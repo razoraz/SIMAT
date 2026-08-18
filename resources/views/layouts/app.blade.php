@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIMAT-RK RSUD Dr. H. Koesnandi Bondowoso</title>
 
+    <!-- Favicon Logo RSUD -->
+    <link rel="icon" type="image/png" href="{{ asset('img/Logo-rsud/logo-rsud.png') }}">
+    <link rel="shortcut icon" href="{{ asset('img/Logo-rsud/logo-rsud.png') }}">
+
     <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
