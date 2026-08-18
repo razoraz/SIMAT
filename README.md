@@ -1,58 +1,138 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏥 SIMAT (Sistem Informasi Manajemen Aset & Logistik)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi manajemen aset, inventarisasi, dan logistik rumah sakit berbasis web yang dibangun menggunakan **Laravel** dan **Tailwind / Vite**.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📋 Daftar Isi
+- [Prasyarat Sistem](#-prasyarat-sistem)
+- [Panduan Instalasi](#-panduan-instalasi)
+- [Akun Pengguna Default](#-akun-pengguna-default)
+- [Fitur Utama](#-fitur-utama)
+- [Troubleshooting](#-troubleshooting)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## ⚙️ Prasyarat Sistem
 
-## Learning Laravel
+Sebelum menjalankan aplikasi, pastikan perangkat Anda telah terpasang:
+- **PHP** >= 8.2 atau 8.3 (dengan ekstensi `pdo_sqlite` / `pdo_mysql`, `mbstring`, `openssl`)
+- **Composer** ([getcomposer.org](https://getcomposer.org/))
+- **Node.js** (v18+) & **NPM** ([nodejs.org](https://nodejs.org/))
+- **Git** ([git-scm.com](https://git-scm.com/))
+- *Database*: SQLite (default) atau MySQL / MariaDB (melalui XAMPP/Laragon)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🚀 Panduan Instalasi
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+Ikuti langkah-langkah di bawah ini untuk menginstal dan menjalankan aplikasi dari nol:
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+### 1. Clone Repository
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/razoraz/SIMAT.git
+cd SIMAT
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### 2. Install Dependensi (PHP & Node.js)
+```bash
+composer install
+npm install
+```
 
-## Contributing
+### 3. Konfigurasi Environment File
+Salin template `.env.example` menjadi `.env`:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+**Windows (PowerShell / CMD):**
+```bash
+copy .env.example .env
+```
 
-## Code of Conduct
+**Linux / macOS / Git Bash:**
+```bash
+cp .env.example .env
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 4. Generate Application Key
+```bash
+php artisan key:generate
+```
 
-## Security Vulnerabilities
+### 5. Konfigurasi & Migrasi Database
+Aplikasi ini secara default menggunakan database **SQLite**.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Jalankan perintah migrasi beserta data awal (*seeder*):
+```bash
+php artisan migrate --seed
+```
+> *Catatan: Jika muncul pertanyaan untuk membuat file database SQLite (`database.sqlite`), ketik `yes`.*
 
-## License
+### 6. Build Asset Frontend & Jalankan Server
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Jalankan server aplikasi Laravel:
+```bash
+php artisan serve
+```
+
+Di jendela / tab terminal terpisah, jalankan server pengembangan Vite:
+```bash
+npm run dev
+```
+*(Atau gunakan `npm run build` untuk build produksi sekali saja)*
+
+Buka browser dan akses: **[http://127.0.0.1:8000](http://127.0.0.1:8000)** atau **[http://localhost:8000](http://localhost:8000)**.
+
+---
+
+## 👤 Akun Pengguna Default
+
+Setelah menjalankan `php artisan migrate --seed`, akun berikut siap digunakan untuk login:
+
+| Role | Email | Password | Deskripsi / Hak Akses |
+| :--- | :--- | :--- | :--- |
+| **Master Admin** | `masteradmin@asimat.com` | `password123` | Akses penuh seluruh master data, konfigurasi pengguna, dan laporan eksekutif. |
+| **Admin** | `admin@asimat.com` | `password123` | Akses operasional harian: Pengadaan, Distribusi, Mutasi, Pemeliharaan, dan Berita Acara. |
+| **Sub Admin** | `subadmin@asimat.com` | `password123` | Akses ruangan / sub-unit untuk pengajuan permohonan aset dan pemantauan barang unit. |
+
+---
+
+## ✨ Fitur Utama
+
+- 🔐 **Autentikasi & Multi-Role Authorization** (Master Admin, Admin, Sub Admin)
+- 📦 **Manajemen Master Data Aset**:
+  - Master Jenis Aset (ASTAP) & Kodefikasi BMD 108
+  - Master Jenis Pengadaan & Unit Paviliun / Ruangan
+- 🔄 **Modul Operasional Aset**:
+  - Form & Data Pengadaan Aset
+  - Form & Data Distribusi Aset
+  - Form & Data Mutasi Aset Antar Unit
+  - Form & Riwayat Pemeliharaan Aset
+  - Form & Pencetakan Berita Acara
+- 📊 **Dashboard Interaktif**:
+  - Statistik ringkasan aset realtime per kategori dan per role pengguna.
+
+---
+
+## 🛠️ Troubleshooting
+
+- **File SQLite Tidak Ditemukan**:
+  Buat file database kosong secara manual, lalu migrasi ulang:
+  ```bash
+  # Windows PowerShell
+  New-Item -ItemType File -Path database/database.sqlite -Force
+  php artisan migrate:fresh --seed
+  ```
+- **Tampilan CSS / Ikon Tidak Muncul**:
+  Pastikan build frontend telah selesai:
+  ```bash
+  npm run build
+  ```
+- **Menghapus Cache Konfigurasi**:
+  ```bash
+  php artisan optimize:clear
+  ```
+
+---
+
+## 📄 Lisensi
+Proyek ini dikembangkan untuk kebutuhan internal RSUD dr. H. Koesnandi Bondowoso.
