@@ -59,20 +59,10 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
 // Frontend Menu & Form Pages (Auth Protected)
 Route::middleware('auth')->group(function () {
     
-    // 1. Data ASTAP Pages & Forms
+    // 1. Data ASTAP Pages
     Route::get('/astap', function () {
         return view('pages.data_astap');
     })->name('astap.index');
-
-    Route::get('/astap/create', function () {
-        $dbMaster108 = \App\Models\JenisAstap::getNested108();
-        return view('pages.form_astap', compact('dbMaster108'));
-    })->name('astap.create');
-
-    Route::get('/astap/{id}/edit', function ($id) {
-        $dbMaster108 = \App\Models\JenisAstap::getNested108();
-        return view('pages.form_astap', ['id' => $id, 'dbMaster108' => $dbMaster108]);
-    })->name('astap.edit');
 
     // 2. Pengadaan Pages & Forms
     Route::get('/pengadaan', function () {
@@ -100,33 +90,7 @@ Route::middleware('auth')->group(function () {
         return view('pages.form_distribusi', ['id' => $id]);
     })->name('distribusi.edit');
 
-    // 4. Berita Acara (BAST) Pages & Forms
-    Route::get('/berita-acara', function () {
-        return view('pages.berita_acara');
-    })->name('bast.index');
-
-    Route::get('/berita-acara/create', function () {
-        return view('pages.form_berita_acara');
-    })->name('bast.create');
-
-    Route::get('/berita-acara/{id}/edit', function ($id) {
-        return view('pages.form_berita_acara', ['id' => $id]);
-    })->name('bast.edit');
-
-    // 5. Pemeliharaan Pages & Forms
-    Route::get('/pemeliharaan', function () {
-        return view('pages.pemeliharaan');
-    })->name('pemeliharaan.index');
-
-    Route::get('/pemeliharaan/create', function () {
-        return view('pages.form_pemeliharaan');
-    })->name('pemeliharaan.create');
-
-    Route::get('/pemeliharaan/{id}/edit', function ($id) {
-        return view('pages.form_pemeliharaan', ['id' => $id]);
-    })->name('pemeliharaan.edit');
-
-    // 6. Mutasi Aset Pages & Forms
+    // 4. Mutasi Aset Pages & Forms
     Route::get('/mutasi-aset', function () {
         return view('pages.mutasi_aset');
     })->name('mutasi.index');
@@ -139,18 +103,60 @@ Route::middleware('auth')->group(function () {
         return view('pages.form_mutasi_aset', ['id' => $id]);
     })->name('mutasi.edit');
 
-    // 7. Unit & Paviliun Pages & Forms
+    // 5. Unit & Paviliun Index (Read-only for Sub Admin, full for Admin)
     Route::get('/unit-paviliun', function () {
         return view('pages.unit_paviliun');
     })->name('unit.index');
 
-    Route::get('/unit-paviliun/create', function () {
-        return view('pages.form_unit_paviliun');
-    })->name('unit.create');
+    // 6. Pemeliharaan Index (Read-only for Sub Admin, full for Admin)
+    Route::get('/pemeliharaan', function () {
+        return view('pages.pemeliharaan');
+    })->name('pemeliharaan.index');
 
-    Route::get('/unit-paviliun/{id}/edit', function ($id) {
-        return view('pages.form_unit_paviliun', ['id' => $id]);
-    })->name('unit.edit');
+    // Rute Khusus Master Admin & Admin Operasional (Sub Admin Dibatasi)
+    Route::middleware([RoleMiddleware::class . ':master_admin,admin'])->group(function () {
+        // Berita Acara (BAST)
+        Route::get('/berita-acara', function () {
+            return view('pages.berita_acara');
+        })->name('bast.index');
+
+        Route::get('/berita-acara/create', function () {
+            return view('pages.form_berita_acara');
+        })->name('bast.create');
+
+        Route::get('/berita-acara/{id}/edit', function ($id) {
+            return view('pages.form_berita_acara', ['id' => $id]);
+        })->name('bast.edit');
+
+        // Form Tambah & Edit ASTAP
+        Route::get('/astap/create', function () {
+            $dbMaster108 = \App\Models\JenisAstap::getNested108();
+            return view('pages.form_astap', compact('dbMaster108'));
+        })->name('astap.create');
+
+        Route::get('/astap/{id}/edit', function ($id) {
+            $dbMaster108 = \App\Models\JenisAstap::getNested108();
+            return view('pages.form_astap', ['id' => $id, 'dbMaster108' => $dbMaster108]);
+        })->name('astap.edit');
+
+        // Form Tambah & Edit Unit / Paviliun
+        Route::get('/unit-paviliun/create', function () {
+            return view('pages.form_unit_paviliun');
+        })->name('unit.create');
+
+        Route::get('/unit-paviliun/{id}/edit', function ($id) {
+            return view('pages.form_unit_paviliun', ['id' => $id]);
+        })->name('unit.edit');
+
+        // Form Tambah & Edit Pemeliharaan
+        Route::get('/pemeliharaan/create', function () {
+            return view('pages.form_pemeliharaan');
+        })->name('pemeliharaan.create');
+
+        Route::get('/pemeliharaan/{id}/edit', function ($id) {
+            return view('pages.form_pemeliharaan', ['id' => $id]);
+        })->name('pemeliharaan.edit');
+    });
 
     // Master Data System Pages
     Route::get('/master-data/users', function () {
