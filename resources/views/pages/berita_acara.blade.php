@@ -1102,7 +1102,8 @@
                                     <div class="font-bold">PENGGUNA BARANG / DIREKTUR</div>
                                     <div>Tervalidasi Digital Signature</div>
                                 </div>
-</p>
+                            </div>
+                        </div>
 
                         <p class="font-bold underline text-[11px]" x-text="currentTriwulanDoc.direktur_nama"></p>
                         <p class="font-mono text-[9px]" x-text="'NIP. ' + currentTriwulanDoc.direktur_nip"></p>
