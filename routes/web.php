@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\JenisAstapController;
 use App\Http\Middleware\RoleMiddleware;
 
 // Auth Routes (Guest)
@@ -154,9 +155,12 @@ Route::middleware('auth')->group(function () {
         return view('pages.master_users');
     })->name('master.users');
 
-    Route::get('/master-data/jenis-astap', function () {
-        return view('pages.master_jenis_astap');
-    })->name('master.jenis_astap');
+Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
+    Route::post('/master-data/jenis-astap', [JenisAstapController::class, 'store'])->name('master.jenis_astap.store');
+    Route::post('/master-data/jenis-astap/import', [JenisAstapController::class, 'import'])->name('master.jenis_astap.import');
+    Route::get('/master-data/jenis-astap/download-template', [JenisAstapController::class, 'downloadTemplate'])->name('master.jenis_astap.template');
+    Route::put('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'update'])->name('master.jenis_astap.update');
+    Route::delete('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'destroy'])->name('master.jenis_astap.destroy');
 
     Route::get('/master-data/jenis-pengadaan', function () {
         return view('pages.master_jenis_pengadaan');
