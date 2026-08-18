@@ -23,22 +23,44 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
         @media print {
-            .no-print, aside, header, footer, #topbar, .no-print * {
+            .no-print, aside, header, footer, #topbar, nav, button, .no-print * {
                 display: none !important;
             }
-            body, main {
+            body, main, html, div[x-data] {
                 background: white !important;
                 color: black !important;
                 padding: 0 !important;
                 margin: 0 !important;
-            }
-            .print-full {
-                width: 100% !important;
-                max-width: 100% !important;
                 box-shadow: none !important;
                 border: none !important;
-                margin: 0 !important;
+                overflow: visible !important;
+            }
+            .fixed.inset-0 {
+                position: static !important;
+                background: white !important;
                 padding: 0 !important;
+                margin: 0 !important;
+            }
+            .bg-slate-900, .bg-slate-950 {
+                background: white !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #print-area-bast, #print-area-distribusi, #print-area-triwulan, #print-area-kir {
+                display: block !important;
+                width: 100% !important;
+                max-height: none !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 1.2cm 1.2cm 1.2cm 1.2cm;
             }
         }
     </style>
