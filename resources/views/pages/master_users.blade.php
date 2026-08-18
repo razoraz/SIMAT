@@ -328,7 +328,7 @@
                                         'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': item.role === 'admin',
                                         'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': item.role === 'sub_admin'
                                     }">
-                                    <span x-text="item.role === 'master_admin' ? '👑 Master Admin' : (item.role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit')"></span>
+                                    <span class="whitespace-nowrap" x-text="item.role === 'master_admin' ? '👑 Master Admin' : (item.role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit')"></span>
                                 </span>
                             </td>
                             <td class="px-4 py-4 font-semibold text-slate-200" x-text="item.unit"></td>
