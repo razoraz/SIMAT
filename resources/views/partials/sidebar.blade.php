@@ -76,7 +76,8 @@
                     <span>Distribusi ASTAP</span>
                 </a>
 
-                <!-- Berita Acara (BAST) -->
+                <!-- Berita Acara (BAST) - Khusus Master Admin & Admin Operasional -->
+                @if(in_array($role, ['master_admin', 'admin']))
                 <a href="{{ route('bast.index') }}" 
                    @click="if (isMobile) sidebarOpen = false"
                    class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('bast.index') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
@@ -85,6 +86,7 @@
                     </svg>
                     <span>Berita Acara (BAST)</span>
                 </a>
+                @endif
             </div>
         </div>
 
@@ -125,7 +127,7 @@
             </div>
         </div>
 
-        <!-- Section 3: Master Data System (Role Khusus) -->
+        <!-- Section 3: Master Data System (Role Master Admin & Admin Operasional) -->
         @if(in_array($role, ['master_admin', 'admin']))
         <div>
             <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Master Data System</div>
@@ -140,8 +142,7 @@
                     <span>Manajemen Pengguna</span>
                 </a>
 
-                <!-- Jenis ASTAP (Master Admin Only) -->
-                @if($role === 'master_admin')
+                <!-- Jenis ASTAP (Klasifikasi Kode 108 Permendagri) -->
                 <a href="{{ route('master.jenis_astap') }}" 
                    @click="if (isMobile) sidebarOpen = false"
                    class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.jenis_astap') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
@@ -151,7 +152,7 @@
                     <span>Jenis ASTAP</span>
                 </a>
 
-                <!-- Jenis Pengadaan (Master Admin Only) -->
+                <!-- Jenis Pengadaan -->
                 <a href="{{ route('master.jenis_pengadaan') }}" 
                    @click="if (isMobile) sidebarOpen = false"
                    class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.jenis_pengadaan') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
@@ -161,7 +162,7 @@
                     <span>Jenis Pengadaan</span>
                 </a>
 
-                <!-- Rekening Belanja SIPD (Master Admin Only) -->
+                <!-- Rekening Belanja SIPD -->
                 <a href="{{ route('master.rekening_belanja') }}" 
                    @click="if (isMobile) sidebarOpen = false"
                    class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.rekening_belanja') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
@@ -170,7 +171,6 @@
                     </svg>
                     <span>Rekening Belanja SIPD</span>
                 </a>
-                @endif
             </div>
         </div>
         @endif
