@@ -59,7 +59,7 @@
                 <a href="{{ route('pemeliharaan.create') }}"
                     class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-2 shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>+ Catat Servis / Perbaikan</span>
+                    <span>Catat Servis / Perbaikan</span>
                 </a>
             </div>
 
