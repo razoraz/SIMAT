@@ -2,6 +2,10 @@
     @section('page-title', request()->routeIs('astap.edit') ? 'Ubah Data ASTAP' : 'Tambah Data ASTAP Baru')
     @section('breadcrumb', request()->routeIs('astap.edit') ? 'Master Utama / Data ASTAP / Ubah Data' : 'Master Utama / Data ASTAP / Tambah Baru')
 
+    <script>
+        window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : []);
+    </script>
+
     <div x-data="{
         isEdit: {{ request()->routeIs('astap.edit') ? 'true' : 'false' }},
         currentStep: 1,
@@ -167,8 +171,8 @@
             }
         ],
 
-        // Master Data Jenis ASTAP & Sub Rincian Objek PMDN 108 (Lengkap dengan Sub-Sub Rincian)
-        masterJenisAstap108: [
+        // Master Data Jenis ASTAP & Sub Rincian Objek PMDN 108 (Diambil Otomatis dari Database Master Jenis ASTAP)
+        masterJenisAstap108: (window.dbMasterJenisAstap108 && window.dbMasterJenisAstap108.length > 0) ? window.dbMasterJenisAstap108 : [
             {
                 kode: '1.3.1',
                 nama: 'TANAH',
@@ -581,6 +585,20 @@
             keterangan_tambahan: 'Aset telah selesai diverifikasi dan siap dibukukan ke dalam KIB RSUD Dr. H. Koesnandi Tahun Anggaran 2026.'
         },
 
+        init() {
+            if (this.masterJenisAstap108 && this.masterJenisAstap108.length > 0) {
+                const currentJenis = this.masterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode);
+                if (!currentJenis) {
+                    this.onJenisAstapChange(this.masterJenisAstap108[0].kode);
+                } else {
+                    const currentSub = currentJenis.subRincian ? currentJenis.subRincian.find(s => s.kode === this.formData.sub_rincian_kode) : null;
+                    if (!currentSub && currentJenis.subRincian && currentJenis.subRincian.length > 0) {
+                        this.onSubRincianChange(currentJenis.subRincian[0].kode);
+                    }
+                }
+            }
+        },
+
         // Cek apakah kategori yang dipilih di Langkah 2 adalah Tanah (KIB A)
         get isTanah() {
             return this.formData.jenis_aset_kode === '1.3.1' || this.formData.jenis_aset_nama.includes('TANAH');
@@ -705,20 +723,22 @@
 
         // Helper Getters untuk Cascading Dropdown Langkah 2 & 3 (Rekening & 108)
         get currentJenisAstap() {
+            if (!this.masterJenisAstap108 || this.masterJenisAstap108.length === 0) return null;
             return this.masterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode) || this.masterJenisAstap108[0];
         },
 
         get availableSubRincian108() {
-            return this.currentJenisAstap ? this.currentJenisAstap.subRincian : [];
+            return (this.currentJenisAstap && this.currentJenisAstap.subRincian) ? this.currentJenisAstap.subRincian : [];
         },
 
         get currentSubRincianObj() {
-            return this.availableSubRincian108.find(s => s.kode === this.formData.sub_rincian_kode) || (this.availableSubRincian108[0] || null);
+            if (this.availableSubRincian108.length === 0) return null;
+            return this.availableSubRincian108.find(s => s.kode === this.formData.sub_rincian_kode) || this.availableSubRincian108[0];
         },
 
         // Mengambil daftar Sub-Sub Rincian (Level 6 Kode 108) sesuai Sub-Rincian Objek yang dipilih di Langkah 2
         get availableSubSubRincian108() {
-            return this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian ? this.currentSubRincianObj.subSubRincian : [];
+            return (this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian) ? this.currentSubRincianObj.subSubRincian : [];
         },
 
         // Handler saat Rekening Belanja Dipilih di Langkah 2
@@ -736,11 +756,14 @@
         // Handler saat Jenis Aset PMDN 108 Berubah di Langkah 2
         onJenisAstapChange(kodeJenis) {
             this.formData.jenis_aset_kode = kodeJenis;
-            const found = this.masterJenisAstap108.find(j => j.kode === kodeJenis);
+            const found = (this.masterJenisAstap108 || []).find(j => j.kode === kodeJenis);
             if (found) {
                 this.formData.jenis_aset_nama = found.nama;
-                if (found.subRincian.length > 0) {
+                if (found.subRincian && found.subRincian.length > 0) {
                     this.onSubRincianChange(found.subRincian[0].kode);
+                } else {
+                    this.formData.sub_rincian_kode = '';
+                    this.formData.sub_rincian_nama = '';
                 }
             }
         },
@@ -812,86 +835,86 @@
     }" x-cloak class="space-y-6">
 
         <!-- Top Navigation Bar (Back + Title) -->
-        <div class="flex items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
-            <div class="flex items-center space-x-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
+            <div class="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
                 <a href="{{ route('astap.index') }}" 
-                   class="w-10 h-10 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all shadow-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                   class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all shadow-sm shrink-0">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 </a>
-                <div>
-                    <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold mb-1">
+                <div class="min-w-0 flex-1">
+                    <div class="inline-flex items-center space-x-2 px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] sm:text-[10px] font-bold mb-1">
                         <span x-text="isEdit ? '✏️ MODE EDIT DATA ASTAP' : '📝 FORM PENAMBAHAN DATA ASTAP'"></span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight" x-text="isEdit ? 'Ubah Data ASTAP: ' + (isTanah ? formData.tanah_nama_barang : (isMesin ? formData.mesin_nama_barang : (isGedung ? formData.gedung_nama_barang : (isJaringan ? formData.jaringan_nama_barang : (isAsetLainnya ? formData.lainnya_nama_barang : (isAtb ? formData.atb_nama_barang : 'Aset Tetap')))))) : 'Input Penambahan Aset Tetap (ASTAP)'"></h1>
+                    <h1 class="text-base sm:text-xl md:text-2xl font-extrabold text-white tracking-tight truncate" x-text="isEdit ? 'Ubah Data ASTAP: ' + (isTanah ? formData.tanah_nama_barang : (isMesin ? formData.mesin_nama_barang : (isGedung ? formData.gedung_nama_barang : (isJaringan ? formData.jaringan_nama_barang : (isAsetLainnya ? formData.lainnya_nama_barang : (isAtb ? formData.atb_nama_barang : 'Aset Tetap')))))) : 'Input Penambahan Aset Tetap (ASTAP)'"></h1>
                 </div>
             </div>
         </div>
 
         <!-- Multi-Step Stepper Header (1 s/d 4) -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 
                 <!-- Step 1 Tab -->
-                <button type="button" @click="currentStep = 1" class="text-left group cursor-pointer">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all"
+                <button type="button" @click="currentStep = 1" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 1 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 1 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
                             <span x-show="currentStep <= 1">1</span>
                             <span x-show="currentStep > 1">✓</span>
                         </div>
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider block" :class="currentStep === 1 ? 'text-emerald-400' : 'text-slate-500'">Langkah 1</span>
-                            <span class="text-xs font-bold text-white block">Filter Jenis Pengadaan</span>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 1 ? 'text-emerald-400' : 'text-slate-500'">Langkah 1</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Jenis Pengadaan</span>
                         </div>
                     </div>
-                    <div class="h-1.5 rounded-full w-full transition-all" :class="currentStep >= 1 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 1 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
                 </button>
 
                 <!-- Step 2 Tab (Rekening Belanja & Jenis ASTAP PMDN 108) -->
-                <button type="button" @click="currentStep = 2" class="text-left group cursor-pointer">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all"
+                <button type="button" @click="currentStep = 2" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 2 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 2 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
                             <span x-show="currentStep <= 2">2</span>
                             <span x-show="currentStep > 2">✓</span>
                         </div>
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider block" :class="currentStep === 2 ? 'text-emerald-400' : 'text-slate-500'">Langkah 2</span>
-                            <span class="text-xs font-bold text-white block">Filter Rekening & Jenis ASTAP</span>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 2 ? 'text-emerald-400' : 'text-slate-500'">Langkah 2</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Rekening & Jenis 108</span>
                         </div>
                     </div>
-                    <div class="h-1.5 rounded-full w-full transition-all" :class="currentStep >= 2 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 2 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
                 </button>
 
                 <!-- Step 3 Tab (Dokumen Pembelian / Rincian Belanja Modal) -->
-                <button type="button" @click="currentStep = 3" class="text-left group cursor-pointer">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all"
+                <button type="button" @click="currentStep = 3" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 3 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 3 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
                             <span x-show="currentStep <= 3">3</span>
                             <span x-show="currentStep > 3">✓</span>
                         </div>
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider block" :class="currentStep === 3 ? 'text-emerald-400' : 'text-slate-500'">Langkah 3</span>
-                            <span class="text-xs font-bold text-white block" x-text="isTanah ? 'Rincian Belanja Tanah' : (isMesin ? 'Rincian Peralatan/Mesin' : (isGedung ? 'Rincian Gedung/Bangunan' : (isJaringan ? 'Rincian Jalan & Jaringan' : (isAsetLainnya ? 'Rincian Aset Lainnya' : (isAtb ? 'Rincian Aset Tdk Berwujud' : 'Dokumen Pembelian')))))"></span>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 3 ? 'text-emerald-400' : 'text-slate-500'">Langkah 3</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate" x-text="isTanah ? 'Rincian Tanah' : (isMesin ? 'Rincian Mesin' : (isGedung ? 'Rincian Gedung' : (isJaringan ? 'Rincian Jaringan' : (isAsetLainnya ? 'Rincian Lainnya' : (isAtb ? 'Rincian ATB' : 'Rincian Aset')))))"></span>
                         </div>
                     </div>
-                    <div class="h-1.5 rounded-full w-full transition-all" :class="currentStep >= 3 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 3 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
                 </button>
 
                 <!-- Step 4 Tab (Penyedia & PPK) -->
-                <button type="button" @click="currentStep = 4" class="text-left group cursor-pointer">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all"
+                <button type="button" @click="currentStep = 4" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 4 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : 'bg-slate-950 text-slate-500 border border-slate-800'">
                             <span>4</span>
                         </div>
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider block" :class="currentStep === 4 ? 'text-emerald-400' : 'text-slate-500'">Langkah 4</span>
-                            <span class="text-xs font-bold text-white block">Penyedia, PPK & Ket.</span>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 4 ? 'text-emerald-400' : 'text-slate-500'">Langkah 4</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Penyedia, PPK & Ket.</span>
                         </div>
                     </div>
-                    <div class="h-1.5 rounded-full w-full transition-all" :class="currentStep >= 4 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 4 ? 'bg-emerald-500' : 'bg-slate-950'"></div>
                 </button>
 
             </div>
@@ -1108,7 +1131,7 @@
                     </div>
 
                     <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-xl">
-                        <table class="w-full text-center text-xs border-collapse font-sans">
+                        <table class="w-full min-w-[760px] text-center text-xs border-collapse font-sans">
                             <!-- Header Atas: BELANJA MODAL -->
                             <thead>
                                 <tr class="bg-blue-300 text-slate-950 font-black border-b border-slate-600">
@@ -3647,28 +3670,28 @@
             </div>
 
             <!-- Bottom Navigation Between Steps -->
-            <div class="pt-8 mt-8 border-t border-slate-800 flex items-center justify-between">
-                <div>
+            <div class="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                <div class="w-full sm:w-auto">
                     <button type="button" x-show="currentStep > 1" @click="currentStep--"
-                            class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all flex items-center space-x-2">
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all flex items-center justify-center space-x-2">
                         <span>&larr; Langkah Sebelumnya</span>
                     </button>
                 </div>
 
-                <div class="flex items-center space-x-3">
-                    <a href="{{ route('astap.index') }}" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
+                <div class="flex items-center justify-end space-x-2.5 sm:space-x-3 w-full sm:w-auto">
+                    <a href="{{ route('astap.index') }}" class="flex-1 sm:flex-initial text-center px-4 sm:px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
                         Batal
                     </a>
 
                     <!-- Next Step Button -->
                     <button type="button" x-show="currentStep < totalSteps" @click="currentStep++"
-                            class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-2">
+                            class="flex-1 sm:flex-initial px-5 sm:px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2">
                         <span>Lanjut Langkah <span x-text="currentStep + 1"></span> &rarr;</span>
                     </button>
 
                     <!-- Submit Button -->
                     <button type="button" x-show="currentStep === totalSteps" @click="submitForm()"
-                            class="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 transition-all flex items-center space-x-2 active:scale-95">
+                            class="flex-1 sm:flex-initial px-5 sm:px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/30 transition-all flex items-center justify-center space-x-2 active:scale-95">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         <span x-text="isEdit ? 'Simpan Perubahan' : 'Simpan Data ASTAP Lengkap'"></span>
                     </button>
