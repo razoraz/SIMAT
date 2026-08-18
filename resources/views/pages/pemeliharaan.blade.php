@@ -56,11 +56,13 @@
                     </p>
                 </div>
                 
+                @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                 <a href="{{ route('pemeliharaan.create') }}"
                     class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-2 shrink-0">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     <span>Catat Servis / Perbaikan</span>
                 </a>
+                @endif
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->
@@ -108,29 +110,30 @@
                     <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Status:</span>
                     <button type="button" @click="statusFilter = 'all'"
                         :class="statusFilter === 'all' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        class="px-3 py-1.5 rounded-xl transition-all">
                         Semua Status
-                    </button>
-                    <button type="button" @click="statusFilter = 'Selesai'"
-                        :class="statusFilter === 'Selesai' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
-                        ✅ Selesai
                     </button>
                     <button type="button" @click="statusFilter = 'Dalam Pengerjaan'"
                         :class="statusFilter === 'Dalam Pengerjaan' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        class="px-3 py-1.5 rounded-xl transition-all">
                         ⚙️ Dalam Pengerjaan
                     </button>
                     <button type="button" @click="statusFilter = 'Menunggu Sparepart'"
                         :class="statusFilter === 'Menunggu Sparepart' ? 'bg-rose-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
-                        ⏳ Tunggu Sparepart
+                        class="px-3 py-1.5 rounded-xl transition-all">
+                        ⏳ Menunggu Sparepart
+                    </button>
+                    <button type="button" @click="statusFilter = 'Selesai'"
+                        :class="statusFilter === 'Selesai' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                        class="px-3 py-1.5 rounded-xl transition-all">
+                        ✅ Selesai Dikerjakan
                     </button>
                 </div>
 
+                <!-- Search Bar & Counter -->
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
                     <div class="relative flex-1 w-full">
-                        <input type="text" x-model="searchQuery" placeholder="Cari nomor servis / nama aset / teknisi pelaksana..."
+                        <input type="text" x-model="searchQuery" placeholder="Cari nama alat / nomor registrasi servis / teknisi..."
                             class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-all">
                         <svg class="w-4 h-4 text-amber-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
@@ -138,7 +141,7 @@
 
                     <div class="flex items-center space-x-2 shrink-0">
                         <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
-                            Menampilkan <span class="text-amber-400 font-bold" x-text="filteredPemeliharaans.length"></span> dari <span class="text-white font-bold" x-text="pemeliharaans.length"></span> Pemeliharaan
+                            Menampilkan <span class="text-amber-400 font-bold" x-text="filteredPemeliharaans.length"></span> dari <span class="text-white font-bold" x-text="pemeliharaans.length"></span> Servis
                         </span>
                         <button type="button" @click="resetFilters()"
                             class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
@@ -154,31 +157,31 @@
             <table class="w-full text-left text-xs text-slate-300">
                 <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
                     <tr>
-                        <th class="px-4 py-3.5 text-center w-12">No</th>
-                        <th class="px-4 py-3.5 text-center">No. Servis</th>
-                        <th class="px-4 py-3.5 text-center">Nama Aset</th>
-                        <th class="px-4 py-3.5 text-center">Jenis Pemeliharaan</th>
-                        <th class="px-4 py-3.5 text-center">Tgl Servis</th>
-                        <th class="px-4 py-3.5 text-center">Biaya Servis</th>
-                        <th class="px-4 py-3.5 text-center">Status</th>
-                        <th class="px-4 py-3.5 text-center">Aksi</th>
+                        <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">No. Servis</th>
+                        <th class="px-4 py-3.5 text-left min-w-[220px]">Nama Aset</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Jenis Pemeliharaan</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tgl Servis</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Biaya Servis</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80">
                     <template x-for="(item, index) in filteredPemeliharaans" :key="item.id">
                         <tr class="hover:bg-slate-800/30 transition-colors">
-                            <td class="px-4 py-4 text-center font-bold text-slate-400" x-text="index + 1"></td>
-                            <td class="px-4 py-4 text-center font-mono font-semibold text-amber-400" x-text="item.kode"></td>
+                            <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
+                            <td class="px-4 py-4 text-center font-mono font-semibold text-amber-400 whitespace-nowrap" x-text="item.kode"></td>
                             <td class="px-4 py-4 font-bold text-white" x-text="item.nama"></td>
-                            <td class="px-4 py-4 text-center text-slate-300" x-text="item.jenis"></td>
-                            <td class="px-4 py-4 text-center font-mono text-slate-300" x-text="item.tgl"></td>
-                            <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono" x-text="item.biaya"></td>
-                            <td class="px-4 py-4 text-center">
-                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold"
+                            <td class="px-4 py-4 text-center text-slate-300 whitespace-nowrap" x-text="item.jenis"></td>
+                            <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tgl"></td>
+                            <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.biaya"></td>
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
                                     :class="{
-                                        'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': item.status === 'Selesai',
-                                        'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': item.status === 'Dalam Pengerjaan',
-                                        'bg-rose-500/20 text-rose-300 border border-rose-500/30': item.status === 'Menunggu Sparepart'
+                                        'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Selesai',
+                                        'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': item.status === 'Dalam Pengerjaan',
+                                        'bg-rose-500/15 text-rose-300 border-rose-500/30': item.status === 'Menunggu Sparepart'
                                     }"
                                     x-text="item.status"></span>
                             </td>
@@ -188,6 +191,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <span>Detail</span>
                                 </button>
+                                @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                 <a :href="'/pemeliharaan/' + item.id + '/edit'"
                                     class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -198,6 +202,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     <span>Hapus</span>
                                 </button>
+                                @endif
                             </td>
                         </tr>
                     </template>
