@@ -20,7 +20,7 @@
             <div class="flex flex-wrap gap-2">
                 <button type="button" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center space-x-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>+ Pengadaan ASTAP Baru</span>
+                    <span>Pengadaan ASTAP Baru</span>
                 </button>
             </div>
         </div>
@@ -40,7 +40,7 @@
                 <h4 class="text-sm font-bold text-white">Pengadaan ASTAP</h4>
                 <p class="text-xs text-slate-400 mt-1">CREATE paket pengadaan baru & kelola anggaran pengadaan barang RSUD.</p>
                 <button type="button" class="mt-4 w-full py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-bold text-xs border border-cyan-500/30 transition-all">
-                    + Input Pengadaan ASTAP
+                    Input Pengadaan ASTAP
                 </button>
             </div>
 
@@ -50,7 +50,7 @@
                 <h4 class="text-sm font-bold text-white">Distribusi ASTAP</h4>
                 <p class="text-xs text-slate-400 mt-1">CREATE & UPDATE alokasi penyerahan barang ke unit/ruang kerja RSUD.</p>
                 <button type="button" class="mt-4 w-full py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 font-bold text-xs border border-teal-500/30 transition-all">
-                    + Form Distribusi ASTAP
+                    Form Distribusi ASTAP
                 </button>
             </div>
 
@@ -60,7 +60,7 @@
                 <h4 class="text-sm font-bold text-white">Berita Acara (BAST)</h4>
                 <p class="text-xs text-slate-400 mt-1">CREATE dokumen BAST resmi, cetak dokumen, & update data penanggung jawab.</p>
                 <button type="button" class="mt-4 w-full py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-bold text-xs border border-purple-500/30 transition-all">
-                    + Pembuatan BAST Baru
+                    Pembuatan BAST Baru
                 </button>
             </div>
 
@@ -70,7 +70,7 @@
                 <h4 class="text-sm font-bold text-white">Pembuatan Akun User</h4>
                 <p class="text-xs text-slate-400 mt-1">CREATE akun pengguna/pegawai, UPDATE data user, & DELETE akun jika diperlukan.</p>
                 <button type="button" class="mt-4 w-full py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30 transition-all">
-                    + Tambah Akun User
+                    Tambah Akun User
                 </button>
             </div>
         </div>
