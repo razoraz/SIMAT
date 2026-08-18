@@ -10,6 +10,11 @@
         showDetailModal: false,
         selectedUser: null,
 
+        // Sesi Pengguna Aktif (Default: Admin Operasional)
+        currentUserRole: '{{ Auth::user()->role ?? 'admin' }}',
+        currentUserId: {{ Auth::user()->id ?? 2 }},
+        currentUserEmail: '{{ Auth::user()->email ?? 'admin@asimat.com' }}',
+
         newFormData: {
             name: '',
             nip: '',
@@ -54,6 +59,16 @@
                 status: 'Aktif'
             },
             {
+                id: 7,
+                name: 'Siti Aminah, S.E (Admin Aset 2)',
+                nip: '19900214 201503 2 006',
+                email: 'siti.admin2@asimat.com',
+                role: 'admin',
+                unit: 'Bagian Umum & Aset',
+                penugasan: 'Admin Operasional: Verifikasi penatausahaan dan inventarisasi aset ruangan',
+                status: 'Aktif'
+            },
+            {
                 id: 3,
                 name: 'User Sub Admin Master',
                 nip: '19920510 201802 2 005',
@@ -95,6 +110,67 @@
             }
         ],
 
+        // Cek apakah user target adalah akun diri sendiri
+        isSelf(targetUser) {
+            if (!targetUser) return false;
+            return targetUser.id === this.currentUserId || targetUser.email === this.currentUserEmail;
+        },
+
+        // Cek hak akses untuk Mengubah Data (Edit)
+        canEditUser(targetUser) {
+            if (!targetUser) return false;
+            // Master Admin bisa mengubah semua akun
+            if (this.currentUserRole === 'master_admin') return true;
+
+            // Admin Operasional:
+            if (this.currentUserRole === 'admin') {
+                // TIDAK BISA mengubah akun Master Admin
+                if (targetUser.role === 'master_admin') return false;
+                // BISA mengubah profil akunnya sendiri
+                if (targetUser.role === 'admin') {
+                    return this.isSelf(targetUser);
+                }
+                // BISA mengubah akun Sub Admin
+                if (targetUser.role === 'sub_admin') return true;
+            }
+
+            return false;
+        },
+
+        // Cek hak akses untuk Menghapus Data (Delete)
+        canDeleteUser(targetUser) {
+            if (!targetUser) return false;
+            // Master Admin bisa menghapus selain dirinya sendiri
+            if (this.currentUserRole === 'master_admin') {
+                return !this.isSelf(targetUser);
+            }
+
+            // Admin Operasional:
+            if (this.currentUserRole === 'admin') {
+                // TIDAK BISA menghapus Master Admin maupun sesama Admin
+                if (targetUser.role === 'master_admin' || targetUser.role === 'admin') return false;
+                // BISA menghapus Sub Admin
+                return targetUser.role === 'sub_admin';
+            }
+
+            return false;
+        },
+
+        // Tooltip penjelasan proteksi
+        getEditTooltip(targetUser) {
+            if (this.canEditUser(targetUser)) return '';
+            if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin diproteksi khusus (Hanya Master Admin yang dapat mengubah)';
+            if (targetUser.role === 'admin' && !this.isSelf(targetUser)) return '🔒 Admin tidak diizinkan mengubah akun Admin lain';
+            return 'Akses dibatasi';
+        },
+
+        getDeleteTooltip(targetUser) {
+            if (this.canDeleteUser(targetUser)) return '';
+            if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin tidak dapat dihapus';
+            if (targetUser.role === 'admin') return '🔒 Admin tidak diizinkan menghapus akun Admin';
+            return 'Akses dibatasi';
+        },
+
         get filteredUsers() {
             const query = (this.searchQuery || '').toLowerCase();
             return this.users.filter(item => {
@@ -131,22 +207,8 @@
             this.showDetailModal = true;
         },
 
-        openEdit(item) {
-            this.editFormData = { ...item };
-            this.showEditModal = true;
-        },
-
-        saveNew() {
-            if (!this.newFormData.name || !this.newFormData.email) {
-                alert('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!');
-                return;
-            }
-            const nextId = this.users.length > 0 ? Math.max(...this.users.map(i => i.id)) + 1 : 1;
-            this.users.push({
-                id: nextId,
-                ...this.newFormData
-            });
-            this.showAddModal = false;
+        openAddModal() {
+            // Jika login sebagai Admin, kunci pilihan role ke sub_admin
             this.newFormData = {
                 name: '',
                 nip: '',
@@ -157,22 +219,66 @@
                 password: '',
                 status: 'Aktif'
             };
-            alert('✅ Akun Pengguna baru berhasil didaftarkan!');
+            this.showAddModal = true;
+        },
+
+        openEdit(item) {
+            if (!this.canEditUser(item)) {
+                alert('⛔ Akses Ditolak: ' + this.getEditTooltip(item));
+                return;
+            }
+            this.editFormData = { ...item };
+            this.showEditModal = true;
+        },
+
+        saveNew() {
+            if (!this.newFormData.name || !this.newFormData.email) {
+                alert('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!');
+                return;
+            }
+
+            // Validasi otorisasi Admin: Admin tidak boleh membuat admin / master_admin
+            if (this.currentUserRole === 'admin' && this.newFormData.role !== 'sub_admin') {
+                alert('⛔ Sebagai Admin Operasional, Anda hanya diizinkan menambah akun Sub Admin (Kepala Ruangan/Paviliun)!');
+                this.newFormData.role = 'sub_admin';
+                return;
+            }
+
+            const nextId = this.users.length > 0 ? Math.max(...this.users.map(i => i.id)) + 1 : 1;
+            this.users.push({
+                id: nextId,
+                ...this.newFormData
+            });
+            this.showAddModal = false;
+            alert('✅ Akun Sub Admin baru berhasil didaftarkan!');
         },
 
         saveEdit() {
             const index = this.users.findIndex(i => i.id === this.editFormData.id);
             if (index !== -1) {
+                // Validasi otorisasi Admin: Tidak boleh mengubah role menjadi admin/master_admin sembarangan
+                if (this.currentUserRole === 'admin') {
+                    if (this.isSelf(this.editFormData)) {
+                        this.editFormData.role = 'admin'; // tetap admin
+                    } else {
+                        this.editFormData.role = 'sub_admin'; // tetap sub_admin
+                    }
+                }
                 this.users[index] = { ...this.editFormData };
             }
             this.showEditModal = false;
             alert('✅ Perubahan data pengguna berhasil disimpan!');
         },
 
-        deleteItem(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus akun pengguna ini?')) {
-                this.users = this.users.filter(i => i.id !== id);
-                alert('🗑️ Akun pengguna berhasil dihapus.');
+        deleteItem(item) {
+            if (!this.canDeleteUser(item)) {
+                alert('⛔ Akses Ditolak: ' + this.getDeleteTooltip(item));
+                return;
+            }
+
+            if (confirm('Apakah Anda yakin ingin menghapus akun Sub Admin: ' + item.name + ' (' + item.unit + ')?')) {
+                this.users = this.users.filter(i => i.id !== item.id);
+                alert('🗑️ Akun Sub Admin berhasil dihapus.');
             }
         }
     }" x-cloak>
@@ -189,13 +295,30 @@
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
                         Pengelolaan akun pegawai RSUD Dr. H. Koesnandi, pengaturan tingkatan hak akses otorisasi (3 Role), penetapan unit/ruangan penugasan, dan status akun aktif.
                     </p>
+
+                    <!-- Role Status & Otorisasi Badge -->
+                    <div class="mt-4 flex flex-wrap items-center gap-2 text-xs">
+                        <div class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl border"
+                            :class="currentUserRole === 'admin' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30 font-bold' : 'bg-amber-500/15 text-amber-300 border-amber-500/30 font-bold'">
+                            <span x-text="currentUserRole === 'admin' ? '🛡️ Sesi Aktif: Admin Operasional' : '👑 Sesi Aktif: Master Admin'"></span>
+                        </div>
+                        <span class="text-slate-400 text-[11px]" x-show="currentUserRole === 'admin'">
+                            • Hak Akses: <strong class="text-emerald-400">Penuh atas Sub Admin</strong> (Tambah/Ubah/Hapus) & <strong class="text-cyan-300">Ubah Profil Sendiri</strong>. Akun Admin lain & Master Admin diproteksi.
+                        </span>
+                        <span class="text-slate-400 text-[11px]" x-show="currentUserRole === 'master_admin'">
+                            • Hak Akses: <strong class="text-amber-400">Superuser Penuh</strong> atas semua tingkatan role akun.
+                        </span>
+                    </div>
                 </div>
                 
-                <button type="button" @click="showAddModal = true"
-                    class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-2 shrink-0">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Tambah Pengguna</span>
-                </button>
+                <!-- Action Button Tambah Pengguna / Sub Admin -->
+                <div class="shrink-0">
+                    <button type="button" @click="openAddModal()"
+                        class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span x-text="currentUserRole === 'admin' ? 'Tambah Sub Admin' : 'Tambah Pengguna'"></span>
+                    </button>
+                </div>
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->
@@ -313,7 +436,10 @@
                                          }"
                                          x-text="item.name.substring(0, 1)"></div>
                                     <div>
-                                        <div class="font-bold text-white text-sm" x-text="item.name"></div>
+                                        <div class="flex items-center space-x-1.5">
+                                            <span class="font-bold text-white text-sm" x-text="item.name"></span>
+                                            <span x-show="isSelf(item)" class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Saya</span>
+                                        </div>
                                         <div class="text-[10px] text-slate-400 font-mono" x-text="'NIP: ' + (item.nip || '-')"></div>
                                     </div>
                                 </div>
@@ -335,22 +461,46 @@
                             <td class="px-4 py-4 text-center">
                                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" x-text="item.status"></span>
                             </td>
+                            
+                            <!-- Aksi dengan Granular Role Permission -->
                             <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
+                                
+                                <!-- Tombol Detail (Bisa untuk Semua Akun) -->
                                 <button type="button" @click="openDetail(item)"
                                     class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <span>Detail</span>
                                 </button>
-                                <button type="button" @click="openEdit(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    <span>Ubah</span>
-                                </button>
-                                <button type="button" @click="deleteItem(item.id)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    <span>Hapus</span>
-                                </button>
+
+                                <!-- Tombol Ubah (Aktif jika diizinkan, Terkunci jika akun Admin lain / Master Admin) -->
+                                <template x-if="canEditUser(item)">
+                                    <button type="button" @click="openEdit(item)"
+                                        class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        <span x-text="isSelf(item) ? 'Profil Saya' : 'Ubah'"></span>
+                                    </button>
+                                </template>
+                                <template x-if="!canEditUser(item)">
+                                    <button type="button" disabled :title="getEditTooltip(item)"
+                                        class="px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-800 font-semibold text-xs cursor-not-allowed inline-flex items-center space-x-1 opacity-60">
+                                        <span>🔒 Terkunci</span>
+                                    </button>
+                                </template>
+
+                                <!-- Tombol Hapus (Aktif jika Sub Admin / Master Admin, Terkunci jika Admin/Master) -->
+                                <template x-if="canDeleteUser(item)">
+                                    <button type="button" @click="deleteItem(item)"
+                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        <span>Hapus</span>
+                                    </button>
+                                </template>
+                                <template x-if="!canDeleteUser(item)">
+                                    <button type="button" disabled :title="getDeleteTooltip(item)"
+                                        class="px-2.5 py-1.5 rounded-xl bg-slate-800/40 text-slate-500 border border-slate-800 font-semibold text-xs cursor-not-allowed inline-flex items-center space-x-1 opacity-60">
+                                        <span>🔒 Terkunci</span>
+                                    </button>
+                                </template>
                             </td>
                         </tr>
                     </template>
@@ -382,7 +532,10 @@
                              }"
                              x-text="selectedUser.name.substring(0, 1)"></div>
                         <div>
-                            <p class="font-extrabold text-white text-base" x-text="selectedUser.name"></p>
+                            <div class="flex items-center space-x-2">
+                                <p class="font-extrabold text-white text-base" x-text="selectedUser.name"></p>
+                                <span x-show="isSelf(selectedUser)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Akun Saya</span>
+                            </div>
                             <p class="text-slate-400 font-mono text-xs" x-text="'NIP: ' + (selectedUser.nip || '-')"></p>
                         </div>
                     </div>
@@ -425,7 +578,7 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- MODAL TAMBAH USER                                                         -->
+        <!-- MODAL TAMBAH USER (ROLE ADMIN HANYA BISA MENAMBAH SUB-ADMIN)             -->
         <!-- ========================================================================= -->
         <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
             <div @click.away="showAddModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
@@ -434,9 +587,20 @@
 
                 <!-- Header Center -->
                 <div class="text-center pb-3 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-extrabold text-white">Tambah Pengguna Baru</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Registrasi Akun Pegawai & Pengaturan Role Otorisasi</p>
+                    <h3 class="text-base font-extrabold text-white" x-text="currentUserRole === 'admin' ? 'Tambah Akun Sub Admin (Unit/Paviliun)' : 'Tambah Pengguna Baru'"></h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="currentUserRole === 'admin' ? 'Pendaftaran Akun Kepala Ruangan & Penanggung Jawab Inventaris Unit' : 'Registrasi Akun Pegawai & Pengaturan Role Otorisasi'"></p>
                 </div>
+
+                <!-- Info Notice untuk Admin Operasional -->
+                <template x-if="currentUserRole === 'admin'">
+                    <div class="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl mb-3 flex items-start space-x-2.5 text-xs text-cyan-200">
+                        <span class="text-base">ℹ️</span>
+                        <div>
+                            <span class="font-bold block">Wewenang Admin:</span>
+                            <span>Anda berwenang mendaftarkan akun <strong>Sub Admin (Kepala Ruangan / Paviliun)</strong>. Penambahan akun Admin & Master Admin hanya dapat dilakukan oleh Master Admin.</span>
+                        </div>
+                    </div>
+                </template>
 
                 <form @submit.prevent="saveNew()" class="space-y-3.5 text-xs">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -457,11 +621,20 @@
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Role Otorisasi</label>
-                            <select x-model="newFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500">
-                                <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
-                                <option value="admin">🛡️ Admin Operasional</option>
-                                <option value="master_admin">👑 Master Admin System</option>
-                            </select>
+                            
+                            <!-- Jika login Admin: Dropdown terkunci ke sub_admin -->
+                            <template x-if="currentUserRole === 'admin'">
+                                <input type="text" value="🏥 Sub Admin (User Unit / Ruangan)" readonly class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold cursor-not-allowed">
+                            </template>
+
+                            <!-- Jika login Master Admin: Bebas pilih role -->
+                            <template x-if="currentUserRole === 'master_admin'">
+                                <select x-model="newFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500">
+                                    <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
+                                    <option value="admin">🛡️ Admin Operasional</option>
+                                    <option value="master_admin">👑 Master Admin System</option>
+                                </select>
+                            </template>
                         </div>
                     </div>
 
@@ -472,8 +645,11 @@
                                 <option value="Paviliun Graha Amukti">Paviliun Graha Amukti (VIP)</option>
                                 <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
                                 <option value="Instalasi Radiologi">Instalasi Radiologi</option>
-                                <option value="Instalasi Gizi & Dapur">Instalasi Gizi & Dapur</option>
+                                <option value="Instalasi Bedah Sentral (IBS)">Instalasi Bedah Sentral (IBS)</option>
+                                <option value="Instalasi Rawat Intensif (ICU)">Instalasi Rawat Intensif (ICU)</option>
+                                <option value="Instalasi Laboratorium Patologi">Instalasi Laboratorium Patologi</option>
                                 <option value="Instalasi Farmasi">Instalasi Farmasi</option>
+                                <option value="Instalasi Gizi & Dapur">Instalasi Gizi & Dapur</option>
                                 <option value="Bagian Umum & Aset">Bagian Umum & Aset</option>
                                 <option value="Direksi & SIMRS">Direksi & SIMRS</option>
                             </select>
@@ -504,7 +680,7 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- MODAL UBAH USER                                                           -->
+        <!-- MODAL UBAH USER (ADMIN BISA UBAH PROFIL DIRI & DATA SUB-ADMIN)           -->
         <!-- ========================================================================= -->
         <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
             <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
@@ -513,8 +689,8 @@
 
                 <!-- Header Center -->
                 <div class="text-center pb-3 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-extrabold text-white">Ubah Data Pengguna</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Perbarui Profil, Hak Akses Role & Unit Penugasan</p>
+                    <h3 class="text-base font-extrabold text-white" x-text="isSelf(editFormData) ? '✏️ Ubah Profil Akun Saya' : '✏️ Ubah Data Sub Admin'"></h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="isSelf(editFormData) ? 'Perbarui informasi identitas, email dan NIP akun Admin Anda' : 'Perbarui data penugasan unit, email, dan status aktif Sub Admin'"></p>
                 </div>
 
                 <form @submit.prevent="saveEdit()" class="space-y-3.5 text-xs">
@@ -536,11 +712,20 @@
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Role Otorisasi</label>
-                            <select x-model="editFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500">
-                                <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
-                                <option value="admin">🛡️ Admin Operasional</option>
-                                <option value="master_admin">👑 Master Admin System</option>
-                            </select>
+                            
+                            <!-- Jika login Admin: Role terkunci sesuai target akun -->
+                            <template x-if="currentUserRole === 'admin'">
+                                <input type="text" :value="editFormData.role === 'admin' ? '🛡️ Admin Operasional (Role Terkunci)' : '🏥 Sub Admin (Role Terkunci)'" readonly class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-300 font-bold cursor-not-allowed">
+                            </template>
+
+                            <!-- Jika login Master Admin: Bebas ubah role -->
+                            <template x-if="currentUserRole === 'master_admin'">
+                                <select x-model="editFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500">
+                                    <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
+                                    <option value="admin">🛡️ Admin Operasional</option>
+                                    <option value="master_admin">👑 Master Admin System</option>
+                                </select>
+                            </template>
                         </div>
                     </div>
 
@@ -551,8 +736,11 @@
                                 <option value="Paviliun Graha Amukti">Paviliun Graha Amukti (VIP)</option>
                                 <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
                                 <option value="Instalasi Radiologi">Instalasi Radiologi</option>
-                                <option value="Instalasi Gizi & Dapur">Instalasi Gizi & Dapur</option>
+                                <option value="Instalasi Bedah Sentral (IBS)">Instalasi Bedah Sentral (IBS)</option>
+                                <option value="Instalasi Rawat Intensif (ICU)">Instalasi Rawat Intensif (ICU)</option>
+                                <option value="Instalasi Laboratorium Patologi">Instalasi Laboratorium Patologi</option>
                                 <option value="Instalasi Farmasi">Instalasi Farmasi</option>
+                                <option value="Instalasi Gizi & Dapur">Instalasi Gizi & Dapur</option>
                                 <option value="Bagian Umum & Aset">Bagian Umum & Aset</option>
                                 <option value="Direksi & SIMRS">Direksi & SIMRS</option>
                             </select>
