@@ -148,28 +148,28 @@
             <table class="w-full text-left text-xs text-slate-300">
                 <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
                     <tr>
-                        <th class="px-4 py-3.5 text-center w-12">No</th>
-                        <th class="px-4 py-3.5 text-center">No. Mutasi</th>
-                        <th class="px-4 py-3.5 text-center">Nama Barang</th>
-                        <th class="px-4 py-3.5 text-center">Ruangan Asal</th>
-                        <th class="px-4 py-3.5 text-center">Ruangan Tujuan</th>
-                        <th class="px-4 py-3.5 text-center">Tgl Pengajuan</th>
-                        <th class="px-4 py-3.5 text-center">Status</th>
-                        <th class="px-4 py-3.5 text-center">Aksi</th>
+                        <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">No. Mutasi</th>
+                        <th class="px-4 py-3.5 text-left min-w-[220px]">Nama Barang</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Ruangan Asal</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Ruangan Tujuan</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tgl Pengajuan</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80">
                     <template x-for="(item, index) in filteredMutasis" :key="item.id">
                         <tr class="hover:bg-slate-800/30 transition-colors">
-                            <td class="px-4 py-4 text-center font-bold text-slate-400" x-text="index + 1"></td>
-                            <td class="px-4 py-4 text-center font-mono font-semibold text-rose-400" x-text="item.kode"></td>
+                            <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
+                            <td class="px-4 py-4 text-center font-mono font-semibold text-rose-400 whitespace-nowrap" x-text="item.kode"></td>
                             <td class="px-4 py-4 font-bold text-white" x-text="item.nama"></td>
-                            <td class="px-4 py-4 text-center text-slate-300" x-text="item.asal"></td>
-                            <td class="px-4 py-4 text-center font-semibold text-rose-300" x-text="item.tujuan"></td>
-                            <td class="px-4 py-4 text-center font-mono text-slate-300" x-text="item.tgl"></td>
-                            <td class="px-4 py-4 text-center">
-                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold"
-                                    :class="item.status === 'Disetujui' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
+                            <td class="px-4 py-4 text-center text-slate-300 whitespace-nowrap" x-text="item.asal"></td>
+                            <td class="px-4 py-4 text-center font-semibold text-rose-300 whitespace-nowrap" x-text="item.tujuan"></td>
+                            <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tgl"></td>
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
+                                    :class="item.status === 'Disetujui' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'"
                                     x-text="item.status"></span>
                             </td>
                             <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
