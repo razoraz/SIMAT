@@ -12,16 +12,16 @@
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Selamat Datang, {{ Auth::user()->name }}!</h1>
                 <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    Anda berada di Panel Sub Admin. Wewenang Anda meliputi input/pengajuan Distribusi ASTAP baru (Create), pemantauan data distribusi khusus akun Anda (Read, Update, Delete), serta melihat Katalog ASTAP & Berita Acara (BAST).
+                    Anda berada di Panel Sub Admin (Perwakilan Unit/Paviliun). Wewenang Anda meliputi melihat Katalog Data ASTAP, memantau Aset Ruangan & Cetak KIR Unit Anda, melihat riwayat Pemeliharaan, serta pengajuan Distribusi Barang Aset.
                 </p>
             </div>
 
             <!-- Sub Admin Create Action -->
             <div class="flex flex-wrap gap-2">
-                <button type="button" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5">
+                <a href="{{ route('distribusi.create') }}" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>+ Pengajuan Distribusi ASTAP</span>
-                </button>
+                    <span>Pengajuan Distribusi ASTAP</span>
+                </a>
             </div>
         </div>
     </div>
@@ -32,30 +32,30 @@
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/40 transition-all">
             <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold text-lg w-fit mb-3">🚚</div>
             <h4 class="text-sm font-bold text-white">Input Distribusi ASTAP</h4>
-            <p class="text-xs text-slate-400 mt-1">Buat permohonan pengalokasian atau penerimaan barang aset baru untuk unit kerja Anda (CREATE).</p>
-            <button type="button" class="mt-4 w-full py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30 transition-all">
+            <p class="text-xs text-slate-400 mt-1">Buat permohonan pengalokasian atau penerimaan barang aset baru untuk unit kerja Anda.</p>
+            <a href="{{ route('distribusi.create') }}" class="mt-4 block text-center w-full py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold text-xs border border-emerald-500/30 transition-all">
                 + Input Distribusi Baru
-            </button>
+            </a>
         </div>
 
         <!-- 2. Katalog Data ASTAP (Read Only) -->
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-cyan-500/40 transition-all">
             <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg w-fit mb-3">📁</div>
             <h4 class="text-sm font-bold text-white">Katalog Data ASTAP</h4>
-            <p class="text-xs text-slate-400 mt-1">Lihat daftar lengkap katalog aset RSUD (Tanah, Bangunan, Mesin, Irigasi, Aset Tidak Berwujud).</p>
-            <button type="button" class="mt-4 w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
+            <p class="text-xs text-slate-400 mt-1">Lihat daftar lengkap katalog aset RSUD (Tanah, Peralatan Medis, Gedung, Sarana, dsb).</p>
+            <a href="{{ route('astap.index') }}" class="mt-4 block text-center w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
                 Lihat Katalog ASTAP &rarr;
-            </button>
+            </a>
         </div>
 
-        <!-- 3. Berita Acara BAST (Read Only) -->
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-purple-500/40 transition-all">
-            <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-lg w-fit mb-3">📄</div>
-            <h4 class="text-sm font-bold text-white">Berita Acara (BAST)</h4>
-            <p class="text-xs text-slate-400 mt-1">Cek & unduh salinan dokumen Berita Acara Serah Terima (BAST) resmi milik unit Anda.</p>
-            <button type="button" class="mt-4 w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
-                Lihat Dokumen BAST &rarr;
-            </button>
+        <!-- 3. Unit & Paviliun (KIR Ruangan) -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-blue-500/40 transition-all">
+            <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 font-bold text-lg w-fit mb-3">🏥</div>
+            <h4 class="text-sm font-bold text-white">Unit & Lembar KIR</h4>
+            <p class="text-xs text-slate-400 mt-1">Lihat daftar aset inventaris ruangan unit kerja Anda dan cetak Lembar Kartu Inventaris Ruangan (KIR).</p>
+            <a href="{{ route('unit.index') }}" class="mt-4 block text-center w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
+                Buka Unit & KIR &rarr;
+            </a>
         </div>
     </div>
 
