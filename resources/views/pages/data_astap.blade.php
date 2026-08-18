@@ -429,11 +429,13 @@
                 
                 <!-- Aksi Utama -->
                 <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                     <a href="{{ route('bast.index') }}"
                         class="px-3.5 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5 active:scale-95">
                         <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                         <span>📑 Cetak BAST Triwulan</span>
                     </a>
+                    @endif
 
                     <button type="button" @click="downloadExcel()"
                         class="px-3.5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5">
@@ -441,11 +443,13 @@
                         <span>Export Excel</span>
                     </button>
 
+                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                     <a href="{{ route('astap.create') }}"
                         class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         <span>Tambah ASTAP</span>
                     </a>
+                    @endif
                 </div>
             </div>
 
@@ -628,27 +632,27 @@
             <table class="w-full text-left text-xs text-slate-300">
                 <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
                     <tr>
-                        <th class="px-4 py-3.5 text-center w-12">No</th>
-                        <th class="px-4 py-3.5 text-center">Nama Barang / ASTAP</th>
-                        <th class="px-4 py-3.5 text-center">Tahun Masuk</th>
-                        <th class="px-4 py-3.5 text-center">Volume / Kuantitas / Luas</th>
-                        <th class="px-4 py-3.5 text-center">Nilai Realisasi</th>
-                        <th class="px-4 py-3.5 text-center">Kondisi</th>
-                        <th class="px-4 py-3.5 text-center">QR Code</th>
-                        <th class="px-4 py-3.5 text-center">Aksi</th>
+                        <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
+                        <th class="px-4 py-3.5 text-left min-w-[240px]">Nama Barang / ASTAP</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tahun Masuk</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Volume / Kuantitas</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Nilai Realisasi</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Kondisi</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">QR Code</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80">
                     <template x-for="(item, index) in filteredAstaps" :key="item.id">
                         <tr class="hover:bg-slate-800/40 transition-colors">
                             <!-- Nomor Urut 1, 2, 3... -->
-                            <td class="px-4 py-4 text-center font-bold text-slate-400" x-text="index + 1"></td>
+                            <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
                             
                             <!-- Nama Barang / ASTAP -->
                             <td class="px-4 py-4">
                                 <div class="font-bold text-white text-sm" x-text="item.nama_barang"></div>
                                 <div class="flex items-center space-x-1.5 mt-1">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap leading-none shrink-0"
                                         :class="{
                                             'bg-amber-500/20 text-amber-300 border border-amber-500/30': item.category === 'KIB A',
                                             'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': item.category === 'KIB B',
@@ -660,38 +664,38 @@
                                             'bg-pink-500/20 text-pink-300 border border-pink-500/30': item.category === 'KIB H'
                                         }"
                                         x-text="item.category"></span>
-                                    <span class="text-[11px] text-slate-400" x-text="item.jenis_aset_nama"></span>
+                                    <span class="text-[11px] text-slate-400 truncate" x-text="item.jenis_aset_nama"></span>
                                 </div>
                             </td>
 
                             <!-- Tahun Masuk / Perolehan -->
-                            <td class="px-4 py-4 text-center font-mono font-bold text-slate-200" x-text="item.tahun_perolehan"></td>
+                            <td class="px-4 py-4 text-center font-mono font-bold text-slate-200 whitespace-nowrap" x-text="item.tahun_perolehan"></td>
 
                             <!-- Volume / Kuantitas / Luas Aset -->
-                            <td class="px-4 py-4 text-center">
-                                <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-300 font-semibold font-mono text-xs">
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-300 font-semibold font-mono text-xs whitespace-nowrap">
                                     <span>📏</span>
                                     <span x-text="item.volume_satuan"></span>
                                 </div>
                             </td>
 
                             <!-- Nilai Realisasi -->
-                            <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono" x-text="item.jumlah_realisasi"></td>
+                            <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.jumlah_realisasi"></td>
 
-                            <!-- Kondisi -->
-                            <td class="px-4 py-4 text-center">
-                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold"
+                            <!-- Kondisi (Non-wrapping badge) -->
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
                                       :class="{
-                                          'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': item.kondisi === 'Baik',
-                                          'bg-amber-500/20 text-amber-300 border border-amber-500/30': item.kondisi === 'Rusak Ringan',
-                                          'bg-rose-500/20 text-rose-300 border border-rose-500/30': item.kondisi === 'Rusak Berat',
-                                          'bg-purple-500/20 text-purple-300 border border-purple-500/30': item.kondisi === 'Dalam Renovasi'
+                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.kondisi === 'Baik',
+                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': item.kondisi === 'Rusak Ringan',
+                                          'bg-rose-500/15 text-rose-300 border-rose-500/30': item.kondisi === 'Rusak Berat',
+                                          'bg-purple-500/15 text-purple-300 border-purple-500/30': item.kondisi === 'Dalam Renovasi'
                                       }"
                                       x-text="item.kondisi"></span>
                             </td>
 
                             <!-- Download QR Code Button -->
-                            <td class="px-4 py-4 text-center">
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
                                 <button type="button" @click="downloadQrCode(item.kode_barang, item.nama_barang)"
                                     class="px-2.5 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-semibold transition-all inline-flex items-center space-x-1.5 shadow-sm"
                                     title="Download Label QR Code">
@@ -708,6 +712,7 @@
                                     <span>Detail</span>
                                 </button>
 
+                                @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                 <a :href="'/astap/' + item.id + '/edit'" 
                                     class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -719,6 +724,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     <span>Hapus</span>
                                 </button>
+                                @endif
                             </td>
                         </tr>
                     </template>
