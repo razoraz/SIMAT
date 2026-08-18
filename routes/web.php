@@ -65,11 +65,13 @@ Route::middleware('auth')->group(function () {
     })->name('astap.index');
 
     Route::get('/astap/create', function () {
-        return view('pages.form_astap');
+        $dbMaster108 = \App\Models\JenisAstap::getNested108();
+        return view('pages.form_astap', compact('dbMaster108'));
     })->name('astap.create');
 
     Route::get('/astap/{id}/edit', function ($id) {
-        return view('pages.form_astap', ['id' => $id]);
+        $dbMaster108 = \App\Models\JenisAstap::getNested108();
+        return view('pages.form_astap', ['id' => $id, 'dbMaster108' => $dbMaster108]);
     })->name('astap.edit');
 
     // 2. Pengadaan Pages & Forms
