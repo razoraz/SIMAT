@@ -148,7 +148,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10m-5 5h5"/>
                     </svg>
-                    <span>Jenis ASTAP (8 Kategori)</span>
+                    <span>Jenis ASTAP</span>
                 </a>
 
                 <!-- Jenis Pengadaan (Master Admin Only) -->
