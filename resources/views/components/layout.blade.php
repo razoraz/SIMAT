@@ -21,6 +21,26 @@
     <style>
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        @media print {
+            .no-print, aside, header, footer, #topbar, .no-print * {
+                display: none !important;
+            }
+            body, main {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .print-full {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen antialiased overflow-x-hidden selection:bg-emerald-500 selection:text-slate-950">
