@@ -3,176 +3,375 @@
     @section('breadcrumb', 'Master Utama / Berita Acara (BAST)')
 
     <div x-data="{
-        searchQuery: '',
-        tahunFilter: 'all',
-        showTemplateModal: false,
-        showEditModal: false,
-        selectedBast: null,
+        // Tab Navigasi Aktif: 'triwulan' (Penambahan ASTAP) atau 'distribusi' (Distribusi ke Unit/Paviliun)
+        activeTab: 'triwulan',
+        
+        // =========================================================================
+        // DATA TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN
+        // =========================================================================
+        selectedTahun: '2026',
+        selectedTriwulanKey: 'TW2',
+        showPrintTriwulanModal: false,
+        showEditTriwulanForm: false,
+        showEditDistribusiForm: false,
+        searchBarangTriwulan: '',
 
-        // Data Dokumen Template BAST Aktif
-        bastDoc: {
-            id: 1,
-            nomor_surat: '000.2.3.2/224/430.10.7/2026',
-            hari_tanggal: 'Selasa tanggal 30 Juni 2026',
-            lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
-            triwulan: 'Triwulan II Tahun 2026',
-            
-            // Pihak Kesatu (PPK / Penerima Barang - Ditandatangani Otomatis Saat Distribusi)
-            pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-            pihak1_nip: '19771002 200604 1 006',
-            pihak1_nip_ttd: '19771126 199901 1 001',
-            pihak1_jabatan: 'Pejabat Pembuat Komitmen / Penerima Barang Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
-            pihak1_title_ttd: 'PEJABAT PEMBUAT KOMITMEN / PENERIMA BARANG RSUD dr.H.KOESNADI',
-            pihak1_signed: true,
-            pihak1_tgl_ttd: '30/06/2026 09:15 WIB',
+        triwulanData: {
+            'TW1': {
+                key: 'TW1',
+                nomor_surat: '000.2.3.2/112/430.10.7/2026',
+                hari_tanggal: 'Selasa tanggal 31 Maret 2026',
+                triwulan_nama: 'Triwulan I (Januari - Maret) Tahun 2026',
+                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
+                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
+                pihak1_nip: '19771002 200604 1 006',
+                pihak1_nip_ttd: '19771126 199901 1 001',
+                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
+                pihak2_nama: 'BUDI HARTONO,S.Sos',
+                pihak2_nip: '19760229 200801 1 010',
+                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
+                direktur_nip: '19730514 200212 2 003',
+                pihak2_signed: true,
+                pihak2_tgl_ttd: '31/03/2026 15:40 WIB',
+                pihak2_qr_hash: 'BSRE-KOESNANDI-BAST-TW1-2026-0914',
+                
+                // Rekapitulasi 8 Kategori Aset Triwulan I
+                rekapItems: [
+                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
+                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 120, nilai: 985500000 },
+                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 0, nilai: 0 },
+                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 0, nilai: 0 },
+                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
+                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
+                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 1, nilai: 135000000 },
+                    { no: '8.', nama: 'Exstra Comtable', qty: 3, nilai: 4500000 }
+                ],
 
-            // Pihak Kedua (Pengurus Barang Aset - Default: BUDI HARTONO, S.Sos)
-            pihak2_nama: 'BUDI HARTONO,S.Sos',
-            pihak2_nip: '19760229 200801 1 010',
-            pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
-            pihak2_title_ttd: 'PENGURUS BARANG ASET RSUD dr.H.KOESNADI',
-            pihak2_signed: true,
-            pihak2_tgl_ttd: '30/06/2026 14:32 WIB',
-            pihak2_qr_hash: 'BSRE-KOESNANDI-BAST-2026-0887419',
+                // Daftar Rincian Barang yang Diadakan Triwulan I
+                detailBarang: [
+                    { no: 1, tanggal_sp2d: '15/02/2026', nomor_spk: '027/015/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.01.012', nama_barang: 'Infusion Pump Terumo TE-171', spesifikasi: 'Flow rate 0.1-1200 mL/h, Battery Backup 4h', penyedia: 'PT Medika Farma Pratama', volume: 10, satuan: 'Unit', nilai_realisasi: 185000000 },
+                    { no: 2, tanggal_sp2d: '20/02/2026', nomor_spk: '027/018/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.01.014', nama_barang: 'Syringe Pump Terumo TE-331', spesifikasi: 'Auto Syringe Size Detection 10/20/50mL', penyedia: 'PT Medika Farma Pratama', volume: 10, satuan: 'Unit', nilai_realisasi: 175000000 },
+                    { no: 3, tanggal_sp2d: '10/03/2026', nomor_spk: '027/022/SPK-RAD/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.02.008', nama_barang: 'USG 4D Mindray DC-30 Color Doppler', spesifikasi: 'Convex & Transvaginal Probe, LCD 17 Inch', penyedia: 'CV Tri Bintang Medika', volume: 1, satuan: 'Unit', nilai_realisasi: 450000000 },
+                    { no: 4, tanggal_sp2d: '18/03/2026', nomor_spk: '027/029/SPK-IT/2026', rekening: '5.2.02.05.01.0001', kode_108: '1.3.2.05.02.01.003', nama_barang: 'Server SIMRS Rackmount Dell PowerEdge', spesifikasi: 'Intel Xeon Silver 16 Core, 64GB ECC RAM, 4TB SSD', penyedia: 'CV Multi Media Solusindo', volume: 1, satuan: 'Unit', nilai_realisasi: 175500000 },
+                    { no: 5, tanggal_sp2d: '25/03/2026', nomor_spk: '027/031/SPK-ATB/2026', rekening: '5.2.05.01.01.0001', kode_108: '1.5.3.01.01.01.001', nama_barang: 'Software SIMRS Modul PACs Radiologi', spesifikasi: 'Lisensi Institusi Unlimited Client & DICOM Viewer', penyedia: 'PT Integra Medika Pratama', volume: 1, satuan: 'Lisensi', nilai_realisasi: 135000000 }
+                ]
+            },
 
-            // Tabel 8 Kategori Aset + Ekstra Komtabel
-            items: [
-                { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
-                { no: '2.', nama: 'Peralatan Dan Mesin', qty: 477, nilai: 3854986225 },
-                { no: '3.', nama: 'Gedung Dan Bangunan', qty: 0, nilai: 0 },
-                { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 0, nilai: 0 },
-                { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
-                { no: '6.', nama: 'Kontruksi Dalam Pengerjaan', qty: 0, nilai: 0 },
-                { no: '7.', nama: 'Aset Tidak Berwujud', qty: 1, nilai: 777000000 },
-                { no: '8.', nama: 'Exstra Comtable', qty: 202, nilai: 33302220 }
-            ]
+            'TW2': {
+                key: 'TW2',
+                nomor_surat: '000.2.3.2/224/430.10.7/2026',
+                hari_tanggal: 'Selasa tanggal 30 Juni 2026',
+                triwulan_nama: 'Triwulan II (April - Juni) Tahun 2026',
+                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
+                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
+                pihak1_nip: '19771002 200604 1 006',
+                pihak1_nip_ttd: '19771126 199901 1 001',
+                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
+                pihak2_nama: 'BUDI HARTONO,S.Sos',
+                pihak2_nip: '19760229 200801 1 010',
+                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
+                direktur_nip: '19730514 200212 2 003',
+                pihak2_signed: true,
+                pihak2_tgl_ttd: '30/06/2026 14:32 WIB',
+                pihak2_qr_hash: 'BSRE-KOESNANDI-BAST-TW2-2026-0887',
+
+                // Rekapitulasi 8 Kategori Aset Triwulan II
+                rekapItems: [
+                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
+                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 477, nilai: 3854986225 },
+                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 0, nilai: 0 },
+                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 0, nilai: 0 },
+                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
+                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
+                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 1, nilai: 777000000 },
+                    { no: '8.', nama: 'Exstra Comtable', qty: 202, nilai: 33302220 }
+                ],
+
+                // Daftar Rincian Barang yang Diadakan Triwulan II
+                detailBarang: [
+                    { no: 1, tanggal_sp2d: '15/04/2026', nomor_spk: '027/044/SPK-RAWAT/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.01.005', nama_barang: 'Bed Patient Electric 3 Crank Acare', spesifikasi: 'Model CPR Electric, Central Lock Caster, Matras Anti Decubitus', penyedia: 'PT Surya Alkesindo Mandiri', volume: 30, satuan: 'Unit', nilai_realisasi: 540000000 },
+                    { no: 2, tanggal_sp2d: '28/04/2026', nomor_spk: '027/048/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.02.010', nama_barang: 'Patient Monitor 6 Parameter Mindray ePM 12', spesifikasi: 'ECG, NIBP, SpO2, Resp, 2-Temp, IBP Ready, Screen 12.1 Inch', penyedia: 'CV Tri Bintang Medika', volume: 15, satuan: 'Unit', nilai_realisasi: 480000000 },
+                    { no: 3, tanggal_sp2d: '14/05/2026', nomor_spk: '027/050/SPK-RAD/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.02.001', nama_barang: 'CT-Scan 128 Slice Siemens SOMATOM go.Top', spesifikasi: 'Stellar Detector 128 Slice, Low Dose AI Reconstruction', penyedia: 'PT Siemens Healthineers Indonesia', volume: 1, satuan: 'Unit', nilai_realisasi: 2450000000 },
+                    { no: 4, tanggal_sp2d: '02/06/2026', nomor_spk: '027/055/SPK-IPSRS/2026', rekening: '5.2.02.03.01.0002', kode_108: '1.3.2.03.01.02.004', nama_barang: 'Submersible Pump Franklin 7.5 HP Sentral', spesifikasi: 'Head Max 120m, 3 Phase 380V, Stainless Steel Impeller', penyedia: 'CV Mitra Teknik Mandiri', volume: 2, satuan: 'Unit', nilai_realisasi: 74986225 },
+                    { no: 5, tanggal_sp2d: '16/06/2026', nomor_spk: '027/058/SPK-IT/2026', rekening: '5.2.02.05.01.0001', kode_108: '1.3.2.05.02.06.001', nama_barang: 'Laptop Operasional Asus ExpertBook B1', spesifikasi: 'Core i7-1355U, 16GB RAM, 512GB SSD, Win 11 Pro', penyedia: 'CV Multi Media Solusindo', volume: 15, satuan: 'Unit', nilai_realisasi: 310000000 },
+                    { no: 6, tanggal_sp2d: '26/06/2026', nomor_spk: '027/062/SPK-ATB/2026', rekening: '5.2.05.01.01.0001', kode_108: '1.5.3.01.01.01.001', nama_barang: 'Software Bridging Antrean Online BPJS & Rekam Medis (EMR)', spesifikasi: 'Lisensi Enterprise SATUSEHAT & BPJS VClaim V.2', penyedia: 'PT Global Health Solusindo', volume: 1, satuan: 'Lisensi', nilai_realisasi: 777000000 }
+                ]
+            },
+
+            'TW3': {
+                key: 'TW3',
+                nomor_surat: '000.2.3.2/318/430.10.7/2026',
+                hari_tanggal: 'Rabu tanggal 30 September 2026',
+                triwulan_nama: 'Triwulan III (Juli - September) Tahun 2026',
+                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
+                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
+                pihak1_nip: '19771002 200604 1 006',
+                pihak1_nip_ttd: '19771126 199901 1 001',
+                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
+                pihak2_nama: 'BUDI HARTONO,S.Sos',
+                pihak2_nip: '19760229 200801 1 010',
+                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
+                direktur_nip: '19730514 200212 2 003',
+                pihak2_signed: false,
+                pihak2_tgl_ttd: '-',
+                pihak2_qr_hash: '',
+
+                // Rekapitulasi 8 Kategori Aset Triwulan III
+                rekapItems: [
+                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
+                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 85, nilai: 720000000 },
+                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 1, nilai: 1450000000 },
+                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 1, nilai: 380000000 },
+                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
+                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
+                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 0, nilai: 0 },
+                    { no: '8.', nama: 'Exstra Comtable', qty: 15, nilai: 22500000 }
+                ],
+
+                // Daftar Rincian Barang yang Diadakan Triwulan III
+                detailBarang: [
+                    { no: 1, tanggal_sp2d: '12/07/2026', nomor_spk: '027/070/SPK-BANG/2026', rekening: '5.2.03.01.01.0001', kode_108: '1.3.3.01.01.01.002', nama_barang: 'Rehabilitasi & Renovasi Gedung Paviliun Melati Lt 2', spesifikasi: 'Pekerjaan Struktur, Arsitektur, Plafon Akustik & Cat Anti Bakteri', penyedia: 'PT Karya Bangun Persada', volume: 1, satuan: 'Paket', nilai_realisasi: 1450000000 },
+                    { no: 2, tanggal_sp2d: '04/08/2026', nomor_spk: '027/074/SPK-IPAL/2026', rekening: '5.2.04.03.01.0001', kode_108: '1.3.4.03.01.01.004', nama_barang: 'Jaringan Pipa Sentral Gas Medis & IPAL RSUD', spesifikasi: 'Pipa Tembaga Standar Medis ASTM B819 & Pompa Aerasi IPAL', penyedia: 'CV Sumber Sehat Teknik', volume: 1, satuan: 'Paket', nilai_realisasi: 380000000 },
+                    { no: 3, tanggal_sp2d: '21/08/2026', nomor_spk: '027/079/SPK-EMR/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.03.004', nama_barang: 'Defibrillator Schiller Defigard Touch 7', spesifikasi: 'Biphasic Defibrillator, AED, Pacer & SpO2 Masimo', penyedia: 'PT Alkes Indo Medika', volume: 3, satuan: 'Unit', nilai_realisasi: 360000000 },
+                    { no: 4, tanggal_sp2d: '15/09/2026', nomor_spk: '027/082/SPK-CSSD/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.04.005', nama_barang: 'Autoclave Steam Sterilizer 300L CSSD', spesifikasi: 'Double Door Pass-Through, Touchscreen PLC Controller', penyedia: 'PT Medika Prima Utama', volume: 2, satuan: 'Unit', nilai_realisasi: 360000000 }
+                ]
+            },
+
+            'TW4': {
+                key: 'TW4',
+                nomor_surat: '000.2.3.2/415/430.10.7/2026',
+                hari_tanggal: 'Kamis tanggal 31 Desember 2026',
+                triwulan_nama: 'Triwulan IV (Oktober - Desember) Tahun 2026',
+                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
+                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
+                pihak1_nip: '19771002 200604 1 006',
+                pihak1_nip_ttd: '19771126 199901 1 001',
+                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
+                pihak2_nama: 'BUDI HARTONO,S.Sos',
+                pihak2_nip: '19760229 200801 1 010',
+                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
+                direktur_nip: '19730514 200212 2 003',
+                pihak2_signed: false,
+                pihak2_tgl_ttd: '-',
+                pihak2_qr_hash: '',
+
+                // Rekapitulasi 8 Kategori Aset Triwulan IV
+                rekapItems: [
+                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
+                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 45, nilai: 410000000 },
+                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 0, nilai: 0 },
+                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 0, nilai: 0 },
+                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 120, nilai: 85000000 },
+                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
+                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 0, nilai: 0 },
+                    { no: '8.', nama: 'Exstra Comtable', qty: 50, nilai: 45000000 }
+                ],
+
+                detailBarang: [
+                    { no: 1, tanggal_sp2d: '10/11/2026', nomor_spk: '027/095/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.01.008', nama_barang: 'Oxygen Concentrator 10L Portabel', spesifikasi: 'Output 93%±3%, Low Noise, Alarm Sensor', penyedia: 'PT Surya Alkesindo', volume: 10, satuan: 'Unit', nilai_realisasi: 210000000 },
+                    { no: 2, tanggal_sp2d: '28/11/2026', nomor_spk: '027/102/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.02.015', nama_barang: 'ECG 12 Channel Bionet CardioTouch 3000', spesifikasi: '12 Lead simultaneous recording with printer', penyedia: 'CV Tri Bintang Medika', volume: 5, satuan: 'Unit', nilai_realisasi: 200000000 },
+                    { no: 3, tanggal_sp2d: '15/12/2026', nomor_spk: '027/110/SPK-BUKU/2026', rekening: '5.2.02.08.01.0001', kode_108: '1.3.5.01.01.01.001', nama_barang: 'Buku Referensi Kedokteran & Jurnal Medis', spesifikasi: 'Koleksi Perpustakaan Medik RSUD Edisi Terbaru', penyedia: 'Penerbit Buku Kedokteran EGC', volume: 120, satuan: 'Eks', nilai_realisasi: 85000000 }
+                ]
+            }
         },
 
-        get totalQty() {
-            return this.bastDoc.items.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+        get currentTriwulanDoc() {
+            return this.triwulanData[this.selectedTriwulanKey] || this.triwulanData['TW2'];
         },
 
-        get totalNilai() {
-            return this.bastDoc.items.reduce((sum, item) => sum + Number(item.nilai || 0), 0);
+        get currentTriwulanTotalQty() {
+            return this.currentTriwulanDoc.rekapItems.reduce((sum, item) => sum + Number(item.qty || 0), 0);
         },
 
+        get currentTriwulanTotalNilai() {
+            return this.currentTriwulanDoc.rekapItems.reduce((sum, item) => sum + Number(item.nilai || 0), 0);
+        },
+
+        get filteredDetailBarangTriwulan() {
+            const query = (this.searchBarangTriwulan || '').toLowerCase();
+            return this.currentTriwulanDoc.detailBarang.filter(b => {
+                return (b.nama_barang || '').toLowerCase().includes(query) ||
+                       (b.kode_108 || '').toLowerCase().includes(query) ||
+                       (b.nomor_spk || '').toLowerCase().includes(query) ||
+                       (b.penyedia || '').toLowerCase().includes(query);
+            });
+        },
+
+        // =========================================================================
+        // DATA TAB 2: BAST DISTRIBUSI BARANG KE UNIT / PAVILIUN (SUB ADMIN)
+        // =========================================================================
+        distribusiSearch: '',
+        distribusiUnitFilter: 'all',
+        showPrintDistribusiModal: false,
+        selectedDistribusi: null,
+
+        distribusiList: [
+            {
+                id: 1,
+                nomor_bast: '000.2.3.2/BAST-DST/044/430.10.7/2026',
+                tgl_bast: 'Rabu, 12 Agustus 2026',
+                unit_nama: 'Paviliun Graha Amukti',
+                unit_tipe: 'Rawat Inap VIP & VVIP',
+                pj_nama: 'Siti Aminah, A.Md.Kep',
+                pj_nip: '19890412 201403 2 004',
+                pj_jabatan: 'Penanggung Jawab Aset / Kepala Ruangan Paviliun Graha Amukti (Sub Admin)',
+                pengurus_nama: 'BUDI HARTONO,S.Sos',
+                pengurus_nip: '19760229 200801 1 010',
+                pengurus_jabatan: 'Pengurus Barang Aset RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                kasubag_nama: 'AGUS WAHYUDI, SE, M.Si',
+                kasubag_nip: '19780615 200501 1 008',
+                status: 'Telah Diterima & Disahkan',
+                keterangan_lokasi: 'Penempatan di Ruang VIP 01-04 dan Pos Perawat Graha Amukti',
+                signed: true,
+                tgl_signed: '12/08/2026 10:45 WIB',
+                qr_hash: 'BSRE-KOESNANDI-DST-AMUKTI-2026-044',
+                items: [
+                    { no: 1, kode_108: '1.3.2.02.01.01.005', nama_barang: 'Bed Patient Electric 3 Crank', spesifikasi: 'Merk Acare CPR Electric, Remote Controller', no_seri: 'ACR-2026-8841 s/d 8844', qty: 4, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Kamar VIP 01 - 04' },
+                    { no: 2, kode_108: '1.3.2.02.01.02.010', nama_barang: 'Patient Monitor 6 Parameter', spesifikasi: 'Merk Mindray ePM 12, Display 12.1 Inch', no_seri: 'MND-PM-9011, MND-PM-9012', qty: 2, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Ruang Observasi VIP' },
+                    { no: 3, kode_108: '1.3.2.05.02.06.002', nama_barang: 'TV LED Smart 43 Inch', spesifikasi: 'Merk Samsung 4K UHD Smart TV', no_seri: 'SAM-43-1102 s/d 1105', qty: 4, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Kamar VIP 01 - 04' },
+                    { no: 4, kode_108: '1.3.2.02.01.05.008', nama_barang: 'Nurse Call Wireless Central Display', spesifikasi: 'Display Panel 32 Bed + 4 Remote Call Button', no_seri: 'NC-WRL-552', qty: 1, satuan: 'Set', kondisi: 'Baik (100%)', penempatan: 'Nurse Station Amukti' }
+                ]
+            },
+            {
+                id: 2,
+                nomor_bast: '000.2.3.2/BAST-DST/048/430.10.7/2026',
+                tgl_bast: 'Jumat, 14 Agustus 2026',
+                unit_nama: 'Instalasi Gawat Darurat (IGD)',
+                unit_tipe: 'Pelayanan Kedaruratan Medis',
+                pj_nama: 'Ns. Hendra, S.Kep',
+                pj_nip: '19880719 201202 1 002',
+                pj_jabatan: 'Kepala Ruangan / PJ Aset IGD (Sub Admin)',
+                pengurus_nama: 'BUDI HARTONO,S.Sos',
+                pengurus_nip: '19760229 200801 1 010',
+                pengurus_jabatan: 'Pengurus Barang Aset RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                kasubag_nama: 'AGUS WAHYUDI, SE, M.Si',
+                kasubag_nip: '19780615 200501 1 008',
+                status: 'Telah Diterima & Disahkan',
+                keterangan_lokasi: 'Zona Kritis Resusitasi dan Tindakan Bedah IGD',
+                signed: true,
+                tgl_signed: '14/08/2026 11:20 WIB',
+                qr_hash: 'BSRE-KOESNANDI-DST-IGD-2026-048',
+                items: [
+                    { no: 1, kode_108: '1.3.2.02.01.02.010', nama_barang: 'Patient Monitor 6 Parameter', spesifikasi: 'Merk Mindray ePM 12, ECG, NIBP, SpO2', no_seri: 'MND-PM-9015 s/d 9018', qty: 4, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Ruang Resusitasi IGD' },
+                    { no: 2, kode_108: '1.3.2.02.01.03.004', nama_barang: 'Defibrillator Biphasic Touchscreen', spesifikasi: 'Merk Schiller Defigard Touch 7 with Pacer', no_seri: 'SCH-DFG-7701', qty: 1, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Ruang Resusitasi Kritis' },
+                    { no: 3, kode_108: '1.3.2.02.01.04.012', nama_barang: 'Mobile Suction Pump High Vacuum', spesifikasi: 'Merk Thomas Medical 30L/min', no_seri: 'THM-SC-4401, 4402', qty: 2, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Ruang Tindakan Bedah IGD' },
+                    { no: 4, kode_108: '1.3.2.02.01.01.015', nama_barang: 'Emergency Crash Cart Trolley', spesifikasi: 'Stainless Steel 5 Laci + Tiang Infus & CPR Board', no_seri: 'CRT-EMG-311, 312', qty: 2, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Zona Merah IGD' }
+                ]
+            },
+            {
+                id: 3,
+                nomor_bast: '000.2.3.2/BAST-DST/050/430.10.7/2026',
+                tgl_bast: 'Sabtu, 15 Agustus 2026',
+                unit_nama: 'Instalasi Radiologi & Imaging',
+                unit_tipe: 'Penunjang Diagnostik',
+                pj_nama: 'Wahyu Hidayat, A.Md.Rad',
+                pj_nip: '19910325 201502 1 005',
+                pj_jabatan: 'Penanggung Jawab Aset Radiologi (Sub Admin)',
+                pengurus_nama: 'BUDI HARTONO,S.Sos',
+                pengurus_nip: '19760229 200801 1 010',
+                pengurus_jabatan: 'Pengurus Barang Aset RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                kasubag_nama: 'AGUS WAHYUDI, SE, M.Si',
+                kasubag_nip: '19780615 200501 1 008',
+                status: 'Telah Diterima & Disahkan',
+                keterangan_lokasi: 'Ruang Pemeriksaan CT-Scan & Ruang Operator Radiologi',
+                signed: true,
+                tgl_signed: '15/08/2026 14:10 WIB',
+                qr_hash: 'BSRE-KOESNANDI-DST-RAD-2026-050',
+                items: [
+                    { no: 1, kode_108: '1.3.2.02.01.02.001', nama_barang: 'CT-Scan 128 Slice Siemens', spesifikasi: 'SOMATOM go.Top + Gantry & Table System', no_seri: 'SMT-GT-128-094', qty: 1, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Ruang Gantry CT-Scan' },
+                    { no: 2, kode_108: '1.3.2.05.02.01.005', nama_barang: 'Workstation Diagnostik 3D Radiologi', spesifikasi: 'Dual Monitor EIZO RadiForce 3MP + HP Z6 G4', no_seri: 'EIZO-RD-771', qty: 1, satuan: 'Set', kondisi: 'Baik (100%)', penempatan: 'Ruang Baca Dokter Radiologi' },
+                    { no: 3, kode_108: '1.3.2.02.01.05.012', nama_barang: 'Lead Apron Proteksi Radiasi 0.5 mmPb', spesifikasi: 'Merk Mavig Germany Double Sided', no_seri: 'MVG-APR-101 s/d 104', qty: 4, satuan: 'Pcs', kondisi: 'Baik (100%)', penempatan: 'Ruang Operator Radiologi' }
+                ]
+            },
+            {
+                id: 4,
+                nomor_bast: '000.2.3.2/BAST-DST/055/430.10.7/2026',
+                tgl_bast: 'Senin, 17 Agustus 2026',
+                unit_nama: 'Instalasi Rawat Intensif (ICU)',
+                unit_tipe: 'Perawatan Intensif Kritis',
+                pj_nama: 'Ns. Aditya, S.Kep',
+                pj_nip: '19901108 201602 1 003',
+                pj_jabatan: 'Kepala Ruangan / PJ Aset ICU (Sub Admin)',
+                pengurus_nama: 'BUDI HARTONO,S.Sos',
+                pengurus_nip: '19760229 200801 1 010',
+                pengurus_jabatan: 'Pengurus Barang Aset RSUD dr.H.Koesnandi Kabupaten Bondowoso',
+                kasubag_nama: 'AGUS WAHYUDI, SE, M.Si',
+                kasubag_nip: '19780615 200501 1 008',
+                status: 'Menunggu Konfirmasi Serah Terima',
+                keterangan_lokasi: 'Kamar Isolasi ICU & Central Monitoring Station',
+                signed: false,
+                tgl_signed: '-',
+                qr_hash: '',
+                items: [
+                    { no: 1, kode_108: '1.3.2.02.01.02.003', nama_barang: 'Ventilator Mekanik Dewasa & Pediatrik', spesifikasi: 'Merk Dräger Evita V300 with SmartCare', no_seri: 'DRG-EV-3301, 3302', qty: 2, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Bed Isolasi ICU 01 & 02' },
+                    { no: 2, kode_108: '1.3.2.02.01.01.012', nama_barang: 'Infusion Pump Terumo TE-171', spesifikasi: 'Flow rate 0.1-1200 mL/h, High Accuracy', no_seri: 'TRM-IP-5501 s/d 5506', qty: 6, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Ruang Perawatan Kritis ICU' },
+                    { no: 3, kode_108: '1.3.2.02.01.01.014', nama_barang: 'Syringe Pump Terumo TE-331', spesifikasi: 'Auto Syringe Size Detection 10/20/50mL', no_seri: 'TRM-SP-7701 s/d 7706', qty: 6, satuan: 'Unit', kondisi: 'Baik (100%)', penempatan: 'Ruang Perawatan Kritis ICU' }
+                ]
+            }
+        ],
+
+        get filteredDistribusiList() {
+            const query = (this.distribusiSearch || '').toLowerCase();
+            return this.distribusiList.filter(d => {
+                const matchQuery = (d.nomor_bast || '').toLowerCase().includes(query) ||
+                                   (d.unit_nama || '').toLowerCase().includes(query) ||
+                                   (d.pj_nama || '').toLowerCase().includes(query) ||
+                                   (d.keterangan_lokasi || '').toLowerCase().includes(query);
+                const matchUnit = this.distribusiUnitFilter === 'all' || d.unit_nama === this.distribusiUnitFilter;
+                return matchQuery && matchUnit;
+            });
+        },
+
+        // Helper Format Rupiah
         formatRupiah(val) {
             return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
         },
 
-        basts: [
-            {
-                id: 1,
-                nomor_surat: '000.2.3.2/224/430.10.7/2026',
-                hari_tanggal: 'Selasa tanggal 30 Juni 2026',
-                triwulan: 'Triwulan II Tahun 2026',
-                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-                pihak2_nama: 'BUDI HARTONO,S.Sos',
-                total_barang: '680 Barang',
-                total_nilai: 'Rp 4.665.288.445,00',
-                pihak2_signed: true,
-                status: 'Ditandatangani'
-            },
-            {
-                id: 2,
-                nomor_surat: '000.2.3.2/112/430.10.7/2026',
-                hari_tanggal: 'Selasa tanggal 31 Maret 2026',
-                triwulan: 'Triwulan I Tahun 2026',
-                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-                pihak2_nama: 'BUDI HARTONO,S.Sos',
-                total_barang: '124 Barang',
-                total_nilai: 'Rp 1.120.500.000,00',
-                pihak2_signed: true,
-                status: 'Ditandatangani'
-            },
-            {
-                id: 3,
-                nomor_surat: '000.2.3.2/340/430.10.7/2025',
-                hari_tanggal: 'Rabu tanggal 31 Desember 2025',
-                triwulan: 'Triwulan IV Tahun 2025',
-                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-                pihak2_nama: 'BUDI HARTONO,S.Sos',
-                total_barang: '315 Barang',
-                total_nilai: 'Rp 2.890.350.000,00',
-                pihak2_signed: false,
-                status: 'Menunggu TTD Pihak Kedua'
-            }
-        ],
-
-        get filteredBasts() {
-            const query = (this.searchQuery || '').toLowerCase();
-            return this.basts.filter(item => {
-                const matchSearch = (item.nomor_surat || '').toLowerCase().includes(query) ||
-                                    (item.triwulan || '').toLowerCase().includes(query) ||
-                                    (item.pihak2_nama || '').toLowerCase().includes(query) ||
-                                    (item.pihak1_nama || '').toLowerCase().includes(query);
-                const matchTahun = this.tahunFilter === 'all' || item.triwulan.includes(this.tahunFilter);
-                return matchSearch && matchTahun;
-            });
+        // Helper Format Angka
+        formatNumber(val) {
+            return new Intl.NumberFormat('id-ID').format(val || 0);
         },
 
-        resetFilters() {
-            this.searchQuery = '';
-            this.tahunFilter = 'all';
+        // Buka Modal Cetak BAST Triwulan
+        openPrintTriwulan(twKey) {
+            if (twKey) this.selectedTriwulanKey = twKey;
+            this.showPrintTriwulanModal = true;
         },
 
-        openTemplate(item) {
-            if (item) {
-                this.bastDoc.id = item.id;
-                this.bastDoc.nomor_surat = item.nomor_surat;
-                this.bastDoc.hari_tanggal = item.hari_tanggal;
-                this.bastDoc.triwulan = item.triwulan;
-                this.bastDoc.pihak1_nama = item.pihak1_nama;
-                this.bastDoc.pihak2_nama = item.pihak2_nama;
-                this.bastDoc.pihak2_signed = item.pihak2_signed ?? true;
-            }
-            this.showTemplateModal = true;
+        // Buka Modal Cetak BAST Distribusi
+        openPrintDistribusi(item) {
+            this.selectedDistribusi = item ? { ...item } : this.distribusiList[0];
+            this.showPrintDistribusiModal = true;
         },
 
-        openEdit(item) {
-            this.selectedBast = item ? { ...item } : null;
-            this.showEditModal = true;
-        },
+        // Tandatangani BAST Distribusi
+        signDistribusi() {
+            if (this.selectedDistribusi) {
+                this.selectedDistribusi.signed = true;
+                const now = new Date();
+                this.selectedDistribusi.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                this.selectedDistribusi.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
+                this.selectedDistribusi.status = 'Telah Diterima & Disahkan';
 
-        // Aksi Tanda Tangan Elektronik Otomatis Pihak Kedua
-        signPihak2() {
-            this.bastDoc.pihak2_signed = true;
-            const now = new Date();
-            const timeStr = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-            this.bastDoc.pihak2_tgl_ttd = timeStr;
-            this.bastDoc.pihak2_qr_hash = 'BSRE-KOESNANDI-BAST-' + Date.now();
-            
-            // Sinkronisasi status list tabel
-            const found = this.basts.find(b => b.id === this.bastDoc.id);
-            if (found) {
-                found.pihak2_signed = true;
-                found.status = 'Ditandatangani';
-            }
-            alert('✅ Dokumen BAST berhasil ditandatangani secara elektronik (QR Code Resmi BSrE diterbitkan)!');
-        },
-
-        // Aksi Pembatalan Tanda Tangan Pihak Kedua
-        unsignPihak2() {
-            if (confirm('Apakah Anda yakin ingin membatalkan tanda tangan digital Pihak Kedua untuk dokumen BAST ini?')) {
-                this.bastDoc.pihak2_signed = false;
-                const found = this.basts.find(b => b.id === this.bastDoc.id);
+                // update list
+                const found = this.distribusiList.find(d => d.id === this.selectedDistribusi.id);
                 if (found) {
-                    found.pihak2_signed = false;
-                    found.status = 'Menunggu TTD Pihak Kedua';
+                    found.signed = true;
+                    found.tgl_signed = this.selectedDistribusi.tgl_signed;
+                    found.qr_hash = this.selectedDistribusi.qr_hash;
+                    found.status = 'Telah Diterima & Disahkan';
                 }
-                alert('⚠️ Tanda tangan Pihak Kedua berhasil dibatalkan (Status: Draf / Menunggu TTD).');
+                alert('✅ BAST Distribusi berhasil disahkan dan ditandatangani secara digital (QR Code BSrE aktif)!');
             }
         },
 
-        printDoc() {
+        // Cetak Dokumen
+        printCurrent() {
             window.print();
-        },
-
-        deleteItem(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus data Berita Acara (BAST) ini?')) {
-                this.basts = this.basts.filter(b => b.id !== id);
-                alert('🗑️ Berita Acara berhasil dihapus.');
-            }
         }
     }" x-cloak>
 
@@ -182,286 +381,481 @@
                 <div>
                     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold mb-3">
                         <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-                        <span>DOKUMEN RESMI SERAH TERIMA BARANG (BAST) RSUD</span>
+                        <span>MODUL RESMI BERITA ACARA SERAH TERIMA (BAST) RSUD</span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Berita Acara Serah Terima Barang (BAST)</h1>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Pusat Cetak Berita Acara (BAST)</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Dokumen serah terima barang hasil pengadaan belanja modal rumah sakit. TTD Pihak Kesatu (PPK) diajukan saat distribusi, dan TTD Pihak Kedua (Pengurus Barang) diverifikasi via Digital Signature QR Code otomatis.
+                        Penerbitan dokumen resmi BAST untuk penambahan aset tetap berbasis triwulan pengadaan serta BAST serah terima barang ke unit dan paviliun penerima (Sub-Admin).
                     </p>
                 </div>
                 
-                <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-                    <button type="button" @click="openTemplate()"
-                        class="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-2">
+                <!-- Quick Print Buttons -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" @click="activeTab = 'triwulan'; openPrintTriwulan('TW2')"
+                        class="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        <span>Cetak Templat BAST</span>
+                        <span>🖨️ Cetak BAST Triwulan Aktif</span>
                     </button>
-                    <a href="{{ route('bast.create') }}"
-                        class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>+ Buat BAST Baru</span>
-                    </a>
+                    <button type="button" @click="activeTab = 'distribusi'; openPrintDistribusi(distribusiList[0])"
+                        class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                        <span>🚚 Cetak BAST Distribusi Unit</span>
+                    </button>
                 </div>
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">📄</div>
+                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">🏛️</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total BAST</span>
-                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="basts.length + ' Dokumen'"></span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">BAST Penambahan Triwulan</span>
+                        <span class="text-sm sm:text-base font-extrabold text-white">4 Periode (1 Tahun)</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
+                    <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 text-lg">🚚</div>
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">BAST Distribusi Unit</span>
+                        <span class="text-sm sm:text-base font-extrabold text-teal-300" x-text="distribusiList.length + ' Dokumen'"></span>
                     </div>
                 </div>
 
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">📱</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">E-Sign QR Code</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-300">Otomatis Terverifikasi</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">📦</div>
-                    <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Barang TW II</span>
-                        <span class="text-sm sm:text-base font-extrabold text-cyan-300">680 Barang</span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">E-Sign QR Code BSrE</span>
+                        <span class="text-sm sm:text-base font-extrabold text-emerald-300">Siap Cetak Resmi</span>
                     </div>
                 </div>
 
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 text-lg">💰</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Nilai Perolehan TW II</span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Aset TW II (2026)</span>
                         <span class="text-sm sm:text-base font-extrabold text-amber-300">Rp 4,66 Miliar</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Filter, Quick Tabs & Search Bar Full-Width -->
-        <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
-            <div class="flex flex-col gap-4">
+        <!-- ========================================================================= -->
+        <!-- NAVIGATION DUAL TABS: TAB 1 (BAST TRIWULAN) VS TAB 2 (BAST DISTRIBUSI)    -->
+        <!-- ========================================================================= -->
+        <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-3 shadow-xl mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 
-                <!-- Quick Filter Tahun Tabs -->
-                <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Periode:</span>
-                    <button type="button" @click="tahunFilter = 'all'"
-                        :class="tahunFilter === 'all' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        Semua Periode
-                    </button>
-                    <button type="button" @click="tahunFilter = '2026'"
-                        :class="tahunFilter === '2026' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        Tahun 2026
-                    </button>
-                    <button type="button" @click="tahunFilter = '2025'"
-                        :class="tahunFilter === '2025' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        Tahun 2025
-                    </button>
-                </div>
-
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
-                    <div class="relative flex-1 w-full">
-                        <input type="text" x-model="searchQuery" placeholder="Cari nomor surat BAST / periode triwulan / nama PPK / nama pengurus barang..."
-                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-all">
-                        <svg class="w-4 h-4 text-purple-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
+                <!-- Tab 1 Button -->
+                <button type="button" @click="activeTab = 'triwulan'"
+                    class="p-4 rounded-2xl transition-all flex items-center space-x-3 text-left"
+                    :class="activeTab === 'triwulan' ? 'bg-purple-500/20 text-purple-300 border-2 border-purple-500/50 shadow-lg shadow-purple-500/10' : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800/80'">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shrink-0"
+                         :class="activeTab === 'triwulan' ? 'bg-purple-500 text-slate-950 shadow-md shadow-purple-500/30' : 'bg-slate-900 text-slate-400 border border-slate-800'">
+                        <span>🏛️</span>
                     </div>
-
-                    <div class="flex items-center space-x-2 shrink-0">
-                        <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
-                            Menampilkan <span class="text-purple-400 font-bold" x-text="filteredBasts.length"></span> dari <span class="text-white font-bold" x-text="basts.length"></span> Dokumen
-                        </span>
-                        <button type="button" @click="resetFilters()"
-                            class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
-                            🔄 Reset
-                        </button>
+                    <div class="min-w-0">
+                        <span class="text-[10px] font-bold uppercase tracking-wider block" :class="activeTab === 'triwulan' ? 'text-purple-400' : 'text-slate-500'">Dokumen Induk Pengadaan</span>
+                        <span class="text-xs sm:text-sm font-extrabold block text-white truncate">1. BAST Penambahan ASTAP (Triwulan)</span>
+                        <span class="text-[10px] text-slate-400 block truncate">Rekapitulasi 8 Kategori & Rincian Belanja Modal per Triwulan</span>
                     </div>
-                </div>
+                </button>
+
+                <!-- Tab 2 Button -->
+                <button type="button" @click="activeTab = 'distribusi'"
+                    class="p-4 rounded-2xl transition-all flex items-center space-x-3 text-left"
+                    :class="activeTab === 'distribusi' ? 'bg-teal-500/20 text-teal-300 border-2 border-teal-500/50 shadow-lg shadow-teal-500/10' : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800/80'">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shrink-0"
+                         :class="activeTab === 'distribusi' ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/30' : 'bg-slate-900 text-slate-400 border border-slate-800'">
+                        <span>🚚</span>
+                    </div>
+                    <div class="min-w-0">
+                        <span class="text-[10px] font-bold uppercase tracking-wider block" :class="activeTab === 'distribusi' ? 'text-teal-400' : 'text-slate-500'">Penyerahan ke Ruangan</span>
+                        <span class="text-xs sm:text-sm font-extrabold block text-white truncate">2. BAST Distribusi Unit & Paviliun</span>
+                        <span class="text-[10px] text-slate-400 block truncate">Serah Terima Barang kepada Akun Sub-Admin Paviliun / Instalasi</span>
+                    </div>
+                </button>
+
             </div>
         </div>
 
-        <!-- Table BAST -->
-        <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto mb-6">
-            <table class="w-full text-left text-xs text-slate-300">
-                <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
-                    <tr>
-                        <th class="px-4 py-3.5 text-center w-12">No</th>
-                        <th class="px-4 py-3.5 text-left">Nomor Surat BAST</th>
-                        <th class="px-4 py-3.5 text-left">Periode & Tanggal</th>
-                        <th class="px-4 py-3.5 text-left">Pihak Kesatu (PPK)</th>
-                        <th class="px-4 py-3.5 text-left">Pihak Kedua (Pengurus Barang)</th>
-                        <th class="px-4 py-3.5 text-center">Status TTD Pihak 2</th>
-                        <th class="px-4 py-3.5 text-right">Nilai Perolehan</th>
-                        <th class="px-4 py-3.5 text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/80">
-                    <template x-for="(item, index) in filteredBasts" :key="item.id">
-                        <tr class="hover:bg-slate-800/30 transition-colors">
-                            <td class="px-4 py-4 text-center font-bold text-slate-400" x-text="index + 1"></td>
-                            <td class="px-4 py-4 font-mono font-bold text-purple-400" x-text="item.nomor_surat"></td>
-                            <td class="px-4 py-4">
-                                <div class="font-bold text-white" x-text="item.triwulan"></div>
-                                <div class="text-[10px] text-slate-400" x-text="item.hari_tanggal"></div>
-                            </td>
-                            <td class="px-4 py-4">
-                                <div class="font-semibold text-slate-200" x-text="item.pihak1_nama"></div>
-                                <div class="text-[10px] text-emerald-400 font-mono">✓ TTD saat Distribusi</div>
-                            </td>
-                            <td class="px-4 py-4">
-                                <div class="font-bold text-emerald-400" x-text="item.pihak2_nama"></div>
-                                <div class="text-[10px] text-slate-400">Pengurus Barang Aset</div>
-                            </td>
-                            <td class="px-4 py-4 text-center">
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center space-x-1"
-                                      :class="item.pihak2_signed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'">
-                                    <span x-text="item.pihak2_signed ? '✅ QR Code Ditandatangani' : '⏳ Belum TTD (Draf)'"></span>
-                                </span>
-                            </td>
-                            <td class="px-4 py-4 text-right font-mono font-bold text-amber-300" x-text="item.total_nilai"></td>
-                            <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                                <button type="button" @click="openTemplate(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <span>Lihat & TTD</span>
-                                </button>
-                                <button type="button" @click="openEdit(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    <span>Ubah</span>
-                                </button>
-                                <button type="button" @click="deleteItem(item.id)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    <span>Hapus</span>
-                                </button>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+        <!-- ========================================================================= -->
+        <!-- KONTEN TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN             -->
+        <!-- ========================================================================= -->
+        <div x-show="activeTab === 'triwulan'" class="space-y-6" x-cloak>
+            
+            <!-- Filter Triwulan & Tahun Toolbar -->
+            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    
+                    <!-- Pilihan 4 Triwulan Tabs -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2 shrink-0">Pilih Periode:</span>
+                        
+                        <button type="button" @click="selectedTriwulanKey = 'TW1'"
+                            :class="selectedTriwulanKey === 'TW1' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
+                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+                            Triwulan I (Jan - Mar)
+                        </button>
+
+                        <button type="button" @click="selectedTriwulanKey = 'TW2'"
+                            :class="selectedTriwulanKey === 'TW2' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
+                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+                            Triwulan II (Apr - Jun)
+                        </button>
+
+                        <button type="button" @click="selectedTriwulanKey = 'TW3'"
+                            :class="selectedTriwulanKey === 'TW3' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
+                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+                            Triwulan III (Jul - Sep)
+                        </button>
+
+                        <button type="button" @click="selectedTriwulanKey = 'TW4'"
+                            :class="selectedTriwulanKey === 'TW4' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
+                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+                            Triwulan IV (Okt - Des)
+                        </button>
+                    </div>
+
+                    <!-- Tahun Dropdown & Tombol Cetak BAST Triwulan -->
+                    <div class="flex items-center space-x-3 shrink-0">
+                        <select x-model="selectedTahun" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500">
+                            <option value="2026">Tahun Anggaran 2026</option>
+                            <option value="2025">Tahun Anggaran 2025</option>
+                        </select>
+
+                        <button type="button" @click="openPrintTriwulan(selectedTriwulanKey)"
+                            class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            <span>Lihat & Cetak Lembar BAST</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Card Ringkasan Triwulan Aktif -->
+            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold mb-1">
+                            <span x-text="'DOKUMEN BAST RESMI: ' + currentTriwulanDoc.nomor_surat"></span>
+                        </div>
+                        <h2 class="text-lg font-extrabold text-white" x-text="'Berita Acara Penambahan Aset Tetap - ' + currentTriwulanDoc.triwulan_nama"></h2>
+                        <p class="text-xs text-slate-400 mt-0.5" x-text="'Hari & Tanggal Pelaksanaan: ' + currentTriwulanDoc.hari_tanggal"></p>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Realisasi Triwulan Ini</span>
+                            <span class="text-base sm:text-lg font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(currentTriwulanTotalNilai)"></span>
+                        </div>
+                        <span class="px-3 py-1.5 rounded-xl text-xs font-bold border"
+                              :class="currentTriwulanDoc.pihak2_signed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'">
+                            <span x-text="currentTriwulanDoc.pihak2_signed ? '✅ Disahkan' : '⏳ Draf / Menunggu TTD'"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Bagian 1: TABEL REKAPITULASI 8 KELOMPOK ASET (FORMAT ASLI STANDAR BAST) -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
+                            <span>📊 1. REKAPITULASI 8 KELOMPOK ASET TETAP TRIWULAN INI:</span>
+                        </span>
+                        <span class="text-[11px] text-purple-400 font-mono font-bold" x-text="'Total: ' + formatNumber(currentTriwulanTotalQty) + ' Barang / Aset'"></span>
+                    </div>
+                    
+                    <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-xl">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-950 text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="px-3 py-2.5 text-center w-12 border-r border-slate-800">No</th>
+                                    <th class="px-4 py-2.5 border-r border-slate-800">Nama Kelompok / Kategori Aset</th>
+                                    <th class="px-4 py-2.5 text-center border-r border-slate-800 w-32">Kuantitas</th>
+                                    <th class="px-4 py-2.5 text-right w-48">Nilai Realisasi Perolehan (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 bg-slate-900/60 font-medium">
+                                <template x-for="item in currentTriwulanDoc.rekapItems" :key="item.no">
+                                    <tr class="hover:bg-slate-800/40 transition-colors">
+                                        <td class="px-3 py-2.5 text-center text-slate-400 font-mono border-r border-slate-800" x-text="item.no"></td>
+                                        <td class="px-4 py-2.5 font-semibold text-slate-200 border-r border-slate-800" x-text="item.nama"></td>
+                                        <td class="px-4 py-2.5 text-center font-mono font-bold text-cyan-400 border-r border-slate-800" x-text="formatNumber(item.qty) + ' Barang'"></td>
+                                        <td class="px-4 py-2.5 text-right font-mono font-bold" :class="item.nilai > 0 ? 'text-amber-300' : 'text-slate-500'" x-text="'Rp ' + formatRupiah(item.nilai)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                            <tfoot class="bg-slate-950 text-white font-extrabold border-t-2 border-slate-700">
+                                <tr>
+                                    <td colspan="2" class="px-4 py-3 text-center uppercase tracking-wider text-purple-300 border-r border-slate-800">Total Pengadaan Triwulan Terpilih:</td>
+                                    <td class="px-4 py-3 text-center font-mono text-cyan-300 text-sm border-r border-slate-800" x-text="formatNumber(currentTriwulanTotalQty) + ' Barang'"></td>
+                                    <td class="px-4 py-3 text-right font-mono text-emerald-400 text-sm" x-text="'Rp ' + formatRupiah(currentTriwulanTotalNilai)"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bagian 2: TABEL RINCIAN DETAIL BARANG YANG DIADAKAN PADA TRIWULAN INI -->
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
+                                <span>📦 2. DAFTAR RINCIAN BARANG & BELANJA MODAL YANG DIADAKAN PADA TRIWULAN INI:</span>
+                            </span>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Daftar item belanja modal yang dibukukan lengkap dengan dokumen SPK dan nilai realisasinya.</p>
+                        </div>
+
+                        <!-- Search Box Filter Barang -->
+                        <div class="relative w-full sm:w-64">
+                            <input type="text" x-model="searchBarangTriwulan" placeholder="Cari nama barang / kode 108 / penyedia..."
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500">
+                            <svg class="w-3.5 h-3.5 text-purple-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-xl">
+                        <table class="w-full text-left text-xs border-collapse min-w-[900px]">
+                            <thead class="bg-slate-950 text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700 text-[11px]">
+                                <tr>
+                                    <th class="px-3 py-2.5 text-center w-10 border-r border-slate-800">No</th>
+                                    <th class="px-3 py-2.5 border-r border-slate-800">Tgl & No SPK</th>
+                                    <th class="px-3 py-2.5 border-r border-slate-800">Kode Barang 108</th>
+                                    <th class="px-4 py-2.5 border-r border-slate-800">Nama Barang & Spesifikasi</th>
+                                    <th class="px-3 py-2.5 border-r border-slate-800">Penyedia / Rekanan</th>
+                                    <th class="px-3 py-2.5 text-center border-r border-slate-800">Volume</th>
+                                    <th class="px-4 py-2.5 text-right">Nilai Realisasi (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 bg-slate-900/60 font-medium text-[11px]">
+                                <template x-for="(b, idx) in filteredDetailBarangTriwulan" :key="b.no">
+                                    <tr class="hover:bg-slate-800/40 transition-colors">
+                                        <td class="px-3 py-2.5 text-center text-slate-400 font-mono border-r border-slate-800" x-text="idx + 1"></td>
+                                        <td class="px-3 py-2.5 border-r border-slate-800">
+                                            <div class="font-mono font-bold text-purple-300" x-text="b.nomor_spk"></div>
+                                            <div class="text-[10px] text-slate-400" x-text="b.tanggal_sp2d"></div>
+                                        </td>
+                                        <td class="px-3 py-2.5 font-mono text-cyan-400 font-bold border-r border-slate-800" x-text="b.kode_108"></td>
+                                        <td class="px-4 py-2.5 border-r border-slate-800">
+                                            <div class="font-bold text-white" x-text="b.nama_barang"></div>
+                                            <div class="text-[10px] text-slate-400" x-text="b.spesifikasi"></div>
+                                        </td>
+                                        <td class="px-3 py-2.5 text-slate-300 border-r border-slate-800 font-semibold" x-text="b.penyedia"></td>
+                                        <td class="px-3 py-2.5 text-center font-mono font-bold text-white border-r border-slate-800" x-text="b.volume + ' ' + b.satuan"></td>
+                                        <td class="px-4 py-2.5 text-right font-mono font-bold text-emerald-400" x-text="'Rp ' + formatRupiah(b.nilai_realisasi)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
 
         <!-- ========================================================================= -->
-        <!-- MODAL & DOKUMEN TEMPLAT BAST RESMI DENGAN DIGITAL SIGNATURE QR CODE       -->
+        <!-- KONTEN TAB 2: BAST DISTRIBUSI BARANG KE UNIT & PAVILIUN (SUB ADMIN)       -->
         <!-- ========================================================================= -->
-        <div x-show="showTemplateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak>
-            <div @click.away="showTemplateModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
+        <div x-show="activeTab === 'distribusi'" class="space-y-6" x-cloak>
+            
+            <!-- Toolbar & Filter Distribusi -->
+            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:w-80">
+                            <input type="text" x-model="distribusiSearch" placeholder="Cari nomor BAST / unit paviliun / nama PJ sub-admin..."
+                                class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500">
+                            <svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+
+                        <select x-model="distribusiUnitFilter" class="bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500">
+                            <option value="all">Semua Unit / Paviliun (Sub-Admin)</option>
+                            <option value="Paviliun Graha Amukti">Paviliun Graha Amukti</option>
+                            <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
+                            <option value="Instalasi Radiologi & Imaging">Instalasi Radiologi & Imaging</option>
+                            <option value="Instalasi Rawat Intensif (ICU)">Instalasi Rawat Intensif (ICU)</option>
+                        </select>
+                    </div>
+
+                    <a href="{{ route('distribusi.create') }}"
+                        class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>+ Input Distribusi Baru</span>
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- Tabel Daftar BAST Distribusi ke Unit / Ruangan -->
+            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="px-4 py-3.5 text-center w-12">No</th>
+                            <th class="px-4 py-3.5 text-left">Nomor BAST Distribusi</th>
+                            <th class="px-4 py-3.5 text-left">Unit / Paviliun (Penerima)</th>
+                            <th class="px-4 py-3.5 text-left">Kepala Ruangan / PJ (Sub Admin)</th>
+                            <th class="px-4 py-3.5 text-center">Jumlah Barang</th>
+                            <th class="px-4 py-3.5 text-center">Status BAST</th>
+                            <th class="px-4 py-3.5 text-center">Aksi Cetak</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/80">
+                        <template x-for="(item, index) in filteredDistribusiList" :key="item.id">
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="px-4 py-4 text-center font-bold text-slate-400" x-text="index + 1"></td>
+                                <td class="px-4 py-4">
+                                    <div class="font-mono font-bold text-teal-400" x-text="item.nomor_bast"></div>
+                                    <div class="text-[10px] text-slate-400" x-text="item.tgl_bast"></div>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="font-bold text-white" x-text="item.unit_nama"></div>
+                                    <div class="text-[10px] text-slate-400" x-text="item.unit_tipe"></div>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <div class="font-semibold text-emerald-400" x-text="item.pj_nama"></div>
+                                    <div class="text-[10px] text-slate-400 font-mono" x-text="'NIP. ' + item.pj_nip"></div>
+                                </td>
+                                <td class="px-4 py-4 text-center font-mono font-bold text-white" x-text="item.items.reduce((s, i) => s + i.qty, 0) + ' Unit'"></td>
+                                <td class="px-4 py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center space-x-1"
+                                          :class="item.signed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'">
+                                        <span x-text="item.signed ? '✅ Disahkan (QR Code)' : '⏳ Belum TTD'"></span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
+                                    <button type="button" @click="openPrintDistribusi(item)"
+                                        class="px-3 py-1.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold text-xs transition-all inline-flex items-center space-x-1.5 shadow-sm active:scale-95">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                        <span>🖨️ Cetak Lembar BAST</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- MODAL CETAK 1: LEMBAR DOKUMEN BAST PENAMBAHAN ASTAP (TRIWULAN PENGADAAN)  -->
+        <!-- ========================================================================= -->
+        <div x-show="showPrintTriwulanModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak>
+            <div @click.away="showPrintTriwulanModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
                 
-                <!-- Action Bar Modal (Hidden When Printed) -->
+                <!-- Action Bar Modal -->
                 <div class="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
                     <div class="flex items-center space-x-2">
                         <span class="p-2 rounded-xl bg-purple-500/20 text-purple-300 text-sm">🖨️</span>
                         <div>
-                            <h3 class="text-base font-extrabold text-white">Templat Berita Acara Serah Terima Barang</h3>
-                            <p class="text-[11px] text-slate-400">Verifikasi Tanda Tangan Elektronik QR Code & Cetak Dokumen</p>
+                            <h3 class="text-base font-extrabold text-white">Cetak Berita Acara Penambahan ASTAP (Triwulan)</h3>
+                            <p class="text-[11px] text-slate-400">Dokumen Resmi Pengesahan Hasil Belanja Modal RSUD Dr. H. Koesnandi</p>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-                        <!-- Tombol TTD Pihak Kedua / Batalkan -->
-                        <template x-if="!bastDoc.pihak2_signed">
-                            <button type="button" @click="signPihak2()"
-                                class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                                <span>✍️ Tanda Tangani (QR Code)</span>
-                            </button>
-                        </template>
-
-                        <template x-if="bastDoc.pihak2_signed">
-                            <button type="button" @click="unsignPihak2()"
-                                class="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all flex items-center space-x-1.5 active:scale-95">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                <span>Batalkan Tanda Tangan</span>
-                            </button>
-                        </template>
-
-                        <!-- Tombol Cetak / PDF -->
-                        <button type="button" @click="printDoc()"
+                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <button type="button" @click="showEditTriwulanForm = !showEditTriwulanForm"
+                            class="px-3.5 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition-all flex items-center space-x-1.5 active:scale-95">
+                            <span x-text="showEditTriwulanForm ? '✕ Tutup Form Edit' : '✏️ Edit Nama Pejabat / Data Surat'"></span>
+                        </button>
+                        <button type="button" @click="printCurrent()"
                             class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>Cetak (Print / PDF)</span>
                         </button>
-
-                        <button type="button" @click="showTemplateModal = false" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all active:scale-95">
+                        <button type="button" @click="showPrintTriwulanModal = false" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all active:scale-95">
                             Tutup
                         </button>
                     </div>
                 </div>
 
-                <!-- Formulir Cepat Edit Pihak Kesatu & Pihak Kedua (Hidden When Printed) -->
-                <div class="no-print bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-purple-300 text-[11px] uppercase tracking-wider">✏️ Sesuaikan Data Surat & Identitas Kedua Pihak:</span>
+                <!-- Formulir Cepat Edit Pejabat & Data Surat (Hidden when Printed) -->
+                <div x-show="showEditTriwulanForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-purple-500/40 text-xs space-y-3 shadow-inner">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span class="font-bold text-purple-300 text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                            <span>✏️ Sesuaikan Data Nomor Surat, Tanggal & Identitas Pejabat Pengesah:</span>
+                        </span>
+                        <span class="text-[10px] text-emerald-400 font-mono">Teks di lembar BAST otomatis berganti live</span>
                     </div>
-                    
+
                     <!-- Edit Nomor & Tanggal -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         <div>
                             <label class="block text-slate-400 text-[10px] mb-1">Nomor Surat BAST</label>
-                            <input type="text" x-model="bastDoc.nomor_surat" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono text-xs">
+                            <input type="text" x-model="currentTriwulanDoc.nomor_surat" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-purple-300 font-mono font-bold text-xs">
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Hari & Tanggal</label>
-                            <input type="text" x-model="bastDoc.hari_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs">
+                            <label class="block text-slate-400 text-[10px] mb-1">Hari & Tanggal Pelaksanaan</label>
+                            <input type="text" x-model="currentTriwulanDoc.hari_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs">
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Periode Triwulan</label>
-                            <input type="text" x-model="bastDoc.triwulan" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs">
+                            <label class="block text-slate-400 text-[10px] mb-1">Nama Periode Triwulan</label>
+                            <input type="text" x-model="currentTriwulanDoc.triwulan_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs">
                         </div>
                     </div>
 
-                    <!-- Edit Pihak Kesatu & Kedua -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-                        <!-- Pihak Kesatu -->
-                        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
-                            <span class="text-[10px] font-bold text-amber-400 block">PIHAK KESATU (PPK / Penerima Barang):</span>
+                    <!-- Edit 3 Pejabat: PPK, Pengurus Barang, Direktur -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80">
+                        <!-- Pihak 1 (PPK) -->
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-purple-500/30 space-y-2">
+                            <span class="text-[10px] font-bold text-purple-400 block uppercase">1. Pihak Kesatu (PPK):</span>
                             <div>
-                                <label class="block text-slate-400 text-[9px]">Nama Lengkap PPK</label>
-                                <input type="text" x-model="bastDoc.pihak1_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold text-xs">
+                                <label class="block text-slate-400 text-[9px]">Nama Lengkap & Gelar</label>
+                                <input type="text" x-model="currentTriwulanDoc.pihak1_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold text-xs">
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[9px]">NIP PPK</label>
-                                    <input type="text" x-model="bastDoc.pihak1_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px]">NIP Tanda Tangan</label>
-                                    <input type="text" x-model="bastDoc.pihak1_nip_ttd" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
-                                </div>
+                            <div>
+                                <label class="block text-slate-400 text-[9px]">NIP PPK</label>
+                                <input type="text" x-model="currentTriwulanDoc.pihak1_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[9px]">Jabatan PPK</label>
+                                <input type="text" x-model="currentTriwulanDoc.pihak1_jabatan" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
                             </div>
                         </div>
 
-                        <!-- Pihak Kedua -->
-                        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-emerald-500/30 space-y-1.5">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[10px] font-bold text-emerald-400 block">PIHAK KEDUA (Pengurus Barang):</span>
-                                <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-bold">Default: Budi Hartono</span>
-                            </div>
+                        <!-- Pihak 2 (Pengurus Barang) -->
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-emerald-500/30 space-y-2">
+                            <span class="text-[10px] font-bold text-emerald-400 block uppercase">2. Pihak Kedua (Pengurus Barang):</span>
                             <div>
                                 <label class="block text-slate-400 text-[9px]">Nama Pengurus Barang</label>
-                                <input type="text" x-model="bastDoc.pihak2_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-emerald-400 font-bold text-xs">
+                                <input type="text" x-model="currentTriwulanDoc.pihak2_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-emerald-400 font-bold text-xs">
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[9px]">NIP Pengurus Barang</label>
-                                <input type="text" x-model="bastDoc.pihak2_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
+                                <input type="text" x-model="currentTriwulanDoc.pihak2_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[9px]">Jabatan Pengurus</label>
+                                <input type="text" x-model="currentTriwulanDoc.pihak2_jabatan" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
+                            </div>
+                        </div>
+
+                        <!-- Direktur RSUD -->
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-cyan-500/30 space-y-2">
+                            <span class="text-[10px] font-bold text-cyan-400 block uppercase">3. Mengetahui (Direktur RSUD):</span>
+                            <div>
+                                <label class="block text-slate-400 text-[9px]">Nama Direktur & Gelar</label>
+                                <input type="text" x-model="currentTriwulanDoc.direktur_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-bold text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[9px]">NIP Direktur</label>
+                                <input type="text" x-model="currentTriwulanDoc.direktur_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- LEMBAR DOKUMEN CETAK ASLI (KERTAS PUTIH RESMI KOP SURAT) -->
-                <div id="print-area" class="bg-white text-black p-6 sm:p-10 rounded-2xl shadow-xl max-h-[65vh] overflow-y-auto font-serif text-[11px] leading-relaxed select-text print:max-h-none print:overflow-visible print:p-0 print:m-0 print:shadow-none print:rounded-none">
+                <!-- LEMBAR DOKUMEN CETAK ASLI RESMI (KERTAS PUTIH STANDAR RUMAH SAKIT) -->
+                <div id="print-area-triwulan" class="bg-white text-black p-6 sm:p-10 rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto font-serif text-[11px] leading-relaxed select-text print:max-h-none print:overflow-visible print:p-0 print:m-0 print:shadow-none print:rounded-none">
                     
                     <!-- KOP SURAT RESMI -->
                     <div class="border-b-[3px] border-black pb-1 mb-0.5">
                         <div class="flex items-center justify-between gap-4">
-                            <!-- Logo RSUD / Pemkab -->
+                            <!-- Logo RSUD -->
                             <div class="w-20 shrink-0 flex justify-center">
                                 <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD" class="w-16 h-16 object-contain">
                             </div>
@@ -475,202 +869,220 @@
                                 <h4 class="font-bold text-xs tracking-[0.3em] uppercase mt-0.5">B O N D O W O S O</h4>
                             </div>
 
-                            <!-- Spacer Simetris Kanan -->
                             <div class="w-16 shrink-0"></div>
                         </div>
                     </div>
-                    <!-- Garis Tipis Tambahan Kop -->
                     <div class="border-b border-black mb-4"></div>
 
                     <!-- JUDUL & NOMOR SURAT -->
                     <div class="text-center font-sans mb-3">
-                        <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA SERAH TERIMA BARANG</h3>
-                        <p class="text-[11px] font-semibold">Nomor : <span x-text="bastDoc.nomor_surat"></span></p>
+                        <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA PENERIMAAN DAN PEMBUKUAN HASIL PENGADAAN BARANG (ASTAP)</h3>
+                        <p class="text-[11px] font-semibold">Nomor : <span x-text="currentTriwulanDoc.nomor_surat"></span></p>
                     </div>
 
                     <!-- PARAGRAF PEMBUKA -->
                     <p class="text-justify mb-2 indent-6">
-                        Pada hari ini <span x-text="bastDoc.hari_tanggal"></span> bertempat di <span x-text="bastDoc.lokasi"></span>, yang bertanda tangan dibawah ini :
+                        Pada hari ini <span class="font-semibold" x-text="currentTriwulanDoc.hari_tanggal"></span> bertempat di <span class="font-semibold" x-text="currentTriwulanDoc.lokasi"></span>, yang bertanda tangan dibawah ini :
                     </p>
 
                     <!-- IDENTITAS PIHAK KESATU & KEDUA -->
-                    <div class="space-y-1.5 mb-2 ml-2">
-                        <!-- 1. Pihak Kesatu -->
+                    <div class="space-y-1.5 mb-3 ml-2">
                         <div class="flex items-start">
                             <span class="w-5 font-bold">1.</span>
-                            <div class="grid grid-cols-[80px_10px_1fr] flex-1">
-                                <span>Nama</span><span>:</span><span class="font-bold uppercase" x-text="bastDoc.pihak1_nama"></span>
-                                <span>NIP</span><span>:</span><span class="font-mono" x-text="bastDoc.pihak1_nip"></span>
-                                <span>Jabatan</span><span>:</span><span x-text="bastDoc.pihak1_jabatan"></span>
-                            </div>
+                            <div class="w-28 font-semibold">Nama</div>
+                            <div class="w-3">:</div>
+                            <div class="flex-1 font-bold" x-text="currentTriwulanDoc.pihak1_nama"></div>
                         </div>
-                        <p class="ml-6 font-semibold">Dalam Hal ini disebut <span class="font-bold">PIHAK KESATU</span>.</p>
+                        <div class="flex items-start">
+                            <span class="w-5"></span>
+                            <div class="w-28 font-semibold">NIP</div>
+                            <div class="w-3">:</div>
+                            <div class="flex-1 font-mono" x-text="currentTriwulanDoc.pihak1_nip"></div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="w-5"></span>
+                            <div class="w-28 font-semibold">Jabatan</div>
+                            <div class="w-3">:</div>
+                            <div class="flex-1" x-text="currentTriwulanDoc.pihak1_jabatan"></div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="w-5"></span>
+                            <div class="w-28"></div>
+                            <div class="w-3"></div>
+                            <div class="flex-1 italic font-semibold">Selanjutnya disebut sebagai PIHAK KESATU</div>
+                        </div>
 
-                        <!-- 2. Pihak Kedua (Default Budi Hartono) -->
-                        <div class="flex items-start pt-1">
+                        <div class="flex items-start pt-1.5">
                             <span class="w-5 font-bold">2.</span>
-                            <div class="grid grid-cols-[80px_10px_1fr] flex-1">
-                                <span>Nama</span><span>:</span><span class="font-bold uppercase" x-text="bastDoc.pihak2_nama"></span>
-                                <span>NIP</span><span>:</span><span class="font-mono" x-text="bastDoc.pihak2_nip"></span>
-                                <span>Jabatan</span><span>:</span><span x-text="bastDoc.pihak2_jabatan"></span>
-                            </div>
+                            <div class="w-28 font-semibold">Nama</div>
+                            <div class="w-3">:</div>
+                            <div class="flex-1 font-bold" x-text="currentTriwulanDoc.pihak2_nama"></div>
                         </div>
-                        <p class="ml-6 font-semibold">Dalam Hal ini disebut <span class="font-bold">PIHAK KEDUA</span>.</p>
+                        <div class="flex items-start">
+                            <span class="w-5"></span>
+                            <div class="w-28 font-semibold">NIP</div>
+                            <div class="w-3">:</div>
+                            <div class="flex-1 font-mono" x-text="currentTriwulanDoc.pihak2_nip"></div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="w-5"></span>
+                            <div class="w-28 font-semibold">Jabatan</div>
+                            <div class="w-3">:</div>
+                            <div class="flex-1" x-text="currentTriwulanDoc.pihak2_jabatan"></div>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="w-5"></span>
+                            <div class="w-28"></div>
+                            <div class="w-3"></div>
+                            <div class="flex-1 italic font-semibold">Selanjutnya disebut sebagai PIHAK KEDUA</div>
+                        </div>
                     </div>
 
-                    <!-- KETERANGAN PENYERAHAN -->
-                    <p class="text-justify mb-1.5 indent-6">
-                        Bersama ini PIHAK KESATU menyerahkan Barang dari Hasil Pengadaan Belanja Modal <span x-text="bastDoc.triwulan"></span> Rumah Sakit Umum Daerah dr.H.Koesnadi Kabupaten Bondowoso kepada PIHAK KEDUA sebagai berikut :
+                    <!-- KLAUSUL PASAL -->
+                    <p class="text-justify mb-2 indent-6">
+                        PIHAK KESATU telah menyerahkan kepada PIHAK KEDUA, dan PIHAK KEDUA menyatakan telah menerima penyerahan barang hasil pengadaan Belanja Modal pada <span class="font-bold" x-text="currentTriwulanDoc.triwulan_nama"></span> dengan rekapitulasi serta rincian barang sebagai berikut :
                     </p>
-                    <p class="mb-1.5">1. PIHAK KESATU menyerahkan Barang kepada PIHAK KEDUA Berupa :</p>
 
-                    <!-- TABEL 8 KATEGORI ASET BMD -->
-                    <div class="mb-2">
-                        <table class="w-full border-collapse border border-black text-center text-[10.5px]">
+                    <!-- TABEL 1: REKAPITULASI 8 KELOMPOK BARANG ASET -->
+                    <div class="my-3">
+                        <table class="w-full text-center border-collapse border border-black text-[10px] font-sans">
                             <thead>
-                                <tr class="font-sans font-bold bg-gray-100">
-                                    <th class="border border-black px-2 py-1 w-10">NO</th>
-                                    <th class="border border-black px-3 py-1 text-left">NAMA BARANG</th>
-                                    <th class="border border-black px-3 py-1 w-28">JUMLAH BARANG</th>
-                                    <th class="border border-black px-3 py-1 w-44">NILAI PEROLEHAN</th>
-                                </tr>
-                                <tr class="font-sans font-semibold text-[9.5px] bg-gray-50 border-b border-black">
-                                    <th class="border border-black py-0.5">1</th>
-                                    <th class="border border-black py-0.5 text-left pl-3">2</th>
-                                    <th class="border border-black py-0.5">3</th>
-                                    <th class="border border-black py-0.5">4</th>
+                                <tr class="bg-gray-200 font-bold border-b border-black">
+                                    <th class="border border-black px-2 py-1 w-10">No</th>
+                                    <th class="border border-black px-4 py-1 text-left">Nama Kelompok / Kategori Aset</th>
+                                    <th class="border border-black px-3 py-1 w-28">Jumlah (Volume)</th>
+                                    <th class="border border-black px-4 py-1 text-right w-44">Nilai Perolehan (Rp)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-for="item in bastDoc.items" :key="item.no">
+                                <template x-for="r in currentTriwulanDoc.rekapItems" :key="r.no">
                                     <tr>
-                                        <td class="border border-black px-2 py-0.5 text-center" x-text="item.no"></td>
-                                        <td class="border border-black px-3 py-0.5 text-left font-semibold" x-text="item.nama"></td>
-                                        <td class="border border-black px-3 py-0.5 text-center font-mono" x-text="item.qty"></td>
-                                        <td class="border border-black px-3 py-0.5 text-right font-mono" x-text="formatRupiah(item.nilai)"></td>
+                                        <td class="border border-black px-2 py-1 font-mono" x-text="r.no"></td>
+                                        <td class="border border-black px-4 py-1 text-left font-medium" x-text="r.nama"></td>
+                                        <td class="border border-black px-3 py-1 font-mono" x-text="r.qty > 0 ? (formatNumber(r.qty) + ' Barang') : '-'"></td>
+                                        <td class="border border-black px-4 py-1 text-right font-mono" x-text="r.nilai > 0 ? formatRupiah(r.nilai) : '-'"></td>
                                     </tr>
                                 </template>
-                                <!-- Baris Total Jumlah -->
-                                <tr class="font-sans font-bold bg-gray-100 border-t-2 border-black">
-                                    <td colspan="2" class="border border-black px-3 py-1 text-center font-bold tracking-wider">JUMLAH</td>
-                                    <td class="border border-black px-3 py-1 text-center font-mono font-bold" x-text="totalQty"></td>
-                                    <td class="border border-black px-3 py-1 text-right font-mono font-bold" x-text="formatRupiah(totalNilai)"></td>
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-gray-100 font-bold border-t-2 border-black">
+                                    <th colspan="2" class="border border-black px-4 py-1 text-center uppercase">Total Belanja Modal:</th>
+                                    <th class="border border-black px-3 py-1 font-mono" x-text="formatNumber(currentTriwulanTotalQty) + ' Barang'"></th>
+                                    <th class="border border-black px-4 py-1 text-right font-mono" x-text="'Rp ' + formatRupiah(currentTriwulanTotalNilai)"></th>
                                 </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- TABEL 2: DETAIL RINCIAN BARANG YANG DIADAKAN PADA TRIWULAN INI -->
+                    <div class="my-3">
+                        <p class="font-sans font-bold text-[10px] mb-1">Rincian Barang yang Diadakan dalam <span x-text="currentTriwulanDoc.triwulan_nama"></span>:</p>
+                        <table class="w-full text-center border-collapse border border-black text-[9px] font-sans">
+                            <thead>
+                                <tr class="bg-gray-200 font-bold border-b border-black">
+                                    <th class="border border-black px-1.5 py-1 w-8">No</th>
+                                    <th class="border border-black px-2 py-1 text-left">Kode Barang 108</th>
+                                    <th class="border border-black px-3 py-1 text-left">Nama Barang & Spesifikasi</th>
+                                    <th class="border border-black px-2 py-1 text-left">Penyedia / Rekanan</th>
+                                    <th class="border border-black px-1.5 py-1 w-14">Vol</th>
+                                    <th class="border border-black px-2.5 py-1 text-right w-28">Nilai Realisasi (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(b, idx) in currentTriwulanDoc.detailBarang" :key="b.no">
+                                    <tr>
+                                        <td class="border border-black px-1.5 py-1 font-mono" x-text="idx + 1"></td>
+                                        <td class="border border-black px-2 py-1 text-left font-mono" x-text="b.kode_108"></td>
+                                        <td class="border border-black px-3 py-1 text-left font-medium" x-text="b.nama_barang + ' (' + b.spesifikasi + ')'"></td>
+                                        <td class="border border-black px-2 py-1 text-left" x-text="b.penyedia"></td>
+                                        <td class="border border-black px-1.5 py-1 font-mono" x-text="b.volume + ' ' + b.satuan"></td>
+                                        <td class="border border-black px-2.5 py-1 text-right font-mono font-semibold" x-text="formatRupiah(b.nilai_realisasi)"></td>
+                                    </tr>
+                                </template>
                             </tbody>
                         </table>
                     </div>
 
-                    <p class="mb-1 text-[10px] italic">Dengan rincian terlampir ;</p>
-
-                    <!-- POIN PENERIMAAN & PENUTUP -->
-                    <p class="text-justify mb-2">
-                        2. PIHAK KEDUA menerima penyerahan Barang dimaksud serta berkewajiban untuk mengamankan dan melakukan entry data ke Rekap Mutasi Barang <span x-text="bastDoc.triwulan"></span>;
-                    </p>
-                    <p class="text-justify mb-5 indent-6">
-                        Demikian Berita Acara ini dibuat untuk dipergunakan sebagaimana mestinya.
+                    <!-- PENUTUP SURAT -->
+                    <p class="text-justify mb-4 indent-6">
+                        Demikian Berita Acara Penerimaan dan Pembukuan Hasil Pengadaan ini dibuat rangkap 2 (dua) untuk dipergunakan sebagaimana mestinya.
                     </p>
 
-                    <!-- BLOK TANDA TANGAN DUA PIHAK DENGAN QR CODE DIGITAL SIGNATURE OTOMATIS -->
-                    <div class="grid grid-cols-2 gap-8 text-center font-sans text-[10px] pt-1">
-                        
-                        <!-- Kolom Tanda Tangan Pihak Kesatu (PPK - TTD Saat Distribusi) -->
-                        <div class="flex flex-col items-center justify-between min-h-[140px]">
-                            <div>
-                                <p class="font-bold">PIHAK KESATU</p>
-                                <p class="font-bold uppercase text-[9px] leading-tight mt-0.5" x-text="bastDoc.pihak1_title_ttd"></p>
-                            </div>
+                    <!-- AREA TANDA TANGAN (KIRI: PIHAK KEDUA, KANAN: PIHAK KESATU, BAWAH TENGAH: DIREKTUR) -->
+                    <div class="grid grid-cols-2 gap-4 text-center font-sans text-[10px] mt-4">
+                        <!-- Pihak Kedua -->
+                        <div class="space-y-1">
+                            <p class="font-bold">Yang Menerima,</p>
+                            <p class="font-semibold uppercase text-[9.5px]">PENGURUS BARANG ASET</p>
                             
-                            <!-- E-Signature QR Code Pihak Kesatu -->
-                            <div class="my-1.5 flex flex-col items-center">
-                                <div class="w-16 h-16 p-1 border border-black/80 bg-white flex flex-col items-center justify-center">
-                                    <!-- QR Code Mock Vector Resmi -->
-                                    <svg class="w-14 h-14" viewBox="0 0 100 100" fill="currentColor">
-                                        <rect x="5" y="5" width="25" height="25" fill="black"/>
-                                        <rect x="10" y="10" width="15" height="15" fill="white"/>
-                                        <rect x="13" y="13" width="9" height="9" fill="black"/>
-                                        <rect x="70" y="5" width="25" height="25" fill="black"/>
-                                        <rect x="75" y="10" width="15" height="15" fill="white"/>
-                                        <rect x="78" y="13" width="9" height="9" fill="black"/>
-                                        <rect x="5" y="70" width="25" height="25" fill="black"/>
-                                        <rect x="10" y="75" width="15" height="15" fill="white"/>
-                                        <rect x="13" y="78" width="9" height="9" fill="black"/>
-                                        <rect x="35" y="10" width="8" height="8" fill="black"/>
-                                        <rect x="50" y="10" width="8" height="8" fill="black"/>
-                                        <rect x="35" y="25" width="15" height="8" fill="black"/>
-                                        <rect x="40" y="40" width="20" height="20" fill="black"/>
-                                        <rect x="45" y="45" width="10" height="10" fill="white"/>
-                                        <rect x="48" y="48" width="4" height="4" fill="black"/>
-                                        <rect x="10" y="40" width="12" height="8" fill="black"/>
-                                        <rect x="70" y="40" width="12" height="8" fill="black"/>
-                                        <rect x="35" y="70" width="8" height="15" fill="black"/>
-                                        <rect x="50" y="70" width="15" height="8" fill="black"/>
-                                        <rect x="70" y="70" width="20" height="8" fill="black"/>
-                                        <rect x="75" y="82" width="15" height="10" fill="black"/>
-                                    </svg>
-                                </div>
-                                <span class="text-[7.5px] font-mono text-gray-600 uppercase tracking-tighter mt-0.5">TERTANDA SAH DISTRIBUSI</span>
+                            <!-- E-Sign QR Code -->
+                            <div class="h-20 flex items-center justify-center py-1">
+                                <template x-if="currentTriwulanDoc.pihak2_signed">
+                                    <div class="flex items-center space-x-2 p-1.5 border border-emerald-600 bg-emerald-50 rounded">
+                                        <div class="w-12 h-12 bg-white border border-black p-0.5 flex items-center justify-center">
+                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-KOESNANDI-BAST-TW" class="w-full h-full object-contain">
+                                        </div>
+                                        <div class="text-left text-[7.5px] leading-tight text-emerald-950 font-sans">
+                                            <div class="font-bold">DITANDATANGANI SECARA ELEKTRONIK</div>
+                                            <div>Balai Sertifikasi Elektronik (BSrE)</div>
+                                            <div class="font-mono" x-text="currentTriwulanDoc.pihak2_tgl_ttd"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!currentTriwulanDoc.pihak2_signed">
+                                    <div class="h-16 flex items-center justify-center text-slate-400 italic text-[10px]">
+                                        (Tanda Tangan & Cap Basah)
+                                    </div>
+                                </template>
                             </div>
 
-                            <div>
-                                <p class="font-bold underline uppercase tracking-tight" x-text="bastDoc.pihak1_nama"></p>
-                                <p class="text-[9px] font-mono">NIP. <span x-text="bastDoc.pihak1_nip_ttd"></span></p>
+                            <p class="font-bold underline text-[10.5px]" x-text="currentTriwulanDoc.pihak2_nama"></p>
+                            <p class="font-mono text-[9px]" x-text="'NIP. ' + currentTriwulanDoc.pihak2_nip"></p>
+                        </div>
+
+                        <!-- Pihak Kesatu -->
+                        <div class="space-y-1">
+                            <p class="font-bold">Yang Menyerahkan,</p>
+                            <p class="font-semibold uppercase text-[9.5px]">PEJABAT PEMBUAT KOMITMEN (PPK)</p>
+                            
+                            <!-- E-Sign QR Code PPK -->
+                            <div class="h-20 flex items-center justify-center py-1">
+                                <div class="flex items-center space-x-2 p-1.5 border border-purple-600 bg-purple-50 rounded">
+                                    <div class="w-12 h-12 bg-white border border-black p-0.5 flex items-center justify-center">
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-KOESNANDI-PPK-TW" class="w-full h-full object-contain">
+                                    </div>
+                                    <div class="text-left text-[7.5px] leading-tight text-purple-950 font-sans">
+                                        <div class="font-bold">DITANDATANGANI SECARA ELEKTRONIK</div>
+                                        <div>Balai Sertifikasi Elektronik (BSrE)</div>
+                                        <div class="font-mono">Terverifikasi SIPD & SIMAT</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="font-bold underline text-[10.5px]" x-text="currentTriwulanDoc.pihak1_nama"></p>
+                            <p class="font-mono text-[9px]" x-text="'NIP. ' + currentTriwulanDoc.pihak1_nip"></p>
+                        </div>
+                    </div>
+
+                    <!-- Mengetahui Direktur RSUD -->
+                    <div class="text-center font-sans text-[10px] mt-4 pt-2 border-t border-dotted border-gray-400">
+                        <p class="font-bold">Mengetahui / Mengesahkan,</p>
+                        <p class="font-black uppercase text-[10px]">DIREKTUR RSUD dr.H.KOESNADI BONDOWOSO</p>
+                        
+                        <div class="h-16 flex items-center justify-center py-1">
+                            <div class="flex items-center space-x-2 p-1 border border-black bg-gray-50 rounded">
+                                <div class="w-10 h-10 bg-white border border-black p-0.5">
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-DIREKTUR-RSUD-KOESNANDI" class="w-full h-full object-contain">
+                                </div>
+                                <div class="text-left text-[7px] leading-tight text-black font-sans">
+                                    <div class="font-bold">PENGGUNA BARANG / DIREKTUR</div>
+                                    <div>Tervalidasi Digital Signature</div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Kolom Tanda Tangan Pihak Kedua (Pengurus Barang Aset - Default Budi Hartono) -->
-                        <div class="flex flex-col items-center justify-between min-h-[140px]">
-                            <div>
-                                <p class="font-bold">PIHAK KEDUA</p>
-                                <p class="font-bold uppercase text-[9px] leading-tight mt-0.5" x-text="bastDoc.pihak2_title_ttd"></p>
-                            </div>
-
-                            <!-- Area QR Code / Ruang TTD -->
-                            <template x-if="bastDoc.pihak2_signed">
-                                <div class="my-1.5 flex flex-col items-center">
-                                    <div class="w-16 h-16 p-1 border border-black/80 bg-white flex flex-col items-center justify-center">
-                                        <!-- QR Code Mock Vector Resmi -->
-                                        <svg class="w-14 h-14" viewBox="0 0 100 100" fill="currentColor">
-                                            <rect x="5" y="5" width="25" height="25" fill="black"/>
-                                            <rect x="10" y="10" width="15" height="15" fill="white"/>
-                                            <rect x="13" y="13" width="9" height="9" fill="black"/>
-                                            <rect x="70" y="5" width="25" height="25" fill="black"/>
-                                            <rect x="75" y="10" width="15" height="15" fill="white"/>
-                                            <rect x="78" y="13" width="9" height="9" fill="black"/>
-                                            <rect x="5" y="70" width="25" height="25" fill="black"/>
-                                            <rect x="10" y="75" width="15" height="15" fill="white"/>
-                                            <rect x="13" y="78" width="9" height="9" fill="black"/>
-                                            <rect x="35" y="15" width="10" height="8" fill="black"/>
-                                            <rect x="52" y="15" width="10" height="8" fill="black"/>
-                                            <rect x="40" y="35" width="20" height="20" fill="black"/>
-                                            <rect x="45" y="40" width="10" height="10" fill="white"/>
-                                            <rect x="48" y="43" width="4" height="4" fill="black"/>
-                                            <rect x="15" y="45" width="10" height="8" fill="black"/>
-                                            <rect x="75" y="45" width="15" height="8" fill="black"/>
-                                            <rect x="35" y="75" width="10" height="15" fill="black"/>
-                                            <rect x="52" y="75" width="12" height="8" fill="black"/>
-                                            <rect x="70" y="70" width="20" height="8" fill="black"/>
-                                            <rect x="72" y="82" width="18" height="10" fill="black"/>
-                                        </svg>
-                                    </div>
-                                    <span class="text-[7.5px] font-mono text-gray-600 uppercase tracking-tighter mt-0.5">DITANDATANGANI ELEKTRONIK</span>
-                                </div>
-                            </template>
-
-                            <!-- Ruang Kosong Jika Belum Ditandatangani -->
-                            <template x-if="!bastDoc.pihak2_signed">
-                                <div class="h-16 flex items-center justify-center">
-                                    <div class="px-3 py-1.5 border border-dashed border-gray-400 rounded text-[9px] text-gray-500 font-sans">
-                                        (Belum Ditandatangani)
-                                    </div>
-                                </div>
-                            </template>
-
-                            <div>
-                                <p class="font-bold underline uppercase tracking-tight" x-text="bastDoc.pihak2_nama"></p>
-                                <p class="text-[9px] font-mono">NIP. <span x-text="bastDoc.pihak2_nip"></span></p>
-                            </div>
-                        </div>
-
+                        <p class="font-bold underline text-[11px]" x-text="currentTriwulanDoc.direktur_nama"></p>
+                        <p class="font-mono text-[9px]" x-text="'NIP. ' + currentTriwulanDoc.direktur_nip"></p>
                     </div>
 
                 </div>
@@ -679,83 +1091,335 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- MODAL UBAH BAST                                                           -->
+        <!-- MODAL CETAK 2: LEMBAR DOKUMEN BAST DISTRIBUSI UNIT / PAVILIUN (SUB ADMIN) -->
         <!-- ========================================================================= -->
-        <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
-                <button type="button" @click="showEditModal = false" class="absolute right-5 top-5 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center text-sm font-bold transition-all">&times;</button>
+        <div x-show="showPrintDistribusiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak>
+            <div @click.away="showPrintDistribusiModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
+                
+                <!-- Action Bar Modal -->
+                <div class="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                    <div class="flex items-center space-x-2">
+                        <span class="p-2 rounded-xl bg-teal-500/20 text-teal-300 text-sm">🚚</span>
+                        <div>
+                            <h3 class="text-base font-extrabold text-white">Cetak BAST Distribusi Barang ke Ruangan / Paviliun</h3>
+                            <p class="text-[11px] text-slate-400" x-text="selectedDistribusi ? ('Serah Terima ke ' + selectedDistribusi.unit_nama + ' (Sub-Admin: ' + selectedDistribusi.pj_nama + ')') : ''"></p>
+                        </div>
+                    </div>
 
-                <div class="text-center pb-3 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-extrabold text-white">Ubah Data Berita Acara (BAST)</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Perbarui Nomor Surat, Identitas Kedua Pihak, dan Periode</p>
+                    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <template x-if="selectedDistribusi && !selectedDistribusi.signed">
+                            <button type="button" @click="signDistribusi()"
+                                class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
+                                <span>✍️ Sahkan & Terbitkan QR Code</span>
+                            </button>
+                        </template>
+
+                        <button type="button" @click="showEditDistribusiForm = !showEditDistribusiForm"
+                            class="px-3.5 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold text-xs transition-all flex items-center space-x-1.5 active:scale-95">
+                            <span x-text="showEditDistribusiForm ? '✕ Tutup Form Edit' : '✏️ Edit Nama Pejabat / Data Surat'"></span>
+                        </button>
+
+                        <button type="button" @click="printCurrent()"
+                            class="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            <span>Cetak (Print / PDF)</span>
+                        </button>
+                        <button type="button" @click="showPrintDistribusiModal = false" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all active:scale-95">
+                            Tutup
+                        </button>
+                    </div>
                 </div>
 
-                <form @submit.prevent="showEditModal = false; alert('✅ Perubahan BAST berhasil disimpan!')" class="space-y-3.5 text-xs">
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Nomor Surat BAST</label>
-                        <input type="text" x-model="selectedBast ? selectedBast.nomor_surat : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-purple-400 font-mono font-bold">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Periode Triwulan</label>
-                            <input type="text" x-model="selectedBast ? selectedBast.triwulan : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                <!-- Formulir Cepat Edit Pejabat & Data Surat Distribusi (Hidden when Printed) -->
+                <template x-if="selectedDistribusi">
+                    <div x-show="showEditDistribusiForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-teal-500/40 text-xs space-y-3 shadow-inner">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <span class="font-bold text-teal-300 text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>✏️ Sesuaikan Data Nomor Surat, Tanggal & Identitas Pengurus / Kepala Ruangan:</span>
+                            </span>
+                            <span class="text-[10px] text-emerald-400 font-mono">Teks di lembar BAST otomatis berganti live</span>
                         </div>
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Hari & Tanggal</label>
-                            <input type="text" x-model="selectedBast ? selectedBast.hari_tanggal : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Pihak Kesatu (PPK / Penerima Barang)</label>
-                        <input type="text" x-model="selectedBast ? selectedBast.pihak1_nama : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Pihak Kedua (Pengurus Barang Aset)</label>
-                        <input type="text" x-model="selectedBast ? selectedBast.pihak2_nama : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold">
-                    </div>
 
-                    <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
-                        <button type="button" @click="showEditModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/30 font-bold text-xs shadow-md transition-all flex items-center space-x-1.5 active:scale-95">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            <span>Batal</span>
-                        </button>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Simpan Perubahan</span>
-                        </button>
+                        <!-- Edit Nomor & Tanggal -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Nomor BAST Distribusi</label>
+                                <input type="text" x-model="selectedDistribusi.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-teal-300 font-mono font-bold text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Hari & Tanggal Pelaksanaan Serah Terima</label>
+                                <input type="text" x-model="selectedDistribusi.tgl_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs">
+                            </div>
+                        </div>
+
+                        <!-- 3 Pejabat: Pengurus Barang, PJ Ruangan (Sub Admin), Kasubag Logistik -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80">
+                            <!-- Pihak 1 (Pengurus Barang) -->
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-emerald-500/30 space-y-2">
+                                <span class="text-[10px] font-bold text-emerald-400 block uppercase">1. Yang Menyerahkan (Pengurus):</span>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">Nama Pengurus Barang</label>
+                                    <input type="text" x-model="selectedDistribusi.pengurus_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-emerald-400 font-bold text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">NIP Pengurus Barang</label>
+                                    <input type="text" x-model="selectedDistribusi.pengurus_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">Jabatan Pengurus</label>
+                                    <input type="text" x-model="selectedDistribusi.pengurus_jabatan" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
+                                </div>
+                            </div>
+
+                            <!-- Pihak 2 (Kepala Ruangan Sub-Admin) -->
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-teal-500/30 space-y-2">
+                                <span class="text-[10px] font-bold text-teal-400 block uppercase">2. Yang Menerima (Sub-Admin):</span>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">Nama PJ Ruangan / Kepala Paviliun</label>
+                                    <input type="text" x-model="selectedDistribusi.pj_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-teal-300 font-bold text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">NIP Kepala Ruangan</label>
+                                    <input type="text" x-model="selectedDistribusi.pj_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">Nama Unit / Paviliun</label>
+                                    <input type="text" x-model="selectedDistribusi.unit_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
+                                </div>
+                            </div>
+
+                            <!-- Mengetahui Kasubag -->
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-purple-500/30 space-y-2">
+                                <span class="text-[10px] font-bold text-purple-400 block uppercase">3. Mengetahui (Kasubag TU & Logistik):</span>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">Nama Kasubag & Gelar</label>
+                                    <input type="text" x-model="selectedDistribusi.kasubag_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-bold text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">NIP Kasubag</label>
+                                    <input type="text" x-model="selectedDistribusi.kasubag_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                </template>
+
+                <!-- LEMBAR DOKUMEN CETAK ASLI BAST DISTRIBUSI (KERTAS PUTIH STANDAR) -->
+                <template x-if="selectedDistribusi">
+                    <div id="print-area-distribusi" class="bg-white text-black p-6 sm:p-10 rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto font-serif text-[11px] leading-relaxed select-text print:max-h-none print:overflow-visible print:p-0 print:m-0 print:shadow-none print:rounded-none">
+                        
+                        <!-- KOP SURAT RESMI -->
+                        <div class="border-b-[3px] border-black pb-1 mb-0.5">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="w-20 shrink-0 flex justify-center">
+                                    <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD" class="w-16 h-16 object-contain">
+                                </div>
+
+                                <div class="flex-1 text-center font-sans text-black">
+                                    <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wide leading-tight">PEMERINTAH KABUPATEN BONDOWOSO</h4>
+                                    <h3 class="font-black text-sm sm:text-base uppercase tracking-tight leading-tight">RUMAH SAKIT UMUM DAERAH dr.H.KOESNADI</h3>
+                                    <p class="text-[10px] leading-tight mt-0.5">Jl. Kapten Piere Tendean No. 3 Telp. (0332) 421974 Fax.0332 422311</p>
+                                    <p class="text-[10px] leading-tight">e-mail : rsu.koesnadi@gmail.com, Website : rsudrkoesnadi.go.id</p>
+                                    <h4 class="font-bold text-xs tracking-[0.3em] uppercase mt-0.5">B O N D O W O S O</h4>
+                                </div>
+
+                                <div class="w-16 shrink-0"></div>
+                            </div>
+                        </div>
+                        <div class="border-b border-black mb-4"></div>
+
+                        <!-- JUDUL & NOMOR SURAT -->
+                        <div class="text-center font-sans mb-3">
+                            <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA SERAH TERIMA (BAST) DISTRIBUSI BARANG ASET</h3>
+                            <p class="text-[11px] font-semibold">Nomor : <span x-text="selectedDistribusi.nomor_bast"></span></p>
+                        </div>
+
+                        <!-- PARAGRAF PEMBUKA -->
+                        <p class="text-justify mb-2 indent-6">
+                            Pada hari ini <span class="font-semibold" x-text="selectedDistribusi.tgl_bast"></span> bertempat di Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso, yang bertanda tangan dibawah ini :
+                        </p>
+
+                        <!-- IDENTITAS KEDUA PIHAK -->
+                        <div class="space-y-1.5 mb-3 ml-2">
+                            <!-- 1. Pihak Kesatu (Pengurus Barang) -->
+                            <div class="flex items-start">
+                                <span class="w-5 font-bold">1.</span>
+                                <div class="w-28 font-semibold">Nama</div>
+                                <div class="w-3">:</div>
+                                <div class="flex-1 font-bold" x-text="selectedDistribusi.pengurus_nama"></div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-5"></span>
+                                <div class="w-28 font-semibold">NIP</div>
+                                <div class="w-3">:</div>
+                                <div class="flex-1 font-mono" x-text="selectedDistribusi.pengurus_nip"></div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-5"></span>
+                                <div class="w-28 font-semibold">Jabatan</div>
+                                <div class="w-3">:</div>
+                                <div class="flex-1" x-text="selectedDistribusi.pengurus_jabatan"></div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-5"></span>
+                                <div class="w-28"></div>
+                                <div class="w-3"></div>
+                                <div class="flex-1 italic font-semibold">Selanjutnya disebut sebagai PIHAK KESATU (Yang Menyerahkan)</div>
+                            </div>
+
+                            <!-- 2. Pihak Kedua (Kepala Ruangan / PJ Unit Paviliun Sub Admin) -->
+                            <div class="flex items-start pt-1.5">
+                                <span class="w-5 font-bold">2.</span>
+                                <div class="w-28 font-semibold">Nama</div>
+                                <div class="w-3">:</div>
+                                <div class="flex-1 font-bold" x-text="selectedDistribusi.pj_nama"></div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-5"></span>
+                                <div class="w-28 font-semibold">NIP</div>
+                                <div class="w-3">:</div>
+                                <div class="flex-1 font-mono" x-text="selectedDistribusi.pj_nip"></div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-5"></span>
+                                <div class="w-28 font-semibold">Unit / Paviliun</div>
+                                <div class="w-3">:</div>
+                                <div class="flex-1 font-bold uppercase" x-text="selectedDistribusi.unit_nama + ' (' + selectedDistribusi.unit_tipe + ')'"></div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-5"></span>
+                                <div class="w-28 font-semibold">Jabatan</div>
+                                <div class="w-3">:</div>
+                                <div class="flex-1" x-text="selectedDistribusi.pj_jabatan"></div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="w-5"></span>
+                                <div class="w-28"></div>
+                                <div class="w-3"></div>
+                                <div class="flex-1 italic font-semibold">Selanjutnya disebut sebagai PIHAK KEDUA (Yang Menerima / Sub-Admin Ruangan)</div>
+                            </div>
+                        </div>
+
+                        <!-- KLAUSUL PASAL -->
+                        <p class="text-justify mb-2 indent-6">
+                            PIHAK KESATU menyerahkan barang inventaris aset tetap kepada PIHAK KEDUA, dan PIHAK KEDUA menyatakan telah menerima penyerahan barang tersebut dalam keadaan baik, lengkap dan siap operasional dengan rincian sebagai berikut:
+                        </p>
+
+                        <!-- TABEL RINCIAN BARANG YANG DIDISTRIBUSIKAN -->
+                        <div class="my-3">
+                            <table class="w-full text-center border-collapse border border-black text-[9.5px] font-sans">
+                                <thead>
+                                    <tr class="bg-gray-200 font-bold border-b border-black">
+                                        <th class="border border-black px-1.5 py-1 w-8">No</th>
+                                        <th class="border border-black px-2 py-1 text-left">Kode Barang 108</th>
+                                        <th class="border border-black px-3 py-1 text-left">Nama Barang & Spesifikasi</th>
+                                        <th class="border border-black px-2 py-1 text-left">No. Seri / Pabrik</th>
+                                        <th class="border border-black px-1.5 py-1 w-12">Qty</th>
+                                        <th class="border border-black px-2 py-1 w-20">Kondisi</th>
+                                        <th class="border border-black px-2.5 py-1 text-left">Lokasi Penempatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(item, idx) in selectedDistribusi.items" :key="item.no">
+                                        <tr>
+                                            <td class="border border-black px-1.5 py-1 font-mono" x-text="idx + 1"></td>
+                                            <td class="border border-black px-2 py-1 text-left font-mono font-semibold" x-text="item.kode_108"></td>
+                                            <td class="border border-black px-3 py-1 text-left">
+                                                <div class="font-bold" x-text="item.nama_barang"></div>
+                                                <div class="text-[8.5px] text-gray-700" x-text="item.spesifikasi"></div>
+                                            </td>
+                                            <td class="border border-black px-2 py-1 text-left font-mono text-[8.5px]" x-text="item.no_seri"></td>
+                                            <td class="border border-black px-1.5 py-1 font-mono font-bold" x-text="item.qty + ' ' + item.satuan"></td>
+                                            <td class="border border-black px-2 py-1 font-semibold" x-text="item.kondisi"></td>
+                                            <td class="border border-black px-2.5 py-1 text-left font-medium" x-text="item.penempatan"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- KLAUSUL TANGGUNG JAWAB -->
+                        <div class="bg-gray-50 border border-gray-300 p-2.5 rounded my-2 text-[10px] space-y-1">
+                            <p class="font-bold">Ketentuan & Tanggung Jawab Pengelolaan Barang di Unit / Ruangan:</p>
+                            <ol class="list-decimal list-inside space-y-0.5 text-gray-800">
+                                <li>PIHAK KEDUA bertanggung jawab penuh terhadap pemeliharaan, keamanan, dan pencatatan KIB Ruangan aset yang telah diserahterimakan.</li>
+                                <li>Segala bentuk mutasi, kerusakan, atau pemindahan barang antar ruangan wajib dilaporkan kepada Pengurus Barang Aset RSUD.</li>
+                            </ol>
+                        </div>
+
+                        <!-- PENUTUP -->
+                        <p class="text-justify mb-4 indent-6">
+                            Demikian Berita Acara Serah Terima (BAST) Distribusi ini dibuat dalam rangkap 2 (dua) bermaterai cukup dan memiliki kekuatan hukum yang sama.
+                        </p>
+
+                        <!-- TANDA TANGAN -->
+                        <div class="grid grid-cols-2 gap-4 text-center font-sans text-[10px] mt-4">
+                            <!-- Pihak Kedua -->
+                            <div class="space-y-1">
+                                <p class="font-bold">Yang Menerima,</p>
+                                <p class="font-semibold uppercase text-[9.5px]" x-text="selectedDistribusi.unit_nama"></p>
+                                
+                                <div class="h-20 flex items-center justify-center py-1">
+                                    <template x-if="selectedDistribusi.signed">
+                                        <div class="flex items-center space-x-2 p-1.5 border border-teal-600 bg-teal-50 rounded">
+                                            <div class="w-12 h-12 bg-white border border-black p-0.5 flex items-center justify-center">
+                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-KOESNANDI-DST-UNIT" class="w-full h-full object-contain">
+                                            </div>
+                                            <div class="text-left text-[7.5px] leading-tight text-teal-950 font-sans">
+                                                <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
+                                                <div>PJ Aset Unit Paviliun (Sub-Admin)</div>
+                                                <div class="font-mono" x-text="selectedDistribusi.tgl_signed"></div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!selectedDistribusi.signed">
+                                        <div class="h-16 flex items-center justify-center text-slate-400 italic text-[10px]">
+                                            (Menunggu Tanda Tangan Sub-Admin)
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <p class="font-bold underline text-[10.5px]" x-text="selectedDistribusi.pj_nama"></p>
+                                <p class="font-mono text-[9px]" x-text="'NIP. ' + selectedDistribusi.pj_nip"></p>
+                            </div>
+
+                            <!-- Pihak Kesatu -->
+                            <div class="space-y-1">
+                                <p class="font-bold">Yang Menyerahkan,</p>
+                                <p class="font-semibold uppercase text-[9.5px]">PENGURUS BARANG ASET RSUD</p>
+                                
+                                <div class="h-20 flex items-center justify-center py-1">
+                                    <div class="flex items-center space-x-2 p-1.5 border border-emerald-600 bg-emerald-50 rounded">
+                                        <div class="w-12 h-12 bg-white border border-black p-0.5 flex items-center justify-center">
+                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-KOESNANDI-PENGURUS-ASET" class="w-full h-full object-contain">
+                                        </div>
+                                        <div class="text-left text-[7.5px] leading-tight text-emerald-950 font-sans">
+                                            <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
+                                            <div>Pengurus Barang Aset RSUD</div>
+                                            <div class="font-mono">Terverifikasi BSrE SIMAT</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p class="font-bold underline text-[10.5px]" x-text="selectedDistribusi.pengurus_nama"></p>
+                                <p class="font-mono text-[9px]" x-text="'NIP. ' + selectedDistribusi.pengurus_nip"></p>
+                            </div>
+                        </div>
+
+                        <!-- Mengetahui Kasubag Umum / Logistik -->
+                        <div class="text-center font-sans text-[10px] mt-4 pt-2 border-t border-dotted border-gray-400">
+                            <p class="font-bold">Mengetahui,</p>
+                            <p class="font-black uppercase text-[10px]">KASUBAG TATA USAHA & LOGISTIK RSUD dr.H.KOESNADI</p>
+                            <div class="h-12 flex items-center justify-center"></div>
+                            <p class="font-bold underline text-[10.5px]" x-text="selectedDistribusi.kasubag_nama"></p>
+                            <p class="font-mono text-[9px]" x-text="'NIP. ' + selectedDistribusi.kasubag_nip"></p>
+                        </div>
+
+                    </div>
+                </template>
+
             </div>
         </div>
 
     </div>
-
-    <!-- Print Styling Khusus Halaman Cetak Dokumen -->
-    <style>
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #print-area, #print-area * {
-                visibility: visible;
-            }
-            #print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 10mm 15mm !important;
-                background: white !important;
-                color: black !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-            @page {
-                size: A4 portrait;
-                margin: 10mm;
-            }
-        }
-    </style>
 </x-layout>
