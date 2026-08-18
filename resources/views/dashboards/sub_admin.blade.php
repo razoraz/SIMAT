@@ -61,50 +61,80 @@
 
     <!-- Data Distribusi Khusus User Ini (READ, UPDATE, DELETE) -->
     <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-        <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
                 <h3 class="text-base font-extrabold text-white">Data Distribusi ASTAP Saya</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Daftar alokasi barang aset khusus yang diajukan atau diterima oleh akun Anda (Read, Update, Delete)</p>
+                <p class="text-xs text-slate-400 mt-0.5">Daftar alokasi barang aset khusus yang diajukan atau diterima oleh akun unit kerja Anda</p>
             </div>
-            <button type="button" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md">
-                + Tambah Distribusi Baru
-            </button>
+            
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('distribusi.index') }}" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition-all flex items-center space-x-1.5">
+                    <span>🔍 Riwayat Distribusi</span>
+                </a>
+                <a href="{{ route('distribusi.create') }}" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center space-x-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    <span>Tambah Distribusi Baru</span>
+                </a>
+            </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto rounded-2xl border border-slate-800/80">
             <table class="w-full text-left text-xs text-slate-300">
-                <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+                <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
                     <tr>
-                        <th class="px-4 py-3 text-center">No. Pengajuan</th>
-                        <th class="px-4 py-3 text-center">Nama Barang / ASTAP</th>
-                        <th class="px-4 py-3 text-center">Tujuan Unit</th>
-                        <th class="px-4 py-3 text-center">Tanggal</th>
-                        <th class="px-4 py-3 text-center">Status Pengajuan</th>
-                        <th class="px-4 py-3 text-center">Aksi User (Update/Delete)</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap w-12">No</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">No. Pengajuan</th>
+                        <th class="px-4 py-3.5 text-left min-w-[220px]">Nama Barang / ASTAP</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tujuan Unit</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tanggal</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Status Pengajuan</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi (Update/Delete)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80">
                     <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-3.5 font-mono font-semibold text-emerald-400">DST-2026-089</td>
-                        <td class="px-4 py-3.5 font-bold text-white">Printer Thermal Lab & Patient Monitor</td>
-                        <td class="px-4 py-3.5">Unit IGD Utama</td>
-                        <td class="px-4 py-3.5">14 Ags 2026</td>
-                        <td class="px-4 py-3.5"><span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Disetujui Admin</span></td>
-                        <td class="px-4 py-3.5 text-right space-x-2">
-                            <button type="button" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-semibold">Edit</button>
-                            <button type="button" class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-semibold">Hapus</button>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">1</td>
+                        <td class="px-4 py-4 text-center font-mono font-semibold text-emerald-400 whitespace-nowrap">DST-2026-089</td>
+                        <td class="px-4 py-4 font-bold text-white">Printer Thermal Lab & Patient Monitor</td>
+                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">Unit IGD Utama</td>
+                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">14 Ags 2026</td>
+                        <td class="px-4 py-4 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
+                                Disetujui Admin
+                            </span>
+                        </td>
+                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
+                            <a href="{{ route('distribusi.index') }}" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Edit</span>
+                            </a>
+                            <button type="button" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <span>Hapus</span>
+                            </button>
                         </td>
                     </tr>
 
                     <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-3.5 font-mono font-semibold text-emerald-400">DST-2026-092</td>
-                        <td class="px-4 py-3.5 font-bold text-white">Laptop Operasional SIMAT-RK IT Unit</td>
-                        <td class="px-4 py-3.5">Ruang IT Server</td>
-                        <td class="px-4 py-3.5">16 Ags 2026</td>
-                        <td class="px-4 py-3.5"><span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">Menunggu Verifikasi</span></td>
-                        <td class="px-4 py-3.5 text-right space-x-2">
-                            <button type="button" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-semibold">Edit</button>
-                            <button type="button" class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-semibold">Hapus</button>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">2</td>
+                        <td class="px-4 py-4 text-center font-mono font-semibold text-emerald-400 whitespace-nowrap">DST-2026-092</td>
+                        <td class="px-4 py-4 font-bold text-white">Laptop Operasional SIMAT-RK IT Unit</td>
+                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">Ruang IT Server</td>
+                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">16 Ags 2026</td>
+                        <td class="px-4 py-4 text-center whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm select-none">
+                                Menunggu Verifikasi
+                            </span>
+                        </td>
+                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
+                            <a href="{{ route('distribusi.index') }}" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Edit</span>
+                            </a>
+                            <button type="button" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <span>Hapus</span>
+                            </button>
                         </td>
                     </tr>
                 </tbody>
