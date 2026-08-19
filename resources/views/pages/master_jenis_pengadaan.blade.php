@@ -3,20 +3,11 @@
     @section('breadcrumb', 'Master Data System / Jenis Pengadaan SIPD')
 
     <div x-data="{
-        searchQuery: '',
-        programFilter: 'all',
+        searchQuery: '{{ request('search', '') }}',
+        programFilter: '{{ request('program', 'all') }}',
         showAddModal: false,
         showEditModal: false,
-
-        newFormData: {
-            program_kode: '0.00.01',
-            program_nama: '',
-            kegiatan_kode: '0.00.01.2.10',
-            kegiatan_nama: '',
-            sub_kegiatan_kode: '0.00.01.2.10.0001',
-            sub_kegiatan_nama: '',
-            keterangan: ''
-        },
+        editActionUrl: '',
 
         editFormData: {
             id: null,
@@ -29,144 +20,52 @@
             keterangan: ''
         },
 
-        sipdList: [
-            {
-                id: 1,
-                program_kode: '0.00.01',
-                program_nama: 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/kota',
-                kegiatan_kode: '0.00.01.2.10',
-                kegiatan_nama: 'Peningkatan Pelayanan BLUD',
-                sub_kegiatan_kode: '0.00.01.2.10.0001',
-                sub_kegiatan_nama: 'Pelayanan dan Penunjang Pelayanan BLUD',
-                keterangan: 'Alokasi pengadaan operasional, sarana dan prasarana penunjang BLUD RSUD Dr. H. Koesnandi'
-            },
-            {
-                id: 2,
-                program_kode: '0.00.01',
-                program_nama: 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/kota',
-                kegiatan_kode: '0.00.01.2.10',
-                kegiatan_nama: 'Peningkatan Pelayanan BLUD',
-                sub_kegiatan_kode: '0.00.01.2.10.0002',
-                sub_kegiatan_nama: 'Pengadaan Sarana dan Prasarana Pendukung Fasilitas Pelayanan Kesehatan',
-                keterangan: 'Belanja modal alat medis ICU, Bed Patient, Instalasi Gas Medis dan Genset Cadangan'
-            },
-            {
-                id: 3,
-                program_kode: '1.02.02',
-                program_nama: 'Program Pemenuhan Upaya Kesehatan Perorangan dan Upaya Kesehatan Masyarakat',
-                kegiatan_kode: '1.02.02.2.02',
-                kegiatan_nama: 'Penyediaan Fasilitas Pelayanan Kesehatan untuk UKP dan UKM Rujukan',
-                sub_kegiatan_kode: '1.02.02.2.02.0005',
-                sub_kegiatan_nama: 'Pembangunan / Renovasi Gedung Rumah Sakit dan Sarana Penunjang',
-                keterangan: 'Alokasi APBD/DAK untuk pekerjaan fisik renovasi paviliun dan gedung poliklinik'
-            },
-            {
-                id: 4,
-                program_kode: '1.02.02',
-                program_nama: 'Program Pemenuhan Upaya Kesehatan Perorangan dan Upaya Kesehatan Masyarakat',
-                kegiatan_kode: '1.02.02.2.02',
-                kegiatan_nama: 'Penyediaan Fasilitas Pelayanan Kesehatan untuk UKP dan UKM Rujukan',
-                sub_kegiatan_kode: '1.02.02.2.02.0012',
-                sub_kegiatan_nama: 'Pengadaan Alat Kesehatan / Alat Penunjang Medik Fasilitas Pelayanan Kesehatan',
-                keterangan: 'Pengadaan CT-Scan 128 Slice, USG Doppler 4D, Radiologi & Alat Kamar Operasi (IBS)'
-            },
-            {
-                id: 5,
-                program_kode: '1.02.03',
-                program_nama: 'Program Peningkatan Kapasitas Sumber Daya Manusia Kesehatan',
-                kegiatan_kode: '1.02.03.2.01',
-                kegiatan_nama: 'Pengembangan Mutu dan Akreditasi Fasilitas Pelayanan Kesehatan',
-                sub_kegiatan_kode: '1.02.03.2.01.0003',
-                sub_kegiatan_nama: 'Pengadaan Sistem Informasi Kesehatan & Software Manajemen SIMRS',
-                keterangan: 'Pengadaan lisensi server, software Rekam Medis Elektronik (RME) & Integrasi SatuSehat'
-            }
-        ],
-
-        get filteredSipd() {
-            const query = (this.searchQuery || '').toLowerCase();
-            return this.sipdList.filter(item => {
-                const matchSearch = (item.program_kode || '').toLowerCase().includes(query) ||
-                                    (item.program_nama || '').toLowerCase().includes(query) ||
-                                    (item.kegiatan_kode || '').toLowerCase().includes(query) ||
-                                    (item.kegiatan_nama || '').toLowerCase().includes(query) ||
-                                    (item.sub_kegiatan_kode || '').toLowerCase().includes(query) ||
-                                    (item.sub_kegiatan_nama || '').toLowerCase().includes(query) ||
-                                    (item.keterangan || '').toLowerCase().includes(query);
-
-                const matchProgram = this.programFilter === 'all' || item.program_kode === this.programFilter;
-                return matchSearch && matchProgram;
-            });
-        },
-
-        get uniquePrograms() {
-            const map = new Map();
-            this.sipdList.forEach(item => {
-                if (!map.has(item.program_kode)) {
-                    map.set(item.program_kode, item.program_nama);
-                }
-            });
-            return Array.from(map.entries()).map(([kode, nama]) => ({ kode, nama }));
-        },
-
-        get uniqueKegiatan() {
-            const map = new Map();
-            this.sipdList.forEach(item => {
-                if (!map.has(item.kegiatan_kode)) {
-                    map.set(item.kegiatan_kode, item.kegiatan_nama);
-                }
-            });
-            return Array.from(map.entries()).map(([kode, nama]) => ({ kode, nama }));
-        },
-
-        resetFilters() {
-            this.searchQuery = '';
-            this.programFilter = 'all';
-        },
-
         openEdit(item) {
             this.editFormData = { ...item };
+            this.editActionUrl = '/master-data/jenis-pengadaan/' + item.id;
             this.showEditModal = true;
         },
 
-        saveNew() {
-            if (!this.newFormData.program_nama || !this.newFormData.kegiatan_nama || !this.newFormData.sub_kegiatan_nama) {
-                alert('⚠️ Harap lengkapi semua nama Program, Kegiatan, dan Sub Kegiatan!');
-                return;
+        filterByProgram(progKode) {
+            this.programFilter = progKode;
+            let url = new URL(window.location.href);
+            if (progKode === 'all') {
+                url.searchParams.delete('program');
+            } else {
+                url.searchParams.set('program', progKode);
             }
-            const nextId = this.sipdList.length > 0 ? Math.max(...this.sipdList.map(i => i.id)) + 1 : 1;
-            this.sipdList.push({
-                id: nextId,
-                ...this.newFormData
-            });
-            this.showAddModal = false;
-            this.newFormData = {
-                program_kode: '0.00.01',
-                program_nama: '',
-                kegiatan_kode: '0.00.01.2.10',
-                kegiatan_nama: '',
-                sub_kegiatan_kode: '0.00.01.2.10.0001',
-                sub_kegiatan_nama: '',
-                keterangan: ''
-            };
-            alert('✅ Berhasil menambahkan Jenis Pengadaan SIPD baru!');
+            window.location.href = url.toString();
         },
 
-        saveEdit() {
-            const index = this.sipdList.findIndex(i => i.id === this.editFormData.id);
-            if (index !== -1) {
-                this.sipdList[index] = { ...this.editFormData };
-            }
-            this.showEditModal = false;
-            alert('✅ Perubahan Jenis Pengadaan SIPD berhasil disimpan!');
-        },
-
-        deleteItem(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus data pengadaan SIPD ini?')) {
-                this.sipdList = this.sipdList.filter(i => i.id !== id);
-                alert('🗑️ Data pengadaan SIPD berhasil dihapus.');
-            }
+        resetFilters() {
+            window.location.href = '{{ route('master.jenis_pengadaan') }}';
         }
     }" x-cloak>
+
+        <!-- Flash Messages Notification -->
+        @if (session('success'))
+            <div class="mb-5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-between shadow-lg">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-base">✅</span>
+                    <span>{{ session('success') }}</span>
+                </div>
+                <button type="button" @click="$el.parentElement.remove()" class="text-emerald-400 hover:text-white text-sm font-bold">&times;</button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="mb-5 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold shadow-lg">
+                <div class="flex items-center space-x-2.5 mb-1.5">
+                    <span class="text-base">⚠️</span>
+                    <span class="font-bold">Terjadi kesalahan validasi:</span>
+                </div>
+                <ul class="list-disc list-inside space-y-0.5 text-[11px] text-rose-200">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         <!-- Header Banner & Mini KPI Strip -->
         <div class="bg-gradient-to-r from-emerald-600/15 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
@@ -195,7 +94,7 @@
                     <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">📑</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Program</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-400" x-text="uniquePrograms.length + ' Program'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-emerald-400">{{ count($uniquePrograms) }} Program</span>
                     </div>
                 </div>
 
@@ -203,7 +102,7 @@
                     <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 text-lg">📁</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Kegiatan</span>
-                        <span class="text-sm sm:text-base font-extrabold text-amber-300" x-text="uniqueKegiatan.length + ' Kegiatan'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-amber-300">{{ count($uniqueKegiatan) }} Kegiatan</span>
                     </div>
                 </div>
 
@@ -211,7 +110,7 @@
                     <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">📄</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Sub Kegiatan</span>
-                        <span class="text-sm sm:text-base font-extrabold text-purple-300" x-text="sipdList.length + ' Sub Kegiatan'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-purple-300">{{ $totalCount }} Sub Kegiatan</span>
                     </div>
                 </div>
 
@@ -232,47 +131,52 @@
                 <!-- Quick Filter Program Tabs -->
                 <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
                     <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Program:</span>
-                    <button type="button" @click="programFilter = 'all'"
+                    <button type="button" @click="filterByProgram('all')"
                         :class="programFilter === 'all' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
                         class="px-3 py-1.5 rounded-xl transition-all">
                         Semua Program
                     </button>
-                    <template x-for="prog in uniquePrograms" :key="prog.kode">
-                        <button type="button" @click="programFilter = prog.kode"
-                            :class="programFilter === prog.kode ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                    @foreach ($uniquePrograms as $prog)
+                        <button type="button" @click="filterByProgram('{{ $prog->program_kode }}')"
+                            :class="programFilter === '{{ $prog->program_kode }}' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
                             class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5">
-                            <span class="font-mono font-bold" x-text="prog.kode"></span>
-                            <span class="truncate max-w-[180px] sm:max-w-xs" x-text="prog.nama"></span>
+                            <span class="font-mono font-bold">{{ $prog->program_kode }}</span>
+                            <span class="truncate max-w-[180px] sm:max-w-xs">{{ $prog->program_nama }}</span>
                         </button>
-                    </template>
+                    @endforeach
                 </div>
 
                 <!-- Search Bar & Counter -->
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
+                <form method="GET" action="{{ route('master.jenis_pengadaan') }}" class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
+                    @if (request('program') && request('program') !== 'all')
+                        <input type="hidden" name="program" value="{{ request('program') }}">
+                    @endif
                     <div class="relative flex-1 w-full">
-                        <input type="text" x-model="searchQuery" placeholder="Cari kode / nama program / kegiatan / sub kegiatan SIPD..."
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode / nama program / kegiatan / sub kegiatan SIPD... (Tekan Enter)"
                             class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
                         <svg class="w-4 h-4 text-emerald-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
+                        @if (request('search'))
+                            <a href="{{ route('master.jenis_pengadaan', array_filter(['program' => request('program')])) }}" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</a>
+                        @endif
                     </div>
 
                     <div class="flex items-center space-x-2 shrink-0">
                         <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
-                            Menampilkan <span class="text-emerald-400 font-bold" x-text="filteredSipd.length"></span> dari <span class="text-white font-bold" x-text="sipdList.length"></span> Data SIPD
+                            Menampilkan <span class="text-emerald-400 font-bold">{{ count($sipdList) }}</span> dari <span class="text-white font-bold">{{ $totalCount }}</span> Data SIPD
                         </span>
                         <button type="button" @click="resetFilters()"
                             class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
                             🔄 Reset
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
 
         <!-- ========================================================================= -->
         <!-- TABEL STRUKTUR JENIS PENGADAAN SIPD (3 BLOK SESUAI FORMAT EXCEL)          -->
         <!-- ========================================================================= -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl overflow-hidden mb-6">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs text-slate-300 border-collapse">
                     
@@ -336,48 +240,61 @@
 
                     <!-- Body Tabel -->
                     <tbody class="divide-y divide-slate-800/80">
-                        <template x-for="(item, index) in filteredSipd" :key="item.id">
+                        @forelse ($sipdList as $index => $item)
                             <tr class="hover:bg-slate-800/40 transition-colors">
                                 <!-- Kolom 1: No -->
-                                <td class="px-4 py-4 text-center font-bold text-slate-400 border-r border-slate-800/80" x-text="index + 1"></td>
+                                <td class="px-4 py-4 text-center font-bold text-slate-400 border-r border-slate-800/80">{{ $index + 1 }}</td>
 
                                 <!-- Kolom 2: Kode Program -->
-                                <td class="px-3 py-4 text-center font-mono font-bold text-emerald-400 bg-emerald-950/10 border-r border-slate-800/80" x-text="item.program_kode"></td>
+                                <td class="px-3 py-4 text-center font-mono font-bold text-emerald-400 bg-emerald-950/10 border-r border-slate-800/80">{{ $item->program_kode }}</td>
 
                                 <!-- Kolom 3: Nama Program -->
-                                <td class="px-4 py-4 font-semibold text-slate-200 bg-emerald-950/10 border-r border-slate-800/80" x-text="item.program_nama"></td>
+                                <td class="px-4 py-4 font-semibold text-slate-200 bg-emerald-950/10 border-r border-slate-800/80">{{ $item->program_nama }}</td>
 
                                 <!-- Kolom 4: Kode Kegiatan -->
-                                <td class="px-3 py-4 text-center font-mono font-bold text-amber-400 bg-amber-950/10 border-r border-slate-800/80" x-text="item.kegiatan_kode"></td>
+                                <td class="px-3 py-4 text-center font-mono font-bold text-amber-400 bg-amber-950/10 border-r border-slate-800/80">{{ $item->kegiatan_kode }}</td>
 
                                 <!-- Kolom 5: Nama Kegiatan -->
-                                <td class="px-4 py-4 font-semibold text-slate-200 bg-amber-950/10 border-r border-slate-800/80" x-text="item.kegiatan_nama"></td>
+                                <td class="px-4 py-4 font-semibold text-slate-200 bg-amber-950/10 border-r border-slate-800/80">{{ $item->kegiatan_nama }}</td>
 
                                 <!-- Kolom 6: Kode Sub Kegiatan -->
-                                <td class="px-3 py-4 text-center font-mono font-bold text-purple-400 bg-purple-950/10 border-r border-slate-800/80" x-text="item.sub_kegiatan_kode"></td>
+                                <td class="px-3 py-4 text-center font-mono font-bold text-purple-400 bg-purple-950/10 border-r border-slate-800/80">{{ $item->sub_kegiatan_kode }}</td>
 
                                 <!-- Kolom 7: Nama Sub Kegiatan -->
-                                <td class="px-4 py-4 font-semibold text-white bg-purple-950/10 border-r border-slate-800/80" x-text="item.sub_kegiatan_nama"></td>
+                                <td class="px-4 py-4 font-semibold text-white bg-purple-950/10 border-r border-slate-800/80">{{ $item->sub_kegiatan_nama }}</td>
 
                                 <!-- Kolom 8: Aksi -->
                                 <td class="px-3 py-4 text-center space-x-1 whitespace-nowrap">
-
-                                    <button type="button" @click="openEdit(item)"
+                                    <button type="button" @click="openEdit({{ json_encode($item) }})"
                                         class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         <span>Ubah</span>
                                     </button>
 
-                                    <button type="button" @click="deleteItem(item.id)"
-                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        <span>Hapus</span>
-                                    </button>
+                                    <form method="POST" action="{{ route('master.jenis_pengadaan.destroy', $item->id) }}" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pengadaan SIPD ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <span>Hapus</span>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
-                        </template>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center py-10 text-slate-500">
+                                    <div class="text-2xl mb-2">📂</div>
+                                    <div class="font-semibold text-slate-400">Tidak ada data jenis pengadaan ditemukan.</div>
+                                    <div class="text-[11px] text-slate-600 mt-0.5">Silakan tambahkan data baru atau sesuaikan filter pencarian Anda.</div>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
-                </table>        
+                </table>
+            </div>
+        </div>
 
         <!-- ========================================================================= -->
         <!-- MODAL TAMBAH JENIS PENGADAAN SIPD                                         -->
@@ -393,18 +310,20 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Input struktur 3 tingkatan (Program, Kegiatan, Sub Kegiatan)</p>
                 </div>
 
-                <form @submit.prevent="saveNew()" class="space-y-3.5 text-xs">
+                <form method="POST" action="{{ route('master.jenis_pengadaan.store') }}" class="space-y-3.5 text-xs">
+                    @csrf
+
                     <!-- Blok 1: Program -->
                     <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
                         <span class="font-bold text-emerald-400 uppercase tracking-wider text-[10px] block">1. Program Pengadaan SIPD</span>
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Program</label>
-                                <input type="text" x-model="newFormData.program_kode" placeholder="0.00.01" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
+                                <input type="text" name="program_kode" placeholder="0.00.01" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Program</label>
-                                <input type="text" x-model="newFormData.program_nama" placeholder="Contoh: Program Penunjang Urusan Pemda..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-emerald-500">
+                                <input type="text" name="program_nama" placeholder="Contoh: Program Penunjang Urusan Pemda..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-emerald-500">
                             </div>
                         </div>
                     </div>
@@ -415,11 +334,11 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Kegiatan</label>
-                                <input type="text" x-model="newFormData.kegiatan_kode" placeholder="0.00.01.2.10" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
+                                <input type="text" name="kegiatan_kode" placeholder="0.00.01.2.10" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Kegiatan Pengadaan</label>
-                                <input type="text" x-model="newFormData.kegiatan_nama" placeholder="Contoh: Peningkatan Pelayanan BLUD..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-amber-500">
+                                <input type="text" name="kegiatan_nama" placeholder="Contoh: Peningkatan Pelayanan BLUD..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-amber-500">
                             </div>
                         </div>
                     </div>
@@ -430,13 +349,18 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Sub Kegiatan</label>
-                                <input type="text" x-model="newFormData.sub_kegiatan_kode" placeholder="0.00.01.2.10.0001" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
+                                <input type="text" name="sub_kegiatan_kode" placeholder="0.00.01.2.10.0001" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Sub Kegiatan Pengadaan</label>
-                                <input type="text" x-model="newFormData.sub_kegiatan_nama" placeholder="Contoh: Pelayanan dan Penunjang Pelayanan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-purple-500">
+                                <input type="text" name="sub_kegiatan_nama" placeholder="Contoh: Pelayanan dan Penunjang Pelayanan..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-purple-500">
                             </div>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Keterangan (Opsional)</label>
+                        <input type="text" name="keterangan" placeholder="Keterangan alokasi pengadaan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-emerald-500">
                     </div>
 
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
@@ -467,18 +391,21 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Perbarui struktur 3 tingkatan (Program, Kegiatan, Sub Kegiatan)</p>
                 </div>
 
-                <form @submit.prevent="saveEdit()" class="space-y-3.5 text-xs">
+                <form method="POST" :action="editActionUrl" class="space-y-3.5 text-xs">
+                    @csrf
+                    @method('PUT')
+
                     <!-- Blok 1: Program -->
                     <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
                         <span class="font-bold text-emerald-400 uppercase tracking-wider text-[10px] block">1. Program Pengadaan SIPD</span>
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Program</label>
-                                <input type="text" x-model="editFormData.program_kode" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
+                                <input type="text" name="program_kode" x-model="editFormData.program_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Program</label>
-                                <input type="text" x-model="editFormData.program_nama" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-emerald-500">
+                                <input type="text" name="program_nama" x-model="editFormData.program_nama" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-emerald-500">
                             </div>
                         </div>
                     </div>
@@ -489,11 +416,11 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Kegiatan</label>
-                                <input type="text" x-model="editFormData.kegiatan_kode" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
+                                <input type="text" name="kegiatan_kode" x-model="editFormData.kegiatan_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Kegiatan Pengadaan</label>
-                                <input type="text" x-model="editFormData.kegiatan_nama" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-amber-500">
+                                <input type="text" name="kegiatan_nama" x-model="editFormData.kegiatan_nama" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-amber-500">
                             </div>
                         </div>
                     </div>
@@ -504,13 +431,18 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Sub Kegiatan</label>
-                                <input type="text" x-model="editFormData.sub_kegiatan_kode" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
+                                <input type="text" name="sub_kegiatan_kode" x-model="editFormData.sub_kegiatan_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Sub Kegiatan Pengadaan</label>
-                                <input type="text" x-model="editFormData.sub_kegiatan_nama" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-purple-500">
+                                <input type="text" name="sub_kegiatan_nama" x-model="editFormData.sub_kegiatan_nama" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold focus:border-purple-500">
                             </div>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-400 mb-1 font-semibold">Keterangan (Opsional)</label>
+                        <input type="text" name="keterangan" x-model="editFormData.keterangan" placeholder="Keterangan alokasi pengadaan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-emerald-500">
                     </div>
 
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
