@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\JenisAstapController;
 use App\Http\Controllers\JenisPengadaanController;
 use App\Http\Controllers\RekeningBelanjaController;
+use App\Http\Controllers\UnitController;
 use App\Http\Middleware\RoleMiddleware;
 
 // Auth Routes (Guest)
@@ -86,11 +87,31 @@ Route::middleware('auth')->group(function () {
     })->name('distribusi.index');
 
     Route::get('/distribusi/create', function () {
-        return view('pages.form_distribusi');
+        $units = \App\Models\Unit::orderBy('id', 'asc')->get()->map(function($u) {
+            return [
+                'id' => $u->id,
+                'nama' => $u->nama,
+                'tipe' => $u->tipe,
+                'kepala' => $u->kepala,
+                'nip' => $u->nip ?: '-',
+                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
+            ];
+        });
+        return view('pages.form_distribusi', compact('units'));
     })->name('distribusi.create');
 
     Route::get('/distribusi/{id}/edit', function ($id) {
-        return view('pages.form_distribusi', ['id' => $id]);
+        $units = \App\Models\Unit::orderBy('id', 'asc')->get()->map(function($u) {
+            return [
+                'id' => $u->id,
+                'nama' => $u->nama,
+                'tipe' => $u->tipe,
+                'kepala' => $u->kepala,
+                'nip' => $u->nip ?: '-',
+                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
+            ];
+        });
+        return view('pages.form_distribusi', compact('units', 'id'));
     })->name('distribusi.edit');
 
     // 4. Mutasi Aset Pages & Forms
@@ -107,9 +128,7 @@ Route::middleware('auth')->group(function () {
     })->name('mutasi.edit');
 
     // 5. Unit & Paviliun Index (Read-only for Sub Admin, full for Admin)
-    Route::get('/unit-paviliun', function () {
-        return view('pages.unit_paviliun');
-    })->name('unit.index');
+    Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index');
 
     // 6. Pemeliharaan Index (Read-only for Sub Admin, full for Admin)
     Route::get('/pemeliharaan', function () {
@@ -142,14 +161,12 @@ Route::middleware('auth')->group(function () {
             return view('pages.form_astap', ['id' => $id, 'dbMaster108' => $dbMaster108]);
         })->name('astap.edit');
 
-        // Form Tambah & Edit Unit / Paviliun
-        Route::get('/unit-paviliun/create', function () {
-            return view('pages.form_unit_paviliun');
-        })->name('unit.create');
-
-        Route::get('/unit-paviliun/{id}/edit', function ($id) {
-            return view('pages.form_unit_paviliun', ['id' => $id]);
-        })->name('unit.edit');
+        // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
+        Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');
+        Route::post('/unit-paviliun', [UnitController::class, 'store'])->name('unit.store');
+        Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit');
+        Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update');
+        Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy');
 
         // Form Tambah & Edit Pemeliharaan
         Route::get('/pemeliharaan/create', function () {

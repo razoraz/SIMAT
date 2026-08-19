@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $currentUser = Auth::user();
-        $users = User::orderByRaw("
+        $users = User::with('unitModel')->orderByRaw("
             CASE 
                 WHEN role = 'master_admin' THEN 1 
                 WHEN role = 'admin' THEN 2 
@@ -24,28 +25,14 @@ class UserController extends Controller
             END ASC
         ")->orderBy('id', 'asc')->get();
 
-        // Ambil daftar seluruh 55 unit dari database atau array default
-        $units = [];
-        try {
-            $mysqli = @new \mysqli("127.0.0.1", "root", "", "siprs_unit_pejabat");
-            if (!$mysqli->connect_error) {
-                $res = $mysqli->query("SELECT nama_unit FROM unit_penanggung_jawab ORDER BY id ASC");
-                while ($row = $res->fetch_assoc()) {
-                    $units[] = $row['nama_unit'];
-                }
-                $mysqli->close();
-            }
-        } catch (\Throwable $e) {}
-
-        if (empty($units)) {
-            $units = User::whereNotNull('unit')->pluck('unit')->unique()->values()->toArray();
-        }
+        // Ambil daftar seluruh nama unit dari tabel units
+        $units = Unit::pluck('nama')->toArray();
 
         return view('pages.master_users', compact('users', 'units', 'currentUser'));
     }
 
     /**
-     * Simpan Pengguna / Sub-Admin Baru ke Database.
+     * Simpan Pengguna Baru ke Database.
      */
     public function store(Request $request)
     {
@@ -56,7 +43,7 @@ class UserController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin (Kepala Unit/Ruangan).'
+                    'message' => 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin.'
                 ], 403);
             }
             return redirect()->back()->with('error', 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin.');
@@ -65,9 +52,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'nip' => 'nullable|string|max:50',
             'role' => ['required', Rule::in(['master_admin', 'admin', 'sub_admin'])],
-            'unit' => 'nullable|string|max:150',
             'penugasan' => 'nullable|string|max:500',
             'status' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:4',
@@ -76,20 +61,18 @@ class UserController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'nip' => $validated['nip'] ?? '-',
             'password' => Hash::make($request->filled('password') ? $request->password : 'rsud123'),
             'role' => $validated['role'],
-            'unit' => $validated['unit'] ?? 'Semua Unit Paviliun',
-            'penugasan' => $validated['penugasan'] ?? "Sub Admin & Penanggung Jawab {$validated['unit']}",
+            'penugasan' => $validated['penugasan'] ?? 'Pengguna Sistem SIMAT',
             'status' => $validated['status'] ?? 'Aktif',
-            'deskripsi' => "Sub Admin {$validated['unit']}",
+            'deskripsi' => $validated['penugasan'] ?? '',
         ]);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => "Akun {$user->name} ({$user->role}) berhasil didaftarkan!",
-                'user' => $user
+                'user' => $user->load('unitModel')
             ]);
         }
 
@@ -123,9 +106,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'nip' => 'nullable|string|max:50',
             'role' => ['required', Rule::in(['master_admin', 'admin', 'sub_admin'])],
-            'unit' => 'nullable|string|max:150',
             'penugasan' => 'nullable|string|max:500',
             'status' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:4',
@@ -133,15 +114,13 @@ class UserController extends Controller
 
         // Cegah Admin mengubah role menjadi master_admin
         if ($currentUser->role === 'admin') {
-            $validated['role'] = $user->role; // pertahankan role asli
+            $validated['role'] = $user->role;
         }
 
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'nip' => $validated['nip'] ?? $user->nip,
             'role' => $validated['role'],
-            'unit' => $validated['unit'] ?? $user->unit,
             'penugasan' => $validated['penugasan'] ?? $user->penugasan,
             'status' => $validated['status'] ?? $user->status,
         ];
@@ -156,7 +135,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Data pengguna {$user->name} berhasil diperbarui!",
-                'user' => $user
+                'user' => $user->load('unitModel')
             ]);
         }
 
@@ -172,44 +151,42 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         // Tidak boleh menghapus akun diri sendiri
-        if ($user->id === $currentUser->id || $user->email === $currentUser->email) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan.'
-            ], 403);
+        if ($user->id === $currentUser->id) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan.'
+                ], 400);
+            }
+            return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
-        // Tidak boleh menghapus Master Admin
-        if ($user->role === 'master_admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akun Master Admin diproteksi dan tidak dapat dihapus.'
-            ], 403);
+        // Admin dilarang menghapus sesama admin atau master admin
+        if ($currentUser->role === 'admin' && in_array($user->role, ['admin', 'master_admin'])) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admin Operasional hanya diizinkan menghapus akun Sub Admin.'
+                ], 403);
+            }
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses menghapus akun tersebut.');
         }
 
-        // Admin tidak boleh menghapus sesama Admin
-        if ($currentUser->role === 'admin' && $user->role === 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Admin Operasional tidak diizinkan menghapus akun Admin lainnya.'
-            ], 403);
-        }
-
-        $nama = $user->name;
+        $userName = $user->name;
         $user->delete();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "Akun {$nama} berhasil dihapus dari sistem."
+                'message' => "Akun {$userName} berhasil dihapus dari sistem."
             ]);
         }
 
-        return redirect()->route('master.users')->with('success', "Akun {$nama} berhasil dihapus.");
+        return redirect()->route('master.users')->with('success', "Akun {$userName} berhasil dihapus.");
     }
 
     /**
-     * Reset Password Pengguna ke Default ('rsud123').
+     * Reset Password Akun Pengguna ke default 'rsud123'.
      */
     public function resetPassword(Request $request, $id)
     {
@@ -219,7 +196,7 @@ class UserController extends Controller
         if ($currentUser->role === 'admin' && $user->role === 'master_admin') {
             return response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak untuk mereset akun Master Admin.'
+                'message' => 'Admin tidak dapat mereset password Master Admin.'
             ], 403);
         }
 
@@ -229,7 +206,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Password akun {$user->name} berhasil direset menjadi 'rsud123'."
+            'message' => "Password akun {$user->name} berhasil direset ke default ('rsud123')."
         ]);
     }
 }

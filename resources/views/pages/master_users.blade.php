@@ -177,7 +177,19 @@
                                     <span class="whitespace-nowrap" x-text="item.role === 'master_admin' ? '👑 Master Admin' : (item.role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit')"></span>
                                 </span>
                             </td>
-                            <td class="px-4 py-4 font-semibold text-slate-200" x-text="item.unit || '-'"></td>
+                            <td class="px-4 py-4 font-semibold">
+                                <template x-if="item.unit && item.role === 'sub_admin'">
+                                    <span class="text-slate-200 flex items-center space-x-1.5">
+                                        <span>🏥</span>
+                                        <span x-text="item.unit"></span>
+                                    </span>
+                                </template>
+                                <template x-if="!item.unit || item.role !== 'sub_admin'">
+                                    <span class="text-slate-400 font-mono text-[11px] px-2 py-0.5 rounded-lg bg-slate-950/80 border border-slate-800">
+                                        - Non-Unit (Pusat) -
+                                    </span>
+                                </template>
+                            </td>
                             <td class="px-4 py-4 text-center">
                                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                                     :class="item.status === 'Aktif' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-slate-500/15 text-slate-400 border border-slate-500/30'"
@@ -337,15 +349,9 @@
                 </template>
 
                 <form @submit.prevent="saveNew()" class="space-y-3.5 text-xs">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap & Gelar <span class="text-rose-400">*</span></label>
-                            <input type="text" x-model="newFormData.name" required placeholder="Nama Pegawai RSUD..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">NIP Pegawai</label>
-                            <input type="text" x-model="newFormData.nip" placeholder="1987xxxx 2011xx x xxx" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
-                        </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap & Gelar <span class="text-rose-400">*</span></label>
+                        <input type="text" x-model="newFormData.name" required placeholder="Nama Pegawai RSUD..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -354,42 +360,32 @@
                             <input type="email" x-model="newFormData.email" required placeholder="pegawai@gmail.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-cyan-400 font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Role Otorisasi</label>
-                            
-                            <!-- Jika login Admin: Dropdown terkunci ke sub_admin -->
-                            <template x-if="currentUserRole === 'admin'">
-                                <input type="text" value="🏥 Sub Admin (User Unit / Ruangan)" readonly class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold cursor-not-allowed">
-                            </template>
-
-                            <!-- Jika login Master Admin: Bebas pilih role -->
-                            <template x-if="currentUserRole === 'master_admin'">
-                                <select x-model="newFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500 focus:outline-none">
-                                    <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
-                                    <option value="admin">🛡️ Admin Operasional</option>
-                                    <option value="master_admin">👑 Master Admin System</option>
-                                </select>
-                            </template>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Unit / Paviliun Penugasan</label>
-                            <select x-model="newFormData.unit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
-                                <template x-for="u in unitsList" :key="u">
-                                    <option :value="u" x-text="u"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div>
                             <label class="block text-slate-300 font-semibold mb-1">Password (Default: rsud123)</label>
                             <input type="text" x-model="newFormData.password" placeholder="Kosongkan untuk pakai 'rsud123'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                     </div>
 
                     <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Role Otorisasi</label>
+                        
+                        <!-- Jika login Admin: Dropdown terkunci ke sub_admin -->
+                        <template x-if="currentUserRole === 'admin'">
+                            <input type="text" value="🏥 Sub Admin (User Unit / Ruangan)" readonly class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold cursor-not-allowed">
+                        </template>
+
+                        <!-- Jika login Master Admin: Bebas pilih role -->
+                        <template x-if="currentUserRole === 'master_admin'">
+                            <select x-model="newFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500 focus:outline-none">
+                                <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
+                                <option value="admin">🛡️ Admin Operasional</option>
+                                <option value="master_admin">👑 Master Admin System</option>
+                            </select>
+                        </template>
+                    </div>
+
+                    <div>
                         <label class="block text-slate-300 font-semibold mb-1">Deskripsi Tugas / Catatan Jabatan</label>
-                        <input type="text" x-model="newFormData.penugasan" placeholder="Contoh: Kepala Ruangan & Penanggung Jawab Inventaris..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
+                        <input type="text" x-model="newFormData.penugasan" placeholder="Contoh: Admin Operasional Sarpras / Sub Admin..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
@@ -421,15 +417,9 @@
                 </div>
 
                 <form @submit.prevent="saveEdit()" class="space-y-3.5 text-xs">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap & Gelar <span class="text-rose-400">*</span></label>
-                            <input type="text" x-model="editFormData.name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">NIP Pegawai</label>
-                            <input type="text" x-model="editFormData.nip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
-                        </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap & Gelar <span class="text-rose-400">*</span></label>
+                        <input type="text" x-model="editFormData.name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -458,31 +448,31 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Unit / Paviliun Penugasan</label>
-                            <select x-model="editFormData.unit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
-                                <template x-for="u in unitsList" :key="u">
-                                    <option :value="u" x-text="u" :selected="editFormData.unit === u"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div>
                             <label class="block text-slate-300 font-semibold mb-1">Status Akun</label>
                             <select x-model="editFormData.status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold focus:border-amber-500 focus:outline-none">
                                 <option value="Aktif">Aktif</option>
                                 <option value="Nonaktif">Nonaktif</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Ubah Password (Opsional)</label>
                             <input type="password" x-model="editFormData.password" placeholder="Kosongkan jika tidak diganti" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                         </div>
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Deskripsi Tugas / Penugasan</label>
-                            <input type="text" x-model="editFormData.penugasan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
+                    </div>
+
+                    <template x-if="editFormData.unit && editFormData.role === 'sub_admin'">
+                        <div class="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-200 flex items-center justify-between text-[11px]">
+                            <span class="flex items-center space-x-1.5">
+                                <span>🏥</span>
+                                <span>Unit: <strong class="text-white" x-text="editFormData.unit"></strong></span>
+                            </span>
+                            <span class="font-mono text-slate-400" x-text="'NIP: ' + (editFormData.nip || '-')"></span>
                         </div>
+                    </template>
+
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Deskripsi Tugas / Penugasan</label>
+                        <input type="text" x-model="editFormData.penugasan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">

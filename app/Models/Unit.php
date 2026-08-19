@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+class Unit extends Model
+{
+    use HasFactory;
+
+    protected $table = 'units';
+
+    protected $fillable = [
+        'kode_unit',
+        'nama',
+        'tipe',
+        'kepala',
+        'nip',
+        'email',
+        'id_aset',
+        'total_aset',
+        'total_nilai',
+    ];
+
+    protected $casts = [
+        'id_aset' => 'array',
+        'total_aset' => 'integer',
+    ];
+
+    /**
+     * Relasi ke akun User (Sub Admin ruangan ini)
+     */
+    public function user()
+    {
+        return $this->hasOne(User::class, 'unit_id');
+    }
+
+    /**
+     * Hook Boot: Otomatisasi pendaftaran & sinkronisasi akun Sub Admin
+     */
+    protected static function booted(): void
+    {
+        // 1. Saat Unit baru dibuat -> otomatis buat Akun Sub Admin dengan unit_id menunjuk ke unit ini
+        static::created(function (Unit $unit) {
+            $email = $unit->email ?: (Str::slug($unit->nama, '.') . '@rsudkoesnandi.id');
+            
+            User::withoutEvents(function () use ($unit, $email) {
+                User::updateOrCreate(
+                    ['email' => $email],
+                    [
+                        'name' => $unit->kepala,
+                        'role' => 'sub_admin',
+                        'unit_id' => $unit->id,
+                        'penugasan' => 'Sub Admin Ruangan ' . $unit->nama,
+                        'status' => 'Aktif',
+                        'password' => Hash::make('rsud123'),
+                        'deskripsi' => 'Akun Sub Admin Otomatis dari Pendaftaran Unit ' . $unit->nama,
+                    ]
+                );
+            });
+        });
+
+        // 2. Saat Unit diubah -> sinkronkan nama kepala dan email ke User Sub Admin terkait
+        static::updated(function (Unit $unit) {
+            $user = User::where('unit_id', $unit->id)->first();
+            if ($user) {
+                if ($user->name !== $unit->kepala || ($unit->email && $user->email !== $unit->email)) {
+                    $user->withoutEvents(function () use ($user, $unit) {
+                        $user->update([
+                            'name' => $unit->kepala,
+                            'email' => $unit->email ?: $user->email,
+                            'penugasan' => 'Sub Admin Ruangan ' . $unit->nama,
+                        ]);
+                    });
+                }
+            }
+        });
+
+        // 3. Saat Unit dihapus -> hapus akun sub admin terkait
+        static::deleted(function (Unit $unit) {
+            User::withoutEvents(function () use ($unit) {
+                User::where('unit_id', $unit->id)->delete();
+            });
+        });
+    }
+}
