@@ -363,10 +363,10 @@
                                 <td class="px-6 py-4 font-semibold text-white bg-blue-950/10 border-r border-slate-800/80 text-sm" x-text="item.nama_belanja"></td>
 
                                 <!-- Kolom 4: Kelompok Akun -->
-                                <td class="px-4 py-4 text-center border-r border-slate-800/80">
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border"
-                                          :class="item.kelompok === '5.2.02' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : (item.kelompok === '5.2.03' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/30')"
-                                          x-text="item.kelompok + ' - ' + item.nama_kelompok"></span>
+                                <td class="px-4 py-4 text-center border-r border-slate-800/80 align-middle">
+                                    <span class="inline-block px-3 py-1.5 rounded-lg text-[11px] font-semibold border leading-tight"
+                                        :class="item.kelompok === '5.2.02' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : (item.kelompok === '5.2.03' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/30')"
+                                        x-text="item.kelompok + ' - ' + item.nama_kelompok"></span>
                                 </td>
 
                                 <!-- Kolom 5: Aksi -->
