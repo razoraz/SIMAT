@@ -102,7 +102,7 @@
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Status Persetujuan</label>
                     <select x-model="formData.status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white">
                         <option value="Disetujui">Disetujui</option>
-                        <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
+                        <option value="Menunggu Persetujuan">Menunggu Persetujua</option>
                         <option value="Ditolak">Ditolak</option>
                     </select>
                 </div>
