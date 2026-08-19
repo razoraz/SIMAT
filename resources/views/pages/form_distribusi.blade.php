@@ -65,7 +65,7 @@
         </div>
 
         <!-- Form Card -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl max-w-4xl space-y-6">
+        <div class="mx-auto bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl max-w-full space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Nomor Registrasi Distribusi</label>
