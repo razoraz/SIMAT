@@ -63,15 +63,15 @@
         </div>
 
         <!-- Form Card -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl max-w-4xl space-y-6">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-xl w-full space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Kode Identitas Unit / Paviliun</label>
-                    <input type="text" x-model="formData.kode" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-blue-400 font-mono font-bold">
+                    <input type="text" x-model="formData.kode" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-blue-400 font-mono font-bold focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Kapasitas (Bed / Ruang / Meja)</label>
-                    <input type="text" x-model="formData.kapasitas" placeholder="Contoh: 24 Kamar / 30 Bed" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white">
+                    <input type="text" x-model="formData.kapasitas" placeholder="Contoh: 24 Kamar / 30 Bed" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500">
                 </div>
             </div>
 
@@ -82,24 +82,24 @@
                 </div>
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Tipe Pelayanan Ruangan</label>
-                    <input type="text" x-model="formData.tipe" placeholder="Rawat Inap / Rawat Jalan / Penunjang Medis" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white">
+                    <input type="text" x-model="formData.tipe" placeholder="Rawat Inap / Rawat Jalan / Penunjang Medis" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Nama Kepala Ruangan / Instalasi</label>
-                    <input type="text" x-model="formData.kepala" placeholder="dr... / Ns..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white">
+                    <input type="text" x-model="formData.kepala" placeholder="dr... / Ns..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500">
                 </div>
                 <div>
                     <label class="block text-blue-300 font-semibold text-xs mb-1.5">Penanggung Jawab Aset (PJ Ruangan)</label>
-                    <input type="text" x-model="formData.pj_aset" placeholder="Nama PJ Inventaris..." class="w-full bg-slate-950 border border-blue-500/40 rounded-xl px-4 py-3 text-xs text-blue-200 font-semibold">
+                    <input type="text" x-model="formData.pj_aset" placeholder="Nama PJ Inventaris..." class="w-full bg-slate-950 border border-blue-500/40 rounded-xl px-4 py-3 text-xs text-blue-200 font-semibold focus:outline-none focus:border-blue-500">
                 </div>
             </div>
 
             <div>
                 <label class="block text-slate-300 font-semibold text-xs mb-1.5">Deskripsi / Fasilitas Ruangan</label>
-                <textarea x-model="formData.keterangan" rows="3" placeholder="Uraian fasilitas penunjang..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white"></textarea>
+                <textarea x-model="formData.keterangan" rows="3" placeholder="Uraian fasilitas penunjang..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500"></textarea>
             </div>
 
             <div class="pt-6 border-t border-slate-800 flex items-center justify-end space-x-3">

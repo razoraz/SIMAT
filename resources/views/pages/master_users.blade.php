@@ -2,286 +2,7 @@
     @section('page-title', 'Manajemen Pengguna')
     @section('breadcrumb', 'Master Data System / Manajemen Pengguna')
 
-    <div x-data="{
-        searchQuery: '',
-        roleFilter: 'all',
-        showAddModal: false,
-        showEditModal: false,
-        showDetailModal: false,
-        selectedUser: null,
-
-        // Sesi Pengguna Aktif (Default: Admin Operasional)
-        currentUserRole: '{{ Auth::user()->role ?? 'admin' }}',
-        currentUserId: {{ Auth::user()->id ?? 2 }},
-        currentUserEmail: '{{ Auth::user()->email ?? 'admin@asimat.com' }}',
-
-        newFormData: {
-            name: '',
-            nip: '',
-            email: '',
-            role: 'sub_admin',
-            unit: 'Paviliun Graha Amukti',
-            penugasan: '',
-            password: '',
-            status: 'Aktif'
-        },
-
-        editFormData: {
-            id: null,
-            name: '',
-            nip: '',
-            email: '',
-            role: '',
-            unit: '',
-            penugasan: '',
-            status: ''
-        },
-
-        users: [
-            {
-                id: 1,
-                name: 'Master Admin System',
-                nip: '19820315 200604 1 008',
-                email: 'masteradmin@asimat.com',
-                role: 'master_admin',
-                unit: 'Direksi & SIMRS',
-                penugasan: 'Wewenang Penuh: Kontrol seluruh sistem, database, audit aset, dan hak akses',
-                status: 'Aktif'
-            },
-            {
-                id: 2,
-                name: 'Admin Operasional SIMAT',
-                nip: '19870822 201101 1 003',
-                email: 'admin@asimat.com',
-                role: 'admin',
-                unit: 'Bagian Umum & Aset',
-                penugasan: 'Wewenang Operasional: Pengelolaan inventaris ASTAP, verifikasi pengadaan, distribusi & BAST',
-                status: 'Aktif'
-            },
-            {
-                id: 7,
-                name: 'Siti Aminah, S.E (Admin Aset 2)',
-                nip: '19900214 201503 2 006',
-                email: 'siti.admin2@asimat.com',
-                role: 'admin',
-                unit: 'Bagian Umum & Aset',
-                penugasan: 'Admin Operasional: Verifikasi penatausahaan dan inventarisasi aset ruangan',
-                status: 'Aktif'
-            },
-            {
-                id: 3,
-                name: 'User Sub Admin Master',
-                nip: '19920510 201802 2 005',
-                email: 'subadmin@asimat.com',
-                role: 'sub_admin',
-                unit: 'Semua Unit Paviliun',
-                penugasan: 'Wewenang Unit: Pengajuan permohonan aset unit, pemantauan barang, & perbaikan',
-                status: 'Aktif'
-            },
-            {
-                id: 4,
-                name: 'dr. H. Rahmat Hidayat, Sp.PD',
-                nip: '19750412 200312 1 002',
-                email: 'rahmat.graha@rsudkoesnandi.id',
-                role: 'sub_admin',
-                unit: 'Paviliun Graha Amukti',
-                penugasan: 'Kepala Ruangan & Penanggung Jawab Aset Paviliun Graha Amukti VIP',
-                status: 'Aktif'
-            },
-            {
-                id: 5,
-                name: 'dr. Anita Wijaya, Sp.Em',
-                nip: '19841105 200903 2 007',
-                email: 'anita.igd@rsudkoesnandi.id',
-                role: 'sub_admin',
-                unit: 'Instalasi Gawat Darurat (IGD)',
-                penugasan: 'Kepala Instalasi Gawat Darurat (IGD) & Penanggung Jawab Alat Medis Emergency',
-                status: 'Aktif'
-            },
-            {
-                id: 6,
-                name: 'Bambang Irawan, S.Tr.Kes',
-                nip: '19890918 201402 1 004',
-                email: 'bambang.radiologi@rsudkoesnandi.id',
-                role: 'sub_admin',
-                unit: 'Instalasi Radiologi',
-                penugasan: 'Kepala Ruangan & Penanggung Jawab Pemeliharaan Alat Radiologi',
-                status: 'Aktif'
-            }
-        ],
-
-        // Cek apakah user target adalah akun diri sendiri
-        isSelf(targetUser) {
-            if (!targetUser) return false;
-            return targetUser.id === this.currentUserId || targetUser.email === this.currentUserEmail;
-        },
-
-        // Cek hak akses untuk Mengubah Data (Edit)
-        canEditUser(targetUser) {
-            if (!targetUser) return false;
-            // Master Admin bisa mengubah semua akun
-            if (this.currentUserRole === 'master_admin') return true;
-
-            // Admin Operasional:
-            if (this.currentUserRole === 'admin') {
-                // TIDAK BISA mengubah akun Master Admin
-                if (targetUser.role === 'master_admin') return false;
-                // BISA mengubah profil akunnya sendiri
-                if (targetUser.role === 'admin') {
-                    return this.isSelf(targetUser);
-                }
-                // BISA mengubah akun Sub Admin
-                if (targetUser.role === 'sub_admin') return true;
-            }
-
-            return false;
-        },
-
-        // Cek hak akses untuk Menghapus Data (Delete)
-        canDeleteUser(targetUser) {
-            if (!targetUser) return false;
-            // Master Admin bisa menghapus selain dirinya sendiri
-            if (this.currentUserRole === 'master_admin') {
-                return !this.isSelf(targetUser);
-            }
-
-            // Admin Operasional:
-            if (this.currentUserRole === 'admin') {
-                // TIDAK BISA menghapus Master Admin maupun sesama Admin
-                if (targetUser.role === 'master_admin' || targetUser.role === 'admin') return false;
-                // BISA menghapus Sub Admin
-                return targetUser.role === 'sub_admin';
-            }
-
-            return false;
-        },
-
-        // Tooltip penjelasan proteksi
-        getEditTooltip(targetUser) {
-            if (this.canEditUser(targetUser)) return '';
-            if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin diproteksi khusus (Hanya Master Admin yang dapat mengubah)';
-            if (targetUser.role === 'admin' && !this.isSelf(targetUser)) return '🔒 Admin tidak diizinkan mengubah akun Admin lain';
-            return 'Akses dibatasi';
-        },
-
-        getDeleteTooltip(targetUser) {
-            if (this.canDeleteUser(targetUser)) return '';
-            if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin tidak dapat dihapus';
-            if (targetUser.role === 'admin') return '🔒 Admin tidak diizinkan menghapus akun Admin';
-            return 'Akses dibatasi';
-        },
-
-        get filteredUsers() {
-            const query = (this.searchQuery || '').toLowerCase();
-            return this.users.filter(item => {
-                const matchSearch = (item.name || '').toLowerCase().includes(query) ||
-                                    (item.email || '').toLowerCase().includes(query) ||
-                                    (item.nip || '').toLowerCase().includes(query) ||
-                                    (item.unit || '').toLowerCase().includes(query) ||
-                                    (item.penugasan || '').toLowerCase().includes(query);
-
-                const matchRole = this.roleFilter === 'all' || item.role === this.roleFilter;
-                return matchSearch && matchRole;
-            });
-        },
-
-        get countMasterAdmin() {
-            return this.users.filter(u => u.role === 'master_admin').length;
-        },
-
-        get countAdmin() {
-            return this.users.filter(u => u.role === 'admin').length;
-        },
-
-        get countSubAdmin() {
-            return this.users.filter(u => u.role === 'sub_admin').length;
-        },
-
-        resetFilters() {
-            this.searchQuery = '';
-            this.roleFilter = 'all';
-        },
-
-        openDetail(item) {
-            this.selectedUser = item;
-            this.showDetailModal = true;
-        },
-
-        openAddModal() {
-            // Jika login sebagai Admin, kunci pilihan role ke sub_admin
-            this.newFormData = {
-                name: '',
-                nip: '',
-                email: '',
-                role: 'sub_admin',
-                unit: 'Paviliun Graha Amukti',
-                penugasan: '',
-                password: '',
-                status: 'Aktif'
-            };
-            this.showAddModal = true;
-        },
-
-        openEdit(item) {
-            if (!this.canEditUser(item)) {
-                alert('⛔ Akses Ditolak: ' + this.getEditTooltip(item));
-                return;
-            }
-            this.editFormData = { ...item };
-            this.showEditModal = true;
-        },
-
-        saveNew() {
-            if (!this.newFormData.name || !this.newFormData.email) {
-                alert('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!');
-                return;
-            }
-
-            // Validasi otorisasi Admin: Admin tidak boleh membuat admin / master_admin
-            if (this.currentUserRole === 'admin' && this.newFormData.role !== 'sub_admin') {
-                alert('⛔ Sebagai Admin Operasional, Anda hanya diizinkan menambah akun Sub Admin (Kepala Ruangan/Paviliun)!');
-                this.newFormData.role = 'sub_admin';
-                return;
-            }
-
-            const nextId = this.users.length > 0 ? Math.max(...this.users.map(i => i.id)) + 1 : 1;
-            this.users.push({
-                id: nextId,
-                ...this.newFormData
-            });
-            this.showAddModal = false;
-            alert('✅ Akun Sub Admin baru berhasil didaftarkan!');
-        },
-
-        saveEdit() {
-            const index = this.users.findIndex(i => i.id === this.editFormData.id);
-            if (index !== -1) {
-                // Validasi otorisasi Admin: Tidak boleh mengubah role menjadi admin/master_admin sembarangan
-                if (this.currentUserRole === 'admin') {
-                    if (this.isSelf(this.editFormData)) {
-                        this.editFormData.role = 'admin'; // tetap admin
-                    } else {
-                        this.editFormData.role = 'sub_admin'; // tetap sub_admin
-                    }
-                }
-                this.users[index] = { ...this.editFormData };
-            }
-            this.showEditModal = false;
-            alert('✅ Perubahan data pengguna berhasil disimpan!');
-        },
-
-        deleteItem(item) {
-            if (!this.canDeleteUser(item)) {
-                alert('⛔ Akses Ditolak: ' + this.getDeleteTooltip(item));
-                return;
-            }
-
-            if (confirm('Apakah Anda yakin ingin menghapus akun Sub Admin: ' + item.name + ' (' + item.unit + ')?')) {
-                this.users = this.users.filter(i => i.id !== item.id);
-                alert('🗑️ Akun Sub Admin berhasil dihapus.');
-            }
-        }
-    }" x-cloak>
+    <div x-data="userManager()" x-cloak>
 
         <!-- Header Banner & Mini KPI Strip -->
         <div class="bg-gradient-to-r from-amber-600/15 via-slate-900 to-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
@@ -357,36 +78,35 @@
             </div>
         </div>
 
-        <!-- Filter, Quick Tabs & Search Bar Full-Width -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
-            <div class="flex flex-col gap-4">
+        <!-- Filter & Search Toolbar -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6 space-y-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 
-                <!-- Quick Filter Role Tabs (Wrapping & Always Visible) -->
-                <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Role:</span>
+                <!-- Filter Kategori Role -->
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
                     <button type="button" @click="roleFilter = 'all'"
-                        :class="roleFilter === 'all' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        Semua Role
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+                        :class="roleFilter === 'all' ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'">
+                        Semua Role (<span x-text="users.length"></span>)
                     </button>
                     <button type="button" @click="roleFilter = 'master_admin'"
-                        :class="roleFilter === 'master_admin' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        👑 Master Admin
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+                        :class="roleFilter === 'master_admin' ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'">
+                        👑 Master Admin (<span x-text="countMasterAdmin"></span>)
                     </button>
                     <button type="button" @click="roleFilter = 'admin'"
-                        :class="roleFilter === 'admin' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        🛡️ Admin Operasional
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+                        :class="roleFilter === 'admin' ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'">
+                        🛡️ Admin (<span x-text="countAdmin"></span>)
                     </button>
                     <button type="button" @click="roleFilter = 'sub_admin'"
-                        :class="roleFilter === 'sub_admin' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        🏥 Sub Admin Unit
+                        class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all"
+                        :class="roleFilter === 'sub_admin' ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'">
+                        🏥 Sub Admin (<span x-text="countSubAdmin"></span>)
                     </button>
                 </div>
 
-                <!-- Search Bar & Counter -->
+                <!-- Input Pencarian -->
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
                     <div class="relative flex-1 w-full">
                         <input type="text" x-model="searchQuery" placeholder="Cari nama pegawai / email kredensial / NIP / unit penugasan..."
@@ -434,7 +154,7 @@
                                              'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': item.role === 'admin',
                                              'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': item.role === 'sub_admin'
                                          }"
-                                         x-text="item.name.substring(0, 1)"></div>
+                                         x-text="(item.name || 'U').substring(0, 1)"></div>
                                     <div>
                                         <div class="flex items-center space-x-1.5">
                                             <span class="font-bold text-white text-sm" x-text="item.name"></span>
@@ -457,9 +177,11 @@
                                     <span class="whitespace-nowrap" x-text="item.role === 'master_admin' ? '👑 Master Admin' : (item.role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit')"></span>
                                 </span>
                             </td>
-                            <td class="px-4 py-4 font-semibold text-slate-200" x-text="item.unit"></td>
+                            <td class="px-4 py-4 font-semibold text-slate-200" x-text="item.unit || '-'"></td>
                             <td class="px-4 py-4 text-center">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" x-text="item.status"></span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                                    :class="item.status === 'Aktif' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-slate-500/15 text-slate-400 border border-slate-500/30'"
+                                    x-text="item.status || 'Aktif'"></span>
                             </td>
                             
                             <!-- Aksi dengan Granular Role Permission -->
@@ -467,15 +189,15 @@
                                 
                                 <!-- Tombol Detail (Bisa untuk Semua Akun) -->
                                 <button type="button" @click="openDetail(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <span>Detail</span>
                                 </button>
 
-                                <!-- Tombol Ubah (Aktif jika diizinkan, Terkunci jika akun Admin lain / Master Admin) -->
+                                <!-- Tombol Ubah (Aktif jika diizinkan) -->
                                 <template x-if="canEditUser(item)">
                                     <button type="button" @click="openEdit(item)"
-                                        class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                        class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         <span x-text="isSelf(item) ? 'Profil Saya' : 'Ubah'"></span>
                                     </button>
@@ -487,10 +209,10 @@
                                     </button>
                                 </template>
 
-                                <!-- Tombol Hapus (Aktif jika Sub Admin / Master Admin, Terkunci jika Admin/Master) -->
+                                <!-- Tombol Hapus (Aktif jika Sub Admin / Master Admin) -->
                                 <template x-if="canDeleteUser(item)">
                                     <button type="button" @click="deleteItem(item)"
-                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         <span>Hapus</span>
                                     </button>
@@ -530,11 +252,11 @@
                                  'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': selectedUser.role === 'admin',
                                  'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': selectedUser.role === 'sub_admin'
                              }"
-                             x-text="selectedUser.name.substring(0, 1)"></div>
-                        <div>
+                             x-text="(selectedUser.name || 'U').substring(0, 1)"></div>
+                        <div class="flex-1 min-w-0">
                             <div class="flex items-center space-x-2">
-                                <p class="font-extrabold text-white text-base" x-text="selectedUser.name"></p>
-                                <span x-show="isSelf(selectedUser)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Akun Saya</span>
+                                <p class="font-extrabold text-white text-base truncate" x-text="selectedUser.name"></p>
+                                <span x-show="isSelf(selectedUser)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shrink-0">Akun Saya</span>
                             </div>
                             <p class="text-slate-400 font-mono text-xs" x-text="'NIP: ' + (selectedUser.nip || '-')"></p>
                         </div>
@@ -547,7 +269,7 @@
                         </div>
                         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                             <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1">Unit Penugasan</span>
-                            <p class="font-semibold text-emerald-400 truncate" x-text="selectedUser.unit"></p>
+                            <p class="font-semibold text-emerald-400 truncate" x-text="selectedUser.unit || '-'"></p>
                         </div>
                     </div>
 
@@ -558,13 +280,25 @@
                         </div>
                         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
                             <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1">Status Akun</span>
-                            <p class="font-bold text-emerald-400" x-text="selectedUser.status"></p>
+                            <p class="font-bold text-emerald-400" x-text="selectedUser.status || 'Aktif'"></p>
                         </div>
                     </div>
 
                     <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
                         <span class="text-slate-400 text-[10px] uppercase font-bold block">Deskripsi Tugas & Wewenang:</span>
-                        <p class="text-slate-300 leading-relaxed" x-text="selectedUser.penugasan"></p>
+                        <p class="text-slate-300 leading-relaxed" x-text="selectedUser.penugasan || selectedUser.deskripsi || '-'"></p>
+                    </div>
+
+                    <!-- Tombol Reset Password Cepat -->
+                    <div class="pt-2 flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                        <div class="text-[11px] text-amber-200">
+                            <span class="font-bold block">🔑 Reset Password Default:</span>
+                            <span class="text-slate-400">Kembalikan password akun ini ke <code class="text-amber-300 font-bold">rsud123</code></span>
+                        </div>
+                        <button type="button" @click="resetPasswordAction(selectedUser)"
+                            class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all active:scale-95 shrink-0">
+                            Reset ke rsud123
+                        </button>
                     </div>
                 </div>
 
@@ -578,10 +312,10 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- MODAL TAMBAH USER (ROLE ADMIN HANYA BISA MENAMBAH SUB-ADMIN)             -->
+        <!-- MODAL TAMBAH USER (CREATE)                                                -->
         <!-- ========================================================================= -->
         <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showAddModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <div @click.away="showAddModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
                 <!-- Tombol Close Corner -->
                 <button type="button" @click="showAddModal = false" class="absolute right-5 top-5 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center text-sm font-bold transition-all">&times;</button>
 
@@ -605,19 +339,19 @@
                 <form @submit.prevent="saveNew()" class="space-y-3.5 text-xs">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap</label>
-                            <input type="text" x-model="newFormData.name" placeholder="Nama Pegawai RSUD..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500">
+                            <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap & Gelar <span class="text-rose-400">*</span></label>
+                            <input type="text" x-model="newFormData.name" required placeholder="Nama Pegawai RSUD..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">NIP Pegawai</label>
-                            <input type="text" x-model="newFormData.nip" placeholder="1987xxxx 2011xx x xxx" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500">
+                            <input type="text" x-model="newFormData.nip" placeholder="1987xxxx 2011xx x xxx" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Email Kredensial (Login)</label>
-                            <input type="email" x-model="newFormData.email" placeholder="pegawai@rsudkoesnandi.id" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-cyan-400 font-mono focus:border-amber-500">
+                            <label class="block text-slate-300 font-semibold mb-1">Email Kredensial (Login) <span class="text-rose-400">*</span></label>
+                            <input type="email" x-model="newFormData.email" required placeholder="pegawai@gmail.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-cyan-400 font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Role Otorisasi</label>
@@ -629,7 +363,7 @@
 
                             <!-- Jika login Master Admin: Bebas pilih role -->
                             <template x-if="currentUserRole === 'master_admin'">
-                                <select x-model="newFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500">
+                                <select x-model="newFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500 focus:outline-none">
                                     <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
                                     <option value="admin">🛡️ Admin Operasional</option>
                                     <option value="master_admin">👑 Master Admin System</option>
@@ -641,28 +375,21 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Unit / Paviliun Penugasan</label>
-                            <select x-model="newFormData.unit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500">
-                                <option value="Paviliun Graha Amukti">Paviliun Graha Amukti (VIP)</option>
-                                <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
-                                <option value="Instalasi Radiologi">Instalasi Radiologi</option>
-                                <option value="Instalasi Bedah Sentral (IBS)">Instalasi Bedah Sentral (IBS)</option>
-                                <option value="Instalasi Rawat Intensif (ICU)">Instalasi Rawat Intensif (ICU)</option>
-                                <option value="Instalasi Laboratorium Patologi">Instalasi Laboratorium Patologi</option>
-                                <option value="Instalasi Farmasi">Instalasi Farmasi</option>
-                                <option value="Instalasi Gizi & Dapur">Instalasi Gizi & Dapur</option>
-                                <option value="Bagian Umum & Aset">Bagian Umum & Aset</option>
-                                <option value="Direksi & SIMRS">Direksi & SIMRS</option>
+                            <select x-model="newFormData.unit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
+                                <template x-for="u in unitsList" :key="u">
+                                    <option :value="u" x-text="u"></option>
+                                </template>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Password Default</label>
-                            <input type="password" x-model="newFormData.password" placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500">
+                            <label class="block text-slate-300 font-semibold mb-1">Password (Default: rsud123)</label>
+                            <input type="text" x-model="newFormData.password" placeholder="Kosongkan untuk pakai 'rsud123'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Deskripsi Tugas / Catatan Jabatan</label>
-                        <input type="text" x-model="newFormData.penugasan" placeholder="Contoh: Kepala Ruangan & Penanggung Jawab Inventaris..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500">
+                        <input type="text" x-model="newFormData.penugasan" placeholder="Contoh: Kepala Ruangan & Penanggung Jawab Inventaris..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
@@ -670,9 +397,9 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             <span>Batal</span>
                         </button>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Register Pengguna</span>
+                        <button type="submit" :disabled="isSaving" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-1.5 active:scale-95 disabled:opacity-50">
+                            <svg x-show="!isSaving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span x-text="isSaving ? 'Menyimpan...' : 'Register Pengguna'"></span>
                         </button>
                     </div>
                 </form>
@@ -680,35 +407,35 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- MODAL UBAH USER (ADMIN BISA UBAH PROFIL DIRI & DATA SUB-ADMIN)           -->
+        <!-- MODAL UBAH USER (UPDATE)                                                  -->
         <!-- ========================================================================= -->
         <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
                 <!-- Tombol Close Corner -->
                 <button type="button" @click="showEditModal = false" class="absolute right-5 top-5 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center text-sm font-bold transition-all">&times;</button>
 
                 <!-- Header Center -->
                 <div class="text-center pb-3 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-extrabold text-white" x-text="isSelf(editFormData) ? '✏️ Ubah Profil Akun Saya' : '✏️ Ubah Data Sub Admin'"></h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="isSelf(editFormData) ? 'Perbarui informasi identitas, email dan NIP akun Admin Anda' : 'Perbarui data penugasan unit, email, dan status aktif Sub Admin'"></p>
+                    <h3 class="text-base font-extrabold text-white" x-text="isSelf(editFormData) ? '✏️ Ubah Profil Akun Saya' : '✏️ Ubah Data Pengguna'"></h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="isSelf(editFormData) ? 'Perbarui informasi identitas, email dan NIP akun Anda' : 'Perbarui data penugasan unit, email, dan status aktif pengguna'"></p>
                 </div>
 
                 <form @submit.prevent="saveEdit()" class="space-y-3.5 text-xs">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap</label>
-                            <input type="text" x-model="editFormData.name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500">
+                            <label class="block text-slate-300 font-semibold mb-1">Nama Lengkap & Gelar <span class="text-rose-400">*</span></label>
+                            <input type="text" x-model="editFormData.name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">NIP Pegawai</label>
-                            <input type="text" x-model="editFormData.nip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500">
+                            <input type="text" x-model="editFormData.nip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Email Kredensial</label>
-                            <input type="email" x-model="editFormData.email" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-cyan-400 font-mono focus:border-amber-500">
+                            <label class="block text-slate-300 font-semibold mb-1">Email Kredensial <span class="text-rose-400">*</span></label>
+                            <input type="email" x-model="editFormData.email" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-cyan-400 font-mono focus:border-amber-500 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Role Otorisasi</label>
@@ -720,7 +447,7 @@
 
                             <!-- Jika login Master Admin: Bebas ubah role -->
                             <template x-if="currentUserRole === 'master_admin'">
-                                <select x-model="editFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500">
+                                <select x-model="editFormData.role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold focus:border-amber-500 focus:outline-none">
                                     <option value="sub_admin">🏥 Sub Admin (User Unit / Ruangan)</option>
                                     <option value="admin">🛡️ Admin Operasional</option>
                                     <option value="master_admin">👑 Master Admin System</option>
@@ -732,31 +459,30 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Unit / Paviliun Penugasan</label>
-                            <select x-model="editFormData.unit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500">
-                                <option value="Paviliun Graha Amukti">Paviliun Graha Amukti (VIP)</option>
-                                <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
-                                <option value="Instalasi Radiologi">Instalasi Radiologi</option>
-                                <option value="Instalasi Bedah Sentral (IBS)">Instalasi Bedah Sentral (IBS)</option>
-                                <option value="Instalasi Rawat Intensif (ICU)">Instalasi Rawat Intensif (ICU)</option>
-                                <option value="Instalasi Laboratorium Patologi">Instalasi Laboratorium Patologi</option>
-                                <option value="Instalasi Farmasi">Instalasi Farmasi</option>
-                                <option value="Instalasi Gizi & Dapur">Instalasi Gizi & Dapur</option>
-                                <option value="Bagian Umum & Aset">Bagian Umum & Aset</option>
-                                <option value="Direksi & SIMRS">Direksi & SIMRS</option>
+                            <select x-model="editFormData.unit" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
+                                <template x-for="u in unitsList" :key="u">
+                                    <option :value="u" x-text="u" :selected="editFormData.unit === u"></option>
+                                </template>
                             </select>
                         </div>
                         <div>
                             <label class="block text-slate-300 font-semibold mb-1">Status Akun</label>
-                            <select x-model="editFormData.status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold focus:border-amber-500">
+                            <select x-model="editFormData.status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold focus:border-amber-500 focus:outline-none">
                                 <option value="Aktif">Aktif</option>
                                 <option value="Nonaktif">Nonaktif</option>
                             </select>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Deskripsi Tugas / Penugasan</label>
-                        <input type="text" x-model="editFormData.penugasan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Ubah Password (Opsional)</label>
+                            <input type="password" x-model="editFormData.password" placeholder="Kosongkan jika tidak diganti" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Deskripsi Tugas / Penugasan</label>
+                            <input type="text" x-model="editFormData.penugasan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">
+                        </div>
                     </div>
 
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
@@ -764,9 +490,9 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             <span>Batal</span>
                         </button>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                            <span>Simpan Perubahan</span>
+                        <button type="submit" :disabled="isSaving" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-1.5 active:scale-95 disabled:opacity-50">
+                            <svg x-show="!isSaving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Perubahan'"></span>
                         </button>
                     </div>
                 </form>
@@ -774,4 +500,355 @@
         </div>
 
     </div>
+
+    <script>
+        function userManager() {
+            return {
+                searchQuery: '',
+                roleFilter: 'all',
+                showAddModal: false,
+                showEditModal: false,
+                showDetailModal: false,
+                selectedUser: null,
+                isSaving: false,
+
+                // Sesi Pengguna Aktif
+                currentUserRole: '{{ Auth::user()->role ?? "admin" }}',
+                currentUserId: {{ Auth::user()->id ?? 2 }},
+                currentUserEmail: '{{ Auth::user()->email ?? "admin@asimat.com" }}',
+                csrfToken: '{{ csrf_token() }}',
+
+                newFormData: {
+                    name: '',
+                    nip: '',
+                    email: '',
+                    role: 'sub_admin',
+                    unit: 'Pav. Anggrek',
+                    penugasan: '',
+                    password: '',
+                    status: 'Aktif'
+                },
+
+                editFormData: {
+                    id: null,
+                    name: '',
+                    nip: '',
+                    email: '',
+                    role: '',
+                    unit: '',
+                    penugasan: '',
+                    password: '',
+                    status: ''
+                },
+
+                // Data Users & Units dari Database Backend
+                users: @json($users ?? []),
+                unitsList: @json($units ?? []),
+
+                init() {
+                    if (this.unitsList && this.unitsList.length > 0) {
+                        this.newFormData.unit = this.unitsList[0];
+                    }
+                },
+
+                // Cek apakah user target adalah akun diri sendiri
+                isSelf(targetUser) {
+                    if (!targetUser) return false;
+                    return targetUser.id === this.currentUserId || targetUser.email === this.currentUserEmail;
+                },
+
+                // Cek hak akses untuk Mengubah Data (Edit)
+                canEditUser(targetUser) {
+                    if (!targetUser) return false;
+                    if (this.currentUserRole === 'master_admin') return true;
+
+                    if (this.currentUserRole === 'admin') {
+                        if (targetUser.role === 'master_admin') return false;
+                        if (targetUser.role === 'admin') {
+                            return this.isSelf(targetUser);
+                        }
+                        if (targetUser.role === 'sub_admin') return true;
+                    }
+
+                    return false;
+                },
+
+                // Cek hak akses untuk Menghapus Data (Delete)
+                canDeleteUser(targetUser) {
+                    if (!targetUser) return false;
+                    if (this.currentUserRole === 'master_admin') {
+                        return !this.isSelf(targetUser);
+                    }
+
+                    if (this.currentUserRole === 'admin') {
+                        if (targetUser.role === 'master_admin' || targetUser.role === 'admin') return false;
+                        return targetUser.role === 'sub_admin';
+                    }
+
+                    return false;
+                },
+
+                getEditTooltip(targetUser) {
+                    if (this.canEditUser(targetUser)) return '';
+                    if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin diproteksi khusus (Hanya Master Admin yang dapat mengubah)';
+                    if (targetUser.role === 'admin' && !this.isSelf(targetUser)) return '🔒 Admin tidak diizinkan mengubah akun Admin lain';
+                    return 'Akses dibatasi';
+                },
+
+                getDeleteTooltip(targetUser) {
+                    if (this.canDeleteUser(targetUser)) return '';
+                    if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin tidak dapat dihapus';
+                    if (targetUser.role === 'admin') return '🔒 Admin tidak diizinkan menghapus akun Admin';
+                    return 'Akses dibatasi';
+                },
+
+                get filteredUsers() {
+                    const query = (this.searchQuery || '').toLowerCase();
+                    const roleWeight = { 'master_admin': 1, 'admin': 2, 'sub_admin': 3 };
+
+                    return this.users
+                        .filter(item => {
+                            const matchSearch = (item.name || '').toLowerCase().includes(query) ||
+                                                (item.email || '').toLowerCase().includes(query) ||
+                                                (item.nip || '').toLowerCase().includes(query) ||
+                                                (item.unit || '').toLowerCase().includes(query) ||
+                                                (item.penugasan || '').toLowerCase().includes(query);
+
+                            const matchRole = this.roleFilter === 'all' || item.role === this.roleFilter;
+                            return matchSearch && matchRole;
+                        })
+                        .sort((a, b) => {
+                            const weightA = roleWeight[a.role] || 99;
+                            const weightB = roleWeight[b.role] || 99;
+                            if (weightA !== weightB) {
+                                return weightA - weightB;
+                            }
+                            return (a.id || 0) - (b.id || 0);
+                        });
+                },
+
+                get countMasterAdmin() {
+                    return this.users.filter(u => u.role === 'master_admin').length;
+                },
+
+                get countAdmin() {
+                    return this.users.filter(u => u.role === 'admin').length;
+                },
+
+                get countSubAdmin() {
+                    return this.users.filter(u => u.role === 'sub_admin').length;
+                },
+
+                resetFilters() {
+                    this.searchQuery = '';
+                    this.roleFilter = 'all';
+                },
+
+                openDetail(item) {
+                    this.selectedUser = item;
+                    this.showDetailModal = true;
+                },
+
+                openAddModal() {
+                    this.newFormData = {
+                        name: '',
+                        nip: '',
+                        email: '',
+                        role: 'sub_admin',
+                        unit: this.unitsList && this.unitsList.length > 0 ? this.unitsList[0] : 'Pav. Anggrek',
+                        penugasan: '',
+                        password: '',
+                        status: 'Aktif'
+                    };
+                    this.showAddModal = true;
+                },
+
+                openEdit(item) {
+                    if (!this.canEditUser(item)) {
+                        alert('⛔ Akses Ditolak: ' + this.getEditTooltip(item));
+                        return;
+                    }
+                    this.editFormData = { 
+                        id: item.id,
+                        name: item.name || '',
+                        nip: item.nip || '',
+                        email: item.email || '',
+                        role: item.role || 'sub_admin',
+                        unit: item.unit || '',
+                        penugasan: item.penugasan || '',
+                        password: '',
+                        status: item.status || 'Aktif'
+                    };
+                    this.showEditModal = true;
+                },
+
+                // 1. Simpan Data Baru ke Backend (CREATE)
+                async saveNew() {
+                    if (!this.newFormData.name || !this.newFormData.email) {
+                        alert('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!');
+                        return;
+                    }
+
+                    if (this.currentUserRole === 'admin' && this.newFormData.role !== 'sub_admin') {
+                        alert('⛔ Sebagai Admin Operasional, Anda hanya diizinkan menambah akun Sub Admin (Kepala Ruangan/Paviliun)!');
+                        this.newFormData.role = 'sub_admin';
+                        return;
+                    }
+
+                    this.isSaving = true;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                        const response = await fetch('{{ route("master.users.store") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                _token: token,
+                                ...this.newFormData
+                            })
+                        });
+
+                        const res = await response.json();
+                        if (response.ok && res.success) {
+                            this.users.unshift(res.user);
+                            this.showAddModal = false;
+                            alert('✅ ' + res.message);
+                        } else {
+                            alert('⚠️ ' + (res.message || 'Gagal mendaftarkan akun baru.'));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('❌ Terjadi kesalahan jaringan / server saat mendaftarkan akun.');
+                    } finally {
+                        this.isSaving = false;
+                    }
+                },
+
+                // 2. Simpan Perubahan ke Backend (UPDATE)
+                async saveEdit() {
+                    if (!this.editFormData.name || !this.editFormData.email) {
+                        alert('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!');
+                        return;
+                    }
+
+                    this.isSaving = true;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                        const response = await fetch('/master-data/users/' + this.editFormData.id, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                _token: token,
+                                ...this.editFormData
+                            })
+                        });
+
+                        const res = await response.json();
+                        if (response.ok && res.success) {
+                            const index = this.users.findIndex(i => i.id === this.editFormData.id);
+                            if (index !== -1) {
+                                this.users[index] = { ...res.user };
+                            }
+                            if (this.selectedUser && this.selectedUser.id === this.editFormData.id) {
+                                this.selectedUser = { ...res.user };
+                            }
+                            this.showEditModal = false;
+                            alert('✅ ' + res.message);
+                        } else {
+                            alert('⚠️ ' + (res.message || 'Gagal menyimpan perubahan.'));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('❌ Terjadi kesalahan jaringan / server saat memperbarui akun.');
+                    } finally {
+                        this.isSaving = false;
+                    }
+                },
+
+                // 3. Hapus Pengguna dari Backend (DELETE)
+                async deleteItem(item) {
+                    if (!this.canDeleteUser(item)) {
+                        alert('⛔ Akses Ditolak: ' + this.getDeleteTooltip(item));
+                        return;
+                    }
+
+                    if (!confirm('Apakah Anda yakin ingin menghapus akun: ' + item.name + ' (' + (item.unit || item.role) + ')?')) {
+                        return;
+                    }
+
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                        const response = await fetch('/master-data/users/' + item.id, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                _token: token
+                            })
+                        });
+
+                        const res = await response.json();
+                        if (response.ok && res.success) {
+                            this.users = this.users.filter(i => i.id !== item.id);
+                            if (this.selectedUser && this.selectedUser.id === item.id) {
+                                this.showDetailModal = false;
+                            }
+                            alert('🗑️ ' + res.message);
+                        } else {
+                            alert('⚠️ ' + (res.message || 'Gagal menghapus akun pengguna.'));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('❌ Terjadi kesalahan jaringan / server saat menghapus akun.');
+                    }
+                },
+
+                // 4. Reset Password ke Default 'rsud123'
+                async resetPasswordAction(item) {
+                    if (!confirm('Reset password akun ' + item.name + ' menjadi default: rsud123 ?')) {
+                        return;
+                    }
+
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                        const response = await fetch('/master-data/users/' + item.id + '/reset-password', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                _token: token
+                            })
+                        });
+
+                        const res = await response.json();
+                        if (response.ok && res.success) {
+                            alert('🔑 ' + res.message);
+                        } else {
+                            alert('⚠️ ' + (res.message || 'Gagal mereset password.'));
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('❌ Terjadi kesalahan jaringan / server saat mereset password.');
+                    }
+                }
+            };
+        }
+    </script>
 </x-layout>

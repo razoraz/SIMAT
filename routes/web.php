@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\JenisAstapController;
 use App\Http\Middleware\RoleMiddleware;
 
@@ -158,12 +159,14 @@ Route::middleware('auth')->group(function () {
         })->name('pemeliharaan.edit');
     });
 
-    // Master Data System Pages
-    Route::get('/master-data/users', function () {
-        return view('pages.master_users');
-    })->name('master.users');
+    // Master Data Users CRUD Routes
+    Route::get('/master-data/users', [UserController::class, 'index'])->name('master.users');
+    Route::post('/master-data/users', [UserController::class, 'store'])->name('master.users.store');
+    Route::put('/master-data/users/{id}', [UserController::class, 'update'])->name('master.users.update');
+    Route::delete('/master-data/users/{id}', [UserController::class, 'destroy'])->name('master.users.destroy');
+    Route::post('/master-data/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('master.users.reset_password');
 
-Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
+    Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
     Route::post('/master-data/jenis-astap', [JenisAstapController::class, 'store'])->name('master.jenis_astap.store');
     Route::post('/master-data/jenis-astap/import', [JenisAstapController::class, 'import'])->name('master.jenis_astap.import');
     Route::get('/master-data/jenis-astap/download-template', [JenisAstapController::class, 'downloadTemplate'])->name('master.jenis_astap.template');
