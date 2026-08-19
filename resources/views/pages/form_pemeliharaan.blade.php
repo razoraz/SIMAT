@@ -65,7 +65,7 @@
         </div>
 
         <!-- Form Card -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl max-w-4xl space-y-6">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl  w-full space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Nomor Registrasi Servis</label>
@@ -111,15 +111,6 @@
             <div>
                 <label class="block text-slate-300 font-semibold text-xs mb-1.5">Catatan Hasil Pengerjaan / Uji Fungsi</label>
                 <textarea x-model="formData.keterangan" rows="3" placeholder="Uraian perbaikan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white"></textarea>
-            </div>
-
-            <div class="pt-6 border-t border-slate-800 flex items-center justify-end space-x-3">
-                <a href="{{ route('pemeliharaan.index') }}" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
-                    Batal
-                </a>
-                <button type="button" @click="submitForm()" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition-all">
-                    <span x-text="isEdit ? 'Simpan Perubahan' : 'Simpan Log Pemeliharaan'"></span>
-                </button>
             </div>
         </div>
 
