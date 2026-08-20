@@ -88,6 +88,41 @@
             this.showDetailModal = true;
         },
 
+        getRiwayatServis(astap) {
+            if (!astap) return [];
+            const stored = localStorage.getItem('simat_pemeliharaans');
+            if (!stored) {
+                const defaultList = [
+                    { id: 1, kode: 'MTN-2026-003', nama: 'CT-Scan 128 Slice Siemens', kode_barang: '1.3.2.02.01.01.005', jenis: 'Kalibrasi Rutin & QC BAPETEN', tgl: '05 Ags 2026', tgl_selesai: '10 Ags 2026', biaya: 'Rp 25.000.000', pelaksana: 'PT. Siemens Healthcare Indonesia', status: 'Selesai', keterangan: 'Hasil uji fungsi akurat dan sertifikat kalibrasi terbit resmi' },
+                    { id: 2, kode: 'MTN-2026-007', nama: 'Submersible Pump 7.5 HP', kode_barang: '1.3.2.01.03.05.005', jenis: 'Penggantian Seal & Bearing', tgl: '10 Ags 2026', tgl_selesai: '-', biaya: 'Rp 4.500.000', pelaksana: 'Teknisi IPSRS RSUD', status: 'Dalam Pengerjaan', keterangan: 'Sedang dibongkar untuk pembersihan kerak impeller' }
+                ];
+                localStorage.setItem('simat_pemeliharaans', JSON.stringify(defaultList));
+                return defaultList.filter(p => this.isMatchAstap(p, astap));
+            }
+            try {
+                const list = JSON.parse(stored);
+                return list.filter(p => this.isMatchAstap(p, astap));
+            } catch(e) {
+                return [];
+            }
+        },
+
+        isMatchAstap(pemeliharaan, astap) {
+            if (!pemeliharaan || !astap) return false;
+            const pNama = (pemeliharaan.nama || '').toLowerCase().trim();
+            const aNama = (astap.nama_barang || '').toLowerCase().trim();
+            const pKode = (pemeliharaan.kode_barang || '').toLowerCase().trim();
+            const aKode = (astap.kode_barang || '').toLowerCase().trim();
+
+            if (pKode && aKode && pKode === aKode) return true;
+            if (pNama && aNama) {
+                if (pNama === aNama || pNama.includes(aNama) || aNama.includes(pNama)) return true;
+                const words = aNama.split(' ').filter(w => w.length > 3);
+                return words.some(w => pNama.includes(w));
+            }
+            return false;
+        },
+
         resetFilters() {
             this.searchQuery = '';
             this.categoryFilter = 'all';
@@ -865,6 +900,82 @@
                                 <p class="font-mono font-semibold text-slate-300" x-text="selectedAstapDetail.faktur_nomor"></p>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Blok 4: Riwayat Pemeliharaan & Servis (Terintegrasi Realtime) -->
+                    <div class="p-4 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3 shadow-inner">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center space-x-2">
+                                <span>🛠️</span>
+                                <span>4. Riwayat Pemeliharaan, Servis & Kalibrasi</span>
+                            </h4>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border"
+                                :class="getRiwayatServis(selectedAstapDetail).length > 0 ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'"
+                                x-text="getRiwayatServis(selectedAstapDetail).length + ' Riwayat Tercatat'"></span>
+                        </div>
+
+                        <!-- JIKA ADA RIWAYAT SERVIS -->
+                        <template x-if="getRiwayatServis(selectedAstapDetail).length > 0">
+                            <div class="space-y-2.5">
+                                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                                    <table class="w-full text-left text-[11px] text-slate-300">
+                                        <thead class="bg-slate-900/90 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 text-[10px]">
+                                            <tr>
+                                                <th class="px-3 py-2 text-center whitespace-nowrap">No. Servis</th>
+                                                <th class="px-3 py-2 text-left min-w-[130px]">Tindakan Pemeliharaan</th>
+                                                <th class="px-3 py-2 text-center whitespace-nowrap">Tgl Servis</th>
+                                                <th class="px-3 py-2 text-center whitespace-nowrap">Tgl Selesai</th>
+                                                <th class="px-3 py-2 text-right whitespace-nowrap">Biaya</th>
+                                                <th class="px-3 py-2 text-center whitespace-nowrap">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-800/80 bg-slate-950/40 font-medium">
+                                            <template x-for="servis in getRiwayatServis(selectedAstapDetail)" :key="servis.id">
+                                                <tr class="hover:bg-slate-800/40 transition-colors">
+                                                    <td class="px-3 py-2.5 text-center font-mono font-bold text-amber-400 whitespace-nowrap" x-text="servis.kode"></td>
+                                                    <td class="px-3 py-2.5">
+                                                        <div class="font-bold text-white" x-text="servis.jenis"></div>
+                                                        <div class="text-[10px] text-slate-400" x-text="'Pelaksana: ' + servis.pelaksana"></div>
+                                                    </td>
+                                                    <td class="px-3 py-2.5 text-center font-mono text-slate-300 whitespace-nowrap" x-text="servis.tgl"></td>
+                                                    <td class="px-3 py-2.5 text-center font-mono text-emerald-300 whitespace-nowrap" x-text="servis.tgl_selesai || '-'"></td>
+                                                    <td class="px-3 py-2.5 text-right font-mono font-bold text-emerald-400 whitespace-nowrap" x-text="servis.biaya"></td>
+                                                    <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-[10px] font-bold border"
+                                                            :class="{
+                                                                'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': servis.status === 'Selesai',
+                                                                'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': servis.status === 'Dalam Pengerjaan',
+                                                                'bg-rose-500/15 text-rose-300 border-rose-500/30': servis.status === 'Menunggu Sparepart'
+                                                            }"
+                                                            x-text="servis.status"></span>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- JIKA BELUM ADA RIWAYAT SERVIS -->
+                        <template x-if="getRiwayatServis(selectedAstapDetail).length === 0">
+                            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-center py-4 space-y-1">
+                                <span class="text-xl block">✨</span>
+                                <p class="text-slate-300 font-semibold text-xs">Belum ada riwayat servis atau pemeliharaan</p>
+                                <p class="text-slate-500 text-[11px]">Aset ini belum pernah dicatat dalam log pemeliharaan / kalibrasi.</p>
+                            </div>
+                        </template>
+
+                        <!-- Tombol Tambah Servis Cepat -->
+                        @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                        <div class="pt-1 flex items-center justify-end">
+                            <a :href="'/pemeliharaan/create?nama=' + encodeURIComponent(selectedAstapDetail.nama_barang) + '&kode_barang=' + encodeURIComponent(selectedAstapDetail.kode_barang)"
+                               class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-bold text-[11px] transition-all inline-flex items-center space-x-1.5 shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span>+ Catat Servis untuk Aset Ini</span>
+                            </a>
+                        </div>
+                        @endif
                     </div>
 
                     <!-- Keterangan Tambahan -->

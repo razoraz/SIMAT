@@ -63,6 +63,7 @@
                 if (item) {
                     this.formData = {
                         kode: item.kode || 'MTN-2026-001',
+                        kode_barang: item.kode_barang || '',
                         nama: item.nama || '',
                         jenis: item.jenis || '',
                         tgl: this.parseToIso(item.tgl) || new Date().toISOString().split('T')[0],
@@ -75,6 +76,7 @@
                 } else {
                     this.formData = {
                         kode: 'MTN-2026-003',
+                        kode_barang: '1.3.2.02.01.01.005',
                         nama: 'CT-Scan 128 Slice Siemens SOMATOM',
                         jenis: 'Kalibrasi Rutin & QC BAPETEN',
                         tgl: '2026-08-05',
@@ -86,9 +88,14 @@
                     };
                 }
             } else {
+                const urlParams = new URLSearchParams(window.location.search);
+                const paramNama = urlParams.get('nama');
+                const paramKodeBarang = urlParams.get('kode_barang');
+
                 this.formData = {
                     kode: 'MTN-2026-' + String(Math.floor(Math.random() * 900) + 100),
-                    nama: '',
+                    kode_barang: paramKodeBarang ? decodeURIComponent(paramKodeBarang) : '',
+                    nama: paramNama ? decodeURIComponent(paramNama) : '',
                     jenis: 'Servis Berkala & Maintenance',
                     tgl: new Date().toISOString().split('T')[0],
                     tgl_selesai: '',
@@ -129,6 +136,7 @@
                 const updatedItem = {
                     id: idx !== -1 ? currentData[idx].id : (isNaN(this.editId) ? Date.now() : Number(this.editId)),
                     kode: this.formData.kode,
+                    kode_barang: this.formData.kode_barang || '',
                     nama: this.formData.nama,
                     jenis: this.formData.jenis,
                     tgl: displayTgl,
@@ -148,6 +156,7 @@
                 const newItem = {
                     id: Date.now(),
                     kode: this.formData.kode,
+                    kode_barang: this.formData.kode_barang || '',
                     nama: this.formData.nama,
                     jenis: this.formData.jenis,
                     tgl: displayTgl,
@@ -214,8 +223,19 @@
             </div>
 
             <div>
-                <label class="block text-slate-200 font-bold text-xs mb-1.5">Nama Aset yang Dipelihara / Diperbaiki</label>
-                <input type="text" x-model="formData.nama" placeholder="Pilih atau ketik nama aset..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+                <label class="block text-slate-200 font-bold text-xs mb-1.5 flex items-center justify-between">
+                    <span>Nama Aset yang Dipelihara / Diperbaiki</span>
+                    <span class="text-[10px] text-amber-400 font-normal">💡 Terhubung dengan Katalog Master ASTAP</span>
+                </label>
+                <input type="text" list="astapAssetsList" x-model="formData.nama" placeholder="Pilih atau ketik nama aset ASTAP..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+                <datalist id="astapAssetsList">
+                    <option value="Submersible Pump 7.5 HP">1.3.2.01.03.05.005 - Franklin Electric</option>
+                    <option value="Pompa Air Shimizu PS-130">1.3.2.01.03.05.010 - Shimizu</option>
+                    <option value="CT-Scan 128 Slice High Resolution">1.3.2.02.01.01.005 - Siemens SOMATOM</option>
+                    <option value="USG 4D Color Doppler">1.3.2.02.01.01.012 - GE Healthcare</option>
+                    <option value="Instalasi Pipa Gas Oksigen IGD">1.3.4.03.01.01.001 - Jaringan Medis</option>
+                    <option value="Gedung Paviliun Graha Amukti Lt 1">1.3.3.01.01.01.002 - Gedung Perawatan</option>
+                </datalist>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
