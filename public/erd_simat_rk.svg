@@ -1,0 +1,288 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="100%" height="100%" style="background-color: #070d18; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Background Grid -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#131e33" stroke-width="1"/>
+    </pattern>
+
+    <!-- Gradients -->
+    <linearGradient id="header-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0891b2" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="header-emerald" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="header-amber" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="header-purple" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="header-rose" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e11d48" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <linearGradient id="header-blue" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+
+    <!-- Shadow Filter -->
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Arrow Marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#34d399" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#fbbf24" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1600" height="1000" fill="#070d18"/>
+  <rect width="1600" height="1000" fill="url(#grid)"/>
+
+  <!-- Title Header -->
+  <g transform="translate(60, 45)">
+    <rect x="0" y="0" width="36" height="36" rx="10" fill="#0ea5e9" fill-opacity="0.2" stroke="#0ea5e9" stroke-width="1.5"/>
+    <text x="18" y="24" fill="#38bdf8" font-size="18" font-weight="bold" text-anchor="middle">🏛️</text>
+    <text x="48" y="22" fill="#ffffff" font-size="20" font-weight="800" letter-spacing="0.5">DIAGRAM ERD RELASIONAL DATABASE - SIMAT-RK</text>
+    <text x="48" y="38" fill="#94a3b8" font-size="12">Sistem Informasi Manajemen Aset Tetap RSUD dr. H. Koesnadi Bondowoso</text>
+  </g>
+
+  <!-- RELATIONSHIP CONNECTING LINES -->
+  <!-- 1. UNITS to USERS -->
+  <path d="M 170 300 L 170 200" fill="none" stroke="#0284c7" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)"/>
+  
+  <!-- 2. UNITS to ASTAPS -->
+  <path d="M 310 370 L 620 370" fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 3. JENIS_ASTAPS to ASTAPS -->
+  <path d="M 520 180 L 650 180 L 650 250" fill="none" stroke="#34d399" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+
+  <!-- 4. PENGADAANS to ASTAPS -->
+  <path d="M 1080 320 L 920 320" fill="none" stroke="#a855f7" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 5. JENIS_PENGADAANS to PENGADAANS -->
+  <path d="M 1390 140 L 1310 140 L 1310 230" fill="none" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)"/>
+
+  <!-- 6. REKENING_BELANJAS to PENGADAANS -->
+  <path d="M 1390 280 L 1350 280 L 1350 260 L 1320 260" fill="none" stroke="#a855f7" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow)"/>
+
+  <!-- 7. ASTAPS to PEMELIHARAANS -->
+  <path d="M 770 540 L 770 660" fill="none" stroke="#fbbf24" stroke-width="2.5" marker-end="url(#arrow-amber)"/>
+
+  <!-- 8. ASTAPS to DISTRIBUSI_ITEMS -->
+  <path d="M 680 540 L 680 600 L 440 600 L 440 660" fill="none" stroke="#34d399" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+
+  <!-- 9. DISTRIBUSIS to DISTRIBUSI_ITEMS -->
+  <path d="M 270 750 L 320 750" fill="none" stroke="#06b6d4" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 10. ASTAPS to MUTASI_ASETS -->
+  <path d="M 860 540 L 860 600 L 1080 600 L 1080 660" fill="none" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- 11. MUTASI / DISTRIBUSI to BERITA_ACARAS -->
+  <path d="M 1210 770 L 1310 770" fill="none" stroke="#f43f5e" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+
+  <!-- =================================================== -->
+  <!-- TABLE CARDS                                         -->
+  <!-- =================================================== -->
+
+  <!-- TABLE: USERS -->
+  <g transform="translate(60, 100)" filter="url(#card-shadow)">
+    <rect width="230" height="150" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect width="230" height="34" rx="14" fill="url(#header-blue)"/>
+    <rect y="20" width="230" height="14" fill="url(#header-blue)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">👤 USERS (Pengguna)</text>
+    <text x="12" y="54" fill="#38bdf8" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="74" fill="#cbd5e1" font-size="11" font-family="monospace">   name : varchar</text>
+    <text x="12" y="94" fill="#cbd5e1" font-size="11" font-family="monospace">   email : varchar [UK]</text>
+    <text x="12" y="114" fill="#fbbf24" font-size="11" font-family="monospace">   role : enum(m_adm,adm,sub)</text>
+    <text x="12" y="134" fill="#f43f5e" font-size="11" font-family="monospace">🔗 unit_id : bigint [FK]</text>
+  </g>
+
+  <!-- TABLE: UNITS -->
+  <g transform="translate(60, 300)" filter="url(#card-shadow)">
+    <rect width="250" height="190" rx="14" fill="#0f172a" stroke="#0284c7" stroke-width="2"/>
+    <rect width="250" height="34" rx="14" fill="url(#header-cyan)"/>
+    <rect y="20" width="250" height="14" fill="url(#header-cyan)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">🏢 UNITS (Paviliun / Ruangan)</text>
+    <text x="12" y="56" fill="#38bdf8" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="78" fill="#cbd5e1" font-size="11" font-family="monospace">   nama : varchar</text>
+    <text x="12" y="100" fill="#cbd5e1" font-size="11" font-family="monospace">   tipe : varchar (Paviliun, dsb)</text>
+    <text x="12" y="122" fill="#cbd5e1" font-size="11" font-family="monospace">   kepala : varchar</text>
+    <text x="12" y="144" fill="#cbd5e1" font-size="11" font-family="monospace">   nip : varchar(20)</text>
+    <text x="12" y="166" fill="#cbd5e1" font-size="11" font-family="monospace">   email : varchar</text>
+  </g>
+
+  <!-- TABLE: JENIS_ASTAPS (108) -->
+  <g transform="translate(350, 110)" filter="url(#card-shadow)">
+    <rect width="240" height="140" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect width="240" height="34" rx="14" fill="url(#header-emerald)"/>
+    <rect y="20" width="240" height="14" fill="url(#header-emerald)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">📑 JENIS_ASTAPS (Kode 108)</text>
+    <text x="12" y="54" fill="#34d399" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="74" fill="#cbd5e1" font-size="11" font-family="monospace">   kode_kib : varchar (KIB A-F)</text>
+    <text x="12" y="94" fill="#cbd5e1" font-size="11" font-family="monospace">   kode_108 : varchar (1.3.x)</text>
+    <text x="12" y="114" fill="#cbd5e1" font-size="11" font-family="monospace">   nama_jenis : varchar</text>
+  </g>
+
+  <!-- TABLE: PENGADAANS -->
+  <g transform="translate(1080, 190)" filter="url(#card-shadow)">
+    <rect width="240" height="210" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect width="240" height="34" rx="14" fill="url(#header-purple)"/>
+    <rect y="20" width="240" height="14" fill="url(#header-purple)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">📦 PENGADAANS (DPA &amp; SPK)</text>
+    <text x="12" y="54" fill="#c084fc" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="74" fill="#f43f5e" font-size="11" font-family="monospace">🔗 jenis_pengadaan_id [FK]</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="11" font-family="monospace">🔗 rekening_belanja_id [FK]</text>
+    <text x="12" y="114" fill="#cbd5e1" font-size="11" font-family="monospace">   nomor_spk : varchar [UK]</text>
+    <text x="12" y="134" fill="#cbd5e1" font-size="11" font-family="monospace">   vendor_nama : varchar</text>
+    <text x="12" y="154" fill="#34d399" font-size="11" font-family="monospace">   total_anggaran : decimal</text>
+    <text x="12" y="174" fill="#fbbf24" font-size="11" font-family="monospace">   status : enum</text>
+  </g>
+
+  <!-- TABLE: JENIS_PENGADAANS -->
+  <g transform="translate(1390, 80)" filter="url(#card-shadow)">
+    <rect width="180" height="95" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <rect width="180" height="28" rx="12" fill="#475569"/>
+    <rect y="16" width="180" height="12" fill="#475569"/>
+    <text x="10" y="19" fill="#ffffff" font-size="10" font-weight="bold">JENIS_PENGADAANS</text>
+    <text x="10" y="46" fill="#94a3b8" font-size="10" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="10" y="64" fill="#cbd5e1" font-size="10" font-family="monospace">   nama_metode</text>
+    <text x="10" y="82" fill="#cbd5e1" font-size="10" font-family="monospace">   kode : varchar</text>
+  </g>
+
+  <!-- TABLE: REKENING_BELANJAS -->
+  <g transform="translate(1390, 210)" filter="url(#card-shadow)">
+    <rect width="180" height="95" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <rect width="180" height="28" rx="12" fill="#475569"/>
+    <rect y="16" width="180" height="12" fill="#475569"/>
+    <text x="10" y="19" fill="#ffffff" font-size="10" font-weight="bold">REKENING_BELANJAS</text>
+    <text x="10" y="46" fill="#94a3b8" font-size="10" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="10" y="64" fill="#cbd5e1" font-size="10" font-family="monospace">   kode_rekening</text>
+    <text x="10" y="82" fill="#cbd5e1" font-size="10" font-family="monospace">   nama_rekening</text>
+  </g>
+
+  <!-- =================================================== -->
+  <!-- CENTER MASTER HUB TABLE: ASTAPS                     -->
+  <!-- =================================================== -->
+  <g transform="translate(620, 250)" filter="url(#card-shadow)">
+    <rect width="300" height="290" rx="16" fill="#0b1329" stroke="#10b981" stroke-width="2.5"/>
+    <rect width="300" height="38" rx="16" fill="url(#header-emerald)"/>
+    <rect y="22" width="300" height="16" fill="url(#header-emerald)"/>
+    <text x="14" y="25" fill="#ffffff" font-size="13" font-weight="800">⭐ ASTAPS (Master Katalog Aset Tetap)</text>
+    <text x="14" y="58" fill="#34d399" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="14" y="78" fill="#cbd5e1" font-size="11" font-family="monospace">   kode_barang : varchar (Kode 108)</text>
+    <text x="14" y="98" fill="#ffffff" font-size="11" font-weight="bold" font-family="monospace">   nama_barang : varchar</text>
+    <text x="14" y="118" fill="#fbbf24" font-size="11" font-family="monospace">   category : enum(KIB A, B, C, D, E, F)</text>
+    <text x="14" y="138" fill="#f43f5e" font-size="11" font-family="monospace">🔗 jenis_astap_id : bigint [FK]</text>
+    <text x="14" y="158" fill="#f43f5e" font-size="11" font-family="monospace">🔗 unit_id : bigint [FK - Lokasi Unit]</text>
+    <text x="14" y="178" fill="#f43f5e" font-size="11" font-family="monospace">🔗 pengadaan_id : bigint [FK - DPA/SPK]</text>
+    <text x="14" y="198" fill="#cbd5e1" font-size="11" font-family="monospace">   merk, type, ukuran, no_pabrik</text>
+    <text x="14" y="218" fill="#cbd5e1" font-size="11" font-family="monospace">   tahun_perolehan, volume_satuan</text>
+    <text x="14" y="238" fill="#34d399" font-size="11" font-family="monospace">   jumlah_realisasi : decimal</text>
+    <text x="14" y="258" fill="#38bdf8" font-size="11" font-family="monospace">   kondisi : enum(Baik, RR, RB, Renovasi)</text>
+    <text x="14" y="278" fill="#cbd5e1" font-size="11" font-family="monospace">   qr_code_path : varchar</text>
+  </g>
+
+  <!-- TABLE: DISTRIBUSIS -->
+  <g transform="translate(60, 660)" filter="url(#card-shadow)">
+    <rect width="210" height="180" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect width="210" height="34" rx="14" fill="url(#header-blue)"/>
+    <rect y="20" width="210" height="14" fill="url(#header-blue)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">🚚 DISTRIBUSIS (SPMB)</text>
+    <text x="12" y="54" fill="#38bdf8" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="74" fill="#cbd5e1" font-size="11" font-family="monospace">   nomor_spmb : varchar [UK]</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="11" font-family="monospace">🔗 unit_tujuan_id [FK]</text>
+    <text x="12" y="114" fill="#cbd5e1" font-size="11" font-family="monospace">   tanggal_distribusi : date</text>
+    <text x="12" y="134" fill="#cbd5e1" font-size="11" font-family="monospace">   penerima_nama, nip</text>
+    <text x="12" y="154" fill="#fbbf24" font-size="11" font-family="monospace">   status : enum</text>
+  </g>
+
+  <!-- TABLE: DISTRIBUSI_ITEMS -->
+  <g transform="translate(320, 660)" filter="url(#card-shadow)">
+    <rect width="220" height="140" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect width="220" height="34" rx="14" fill="url(#header-cyan)"/>
+    <rect y="20" width="220" height="14" fill="url(#header-cyan)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">📋 DISTRIBUSI_ITEMS</text>
+    <text x="12" y="54" fill="#38bdf8" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="74" fill="#f43f5e" font-size="11" font-family="monospace">🔗 distribusi_id [FK]</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="11" font-family="monospace">🔗 astap_id [FK]</text>
+    <text x="12" y="114" fill="#cbd5e1" font-size="11" font-family="monospace">   jumlah : int</text>
+    <text x="12" y="130" fill="#cbd5e1" font-size="11" font-family="monospace">   kondisi_awal : varchar</text>
+  </g>
+
+  <!-- TABLE: PEMELIHARAANS -->
+  <g transform="translate(630, 660)" filter="url(#card-shadow)">
+    <rect width="280" height="220" rx="14" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+    <rect width="280" height="34" rx="14" fill="url(#header-amber)"/>
+    <rect y="20" width="280" height="14" fill="url(#header-amber)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">🛠️ PEMELIHARAANS (Servis &amp; Kalibrasi)</text>
+    <text x="12" y="56" fill="#fbbf24" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="78" fill="#cbd5e1" font-size="11" font-family="monospace">   kode_servis : varchar (MTN-xxx)</text>
+    <text x="12" y="100" fill="#f43f5e" font-size="11" font-family="monospace">🔗 astap_id : bigint [FK]</text>
+    <text x="12" y="122" fill="#cbd5e1" font-size="11" font-family="monospace">   jenis_pemeliharaan : varchar</text>
+    <text x="12" y="144" fill="#cbd5e1" font-size="11" font-family="monospace">   tanggal_pelaksanaan : date</text>
+    <text x="12" y="166" fill="#34d399" font-size="11" font-family="monospace">   tanggal_selesai : date [nullable]</text>
+    <text x="12" y="188" fill="#34d399" font-size="11" font-family="monospace">   biaya_pemeliharaan : decimal</text>
+    <text x="12" y="208" fill="#fbbf24" font-size="11" font-family="monospace">   status : enum(Pengerjaan,Sparepart,Selesai)</text>
+  </g>
+
+  <!-- TABLE: MUTASI_ASETS -->
+  <g transform="translate(980, 660)" filter="url(#card-shadow)">
+    <rect width="250" height="200" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect width="250" height="34" rx="14" fill="url(#header-purple)"/>
+    <rect y="20" width="250" height="14" fill="url(#header-purple)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">🔄 MUTASI_ASETS (Pindah Ruang)</text>
+    <text x="12" y="54" fill="#c084fc" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="74" fill="#cbd5e1" font-size="11" font-family="monospace">   nomor_mutasi : varchar [UK]</text>
+    <text x="12" y="94" fill="#f43f5e" font-size="11" font-family="monospace">🔗 astap_id [FK]</text>
+    <text x="12" y="114" fill="#f43f5e" font-size="11" font-family="monospace">🔗 unit_asal_id [FK]</text>
+    <text x="12" y="134" fill="#f43f5e" font-size="11" font-family="monospace">🔗 unit_tujuan_id [FK]</text>
+    <text x="12" y="154" fill="#cbd5e1" font-size="11" font-family="monospace">   tanggal_mutasi : date</text>
+    <text x="12" y="174" fill="#cbd5e1" font-size="11" font-family="monospace">   penanggung_jawab : varchar</text>
+  </g>
+
+  <!-- TABLE: BERITA_ACARAS -->
+  <g transform="translate(1310, 660)" filter="url(#card-shadow)">
+    <rect width="240" height="200" rx="14" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+    <rect width="240" height="34" rx="14" fill="url(#header-rose)"/>
+    <rect y="20" width="240" height="14" fill="url(#header-rose)"/>
+    <text x="12" y="22" fill="#ffffff" font-size="12" font-weight="bold">📜 BERITA_ACARAS (BAST)</text>
+    <text x="12" y="54" fill="#fb7185" font-size="11" font-family="monospace">🔑 id : bigint [PK]</text>
+    <text x="12" y="74" fill="#cbd5e1" font-size="11" font-family="monospace">   nomor_bast : varchar [UK]</text>
+    <text x="12" y="94" fill="#fbbf24" font-size="11" font-family="monospace">   jenis : enum(Pengadaan,Distribusi,Mutasi)</text>
+    <text x="12" y="114" fill="#f43f5e" font-size="11" font-family="monospace">🔗 ref_id (pengadaan/distribusi/mutasi)</text>
+    <text x="12" y="134" fill="#cbd5e1" font-size="11" font-family="monospace">   pihak_pertama, pihak_kedua</text>
+    <text x="12" y="154" fill="#cbd5e1" font-size="11" font-family="monospace">   tanggal_bast : date</text>
+    <text x="12" y="174" fill="#cbd5e1" font-size="11" font-family="monospace">   file_pdf_path : varchar</text>
+  </g>
+
+  <!-- Legend Bottom Bar -->
+  <g transform="translate(60, 930)">
+    <rect width="1480" height="40" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+    <text x="20" y="25" fill="#94a3b8" font-size="12" font-weight="bold">Keterangan Relasi:</text>
+    <circle cx="160" cy="21" r="5" fill="#38bdf8"/>
+    <text x="175" y="25" fill="#cbd5e1" font-size="11">Relasi Master Unit &amp; Pengguna</text>
+    <circle cx="390" cy="21" r="5" fill="#10b981"/>
+    <text x="405" y="25" fill="#cbd5e1" font-size="11">Relasi Inti Aset Tetap (ASTAP)</text>
+    <circle cx="630" cy="21" r="5" fill="#f59e0b"/>
+    <text x="645" y="25" fill="#cbd5e1" font-size="11">Histori Servis &amp; Pemeliharaan</text>
+    <circle cx="870" cy="21" r="5" fill="#8b5cf6"/>
+    <text x="885" y="25" fill="#cbd5e1" font-size="11">Transaksi Pengadaan &amp; Mutasi</text>
+    <circle cx="1100" cy="21" r="5" fill="#f43f5e"/>
+    <text x="1115" y="25" fill="#cbd5e1" font-size="11">Dokumen Legalitas BAST</text>
+  </g>
+</svg>
