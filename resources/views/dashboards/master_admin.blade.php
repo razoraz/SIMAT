@@ -183,12 +183,16 @@
                         class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD
                         Aktif</span>
                 </div>
-                <h4 class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Unit & Paviliun</h4>
-                <p class="text-xs text-slate-400 mt-1">Manajemen gedung paviliun, unit ruangan kerja, instalasi RSUD, & kepala penanggung jawab.</p>
+                <h4 class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Unit & Paviliun
+                </h4>
+                <p class="text-xs text-slate-400 mt-1">Manajemen gedung paviliun, unit ruangan kerja, instalasi RSUD, &
+                    kepala penanggung jawab.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('unit.create') }}" class="text-indigo-400 hover:text-indigo-300">+ Tambah Unit</a>
-                    <a href="{{ route('unit.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                    <a href="{{ route('unit.create') }}" class="text-indigo-400 hover:text-indigo-300">+ Tambah
+                        Unit</a>
+                    <a href="{{ route('unit.index') }}" class="text-slate-400 hover:text-white">Kelola Data
+                        &rarr;</a>
                 </div>
             </div>
 
@@ -201,12 +205,16 @@
                         class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD
                         Aktif</span>
                 </div>
-                <h4 class="text-sm font-bold text-white group-hover:text-rose-400 transition-colors">Pemeliharaan Aset</h4>
-                <p class="text-xs text-slate-400 mt-1">Jadwal servis berkala, perbaikan aset rusak, riwayat pemeliharaan, & status kelayakan alat.</p>
+                <h4 class="text-sm font-bold text-white group-hover:text-rose-400 transition-colors">Pemeliharaan Aset
+                </h4>
+                <p class="text-xs text-slate-400 mt-1">Jadwal servis berkala, perbaikan aset rusak, riwayat
+                    pemeliharaan, & status kelayakan alat.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('pemeliharaan.create') }}" class="text-rose-400 hover:text-rose-300">+ Input Servis</a>
-                    <a href="{{ route('pemeliharaan.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                    <a href="{{ route('pemeliharaan.create') }}" class="text-rose-400 hover:text-rose-300">+ Input
+                        Servis</a>
+                    <a href="{{ route('pemeliharaan.index') }}" class="text-slate-400 hover:text-white">Kelola Data
+                        &rarr;</a>
                 </div>
             </div>
 
@@ -263,12 +271,16 @@
                         class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">Master
                         Admin Only</span>
                 </div>
-                <h4 class="text-sm font-bold text-white group-hover:text-violet-400 transition-colors">Rekening Belanja SIPD</h4>
-                <p class="text-xs text-slate-400 mt-1">Kelola kode akun rekening belanja aset, klasifikasi belanja modal, & sinkronisasi SIPD.</p>
+                <h4 class="text-sm font-bold text-white group-hover:text-violet-400 transition-colors">Rekening Belanja
+                    SIPD</h4>
+                <p class="text-xs text-slate-400 mt-1">Kelola kode akun rekening belanja aset, klasifikasi belanja
+                    modal, & sinkronisasi SIPD.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('master.rekening_belanja') }}" class="text-violet-400 hover:text-violet-300">+ Tambah Akun</a>
-                    <a href="{{ route('master.rekening_belanja') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                    <a href="{{ route('master.rekening_belanja') }}" class="text-violet-400 hover:text-violet-300">+
+                        Tambah Akun</a>
+                    <a href="{{ route('master.rekening_belanja') }}" class="text-slate-400 hover:text-white">Kelola
+                        Data &rarr;</a>
                 </div>
             </div>
         </div>
