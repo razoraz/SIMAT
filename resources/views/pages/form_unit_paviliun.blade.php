@@ -141,7 +141,14 @@
                 </div>
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">NIP Kepala Ruangan</label>
-                    <input type="text" x-model="formData.nip" placeholder="19880512 201201 2 004" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white font-mono focus:outline-none focus:border-blue-500">
+                    <input 
+                        type="text" 
+                        inputmode="numeric"
+                        x-model="formData.nip"
+                        @input="formData.nip = $event.target.value.replace(/[^0-9]/g, '')"
+                        placeholder="198805122012012004" 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+                    >
                 </div>
             </div>
 
