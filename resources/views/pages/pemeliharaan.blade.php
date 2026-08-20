@@ -11,10 +11,10 @@
         selectedPemeliharaan: null,
 
         pemeliharaans: [
-            { id: 1, kode: 'MTN-2026-003', nama: 'CT-Scan 128 Slice Siemens', jenis: 'Kalibrasi Rutin & QC BAPETEN', tgl: '05 Ags 2026', biaya: 'Rp 25.000.000', pelaksana: 'PT. Siemens Healthcare Indonesia', status: 'Selesai', keterangan: 'Hasil uji fungsi akurat dan sertifikat kalibrasi terbit' },
-            { id: 2, kode: 'MTN-2026-007', nama: 'Submersible Pump Pompa Sentral', jenis: 'Penggantian Seal & Bearing', tgl: '10 Ags 2026', biaya: 'Rp 4.500.000', pelaksana: 'Teknisi IPSRS RSUD', status: 'Dalam Pengerjaan', keterangan: 'Sedang dibongkar untuk pembersihan kerak impeller' },
-            { id: 3, kode: 'MTN-2026-009', nama: 'Instalasi Jaringan Pipa Oksigen IGD', jenis: 'Perbaikan Kebocoran Valve Outlet', tgl: '14 Ags 2026', biaya: 'Rp 8.200.000', pelaksana: 'CV. Gas Medika Sentosa', status: 'Menunggu Sparepart', keterangan: 'Menunggu pengiriman flowmeter dan digital sensor dari Surabaya' },
-            { id: 4, kode: 'MTN-2026-012', nama: 'Gedung Paviliun Graha Amukti Lt 1', jenis: 'Pengecatan & Perbaikan Plafon', tgl: '15 Ags 2026', biaya: 'Rp 15.000.000', pelaksana: 'Tim Pemeliharaan Sarpras', status: 'Dalam Pengerjaan', keterangan: 'Perapian koridor utama ruang rawat inap VIP' }
+            { id: 1, kode: 'MTN-2026-003', nama: 'CT-Scan 128 Slice Siemens', jenis: 'Kalibrasi Rutin & QC BAPETEN', tgl: '05 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 25.000.000', pelaksana: 'PT. Siemens Healthcare Indonesia', status: 'Selesai', keterangan: 'Hasil uji fungsi akurat dan sertifikat kalibrasi terbit' },
+            { id: 2, kode: 'MTN-2026-007', nama: 'Submersible Pump Pompa Sentral', jenis: 'Penggantian Seal & Bearing', tgl: '10 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 4.500.000', pelaksana: 'Teknisi IPSRS RSUD', status: 'Dalam Pengerjaan', keterangan: 'Sedang dibongkar untuk pembersihan kerak impeller' },
+            { id: 3, kode: 'MTN-2026-009', nama: 'Instalasi Jaringan Pipa Oksigen IGD', jenis: 'Perbaikan Kebocoran Valve Outlet', tgl: '14 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 8.200.000', pelaksana: 'CV. Gas Medika Sentosa', status: 'Menunggu Sparepart', keterangan: 'Menunggu pengiriman flowmeter dan digital sensor dari Surabaya' },
+            { id: 4, kode: 'MTN-2026-012', nama: 'Gedung Paviliun Graha Amukti Lt 1', jenis: 'Pengecatan & Perbaikan Plafon', tgl: '15 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 15.000.000', pelaksana: 'Tim Pemeliharaan Sarpras', status: 'Dalam Pengerjaan', keterangan: 'Perapian koridor utama ruang rawat inap VIP' }
         ],
 
         get filteredPemeliharaans() {
@@ -163,6 +163,7 @@
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Jenis Pemeliharaan</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Tgl Servis</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Biaya Servis</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tgl Selesai</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi</th>
                     </tr>
@@ -176,6 +177,7 @@
                             <td class="px-4 py-4 text-center text-slate-300 whitespace-nowrap" x-text="item.jenis"></td>
                             <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tgl"></td>
                             <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.biaya"></td>
+                            <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tglsls"></td>
                             <td class="px-4 py-4 text-center whitespace-nowrap">
                                 <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
                                     :class="{
