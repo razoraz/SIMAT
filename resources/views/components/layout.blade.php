@@ -66,7 +66,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased overflow-x-hidden selection:bg-emerald-500 selection:text-slate-950">
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-emerald-500 selection:text-slate-950">
     <div x-data="{ 
             sidebarOpen: window.innerWidth >= 1024,
             isMobile: window.innerWidth < 1024
@@ -93,7 +93,7 @@
         @include('partials.sidebar')
 
         <!-- Area Konten Utama -->
-        <div class="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden w-full">
+        <div class="flex-1 flex flex-col min-w-0 min-h-screen w-full">
             <!-- Panggil Topbar -->
             @include('partials.topbar')
 
