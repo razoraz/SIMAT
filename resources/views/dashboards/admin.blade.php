@@ -12,15 +12,15 @@
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Selamat Datang, {{ Auth::user()->name }}!</h1>
                 <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    Anda berada di Panel Admin Operasional. Wewenang Anda meliputi pembuatan Pengadaan ASTAP, Distribusi ASTAP, Berita Acara (BAST), pembuatan akun User, serta Update/Delete Data ASTAP (status kondisi), Distribusi, User, dan BAST.
+                    Anda berada di Panel Admin Operasional. Wewenang Anda meliputi pembuatan Distribusi ASTAP, Mutasi Aset, Berita Acara (BAST), pembuatan akun User, serta Update/Delete Data ASTAP (status kondisi), Distribusi, User, dan BAST.
                 </p>
             </div>
             
             <!-- Admin Fast Create Action -->
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('pengadaan.create') }}" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center space-x-1.5">
+                <a href="{{ route('distribusi.create') }}" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center space-x-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Pengadaan ASTAP Baru</span>
+                    <span>Distribusi ASTAP Baru</span>
                 </a>
             </div>
         </div>
@@ -39,11 +39,11 @@
 
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-xs font-bold uppercase tracking-wider">Pengadaan ASTAP</span>
-                <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg></div>
+                <span class="text-xs font-bold uppercase tracking-wider">Mutasi Aset</span>
+                <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>
             </div>
-            <p class="text-2xl font-black text-white">84 <span class="text-xs font-normal text-cyan-400">Paket</span></p>
-            <p class="text-[11px] text-slate-400 mt-1">APBD, BLUD, DAK, Hibah</p>
+            <p class="text-2xl font-black text-white">84 <span class="text-xs font-normal text-cyan-400">Mutasi</span></p>
+            <p class="text-[11px] text-slate-400 mt-1">Pemindahan Lokasi Unit</p>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -73,16 +73,16 @@
         </h3>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- 1. Pengadaan ASTAP (Create, Read, Update, Delete) -->
+            <!-- 1. Mutasi Aset (Create, Read, Update, Delete) -->
             <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-cyan-500/40 transition-all flex flex-col justify-between">
                 <div>
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg w-fit mb-3">🛒</div>
-                    <h4 class="text-sm font-bold text-white">Pengadaan ASTAP</h4>
-                    <p class="text-xs text-slate-400 mt-1">CREATE paket pengadaan baru & kelola anggaran pengadaan barang RSUD.</p>
+                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg w-fit mb-3">🔄</div>
+                    <h4 class="text-sm font-bold text-white">Mutasi Aset</h4>
+                    <p class="text-xs text-slate-400 mt-1">CREATE mutasi perpindahan barang antar unit/ruangan kerja RSUD.</p>
                 </div>
                 <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('pengadaan.create') }}" class="text-cyan-400 hover:text-cyan-300">+ Input Pengadaan</a>
-                    <a href="{{ route('pengadaan.index') }}" class="text-slate-400 hover:text-white">Kelola &rarr;</a>
+                    <a href="{{ route('mutasi.create') }}" class="text-cyan-400 hover:text-cyan-300">+ Mutasi Baru</a>
+                    <a href="{{ route('mutasi.index') }}" class="text-slate-400 hover:text-white">Kelola &rarr;</a>
                 </div>
             </div>
 

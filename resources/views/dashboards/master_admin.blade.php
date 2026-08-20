@@ -18,8 +18,7 @@
                     {{ Auth::user()->name }}!</h1>
                 <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
                     Anda berada di Panel Master Admin. Anda memiliki wewenang penuh (Create, Read, Update, Delete) untuk
-                    manajemen akun pengguna, pengadaan ASTAP, distribusi barang, Berita Acara (BAST), serta Jenis ASTAP
-                    dan Jenis Pengadaan.
+                    manajemen fitur master utama, master aset, dan master data sistem.
                 </p>
             </div>
         </div>
@@ -43,16 +42,16 @@
 
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-xs font-bold uppercase tracking-wider">Pengadaan ASTAP</span>
+                <span class="text-xs font-bold uppercase tracking-wider">Mutasi Aset</span>
                 <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400"><svg class="w-4 h-4" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg></div>
             </div>
-            <p class="text-2xl font-black text-white">84 <span class="text-xs font-normal text-cyan-400">Paket</span>
+            <p class="text-2xl font-black text-white">84 <span class="text-xs font-normal text-cyan-400">Mutasi</span>
             </p>
-            <p class="text-[11px] text-slate-400 mt-1">APBD, BLUD, DAK, Hibah</p>
+            <p class="text-[11px] text-slate-400 mt-1">Pemindahan Lokasi Unit</p>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -107,28 +106,28 @@
                     password, & hapus akun.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <button type="button" class="text-amber-400 hover:text-amber-300">+ Create Akun</button>
-                    <button type="button" class="text-slate-400 hover:text-white">Kelola Data &rarr;</button>
+                    <a href="{{ route('master.users') }}" class="text-amber-400 hover:text-amber-300">+ Create Akun</a>
+                    <a href="{{ route('master.users') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
 
-            <!-- 2. Pengadaan ASTAP -->
+            <!-- 2. Mutasi Aset -->
             <div
                 class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-cyan-500/40 transition-all group">
                 <div class="flex items-center justify-between mb-3">
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg">🛒</div>
+                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg">🔄</div>
                     <span
                         class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD
                         Aktif</span>
                 </div>
-                <h4 class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">Pengadaan ASTAP
+                <h4 class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">Mutasi Aset
                 </h4>
-                <p class="text-xs text-slate-400 mt-1">Input paket pengadaan baru, update anggaran/status pengadaan, &
-                    hapus riwayat pengadaan.</p>
+                <p class="text-xs text-slate-400 mt-1">Form perpindahan lokasi barang antar unit/ruangan RSUD &
+                    riwayat penanggung jawab.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <button type="button" class="text-cyan-400 hover:text-cyan-300">+ Input Pengadaan</button>
-                    <button type="button" class="text-slate-400 hover:text-white">Kelola Data &rarr;</button>
+                    <a href="{{ route('mutasi.create') }}" class="text-cyan-400 hover:text-cyan-300">+ Mutasi Baru</a>
+                    <a href="{{ route('mutasi.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
 
@@ -147,8 +146,10 @@
                     barang, & hapus data distribusi.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <button type="button" class="text-teal-400 hover:text-teal-300">+ Distribusi Baru</button>
-                    <button type="button" class="text-slate-400 hover:text-white">Kelola Data &rarr;</button>
+                    <a href="{{ route('distribusi.create') }}" class="text-teal-400 hover:text-teal-300">+ Distribusi
+                        Baru</a>
+                    <a href="{{ route('distribusi.index') }}" class="text-slate-400 hover:text-white">Kelola Data
+                        &rarr;</a>
                 </div>
             </div>
 
@@ -167,12 +168,49 @@
                     jawab, & hapus dokumen.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <button type="button" class="text-purple-400 hover:text-purple-300">+ Buat Dokumen BAST</button>
-                    <button type="button" class="text-slate-400 hover:text-white">Kelola Data &rarr;</button>
+                    <a href="{{ route('bast.create') }}" class="text-purple-400 hover:text-purple-300">+ Buat Dokumen
+                        BAST</a>
+                    <a href="{{ route('bast.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
 
-            <!-- 5. Master Jenis ASTAP -->
+            <!-- 5. Unit & Paviliun -->
+            <div
+                class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-indigo-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-bold text-lg">🏥</div>
+                    <span
+                        class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD
+                        Aktif</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Unit & Paviliun</h4>
+                <p class="text-xs text-slate-400 mt-1">Manajemen gedung paviliun, unit ruangan kerja, instalasi RSUD, & kepala penanggung jawab.</p>
+                <div
+                    class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('unit.create') }}" class="text-indigo-400 hover:text-indigo-300">+ Tambah Unit</a>
+                    <a href="{{ route('unit.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 6. Pemeliharaan Aset -->
+            <div
+                class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-rose-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 font-bold text-lg">🛠️</div>
+                    <span
+                        class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD
+                        Aktif</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-rose-400 transition-colors">Pemeliharaan Aset</h4>
+                <p class="text-xs text-slate-400 mt-1">Jadwal servis berkala, perbaikan aset rusak, riwayat pemeliharaan, & status kelayakan alat.</p>
+                <div
+                    class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('pemeliharaan.create') }}" class="text-rose-400 hover:text-rose-300">+ Input Servis</a>
+                    <a href="{{ route('pemeliharaan.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 7. Master Jenis ASTAP -->
             <div
                 class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/40 transition-all group">
                 <div class="flex items-center justify-between mb-3">
@@ -187,12 +225,14 @@
                     Irigasi, Tetap Lainnya, Tidak Berwujud).</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <button type="button" class="text-emerald-400 hover:text-emerald-300">+ Tambah Jenis</button>
-                    <button type="button" class="text-slate-400 hover:text-white">Kelola Data &rarr;</button>
+                    <a href="{{ route('master.jenis_astap') }}" class="text-emerald-400 hover:text-emerald-300">+
+                        Tambah Jenis</a>
+                    <a href="{{ route('master.jenis_astap') }}" class="text-slate-400 hover:text-white">Kelola Data
+                        &rarr;</a>
                 </div>
             </div>
 
-            <!-- 6. Master Jenis Pengadaan -->
+            <!-- 8. Master Jenis Pengadaan -->
             <div
                 class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-blue-500/40 transition-all group">
                 <div class="flex items-center justify-between mb-3">
@@ -207,8 +247,28 @@
                     BLUD RSUD, Hibah Pemerintah).</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <button type="button" class="text-blue-400 hover:text-blue-300">+ Tambah Sumber</button>
-                    <button type="button" class="text-slate-400 hover:text-white">Kelola Data &rarr;</button>
+                    <a href="{{ route('master.jenis_pengadaan') }}" class="text-blue-400 hover:text-blue-300">+
+                        Tambah Sumber</a>
+                    <a href="{{ route('master.jenis_pengadaan') }}" class="text-slate-400 hover:text-white">Kelola
+                        Data &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 9. Rekening Belanja SIPD -->
+            <div
+                class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-violet-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-violet-500/10 text-violet-400 font-bold text-lg">💳</div>
+                    <span
+                        class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">Master
+                        Admin Only</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-violet-400 transition-colors">Rekening Belanja SIPD</h4>
+                <p class="text-xs text-slate-400 mt-1">Kelola kode akun rekening belanja aset, klasifikasi belanja modal, & sinkronisasi SIPD.</p>
+                <div
+                    class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('master.rekening_belanja') }}" class="text-violet-400 hover:text-violet-300">+ Tambah Akun</a>
+                    <a href="{{ route('master.rekening_belanja') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
         </div>
@@ -218,7 +278,7 @@
     <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
-                <h3 class="text-base font-extrabold text-white">Data ASTAP Full Format (Master Catalog)</h3>
+                <h3 class="text-base font-extrabold text-white">Data ASTAP Full Format</h3>
                 <p class="text-xs text-slate-400 mt-0.5">Daftar lengkap Aset Tetap RSUD Dr. H. Koesnandi Bondowoso
                     berdasarkan kategori resmi</p>
             </div>
@@ -251,7 +311,6 @@
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Tahun</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Lokasi Unit</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Kondisi</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi (CRUD)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80">
@@ -275,24 +334,6 @@
                                 Baik
                             </span>
                         </td>
-                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                            <a href="{{ route('astap.index') }}"
-                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Ubah</span>
-                            </a>
-                            <button type="button"
-                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>Hapus</span>
-                            </button>
-                        </td>
                     </tr>
 
                     <tr class="hover:bg-slate-800/30 transition-colors">
@@ -314,24 +355,6 @@
                                 class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
                                 Baik
                             </span>
-                        </td>
-                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                            <a href="{{ route('astap.index') }}"
-                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Ubah</span>
-                            </a>
-                            <button type="button"
-                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>Hapus</span>
-                            </button>
                         </td>
                     </tr>
 
@@ -355,24 +378,6 @@
                                 Baik
                             </span>
                         </td>
-                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                            <a href="{{ route('astap.index') }}"
-                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Ubah</span>
-                            </a>
-                            <button type="button"
-                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>Hapus</span>
-                            </button>
-                        </td>
                     </tr>
 
                     <tr class="hover:bg-slate-800/30 transition-colors">
@@ -395,24 +400,6 @@
                                 Rusak Ringan
                             </span>
                         </td>
-                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                            <a href="{{ route('astap.index') }}"
-                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Ubah</span>
-                            </a>
-                            <button type="button"
-                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>Hapus</span>
-                            </button>
-                        </td>
                     </tr>
 
                     <tr class="hover:bg-slate-800/30 transition-colors">
@@ -434,24 +421,6 @@
                                 class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
                                 Baik
                             </span>
-                        </td>
-                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                            <a href="{{ route('astap.index') }}"
-                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span>Ubah</span>
-                            </a>
-                            <button type="button"
-                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>Hapus</span>
-                            </button>
                         </td>
                     </tr>
                 </tbody>

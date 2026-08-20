@@ -68,20 +68,7 @@ Route::middleware('auth')->group(function () {
         return view('pages.data_astap');
     })->name('astap.index');
 
-    // 2. Pengadaan Pages & Forms
-    Route::get('/pengadaan', function () {
-        return view('pages.pengadaan');
-    })->name('pengadaan.index');
-
-    Route::get('/pengadaan/create', function () {
-        return view('pages.form_pengadaan');
-    })->name('pengadaan.create');
-
-    Route::get('/pengadaan/{id}/edit', function ($id) {
-        return view('pages.form_pengadaan', ['id' => $id]);
-    })->name('pengadaan.edit');
-
-    // 3. Distribusi Pages & Forms
+    // 2. Distribusi Pages & Forms
     Route::get('/distribusi', function () {
         return view('pages.distribusi');
     })->name('distribusi.index');
