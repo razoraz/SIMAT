@@ -1,5 +1,5 @@
 <!-- TOPBAR SIMAT-RK -->
-<header class="h-16 bg-slate-900 border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0">
+<header class="h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0 shadow-lg shadow-black/20">
     <!-- Left Section: Hamburger & Breadcrumb -->
     <div class="flex items-center space-x-3 sm:space-x-4">
         <button type="button" @click="sidebarOpen = !sidebarOpen"
