@@ -130,36 +130,20 @@
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">🏛️</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-800/80">
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 flex items-center space-x-3">
+                    <div class="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 text-xl">🏛️</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Objek</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-400">{{ number_format($totalCount ?? 0) }} Data</span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Objek Aset</span>
+                        <span class="text-base sm:text-lg font-extrabold text-emerald-400">{{ number_format($totalCount ?? 0) }} Data Kode 108</span>
                     </div>
                 </div>
 
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 text-lg">📁</div>
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 flex items-center space-x-3">
+                    <div class="p-3 rounded-xl bg-cyan-500/10 text-cyan-400 text-xl">📋</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Halaman Aktif</span>
-                        <span class="text-sm sm:text-base font-extrabold text-amber-300">Hal {{ $kode108List->currentPage() }} / {{ $kode108List->lastPage() }}</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">🏷️</div>
-                    <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Data Tampil</span>
-                        <span class="text-sm sm:text-base font-extrabold text-purple-300">{{ $kode108List->count() }} Per Halaman</span>
-                    </div>
-                </div>
-
-                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">📋</div>
-                    <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Klasifikasi KIB</span>
-                        <span class="text-sm sm:text-base font-extrabold text-cyan-300">KIB A s/d KIB H</span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Klasifikasi Aset</span>
+                        <span class="text-base sm:text-lg font-extrabold text-cyan-300">8 Kategori Aset Tetap</span>
                     </div>
                 </div>
             </div>
@@ -171,42 +155,42 @@
                 
                 <!-- Quick Filter Jenis Utama Tabs -->
                 <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">KIB:</span>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Kategori Aset:</span>
                     <a href="{{ route('master.jenis_astap', ['search' => request('search')]) }}"
                         class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis', 'all') === 'all' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        Semua KIB
+                        Semua Aset
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.3.1', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.3.1' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        🌾 KIB A (Tanah)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.3.1' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>🌾 Aset Tanah</span>
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.3.2', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.3.2' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        🔬 KIB B (Mesin)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.3.2' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>🔬 Aset Peralatan dan Mesin</span>
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.3.3', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.3.3' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        🏢 KIB C (Gedung)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.3.3' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>🏢 Aset Gedung & Bangunan</span>
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.3.4', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.3.4' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        🚰 KIB D (Jaringan)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.3.4' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>🚰 Aset Jalan, Irigasi dan Jaringan</span>
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.3.5', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.3.5' ? 'bg-orange-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        📦 KIB E (Lainnya)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.3.5' ? 'bg-orange-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>📦 Aset Tetap Lainnya</span>
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.3.6', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.3.6' ? 'bg-rose-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        🏗️ KIB F (KDP)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.3.6' ? 'bg-rose-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>🏗️ Aset Konstruksi Dalam Pengerjaan</span>
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.5.3', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.5.3' ? 'bg-indigo-500 text-white font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        💾 KIB G (Tidak Berwujud)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.5.3' ? 'bg-indigo-500 text-white font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>💾 Aset Tidak Berwujud</span>
                     </a>
                     <a href="{{ route('master.jenis_astap', ['jenis' => '1.3.7', 'search' => request('search')]) }}"
-                        class="px-3 py-1.5 rounded-xl transition-all {{ request('jenis') === '1.3.7' ? 'bg-pink-500 text-white font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
-                        🔨 KIB H (Renovasi)
+                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 {{ request('jenis') === '1.3.7' ? 'bg-pink-500 text-white font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800' }}">
+                        <span>🔨 Aset Tetap Dalam Renovasi</span>
                     </a>
                 </div>
 
