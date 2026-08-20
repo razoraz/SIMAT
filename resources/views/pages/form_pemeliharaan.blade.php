@@ -245,7 +245,11 @@
                 </div>
                 <div>
                     <label class="block text-emerald-400 font-bold text-xs mb-1.5">Biaya Pemeliharaan (Rp)</label>
-                    <input type="text" x-model="formData.biaya" placeholder="Contoh: Rp 5.000.000" class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-4 py-3 text-xs text-emerald-300 font-mono font-bold">
+                    <input type="text" 
+                        x-model="formData.biaya" 
+                        @input="let val = $event.target.value.replace(/[^0-9]/g, ''); formData.biaya = val ? 'Rp ' + val.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''"
+                        placeholder="Contoh: Rp 5.000.000" 
+                        class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-4 py-3 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
                 </div>
             </div>
 
