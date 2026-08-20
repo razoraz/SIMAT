@@ -10,12 +10,68 @@
         showDetailModal: false,
         selectedPemeliharaan: null,
 
-        pemeliharaans: [
-            { id: 1, kode: 'MTN-2026-003', nama: 'CT-Scan 128 Slice Siemens', jenis: 'Kalibrasi Rutin & QC BAPETEN', tgl: '05 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 25.000.000', pelaksana: 'PT. Siemens Healthcare Indonesia', status: 'Selesai', keterangan: 'Hasil uji fungsi akurat dan sertifikat kalibrasi terbit' },
-            { id: 2, kode: 'MTN-2026-007', nama: 'Submersible Pump Pompa Sentral', jenis: 'Penggantian Seal & Bearing', tgl: '10 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 4.500.000', pelaksana: 'Teknisi IPSRS RSUD', status: 'Dalam Pengerjaan', keterangan: 'Sedang dibongkar untuk pembersihan kerak impeller' },
-            { id: 3, kode: 'MTN-2026-009', nama: 'Instalasi Jaringan Pipa Oksigen IGD', jenis: 'Perbaikan Kebocoran Valve Outlet', tgl: '14 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 8.200.000', pelaksana: 'CV. Gas Medika Sentosa', status: 'Menunggu Sparepart', keterangan: 'Menunggu pengiriman flowmeter dan digital sensor dari Surabaya' },
-            { id: 4, kode: 'MTN-2026-012', nama: 'Gedung Paviliun Graha Amukti Lt 1', jenis: 'Pengecatan & Perbaikan Plafon', tgl: '15 Ags 2026', tglsls:'10 Des 2026', biaya: 'Rp 15.000.000', pelaksana: 'Tim Pemeliharaan Sarpras', status: 'Dalam Pengerjaan', keterangan: 'Perapian koridor utama ruang rawat inap VIP' }
-        ],
+        pemeliharaans: [],
+
+        init() {
+            const stored = localStorage.getItem('simat_pemeliharaans');
+            if (stored) {
+                try {
+                    this.pemeliharaans = JSON.parse(stored);
+                } catch (e) {
+                    this.loadDefaultData();
+                }
+            } else {
+                this.loadDefaultData();
+            }
+        },
+
+        loadDefaultData() {
+            this.pemeliharaans = [
+                { id: 1, kode: 'MTN-2026-003', nama: 'CT-Scan 128 Slice Siemens', jenis: 'Kalibrasi Rutin & QC BAPETEN', tgl: '05 Ags 2026', tgl_selesai: '10 Ags 2026', biaya: 'Rp 25.000.000', pelaksana: 'PT. Siemens Healthcare Indonesia', status: 'Selesai', keterangan: 'Hasil uji fungsi akurat dan sertifikat kalibrasi terbit resmi' },
+                { id: 2, kode: 'MTN-2026-007', nama: 'Submersible Pump Pompa Sentral', jenis: 'Penggantian Seal & Bearing', tgl: '10 Ags 2026', tgl_selesai: '-', biaya: 'Rp 4.500.000', pelaksana: 'Teknisi IPSRS RSUD', status: 'Dalam Pengerjaan', keterangan: 'Sedang dibongkar untuk pembersihan kerak impeller' },
+                { id: 3, kode: 'MTN-2026-009', nama: 'Instalasi Jaringan Pipa Oksigen IGD', jenis: 'Perbaikan Kebocoran Valve Outlet', tgl: '14 Ags 2026', tgl_selesai: '-', biaya: 'Rp 8.200.000', pelaksana: 'CV. Gas Medika Sentosa', status: 'Menunggu Sparepart', keterangan: 'Menunggu pengiriman flowmeter dan digital sensor dari Surabaya' },
+                { id: 4, kode: 'MTN-2026-012', nama: 'Gedung Paviliun Graha Amukti Lt 1', jenis: 'Pengecatan & Perbaikan Plafon', tgl: '15 Ags 2026', tgl_selesai: '-', biaya: 'Rp 15.000.000', pelaksana: 'Tim Pemeliharaan Sarpras', status: 'Dalam Pengerjaan', keterangan: 'Perapian koridor utama ruang rawat inap VIP' }
+            ];
+            this.saveToStorage();
+        },
+
+        saveToStorage() {
+            localStorage.setItem('simat_pemeliharaans', JSON.stringify(this.pemeliharaans));
+        },
+
+        deletePemeliharaan(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus data log pemeliharaan ini?')) {
+                this.pemeliharaans = this.pemeliharaans.filter(p => p.id !== id);
+                this.saveToStorage();
+            }
+        },
+
+        formatDateToday() {
+            const today = new Date();
+            const d = String(today.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            const m = months[today.getMonth()];
+            const y = today.getFullYear();
+            return `${d} ${m} ${y}`;
+        },
+
+        saveQuickEdit() {
+            if (this.selectedPemeliharaan) {
+                const idx = this.pemeliharaans.findIndex(p => p.id === this.selectedPemeliharaan.id);
+                if (idx !== -1) {
+                    if (this.selectedPemeliharaan.status === 'Selesai') {
+                        if (!this.selectedPemeliharaan.tgl_selesai || this.selectedPemeliharaan.tgl_selesai === '-') {
+                            this.selectedPemeliharaan.tgl_selesai = this.formatDateToday();
+                        }
+                    } else {
+                        this.selectedPemeliharaan.tgl_selesai = '-';
+                    }
+                    this.pemeliharaans[idx] = { ...this.selectedPemeliharaan };
+                    this.saveToStorage();
+                }
+                this.showEditModal = false;
+            }
+        },
 
         get filteredPemeliharaans() {
             const query = (this.searchQuery || '').toLowerCase();
@@ -79,7 +135,7 @@
                     <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">✅</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Selesai Dikerjakan</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-300">1 Kegiatan</span>
+                        <span class="text-sm sm:text-base font-extrabold text-emerald-300" x-text="pemeliharaans.filter(p => p.status === 'Selesai').length + ' Kegiatan'"></span>
                     </div>
                 </div>
 
@@ -87,7 +143,7 @@
                     <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">⚙️</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Dalam Pengerjaan</span>
-                        <span class="text-sm sm:text-base font-extrabold text-cyan-300">2 Kegiatan</span>
+                        <span class="text-sm sm:text-base font-extrabold text-cyan-300" x-text="pemeliharaans.filter(p => p.status === 'Dalam Pengerjaan').length + ' Kegiatan'"></span>
                     </div>
                 </div>
 
@@ -95,7 +151,7 @@
                     <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-lg">⏳</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Tunggu Sparepart</span>
-                        <span class="text-sm sm:text-base font-extrabold text-rose-300">1 Kegiatan</span>
+                        <span class="text-sm sm:text-base font-extrabold text-rose-300" x-text="pemeliharaans.filter(p => p.status === 'Menunggu Sparepart').length + ' Kegiatan'"></span>
                     </div>
                 </div>
             </div>
@@ -177,7 +233,7 @@
                             <td class="px-4 py-4 text-center text-slate-300 whitespace-nowrap" x-text="item.jenis"></td>
                             <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tgl"></td>
                             <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.biaya"></td>
-                            <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tglsls"></td>
+                            <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tgl_selesai || '-'"></td>
                             <td class="px-4 py-4 text-center whitespace-nowrap">
                                 <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
                                     :class="{
@@ -199,7 +255,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     <span>Ubah</span>
                                 </a>
-                                <button type="button"
+                                <button type="button" @click="deletePemeliharaan(item.id)"
                                     class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     <span>Hapus</span>
@@ -239,6 +295,14 @@
                         <div>
                             <span class="text-slate-400">Biaya Servis:</span>
                             <p class="font-bold text-emerald-400 font-mono" x-text="selectedPemeliharaan.biaya"></p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Tanggal Pelaksanaan:</span>
+                            <p class="font-semibold text-slate-200 font-mono" x-text="selectedPemeliharaan.tgl"></p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">Tanggal Selesai:</span>
+                            <p class="font-semibold text-emerald-300 font-mono" x-text="selectedPemeliharaan.tgl_selesai || '-'"></p>
                         </div>
                         <div>
                             <span class="text-slate-400">Pelaksana Teknisi:</span>
@@ -299,18 +363,24 @@
                     <h3 class="text-base font-bold text-white">✏️ Ubah Status Pemeliharaan</h3>
                     <button type="button" @click="showEditModal = false" class="text-slate-500 hover:text-white">&times;</button>
                 </div>
-                <form @submit.prevent="showEditModal = false" class="space-y-4 text-xs">
+                <form @submit.prevent="saveQuickEdit()" class="space-y-4 text-xs">
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Nama Aset</label>
                         <input type="text" x-model="selectedPemeliharaan ? selectedPemeliharaan.nama : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
                     </div>
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Status Servis</label>
-                        <select x-model="selectedPemeliharaan ? selectedPemeliharaan.status : 'Selesai'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                        <select x-model="selectedPemeliharaan ? selectedPemeliharaan.status : 'Selesai'"
+                                @change="if(selectedPemeliharaan && selectedPemeliharaan.status === 'Selesai' && (!selectedPemeliharaan.tgl_selesai || selectedPemeliharaan.tgl_selesai === '-')) selectedPemeliharaan.tgl_selesai = formatDateToday()"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
                             <option value="Selesai">Selesai</option>
                             <option value="Dalam Pengerjaan">Dalam Pengerjaan</option>
                             <option value="Menunggu Sparepart">Menunggu Sparepart</option>
                         </select>
+                    </div>
+                    <div x-show="selectedPemeliharaan && selectedPemeliharaan.status === 'Selesai'" x-cloak>
+                        <label class="block text-emerald-400 font-semibold mb-1">Tanggal Selesai</label>
+                        <input type="text" x-model="selectedPemeliharaan ? selectedPemeliharaan.tgl_selesai : ''" placeholder="Contoh: 20 Ags 2026" class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-3.5 py-2.5 text-emerald-300">
                     </div>
                     <div class="pt-4 flex items-center justify-end space-x-2">
                         <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Batal</button>
