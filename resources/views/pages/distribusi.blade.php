@@ -302,6 +302,51 @@
             this.showPrintBastModal = true;
         },
 
+        toggleSignDistribusi(item) {
+            if (!item) return;
+            const target = this.distribusis.find(d => d.id === item.id) || item;
+            if (target.signed) {
+                target.signed = false;
+                target.tgl_signed = '-';
+                target.qr_hash = '';
+                target.status = 'Menunggu Konfirmasi';
+                item.signed = false;
+                item.tgl_signed = '-';
+                item.qr_hash = '';
+                item.status = 'Menunggu Konfirmasi';
+                alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil dibatalkan.');
+            } else {
+                target.signed = true;
+                const now = new Date();
+                target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
+                target.status = 'Telah Diterima';
+                item.signed = true;
+                item.tgl_signed = target.tgl_signed;
+                item.qr_hash = target.qr_hash;
+                item.status = 'Telah Diterima';
+                alert('✍️ BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+            }
+        },
+
+        tolakDistribusi(item) {
+            if (!item) return;
+            item.signed = false;
+            item.tgl_signed = '-';
+            item.qr_hash = '';
+            item.status = 'Ditolak';
+
+            // Sync with main array item
+            const found = this.distribusis.find(d => d.id === item.id);
+            if (found) {
+                found.signed = false;
+                found.tgl_signed = '-';
+                found.qr_hash = '';
+                found.status = 'Ditolak';
+            }
+            alert('❌ BAST Distribusi (' + (item.kode || item.bast_nomor) + ') ditolak! Tanda tangan digital telah dihapus.');
+        },
+
         printCurrentBast() {
             window.print();
         }
@@ -489,10 +534,11 @@
                         <div>
                             <select x-model="statusFilter" 
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-teal-500 transition-all cursor-pointer">
-                                <option value="all">Semua Status Penyerahan</option>
-                                <option value="Telah Diterima">Telah Diterima (Disetujui & Masuk KIR)</option>
-                                <option value="Dalam Pengiriman">Dalam Pengiriman (Siap Kirim)</option>
-                                <option value="Menunggu Konfirmasi">Menunggu Konfirmasi (Verifikasi)</option>
+                                <option value="all">🔍 Semua Status Penyerahan BAST</option>
+                                <option value="Telah Diterima">✅ Telah Diterima & Disahkan</option>
+                                <option value="Ditolak">❌ Ditolak</option>
+                                <option value="Dalam Pengiriman">🚚 Dalam Pengiriman (Siap Kirim)</option>
+                                <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi (Verifikasi)</option>
                             </select>
                         </div>
                     </div>
@@ -608,6 +654,12 @@
                     </div>
 
                     <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                        <button type="button" @click="terimaDistribusi(selectedDistribusi)"
+                            class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg transition-all active:scale-95 flex items-center space-x-1"
+                            title="Tanda Tangan Digital BSrE">
+                            <span>✍️ TTD BSrE</span>
+                        </button>
+
                         <button type="button" @click="showEditBastForm = !showEditBastForm"
                             class="px-3.5 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition-all flex items-center space-x-1.5 active:scale-95">
                             <span x-text="showEditBastForm ? '✕ Tutup Form Edit' : '✏️ Edit Data & Pejabat BAST'"></span>

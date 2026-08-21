@@ -8,12 +8,13 @@
         showAddModal: false,
         showEditModal: false,
         showDetailModal: false,
+        showPrintBastModal: false,
         selectedMutasi: null,
 
         mutasis: [
-            { id: 1, kode: 'MTS-2026-002', nama: 'Bed Pasien Crank Manual (3 Unit)', asal: 'Ruang Rawat Inap Melati', tujuan: 'Paviliun Graha Amukti', tgl: '10 Ags 2026', pemohon: 'dr. H. Rahmat, Sp.PD', status: 'Disetujui', keterangan: 'Penambahan kapasitas ranjang cadangan ruang isolasi VIP' },
-            { id: 2, kode: 'MTS-2026-005', nama: 'Infusion Pump Terumo TE-112', asal: 'Instalasi Gawat Darurat (IGD)', tujuan: 'Ruang ICU Medis', tgl: '12 Ags 2026', pemohon: 'dr. Anita Wijaya, Sp.Em', status: 'Disetujui', keterangan: 'Kebutuhan mendesak monitoring cairan pasien kritis ICU' },
-            { id: 3, kode: 'MTS-2026-009', nama: 'Komputer Desktop All-in-One Core i5', asal: 'Gudang Inventaris Pusat', tujuan: 'Poliklinik Jantung Terpadu', tgl: '14 Ags 2026', pemohon: 'Ns. Bagus, S.Kep', status: 'Menunggu Persetujuan', keterangan: 'Penggantian PC lama unit entri resep elektronik' }
+            { id: 1, kode: 'MTS-2026-002', nama: 'Bed Pasien Crank Manual (3 Unit)', kode_barang: '1.3.2.02.01.08.002', qty: 3, satuan: 'Unit', asal: 'Ruang Rawat Inap Melati', tujuan: 'Paviliun Graha Amukti', tgl: '10 Ags 2026', pemohon: 'dr. H. Rahmat, Sp.PD', status: 'Disetujui', keterangan: 'Penambahan kapasitas ranjang cadangan ruang isolasi VIP' },
+            { id: 2, kode: 'MTS-2026-005', nama: 'Infusion Pump Terumo TE-112', kode_barang: '1.3.2.02.01.01.012', qty: 2, satuan: 'Unit', asal: 'Instalasi Gawat Darurat (IGD)', tujuan: 'Ruang ICU Medis', tgl: '12 Ags 2026', pemohon: 'dr. Anita Wijaya, Sp.Em', status: 'Disetujui', keterangan: 'Kebutuhan mendesak monitoring cairan pasien kritis ICU' },
+            { id: 3, kode: 'MTS-2026-009', nama: 'Komputer Desktop All-in-One Core i5', kode_barang: '1.3.2.10.01.02.003', qty: 1, satuan: 'Unit', asal: 'Gudang Inventaris Pusat', tujuan: 'Poliklinik Jantung Terpadu', tgl: '14 Ags 2026', pemohon: 'Ns. Bagus, S.Kep', status: 'Menunggu Persetujuan', keterangan: 'Penggantian PC lama unit entri resep elektronik' }
         ],
 
         get filteredMutasis() {
@@ -38,6 +39,57 @@
         openEdit(item) {
             this.selectedMutasi = { ...item };
             this.showEditModal = true;
+        },
+
+        openPrintBast(item) {
+            this.selectedMutasi = {
+                ...item,
+                bast_nomor: '034 / MTS / 430.10.7 / 2026',
+                hari: 'Jumat',
+                tanggal_angka: '15',
+                bulan: 'Agustus',
+                tahun: '2026',
+                sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                sk_bupati_tanggal: '02 Januari 2025',
+                pengurus_nama: 'ESTU PRATIKA SARI, SST',
+                pengurus_nip: '198805122011012005',
+                pengurus_jabatan: 'Pengurus Barang Aset RSUD',
+                pj_asal_nama: item.pemohon || 'dr. H. Rahmat, Sp.PD',
+                pj_asal_nip: '198004152006041008',
+                pj_asal_jabatan: 'Kepala Ruangan ' + item.asal,
+                pj_tujuan_nama: 'dr. ADHI SUDARMADJI',
+                pj_tujuan_nip: '198410272009021003',
+                pj_tujuan_jabatan: 'Kepala Ruangan ' + item.tujuan,
+                signed: true
+            };
+            this.showPrintBastModal = true;
+        },
+
+        toggleSignMutasi(item) {
+            if (!item) return;
+            const target = this.mutasis.find(m => m.id === item.id) || item;
+            if (target.signed) {
+                target.signed = false;
+                target.tgl_signed = '-';
+                target.qr_hash = '';
+                target.status = 'Menunggu Persetujuan';
+                item.signed = false;
+                item.tgl_signed = '-';
+                item.qr_hash = '';
+                item.status = 'Menunggu Persetujuan';
+                alert('↩️ Tanda tangan digital BSrE BAST Mutasi (' + (target.kode || target.bast_nomor) + ') berhasil dibatalkan.');
+            } else {
+                target.signed = true;
+                const now = new Date();
+                target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                target.qr_hash = 'BSRE-KOESNANDI-MTS-' + Date.now();
+                target.status = 'Disetujui';
+                item.signed = true;
+                item.tgl_signed = target.tgl_signed;
+                item.qr_hash = target.qr_hash;
+                item.status = 'Disetujui';
+                alert('✍️ BAST Mutasi (' + (target.kode || target.bast_nomor) + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+            }
         }
     }" x-cloak>
 
@@ -51,7 +103,7 @@
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Mutasi Aset</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Pencatatan perpindahan lokasi unit penempatan barang antar ruangan, pelacakan riwayat pergerakan aset, dan otorisasi persetujuan mutasi.
+                        Pencatatan perpindahan lokasi unit penempatan barang antar ruangan, pelacakan riwayat pergerakan aset, dan pencetakan Berita Acara Mutasi resmi.
                     </p>
                 </div>
                 
@@ -120,6 +172,11 @@
                         class="px-3 py-1.5 rounded-xl transition-all shrink-0">
                         ⏳ Menunggu Persetujuan
                     </button>
+                    <button type="button" @click="statusFilter = 'Ditolak'"
+                        :class="statusFilter === 'Ditolak' ? 'bg-rose-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        ❌ Ditolak
+                    </button>
                 </div>
 
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
@@ -172,7 +229,17 @@
                                     :class="item.status === 'Disetujui' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'"
                                     x-text="item.status"></span>
                             </td>
-                            <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
+                            <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
+                                
+                                <!-- Tombol Cetak Berita Acara Mutasi -->
+                                <button type="button" @click="openPrintBast(item)"
+                                    class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                    <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                    </svg>
+                                    <span>Cetak Berita Acara</span>
+                                </button>
+
                                 <button type="button" @click="openDetail(item)"
                                     class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -183,11 +250,6 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     <span>Ubah</span>
                                 </a>
-                                <button type="button"
-                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    <span>Hapus</span>
-                                </button>
                             </td>
                         </tr>
                     </template>
@@ -243,65 +305,169 @@
             </div>
         </div>
 
-        <!-- MODAL TAMBAH MUTASI -->
-        <div x-show="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" x-cloak>
-            <div @click.away="showAddModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-bold text-white">+ Ajukan Mutasi Aset Baru</h3>
-                    <button type="button" @click="showAddModal = false" class="text-slate-500 hover:text-white">&times;</button>
-                </div>
-                <form @submit.prevent="showAddModal = false" class="space-y-4 text-xs">
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Pilih Barang yang Dimutasi</label>
-                        <input type="text" placeholder="Cari nama atau barcode barang..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Ruangan Asal</label>
-                            <input type="text" placeholder="Asal..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+        <!-- MODAL PRINTER BERITA ACARA SERAH TERIMA (BAST) MUTASI ASET RESMI RSUD KOESNANDI -->
+        <div x-show="showPrintBastModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 overflow-y-auto" x-cloak>
+            <div @click.away="showPrintBastModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto my-6">
+                
+                <!-- Action Header Modal Print -->
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800 print:hidden">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center font-bold text-lg">
+                            📄
                         </div>
                         <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Ruangan Tujuan</label>
-                            <input type="text" placeholder="Tujuan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                            <h3 class="text-base font-extrabold text-white">Pratinjau Berita Acara Mutasi Aset (BAST)</h3>
+                            <p class="text-xs text-slate-400">Dokumen resmi Berita Acara Serah Terima Pemindahan Barang Antar Ruangan</p>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Alasan Pemindahan / Mutasi</label>
-                        <textarea placeholder="Uraikan alasan mutasi..." rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white"></textarea>
-                    </div>
-                    <div class="pt-4 flex items-center justify-end space-x-2">
-                        <button type="button" @click="showAddModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Batal</button>
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-rose-500 text-slate-950 font-bold">Kirim Pengajuan</button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
-        <!-- MODAL UBAH MUTASI -->
-        <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" x-cloak>
-            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-bold text-white">✏️ Ubah Status Mutasi</h3>
-                    <button type="button" @click="showEditModal = false" class="text-slate-500 hover:text-white">&times;</button>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" @click="terimaMutasi(selectedMutasi)"
+                            class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg transition-all active:scale-95 flex items-center space-x-1"
+                            title="Tanda Tangan Digital BSrE">
+                            <span>✍️ TTD BSrE</span>
+                        </button>
+
+                        <button type="button" @click="window.print()" 
+                                class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            <span>Cetak Sekarang</span>
+                        </button>
+                        <button type="button" @click="showPrintBastModal = false" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-base font-bold">&times;</button>
+                    </div>
                 </div>
-                <form @submit.prevent="showEditModal = false" class="space-y-4 text-xs">
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Nama Barang</label>
-                        <input type="text" x-model="selectedMutasi ? selectedMutasi.nama : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+
+                <!-- SURAT BAST MUTASI FISIK (PRINTABLE LEMBAR RESMI KERTAS F4/A4) -->
+                <template x-if="selectedMutasi">
+                    <div class="bg-white text-black p-8 sm:p-10 rounded-2xl font-serif shadow-2xl text-xs space-y-4 print:p-0 print:shadow-none print:bg-transparent">
+                        
+                        <!-- KOP SURAT RESMI RSUD DR. H. KOESNANDI BONDOWOSO -->
+                        <div class="border-b-[3px] border-black pb-1 mb-0.5">
+                            <div class="flex items-center justify-between gap-4">
+                                <div class="w-20 shrink-0 flex justify-center">
+                                    <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD" class="w-16 h-16 object-contain">
+                                </div>
+                                <div class="flex-1 text-center font-sans text-black">
+                                    <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wide leading-tight">PEMERINTAH KABUPATEN BONDOWOSO</h4>
+                                    <h3 class="font-black text-sm sm:text-base uppercase tracking-tight leading-tight">RUMAH SAKIT UMUM DAERAH dr. H. KOESNADI</h3>
+                                    <p class="text-[10px] leading-tight mt-0.5">Jl. Kapten Pierre Tendean No. 3 Telepon (0332) 421974. Fax.0332 422311</p>
+                                    <p class="text-[10px] leading-tight">Website: rsudrkoesnadi.go.id, Email: rsu.koesnadi@gmail.com</p>
+                                    <div class="flex items-center justify-between mt-0.5 px-4">
+                                        <span></span>
+                                        <h4 class="font-bold text-xs tracking-[0.3em] uppercase">B O N D O W O S O</h4>
+                                        <span class="text-[9.5px] font-sans font-semibold">Kode Pos: 68214</span>
+                                    </div>
+                                </div>
+                                <div class="w-20 shrink-0 flex justify-center">
+                                    <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD" class="w-16 h-16 object-contain">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border-b border-black mb-4"></div>
+
+                        <!-- JUDUL & NOMOR SURAT -->
+                        <div class="text-center font-sans mb-3">
+                            <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA SERAH TERIMA MUTASI ASET</h3>
+                            <p class="text-[11px] font-semibold">Nomor : <span x-text="selectedMutasi.bast_nomor"></span></p>
+                        </div>
+
+                        <!-- PARAGRAF PEMBUKA -->
+                        <p class="text-justify mb-2 leading-relaxed font-sans">
+                            Pada hari ini <strong x-text="selectedMutasi.hari || 'Jumat'"></strong> tanggal <strong x-text="selectedMutasi.tanggal_angka || '15'"></strong> bulan <strong x-text="selectedMutasi.bulan || 'Agustus'"></strong> tahun <strong x-text="selectedMutasi.tahun || '2026'"></strong>, yang bertanda tangan di bawah ini :
+                        </p>
+
+                        <!-- PIHAK PERTAMA (RUANGAN ASAL / PENGURUS BARANG) -->
+                        <div class="space-y-0.5 mb-2 ml-4 font-sans text-[10.5px]">
+                            <div class="flex"><div class="w-32 font-medium">Nama (Pihak I - Asal)</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.pj_asal_nama"></div></div>
+                            <div class="flex"><div class="w-32 font-medium">NIP</div><div class="w-4">:</div><div class="flex-1 font-mono" x-text="selectedMutasi.pj_asal_nip"></div></div>
+                            <div class="flex"><div class="w-32 font-medium">Jabatan / Ruangan</div><div class="w-4">:</div><div class="flex-1 font-bold" x-text="selectedMutasi.pj_asal_jabatan + ' (' + selectedMutasi.asal + ')'"></div></div>
+                        </div>
+
+                        <!-- PIHAK KEDUA (RUANGAN TUJUAN) -->
+                        <p class="mb-1 leading-relaxed font-sans">Menyerahkan mutasi barang aset kepada :</p>
+                        <div class="space-y-0.5 mb-3 ml-4 font-sans text-[10.5px]">
+                            <div class="flex"><div class="w-32 font-medium">Nama (Pihak II - Tujuan)</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.pj_tujuan_nama"></div></div>
+                            <div class="flex"><div class="w-32 font-medium">NIP</div><div class="w-4">:</div><div class="flex-1 font-mono" x-text="selectedMutasi.pj_tujuan_nip"></div></div>
+                            <div class="flex"><div class="w-32 font-medium">Jabatan / Ruangan</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.pj_tujuan_jabatan + ' (' + selectedMutasi.tujuan + ')'"></div></div>
+                        </div>
+
+                        <!-- TABEL RINCIAN MUTASI ASET -->
+                        <div class="my-3">
+                            <table class="w-full text-center border-collapse border border-black text-[10px] font-sans">
+                                <thead>
+                                    <tr class="bg-gray-200 font-bold border-b border-black">
+                                        <th class="border border-black px-2 py-1.5 w-8">No</th>
+                                        <th class="border border-black px-3 py-1.5 text-left">Nama Barang / Aset</th>
+                                        <th class="border border-black px-3 py-1.5 font-mono">Kode Rekening 108</th>
+                                        <th class="border border-black px-2 py-1.5 w-12">Vol</th>
+                                        <th class="border border-black px-2 py-1.5 w-14">Satuan</th>
+                                        <th class="border border-black px-2 py-1.5">Kondisi</th>
+                                        <th class="border border-black px-3 py-1.5 text-left">Alasan / Urgensi Pemindahan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-black">
+                                        <td class="border border-black px-2 py-1.5">1</td>
+                                        <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="selectedMutasi.nama"></td>
+                                        <td class="border border-black px-3 py-1.5 font-mono" x-text="selectedMutasi.kode_barang || '1.3.2.02.01.08.002'"></td>
+                                        <td class="border border-black px-2 py-1.5 font-bold" x-text="selectedMutasi.qty || 1"></td>
+                                        <td class="border border-black px-2 py-1.5" x-text="selectedMutasi.satuan || 'Unit'"></td>
+                                        <td class="border border-black px-2 py-1.5 font-bold text-emerald-800">Baik</td>
+                                        <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" x-text="selectedMutasi.keterangan"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- KALIMAT PENUTUP -->
+                        <p class="text-justify mb-4 leading-relaxed font-sans">
+                            Demikian Berita Acara Mutasi Aset ini dibuat dengan sebenar-benarnya untuk dipergunakan sebagai kelengkapan administrasi SIMAT-RK RSUD Dr. H. Koesnandi Bondowoso.
+                        </p>
+
+                        <!-- TANDA TANGAN DUAL BSR-E -->
+                        <div class="grid grid-cols-2 gap-8 text-center font-sans text-[10px] mt-6">
+                            <div>
+                                <p>Yang Menyerahkan (Ruangan Asal)</p>
+                                <p class="font-bold" x-text="selectedMutasi.pj_asal_jabatan"></p>
+                                <div class="h-20 flex items-center justify-center py-1">
+                                    <div class="flex items-center space-x-2 p-1.5 border border-purple-600 bg-purple-50 rounded">
+                                        <div class="w-11 h-11 bg-white border border-black p-0.5 flex items-center justify-center">
+                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-MUTASI-ASAL" class="w-full h-full object-contain">
+                                        </div>
+                                        <div class="text-left text-[7.5px] leading-tight text-purple-950 font-sans">
+                                            <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
+                                            <div>Penanggung Jawab Ruangan Asal</div>
+                                            <div class="font-mono">Terverifikasi BSrE SIMAT</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="font-bold underline text-[11px] uppercase" x-text="selectedMutasi.pj_asal_nama"></p>
+                                <p class="font-mono text-[9.5px]" x-text="'NIP. ' + selectedMutasi.pj_asal_nip"></p>
+                            </div>
+
+                            <div>
+                                <p>Yang Menerima (Ruangan Tujuan)</p>
+                                <p class="font-bold" x-text="selectedMutasi.pj_tujuan_jabatan"></p>
+                                <div class="h-20 flex items-center justify-center py-1">
+                                    <div class="flex items-center space-x-2 p-1.5 border border-emerald-600 bg-emerald-50 rounded">
+                                        <div class="w-11 h-11 bg-white border border-black p-0.5 flex items-center justify-center">
+                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-MUTASI-TUJUAN" class="w-full h-full object-contain">
+                                        </div>
+                                        <div class="text-left text-[7.5px] leading-tight text-emerald-950 font-sans">
+                                            <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
+                                            <div>Penanggung Jawab Ruangan Tujuan</div>
+                                            <div class="font-mono">Terverifikasi BSrE SIMAT</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="font-bold underline text-[11px] uppercase" x-text="selectedMutasi.pj_tujuan_nama"></p>
+                                <p class="font-mono text-[9.5px]" x-text="'NIP. ' + selectedMutasi.pj_tujuan_nip"></p>
+                            </div>
+                        </div>
+
                     </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Status Persetujuan</label>
-                        <select x-model="selectedMutasi ? selectedMutasi.status : 'Disetujui'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                            <option value="Disetujui">Disetujui</option>
-                            <option value="Menunggu Persetujuan">Menunggu Persetujuan</option>
-                            <option value="Ditolak">Ditolak</option>
-                        </select>
-                    </div>
-                    <div class="pt-4 flex items-center justify-end space-x-2">
-                        <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Batal</button>
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-rose-500 text-slate-950 font-bold">Simpan Perubahan</button>
-                    </div>
-                </form>
+                </template>
+
             </div>
         </div>
 
