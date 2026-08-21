@@ -83,7 +83,18 @@ Route::middleware('auth')->group(function () {
 
     // 2. Distribusi Pages & Forms
     Route::get('/distribusi', function () {
-        return view('pages.distribusi');
+        $units = \App\Models\Unit::orderBy('id', 'asc')->get()->map(function($u, $idx) {
+            return [
+                'id' => $u->id,
+                'kode' => $u->kode_unit ?: ('UNIT-' . str_pad($u->id, 3, '0', STR_PAD_LEFT)),
+                'nama' => $u->nama,
+                'tipe' => $u->tipe ?: 'Rawat Inap & Paviliun',
+                'kepala' => $u->kepala,
+                'nip' => $u->nip ?: '-',
+                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
+            ];
+        });
+        return view('pages.distribusi', compact('units'));
     })->name('distribusi.index');
 
     Route::get('/distribusi/create', function () {
