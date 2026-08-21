@@ -40,7 +40,7 @@ class UnitController extends Controller
      */
     public function create()
     {
-        $nextKode = 'UNIT-' . str_pad(Unit::count() + 1, 3, '0', STR_PAD_LEFT);
+        $nextKode = Unit::generateNextKode();
         return view('pages.form_unit_paviliun', compact('nextKode'));
     }
 
@@ -59,7 +59,7 @@ class UnitController extends Controller
         ]);
 
         if (empty($validated['kode_unit'])) {
-            $validated['kode_unit'] = 'UNIT-' . str_pad(Unit::count() + 1, 3, '0', STR_PAD_LEFT);
+            $validated['kode_unit'] = Unit::generateNextKode();
         }
 
         $validated['id_aset'] = [];

@@ -19,7 +19,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             UnitSeeder::class,
             JenisAstapSeeder::class,
-            JenisPengadaanSeeder::class,
+            RekeningBelanjaSeeder::class,
+            JenisPengadaanSeeder::class
         ]);
     }
 }

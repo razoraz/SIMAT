@@ -39,10 +39,38 @@ class Unit extends Model
     }
 
     /**
+     * Generate Kode Unit otomatis format UNIT-(3 digit angka nomor urut)
+     * Contoh: UNIT-001, UNIT-002, ..., UNIT-056
+     */
+    public static function generateNextKode(): string
+    {
+        $maxNum = 0;
+        $allKodes = self::pluck('kode_unit');
+        foreach ($allKodes as $kode) {
+            if (preg_match('/^UNIT-(\d+)$/i', $kode, $matches)) {
+                $num = (int)$matches[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+
+        $nextNum = $maxNum > 0 ? ($maxNum + 1) : (self::count() + 1);
+        return 'UNIT-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Hook Boot: Otomatisasi pendaftaran & sinkronisasi akun Sub Admin
      */
     protected static function booted(): void
     {
+        // 0. Saat Unit baru akan dibuat -> pastikan kode_unit selalu terisi otomatis UNIT-(3 digit)
+        static::creating(function (Unit $unit) {
+            if (empty($unit->kode_unit)) {
+                $unit->kode_unit = self::generateNextKode();
+            }
+        });
+
         // 1. Saat Unit baru dibuat -> otomatis buat Akun Sub Admin dengan unit_id menunjuk ke unit ini
         static::created(function (Unit $unit) {
             $email = $unit->email ?: (Str::slug($unit->nama, '.') . '@rsudkoesnandi.id');
