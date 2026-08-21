@@ -224,6 +224,39 @@
             }
         ],
 
+        unitSearchQuery: '',
+        isUnitDropdownOpen: false,
+
+        get filteredUnitDropdownList() {
+            if (!this.unitSearchQuery || this.unitSearchQuery.trim().length === 0) {
+                return this.unitList;
+            }
+            const q = this.unitSearchQuery.toLowerCase().trim();
+            return this.unitList.filter(u => 
+                (u.nama || '').toLowerCase().includes(q) ||
+                (u.kode || '').toLowerCase().includes(q) ||
+                (u.tipe || '').toLowerCase().includes(q) ||
+                (u.kepala || '').toLowerCase().includes(q)
+            );
+        },
+
+        selectUnitFilter(unit) {
+            if (!unit) {
+                this.unitFilter = 'all';
+                this.unitSearchQuery = '';
+            } else {
+                this.unitFilter = unit.nama;
+                this.unitSearchQuery = unit.nama;
+            }
+            this.isUnitDropdownOpen = false;
+        },
+
+        clearUnitFilter() {
+            this.unitFilter = 'all';
+            this.unitSearchQuery = '';
+            this.isUnitDropdownOpen = false;
+        },
+
         get filteredDistribusis() {
             const query = (this.searchQuery || '').toLowerCase();
             return this.distribusis.filter(item => {
@@ -249,6 +282,8 @@
         resetFilters() {
             this.searchQuery = '';
             this.unitFilter = 'all';
+            this.unitSearchQuery = '';
+            this.isUnitDropdownOpen = false;
             this.statusFilter = 'all';
         },
 
@@ -282,7 +317,7 @@
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Distribusi ASTAP</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Pengelolaan alokasi penyerahan barang aset dari inventaris ke paviliun rawat inap, poliklinik, dan instalasi RSUD. Mendukung distribusi beberapa barang sekaligus dalam satu transaksi.
+                        Pengelolaan alokasi penyerahan barang aset dari inventaris ke paviliun rawat inap, unit RSUD, dan instalasi RSUD. Mendukung distribusi beberapa barang sekaligus dalam satu transaksi.
                     </p>
                 </div>
                 
@@ -356,45 +391,109 @@
                     </div>
                 </div>
 
-                <!-- Baris Bawah: Filter Dropdown Unit (Dinamis DB) & Filter Status -->
+                <!-- Baris Bawah: Filter Dropdown Unit (Searchable Ketik Filter) & Filter Status -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
                     
-                    <!-- 1. FILTER UNIT / PAVILIUN (DROPDOWN DINAMIS DATABASE TABEL UNITS) -->
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center space-x-1.5">
-                            <span>🏥 Filter Unit / Paviliun Penerima</span>
-                            <span class="text-teal-400 font-mono text-[10px]" x-text="'(' + unitList.length + ' Unit RSUD)'"></span>
-                        </label>
+                    <!-- 1. FILTER UNIT / PAVILIUN (SEARCHABLE INPUT / KETIK FILTER DINAMIS DARI DATABASE) -->
+                    <div class="relative" @click.away="isUnitDropdownOpen = false">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>🏥 Filter Unit / Paviliun Penerima</span>
+                                <span class="text-teal-400 font-mono text-[10px]" x-text="'(' + unitList.length + ' Unit RSUD)'"></span>
+                            </label>
+                            <template x-if="unitFilter !== 'all'">
+                                <button type="button" @click="clearUnitFilter()" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold flex items-center space-x-0.5">
+                                    <span>✕ Reset Filter Unit</span>
+                                </button>
+                            </template>
+                        </div>
+
                         <div class="relative">
-                            <select x-model="unitFilter" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-teal-500 transition-all appearance-none cursor-pointer">
-                                <option value="all">🏢 Semua Unit & Paviliun (Seluruh RSUD)</option>
-                                <template x-for="u in unitList" :key="u.id">
-                                    <option :value="u.nama" x-text="(u.kode ? u.kode + ' - ' : '') + u.nama + ' (' + u.tipe + ')'"></option>
+                            <input type="text" 
+                                   x-model="unitSearchQuery" 
+                                   @focus="isUnitDropdownOpen = true"
+                                   @input="isUnitDropdownOpen = true; if(unitSearchQuery.trim() === '') unitFilter = 'all'"
+                                   placeholder="Ketik nama unit (misal: 'igd', 'melati', 'radiologi', 'graha')..." 
+                                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pl-9 pr-8 text-xs text-white font-semibold placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
+                            
+                            <svg class="w-4 h-4 text-teal-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+
+                            <template x-if="unitSearchQuery && unitSearchQuery.length > 0">
+                                <button type="button" @click="clearUnitFilter()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-rose-400 p-0.5 rounded">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </template>
+                        </div>
+
+                        <!-- Dropdown Floating Hasil Pencarian Unit -->
+                        <div x-show="isUnitDropdownOpen" 
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0 translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="absolute left-0 right-0 z-40 mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-slate-800">
+                            
+                            <!-- Opsi Semua Unit -->
+                            <div @click="selectUnitFilter(null)" 
+                                 class="px-4 py-2.5 hover:bg-teal-500/15 cursor-pointer transition-colors flex items-center justify-between font-bold text-xs"
+                                 :class="unitFilter === 'all' ? 'bg-teal-500/10 text-teal-300' : 'text-slate-300'">
+                                <div class="flex items-center space-x-2">
+                                    <span>🏢</span>
+                                    <span>Semua Unit & Paviliun (Seluruh RSUD)</span>
+                                </div>
+                                <template x-if="unitFilter === 'all'">
+                                    <span class="text-teal-400 text-xs">✓ Aktif</span>
                                 </template>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </div>
+
+                            <!-- List Unit Terfilter -->
+                            <template x-for="u in filteredUnitDropdownList" :key="u.id">
+                                <div @click="selectUnitFilter(u)" 
+                                     class="px-4 py-2.5 hover:bg-teal-500/15 cursor-pointer transition-colors group flex items-center justify-between"
+                                     :class="unitFilter === u.nama ? 'bg-teal-500/10 text-teal-300' : 'text-slate-300'">
+                                    <div class="space-y-0.5">
+                                        <div class="font-bold text-xs group-hover:text-teal-300 flex items-center space-x-1.5 text-white">
+                                            <span>🏥</span>
+                                            <span x-text="u.nama"></span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-400" x-text="(u.kode ? u.kode + ' • ' : '') + u.tipe + ' • PJ: ' + u.kepala"></div>
+                                    </div>
+                                    <template x-if="unitFilter === u.nama">
+                                        <span class="text-teal-400 font-bold text-xs">✓ Terpilih</span>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <template x-if="filteredUnitDropdownList.length === 0">
+                                <div class="px-4 py-4 text-center text-xs text-slate-400">
+                                    <p class="font-semibold text-amber-400">Unit "<span x-text="unitSearchQuery"></span>" tidak ditemukan</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Coba ketik kata kunci nama ruangan lainnya</p>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
                     <!-- 2. FILTER STATUS PENYERAHAN -->
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                            <span>Status Penyerahan Distribusi</span>
-                        </label>
-                        <div class="relative">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <span>Status Penyerahan Distribusi</span>
+                            </label>
+                            <template x-if="statusFilter !== 'all'">
+                                <button type="button" @click="statusFilter = 'all'" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold">
+                                    <span>✕ Reset Status</span>
+                                </button>
+                            </template>
+                        </div>
+                        <div>
                             <select x-model="statusFilter" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-teal-500 transition-all appearance-none cursor-pointer">
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-teal-500 transition-all cursor-pointer">
                                 <option value="all">Semua Status Penyerahan</option>
                                 <option value="Telah Diterima">Telah Diterima (Disetujui & Masuk KIR)</option>
                                 <option value="Dalam Pengiriman">Dalam Pengiriman (Siap Kirim)</option>
                                 <option value="Menunggu Konfirmasi">Menunggu Konfirmasi (Verifikasi)</option>
                             </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </div>
                         </div>
                     </div>
                 </div>
