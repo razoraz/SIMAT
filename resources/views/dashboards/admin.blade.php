@@ -75,56 +75,132 @@
             <span>Akses Fitur Admin Operasional</span>
         </h3>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- 1. Mutasi Aset (Create, Read, Update, Delete) -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-cyan-500/40 transition-all flex flex-col justify-between">
-                <div>
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg w-fit mb-3">🔄</div>
-                    <h4 class="text-sm font-bold text-white">Mutasi Aset</h4>
-                    <p class="text-xs text-slate-400 mt-1">CREATE mutasi perpindahan barang antar unit/ruangan kerja RSUD.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- 1. Manajemen Akun Sub Admin -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-amber-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 font-bold text-lg">👥</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
                 </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">Manajemen Akun Sub Admin</h4>
+                <p class="text-xs text-slate-400 mt-1">Register akun baru, reset password, & hapus akun.</p>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('master.users') }}" class="text-amber-400 hover:text-amber-300">+ Create Akun</a>
+                    <a href="{{ route('master.users') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 2. Mutasi Aset -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-cyan-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 font-bold text-lg">🔄</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">Mutasi Aset</h4>
+                <p class="text-xs text-slate-400 mt-1">Form perpindahan lokasi barang antar unit/ruangan RSUD & riwayat penanggung jawab.</p>
                 <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
                     <a href="{{ route('mutasi.create') }}" class="text-cyan-400 hover:text-cyan-300">+ Mutasi Baru</a>
-                    <a href="{{ route('mutasi.index') }}" class="text-slate-400 hover:text-white">Kelola &rarr;</a>
+                    <a href="{{ route('mutasi.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
 
-            <!-- 2. Distribusi ASTAP (Create, Read, Update, Delete) -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-teal-500/40 transition-all flex flex-col justify-between">
-                <div>
-                    <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 font-bold text-lg w-fit mb-3">🚚</div>
-                    <h4 class="text-sm font-bold text-white">Distribusi ASTAP</h4>
-                    <p class="text-xs text-slate-400 mt-1">CREATE & UPDATE alokasi penyerahan barang ke unit/ruang kerja RSUD.</p>
+            <!-- 3. Distribusi ASTAP -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-teal-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 font-bold text-lg">🚚</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
                 </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-teal-400 transition-colors">Distribusi ASTAP</h4>
+                <p class="text-xs text-slate-400 mt-1">Form alokasi distribusi barang ke unit RSUD, perbarui lokasi barang, & hapus data distribusi.</p>
                 <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
                     <a href="{{ route('distribusi.create') }}" class="text-teal-400 hover:text-teal-300">+ Distribusi Baru</a>
-                    <a href="{{ route('distribusi.index') }}" class="text-slate-400 hover:text-white">Kelola &rarr;</a>
+                    <a href="{{ route('distribusi.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
 
-            <!-- 3. Berita Acara BAST (Create, Read, Update, Delete) -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-purple-500/40 transition-all flex flex-col justify-between">
-                <div>
-                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-lg w-fit mb-3">📄</div>
-                    <h4 class="text-sm font-bold text-white">Berita Acara (BAST)</h4>
-                    <p class="text-xs text-slate-400 mt-1">CREATE dokumen BAST resmi, cetak dokumen, & update data penanggung jawab.</p>
+            <!-- 4. Pembuatan Berita Acara (BAST) -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-purple-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-lg">📄</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
                 </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">Berita Acara
+                    (BAST)</h4>
+                <p class="text-xs text-slate-400 mt-1">Cetak & buat dokumen BAST penyerahan aset, update penanggung jawab, & hapus dokumen.</p>
                 <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('bast.create') }}" class="text-purple-400 hover:text-purple-300">+ Buat BAST</a>
-                    <a href="{{ route('bast.index') }}" class="text-slate-400 hover:text-white">Kelola &rarr;</a>
+                    <a href="{{ route('bast.create') }}" class="text-purple-400 hover:text-purple-300">+ Buat Dokumen BAST</a>
+                    <a href="{{ route('bast.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
 
-            <!-- 4. Pembuatan Akun User (Create, Update, Delete User) -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/40 transition-all flex flex-col justify-between">
-                <div>
-                    <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold text-lg w-fit mb-3">👤</div>
-                    <h4 class="text-sm font-bold text-white">Manajemen Akun User</h4>
-                    <p class="text-xs text-slate-400 mt-1">CREATE akun sub admin unit/ruangan, UPDATE profil user, & kelola akun.</p>
+            <!-- 5. Unit & Paviliun -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-indigo-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 font-bold text-lg">🏥</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
                 </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-indigo-400 transition-colors">Unit & Paviliun</h4>
+                <p class="text-xs text-slate-400 mt-1">Manajemen gedung paviliun, unit ruangan kerja, instalasi RSUD, & kepala penanggung jawab.</p>
                 <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('master.users') }}" class="text-emerald-400 hover:text-emerald-300">Tambah Akun</a>
-                    <a href="{{ route('master.users') }}" class="text-slate-400 hover:text-white">Kelola &rarr;</a>
+                    <a href="{{ route('unit.create') }}" class="text-indigo-400 hover:text-indigo-300">+ Tambah Unit</a>
+                    <a href="{{ route('unit.index') }}" class="text-slate-400 hover:text-white">Kelola Data
+                        &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 6. Pemeliharaan Aset -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-rose-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 font-bold text-lg">🛠️</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-rose-400 transition-colors">Pemeliharaan Aset</h4>
+                <p class="text-xs text-slate-400 mt-1">Jadwal servis berkala, perbaikan aset rusak, riwayat pemeliharaan, & status kelayakan alat.</p>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('pemeliharaan.create') }}" class="text-rose-400 hover:text-rose-300">+ Input Servis</a>
+                    <a href="{{ route('pemeliharaan.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 7. Master Jenis ASTAP -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold text-lg">🏷️</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">Master Jenis ASTAP</h4>
+                <p class="text-xs text-slate-400 mt-1">Kelola 8 kategori utama (Tanah, Bangunan, Peralatan/Mesin, Irigasi, Tetap Lainnya, Tidak Berwujud).</p>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('master.jenis_astap') }}" class="text-emerald-400 hover:text-emerald-300">+ Tambah Jenis</a>
+                    <a href="{{ route('master.jenis_astap') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 8. Master Jenis Pengadaan -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-blue-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 font-bold text-lg">📋</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">Master Jenis Pengadaan</h4>
+                <p class="text-xs text-slate-400 mt-1">Kelola sumber dana pengadaan (APBD Kabupaten, DAK Kesehatan, BLUD RSUD, Hibah Pemerintah).</p>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('master.jenis_pengadaan') }}" class="text-blue-400 hover:text-blue-300">+ Tambah Sumber</a>
+                    <a href="{{ route('master.jenis_pengadaan') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
+                </div>
+            </div>
+
+            <!-- 9. Rekening Belanja SIPD -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-violet-500/40 transition-all group">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="p-2.5 rounded-xl bg-violet-500/10 text-violet-400 font-bold text-lg">💳</div>
+                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD Aktif</span>
+                </div>
+                <h4 class="text-sm font-bold text-white group-hover:text-violet-400 transition-colors">Rekening Belanja SIPD</h4>
+                <p class="text-xs text-slate-400 mt-1">Kelola kode akun rekening belanja aset, klasifikasi belanja modal, & sinkronisasi SIPD.</p>
+                <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
+                    <a href="{{ route('master.rekening_belanja') }}" class="text-violet-400 hover:text-violet-300">+ Tambah Akun</a>
+                    <a href="{{ route('master.rekening_belanja') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
         </div>
