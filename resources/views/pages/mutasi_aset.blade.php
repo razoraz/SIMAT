@@ -51,7 +51,7 @@
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Mutasi Aset</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Pencatatan perpindahan lokasi unit penempatan barang antar ruangan, tracking riwayat pergerakan aset, dan otorisasi persetujuan mutasi.
+                        Pencatatan perpindahan lokasi unit penempatan barang antar ruangan, pelacakan riwayat pergerakan aset, dan otorisasi persetujuan mutasi.
                     </p>
                 </div>
                 
@@ -83,7 +83,7 @@
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 text-lg">⏳</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu ACC</span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Persetujuan</span>
                         <span class="text-sm sm:text-base font-extrabold text-amber-300">1 Pengajuan</span>
                     </div>
                 </div>
