@@ -11,57 +11,7 @@ class JenisPengadaanController extends Controller
     {
         // Seed initial default data if table is empty
         if (JenisPengadaan::count() === 0) {
-            $defaultData = [
-                [
-                    'program_kode' => '0.00.01',
-                    'program_nama' => 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/kota',
-                    'kegiatan_kode' => '0.00.01.2.10',
-                    'kegiatan_nama' => 'Peningkatan Pelayanan BLUD',
-                    'sub_kegiatan_kode' => '0.00.01.2.10.0001',
-                    'sub_kegiatan_nama' => 'Pelayanan dan Penunjang Pelayanan BLUD',
-                    'keterangan' => 'Alokasi pengadaan operasional, sarana dan prasarana penunjang BLUD RSUD Dr. H. Koesnandi',
-                ],
-                [
-                    'program_kode' => '0.00.01',
-                    'program_nama' => 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/kota',
-                    'kegiatan_kode' => '0.00.01.2.10',
-                    'kegiatan_nama' => 'Peningkatan Pelayanan BLUD',
-                    'sub_kegiatan_kode' => '0.00.01.2.10.0002',
-                    'sub_kegiatan_nama' => 'Pengadaan Sarana dan Prasarana Pendukung Fasilitas Pelayanan Kesehatan',
-                    'keterangan' => 'Belanja modal alat medis ICU, Bed Patient, Instalasi Gas Medis dan Genset Cadangan',
-                ],
-                [
-                    'program_kode' => '1.02.02',
-                    'program_nama' => 'Program Pemenuhan Upaya Kesehatan Perorangan dan Upaya Kesehatan Masyarakat',
-                    'kegiatan_kode' => '1.02.02.2.02',
-                    'kegiatan_nama' => 'Penyediaan Fasilitas Pelayanan Kesehatan untuk UKP dan UKM Rujukan',
-                    'sub_kegiatan_kode' => '1.02.02.2.02.0005',
-                    'sub_kegiatan_nama' => 'Pembangunan / Renovasi Gedung Rumah Sakit dan Sarana Penunjang',
-                    'keterangan' => 'Alokasi APBD/DAK untuk pekerjaan fisik renovasi paviliun dan gedung poliklinik',
-                ],
-                [
-                    'program_kode' => '1.02.02',
-                    'program_nama' => 'Program Pemenuhan Upaya Kesehatan Perorangan dan Upaya Kesehatan Masyarakat',
-                    'kegiatan_kode' => '1.02.02.2.02',
-                    'kegiatan_nama' => 'Penyediaan Fasilitas Pelayanan Kesehatan untuk UKP dan UKM Rujukan',
-                    'sub_kegiatan_kode' => '1.02.02.2.02.0012',
-                    'sub_kegiatan_nama' => 'Pengadaan Alat Kesehatan / Alat Penunjang Medik Fasilitas Pelayanan Kesehatan',
-                    'keterangan' => 'Pengadaan CT-Scan 128 Slice, USG Doppler 4D, Radiologi & Alat Kamar Operasi (IBS)',
-                ],
-                [
-                    'program_kode' => '1.02.03',
-                    'program_nama' => 'Program Peningkatan Kapasitas Sumber Daya Manusia Kesehatan',
-                    'kegiatan_kode' => '1.02.03.2.01',
-                    'kegiatan_nama' => 'Pengembangan Mutu dan Akreditasi Fasilitas Pelayanan Kesehatan',
-                    'sub_kegiatan_kode' => '1.02.03.2.01.0003',
-                    'sub_kegiatan_nama' => 'Pengadaan Sistem Informasi Kesehatan & Software Manajemen SIMRS',
-                    'keterangan' => 'Pengadaan lisensi server, software Rekam Medis Elektronik (RME) & Integrasi SatuSehat',
-                ],
-            ];
-
-            foreach ($defaultData as $item) {
-                JenisPengadaan::create($item);
-            }
+            (new \Database\Seeders\JenisPengadaanSeeder())->run();
         }
 
         $query = JenisPengadaan::query();
@@ -74,13 +24,16 @@ class JenisPengadaanController extends Controller
                   ->orWhere('kegiatan_kode', 'like', "%{$search}%")
                   ->orWhere('kegiatan_nama', 'like', "%{$search}%")
                   ->orWhere('sub_kegiatan_kode', 'like', "%{$search}%")
-                  ->orWhere('sub_kegiatan_nama', 'like', "%{$search}%")
-                  ->orWhere('keterangan', 'like', "%{$search}%");
+                  ->orWhere('sub_kegiatan_nama', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('program') && $request->program !== 'all') {
-            $query->where('program_kode', $request->program);
+            $prog = $request->program;
+            $query->where(function ($q) use ($prog) {
+                $q->where('program_kode', $prog)
+                  ->orWhere('program_nama', 'like', "%{$prog}%");
+            });
         }
 
         $sipdList = $query->orderBy('program_kode')->orderBy('kegiatan_kode')->orderBy('sub_kegiatan_kode')->get();
@@ -100,7 +53,6 @@ class JenisPengadaanController extends Controller
             'kegiatan_nama'     => 'required|string|max:255',
             'sub_kegiatan_kode' => 'required|string|max:50',
             'sub_kegiatan_nama' => 'required|string|max:255',
-            'keterangan'        => 'nullable|string',
         ]);
 
         JenisPengadaan::create($validated);
@@ -119,7 +71,6 @@ class JenisPengadaanController extends Controller
             'kegiatan_nama'     => 'required|string|max:255',
             'sub_kegiatan_kode' => 'required|string|max:50',
             'sub_kegiatan_nama' => 'required|string|max:255',
-            'keterangan'        => 'nullable|string',
         ]);
 
         $item->update($validated);

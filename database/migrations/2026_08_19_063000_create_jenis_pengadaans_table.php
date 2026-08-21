@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('kegiatan_nama');
             $table->string('sub_kegiatan_kode');
             $table->string('sub_kegiatan_nama');
-            $table->text('keterangan')->nullable();
             $table->timestamps();
         });
     }

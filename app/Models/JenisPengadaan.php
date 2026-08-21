@@ -13,6 +13,5 @@ class JenisPengadaan extends Model
         'kegiatan_nama',
         'sub_kegiatan_kode',
         'sub_kegiatan_nama',
-        'keterangan',
     ];
 }

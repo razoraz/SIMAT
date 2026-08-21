@@ -16,8 +16,7 @@
             kegiatan_kode: '',
             kegiatan_nama: '',
             sub_kegiatan_kode: '',
-            sub_kegiatan_nama: '',
-            keterangan: ''
+            sub_kegiatan_nama: ''
         },
 
         openEdit(item) {
@@ -124,53 +123,39 @@
             </div>
         </div>
 
-        <!-- Filter, Quick Tabs & Search Bar Full-Width -->
+        <!-- Search Bar Only -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
-            <div class="flex flex-col gap-4">
+            <form method="GET" action="{{ route('master.jenis_pengadaan') }}" class="flex flex-col sm:flex-row items-center gap-3 w-full text-xs">
                 
-                <!-- Quick Filter Program Tabs -->
-                <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Program:</span>
-                    <button type="button" @click="filterByProgram('all')"
-                        :class="programFilter === 'all' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all">
-                        Semua Program
-                    </button>
-                    @foreach ($uniquePrograms as $prog)
-                        <button type="button" @click="filterByProgram('{{ $prog->program_kode }}')"
-                            :class="programFilter === '{{ $prog->program_kode }}' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                            class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5">
-                            <span class="font-mono font-bold">{{ $prog->program_kode }}</span>
-                            <span class="truncate max-w-[180px] sm:max-w-xs">{{ $prog->program_nama }}</span>
-                        </button>
-                    @endforeach
+                <!-- Search Input Field -->
+                <div class="relative flex-1 w-full">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode / nama program, kegiatan, atau sub kegiatan SIPD... (Tekan Enter)"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
+                    <svg class="w-4 h-4 text-emerald-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    @if (request('search'))
+                        <a href="{{ route('master.jenis_pengadaan') }}" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</a>
+                    @endif
                 </div>
 
-                <!-- Search Bar & Counter -->
-                <form method="GET" action="{{ route('master.jenis_pengadaan') }}" class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
-                    @if (request('program') && request('program') !== 'all')
-                        <input type="hidden" name="program" value="{{ request('program') }}">
-                    @endif
-                    <div class="relative flex-1 w-full">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode / nama program / kegiatan / sub kegiatan SIPD... (Tekan Enter)"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
-                        <svg class="w-4 h-4 text-emerald-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        @if (request('search'))
-                            <a href="{{ route('master.jenis_pengadaan', array_filter(['program' => request('program')])) }}" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</a>
-                        @endif
-                    </div>
+                <!-- Action Buttons & Counter Badge -->
+                <div class="flex items-center space-x-2 shrink-0 w-full sm:w-auto">
+                    <button type="submit" class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <span>Cari</span>
+                    </button>
 
-                    <div class="flex items-center space-x-2 shrink-0">
-                        <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
-                            Menampilkan <span class="text-emerald-400 font-bold">{{ count($sipdList) }}</span> dari <span class="text-white font-bold">{{ $totalCount }}</span> Data SIPD
-                        </span>
-                        <button type="button" @click="resetFilters()"
-                            class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
+                    <span class="px-3.5 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300 whitespace-nowrap">
+                        Menampilkan <span class="text-emerald-400 font-bold">{{ count($sipdList) }}</span> dari <span class="text-white font-bold">{{ $totalCount }}</span> Data SIPD
+                    </span>
+
+                    @if (request('search'))
+                        <button type="button" @click="resetFilters()" class="px-3.5 py-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all shrink-0">
                             🔄 Reset
                         </button>
-                    </div>
-                </form>
-            </div>
+                    @endif
+                </div>
+
+            </form>
         </div>
 
         <!-- ========================================================================= -->
@@ -319,7 +304,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Program</label>
-                                <input type="text" name="program_kode" placeholder="0.00.01" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
+                                <input type="text" inputmode="numeric" @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '')" name="program_kode" placeholder="0.00.01" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Program</label>
@@ -334,7 +319,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Kegiatan</label>
-                                <input type="text" name="kegiatan_kode" placeholder="0.00.01.2.10" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
+                                <input type="text" inputmode="numeric" @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '')" name="kegiatan_kode" placeholder="0.00.01.2.10" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Kegiatan Pengadaan</label>
@@ -349,7 +334,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Sub Kegiatan</label>
-                                <input type="text" name="sub_kegiatan_kode" placeholder="0.00.01.2.10.0001" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
+                                <input type="text" inputmode="numeric" @input="$event.target.value = $event.target.value.replace(/[^0-9.]/g, '')" name="sub_kegiatan_kode" placeholder="0.00.01.2.10.0001" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Sub Kegiatan Pengadaan</label>
@@ -357,12 +342,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-semibold">Keterangan (Opsional)</label>
-                        <input type="text" name="keterangan" placeholder="Keterangan alokasi pengadaan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-emerald-500">
-                    </div>
-
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
                         <button type="button" @click="showAddModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/30 font-bold text-xs shadow-md transition-all flex items-center space-x-1.5 active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -401,7 +380,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Program</label>
-                                <input type="text" name="program_kode" x-model="editFormData.program_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
+                                <input type="text" inputmode="numeric" @input="editFormData.program_kode = $event.target.value = $event.target.value.replace(/[^0-9.]/g, '')" name="program_kode" x-model="editFormData.program_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold focus:border-emerald-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Program</label>
@@ -416,7 +395,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Kegiatan</label>
-                                <input type="text" name="kegiatan_kode" x-model="editFormData.kegiatan_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
+                                <input type="text" inputmode="numeric" @input="editFormData.kegiatan_kode = $event.target.value = $event.target.value.replace(/[^0-9.]/g, '')" name="kegiatan_kode" x-model="editFormData.kegiatan_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-amber-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Kegiatan Pengadaan</label>
@@ -431,7 +410,7 @@
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-slate-400 mb-1">Kode Sub Kegiatan</label>
-                                <input type="text" name="sub_kegiatan_kode" x-model="editFormData.sub_kegiatan_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
+                                <input type="text" inputmode="numeric" @input="editFormData.sub_kegiatan_kode = $event.target.value = $event.target.value.replace(/[^0-9.]/g, '')" name="sub_kegiatan_kode" x-model="editFormData.sub_kegiatan_kode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-purple-400 font-mono font-bold focus:border-purple-500">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-slate-400 mb-1">Nama Sub Kegiatan Pengadaan</label>
@@ -439,12 +418,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <div>
-                        <label class="block text-slate-400 mb-1 font-semibold">Keterangan (Opsional)</label>
-                        <input type="text" name="keterangan" x-model="editFormData.keterangan" placeholder="Keterangan alokasi pengadaan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:border-emerald-500">
-                    </div>
-
                     <div class="pt-3 flex items-center justify-end space-x-2.5 border-t border-slate-800">
                         <button type="button" @click="showEditModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-500/30 font-bold text-xs shadow-md transition-all flex items-center space-x-1.5 active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
