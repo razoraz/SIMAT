@@ -99,9 +99,9 @@
                         <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
                         <span>LOKASI RUANGAN, PAVILIUN & INSTALASI RSUD</span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Unit & Paviliun</h1>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Unit Kerja</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Daftar lokasi penempatan aset tetap, kepala penanggung jawab ruangan, volume barang terpasang, serta total nilai aset tiap paviliun.
+                        Memuat informasi lokasi penempatan aset tetap, penanggung jawab ruangan, kuantitas aset tercatat, serta akumulasi nilai aset di setiap unit kerja.
                     </p>
                 </div>
                 
