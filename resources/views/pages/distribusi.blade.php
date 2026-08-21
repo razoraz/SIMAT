@@ -6,13 +6,16 @@
         searchQuery: '',
         unitFilter: 'all',
         statusFilter: 'all',
-        showAddModal: false,
-        showEditModal: false,
         showDetailModal: false,
+        showEditModal: false,
         showPrintBastModal: false,
         showEditBastForm: false,
         selectedDistribusi: null,
 
+        // Data Unit & Paviliun RSUD diambil dinamis dari Database Tabel Units
+        unitList: {{ Js::from($units ?? []) }},
+
+        // Data Transaksi Distribusi ASTAP (Mendukung Banyak Barang Berbeda Sekali Distribusi)
         distribusis: [
             {
                 id: 1,
@@ -66,10 +69,10 @@
             {
                 id: 2,
                 kode: 'DST-2026-008',
-                nama: 'Patient Monitor 6 Parameter Mindray',
-                tujuan: 'Instalasi Gawat Darurat (IGD)',
+                nama: 'Patient Monitor 6 Parameter Mindray & Emergency Crash Cart',
+                tujuan: 'IGD',
                 tgl: '14 Ags 2026',
-                penerima: 'Ns. Hendra, S.Kep',
+                penerima: 'dr. ADHI SUDARMADJI',
                 status: 'Telah Diterima',
                 bast_nomor: '034 / 034 / 430.10.7 / 2026',
                 hari: 'Jumat',
@@ -83,9 +86,9 @@
                 pengurus_nip: '19760229 200801 1 010',
                 pengurus_jabatan: 'Pengurus Barang',
                 pengurus_ruangan: 'Gudang Perbekalan',
-                pj_nama: 'Ns. Hendra, S.Kep',
-                pj_nip: '19880719 201202 1 002',
-                pj_jabatan: 'Kepala Ruangan IGD',
+                pj_nama: 'dr. ADHI SUDARMADJI',
+                pj_nip: '198410272009021003',
+                pj_jabatan: 'Kepala IGD',
                 pj_ruangan: 'IGD',
                 pj_jabatan_ttd: 'Kepala Ruangan IGD',
                 signed: true,
@@ -109,16 +112,25 @@
                         satuan: 'Unit',
                         kondisi: 'Baik',
                         keterangan: 'Peralatan Siaga Resusitasi IGD'
+                    },
+                    {
+                        no: 3,
+                        nama_barang: 'Suction Pump Portable Medis Thomas',
+                        merk_type: 'Thomas 1632 Aspirator Heavy Duty',
+                        qty: 1,
+                        satuan: 'Unit',
+                        kondisi: 'Baik',
+                        keterangan: 'Peralatan Siaga IGD'
                     }
                 ]
             },
             {
                 id: 3,
                 kode: 'DST-2026-012',
-                nama: 'Submersible Pump Franklin 7.5 HP',
-                tujuan: 'Ruang Utility & Pompa Sentral',
+                nama: 'Submersible Pump Franklin 7.5 HP & Pipa Valve Sentral',
+                tujuan: 'Inst. IPS RS',
                 tgl: '15 Ags 2026',
-                penerima: 'Budi Santoso, ST',
+                penerima: 'DANI PRIANTO, ST',
                 status: 'Dalam Pengiriman',
                 bast_nomor: '037 / 034 / 430.10.7 / 2026',
                 hari: 'Sabtu',
@@ -132,10 +144,10 @@
                 pengurus_nip: '19760229 200801 1 010',
                 pengurus_jabatan: 'Pengurus Barang',
                 pengurus_ruangan: 'Gudang Perbekalan',
-                pj_nama: 'Budi Santoso, ST',
-                pj_nip: '19820510 200902 1 004',
-                pj_jabatan: 'Kepala Instalasi IPSRS',
-                pj_ruangan: 'IPSRS / Utility',
+                pj_nama: 'DANI PRIANTO, ST',
+                pj_nip: '198310152006041010',
+                pj_jabatan: 'Pengelola Penataan Sarana dan Prasarana',
+                pj_ruangan: 'IPSRS',
                 pj_jabatan_ttd: 'Kepala Instalasi IPSRS',
                 signed: false,
                 tgl_signed: '-',
@@ -149,16 +161,25 @@
                         satuan: 'Unit',
                         kondisi: 'Baik',
                         keterangan: 'Sumur Dalam Sentral Gedung Utama'
+                    },
+                    {
+                        no: 2,
+                        nama_barang: 'Ball Valve Kuningan 3 Inch',
+                        merk_type: 'Kitz Heavy Duty Brass 10K',
+                        qty: 4,
+                        satuan: 'Pcs',
+                        kondisi: 'Baik',
+                        keterangan: 'Pipa Distribusi Utama'
                     }
                 ]
             },
             {
                 id: 4,
                 kode: 'DST-2026-015',
-                nama: 'Laptop Operasional Asus ExpertBook',
-                tujuan: 'Instalasi Rekam Medis',
+                nama: 'Laptop Operasional Asus ExpertBook & Printer Label Resep',
+                tujuan: 'Inst. Rekam Medik',
                 tgl: '16 Ags 2026',
-                penerima: 'Dewi Lestari, A.Md.RMIK',
+                penerima: 'PRASTIWI, A.Md',
                 status: 'Menunggu Konfirmasi',
                 bast_nomor: '039 / 034 / 430.10.7 / 2026',
                 hari: 'Minggu',
@@ -172,11 +193,11 @@
                 pengurus_nip: '19760229 200801 1 010',
                 pengurus_jabatan: 'Pengurus Barang',
                 pengurus_ruangan: 'Gudang Perbekalan',
-                pj_nama: 'Dewi Lestari, A.Md.RMIK',
-                pj_nip: '19930814 201703 2 006',
-                pj_jabatan: 'Penanggung Jawab SIMRS Rekam Medis',
-                pj_ruangan: 'Rekam Medis',
-                pj_jabatan_ttd: 'Kepala Instalasi Rekam Medis',
+                pj_nama: 'PRASTIWI, A.Md',
+                pj_nip: '199207272015032008',
+                pj_jabatan: 'Kepala Instalasi Rekam Medik',
+                pj_ruangan: 'Rekam Medik',
+                pj_jabatan_ttd: 'Kepala Instalasi Rekam Medik',
                 signed: false,
                 tgl_signed: '-',
                 keterangan: 'Peremajaan Unit Entri Data SIMRS & EMR',
@@ -189,6 +210,15 @@
                         satuan: 'Unit',
                         kondisi: 'Baik',
                         keterangan: 'Loket Pendaftaran & Coding Klaim BPJS'
+                    },
+                    {
+                        no: 2,
+                        nama_barang: 'Printer Thermal Resep & Label',
+                        merk_type: 'Epson TM-T82X Thermal Auto-Cutter USB',
+                        qty: 2,
+                        satuan: 'Unit',
+                        kondisi: 'Baik',
+                        keterangan: 'Cetak Barcode Berkas Rekam Medis'
                     }
                 ]
             }
@@ -197,11 +227,23 @@
         get filteredDistribusis() {
             const query = (this.searchQuery || '').toLowerCase();
             return this.distribusis.filter(item => {
-                const matchSearch = (item.nama || '').toLowerCase().includes(query) || (item.kode || '').toLowerCase().includes(query) || (item.penerima || '').toLowerCase().includes(query);
-                const matchUnit = this.unitFilter === 'all' || item.tujuan === this.unitFilter;
+                const matchSearch = (item.nama || '').toLowerCase().includes(query) || 
+                                    (item.kode || '').toLowerCase().includes(query) || 
+                                    (item.penerima || '').toLowerCase().includes(query) ||
+                                    (item.items || []).some(it => (it.nama_barang || '').toLowerCase().includes(query));
+                
+                const matchUnit = this.unitFilter === 'all' || 
+                                  item.tujuan.toLowerCase().includes(this.unitFilter.toLowerCase()) ||
+                                  this.unitFilter.toLowerCase().includes(item.tujuan.toLowerCase());
+                
                 const matchStatus = this.statusFilter === 'all' || item.status === this.statusFilter;
                 return matchSearch && matchUnit && matchStatus;
             });
+        },
+
+        getTotalQty(items) {
+            if (!items || !items.length) return 0;
+            return items.reduce((acc, curr) => acc + (parseInt(curr.qty) || 0), 0);
         },
 
         resetFilters() {
@@ -240,19 +282,12 @@
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Distribusi ASTAP</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Pengelolaan alokasi penyerahan dan penyaluran aset dari gudang pusat ke paviliun rawat inap, poliklinik, dan instalasi RSUD.
+                        Pengelolaan alokasi penyerahan barang aset dari inventaris ke paviliun rawat inap, poliklinik, dan instalasi RSUD. Mendukung distribusi beberapa barang sekaligus dalam satu transaksi.
                     </p>
                 </div>
                 
-                <div class="flex flex-wrap items-center gap-2.5 shrink-0">
-                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                    <button type="button" @click="openPrintBast(distribusis[0])"
-                        class="px-3.5 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5 active:scale-95">
-                        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span>📑 Cetak Berita Acara Distribusi</span>
-                    </button>
-                    @endif
-
+                <!-- Action Button Input Baru -->
+                <div class="flex items-center gap-2.5 shrink-0">
                     <a href="{{ route('distribusi.create') }}"
                         class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -297,86 +332,84 @@
             </div>
         </div>
 
-        <!-- Filter, Quick Tabs & Search Bar Full-Width -->
+        <!-- Filter & Search Section (Filter Unit Mengambil Dinamis dari Database Unit) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
             <div class="flex flex-col gap-4">
                 
-                <!-- Quick Filter Unit Tabs -->
-                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Unit:</span>
-                    <button type="button" @click="unitFilter = 'all'"
-                        :class="unitFilter === 'all' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
-                        Semua Unit
-                    </button>
-                    <button type="button" @click="unitFilter = 'Paviliun Graha Amukti'"
-                        :class="unitFilter === 'Paviliun Graha Amukti' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
-                        🏥 Pav. Graha Amukti
-                    </button>
-                    <button type="button" @click="unitFilter = 'Instalasi Gawat Darurat (IGD)'"
-                        :class="unitFilter === 'Instalasi Gawat Darurat (IGD)' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
-                        🚑 IGD Utama
-                    </button>
-                    <button type="button" @click="unitFilter = 'Ruang Utility & Pompa Sentral'"
-                        :class="unitFilter === 'Ruang Utility & Pompa Sentral' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
-                        ⚙️ Utility & Pompa
-                    </button>
-                    <button type="button" @click="unitFilter = 'Instalasi Rekam Medis'"
-                        :class="unitFilter === 'Instalasi Rekam Medis' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
-                        📁 Rekam Medis
-                    </button>
-                </div>
-
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
+                <!-- Baris Atas: Input Pencarian & Counter Data -->
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
                     <div class="relative flex-1 w-full">
-                        <input type="text" x-model="searchQuery" placeholder="Cari nomor distribusi / nama aset / pegawai penerima..."
+                        <input type="text" x-model="searchQuery" placeholder="Cari no. distribusi / nama aset barang / pegawai penerima..."
                             class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all">
                         <svg class="w-4 h-4 text-teal-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
                     </div>
 
                     <div class="flex items-center space-x-2 shrink-0">
-                        <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
+                        <span class="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
                             Menampilkan <span class="text-teal-400 font-bold" x-text="filteredDistribusis.length"></span> dari <span class="text-white font-bold" x-text="distribusis.length"></span> Data
                         </span>
                         <button type="button" @click="resetFilters()"
-                            class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
+                            class="px-3 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
                             🔄 Reset
                         </button>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-800/80">
+                <!-- Baris Bawah: Filter Dropdown Unit (Dinamis DB) & Filter Status -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
+                    
+                    <!-- 1. FILTER UNIT / PAVILIUN (DROPDOWN DINAMIS DATABASE TABEL UNITS) -->
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Penyerahan Distribusi</label>
-                        <select x-model="statusFilter" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500">
-                            <option value="all">Semua Status</option>
-                            <option value="Telah Diterima">Telah Diterima</option>
-                            <option value="Dalam Pengiriman">Dalam Pengiriman</option>
-                            <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
-                        </select>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center space-x-1.5">
+                            <span>🏥 Filter Unit / Paviliun Penerima</span>
+                            <span class="text-teal-400 font-mono text-[10px]" x-text="'(' + unitList.length + ' Unit RSUD)'"></span>
+                        </label>
+                        <div class="relative">
+                            <select x-model="unitFilter" 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-teal-500 transition-all appearance-none cursor-pointer">
+                                <option value="all">🏢 Semua Unit & Paviliun (Seluruh RSUD)</option>
+                                <template x-for="u in unitList" :key="u.id">
+                                    <option :value="u.nama" x-text="(u.kode ? u.kode + ' - ' : '') + u.nama + ' (' + u.tipe + ')'"></option>
+                                </template>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="flex items-end">
-                        <span class="text-xs text-slate-400 italic">Setiap distribusi otomatis menghasilkan nomor dokumen BAST resmi.</span>
+                    <!-- 2. FILTER STATUS PENYERAHAN -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                            <span>Status Penyerahan Distribusi</span>
+                        </label>
+                        <div class="relative">
+                            <select x-model="statusFilter" 
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-teal-500 transition-all appearance-none cursor-pointer">
+                                <option value="all">Semua Status Penyerahan</option>
+                                <option value="Telah Diterima">Telah Diterima (Disetujui & Masuk KIR)</option>
+                                <option value="Dalam Pengiriman">Dalam Pengiriman (Siap Kirim)</option>
+                                <option value="Menunggu Konfirmasi">Menunggu Konfirmasi (Verifikasi)</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Table Distribusi -->
+        <!-- Tabel Distribusi ASTAP (Multi-Barang / Transaksi) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-300">
                 <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
                     <tr>
                         <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">No. Distribusi</th>
-                        <th class="px-4 py-3.5 text-left min-w-[220px]">Nama Barang / ASTAP</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tujuan Unit / Paviliun</th>
+                        <th class="px-4 py-3.5 text-left min-w-[260px]">Rincian Barang yang Didistribusikan</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tujuan Unit / Ruangan</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Tgl Distribusi</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Penerima</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
@@ -388,8 +421,36 @@
                         <tr class="hover:bg-slate-800/30 transition-colors">
                             <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
                             <td class="px-4 py-4 text-center font-mono font-semibold text-teal-400 whitespace-nowrap" x-text="item.kode"></td>
-                            <td class="px-4 py-4 font-bold text-white" x-text="item.nama"></td>
-                            <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap" x-text="item.tujuan"></td>
+                            
+                            <!-- Kolom Barang: Menampilkan Rincian Multi-Barang yang Didistribusikan -->
+                            <td class="px-4 py-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <p class="font-bold text-white text-xs" x-text="item.nama"></p>
+                                        <template x-if="item.items && item.items.length > 1">
+                                            <span class="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold shrink-0"
+                                                  x-text="item.items.length + ' Jenis Barang'">
+                                            </span>
+                                        </template>
+                                    </div>
+
+                                    <!-- Mini Badge Rincian Item Barang -->
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <template x-for="(subItem, subIdx) in item.items" :key="subIdx">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] text-slate-300">
+                                                <span class="text-teal-400">📦</span>
+                                                <span x-text="subItem.nama_barang"></span>
+                                                <span class="font-bold text-emerald-400" x-text="'(' + subItem.qty + ' ' + subItem.satuan + ')'"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 italic mt-0.5" x-text="'Catatan: ' + item.keterangan"></p>
+                                </div>
+                            </td>
+
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <span class="font-bold text-slate-200 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800" x-text="item.tujuan"></span>
+                            </td>
                             <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tgl"></td>
                             <td class="px-4 py-4 text-center font-semibold text-white whitespace-nowrap" x-text="item.penerima"></td>
                             <td class="px-4 py-4 text-center whitespace-nowrap">
@@ -401,26 +462,34 @@
                                     }"
                                     x-text="item.status"></span>
                             </td>
-                            <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                                @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                            <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
+                                
+                                <!-- 1. Tombol Cetak Berita Acara (BAST) di Kolom Aksi -->
                                 <button type="button" @click="openPrintBast(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                    <span>BAST</span>
+                                    class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                    <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                    </svg>
+                                    <span>Cetak Berita Acara</span>
                                 </button>
-                                @endif
+
+                                <!-- 2. Tombol Detail Modal -->
                                 <button type="button" @click="openDetail(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    class="px-2.5 py-1.5 rounded-xl bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 border border-teal-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                    <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     <span>Detail</span>
                                 </button>
+
+                                <!-- 3. Tombol Ubah Form -->
                                 <a :href="'/distribusi/' + item.id + '/edit'"
-                                    class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     <span>Ubah</span>
                                 </a>
+                                
+                                <!-- 4. Tombol Hapus -->
                                 <button type="button"
-                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     <span>Hapus</span>
                                 </button>
@@ -429,84 +498,6 @@
                     </template>
                 </tbody>
             </table>
-        </div>
-
-        <!-- MODAL DETAIL DISTRIBUSI -->
-        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-teal-400 font-bold">🚚</span>
-                        <h3 class="text-base font-bold text-white">Detail Alokasi Distribusi</h3>
-                    </div>
-                    <button type="button" @click="showDetailModal = false" class="text-slate-500 hover:text-white">&times;</button>
-                </div>
-                <div class="space-y-3 text-xs" x-if="selectedDistribusi">
-                    <div>
-                        <span class="text-slate-400">Nomor Distribusi:</span>
-                        <p class="font-mono font-bold text-teal-400" x-text="selectedDistribusi.kode"></p>
-                    </div>
-                    <div>
-                        <span class="text-slate-400">Nama Barang:</span>
-                        <p class="font-bold text-white text-sm" x-text="selectedDistribusi.nama"></p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-                        <div>
-                            <span class="text-slate-400">Tujuan Unit:</span>
-                            <p class="font-semibold text-white" x-text="selectedDistribusi.tujuan"></p>
-                        </div>
-                        <div>
-                            <span class="text-slate-400">Penerima Barang:</span>
-                            <p class="font-semibold text-white" x-text="selectedDistribusi.penerima"></p>
-                        </div>
-                        <div>
-                            <span class="text-slate-400">Tanggal Distribusi:</span>
-                            <p class="font-semibold text-slate-300" x-text="selectedDistribusi.tgl"></p>
-                        </div>
-                        <div>
-                            <span class="text-slate-400">Nomor BAST:</span>
-                            <p class="font-mono font-semibold text-purple-300" x-text="selectedDistribusi.bast_nomor"></p>
-                        </div>
-                    </div>
-                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                        <span class="text-slate-500 block mb-1">Catatan Distribusi:</span>
-                        <p class="text-slate-300" x-text="selectedDistribusi.keterangan"></p>
-                    </div>
-                </div>
-                <div class="pt-4 mt-4 border-t border-slate-800 flex justify-end">
-                    <button type="button" @click="showDetailModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">Tutup</button>
-                </div>
-            </div>
-        <!-- MODAL UBAH DISTRIBUSI -->
-        <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" x-cloak>
-            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-bold text-white">✏️ Ubah Status Distribusi</h3>
-                    <button type="button" @click="showEditModal = false" class="text-slate-500 hover:text-white">&times;</button>
-                </div>
-                <form @submit.prevent="showEditModal = false" class="space-y-4 text-xs">
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Nama Barang</label>
-                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.nama : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Penerima Barang</label>
-                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.penerima : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Status Distribusi</label>
-                        <select x-model="selectedDistribusi ? selectedDistribusi.status : 'Telah Diterima'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                            <option value="Telah Diterima">Telah Diterima</option>
-                            <option value="Dalam Pengiriman">Dalam Pengiriman</option>
-                            <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
-                        </select>
-                    </div>
-                    <div class="pt-4 flex items-center justify-end space-x-2">
-                        <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Batal</button>
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold">Simpan Perubahan</button>
-                    </div>
-                </form>
-            </div>
         </div>
 
         <!-- ========================================================================= -->
@@ -858,6 +849,130 @@
                     </div>
                 </template>
 
+            </div>
+        </div>
+
+        <!-- MODAL DETAIL RINCIAN DISTRIBUSI BARANG (MENDUKUNG MULTI-BARANG) -->
+        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
+            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="p-2 rounded-xl bg-teal-500/20 text-teal-300 text-lg">🚚</span>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-extrabold text-white">Detail Alokasi Penyerahan Barang</h3>
+                            <p class="text-xs text-slate-400" x-text="selectedDistribusi ? ('Nomor Registrasi: ' + selectedDistribusi.kode) : ''"></p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold">&times;</button>
+                </div>
+
+                <template x-if="selectedDistribusi">
+                    <div class="space-y-4 text-xs">
+                        
+                        <!-- Informasi Ringkas Transaksi -->
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                            <div>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Tujuan Unit / Ruangan</span>
+                                <span class="font-bold text-teal-300 text-xs" x-text="selectedDistribusi.tujuan"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Pegawai Penerima (PJ)</span>
+                                <span class="font-bold text-white text-xs" x-text="selectedDistribusi.penerima"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Tanggal Distribusi</span>
+                                <span class="font-mono text-slate-300" x-text="selectedDistribusi.tgl"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Status Penyerahan</span>
+                                <span class="font-bold text-emerald-400" x-text="selectedDistribusi.status"></span>
+                            </div>
+                            <div class="col-span-2">
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Catatan Penyerahan</span>
+                                <span class="text-slate-300 italic" x-text="selectedDistribusi.keterangan"></span>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Rincian Semua Barang yang Didistribusikan -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-slate-300 font-extrabold text-xs flex items-center space-x-1.5">
+                                    <span>📦 Daftar Barang yang Diserahkan</span>
+                                    <span class="text-teal-400" x-text="'(' + (selectedDistribusi.items ? selectedDistribusi.items.length : 0) + ' Jenis Barang)'"></span>
+                                </span>
+                                <span class="text-[11px] text-emerald-400 font-bold" x-text="'Total Volume: ' + getTotalQty(selectedDistribusi.items) + ' Item'"></span>
+                            </div>
+
+                            <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
+                                <table class="w-full text-left text-xs text-slate-300">
+                                    <thead class="bg-slate-900 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
+                                        <tr>
+                                            <th class="px-3 py-2.5 text-center w-8">No</th>
+                                            <th class="px-3 py-2.5 text-left">Nama Barang</th>
+                                            <th class="px-3 py-2.5 text-left">Merk / Tipe</th>
+                                            <th class="px-3 py-2.5 text-center">Vol</th>
+                                            <th class="px-3 py-2.5 text-center">Satuan</th>
+                                            <th class="px-3 py-2.5 text-center">Kondisi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/80">
+                                        <template x-for="(item, idx) in selectedDistribusi.items" :key="idx">
+                                            <tr class="hover:bg-slate-900/50">
+                                                <td class="px-3 py-2.5 text-center font-bold text-slate-500" x-text="idx + 1"></td>
+                                                <td class="px-3 py-2.5 font-bold text-white" x-text="item.nama_barang"></td>
+                                                <td class="px-3 py-2.5 text-slate-400 text-[11px]" x-text="item.merk_type || '-'"></td>
+                                                <td class="px-3 py-2.5 text-center font-bold text-emerald-400" x-text="item.qty"></td>
+                                                <td class="px-3 py-2.5 text-center text-slate-300" x-text="item.satuan"></td>
+                                                <td class="px-3 py-2.5 text-center">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" x-text="item.kondisi"></span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </template>
+
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-2">
+                    <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL UBAH STATUS DISTRIBUSI -->
+        <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" x-cloak>
+            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                    <h3 class="text-base font-bold text-white">✏️ Ubah Status Distribusi</h3>
+                    <button type="button" @click="showEditModal = false" class="text-slate-500 hover:text-white">&times;</button>
+                </div>
+                <form @submit.prevent="showEditModal = false" class="space-y-4 text-xs">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Judul / Ringkasan Barang</label>
+                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.nama : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Penerima Barang</label>
+                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.penerima : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Status Distribusi</label>
+                        <select x-model="selectedDistribusi ? selectedDistribusi.status : 'Telah Diterima'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                            <option value="Telah Diterima">Telah Diterima</option>
+                            <option value="Dalam Pengiriman">Dalam Pengiriman</option>
+                            <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
+                        </select>
+                    </div>
+                    <div class="pt-4 flex items-center justify-end space-x-2">
+                        <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Batal</button>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold">Simpan Perubahan</button>
+                    </div>
+                </form>
             </div>
         </div>
 
