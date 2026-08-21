@@ -409,7 +409,7 @@
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Pusat Cetak Berita Acara (BAST)</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Penerbitan dokumen resmi BAST untuk penambahan aset tetap berbasis triwulan pengadaan serta BAST serah terima barang ke unit dan paviliun penerima (Sub-Admin).
+                        Penerbitan dokumen resmi BAST untuk penambahan aset tetap berbasis triwulan pengadaan serta BAST serah terima barang ke unit dan paviliun penerima.
                     </p>
                 </div>
                 
