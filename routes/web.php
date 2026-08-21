@@ -56,7 +56,20 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function ()
 // Dashboard Sub Admin
 Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(function () {
     Route::get('/sub-admin/dashboard', function () {
-        return view('dashboards.sub_admin');
+        $user = Auth::user();
+        $unit = null;
+        if ($user->unit_id) {
+            $unit = \App\Models\Unit::find($user->unit_id);
+        }
+        
+        // Fallback jika akun subadmin universal / belum memiliki unit_id
+        if (!$unit) {
+            $unit = \App\Models\Unit::where('nama', 'like', '%IGD%')->first() 
+                ?? \App\Models\Unit::where('nama', 'like', '%Melati%')->first()
+                ?? \App\Models\Unit::first();
+        }
+
+        return view('dashboards.sub_admin', compact('unit', 'user'));
     })->name('subadmin.dashboard');
 });
 
