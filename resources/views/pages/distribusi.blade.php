@@ -521,29 +521,20 @@
                             <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
                             <td class="px-4 py-4 text-center font-mono font-semibold text-teal-400 whitespace-nowrap" x-text="item.kode"></td>
                             
-                            <!-- Kolom Barang: Menampilkan Rincian Multi-Barang yang Didistribusikan -->
+                            <!-- Kolom Barang: Ringkasan Rapi (Detail Lengkap Dapat Dilihat di Modal Detail / BAST) -->
                             <td class="px-4 py-4">
                                 <div class="space-y-1">
                                     <div class="flex items-center space-x-2">
-                                        <p class="font-bold text-white text-xs" x-text="item.nama"></p>
-                                        <template x-if="item.items && item.items.length > 1">
-                                            <span class="px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold shrink-0"
+                                        <p class="font-extrabold text-white text-xs" x-text="item.nama"></p>
+                                        <template x-if="item.items && item.items.length > 0">
+                                            <span class="px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold shrink-0"
                                                   x-text="item.items.length + ' Jenis Barang'">
                                             </span>
                                         </template>
                                     </div>
-
-                                    <!-- Mini Badge Rincian Item Barang -->
-                                    <div class="flex flex-wrap gap-1 mt-1">
-                                        <template x-for="(subItem, subIdx) in item.items" :key="subIdx">
-                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] text-slate-300">
-                                                <span class="text-teal-400">📦</span>
-                                                <span x-text="subItem.nama_barang"></span>
-                                                <span class="font-bold text-emerald-400" x-text="'(' + subItem.qty + ' ' + subItem.satuan + ')'"></span>
-                                            </span>
-                                        </template>
-                                    </div>
-                                    <p class="text-[10px] text-slate-400 italic mt-0.5" x-text="'Catatan: ' + item.keterangan"></p>
+                                    <template x-if="item.keterangan">
+                                        <p class="text-[11px] text-slate-400 truncate max-w-xs sm:max-w-md" x-text="'Catatan: ' + item.keterangan"></p>
+                                    </template>
                                 </div>
                             </td>
 
@@ -987,7 +978,7 @@
                                 <span class="font-bold text-emerald-400" x-text="selectedDistribusi.status"></span>
                             </div>
                             <div class="col-span-2">
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Catatan Penyerahan</span>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Catatan</span>
                                 <span class="text-slate-300 italic" x-text="selectedDistribusi.keterangan"></span>
                             </div>
                         </div>
