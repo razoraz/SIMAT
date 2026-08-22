@@ -1,0 +1,48 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('astap_registers', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('astap_id')->constrained('astaps')->cascadeOnDelete();
+            $table->foreignId('unit_id')->nullable()->constrained('units')->nullOnDelete();
+
+            // Kunci Auto-Increment NIBAR (Tahun & Kode 108)
+            $table->string('kode_108', 30);
+            $table->year('tahun_perolehan');
+            $table->unsignedInteger('no_register_int'); // 1, 2, 3, 4, 5... (Auto-increment per kode 108 & tahun)
+            $table->string('no_register', 10); // '0000001', '0000002'...
+            
+            // NIBAR Resmi 45 Digit Unik
+            // Format: 12013511.0200000028.00002026.132050206001.0000001
+            $table->string('nibar', 60)->unique();
+
+            // Status Fisik & Penempatan Unit Ruangan
+            $table->string('ruang_pemegang', 255)->nullable();
+            $table->enum('kondisi', ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Dalam Renovasi'])->default('Baik');
+            $table->enum('status_mutasi', ['Tersedia', 'Dimutasi', 'Dihapuskan'])->default('Tersedia');
+            $table->string('qr_code_path', 255)->nullable();
+            
+            $table->timestamps();
+            
+            $table->index(['kode_108', 'tahun_perolehan', 'no_register_int']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('astap_registers');
+    }
+};

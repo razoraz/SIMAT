@@ -78,7 +78,52 @@ Route::middleware('auth')->group(function () {
     
     // 1. Data ASTAP Pages
     Route::get('/astap', function () {
-        return view('pages.data_astap');
+        $astaps = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'unit'])
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function($a) {
+                $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
+                $firstReg = $a->registers ? $a->registers->first() : null;
+                return [
+                    'id' => $a->id,
+                    'category' => $a->category,
+                    'kode_barang' => $a->kode_108,
+                    'nama_barang' => $a->nama_barang,
+                    'tahun_perolehan' => (string) $a->tahun_perolehan,
+                    'volume_satuan' => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
+                    'jenis_aset_nama' => $a->jenisAstap ? $a->jenisAstap->nama_jenis : ($a->category === 'ATB' ? 'ASET TIDAK BERWUJUD' : ($a->category === 'EXTRACOM' ? 'EKSTRAKOMTABEL (< RP 300.000)' : 'PERALATAN DAN MESIN')),
+                    'merk' => $spec['merk'] ?? ($spec['buku_judul'] ?? ($spec['judul_lisensi'] ?? ($spec['konstruksi'] ?? '-'))),
+                    'type' => $spec['type'] ?? ($spec['hak_tanah'] ?? ($spec['bertingkat'] ?? '-')),
+                    'ukuran' => $spec['ukuran'] ?? (isset($spec['luas_m2']) ? $spec['luas_m2'] . ' m²' : ($spec['buku_spesifikasi'] ?? '-')),
+                    'no_pabrik' => $spec['no_pabrik'] ?? ($spec['sertifikat_no'] ?? '-'),
+                    'bahan' => $spec['bahan'] ?? '-',
+                    'program_nama' => $a->jenisPengadaan ? $a->jenisPengadaan->program_nama : 'Program Penunjang Urusan Pemerintah Daerah',
+                    'kegiatan_nama' => $a->jenisPengadaan ? $a->jenisPengadaan->kegiatan_nama : 'Peningkatan Pelayanan BLUD',
+                    'sub_kegiatan_nama' => $a->jenisPengadaan ? $a->jenisPengadaan->sub_kegiatan_nama : 'Pelayanan dan Penunjang Pelayanan BLUD',
+                    'rekening_nama' => $a->rekeningBelanja ? $a->rekeningBelanja->nama_belanja : 'Belanja Modal Aset Tetap',
+                    'spk_nomor' => $a->spk_nomor,
+                    'spk_tanggal' => $a->spk_tanggal ? $a->spk_tanggal->format('Y-m-d') : null,
+                    'surat_pesanan_nomor' => $a->surat_pesanan_nomor,
+                    'kwitansi_nomor' => $a->kwitansi_nomor,
+                    'faktur_nomor' => $a->faktur_nomor,
+                    'jumlah_realisasi' => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
+                    'total_realisasi_num' => (float) $a->total_realisasi,
+                    'kondisi' => $firstReg ? $firstReg->kondisi : 'Baik',
+                    'asal_usul' => 'BLUD RSUD',
+                    'keterangan' => $a->keterangan_tambahan,
+                    'registers' => $a->registers ? $a->registers->map(function($r) {
+                        return [
+                            'id' => $r->id,
+                            'no_register' => $r->no_register,
+                            'nibar' => $r->nibar,
+                            'ruang_pemegang' => $r->ruang_pemegang,
+                            'kondisi' => $r->kondisi,
+                            'status_mutasi' => $r->status_mutasi
+                        ];
+                    })->values() : []
+                ];
+            });
+        return view('pages.data_astap', compact('astaps'));
     })->name('astap.index');
 
     // 2. Distribusi Pages & Forms
@@ -171,6 +216,15 @@ Route::middleware('auth')->group(function () {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
             return view('pages.form_astap', ['id' => $id, 'dbMaster108' => $dbMaster108]);
         })->name('astap.edit');
+
+        Route::delete('/astap/{id}', function ($id) {
+            $astap = \App\Models\Astap::find($id);
+            if ($astap) {
+                $astap->registers()->delete();
+                $astap->delete();
+            }
+            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dihapus.']);
+        })->name('astap.destroy');
 
         // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
         Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');

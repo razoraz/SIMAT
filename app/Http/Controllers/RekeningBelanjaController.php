@@ -88,10 +88,6 @@ class RekeningBelanjaController extends Controller
             });
         }
 
-        if ($request->filled('kelompok') && $request->kelompok !== 'all') {
-            $query->where('kelompok', $request->kelompok);
-        }
-
         $rekeningList = $query->orderBy('kelompok')->orderBy('kode_rek')->get();
         $totalCount = RekeningBelanja::count();
 

@@ -20,7 +20,8 @@ class DatabaseSeeder extends Seeder
             UnitSeeder::class,
             JenisAstapSeeder::class,
             RekeningBelanjaSeeder::class,
-            JenisPengadaanSeeder::class
+            JenisPengadaanSeeder::class,
+            AstapSeeder::class
         ]);
     }
 }

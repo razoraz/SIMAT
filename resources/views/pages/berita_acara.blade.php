@@ -677,33 +677,15 @@
             <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     
-                    <!-- Pilihan 4 Triwulan Tabs -->
+                    <!-- Pilihan Periode Filter Dropdown -->
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2 shrink-0">Pilih Periode:</span>
-                        
-                        <button type="button" @click="selectedTriwulanKey = 'TW1'"
-                            :class="selectedTriwulanKey === 'TW1' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
-                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
-                            Triwulan I (Jan - Mar)
-                        </button>
-
-                        <button type="button" @click="selectedTriwulanKey = 'TW2'"
-                            :class="selectedTriwulanKey === 'TW2' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
-                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
-                            Triwulan II (Apr - Jun)
-                        </button>
-
-                        <button type="button" @click="selectedTriwulanKey = 'TW3'"
-                            :class="selectedTriwulanKey === 'TW3' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
-                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
-                            Triwulan III (Jul - Sep)
-                        </button>
-
-                        <button type="button" @click="selectedTriwulanKey = 'TW4'"
-                            :class="selectedTriwulanKey === 'TW4' ? 'bg-purple-500 text-slate-950 font-extrabold shadow-lg shadow-purple-500/20 ring-2 ring-purple-400' : 'bg-slate-950 text-slate-300 hover:text-white border border-slate-800'"
-                            class="px-4 py-2 rounded-xl text-xs font-semibold transition-all">
-                            Triwulan IV (Okt - Des)
-                        </button>
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Pilih Periode:</label>
+                        <select x-model="selectedTriwulanKey" class="bg-slate-950 border border-purple-500/40 hover:border-purple-400 rounded-xl px-3.5 py-2 text-xs font-bold text-purple-300 focus:outline-none focus:border-purple-500 shadow-md shadow-purple-500/10 transition-all cursor-pointer">
+                            <option value="TW1">Triwulan I (Jan - Mar)</option>
+                            <option value="TW2">Triwulan II (Apr - Jun)</option>
+                            <option value="TW3">Triwulan III (Jul - Sep)</option>
+                            <option value="TW4">Triwulan IV (Okt - Des)</option>
+                        </select>
                     </div>
 
                     <!-- Tahun Dropdown & Tombol Aksi TTD / Cetak -->
