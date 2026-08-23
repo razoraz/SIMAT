@@ -302,6 +302,9 @@
                 selectedAstap: null,
                 selectedAstapDetail: null,
                 selectedQrItem: null,
+                detailKondisiFilter: 'all',
+                detailPenempatanFilter: 'all',
+                detailSearchQuery: '',
                 
                 // Multi-Step Form State
                 currentStep: 1,
@@ -374,6 +377,9 @@
 
                 openDetail(item) {
                     this.selectedAstapDetail = item;
+                    this.detailKondisiFilter = 'all';
+                    this.detailPenempatanFilter = 'all';
+                    this.detailSearchQuery = '';
                     this.showDetailModal = true;
                 },
 
@@ -440,15 +446,90 @@
                     });
                 },
 
+                get filteredRegisters() {
+                    if (!this.selectedAstapDetail || !this.selectedAstapDetail.registers) return [];
+                    const query = (this.detailSearchQuery || '').toLowerCase().trim();
+                    return this.selectedAstapDetail.registers.filter(reg => {
+                        const matchKondisi = this.detailKondisiFilter === 'all' || reg.kondisi === this.detailKondisiFilter;
+                        
+                        let matchPenempatan = true;
+                        if (this.detailPenempatanFilter === 'sudah') {
+                            matchPenempatan = !!reg.ruang_pemegang;
+                        } else if (this.detailPenempatanFilter === 'belum') {
+                            matchPenempatan = !reg.ruang_pemegang;
+                        }
+
+                        const matchQuery = !query || 
+                            (reg.nibar || '').toLowerCase().includes(query) ||
+                            (reg.no_register || '').toLowerCase().includes(query) ||
+                            (reg.ruang_pemegang || '').toLowerCase().includes(query);
+
+                        return matchKondisi && matchPenempatan && matchQuery;
+                    });
+                },
+
                 downloadQrCode(item) {
-                    this.selectedQrItem = item;
+                    const riwayat = this.getRiwayatServis(item);
+                    let riwayatText = 'Tidak Ada Riwayat Perbaikan';
+                    if (riwayat && riwayat.length > 0) {
+                        riwayatText = riwayat.length + ' Kali Perbaikan (Terakhir: ' + riwayat[0].jenis + ' - ' + riwayat[0].status + ')';
+                    }
+
+                    this.selectedQrItem = {
+                        kode_barang: item.kode_barang,
+                        nama_barang: item.nama_barang,
+                        category: item.category,
+                        tahun_perolehan: item.tahun_perolehan,
+                        ruang_pemegang: item.letak_lokasi || 'Gudang Aset Utama / Belum Ditempatkan',
+                        kondisi: item.kondisi || 'Baik',
+                        riwayat_servis: riwayatText
+                    };
                     this.showQrModal = true;
+                },
+
+                downloadQrCodeNibar(reg, astap) {
+                    const riwayat = this.getRiwayatServis(astap);
+                    let riwayatText = 'Tidak Ada Riwayat Perbaikan';
+                    if (riwayat && riwayat.length > 0) {
+                        riwayatText = riwayat.length + ' Kali Perbaikan (Terakhir: ' + riwayat[0].jenis + ' - ' + riwayat[0].status + ')';
+                    }
+
+                    this.selectedQrItem = {
+                        kode_barang: reg.nibar || (astap ? astap.kode_barang : 'ASET'),
+                        nama_barang: (astap ? astap.nama_barang : 'Aset') + ' (Register ' + reg.no_register + ')',
+                        category: astap ? astap.category : 'NIBAR',
+                        tahun_perolehan: astap ? astap.tahun_perolehan : '-',
+                        ruang_pemegang: reg.ruang_pemegang || 'Belum Ditempatkan / Di Gudang Aset',
+                        kondisi: reg.kondisi || (astap ? astap.kondisi : 'Baik'),
+                        riwayat_servis: riwayatText
+                    };
+                    this.showQrModal = true;
+                },
+
+                getQrPayloadUrl(item) {
+                    if (!item) return '';
+                    return window.location.origin + '/scan/' + encodeURIComponent(item.kode_barang || '');
+                },
+
+                getQrPayloadString(item) {
+                    if (!item) return '';
+                    return [
+                        '=== SIMAT-RK RSUD DR. H. KOESNANDI ===',
+                        '📦 Nama Barang : ' + (item.nama_barang || '-'),
+                        '🏷️ NIBAR / Kode : ' + (item.kode_barang || '-'),
+                        '📅 Thn Perolehan : ' + (item.tahun_perolehan || '-'),
+                        '📍 Lokasi Penempatan: ' + (item.ruang_pemegang || 'Belum Ditempatkan'),
+                        '⚙️ Kondisi Aset : ' + (item.kondisi || 'Baik'),
+                        '🛠️ Riwayat Servis: ' + (item.riwayat_servis || 'Tidak Ada Riwayat Perbaikan'),
+                        '---------------------------------------',
+                        'Verifikasi Publik: ' + this.getQrPayloadUrl(item)
+                    ].join('\n');
                 },
 
                 downloadQrImage() {
                     if (!this.selectedQrItem) return;
-                    const kode = this.selectedQrItem.kode_barang || 'ASET';
-                    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(kode);
+                    const scanUrl = this.getQrPayloadUrl(this.selectedQrItem);
+                    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(scanUrl);
                     fetch(qrUrl)
                         .then(res => res.blob())
                         .then(blob => {
@@ -456,7 +537,7 @@
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = url;
-                            a.download = 'QR_CODE_' + kode.replace(/\./g, '_') + '.png';
+                            a.download = 'QR_CODE_' + (this.selectedQrItem.kode_barang || 'ASET').replace(/\./g, '_') + '.png';
                             document.body.appendChild(a);
                             a.click();
                             window.URL.revokeObjectURL(url);
@@ -724,7 +805,6 @@
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Volume / Kuantitas</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Nilai Realisasi</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Kondisi</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">QR Code</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
@@ -787,18 +867,6 @@
                                           }"></span>
                                     <span x-text="item.kondisi"></span>
                                 </span>
-                            </td>
-
-                            <!-- QR Code Aset -->
-                            <td class="px-4 py-4 text-center whitespace-nowrap">
-                                <button type="button" @click="downloadQrCode(item)"
-                                    title="Pratinjau & Download QR Code Aset"
-                                    class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-xs transition-all shadow-sm hover:scale-105 active:scale-95 group cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                    </svg>
-                                    <span class="leading-none pt-0.5">Download QR Code</span>
-                                </button>
                             </td>
 
                             <!-- Aksi (Rincian, Edit, Hapus) -->
@@ -925,12 +993,49 @@
 
                         <!-- TABEL RINCIAN REGISTER NIBAR PER-UNIT -->
                         <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🏷️ RINCIAN NIBAR &amp; PENEMPATAN RUANGAN (REGISTER):</span>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-800 pb-3">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🏷️ RINCIAN NIBAR &amp; PENEMPATAN RUANGAN (REGISTER):</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Filter kondisi aset dan lokasi penempatan ruangan di bawah ini.</p>
                                 </div>
-                                <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono"
-                                      x-text="(selectedAstapDetail.registers ? selectedAstapDetail.registers.length : 0) + ' Unit Register'"></span>
+                                <div class="flex items-center space-x-2 shrink-0">
+                                    <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono"
+                                          x-text="filteredRegisters.length + ' / ' + (selectedAstapDetail.registers ? selectedAstapDetail.registers.length : 0) + ' Unit'"></span>
+                                </div>
+                            </div>
+
+                            <!-- FILTER BAR INTERAKTIF RINCIAN MODAL -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                                <!-- Filter Status Penempatan -->
+                                <div>
+                                    <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Penempatan</label>
+                                    <select x-model="detailPenempatanFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
+                                        <option value="all">Semua Penempatan</option>
+                                        <option value="sudah">📍 Sudah Ditempatkan (Ada Ruangan)</option>
+                                        <option value="belum">⚠️ Belum Ditempatkan (Gudang)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Filter Kondisi -->
+                                <div>
+                                    <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi Unit</label>
+                                    <select x-model="detailKondisiFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
+                                        <option value="all">Semua Kondisi</option>
+                                        <option value="Baik">Baik (B)</option>
+                                        <option value="Rusak Ringan">Rusak Ringan (RR)</option>
+                                        <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                        <option value="Dalam Renovasi">Dalam Renovasi</option>
+                                    </select>
+                                </div>
+
+                                <!-- Cari NIBAR / Ruangan -->
+                                <div>
+                                    <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cari NIBAR / Ruangan</label>
+                                    <input type="text" x-model="detailSearchQuery" placeholder="Cari NIBAR / No Reg / Ruang..."
+                                           class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+                                </div>
                             </div>
 
                             <div class="overflow-x-auto rounded-xl border border-slate-800/80">
@@ -941,10 +1046,11 @@
                                             <th class="px-3 py-2.5">NIBAR Resmi 45 Digit</th>
                                             <th class="px-3 py-2.5">Status Penempatan Ruangan</th>
                                             <th class="px-3 py-2.5 text-center">Kondisi</th>
+                                            <th class="px-3 py-2.5 text-center whitespace-nowrap">QR Code</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80 bg-slate-900/50">
-                                        <template x-for="reg in (selectedAstapDetail.registers || [])" :key="reg.id">
+                                        <template x-for="reg in filteredRegisters" :key="reg.id">
                                             <tr class="hover:bg-slate-800/60 transition-colors">
                                                 <td class="px-3 py-2.5 text-center font-mono font-bold text-slate-400" x-text="reg.no_register"></td>
                                                 <td class="px-3 py-2.5 font-mono font-semibold text-emerald-400 whitespace-nowrap" x-text="reg.nibar"></td>
@@ -971,12 +1077,22 @@
                                                               'bg-purple-500/20 text-purple-300 border border-purple-500/30': reg.kondisi === 'Dalam Renovasi'
                                                           }" x-text="reg.kondisi"></span>
                                                 </td>
+                                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                                    <button type="button" @click="downloadQrCodeNibar(reg, selectedAstapDetail)"
+                                                        title="Pratinjau & Download QR NIBAR Unit Ini"
+                                                        class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-[10.5px] transition-all shadow-sm hover:scale-105 active:scale-95 group cursor-pointer leading-none">
+                                                        <svg class="w-3 h-3 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                                        </svg>
+                                                        <span class="leading-none pt-0.5">Download QR</span>
+                                                    </button>
+                                                </td>
                                             </tr>
                                         </template>
-                                        <template x-if="!selectedAstapDetail.registers || selectedAstapDetail.registers.length === 0">
+                                        <template x-if="filteredRegisters.length === 0">
                                             <tr>
-                                                <td colspan="4" class="px-3 py-3 text-center text-slate-500 italic text-xs">
-                                                    Belum ada rincian register NIBAR terdaftar untuk aset ini.
+                                                <td colspan="5" class="px-3 py-4 text-center text-slate-500 italic text-xs">
+                                                    Tidak ditemukan rincian register NIBAR yang sesuai dengan filter pencarian.
                                                 </td>
                                             </tr>
                                         </template>
@@ -1013,24 +1129,61 @@
 
                 <template x-if="selectedQrItem">
                     <div class="space-y-4">
+                        <!-- Gambar QR Code yang Berisi URL Publik (Bisa Di-scan HP Tanpa Login) -->
                         <div class="p-4 bg-white rounded-2xl inline-block shadow-lg border-2 border-emerald-500/40">
-                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=' + encodeURIComponent(selectedQrItem.kode_barang)"
+                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=' + encodeURIComponent(getQrPayloadUrl(selectedQrItem))"
                                  :alt="selectedQrItem.nama_barang"
-                                 class="w-48 h-48 mx-auto object-contain" />
+                                 class="w-52 h-52 mx-auto object-contain" />
                         </div>
-                        <div>
-                            <h4 class="text-sm font-extrabold text-white" x-text="selectedQrItem.nama_barang"></h4>
-                            <p class="text-xs font-mono font-bold text-emerald-400 mt-1" x-text="'Kode: ' + selectedQrItem.kode_barang"></p>
-                            <p class="text-[11px] text-slate-400 mt-0.5" x-text="selectedQrItem.category + ' • Perolehan Tahun ' + selectedQrItem.tahun_perolehan"></p>
+
+                        <!-- Kartu Informasi Detail Barang Sesuai QR Code -->
+                        <div class="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 text-left space-y-2 text-xs">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <span class="text-slate-400 font-semibold text-[10.5px]">📦 Nama Barang:</span>
+                                <span class="text-white font-extrabold text-right max-w-[200px] truncate" x-text="selectedQrItem.nama_barang"></span>
+                            </div>
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <span class="text-slate-400 font-semibold text-[10.5px]">🏷️ NIBAR / Kode:</span>
+                                <span class="text-emerald-400 font-bold font-mono text-right text-[11px]" x-text="selectedQrItem.kode_barang"></span>
+                            </div>
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <span class="text-slate-400 font-semibold text-[10.5px]">📅 Tahun Perolehan:</span>
+                                <span class="text-slate-200 font-bold font-mono" x-text="selectedQrItem.tahun_perolehan"></span>
+                            </div>
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <span class="text-slate-400 font-semibold text-[10.5px]">📍 Penempatan Ruangan:</span>
+                                <span class="text-teal-300 font-bold text-right max-w-[190px] truncate" x-text="selectedQrItem.ruang_pemegang"></span>
+                            </div>
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <span class="text-slate-400 font-semibold text-[10.5px]">⚙️ Kondisi Aset:</span>
+                                <span class="text-emerald-300 font-extrabold" x-text="selectedQrItem.kondisi"></span>
+                            </div>
+                            <div class="flex items-start justify-between pt-0.5">
+                                <span class="text-slate-400 font-semibold text-[10.5px] shrink-0 mr-2">🛠️ Riwayat Perbaikan:</span>
+                                <span class="text-amber-300 font-medium text-right text-[10.5px]" x-text="selectedQrItem.riwayat_servis"></span>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-center gap-3 pt-2">
+
+                        <!-- Box URL Publik Scan -->
+                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-left space-y-1.5">
+                            <span class="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block">🔗 URL Publik Terenkripsi QR Code (Tanpa Login):</span>
+                            <a :href="getQrPayloadUrl(selectedQrItem)" target="_blank"
+                               class="font-mono text-[10.5px] text-cyan-400 hover:underline block truncate" x-text="getQrPayloadUrl(selectedQrItem)"></a>
+                        </div>
+
+                        <!-- Tombol Aksi -->
+                        <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
                             <button type="button" @click="downloadQrImage()"
-                                class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2 active:scale-95 cursor-pointer">
+                                class="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2 active:scale-95 cursor-pointer">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                 <span>Unduh Gambar QR (PNG)</span>
                             </button>
+                            <a :href="getQrPayloadUrl(selectedQrItem)" target="_blank"
+                               class="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-xs transition-all flex items-center justify-center space-x-1.5">
+                                <span>🌐 Buka Halaman Scan</span>
+                            </a>
                             <button type="button" @click="showQrModal = false"
-                                class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
+                                class="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
                                 Tutup
                             </button>
                         </div>

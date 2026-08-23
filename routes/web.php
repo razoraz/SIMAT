@@ -16,6 +16,29 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
+// Halaman Publik Scan QR Code Aset (Tanpa Perlu Login)
+Route::get('/scan/{nibar}', function ($nibar) {
+    $register = \App\Models\AstapRegister::where('nibar', $nibar)
+        ->orWhere('no_register', $nibar)
+        ->first();
+
+    $astap = null;
+    if ($register) {
+        $astap = \App\Models\Astap::with('jenisAstap', 'jenisPengadaan', 'rekeningBelanja', 'registers')->find($register->astap_id);
+    } else {
+        $astap = \App\Models\Astap::with('jenisAstap', 'jenisPengadaan', 'rekeningBelanja', 'registers')
+            ->where('kode_barang', $nibar)
+            ->first();
+    }
+
+    return view('pages.public_scan', [
+        'found' => ($astap !== null || $register !== null),
+        'nibar' => $nibar,
+        'register' => $register,
+        'astap' => $astap
+    ]);
+})->name('scan.nibar');
+
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Redirect / or /dashboard to specific role dashboard

@@ -2,96 +2,221 @@
     @section('page-title', 'Mutasi Aset')
     @section('breadcrumb', 'Master Utama / Mutasi Aset')
 
-    <div x-data="{
-        searchQuery: '',
-        statusFilter: 'all',
-        showAddModal: false,
-        showEditModal: false,
-        showDetailModal: false,
-        showPrintBastModal: false,
-        selectedMutasi: null,
+    <script>
+        function mutasiCatalog() {
+            return {
+                userRole: {{ Js::from(Auth::user()->role) }},
+                userUnit: {{ Js::from(Auth::user()->unitModel?->nama ?? Auth::user()->unit ?? '') }},
+                userName: {{ Js::from(Auth::user()->name) }},
 
-        mutasis: [
-            { id: 1, kode: 'MTS-2026-002', nama: 'Bed Pasien Crank Manual (3 Unit)', kode_barang: '1.3.2.02.01.08.002', qty: 3, satuan: 'Unit', asal: 'Ruang Rawat Inap Melati', tujuan: 'Paviliun Graha Amukti', tgl: '10 Ags 2026', pemohon: 'dr. H. Rahmat, Sp.PD', status: 'Disetujui', keterangan: 'Penambahan kapasitas ranjang cadangan ruang isolasi VIP' },
-            { id: 2, kode: 'MTS-2026-005', nama: 'Infusion Pump Terumo TE-112', kode_barang: '1.3.2.02.01.01.012', qty: 2, satuan: 'Unit', asal: 'Instalasi Gawat Darurat (IGD)', tujuan: 'Ruang ICU Medis', tgl: '12 Ags 2026', pemohon: 'dr. Anita Wijaya, Sp.Em', status: 'Disetujui', keterangan: 'Kebutuhan mendesak monitoring cairan pasien kritis ICU' },
-            { id: 3, kode: 'MTS-2026-009', nama: 'Komputer Desktop All-in-One Core i5', kode_barang: '1.3.2.10.01.02.003', qty: 1, satuan: 'Unit', asal: 'Gudang Inventaris Pusat', tujuan: 'Poliklinik Jantung Terpadu', tgl: '14 Ags 2026', pemohon: 'Ns. Bagus, S.Kep', status: 'Menunggu Persetujuan', keterangan: 'Penggantian PC lama unit entri resep elektronik' }
-        ],
+                searchQuery: '',
+                statusFilter: 'all',
+                showAddModal: false,
+                showEditModal: false,
+                showDetailModal: false,
+                showPrintBastModal: false,
+                selectedMutasi: null,
 
-        get filteredMutasis() {
-            const query = (this.searchQuery || '').toLowerCase();
-            return this.mutasis.filter(item => {
-                const matchSearch = (item.nama || '').toLowerCase().includes(query) || (item.kode || '').toLowerCase().includes(query) || (item.tujuan || '').toLowerCase().includes(query) || (item.asal || '').toLowerCase().includes(query);
-                const matchStatus = this.statusFilter === 'all' || item.status === this.statusFilter;
-                return matchSearch && matchStatus;
-            });
-        },
+                mutasis: [
+                    {
+                        id: 1,
+                        kode: 'MTS-2026-002',
+                        nama: 'Bed Pasien Crank Manual (3 Unit)',
+                        kode_barang: '1.3.2.02.01.08.002',
+                        qty: 3,
+                        satuan: 'Unit',
+                        asal: 'Pav. Melati',
+                        tujuan: 'Pav. Bougenville',
+                        tgl: '10 Ags 2026',
+                        pemohon: 'FETTY FATKHIYAH, S.ST.M.Si',
+                        penerima_pj: 'PUJE ANGGAYUNI, S.Kep.Ns',
+                        persetujuan_pengirim: true,
+                        persetujuan_penerima: true,
+                        persetujuan_admin: true,
+                        status: 'Disetujui Admin (Selesai)',
+                        keterangan: 'Penambahan kapasitas ranjang cadangan'
+                    },
+                    {
+                        id: 2,
+                        kode: 'MTS-2026-005',
+                        nama: 'Infusion Pump Terumo TE-112',
+                        kode_barang: '1.3.2.02.01.01.012',
+                        qty: 2,
+                        satuan: 'Unit',
+                        asal: 'IGD',
+                        tujuan: 'Pav. Melati',
+                        tgl: '12 Ags 2026',
+                        pemohon: 'dr. ADHI SUDARMADJI',
+                        penerima_pj: 'FETTY FATKHIYAH, S.ST.M.Si',
+                        persetujuan_pengirim: true,
+                        persetujuan_penerima: true,
+                        persetujuan_admin: false,
+                        status: 'Disetujui 2 Pihak (Menunggu Admin)',
+                        keterangan: 'Kebutuhan mendesak monitoring cairan pasien ICU/Pav. Melati'
+                    },
+                    {
+                        id: 3,
+                        kode: 'MTS-2026-009',
+                        nama: 'Komputer Desktop All-in-One Core i5',
+                        kode_barang: '1.3.2.10.01.02.003',
+                        qty: 1,
+                        satuan: 'Unit',
+                        asal: 'Pav. Anggrek',
+                        tujuan: 'Pav. Melati',
+                        tgl: '14 Ags 2026',
+                        pemohon: 'SUTANTI PUSPOSARI, S.Kep.Ns.',
+                        penerima_pj: 'FETTY FATKHIYAH, S.ST.M.Si',
+                        persetujuan_pengirim: true,
+                        persetujuan_penerima: false,
+                        persetujuan_admin: false,
+                        status: 'Menunggu Persetujuan Penerima',
+                        keterangan: 'Pengajuan mutasi komputer entri resep elektronik dari Anggrek ke Melati'
+                    },
+                    {
+                        id: 4,
+                        kode: 'MTS-2026-011',
+                        nama: 'Kursi Roda Standard GEA FS875',
+                        kode_barang: '1.3.2.02.01.05.001',
+                        qty: 2,
+                        satuan: 'Unit',
+                        asal: 'Pav. Melati',
+                        tujuan: 'Pav. Seruni',
+                        tgl: '15 Ags 2026',
+                        pemohon: 'FETTY FATKHIYAH, S.ST.M.Si',
+                        penerima_pj: 'RAHAYU SRI WAHYUNI, S.Kep.Ns',
+                        persetujuan_pengirim: true,
+                        persetujuan_penerima: false,
+                        persetujuan_admin: false,
+                        status: 'Menunggu Persetujuan Penerima',
+                        keterangan: 'Mutasi kursi roda dari Melati ke Seruni'
+                    }
+                ],
 
-        resetFilters() {
-            this.searchQuery = '';
-            this.statusFilter = 'all';
-        },
+                get filteredMutasis() {
+                    const query = (this.searchQuery || '').toLowerCase().trim();
+                    const role = this.userRole;
+                    const myUnit = (this.userUnit || '').toLowerCase().trim();
+                    const myName = (this.userName || '').toLowerCase().trim();
 
-        openDetail(item) {
-            this.selectedMutasi = item;
-            this.showDetailModal = true;
-        },
+                    return this.mutasis.filter(item => {
+                        // Jika Sub Admin: hanya tampilkan mutasi yang melibatkan unit dia (sebagai Asal ATAU Tujuan)
+                        if (role === 'sub_admin' && myUnit) {
+                            const isAsal = (item.asal || '').toLowerCase().includes(myUnit) || 
+                                           (item.pemohon || '').toLowerCase().includes(myName) ||
+                                           myUnit.includes((item.asal || '').toLowerCase());
+                            const isTujuan = (item.tujuan || '').toLowerCase().includes(myUnit) || 
+                                             (item.penerima_pj || '').toLowerCase().includes(myName) ||
+                                             myUnit.includes((item.tujuan || '').toLowerCase());
+                            if (!isAsal && !isTujuan) return false;
+                        }
 
-        openEdit(item) {
-            this.selectedMutasi = { ...item };
-            this.showEditModal = true;
-        },
+                        const matchSearch = !query ||
+                            (item.nama || '').toLowerCase().includes(query) ||
+                            (item.kode || '').toLowerCase().includes(query) ||
+                            (item.tujuan || '').toLowerCase().includes(query) ||
+                            (item.asal || '').toLowerCase().includes(query) ||
+                            (item.pemohon || '').toLowerCase().includes(query);
 
-        openPrintBast(item) {
-            this.selectedMutasi = {
-                ...item,
-                bast_nomor: '034 / MTS / 430.10.7 / 2026',
-                hari: 'Jumat',
-                tanggal_angka: '15',
-                bulan: 'Agustus',
-                tahun: '2026',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                pengurus_nama: 'ESTU PRATIKA SARI, SST',
-                pengurus_nip: '198805122011012005',
-                pengurus_jabatan: 'Pengurus Barang Aset RSUD',
-                pj_asal_nama: item.pemohon || 'dr. H. Rahmat, Sp.PD',
-                pj_asal_nip: '198004152006041008',
-                pj_asal_jabatan: 'Kepala Ruangan ' + item.asal,
-                pj_tujuan_nama: 'dr. ADHI SUDARMADJI',
-                pj_tujuan_nip: '198410272009021003',
-                pj_tujuan_jabatan: 'Kepala Ruangan ' + item.tujuan,
-                signed: true
+                        const matchStatus = this.statusFilter === 'all' || item.status === this.statusFilter;
+
+                        return matchSearch && matchStatus;
+                    });
+                },
+
+                resetFilters() {
+                    this.searchQuery = '';
+                    this.statusFilter = 'all';
+                },
+
+                approvePenerima(item) {
+                    const target = this.mutasis.find(m => m.id === item.id) || item;
+                    target.persetujuan_penerima = true;
+                    target.status = 'Disetujui 2 Pihak (Menunggu Admin)';
+                    alert('🤝 PERSETUJUAN DUA PIHAK BERHASIL!\n\nSub Admin Penerima (' + (target.penerima_pj || 'Unit Tujuan') + ') telah menyetujui mutasi barang "' + target.nama + '".\n\nSelanjutnya mutasi ini menunggu verifikasi & pengesahan akhir dari Admin / Master Admin.');
+                },
+
+                approveAdmin(item) {
+                    const target = this.mutasis.find(m => m.id === item.id) || item;
+                    target.persetujuan_admin = true;
+                    target.status = 'Disetujui Admin (Selesai)';
+                    alert('✅ PENGESAHAN ADMIN BERHASIL!\n\nMutasi aset "' + target.nama + '" resmi disahkan oleh Admin.\nLokasi fisik & register barang telah diperbarui ke ' + target.tujuan + '.');
+                },
+
+                rejectMutasi(item) {
+                    const alasan = prompt('Masukkan alasan penolakan mutasi aset:', 'Lokasi penempatan belum siap / Kurang sesuai');
+                    if (alasan !== null && alasan.trim() !== '') {
+                        const target = this.mutasis.find(m => m.id === item.id) || item;
+                        target.status = 'Ditolak';
+                        target.alasan_penolakan = alasan;
+                        alert('❌ Mutasi Aset Ditolak.\nAlasan: ' + alasan);
+                    }
+                },
+
+                openDetail(item) {
+                    this.selectedMutasi = item;
+                    this.showDetailModal = true;
+                },
+
+                openEdit(item) {
+                    this.selectedMutasi = { ...item };
+                    this.showEditModal = true;
+                },
+
+                openPrintBast(item) {
+                    this.selectedMutasi = {
+                        ...item,
+                        bast_nomor: '034 / MTS / 430.10.7 / 2026',
+                        hari: 'Jumat',
+                        tanggal_angka: '15',
+                        bulan: 'Agustus',
+                        tahun: '2026',
+                        sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                        sk_bupati_tanggal: '02 Januari 2025',
+                        pengurus_nama: 'ESTU PRATIKA SARI, SST',
+                        pengurus_nip: '198805122011012005',
+                        pengurus_jabatan: 'Pengurus Barang Aset RSUD',
+                        pj_asal_nama: item.pemohon || 'dr. H. Rahmat, Sp.PD',
+                        pj_asal_nip: '198004152006041008',
+                        pj_asal_jabatan: 'Kepala Ruangan ' + item.asal,
+                        pj_tujuan_nama: item.penerima_pj || 'dr. ADHI SUDARMADJI',
+                        pj_tujuan_nip: '198410272009021003',
+                        pj_tujuan_jabatan: 'Kepala Ruangan ' + item.tujuan,
+                        signed: true
+                    };
+                    this.showPrintBastModal = true;
+                },
+
+                toggleSignMutasi(item) {
+                    if (!item) return;
+                    const target = this.mutasis.find(m => m.id === item.id) || item;
+                    if (target.signed) {
+                        target.signed = false;
+                        target.tgl_signed = '-';
+                        target.qr_hash = '';
+                        target.status = 'Menunggu Persetujuan Penerima';
+                        item.signed = false;
+                        item.tgl_signed = '-';
+                        item.qr_hash = '';
+                        item.status = 'Menunggu Persetujuan Penerima';
+                        alert('↩️ Tanda tangan digital BSrE BAST Mutasi (' + (target.kode || target.bast_nomor) + ') berhasil dibatalkan.');
+                    } else {
+                        target.signed = true;
+                        const now = new Date();
+                        target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                        target.qr_hash = 'BSRE-KOESNANDI-MTS-' + Date.now();
+                        target.status = 'Disetujui Admin (Selesai)';
+                        item.signed = true;
+                        item.tgl_signed = target.tgl_signed;
+                        item.qr_hash = target.qr_hash;
+                        item.status = 'Disetujui Admin (Selesai)';
+                        alert('✍️ BAST Mutasi (' + (target.kode || target.bast_nomor) + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+                    }
+                }
             };
-            this.showPrintBastModal = true;
-        },
-
-        toggleSignMutasi(item) {
-            if (!item) return;
-            const target = this.mutasis.find(m => m.id === item.id) || item;
-            if (target.signed) {
-                target.signed = false;
-                target.tgl_signed = '-';
-                target.qr_hash = '';
-                target.status = 'Menunggu Persetujuan';
-                item.signed = false;
-                item.tgl_signed = '-';
-                item.qr_hash = '';
-                item.status = 'Menunggu Persetujuan';
-                alert('↩️ Tanda tangan digital BSrE BAST Mutasi (' + (target.kode || target.bast_nomor) + ') berhasil dibatalkan.');
-            } else {
-                target.signed = true;
-                const now = new Date();
-                target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                target.qr_hash = 'BSRE-KOESNANDI-MTS-' + Date.now();
-                target.status = 'Disetujui';
-                item.signed = true;
-                item.tgl_signed = target.tgl_signed;
-                item.qr_hash = target.qr_hash;
-                item.status = 'Disetujui';
-                alert('✍️ BAST Mutasi (' + (target.kode || target.bast_nomor) + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
-            }
         }
-    }" x-cloak>
+    </script>
+
+    <div x-data="mutasiCatalog()" x-cloak>
 
         <!-- Header Banner & Mini KPI Strip -->
         <div class="bg-gradient-to-r from-rose-600/15 via-slate-900 to-slate-900 border border-rose-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
@@ -200,6 +325,20 @@
             </div>
         </div>
 
+        <!-- Sub Admin Context Banner -->
+        <template x-if="userRole === 'sub_admin'">
+            <div class="mb-5 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-lg">🏛️</span>
+                    <div>
+                        <span class="font-extrabold text-white block text-sm">Mode Akses Unit: <span x-text="userUnit || 'Sub Admin Ruangan'"></span></span>
+                        <span class="text-slate-400 text-[11px]">Hanya menampilkan transaksi mutasi aset yang dikirim dari atau ditujukan ke unit Anda.</span>
+                    </div>
+                </div>
+                <span class="text-[10.5px] font-mono font-bold px-3 py-1 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-500/40 shrink-0">Sub Admin Restricted</span>
+            </div>
+        </template>
+
         <!-- Table Mutasi -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-300">
@@ -207,12 +346,12 @@
                     <tr>
                         <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">No. Mutasi</th>
-                        <th class="px-4 py-3.5 text-left min-w-[220px]">Nama Barang</th>
+                        <th class="px-4 py-3.5 text-left min-w-[200px]">Nama Barang</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Ruangan Asal</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">Ruangan Tujuan</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tgl Pengajuan</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Alur Mutasi</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Status Persetujuan</th>
+                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi &amp; Persetujuan</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80">
@@ -220,36 +359,96 @@
                         <tr class="hover:bg-slate-800/30 transition-colors">
                             <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
                             <td class="px-4 py-4 text-center font-mono font-semibold text-rose-400 whitespace-nowrap" x-text="item.kode"></td>
-                            <td class="px-4 py-4 font-bold text-white" x-text="item.nama"></td>
-                            <td class="px-4 py-4 text-center text-slate-300 whitespace-nowrap" x-text="item.asal"></td>
+                            <td class="px-4 py-4 font-bold text-white">
+                                <span x-text="item.nama"></span>
+                                <span class="text-[10.5px] text-slate-400 block font-normal font-mono" x-text="'Kode: ' + item.kode_barang"></span>
+                            </td>
+                            <td class="px-4 py-4 text-center text-slate-300 whitespace-nowrap font-medium" x-text="item.asal"></td>
                             <td class="px-4 py-4 text-center font-semibold text-rose-300 whitespace-nowrap" x-text="item.tujuan"></td>
-                            <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap" x-text="item.tgl"></td>
+                            
+                            <!-- Indikator Arah Mutasi (Keluar/Masuk) khusus Sub Admin -->
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <template x-if="userRole === 'sub_admin'">
+                                    <span>
+                                        <template x-if="(item.asal || '').toLowerCase().includes((userUnit || '').toLowerCase())">
+                                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40">📤 Mutasi Keluar</span>
+                                        </template>
+                                        <template x-if="(item.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase())">
+                                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-teal-500/20 text-teal-300 border border-teal-500/40">📥 Mutasi Masuk</span>
+                                        </template>
+                                    </span>
+                                </template>
+                                <template x-if="userRole !== 'sub_admin'">
+                                    <span class="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Antar Unit</span>
+                                </template>
+                            </td>
+
+                            <!-- Status Persetujuan Bertingkat -->
                             <td class="px-4 py-4 text-center whitespace-nowrap">
                                 <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
-                                    :class="item.status === 'Disetujui' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'"
+                                    :class="{
+                                        'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Disetujui Admin (Selesai)',
+                                        'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': item.status === 'Disetujui 2 Pihak (Menunggu Admin)',
+                                        'bg-amber-500/15 text-amber-300 border-amber-500/30': item.status === 'Menunggu Persetujuan Penerima',
+                                        'bg-rose-500/15 text-rose-300 border-rose-500/30': item.status === 'Ditolak'
+                                    }"
                                     x-text="item.status"></span>
                             </td>
-                            <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
-                                
-                                <!-- Tombol Cetak Berita Acara Mutasi -->
-                                <button type="button" @click="openPrintBast(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                    <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                    </svg>
-                                    <span>Cetak Berita Acara</span>
-                                </button>
 
-                                <button type="button" @click="openDetail(item)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <span>Detail</span>
-                                </button>
-                                <a :href="'/mutasi-aset/' + item.id + '/edit'"
-                                    class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    <span>Ubah</span>
-                                </a>
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <div class="flex items-center justify-center space-x-1.5">
+
+                                    <!-- Tombol Persetujuan Pihak 2 (Penerima Sub Admin) -->
+                                    <template x-if="!item.persetujuan_penerima && item.status !== 'Ditolak' && (userRole !== 'sub_admin' || (item.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase()))">
+                                        <button type="button" @click="approvePenerima(item)"
+                                            title="Persetujuan Pihak Penerima Barang"
+                                            class="px-2.5 py-1.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/35 text-teal-300 border border-teal-500/40 font-bold text-xs transition-all flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                            <span>🤝 Terima &amp; Setujui</span>
+                                        </button>
+                                    </template>
+
+                                    <!-- Tombol Persetujuan Admin (Master Admin / Admin Operasional) -->
+                                    <template x-if="item.persetujuan_penerima && !item.persetujuan_admin && item.status !== 'Ditolak' && (userRole === 'admin' || userRole === 'master_admin')">
+                                        <button type="button" @click="approveAdmin(item)"
+                                            title="Sahkan &amp; Verifikasi Akhir Admin"
+                                            class="px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 font-bold text-xs transition-all flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                            <span>✅ Sahkan Admin</span>
+                                        </button>
+                                    </template>
+
+                                    <!-- Tombol Tolak Mutasi -->
+                                    <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
+                                        <button type="button" @click="rejectMutasi(item)"
+                                            title="Tolak Pengajuan Mutasi"
+                                            class="px-2 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs transition-all flex items-center space-x-1 cursor-pointer">
+                                            <span>❌ Tolak</span>
+                                        </button>
+                                    </template>
+
+                                    <!-- Tombol Cetak BAST Mutasi (Jika sudah disetujui) -->
+                                    <template x-if="item.status === 'Disetujui Admin (Selesai)' || item.status === 'Disetujui 2 Pihak (Menunggu Admin)'">
+                                        <button type="button" @click="openPrintBast(item)"
+                                            class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                            <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                            </svg>
+                                            <span>Cetak BAST</span>
+                                        </button>
+                                    </template>
+
+                                    <button type="button" @click="openDetail(item)"
+                                        class="px-2 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        <span>Detail</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                    <template x-if="filteredMutasis.length === 0">
+                        <tr>
+                            <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic text-xs">
+                                Tidak ditemukan data mutasi aset yang sesuai dengan kriteria / wewenang unit Anda.
                             </td>
                         </tr>
                     </template>

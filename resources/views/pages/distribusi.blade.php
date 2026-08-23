@@ -2,355 +2,427 @@
     @section('page-title', 'Distribusi ASTAP')
     @section('breadcrumb', 'Master Utama / Distribusi ASTAP')
 
-    <div x-data="{
-        searchQuery: '',
-        unitFilter: 'all',
-        statusFilter: 'all',
-        showDetailModal: false,
-        showEditModal: false,
-        showPrintBastModal: false,
-        showEditBastForm: false,
-        selectedDistribusi: null,
+    <script>
+        function distribusiCatalog() {
+            return {
+                userRole: {{ Js::from(Auth::user()->role) }},
+                userUnit: {{ Js::from(Auth::user()->unitModel?->nama ?? Auth::user()->unit ?? '') }},
+                userName: {{ Js::from(Auth::user()->name) }},
 
-        // Data Unit & Paviliun RSUD diambil dinamis dari Database Tabel Units
-        unitList: {{ Js::from($units ?? []) }},
+                searchQuery: '',
+                unitFilter: 'all',
+                statusFilter: 'all',
+                showDetailModal: false,
+                showEditModal: false,
+                showPrintBastModal: false,
+                showEditBastForm: false,
+                selectedDistribusi: null,
 
-        // Data Transaksi Distribusi ASTAP (Mendukung Banyak Barang Berbeda Sekali Distribusi)
-        distribusis: [
-            {
-                id: 1,
-                kode: 'DST-2026-004',
-                nama: 'Kasur Matras spoon & Ranjang Pasien',
-                tujuan: 'Front Office (FO) & Rawat Inap',
-                tgl: '13 Ags 2026',
-                penerima: 'ESTU PRATIKA SARI, SST',
-                status: 'Telah Diterima',
-                bast_nomor: '032 / 034 / 430.10.7 / 2026',
-                hari: 'Kamis',
-                tanggal_angka: '13',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                pengurus_nama: 'BUDI HARTONO, S.Sos',
-                pengurus_nip: '19760229 200801 1 010',
-                pengurus_jabatan: 'Pengurus Barang',
-                pengurus_ruangan: 'Gudang Perbekalan',
-                pj_nama: 'ESTU PRATIKA SARI, SST',
-                pj_nip: '199409242023212002',
-                pj_jabatan: 'Supervisor Front Office',
-                pj_ruangan: 'FO',
-                pj_jabatan_ttd: 'Kepala Ruangan FO R.Inap',
-                signed: true,
-                tgl_signed: '13/08/2026 11:30 WIB',
-                keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap',
-                items: [
+                unitList: {{ Js::from($units ?? []) }},
+
+                distribusis: [
                     {
-                        no: 1,
-                        nama_barang: 'Kasur Matras spoon',
-                        merk_type: 'Mattres Cover (Matras Spon) / Mattress Foam Adult 200x90x10',
-                        qty: 2,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap'
+                        id: 1,
+                        kode: 'DST-2026-004',
+                        nama: 'Kasur Matras spoon & Ranjang Pasien',
+                        tujuan: 'Front Office (FO) & Rawat Inap',
+                        tgl: '13 Ags 2026',
+                        penerima: 'ESTU PRATIKA SARI, SST',
+                        status: 'Telah Diterima',
+                        bast_nomor: '032 / 034 / 430.10.7 / 2026',
+                        hari: 'Kamis',
+                        tanggal_angka: '13',
+                        bulan: 'Agustus',
+                        tahun: '2026',
+                        tahun_anggaran: '2025',
+                        sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                        sk_bupati_tanggal: '02 Januari 2025',
+                        pengurus_nama: 'BUDI HARTONO, S.Sos',
+                        pengurus_nip: '19760229 200801 1 010',
+                        pengurus_jabatan: 'Pengurus Barang',
+                        pengurus_ruangan: 'Gudang Perbekalan',
+                        pj_nama: 'ESTU PRATIKA SARI, SST',
+                        pj_nip: '199409242023212002',
+                        pj_jabatan: 'Supervisor Front Office',
+                        pj_ruangan: 'FO',
+                        pj_jabatan_ttd: 'Kepala Ruangan FO R.Inap',
+                        signed: true,
+                        tgl_signed: '13/08/2026 11:30 WIB',
+                        keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap',
+                        items: [
+                            {
+                                no: 1,
+                                nama_barang: 'Kasur Matras spoon',
+                                merk_type: 'Mattres Cover (Matras Spon) / Mattress Foam Adult 200x90x10',
+                                qty: 2,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap'
+                            },
+                            {
+                                no: 2,
+                                nama_barang: 'Bed Patient Manual 2 Crank',
+                                merk_type: 'Paramount Bed Model Standard with Side Rail',
+                                qty: 2,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Ruang Rawat Observasi FO'
+                            }
+                        ]
                     },
                     {
-                        no: 2,
-                        nama_barang: 'Bed Patient Manual 2 Crank',
-                        merk_type: 'Paramount Bed Model Standard with Side Rail',
-                        qty: 2,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'Ruang Rawat Observasi FO'
+                        id: 2,
+                        kode: 'DST-2026-008',
+                        nama: 'Patient Monitor 6 Parameter Mindray & Emergency Crash Cart',
+                        tujuan: 'IGD',
+                        tgl: '14 Ags 2026',
+                        penerima: 'dr. ADHI SUDARMADJI',
+                        status: 'Telah Diterima',
+                        bast_nomor: '034 / 034 / 430.10.7 / 2026',
+                        hari: 'Jumat',
+                        tanggal_angka: '14',
+                        bulan: 'Agustus',
+                        tahun: '2026',
+                        tahun_anggaran: '2025',
+                        sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                        sk_bupati_tanggal: '02 Januari 2025',
+                        pengurus_nama: 'BUDI HARTONO, S.Sos',
+                        pengurus_nip: '19760229 200801 1 010',
+                        pengurus_jabatan: 'Pengurus Barang',
+                        pengurus_ruangan: 'Gudang Perbekalan',
+                        pj_nama: 'dr. ADHI SUDARMADJI',
+                        pj_nip: '198410272009021003',
+                        pj_jabatan: 'Kepala IGD',
+                        pj_ruangan: 'IGD',
+                        pj_jabatan_ttd: 'Kepala Ruangan IGD',
+                        signed: true,
+                        tgl_signed: '14/08/2026 14:15 WIB',
+                        keterangan: 'Pengadaan DAK Kesehatan 2024 u/IGD Kritis',
+                        items: [
+                            {
+                                no: 1,
+                                nama_barang: 'Patient Monitor 6 Parameter',
+                                merk_type: 'Mindray ePM 12 / Display 12.1 Inch Multi-Lead ECG',
+                                qty: 4,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Zona Kritis Resusitasi IGD'
+                            },
+                            {
+                                no: 2,
+                                nama_barang: 'Emergency Crash Cart Trolley',
+                                merk_type: 'Stainless Steel 5 Laci + Tiang Infus & CPR Board',
+                                qty: 2,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Peralatan Siaga Resusitasi IGD'
+                            },
+                            {
+                                no: 3,
+                                nama_barang: 'Suction Pump Portable Medis Thomas',
+                                merk_type: 'Thomas 1632 Aspirator Heavy Duty',
+                                qty: 1,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Peralatan Siaga IGD'
+                            }
+                        ]
+                    },
+                    {
+                        id: 3,
+                        kode: 'DST-2026-012',
+                        nama: 'Submersible Pump Franklin 7.5 HP & Pipa Valve Sentral',
+                        tujuan: 'Inst. IPS RS',
+                        tgl: '15 Ags 2026',
+                        penerima: 'DANI PRIANTO, ST',
+                        status: 'Dalam Pengiriman',
+                        bast_nomor: '037 / 034 / 430.10.7 / 2026',
+                        hari: 'Sabtu',
+                        tanggal_angka: '15',
+                        bulan: 'Agustus',
+                        tahun: '2026',
+                        tahun_anggaran: '2025',
+                        sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                        sk_bupati_tanggal: '02 Januari 2025',
+                        pengurus_nama: 'BUDI HARTONO, S.Sos',
+                        pengurus_nip: '19760229 200801 1 010',
+                        pengurus_jabatan: 'Pengurus Barang',
+                        pengurus_ruangan: 'Gudang Perbekalan',
+                        pj_nama: 'DANI PRIANTO, ST',
+                        pj_nip: '198310152006041010',
+                        pj_jabatan: 'Pengelola Penataan Sarana dan Prasarana',
+                        pj_ruangan: 'IPSRS',
+                        pj_jabatan_ttd: 'Kepala Instalasi IPSRS',
+                        signed: false,
+                        tgl_signed: '-',
+                        keterangan: 'Pemasangan & Testing oleh Tim Teknisi IPSRS',
+                        items: [
+                            {
+                                no: 1,
+                                nama_barang: 'Submersible Pump Franklin 7.5 HP',
+                                merk_type: 'Franklin Electric 4 Inch Super Stainless 3-Phase',
+                                qty: 1,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Sumur Dalam Sentral Gedung Utama'
+                            },
+                            {
+                                no: 2,
+                                nama_barang: 'Ball Valve Kuningan 3 Inch',
+                                merk_type: 'Kitz Heavy Duty Brass 10K',
+                                qty: 4,
+                                satuan: 'Pcs',
+                                kondisi: 'Baik',
+                                keterangan: 'Pipa Distribusi Utama'
+                            }
+                        ]
+                    },
+                    {
+                        id: 4,
+                        kode: 'DST-2026-015',
+                        nama: 'Laptop Operasional Asus ExpertBook & Printer Label Resep',
+                        tujuan: 'Inst. Rekam Medik',
+                        tgl: '16 Ags 2026',
+                        penerima: 'PRASTIWI, A.Md',
+                        status: 'Menunggu Konfirmasi',
+                        bast_nomor: '039 / 034 / 430.10.7 / 2026',
+                        hari: 'Minggu',
+                        tanggal_angka: '16',
+                        bulan: 'Agustus',
+                        tahun: '2026',
+                        tahun_anggaran: '2025',
+                        sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                        sk_bupati_tanggal: '02 Januari 2025',
+                        pengurus_nama: 'BUDI HARTONO, S.Sos',
+                        pengurus_nip: '19760229 200801 1 010',
+                        pengurus_jabatan: 'Pengurus Barang',
+                        pengurus_ruangan: 'Gudang Perbekalan',
+                        pj_nama: 'PRASTIWI, A.Md',
+                        pj_nip: '199207272015032008',
+                        pj_jabatan: 'Kepala Instalasi Rekam Medik',
+                        pj_ruangan: 'Rekam Medik',
+                        pj_jabatan_ttd: 'Kepala Instalasi Rekam Medik',
+                        signed: false,
+                        tgl_signed: '-',
+                        keterangan: 'Peremajaan Unit Entri Data SIMRS & EMR',
+                        items: [
+                            {
+                                no: 1,
+                                nama_barang: 'Laptop Asus ExpertBook B1',
+                                merk_type: 'Core i7-1355U, 16GB DDR4, 512GB SSD, Windows 11 Pro',
+                                qty: 3,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Loket Pendaftaran & Coding Klaim BPJS'
+                            },
+                            {
+                                no: 2,
+                                nama_barang: 'Printer Thermal Resep & Label',
+                                merk_type: 'Epson TM-T82X Thermal Auto-Cutter USB',
+                                qty: 2,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Cetak Barcode Berkas Rekam Medis'
+                            }
+                        ]
+                    },
+                    {
+                        id: 5,
+                        kode: 'DST-2026-018',
+                        nama: 'Stethoscope Littmann Classic III & Sphygmomanometer Digital',
+                        tujuan: 'Pav. Melati',
+                        tgl: '16 Ags 2026',
+                        penerima: 'FETTY FATKHIYAH, S.ST.M.Si',
+                        status: 'Telah Diterima',
+                        bast_nomor: '038 / 034 / 430.10.7 / 2026',
+                        hari: 'Minggu',
+                        tanggal_angka: '16',
+                        bulan: 'Agustus',
+                        tahun: '2026',
+                        tahun_anggaran: '2025',
+                        sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                        sk_bupati_tanggal: '02 Januari 2025',
+                        pengurus_nama: 'BUDI HARTONO, S.Sos',
+                        pengurus_nip: '19760229 200801 1 010',
+                        pengurus_jabatan: 'Pengurus Barang',
+                        pengurus_ruangan: 'Gudang Perbekalan',
+                        pj_nama: 'FETTY FATKHIYAH, S.ST.M.Si',
+                        pj_nip: '197602042006042024',
+                        pj_jabatan: 'Kepala Paviliun Melati',
+                        pj_ruangan: 'Pav. Melati',
+                        pj_jabatan_ttd: 'Kepala Paviliun Melati',
+                        signed: true,
+                        tgl_signed: '16/08/2026 10:00 WIB',
+                        keterangan: 'Distribusi Alkes Penunjang Pemeriksaan Vital Pasien',
+                        items: [
+                            {
+                                no: 1,
+                                nama_barang: 'Stethoscope Littmann Classic III Black Edition',
+                                merk_type: '3M Littmann Classic III Stainless Steel',
+                                qty: 3,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Pemeriksaan Diagnostik Melati'
+                            },
+                            {
+                                no: 2,
+                                nama_barang: 'Sphygmomanometer Digital Omron HEA-221',
+                                merk_type: 'Omron Professional Digital Tensimeter',
+                                qty: 2,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: 'Tensi Darah Otomatis'
+                            }
+                        ]
                     }
-                ]
-            },
-            {
-                id: 2,
-                kode: 'DST-2026-008',
-                nama: 'Patient Monitor 6 Parameter Mindray & Emergency Crash Cart',
-                tujuan: 'IGD',
-                tgl: '14 Ags 2026',
-                penerima: 'dr. ADHI SUDARMADJI',
-                status: 'Telah Diterima',
-                bast_nomor: '034 / 034 / 430.10.7 / 2026',
-                hari: 'Jumat',
-                tanggal_angka: '14',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                pengurus_nama: 'BUDI HARTONO, S.Sos',
-                pengurus_nip: '19760229 200801 1 010',
-                pengurus_jabatan: 'Pengurus Barang',
-                pengurus_ruangan: 'Gudang Perbekalan',
-                pj_nama: 'dr. ADHI SUDARMADJI',
-                pj_nip: '198410272009021003',
-                pj_jabatan: 'Kepala IGD',
-                pj_ruangan: 'IGD',
-                pj_jabatan_ttd: 'Kepala Ruangan IGD',
-                signed: true,
-                tgl_signed: '14/08/2026 14:15 WIB',
-                keterangan: 'Pengadaan DAK Kesehatan 2024 u/IGD Kritis',
-                items: [
-                    {
-                        no: 1,
-                        nama_barang: 'Patient Monitor 6 Parameter',
-                        merk_type: 'Mindray ePM 12 / Display 12.1 Inch Multi-Lead ECG',
-                        qty: 4,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'Zona Kritis Resusitasi IGD'
-                    },
-                    {
-                        no: 2,
-                        nama_barang: 'Emergency Crash Cart Trolley',
-                        merk_type: 'Stainless Steel 5 Laci + Tiang Infus & CPR Board',
-                        qty: 2,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'Peralatan Siaga Resusitasi IGD'
-                    },
-                    {
-                        no: 3,
-                        nama_barang: 'Suction Pump Portable Medis Thomas',
-                        merk_type: 'Thomas 1632 Aspirator Heavy Duty',
-                        qty: 1,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'Peralatan Siaga IGD'
+                ],
+
+                unitSearchQuery: '',
+                isUnitDropdownOpen: false,
+
+                get filteredUnitDropdownList() {
+                    if (!this.unitSearchQuery || this.unitSearchQuery.trim().length === 0) {
+                        return this.unitList;
                     }
-                ]
-            },
-            {
-                id: 3,
-                kode: 'DST-2026-012',
-                nama: 'Submersible Pump Franklin 7.5 HP & Pipa Valve Sentral',
-                tujuan: 'Inst. IPS RS',
-                tgl: '15 Ags 2026',
-                penerima: 'DANI PRIANTO, ST',
-                status: 'Dalam Pengiriman',
-                bast_nomor: '037 / 034 / 430.10.7 / 2026',
-                hari: 'Sabtu',
-                tanggal_angka: '15',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                pengurus_nama: 'BUDI HARTONO, S.Sos',
-                pengurus_nip: '19760229 200801 1 010',
-                pengurus_jabatan: 'Pengurus Barang',
-                pengurus_ruangan: 'Gudang Perbekalan',
-                pj_nama: 'DANI PRIANTO, ST',
-                pj_nip: '198310152006041010',
-                pj_jabatan: 'Pengelola Penataan Sarana dan Prasarana',
-                pj_ruangan: 'IPSRS',
-                pj_jabatan_ttd: 'Kepala Instalasi IPSRS',
-                signed: false,
-                tgl_signed: '-',
-                keterangan: 'Pemasangan & Testing oleh Tim Teknisi IPSRS',
-                items: [
-                    {
-                        no: 1,
-                        nama_barang: 'Submersible Pump Franklin 7.5 HP',
-                        merk_type: 'Franklin Electric 4 Inch Super Stainless 3-Phase',
-                        qty: 1,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'Sumur Dalam Sentral Gedung Utama'
-                    },
-                    {
-                        no: 2,
-                        nama_barang: 'Ball Valve Kuningan 3 Inch',
-                        merk_type: 'Kitz Heavy Duty Brass 10K',
-                        qty: 4,
-                        satuan: 'Pcs',
-                        kondisi: 'Baik',
-                        keterangan: 'Pipa Distribusi Utama'
+                    const q = this.unitSearchQuery.toLowerCase().trim();
+                    return this.unitList.filter(u => 
+                        (u.nama || '').toLowerCase().includes(q) ||
+                        (u.kode || '').toLowerCase().includes(q) ||
+                        (u.tipe || '').toLowerCase().includes(q) ||
+                        (u.kepala || '').toLowerCase().includes(q)
+                    );
+                },
+
+                selectUnitFilter(unit) {
+                    if (!unit) {
+                        this.unitFilter = 'all';
+                        this.unitSearchQuery = '';
+                    } else {
+                        this.unitFilter = unit.nama;
+                        this.unitSearchQuery = unit.nama;
                     }
-                ]
-            },
-            {
-                id: 4,
-                kode: 'DST-2026-015',
-                nama: 'Laptop Operasional Asus ExpertBook & Printer Label Resep',
-                tujuan: 'Inst. Rekam Medik',
-                tgl: '16 Ags 2026',
-                penerima: 'PRASTIWI, A.Md',
-                status: 'Menunggu Konfirmasi',
-                bast_nomor: '039 / 034 / 430.10.7 / 2026',
-                hari: 'Minggu',
-                tanggal_angka: '16',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                pengurus_nama: 'BUDI HARTONO, S.Sos',
-                pengurus_nip: '19760229 200801 1 010',
-                pengurus_jabatan: 'Pengurus Barang',
-                pengurus_ruangan: 'Gudang Perbekalan',
-                pj_nama: 'PRASTIWI, A.Md',
-                pj_nip: '199207272015032008',
-                pj_jabatan: 'Kepala Instalasi Rekam Medik',
-                pj_ruangan: 'Rekam Medik',
-                pj_jabatan_ttd: 'Kepala Instalasi Rekam Medik',
-                signed: false,
-                tgl_signed: '-',
-                keterangan: 'Peremajaan Unit Entri Data SIMRS & EMR',
-                items: [
-                    {
-                        no: 1,
-                        nama_barang: 'Laptop Asus ExpertBook B1',
-                        merk_type: 'Core i7-1355U, 16GB DDR4, 512GB SSD, Windows 11 Pro',
-                        qty: 3,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'Loket Pendaftaran & Coding Klaim BPJS'
-                    },
-                    {
-                        no: 2,
-                        nama_barang: 'Printer Thermal Resep & Label',
-                        merk_type: 'Epson TM-T82X Thermal Auto-Cutter USB',
-                        qty: 2,
-                        satuan: 'Unit',
-                        kondisi: 'Baik',
-                        keterangan: 'Cetak Barcode Berkas Rekam Medis'
+                    this.isUnitDropdownOpen = false;
+                },
+
+                clearUnitFilter() {
+                    this.unitFilter = 'all';
+                    this.unitSearchQuery = '';
+                    this.isUnitDropdownOpen = false;
+                },
+
+                get filteredDistribusis() {
+                    const query = (this.searchQuery || '').toLowerCase().trim();
+                    const role = this.userRole;
+                    const myUnit = (this.userUnit || '').toLowerCase().trim();
+                    const myName = (this.userName || '').toLowerCase().trim();
+
+                    return this.distribusis.filter(item => {
+                        // Jika Sub Admin: hanya tampilkan distribusi yang melibatkan unit atau penerima dirinya
+                        if (role === 'sub_admin' && myUnit) {
+                            const isUnitMatch = (item.tujuan || '').toLowerCase().includes(myUnit) ||
+                                                (item.pj_ruangan || '').toLowerCase().includes(myUnit) ||
+                                                myUnit.includes((item.tujuan || '').toLowerCase());
+                            const isPenerimaMatch = (item.penerima || '').toLowerCase().includes(myName) ||
+                                                    (item.pj_nama || '').toLowerCase().includes(myName);
+                            if (!isUnitMatch && !isPenerimaMatch) return false;
+                        }
+
+                        const matchSearch = !query ||
+                                            (item.nama || '').toLowerCase().includes(query) || 
+                                            (item.kode || '').toLowerCase().includes(query) || 
+                                            (item.penerima || '').toLowerCase().includes(query) ||
+                                            (item.items || []).some(it => (it.nama_barang || '').toLowerCase().includes(query));
+
+                        const matchUnit = this.unitFilter === 'all' || 
+                                          item.tujuan.toLowerCase().includes(this.unitFilter.toLowerCase()) ||
+                                          this.unitFilter.toLowerCase().includes(item.tujuan.toLowerCase());
+
+                        const matchStatus = this.statusFilter === 'all' || item.status === this.statusFilter;
+                        return matchSearch && matchUnit && matchStatus;
+                    });
+                },
+
+                getTotalQty(items) {
+                    if (!items || !items.length) return 0;
+                    return items.reduce((acc, curr) => acc + (parseInt(curr.qty) || 0), 0);
+                },
+
+                resetFilters() {
+                    this.searchQuery = '';
+                    this.unitFilter = 'all';
+                    this.unitSearchQuery = '';
+                    this.isUnitDropdownOpen = false;
+                    this.statusFilter = 'all';
+                },
+
+                openDetail(item) {
+                    this.selectedDistribusi = item;
+                    this.showDetailModal = true;
+                },
+
+                openEdit(item) {
+                    this.selectedDistribusi = { ...item };
+                    this.showEditModal = true;
+                },
+
+                openPrintBast(item) {
+                    this.selectedDistribusi = { ...item };
+                    this.showPrintBastModal = true;
+                },
+
+                toggleSignDistribusi(item) {
+                    if (!item) return;
+                    const target = this.distribusis.find(d => d.id === item.id) || item;
+                    if (target.signed) {
+                        target.signed = false;
+                        target.tgl_signed = '-';
+                        target.qr_hash = '';
+                        target.status = 'Menunggu Konfirmasi';
+                        item.signed = false;
+                        item.tgl_signed = '-';
+                        item.qr_hash = '';
+                        item.status = 'Menunggu Konfirmasi';
+                        alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil dibatalkan.');
+                    } else {
+                        target.signed = true;
+                        const now = new Date();
+                        target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                        target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
+                        target.status = 'Telah Diterima';
+                        item.signed = true;
+                        item.tgl_signed = target.tgl_signed;
+                        item.qr_hash = target.qr_hash;
+                        item.status = 'Telah Diterima';
+                        alert('✍️ BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
                     }
-                ]
+                },
+
+                tolakDistribusi(item) {
+                    if (!item) return;
+                    item.signed = false;
+                    item.tgl_signed = '-';
+                    item.qr_hash = '';
+                    item.status = 'Ditolak';
+
+                    // Sync with main array item
+                    const found = this.distribusis.find(d => d.id === item.id);
+                    if (found) {
+                        found.signed = false;
+                        found.tgl_signed = '-';
+                        found.qr_hash = '';
+                        found.status = 'Ditolak';
+                    }
+                    alert('❌ BAST Distribusi (' + (item.kode || item.bast_nomor) + ') ditolak! Tanda tangan digital telah dihapus.');
+                },
+
+                printCurrentBast() {
+                    window.print();
+                }
             }
-        ],
-
-        unitSearchQuery: '',
-        isUnitDropdownOpen: false,
-
-        get filteredUnitDropdownList() {
-            if (!this.unitSearchQuery || this.unitSearchQuery.trim().length === 0) {
-                return this.unitList;
-            }
-            const q = this.unitSearchQuery.toLowerCase().trim();
-            return this.unitList.filter(u => 
-                (u.nama || '').toLowerCase().includes(q) ||
-                (u.kode || '').toLowerCase().includes(q) ||
-                (u.tipe || '').toLowerCase().includes(q) ||
-                (u.kepala || '').toLowerCase().includes(q)
-            );
-        },
-
-        selectUnitFilter(unit) {
-            if (!unit) {
-                this.unitFilter = 'all';
-                this.unitSearchQuery = '';
-            } else {
-                this.unitFilter = unit.nama;
-                this.unitSearchQuery = unit.nama;
-            }
-            this.isUnitDropdownOpen = false;
-        },
-
-        clearUnitFilter() {
-            this.unitFilter = 'all';
-            this.unitSearchQuery = '';
-            this.isUnitDropdownOpen = false;
-        },
-
-        get filteredDistribusis() {
-            const query = (this.searchQuery || '').toLowerCase();
-            return this.distribusis.filter(item => {
-                const matchSearch = (item.nama || '').toLowerCase().includes(query) || 
-                                    (item.kode || '').toLowerCase().includes(query) || 
-                                    (item.penerima || '').toLowerCase().includes(query) ||
-                                    (item.items || []).some(it => (it.nama_barang || '').toLowerCase().includes(query));
-                
-                const matchUnit = this.unitFilter === 'all' || 
-                                  item.tujuan.toLowerCase().includes(this.unitFilter.toLowerCase()) ||
-                                  this.unitFilter.toLowerCase().includes(item.tujuan.toLowerCase());
-                
-                const matchStatus = this.statusFilter === 'all' || item.status === this.statusFilter;
-                return matchSearch && matchUnit && matchStatus;
-            });
-        },
-
-        getTotalQty(items) {
-            if (!items || !items.length) return 0;
-            return items.reduce((acc, curr) => acc + (parseInt(curr.qty) || 0), 0);
-        },
-
-        resetFilters() {
-            this.searchQuery = '';
-            this.unitFilter = 'all';
-            this.unitSearchQuery = '';
-            this.isUnitDropdownOpen = false;
-            this.statusFilter = 'all';
-        },
-
-        openDetail(item) {
-            this.selectedDistribusi = item;
-            this.showDetailModal = true;
-        },
-
-        openEdit(item) {
-            this.selectedDistribusi = { ...item };
-            this.showEditModal = true;
-        },
-
-        openPrintBast(item) {
-            this.selectedDistribusi = { ...item };
-            this.showPrintBastModal = true;
-        },
-
-        toggleSignDistribusi(item) {
-            if (!item) return;
-            const target = this.distribusis.find(d => d.id === item.id) || item;
-            if (target.signed) {
-                target.signed = false;
-                target.tgl_signed = '-';
-                target.qr_hash = '';
-                target.status = 'Menunggu Konfirmasi';
-                item.signed = false;
-                item.tgl_signed = '-';
-                item.qr_hash = '';
-                item.status = 'Menunggu Konfirmasi';
-                alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil dibatalkan.');
-            } else {
-                target.signed = true;
-                const now = new Date();
-                target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
-                target.status = 'Telah Diterima';
-                item.signed = true;
-                item.tgl_signed = target.tgl_signed;
-                item.qr_hash = target.qr_hash;
-                item.status = 'Telah Diterima';
-                alert('✍️ BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
-            }
-        },
-
-        tolakDistribusi(item) {
-            if (!item) return;
-            item.signed = false;
-            item.tgl_signed = '-';
-            item.qr_hash = '';
-            item.status = 'Ditolak';
-
-            // Sync with main array item
-            const found = this.distribusis.find(d => d.id === item.id);
-            if (found) {
-                found.signed = false;
-                found.tgl_signed = '-';
-                found.qr_hash = '';
-                found.status = 'Ditolak';
-            }
-            alert('❌ BAST Distribusi (' + (item.kode || item.bast_nomor) + ') ditolak! Tanda tangan digital telah dihapus.');
-        },
-
-        printCurrentBast() {
-            window.print();
         }
-    }" x-cloak>
+    </script>
+
+    <div x-data="distribusiCatalog()" x-cloak>
 
         <!-- Header Banner & Mini KPI Strip -->
         <div class="bg-gradient-to-r from-teal-600/15 via-slate-900 to-slate-900 border border-teal-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
@@ -545,6 +617,20 @@
                 </div>
             </div>
         </div>
+
+        <!-- Sub Admin Context Banner -->
+        <template x-if="userRole === 'sub_admin'">
+            <div class="mb-5 p-4 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-lg">🚚</span>
+                    <div>
+                        <span class="font-extrabold text-white block text-sm">Mode Akses Distribusi Unit: <span x-text="userUnit || 'Sub Admin Ruangan'"></span></span>
+                        <span class="text-slate-400 text-[11px]">Hanya menampilkan transaksi distribusi barang yang ditujukan ke unit / ruangan Anda.</span>
+                    </div>
+                </div>
+                <span class="text-[10.5px] font-mono font-bold px-3 py-1 rounded-xl bg-teal-500/20 text-teal-200 border border-teal-500/40 shrink-0">Sub Admin Restricted</span>
+            </div>
+        </template>
 
         <!-- Tabel Distribusi ASTAP (Multi-Barang / Transaksi) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto">
