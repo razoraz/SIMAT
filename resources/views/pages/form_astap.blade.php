@@ -642,20 +642,6 @@
                     const found = this.masterRekeningBelanja.find(r => r.kode_rek === kodeRek);
                     if (found) {
                         this.formData.nama_belanja = found.nama_belanja;
-                        this.searchRekening = found.kode_rek + ' - ' + found.nama_belanja;
-                        let defaultJenisKode = found.default_jenis_kode;
-                        if (!defaultJenisKode) {
-                            if (kodeRek.startsWith('5.2.01')) defaultJenisKode = '1.3.1';
-                            else if (kodeRek.startsWith('5.2.02')) defaultJenisKode = '1.3.2';
-                            else if (kodeRek.startsWith('5.2.03')) defaultJenisKode = '1.3.3';
-                            else if (kodeRek.startsWith('5.2.04')) defaultJenisKode = '1.3.4';
-                            else if (kodeRek.startsWith('5.2.05')) defaultJenisKode = '1.3.5';
-                            else if (kodeRek.startsWith('5.2.06')) defaultJenisKode = '1.5.3';
-                            else if (kodeRek.startsWith('5.2.07')) defaultJenisKode = '1.3.6';
-                        }
-                        if (defaultJenisKode) {
-                            this.onJenisAstapChange(defaultJenisKode);
-                        }
                     }
                 },
 
@@ -664,26 +650,21 @@
                     const found = (window.dbMasterJenisAstap108 || []).find(j => j.kode === kodeJenis);
                     if (found) {
                         this.formData.jenis_aset_nama = found.nama;
-                        this.searchJenis108 = found.kode + ' - ' + found.nama;
-                        if (found.subRincian && found.subRincian.length > 0) {
-                            this.onSubRincianChange(found.subRincian[0].kode);
-                        } else {
-                            this.formData.sub_rincian_kode = '';
-                            this.formData.sub_rincian_nama = '';
-                            this.searchSubRincian108 = '';
-                        }
+                    } else {
+                        this.formData.jenis_aset_nama = '';
                     }
+                    // Reset sub rincian agar pengguna memilih sendiri secara mandiri
+                    this.formData.sub_rincian_kode = '';
+                    this.formData.sub_rincian_nama = '';
                 },
 
                 onSubRincianChange(kodeSub) {
                     this.formData.sub_rincian_kode = kodeSub;
-                    const found = this.availableSubRincian108.find(s => s.kode === kodeSub);
+                    const found = (this.availableSubRincian108 || []).find(s => s.kode === kodeSub);
                     if (found) {
                         this.formData.sub_rincian_nama = found.nama;
-                        this.searchSubRincian108 = found.kode + ' - ' + found.nama;
-                        if (found.subSubRincian && found.subSubRincian.length > 0) {
-                            this.onSubSubRincianChange(found.subSubRincian[0].kode);
-                        }
+                    } else {
+                        this.formData.sub_rincian_nama = '';
                     }
                 },
 
