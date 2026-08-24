@@ -174,6 +174,7 @@
                     this.formData = {
                         kode: found.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100)),
                         bast_nomor: found.bast_nomor || '',
+                        status: found.status || 'Telah Diterima',
                         tujuan: found.tujuan || '',
                         tgl: new Date().toISOString().split('T')[0],
                         penerima: found.penerima || found.pj_nama || '',
@@ -251,6 +252,7 @@
                 this.formData = {
                     kode: 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100),
                     bast_nomor: '032 / 0' + String(Math.floor(Math.random() * 80) + 10) + ' / 430.10.7 / 2026',
+                    status: 'Telah Diterima',
                     tujuan: '',
                     tgl: new Date().toISOString().split('T')[0],
                     penerima: '',
@@ -319,11 +321,14 @@
             return '';
         },
 
-        // Hitung total NIBAR yang terdaftar di database untuk barang ini
+        // Hitung total NIBAR yang terdaftar di database untuk barang ini (Khusus status_mutasi: Tersedia)
         getMatchingNibarCount(item) {
             const kode = this.getItemKode(item);
             if (!kode) return 0;
-            return (this.nibarList || []).filter(n => n.kode === kode).length;
+            return (this.nibarList || []).filter(n => 
+                n.kode === kode && 
+                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
+            ).length;
         },
 
         // Cek apakah data NIBAR kosong untuk barang yang dipilih
@@ -332,11 +337,14 @@
             return this.getMatchingNibarCount(item) === 0;
         },
 
-        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih
+        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih (Khusus status_mutasi: Tersedia)
         getFilteredNibar(item, query) {
             const kode = this.getItemKode(item);
             if (!kode) return [];
-            let list = (this.nibarList || []).filter(n => n.kode === kode);
+            let list = (this.nibarList || []).filter(n => 
+                n.kode === kode && 
+                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
+            );
             // Exclude yang sudah dipilih di item ini
             const chosen = (item.nibar_selected || []).map(n => n.nibar);
             list = list.filter(n => !chosen.includes(n.nibar));
@@ -344,7 +352,8 @@
                 const q = query.toLowerCase().trim();
                 list = list.filter(n =>
                     (n.nibar || '').toLowerCase().includes(q) ||
-                    (n.ruang || '').toLowerCase().includes(q)
+                    (n.ruang || '').toLowerCase().includes(q) ||
+                    (n.kondisi || '').toLowerCase().includes(q)
                 );
             }
             return list.slice(0, 20);
@@ -634,6 +643,7 @@
                         tgl: `${d} ${m} ${y}`,
                         tgl_iso: tglStr,
                         penerima: this.formData.penerima || 'Petugas Ruangan',
+                        status: this.formData.status || storedList[idx].status || 'Telah Diterima',
                         bast_nomor: this.formData.bast_nomor || '-',
                         hari: dayName,
                         tanggal_angka: String(dateObj.getDate()),
@@ -658,7 +668,7 @@
                     tgl: `${d} ${m} ${y}`,
                     tgl_iso: tglStr,
                     penerima: this.formData.penerima || 'Petugas Ruangan',
-                    status: 'Menunggu Konfirmasi',
+                    status: this.formData.status || 'Telah Diterima',
                     bast_nomor: this.formData.bast_nomor || '-',
                     hari: dayName,
                     tanggal_angka: String(dateObj.getDate()),
@@ -718,7 +728,7 @@
                     <span>1. Informasi Penyerahan & Pegawai Penerima Ruangan</span>
                 </h3>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Kode Transaksi Distribusi -->
                     <div>
                         <label class="block text-slate-300 font-semibold text-xs mb-1.5">No. Registrasi Distribusi</label>
@@ -738,6 +748,29 @@
                         <label class="block text-slate-300 font-semibold text-xs mb-1.5">Tanggal Penyerahan</label>
                         <input type="date" x-model="formData.tgl"
                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-teal-500">
+                    </div>
+
+                    <!-- Status Distribusi -->
+                    <div>
+                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                            <span>Status Distribusi</span>
+                            <template x-if="isEdit">
+                                <span class="text-teal-400 text-[10px] font-bold">⚡ Edit Status</span>
+                            </template>
+                        </label>
+                        <select x-model="formData.status"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
+                                :class="{
+                                    'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
+                                    'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
+                                    'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
+                                    'text-slate-400': formData.status === 'Draft'
+                                }">
+                            <option value="Telah Diterima">🟢 Telah Diterima</option>
+                            <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
+                            <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
+                            <option value="Draft">📝 Draft</option>
+                        </select>
                     </div>
                 </div>
 
@@ -996,136 +1029,141 @@
                                     </div>
                                 </div>
 
-                                <!-- Baris 1b: NIBAR Multi-Select (Selalu Ditampilkan, Beri Keterangan jika Barang Kosong) -->
-                                <div class="relative" @click.away="if(activeNibarDropdownIndex === idx) activeNibarDropdownIndex = null">
-                                    <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
-                                        <span class="flex items-center space-x-1.5">
-                                            <span class="text-amber-400">🔖</span>
-                                            <span>NIBAR (Nomor Induk Barang)</span>
-                                            <template x-if="!item.nama_barang && !item.kode_barang">
-                                                <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih nama barang terlebih dahulu</span>
-                                            </template>
-                                            <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih maks. sesuai Volume (Qty)</span>
-                                            </template>
-                                        </span>
-                                        
-                                        <!-- Status Badge -->
-                                        <div>
-                                            <template x-if="!item.nama_barang && !item.kode_barang">
-                                                <span class="text-slate-500 font-mono text-[10px]">Pilih barang dulu</span>
-                                            </template>
-                                            <template x-if="(item.nama_barang || item.kode_barang) && isNibarEmpty(item)">
-                                                <span class="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-bold">
-                                                    ⚠️ Barang Kosong (0 NIBAR)
-                                                </span>
-                                            </template>
-                                            <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                <span class="text-amber-400 font-mono text-[10px]" x-text="(item.nibar_selected || []).length + ' / ' + (item.qty || 1) + ' dipilih'"></span>
-                                            </template>
-                                        </div>
-                                    </label>
+                                <!-- Baris 1b: NIBAR Multi-Select (Hanya Ditampilkan Pada Fitur Edit Distribusi) -->
+                                <template x-if="isEdit">
+                                    <div class="relative" @click.away="if(activeNibarDropdownIndex === idx) activeNibarDropdownIndex = null">
+                                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                            <span class="flex items-center space-x-1.5">
+                                                <span class="text-amber-400">🔖</span>
+                                                <span>NIBAR (Nomor Induk Barang)</span>
+                                                <template x-if="!item.nama_barang && !item.kode_barang">
+                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih nama barang terlebih dahulu</span>
+                                                </template>
+                                                <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
+                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih maks. sesuai Volume (Qty)</span>
+                                                </template>
+                                            </span>
+                                            
+                                            <!-- Status Badge -->
+                                            <div>
+                                                <template x-if="!item.nama_barang && !item.kode_barang">
+                                                    <span class="text-slate-500 font-mono text-[10px]">Pilih barang dulu</span>
+                                                </template>
+                                                <template x-if="(item.nama_barang || item.kode_barang) && isNibarEmpty(item)">
+                                                    <span class="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-bold">
+                                                        ⚠️ Barang Kosong (0 NIBAR)
+                                                    </span>
+                                                </template>
+                                                <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
+                                                    <span class="text-amber-400 font-mono text-[10px]" x-text="(item.nibar_selected || []).length + ' / ' + (item.qty || 1) + ' dipilih'"></span>
+                                                </template>
+                                            </div>
+                                        </label>
 
-                                    <!-- Chips: NIBAR yang sudah dipilih -->
-                                    <template x-if="(item.nibar_selected || []).length > 0">
-                                        <div class="flex flex-wrap gap-2 mb-2">
-                                            <template x-for="n in item.nibar_selected" :key="n.nibar">
-                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold">
-                                                    <span x-text="n.nibar"></span>
-                                                    <button type="button" @click.stop="removeNibar(item, n.nibar)"
-                                                            class="w-3.5 h-3.5 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition-all"
-                                                            title="Hapus NIBAR ini">
-                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                    </button>
-                                                </span>
-                                            </template>
-                                        </div>
-                                    </template>
+                                        <!-- Chips: NIBAR yang sudah dipilih -->
+                                        <template x-if="(item.nibar_selected || []).length > 0">
+                                            <div class="flex flex-wrap gap-2 mb-2">
+                                                <template x-for="n in item.nibar_selected" :key="n.nibar">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold">
+                                                        <span x-text="n.nibar"></span>
+                                                        <button type="button" @click.stop="removeNibar(item, n.nibar)"
+                                                                class="w-3.5 h-3.5 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition-all"
+                                                                title="Hapus NIBAR ini">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        </button>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </template>
 
-                                    <!-- KONDISI 1: Belum Pilih Barang -->
-                                    <template x-if="!item.nama_barang && !item.kode_barang">
-                                        <div class="relative flex items-center">
-                                            <input type="text" 
-                                                   disabled
-                                                   placeholder="Pilih nama barang di atas terlebih dahulu untuk memilih NIBAR..." 
-                                                   class="w-full h-11 bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-4 text-xs text-slate-500 placeholder-slate-600 cursor-not-allowed">
-                                            <svg class="w-4 h-4 text-slate-600 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                                        </div>
-                                    </template>
-
-                                    <!-- KONDISI 2: Barang Terpilih Tapi Data NIBAR Kosong -->
-                                    <template x-if="(item.nama_barang || item.kode_barang) && isNibarEmpty(item)">
-                                        <div class="space-y-1.5">
+                                        <!-- KONDISI 1: Belum Pilih Barang -->
+                                        <template x-if="!item.nama_barang && !item.kode_barang">
                                             <div class="relative flex items-center">
                                                 <input type="text" 
                                                        disabled
-                                                       value="⚠️ Barang Kosong — Data NIBAR belum tersedia di sistem" 
-                                                       class="w-full h-11 bg-rose-950/20 border border-rose-500/40 rounded-xl px-4 py-2.5 pl-10 pr-4 text-xs text-rose-300 font-semibold cursor-not-allowed">
-                                                <svg class="w-4 h-4 text-rose-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                       placeholder="Pilih nama barang di atas terlebih dahulu untuk memilih NIBAR..." 
+                                                       class="w-full h-11 bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-4 text-xs text-slate-500 placeholder-slate-600 cursor-not-allowed">
+                                                <svg class="w-4 h-4 text-slate-600 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
                                             </div>
-                                            <p class="text-[11px] text-rose-400/90 flex items-center space-x-1.5 pl-1">
-                                                <span>ℹ️ Tidak ditemukan register NIBAR aktif untuk barang <span class="font-mono font-bold text-white" x-text="getItemKode(item) || item.nama_barang"></span>. Anda tetap dapat mendistribusikan barang dengan mengisi Volume (Qty).</span>
-                                            </p>
-                                        </div>
-                                    </template>
+                                        </template>
 
-                                    <!-- KONDISI 3: Barang Terpilih & Ada NIBAR Tersedia -->
-                                    <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                        <div>
-                                            <!-- Input Pencarian NIBAR -->
-                                            <div class="relative flex items-center">
-                                                <input type="text" 
-                                                       :value="nibarSearch[item.id] || ''"
-                                                       @input="nibarSearch = {...nibarSearch, [item.id]: $event.target.value}; activeNibarDropdownIndex = idx"
-                                                       @focus="activeNibarDropdownIndex = idx"
-                                                       :placeholder="(item.nibar_selected || []).length >= (item.qty || 1) ? '✅ Sudah memilih ' + (item.qty || 1) + ' NIBAR (sesuai volume)' : 'Ketik atau klik untuk pilih NIBAR...'" 
-                                                       :disabled="(item.nibar_selected || []).length >= (item.qty || 1)"
-                                                       class="w-full h-11 bg-slate-900 border border-amber-500/40 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                                <svg class="w-4 h-4 text-amber-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-
-                                                <!-- Tombol Silang Reset Input Pencarian NIBAR di Pojok Kanan Dalam Input -->
-                                                <template x-if="(nibarSearch[item.id] || '').trim() !== ''">
-                                                    <button type="button" 
-                                                            @click.stop="nibarSearch[item.id] = ''" 
-                                                            style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
-                                                            class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all cursor-pointer shadow-sm border border-slate-700/60 hover:border-rose-500/40"
-                                                            title="Bersihkan pencarian NIBAR">
-                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                    </button>
-                                                </template>
+                                        <!-- KONDISI 2: Barang Terpilih Tapi Data NIBAR Kosong -->
+                                        <template x-if="(item.nama_barang || item.kode_barang) && isNibarEmpty(item)">
+                                            <div class="space-y-1.5">
+                                                <div class="relative flex items-center">
+                                                    <input type="text" 
+                                                           disabled
+                                                           value="⚠️ Barang Kosong — Data NIBAR belum tersedia di sistem" 
+                                                           class="w-full h-11 bg-rose-950/20 border border-rose-500/40 rounded-xl px-4 py-2.5 pl-10 pr-4 text-xs text-rose-300 font-semibold cursor-not-allowed">
+                                                    <svg class="w-4 h-4 text-rose-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                                </div>
+                                                <p class="text-[11px] text-rose-400/90 flex items-center space-x-1.5 pl-1">
+                                                    <span>ℹ️ Tidak ditemukan register NIBAR aktif untuk barang <span class="font-mono font-bold text-white" x-text="getItemKode(item) || item.nama_barang"></span>. Anda tetap dapat mendistribusikan barang dengan mengisi Volume (Qty).</span>
+                                                </p>
                                             </div>
+                                        </template>
 
-                                            <!-- Dropdown NIBAR -->
-                                            <div x-show="activeNibarDropdownIndex === idx"
-                                                 x-transition
-                                                 class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
+                                        <!-- KONDISI 3: Barang Terpilih & Ada NIBAR Tersedia -->
+                                        <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
+                                            <div>
+                                                <!-- Input Pencarian NIBAR -->
+                                                <div class="relative flex items-center">
+                                                    <input type="text" 
+                                                           :value="nibarSearch[item.id] || ''"
+                                                           @input="nibarSearch = {...nibarSearch, [item.id]: $event.target.value}; activeNibarDropdownIndex = idx"
+                                                           @focus="activeNibarDropdownIndex = idx"
+                                                           :placeholder="(item.nibar_selected || []).length >= (item.qty || 1) ? '✅ Sudah memilih ' + (item.qty || 1) + ' NIBAR (sesuai volume)' : 'Ketik atau klik untuk pilih NIBAR...'" 
+                                                           :disabled="(item.nibar_selected || []).length >= (item.qty || 1)"
+                                                           class="w-full h-11 bg-slate-900 border border-amber-500/40 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    <svg class="w-4 h-4 text-amber-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
 
-                                                <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
-                                                    <span x-text="'NIBAR tersedia untuk ' + (item.nama_barang || '-')"></span>
-                                                    <span class="text-amber-400 font-mono" x-text="getFilteredNibar(item, nibarSearch[item.id] || '').length + ' tersedia'"></span>
+                                                    <!-- Tombol Silang Reset Input Pencarian NIBAR di Pojok Kanan Dalam Input -->
+                                                    <template x-if="(nibarSearch[item.id] || '').trim() !== ''">
+                                                        <button type="button" 
+                                                                @click.stop="nibarSearch[item.id] = ''" 
+                                                                style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
+                                                                class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all cursor-pointer shadow-sm border border-slate-700/60 hover:border-rose-500/40"
+                                                                title="Bersihkan pencarian NIBAR">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        </button>
+                                                    </template>
                                                 </div>
 
-                                                <template x-for="n in getFilteredNibar(item, nibarSearch[item.id] || '')" :key="n.nibar">
-                                                    <div @click="selectNibar(item, n)"
-                                                         class="px-4 py-2.5 hover:bg-amber-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3">
-                                                        <div class="space-y-0.5">
-                                                            <p class="font-mono font-bold text-xs text-white group-hover:text-amber-300" x-text="n.nibar"></p>
-                                                            <p class="text-[10px] text-slate-400" x-text="'Ruang: ' + n.ruang + ' • ' + n.kondisi"></p>
-                                                        </div>
-                                                        <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0">Pilih →</span>
-                                                    </div>
-                                                </template>
+                                                <!-- Dropdown NIBAR -->
+                                                <div x-show="activeNibarDropdownIndex === idx"
+                                                     x-transition
+                                                     class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
 
-                                                <template x-if="getFilteredNibar(item, nibarSearch[item.id] || '').length === 0">
-                                                    <div class="p-4 text-center text-xs text-slate-400">
-                                                        <p class="text-amber-400 font-semibold">Tidak ada NIBAR yang cocok</p>
-                                                        <p class="text-[10px] text-slate-500 mt-0.5">Semua NIBAR mungkin sudah dipilih</p>
+                                                    <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                                                        <span x-text="'NIBAR tersedia untuk ' + (item.nama_barang || '-')"></span>
+                                                        <span class="text-amber-400 font-mono" x-text="getFilteredNibar(item, nibarSearch[item.id] || '').length + ' tersedia'"></span>
                                                     </div>
-                                                </template>
+
+                                                    <template x-for="n in getFilteredNibar(item, nibarSearch[item.id] || '')" :key="n.nibar">
+                                                        <div @click="selectNibar(item, n)"
+                                                             class="px-4 py-2.5 hover:bg-amber-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3">
+                                                            <div class="space-y-0.5">
+                                                                <div class="flex items-center space-x-2">
+                                                                    <p class="font-mono font-bold text-xs text-white group-hover:text-amber-300" x-text="n.nibar"></p>
+                                                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-semibold" x-text="n.status || 'Tersedia'"></span>
+                                                                </div>
+                                                                <p class="text-[10px] text-slate-400" x-text="'Ruang: ' + n.ruang + ' • ' + n.kondisi"></p>
+                                                            </div>
+                                                            <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0">Pilih →</span>
+                                                        </div>
+                                                    </template>
+
+                                                    <template x-if="getFilteredNibar(item, nibarSearch[item.id] || '').length === 0">
+                                                        <div class="p-4 text-center text-xs text-slate-400">
+                                                            <p class="text-amber-400 font-semibold">Tidak ada NIBAR yang cocok</p>
+                                                            <p class="text-[10px] text-slate-500 mt-0.5">Semua NIBAR mungkin sudah dipilih</p>
+                                                        </div>
+                                                    </template>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </template>
-                                </div>
+                                        </template>
+                                    </div>
+                                </template>
 
                                 <!-- Baris 2: Kondisi Fisik, Volume, & Satuan (Selalu Sejajar Berdampingan dalam 1 Baris) -->
                                 <div class="flex flex-row items-end gap-3 w-full">

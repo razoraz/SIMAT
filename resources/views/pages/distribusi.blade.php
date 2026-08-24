@@ -729,11 +729,12 @@
                             <td class="px-4 py-4 text-center whitespace-nowrap">
                                 <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
                                     :class="{
-                                        'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Telah Diterima',
-                                        'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': item.status === 'Dalam Pengiriman',
-                                        'bg-amber-500/15 text-amber-300 border-amber-500/30': item.status === 'Menunggu Konfirmasi'
+                                        'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Telah Diterima' || item.status === 'Diterima',
+                                        'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': item.status === 'Dalam Pengiriman' || item.status === 'Dikirim',
+                                        'bg-amber-500/15 text-amber-300 border-amber-500/30': item.status === 'Menunggu Konfirmasi' || item.status === 'Pending',
+                                        'bg-slate-500/15 text-slate-300 border-slate-500/30': item.status === 'Draft' || !item.status
                                     }"
-                                    x-text="item.status"></span>
+                                    x-text="item.status || 'Draft'"></span>
                             </td>
                             <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
                                 

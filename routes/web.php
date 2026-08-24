@@ -233,11 +233,12 @@ Route::middleware('auth')->group(function () {
             ->get()
             ->map(function($r) {
                 return [
-                    'id'     => $r->id,
-                    'nibar'  => $r->nibar,
-                    'kode'   => $r->kode_108,
-                    'ruang'  => $r->ruang_pemegang ?: '-',
-                    'kondisi'=> $r->kondisi,
+                    'id'      => $r->id,
+                    'nibar'   => $r->nibar,
+                    'kode'    => $r->kode_108,
+                    'ruang'   => $r->ruang_pemegang ?: '-',
+                    'kondisi' => $r->kondisi,
+                    'status'  => $r->status_mutasi,
                 ];
             });
 
@@ -312,11 +313,12 @@ Route::middleware('auth')->group(function () {
             ->get()
             ->map(function($r) {
                 return [
-                    'id'     => $r->id,
-                    'nibar'  => $r->nibar,
-                    'kode'   => $r->kode_108,
-                    'ruang'  => $r->ruang_pemegang ?: '-',
-                    'kondisi'=> $r->kondisi,
+                    'id'      => $r->id,
+                    'nibar'   => $r->nibar,
+                    'kode'    => $r->kode_108,
+                    'ruang'   => $r->ruang_pemegang ?: '-',
+                    'kondisi' => $r->kondisi,
+                    'status'  => $r->status_mutasi,
                 ];
             });
 
