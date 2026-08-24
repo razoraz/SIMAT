@@ -13,6 +13,20 @@
                 currentStep: 1,
                 totalSteps: 4,
 
+                // State Search Filter Ketik Langkah 1 & Langkah 2
+                searchProgram: '',
+                isProgramOpen: false,
+                searchKegiatan: '',
+                isKegiatanOpen: false,
+                searchSubKegiatan: '',
+                isSubKegiatanOpen: false,
+                searchRekening: '',
+                isRekeningOpen: false,
+                searchJenis108: '',
+                isJenis108Open: false,
+                searchSubRincian108: '',
+                isSubRincian108Open: false,
+
                 // Master Data Hierarki SIPD Langkah 1 (Diisi dinamis 100% dari SQLite Database)
                 sipdData: [],
 
@@ -137,7 +151,7 @@
                     // ===============================================================
                     // LANGKAH 1: MEMILIH JENIS PENGADAAN (FILTER BERTINGKAT SIPD)
                     // ===============================================================
-                    jenis_pengadaan_id: 1,
+                    jenis_pengadaan_id: null,
                     program_kode: '',
                     program_nama: '',
                     kegiatan_kode: '',
@@ -149,14 +163,14 @@
                     // ===============================================================
                     // LANGKAH 2: REKENING BELANJA SIPD & JENIS ASTAP (FILTER BERTINGKAT)
                     // ===============================================================
-                    kode_rek: '5.2.01.01.01.0002',
-                    nama_belanja: 'Belanja Modal Pengadaan Tanah Fasilitas Pelayanan Kesehatan',
-                    jenis_aset_kode: '1.3.1',
-                    jenis_aset_nama: 'TANAH',
-                    sub_rincian_kode: '1.3.1.01.01.02',
-                    sub_rincian_nama: 'TANAH UNTUK BANGUNAN GEDUNG RSUD & FASILITAS',
-                    jumlah_anggaran: 8500000000,
-                    jumlah_realisasi: 8500000000,
+                    kode_rek: '',
+                    nama_belanja: '',
+                    jenis_aset_kode: '',
+                    jenis_aset_nama: '',
+                    sub_rincian_kode: '',
+                    sub_rincian_nama: '',
+                    jumlah_anggaran: 0,
+                    jumlah_realisasi: 0,
 
                     // ===============================================================
                     // LANGKAH 3: RINCIAN BELANJA MODAL / DOKUMEN PENGADAAN (PMDN 108)
@@ -336,25 +350,6 @@
                             }
                         });
                         this.sipdData = dynamicSipd;
-
-                        // Set default terpilih pada Langkah 1 jika data tersedia
-                        if (this.sipdData.length > 0) {
-                            const firstProg = this.sipdData[0];
-                            this.formData.program_kode = firstProg.kode;
-                            this.formData.program_nama = firstProg.nama;
-                            if (firstProg.kegiatans && firstProg.kegiatans.length > 0) {
-                                const firstKeg = firstProg.kegiatans[0];
-                                this.formData.kegiatan_kode = firstKeg.kode;
-                                this.formData.kegiatan_nama = firstKeg.nama;
-                                if (firstKeg.subKegiatans && firstKeg.subKegiatans.length > 0) {
-                                    const firstSub = firstKeg.subKegiatans[0];
-                                    this.formData.sub_kegiatan_kode = firstSub.kode;
-                                    this.formData.sub_kegiatan_nama = firstSub.nama;
-                                    this.formData.keterangan_pengadaan = firstSub.keterangan;
-                                    this.formData.jenis_pengadaan_id = firstSub.id;
-                                }
-                            }
-                        }
                     }
 
                     // 2. Membangun Rekening Belanja Langkah 2 murni dari Database SQLite (rekening_belanjas)
@@ -366,23 +361,6 @@
                             kelompok: item.kelompok,
                             default_jenis_kode: item.kelompok === 'Tanah' ? '1.3.1' : (item.kelompok === 'Bangunan' ? '1.3.3' : '1.3.2')
                         }));
-                        if (this.masterRekeningBelanja.length > 0) {
-                            this.formData.kode_rek = this.masterRekeningBelanja[0].kode_rek;
-                            this.formData.nama_belanja = this.masterRekeningBelanja[0].nama_belanja;
-                        }
-                    }
-
-                    // 3. Membangun Jenis ASTAP PMDN 108 murni dari Database SQLite (jenis_astaps)
-                    if (window.dbMasterJenisAstap108 && window.dbMasterJenisAstap108.length > 0) {
-                        const currentJenis = window.dbMasterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode);
-                        if (!currentJenis) {
-                            this.onJenisAstapChange(window.dbMasterJenisAstap108[0].kode);
-                        } else {
-                            const currentSub = currentJenis.subRincian ? currentJenis.subRincian.find(s => s.kode === this.formData.sub_rincian_kode) : null;
-                            if (!currentSub && currentJenis.subRincian && currentJenis.subRincian.length > 0) {
-                                this.onSubRincianChange(currentJenis.subRincian[0].kode);
-                            }
-                        }
                     }
                 },
 
@@ -457,71 +435,206 @@
                 },
 
                 get currentProgram() {
-                    if (!this.sipdData || this.sipdData.length === 0) return null;
-                    return this.sipdData.find(p => p.kode === this.formData.program_kode) || this.sipdData[0];
+                    if (!this.sipdData || !this.formData.program_kode) return null;
+                    return this.sipdData.find(p => p.kode === this.formData.program_kode) || null;
                 },
 
                 get availableKegiatans() {
-                    return this.currentProgram ? this.currentProgram.kegiatans : [];
+                    if (this.currentProgram) {
+                        return this.currentProgram.kegiatans || [];
+                    }
+                    // Jika program belum dipilih, tampilkan seluruh kegiatan
+                    let allKegs = [];
+                    (this.sipdData || []).forEach(p => {
+                        if (p.kegiatans) allKegs = allKegs.concat(p.kegiatans);
+                    });
+                    return allKegs;
                 },
 
                 get currentKegiatan() {
-                    if (!this.availableKegiatans || this.availableKegiatans.length === 0) return null;
-                    return this.availableKegiatans.find(k => k.kode === this.formData.kegiatan_kode) || this.availableKegiatans[0];
+                    if (!this.formData.kegiatan_kode) return null;
+                    return this.availableKegiatans.find(k => k.kode === this.formData.kegiatan_kode) || null;
                 },
 
                 get availableSubKegiatans() {
-                    return this.currentKegiatan ? this.currentKegiatan.subKegiatans : [];
+                    if (this.currentKegiatan) {
+                        return this.currentKegiatan.subKegiatans || [];
+                    }
+                    // Jika kegiatan belum dipilih, tampilkan seluruh sub kegiatan
+                    let allSubs = [];
+                    (this.availableKegiatans || []).forEach(k => {
+                        if (k.subKegiatans) allSubs = allSubs.concat(k.subKegiatans);
+                    });
+                    return allSubs;
                 },
 
                 onProgramChange(kode) {
                     this.formData.program_kode = kode;
-                    const prog = this.sipdData.find(p => p.kode === kode);
-                    if (prog) {
-                        this.formData.program_nama = prog.nama;
-                        if (prog.kegiatans && prog.kegiatans.length > 0) {
-                            this.onKegiatanChange(prog.kegiatans[0].kode);
-                        }
-                    }
+                    const prog = (this.sipdData || []).find(p => p.kode === kode);
+                    this.formData.program_nama = prog ? prog.nama : '';
+                    // Reset turunan jika program diganti
+                    this.formData.kegiatan_kode = '';
+                    this.formData.kegiatan_nama = '';
+                    this.formData.sub_kegiatan_kode = '';
+                    this.formData.sub_kegiatan_nama = '';
                 },
 
                 onKegiatanChange(kode) {
                     this.formData.kegiatan_kode = kode;
-                    const keg = this.availableKegiatans.find(k => k.kode === kode);
-                    if (keg) {
-                        this.formData.kegiatan_nama = keg.nama;
-                        if (keg.subKegiatans && keg.subKegiatans.length > 0) {
-                            this.onSubKegiatanChange(keg.subKegiatans[0].kode);
-                        }
-                    }
+                    const keg = (this.availableKegiatans || []).find(k => k.kode === kode);
+                    this.formData.kegiatan_nama = keg ? keg.nama : '';
+                    // Reset turunan jika kegiatan diganti
+                    this.formData.sub_kegiatan_kode = '';
+                    this.formData.sub_kegiatan_nama = '';
                 },
 
                 onSubKegiatanChange(kode) {
                     this.formData.sub_kegiatan_kode = kode;
-                    const sub = this.availableSubKegiatans.find(s => s.kode === kode);
+                    const sub = (this.availableSubKegiatans || []).find(s => s.kode === kode);
                     if (sub) {
                         this.formData.sub_kegiatan_nama = sub.nama;
                         this.formData.keterangan_pengadaan = sub.keterangan;
                         this.formData.jenis_pengadaan_id = sub.id || 1;
+                    } else {
+                        this.formData.sub_kegiatan_nama = '';
+                        this.formData.keterangan_pengadaan = '';
                     }
                 },
 
                 get currentJenisAstap() {
-                    if (!window.dbMasterJenisAstap108 || window.dbMasterJenisAstap108.length === 0) return null;
-                    return window.dbMasterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode) || window.dbMasterJenisAstap108[0];
+                    if (!window.dbMasterJenisAstap108 || !this.formData.jenis_aset_kode) return null;
+                    return window.dbMasterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode) || null;
                 },
 
                 get availableSubRincian108() {
-                    return (this.currentJenisAstap && this.currentJenisAstap.subRincian) ? this.currentJenisAstap.subRincian : [];
+                    if (this.currentJenisAstap && this.currentJenisAstap.subRincian) {
+                        return this.currentJenisAstap.subRincian;
+                    }
+                    let allSubRincian = [];
+                    (window.dbMasterJenisAstap108 || []).forEach(j => {
+                        if (j.subRincian) allSubRincian = allSubRincian.concat(j.subRincian);
+                    });
+                    return allSubRincian;
                 },
 
                 get currentSubRincianObj() {
-                    if (this.availableSubRincian108.length === 0) return null;
-                    return this.availableSubRincian108.find(s => s.kode === this.formData.sub_rincian_kode) || this.availableSubRincian108[0];
+                    if (!this.formData.sub_rincian_kode) return null;
+                    return (this.availableSubRincian108 || []).find(s => s.kode === this.formData.sub_rincian_kode) || null;
                 },
 
                 get availableSubSubRincian108() {
                     return (this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian) ? this.currentSubRincianObj.subSubRincian : [];
+                },
+
+                // Getters Filter Pencarian Langkah 1 (SIPD)
+                get filteredPrograms() {
+                    if (!this.searchProgram || this.searchProgram.trim() === '') {
+                        return this.sipdData;
+                    }
+                    const q = this.searchProgram.toLowerCase();
+                    return this.sipdData.filter(p => 
+                        (p.kode && p.kode.toLowerCase().includes(q)) || 
+                        (p.nama && p.nama.toLowerCase().includes(q))
+                    );
+                },
+
+                get filteredKegiatans() {
+                    const list = this.availableKegiatans;
+                    if (!this.searchKegiatan || this.searchKegiatan.trim() === '') {
+                        return list;
+                    }
+                    const q = this.searchKegiatan.toLowerCase();
+                    return list.filter(k => 
+                        (k.kode && k.kode.toLowerCase().includes(q)) || 
+                        (k.nama && k.nama.toLowerCase().includes(q))
+                    );
+                },
+
+                get filteredSubKegiatans() {
+                    const list = this.availableSubKegiatans;
+                    if (!this.searchSubKegiatan || this.searchSubKegiatan.trim() === '') {
+                        return list;
+                    }
+                    const q = this.searchSubKegiatan.toLowerCase();
+                    return list.filter(s => 
+                        (s.kode && s.kode.toLowerCase().includes(q)) || 
+                        (s.nama && s.nama.toLowerCase().includes(q)) || 
+                        (s.keterangan && s.keterangan.toLowerCase().includes(q))
+                    );
+                },
+
+                // Getters Filter Pencarian Langkah 2 (Rekening Belanja & PMDN 108)
+                get filteredRekeningBelanja() {
+                    if (!this.searchRekening || this.searchRekening.trim() === '') {
+                        return this.masterRekeningBelanja;
+                    }
+                    const q = this.searchRekening.toLowerCase();
+                    return this.masterRekeningBelanja.filter(r => 
+                        (r.kode_rek && r.kode_rek.toLowerCase().includes(q)) || 
+                        (r.nama_belanja && r.nama_belanja.toLowerCase().includes(q)) ||
+                        (r.kelompok && r.kelompok.toLowerCase().includes(q))
+                    );
+                },
+
+                get filteredJenisAstap108() {
+                    let list = (this.masterJenisAstap108 || []).filter(j => j && j.kode && j.nama && j.nama.trim() !== '');
+                    if (!this.searchJenis108 || this.searchJenis108.trim() === '') {
+                        return list;
+                    }
+                    const q = this.searchJenis108.toLowerCase();
+                    return list.filter(j => 
+                        (j.kode && j.kode.toLowerCase().includes(q)) || 
+                        (j.nama && j.nama.toLowerCase().includes(q))
+                    );
+                },
+
+                get filteredSubRincian108() {
+                    let list = (this.availableSubRincian108 || []).filter(s => s && s.kode && s.nama && s.nama.trim() !== '');
+                    if (!this.searchSubRincian108 || this.searchSubRincian108.trim() === '') {
+                        return list;
+                    }
+                    const q = this.searchSubRincian108.toLowerCase();
+                    return list.filter(s => 
+                        (s.kode && s.kode.toLowerCase().includes(q)) || 
+                        (s.nama && s.nama.toLowerCase().includes(q))
+                    );
+                },
+
+                // Helper Selection Pilihan Filter Card Model (Langkah 1 & Langkah 2)
+                selectProgram(p) {
+                    this.onProgramChange(p.kode);
+                    this.isProgramOpen = false;
+                    this.searchProgram = '';
+                },
+
+                selectKegiatan(k) {
+                    this.onKegiatanChange(k.kode);
+                    this.isKegiatanOpen = false;
+                    this.searchKegiatan = '';
+                },
+
+                selectSubKegiatan(s) {
+                    this.onSubKegiatanChange(s.kode);
+                    this.isSubKegiatanOpen = false;
+                    this.searchSubKegiatan = '';
+                },
+
+                selectRekening(r) {
+                    this.onRekeningBelanjaChange(r.kode_rek);
+                    this.isRekeningOpen = false;
+                    this.searchRekening = '';
+                },
+
+                selectJenisAstap(j) {
+                    this.onJenisAstapChange(j.kode);
+                    this.isJenis108Open = false;
+                    this.searchJenis108 = '';
+                },
+
+                selectSubRincian(s) {
+                    this.onSubRincianChange(s.kode);
+                    this.isSubRincian108Open = false;
+                    this.searchSubRincian108 = '';
                 },
 
                 onRekeningBelanjaChange(kodeRek) {
@@ -529,8 +642,19 @@
                     const found = this.masterRekeningBelanja.find(r => r.kode_rek === kodeRek);
                     if (found) {
                         this.formData.nama_belanja = found.nama_belanja;
-                        if (found.default_jenis_kode) {
-                            this.onJenisAstapChange(found.default_jenis_kode);
+                        this.searchRekening = found.kode_rek + ' - ' + found.nama_belanja;
+                        let defaultJenisKode = found.default_jenis_kode;
+                        if (!defaultJenisKode) {
+                            if (kodeRek.startsWith('5.2.01')) defaultJenisKode = '1.3.1';
+                            else if (kodeRek.startsWith('5.2.02')) defaultJenisKode = '1.3.2';
+                            else if (kodeRek.startsWith('5.2.03')) defaultJenisKode = '1.3.3';
+                            else if (kodeRek.startsWith('5.2.04')) defaultJenisKode = '1.3.4';
+                            else if (kodeRek.startsWith('5.2.05')) defaultJenisKode = '1.3.5';
+                            else if (kodeRek.startsWith('5.2.06')) defaultJenisKode = '1.5.3';
+                            else if (kodeRek.startsWith('5.2.07')) defaultJenisKode = '1.3.6';
+                        }
+                        if (defaultJenisKode) {
+                            this.onJenisAstapChange(defaultJenisKode);
                         }
                     }
                 },
@@ -540,11 +664,13 @@
                     const found = (window.dbMasterJenisAstap108 || []).find(j => j.kode === kodeJenis);
                     if (found) {
                         this.formData.jenis_aset_nama = found.nama;
+                        this.searchJenis108 = found.kode + ' - ' + found.nama;
                         if (found.subRincian && found.subRincian.length > 0) {
                             this.onSubRincianChange(found.subRincian[0].kode);
                         } else {
                             this.formData.sub_rincian_kode = '';
                             this.formData.sub_rincian_nama = '';
+                            this.searchSubRincian108 = '';
                         }
                     }
                 },
@@ -554,6 +680,7 @@
                     const found = this.availableSubRincian108.find(s => s.kode === kodeSub);
                     if (found) {
                         this.formData.sub_rincian_nama = found.nama;
+                        this.searchSubRincian108 = found.kode + ' - ' + found.nama;
                         if (found.subSubRincian && found.subSubRincian.length > 0) {
                             this.onSubSubRincianChange(found.subSubRincian[0].kode);
                         }
@@ -586,6 +713,67 @@
                     }
                 },
 
+                nextStep() {
+                    if (this.currentStep === 1) {
+                        if (!this.formData.program_kode) {
+                            alert('⚠️ Mohon pilih Program Pengadaan SIPD terlebih dahulu!');
+                            this.isProgramOpen = true;
+                            return;
+                        }
+                        if (!this.formData.kegiatan_kode) {
+                            alert('⚠️ Mohon pilih Kegiatan Pengadaan SIPD terlebih dahulu!');
+                            this.isKegiatanOpen = true;
+                            return;
+                        }
+                        if (!this.formData.sub_kegiatan_kode) {
+                            alert('⚠️ Mohon pilih Sub Kegiatan / Jenis Pengadaan Spesifik terlebih dahulu!');
+                            this.isSubKegiatanOpen = true;
+                            return;
+                        }
+                    } else if (this.currentStep === 2) {
+                        if (!this.formData.kode_rek) {
+                            alert('⚠️ Mohon pilih Rekening Belanja Pengadaan SIPD terlebih dahulu!');
+                            this.isRekeningOpen = true;
+                            return;
+                        }
+                        if (!this.formData.jenis_aset_kode) {
+                            alert('⚠️ Mohon pilih Jenis Aset PMDN 108 terlebih dahulu!');
+                            this.isJenis108Open = true;
+                            return;
+                        }
+                        if (!this.formData.sub_rincian_kode) {
+                            alert('⚠️ Mohon pilih Sub Rincian Objek PMDN 108 terlebih dahulu!');
+                            this.isSubRincian108Open = true;
+                            return;
+                        }
+                    }
+                    if (this.currentStep < this.totalSteps) {
+                        this.currentStep++;
+                    }
+                },
+
+                goToStep(step) {
+                    if (step > this.currentStep) {
+                        for (let s = 1; s < step; s++) {
+                            if (s === 1) {
+                                if (!this.formData.program_kode || !this.formData.kegiatan_kode || !this.formData.sub_kegiatan_kode) {
+                                    alert('⚠️ Mohon lengkapi seluruh pilihan pada Langkah 1 (Program, Kegiatan, dan Sub Kegiatan SIPD) terlebih dahulu!');
+                                    this.currentStep = 1;
+                                    return;
+                                }
+                            }
+                            if (s === 2) {
+                                if (!this.formData.kode_rek || !this.formData.jenis_aset_kode || !this.formData.sub_rincian_kode) {
+                                    alert('⚠️ Mohon lengkapi seluruh pilihan pada Langkah 2 (Rekening Belanja & Jenis PMDN 108) terlebih dahulu!');
+                                    this.currentStep = 2;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    this.currentStep = step;
+                },
+
                 autoFillDokumen() {
                     const dateStr = new Date().toISOString().slice(0, 10);
                     const randomNo = Math.floor(100 + Math.random() * 900);
@@ -609,6 +797,16 @@
                 },
 
                 submitForm() {
+                    if (!this.formData.program_kode || !this.formData.kegiatan_kode || !this.formData.sub_kegiatan_kode) {
+                        alert('⚠️ Mohon lengkapi pilihan pada Langkah 1 terlebih dahulu!');
+                        this.currentStep = 1;
+                        return;
+                    }
+                    if (!this.formData.kode_rek || !this.formData.jenis_aset_kode || !this.formData.sub_rincian_kode) {
+                        alert('⚠️ Mohon lengkapi pilihan pada Langkah 2 terlebih dahulu!');
+                        this.currentStep = 2;
+                        return;
+                    }
                     const namaBarang = this.isTanah ? this.formData.tanah_nama_barang : (this.isMesin ? this.formData.mesin_nama_barang : (this.isGedung ? this.formData.gedung_nama_barang : (this.isJaringan ? this.formData.jaringan_nama_barang : (this.isAsetLainnya ? this.formData.lainnya_nama_barang : (this.isAtb ? this.formData.atb_nama_barang : (this.isKdp ? this.formData.kdp_nama_barang : 'Aset Belanja Modal'))))));
                     alert('✅ Data ASTAP (' + namaBarang + ') berhasil disimpan ke database SIMAT-RK!');
                     window.location.href = '{{ route('astap.index') }}';
@@ -640,7 +838,7 @@
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 
                 <!-- Step 1 Tab -->
-                <button type="button" @click="currentStep = 1" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                <button type="button" @click="goToStep(1)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
                         <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 1 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 1 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
@@ -656,7 +854,7 @@
                 </button>
 
                 <!-- Step 2 Tab (Rekening Belanja & Jenis ASTAP PMDN 108) -->
-                <button type="button" @click="currentStep = 2" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                <button type="button" @click="goToStep(2)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
                         <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 2 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 2 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
@@ -672,7 +870,7 @@
                 </button>
 
                 <!-- Step 3 Tab (Dokumen Pembelian / Rincian Belanja Modal) -->
-                <button type="button" @click="currentStep = 3" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                <button type="button" @click="goToStep(3)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
                         <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 3 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 3 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
@@ -688,7 +886,7 @@
                 </button>
 
                 <!-- Step 4 Tab (Penyedia & PPK) -->
-                <button type="button" @click="currentStep = 4" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                <button type="button" @click="goToStep(4)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
                         <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
                              :class="currentStep === 4 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : 'bg-slate-950 text-slate-500 border border-slate-800'">
@@ -726,63 +924,150 @@
                 <!-- 3 Tingkat Filter Berjenjang (Ibarat Provinsi ➔ Kota ➔ Kecamatan) -->
                 <div class="p-6 rounded-3xl bg-slate-950/80 border border-purple-500/30 space-y-5 shadow-2xl">
                     
-                    <!-- Tingkat 1: PROGRAM (Ibarat Provinsi) -->
-                    <div class="space-y-1.5">
+                    <!-- Tingkat 1: PROGRAM PENGADAAN (SIPD) Card Filter Model -->
+                    <div class="space-y-2 relative" @click.away="isProgramOpen = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-black flex items-center justify-center">1</span>
-                                <span>Pilih Program Pengadaan (SIPD):</span>
+                                <span>Program Pengadaan SIPD (<span x-text="filteredPrograms.length"></span> Program Terdaftar)</span>
                             </label>
-                            <span class="text-[10px] font-mono text-purple-400 font-bold" x-text="'Kode: ' + formData.program_kode"></span>
+                            
+                            <!-- Tombol Red ✕ Ganti Program (Muncul bila sudah terpilih) -->
+                            <button type="button" 
+                                    x-show="formData.program_kode && !isProgramOpen" 
+                                    @click="isProgramOpen = true; searchProgram = ''" 
+                                    class="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 cursor-pointer">
+                                <span>✕ Ganti Program</span>
+                            </button>
                         </div>
+                        
+                        <!-- Input Search Box dengan Icon Magnifying Glass -->
                         <div class="relative">
-                            <select :value="formData.program_kode" 
-                                    @change="onProgramChange($event.target.value)"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-purple-500 rounded-2xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-purple-500 transition-all">
-                                <template x-for="p in sipdData" :key="p.kode">
-                                    <option :value="p.kode" :selected="p.kode === formData.program_kode" x-text="p.kode + ' - ' + p.nama"></option>
-                                </template>
-                            </select>
+                            <input type="text" 
+                                   :value="(!isProgramOpen && formData.program_kode) ? (formData.program_kode + ' - ' + formData.program_nama) : searchProgram"
+                                   @input="searchProgram = $event.target.value; isProgramOpen = true"
+                                   @focus="isProgramOpen = true"
+                                   :placeholder="formData.program_kode ? (formData.program_kode + ' - ' + formData.program_nama) : 'Ketik untuk memfilter nama / kode program (contoh: Penunjang, BLUD, Pelayanan)...'" 
+                                   class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
+                                   :class="formData.program_kode && !isProgramOpen ? 'border-purple-500/60 text-purple-200' : 'border-purple-500/40 text-white focus:border-purple-400'">
+                            <svg class="w-4 h-4 text-purple-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+
+                        <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
+                        <div x-show="isProgramOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-purple-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                            <template x-for="p in filteredPrograms" :key="p.kode">
+                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                     :class="p.kode === formData.program_kode ? 'border-purple-500 bg-purple-950/40 shadow-lg' : 'border-slate-800 hover:border-purple-500/50'">
+                                    <div class="min-w-0 pr-3">
+                                        <h4 class="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate" x-text="p.kode + ' - ' + p.nama"></h4>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'PROGRAM SIPD • ' + (p.kegiatans ? p.kegiatans.length : 0) + ' Kegiatan Terdaftar'"></p>
+                                    </div>
+                                    <button type="button" 
+                                            @click="selectProgram(p)" 
+                                            class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
+                                            :class="p.kode === formData.program_kode ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500 hover:text-slate-950'">
+                                        <span x-text="p.kode === formData.program_kode ? '✓ Terpilih' : 'Pilih →'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- Tingkat 2: KEGIATAN (Ibarat Kota / Kabupaten - Terfilter Sesuai Program) -->
-                    <div class="space-y-1.5">
+                    <!-- Tingkat 2: KEGIATAN PENGADAAN (SIPD) Card Filter Model -->
+                    <div class="space-y-2 relative" @click.away="isKegiatanOpen = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center">2</span>
-                                <span>Pilih Kegiatan Pengadaan (SIPD):</span>
+                                <span>Kegiatan Pengadaan SIPD (<span x-text="filteredKegiatans.length"></span> Kegiatan Terdaftar)</span>
                             </label>
-                            <span class="text-[10px] font-mono text-cyan-400 font-bold" x-text="'Kode: ' + formData.kegiatan_kode"></span>
+                            
+                            <!-- Tombol Red ✕ Ganti Kegiatan (Muncul bila sudah terpilih) -->
+                            <button type="button" 
+                                    x-show="formData.kegiatan_kode && !isKegiatanOpen" 
+                                    @click="isKegiatanOpen = true; searchKegiatan = ''" 
+                                    class="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 cursor-pointer">
+                                <span>✕ Ganti Kegiatan</span>
+                            </button>
                         </div>
+                        
+                        <!-- Input Search Box -->
                         <div class="relative">
-                            <select :value="formData.kegiatan_kode" 
-                                    @change="onKegiatanChange($event.target.value)"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500 rounded-2xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-cyan-500 transition-all">
-                                <template x-for="k in availableKegiatans" :key="k.kode">
-                                    <option :value="k.kode" :selected="k.kode === formData.kegiatan_kode" x-text="k.kode + ' - ' + k.nama"></option>
-                                </template>
-                            </select>
+                            <input type="text" 
+                                   :value="(!isKegiatanOpen && formData.kegiatan_kode) ? (formData.kegiatan_kode + ' - ' + formData.kegiatan_nama) : searchKegiatan"
+                                   @input="searchKegiatan = $event.target.value; isKegiatanOpen = true"
+                                   @focus="isKegiatanOpen = true"
+                                   :placeholder="formData.kegiatan_kode ? (formData.kegiatan_kode + ' - ' + formData.kegiatan_nama) : 'Ketik untuk memfilter nama / kode kegiatan (contoh: Peningkatan BLUD, Sarana Prasarana)...'" 
+                                   class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
+                                   :class="formData.kegiatan_kode && !isKegiatanOpen ? 'border-cyan-500/60 text-cyan-200' : 'border-cyan-500/40 text-white focus:border-cyan-400'">
+                            <svg class="w-4 h-4 text-cyan-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+
+                        <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
+                        <div x-show="isKegiatanOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                            <template x-for="k in filteredKegiatans" :key="k.kode">
+                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                     :class="k.kode === formData.kegiatan_kode ? 'border-cyan-500 bg-cyan-950/40 shadow-lg' : 'border-slate-800 hover:border-cyan-500/50'">
+                                    <div class="min-w-0 pr-3">
+                                        <h4 class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate" x-text="k.kode + ' - ' + k.nama"></h4>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'KEGIATAN SIPD • Terfilter dari Program: ' + formData.program_nama"></p>
+                                    </div>
+                                    <button type="button" 
+                                            @click="selectKegiatan(k)" 
+                                            class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
+                                            :class="k.kode === formData.kegiatan_kode ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500 hover:text-slate-950'">
+                                        <span x-text="k.kode === formData.kegiatan_kode ? '✓ Terpilih' : 'Pilih →'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- Tingkat 3: SUB KEGIATAN / JENIS PENGADAAN (Ibarat Kecamatan - Terfilter Sesuai Kegiatan) -->
-                    <div class="space-y-1.5">
+                    <!-- Tingkat 3: SUB KEGIATAN / JENIS PENGADAAN Card Filter Model -->
+                    <div class="space-y-2 relative" @click.away="isSubKegiatanOpen = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black flex items-center justify-center">3</span>
-                                <span>Pilih Sub Kegiatan (Jenis Pengadaan Spesifik):</span>
+                                <span>Sub Kegiatan / Jenis Pengadaan Spesifik (<span x-text="filteredSubKegiatans.length"></span> Sub Kegiatan Terdaftar)</span>
                             </label>
-                            <span class="text-[10px] font-mono text-emerald-400 font-bold" x-text="'Kode: ' + formData.sub_kegiatan_kode"></span>
+                            
+                            <!-- Tombol Red ✕ Ganti Sub Kegiatan (Muncul bila sudah terpilih) -->
+                            <button type="button" 
+                                    x-show="formData.sub_kegiatan_kode && !isSubKegiatanOpen" 
+                                    @click="isSubKegiatanOpen = true; searchSubKegiatan = ''" 
+                                    class="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 cursor-pointer">
+                                <span>✕ Ganti Sub Kegiatan</span>
+                            </button>
                         </div>
+                        
+                        <!-- Input Search Box -->
                         <div class="relative">
-                            <select :value="formData.sub_kegiatan_kode" 
-                                    @change="onSubKegiatanChange($event.target.value)"
-                                    class="w-full bg-slate-900 border border-emerald-500/50 hover:border-emerald-400 rounded-2xl px-4 py-3 text-xs text-emerald-300 font-bold focus:outline-none focus:border-emerald-400 transition-all">
-                                <template x-for="s in availableSubKegiatans" :key="s.kode">
-                                    <option :value="s.kode" :selected="s.kode === formData.sub_kegiatan_kode" x-text="s.kode + ' - ' + s.nama"></option>
-                                </template>
-                            </select>
+                            <input type="text" 
+                                   :value="(!isSubKegiatanOpen && formData.sub_kegiatan_kode) ? (formData.sub_kegiatan_kode + ' - ' + formData.sub_kegiatan_nama) : searchSubKegiatan"
+                                   @input="searchSubKegiatan = $event.target.value; isSubKegiatanOpen = true"
+                                   @focus="isSubKegiatanOpen = true"
+                                   :placeholder="formData.sub_kegiatan_kode ? (formData.sub_kegiatan_kode + ' - ' + formData.sub_kegiatan_nama) : 'Ketik untuk memfilter nama / kode sub kegiatan (contoh: Pelayanan BLUD, Alat Medis)...'" 
+                                   class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
+                                   :class="formData.sub_kegiatan_kode && !isSubKegiatanOpen ? 'border-emerald-500/60 text-emerald-200' : 'border-emerald-500/40 text-white focus:border-emerald-400'">
+                            <svg class="w-4 h-4 text-emerald-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+
+                        <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
+                        <div x-show="isSubKegiatanOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                            <template x-for="s in filteredSubKegiatans" :key="s.kode">
+                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                     :class="s.kode === formData.sub_kegiatan_kode ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
+                                    <div class="min-w-0 pr-3">
+                                        <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="s.kode + ' - ' + s.nama"></h4>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'SUB KEGIATAN • ' + s.keterangan"></p>
+                                    </div>
+                                    <button type="button" 
+                                            @click="selectSubKegiatan(s)" 
+                                            class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
+                                            :class="s.kode === formData.sub_kegiatan_kode ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950'">
+                                        <span x-text="s.kode === formData.sub_kegiatan_kode ? '✓ Terpilih' : 'Pilih →'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -822,63 +1107,150 @@
                 <!-- 3 Tingkat Filter Berjenjang Rekening Belanja & PMDN 108 -->
                 <div class="p-6 rounded-3xl bg-slate-950/80 border border-blue-500/30 space-y-5 shadow-2xl">
                     
-                    <!-- Tingkat 1: REKENING BELANJA PENGADAAN SIPD (Kolom 8 & 9) -->
-                    <div class="space-y-1.5">
+                    <!-- Tingkat 1: REKENING BELANJA PENGADAAN SIPD Card Filter Model -->
+                    <div class="space-y-2 relative" @click.away="isRekeningOpen = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] font-black flex items-center justify-center">1</span>
-                                <span>Pilih Rekening Belanja Untuk Pengadaan SIPD (Kolom 8 & 9):</span>
+                                <span>Rekening Belanja Pengadaan SIPD (<span x-text="filteredRekeningBelanja.length"></span> Rekening Terdaftar)</span>
                             </label>
-                            <span class="text-[10px] font-mono text-blue-400 font-bold" x-text="'Kode Rek: ' + formData.kode_rek"></span>
+                            
+                            <!-- Tombol Red ✕ Ganti Rekening (Muncul bila sudah terpilih) -->
+                            <button type="button" 
+                                    x-show="formData.kode_rek && !isRekeningOpen" 
+                                    @click="isRekeningOpen = true; searchRekening = ''" 
+                                    class="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 cursor-pointer">
+                                <span>✕ Ganti Rekening</span>
+                            </button>
                         </div>
+                        
+                        <!-- Input Search Box dengan Icon Magnifying Glass -->
                         <div class="relative">
-                            <select :value="formData.kode_rek" 
-                                    @change="onRekeningBelanjaChange($event.target.value)"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-blue-500 rounded-2xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-blue-500 transition-all">
-                                <template x-for="r in masterRekeningBelanja" :key="r.kode_rek">
-                                    <option :value="r.kode_rek" :selected="r.kode_rek === formData.kode_rek" x-text="r.kode_rek + ' - ' + r.nama_belanja"></option>
-                                </template>
-                            </select>
+                            <input type="text" 
+                                   :value="(!isRekeningOpen && formData.kode_rek) ? (formData.kode_rek + ' - ' + formData.nama_belanja) : searchRekening"
+                                   @input="searchRekening = $event.target.value; isRekeningOpen = true"
+                                   @focus="isRekeningOpen = true"
+                                   :placeholder="formData.kode_rek ? (formData.kode_rek + ' - ' + formData.nama_belanja) : 'Ketik untuk memfilter nama / kode rekening belanja (contoh: 5.2.02, Radiologi, Tanah, Gedung)...'" 
+                                   class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
+                                   :class="formData.kode_rek && !isRekeningOpen ? 'border-blue-500/60 text-blue-200' : 'border-blue-500/40 text-white focus:border-blue-400'">
+                            <svg class="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+
+                        <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
+                        <div x-show="isRekeningOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-blue-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                            <template x-for="r in filteredRekeningBelanja" :key="r.kode_rek">
+                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                     :class="r.kode_rek === formData.kode_rek ? 'border-blue-500 bg-blue-950/40 shadow-lg' : 'border-slate-800 hover:border-blue-500/50'">
+                                    <div class="min-w-0 pr-3">
+                                        <h4 class="text-xs font-bold text-white group-hover:text-blue-300 transition-colors truncate" x-text="r.kode_rek + ' - ' + r.nama_belanja"></h4>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'REKENING BELANJA • Kelompok: ' + r.kelompok"></p>
+                                    </div>
+                                    <button type="button" 
+                                            @click="selectRekening(r)" 
+                                            class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
+                                            :class="r.kode_rek === formData.kode_rek ? 'bg-blue-500 text-slate-950 shadow-lg shadow-blue-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500 hover:text-slate-950'">
+                                        <span x-text="r.kode_rek === formData.kode_rek ? '✓ Terpilih' : 'Pilih →'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- Tingkat 2: JENIS ASET PMDN 108 (Kolom 10 & 11) -->
-                    <div class="space-y-1.5">
+                    <!-- Tingkat 2: JENIS ASET PMDN 108 Card Filter Model -->
+                    <div class="space-y-2 relative" @click.away="isJenis108Open = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center">2</span>
-                                <span>Pilih Jenis Aset (PMDN 108) (Kolom 10 & 11):</span>
+                                <span>Jenis Aset PMDN 108 (<span x-text="filteredJenisAstap108.length"></span> Jenis Aset Terdaftar)</span>
                             </label>
-                            <span class="text-[10px] font-mono text-cyan-400 font-bold" x-text="'Kode: ' + formData.jenis_aset_kode"></span>
+                            
+                            <!-- Tombol Red ✕ Ganti Jenis Aset (Muncul bila sudah terpilih) -->
+                            <button type="button" 
+                                    x-show="formData.jenis_aset_kode && !isJenis108Open" 
+                                    @click="isJenis108Open = true; searchJenis108 = ''" 
+                                    class="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 cursor-pointer">
+                                <span>✕ Ganti Jenis Aset</span>
+                            </button>
                         </div>
+                        
+                        <!-- Input Search Box -->
                         <div class="relative">
-                            <select :value="formData.jenis_aset_kode" 
-                                    @change="onJenisAstapChange($event.target.value)"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500 rounded-2xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-cyan-500 transition-all">
-                                <template x-for="j in masterJenisAstap108" :key="j.kode">
-                                    <option :value="j.kode" :selected="j.kode === formData.jenis_aset_kode" x-text="j.kode + ' - ' + j.nama"></option>
-                                </template>
-                            </select>
+                            <input type="text" 
+                                   :value="(!isJenis108Open && formData.jenis_aset_kode) ? (formData.jenis_aset_kode + ' - ' + formData.jenis_aset_nama) : searchJenis108"
+                                   @input="searchJenis108 = $event.target.value; isJenis108Open = true"
+                                   @focus="isJenis108Open = true"
+                                   :placeholder="formData.jenis_aset_kode ? (formData.jenis_aset_kode + ' - ' + formData.jenis_aset_nama) : 'Ketik untuk memfilter kode / nama jenis PMDN 108 (contoh: 1.3.1, TANAH, PERALATAN, GEDUNG)...'" 
+                                   class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
+                                   :class="formData.jenis_aset_kode && !isJenis108Open ? 'border-cyan-500/60 text-cyan-200' : 'border-cyan-500/40 text-white focus:border-cyan-400'">
+                            <svg class="w-4 h-4 text-cyan-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+
+                        <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
+                        <div x-show="isJenis108Open" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                            <template x-for="j in filteredJenisAstap108" :key="j.kode">
+                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                     :class="j.kode === formData.jenis_aset_kode ? 'border-cyan-500 bg-cyan-950/40 shadow-lg' : 'border-slate-800 hover:border-cyan-500/50'">
+                                    <div class="min-w-0 pr-3">
+                                        <h4 class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate" x-text="j.kode + ' - ' + j.nama"></h4>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'PMDN 108 • Kode Kelompok Permendagri 108'"></p>
+                                    </div>
+                                    <button type="button" 
+                                            @click="selectJenisAstap(j)" 
+                                            class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
+                                            :class="j.kode === formData.jenis_aset_kode ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500 hover:text-slate-950'">
+                                        <span x-text="j.kode === formData.jenis_aset_kode ? '✓ Terpilih' : 'Pilih →'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- Tingkat 3: SUB RINCIAN OBJEK PMDN 108 (Kolom 12 & 13 - Terfilter Sesuai Jenis Aset) -->
-                    <div class="space-y-1.5">
+                    <!-- Tingkat 3: SUB RINCIAN OBJEK PMDN 108 Card Filter Model -->
+                    <div class="space-y-2 relative" @click.away="isSubRincian108Open = false">
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black flex items-center justify-center">3</span>
-                                <span>Pilih Sub Rincian Objek (PMDN 108) (Kolom 12 & 13):</span>
+                                <span>Sub Rincian Objek PMDN 108 (<span x-text="filteredSubRincian108.length"></span> Sub Rincian Terdaftar)</span>
                             </label>
-                            <span class="text-[10px] font-mono text-emerald-400 font-bold" x-text="'Kode: ' + formData.sub_rincian_kode"></span>
+                            
+                            <!-- Tombol Red ✕ Ganti Sub Rincian (Muncul bila sudah terpilih) -->
+                            <button type="button" 
+                                    x-show="formData.sub_rincian_kode && !isSubRincian108Open" 
+                                    @click="isSubRincian108Open = true; searchSubRincian108 = ''" 
+                                    class="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 cursor-pointer">
+                                <span>✕ Ganti Sub Rincian</span>
+                            </button>
                         </div>
+                        
+                        <!-- Input Search Box -->
                         <div class="relative">
-                            <select :value="formData.sub_rincian_kode" 
-                                    @change="onSubRincianChange($event.target.value)"
-                                    class="w-full bg-slate-900 border border-emerald-500/50 hover:border-emerald-400 rounded-2xl px-4 py-3 text-xs text-emerald-300 font-bold focus:outline-none focus:border-emerald-400 transition-all">
-                                <template x-for="s in availableSubRincian108" :key="s.kode">
-                                    <option :value="s.kode" :selected="s.kode === formData.sub_rincian_kode" x-text="s.kode + ' - ' + s.nama"></option>
-                                </template>
-                            </select>
+                            <input type="text" 
+                                   :value="(!isSubRincian108Open && formData.sub_rincian_kode) ? (formData.sub_rincian_kode + ' - ' + formData.sub_rincian_nama) : searchSubRincian108"
+                                   @input="searchSubRincian108 = $event.target.value; isSubRincian108Open = true"
+                                   @focus="isSubRincian108Open = true"
+                                   :placeholder="formData.sub_rincian_kode ? (formData.sub_rincian_kode + ' - ' + formData.sub_rincian_nama) : 'Ketik untuk memfilter kode / nama sub rincian PMDN 108 (contoh: Radiologi, ICU, Gedung)...'" 
+                                   class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
+                                   :class="formData.sub_rincian_kode && !isSubRincian108Open ? 'border-emerald-500/60 text-emerald-200' : 'border-emerald-500/40 text-white focus:border-emerald-400'">
+                            <svg class="w-4 h-4 text-emerald-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+
+                        <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
+                        <div x-show="isSubRincian108Open" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                            <template x-for="s in filteredSubRincian108" :key="s.kode">
+                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                     :class="s.kode === formData.sub_rincian_kode ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
+                                    <div class="min-w-0 pr-3">
+                                        <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="s.kode + ' - ' + s.nama"></h4>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'SUB RINCIAN OBJEK • ' + s.keterangan"></p>
+                                    </div>
+                                    <button type="button" 
+                                            @click="selectSubRincian(s)" 
+                                            class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
+                                            :class="s.kode === formData.sub_rincian_kode ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950'">
+                                        <span x-text="s.kode === formData.sub_rincian_kode ? '✓ Terpilih' : 'Pilih →'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -3842,7 +4214,7 @@
                     </a>
 
                     <!-- Next Step Button -->
-                    <button type="button" x-show="currentStep < totalSteps" @click="currentStep++"
+                    <button type="button" x-show="currentStep < totalSteps" @click="nextStep()"
                             class="flex-1 sm:flex-initial px-5 sm:px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2">
                         <span>Lanjut Langkah <span x-text="currentStep + 1"></span> &rarr;</span>
                     </button>
