@@ -174,7 +174,7 @@
                     this.formData = {
                         kode: found.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100)),
                         bast_nomor: found.bast_nomor || '',
-                        status: found.status || 'Draft',
+                        status: found.status || 'Telah Diterima',
                         tujuan: found.tujuan || '',
                         tgl: new Date().toISOString().split('T')[0],
                         penerima: found.penerima || found.pj_nama || '',
@@ -252,7 +252,7 @@
                 this.formData = {
                     kode: 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100),
                     bast_nomor: '032 / 0' + String(Math.floor(Math.random() * 80) + 10) + ' / 430.10.7 / 2026',
-                    status: 'Draft',
+                    status: 'Telah Diterima',
                     tujuan: '',
                     tgl: new Date().toISOString().split('T')[0],
                     penerima: '',
@@ -321,13 +321,13 @@
             return '';
         },
 
-        // Hitung total NIBAR yang terdaftar di database untuk barang ini (Belum ada penempatan)
+        // Hitung total NIBAR yang terdaftar di database untuk barang ini (Khusus status_mutasi: Tersedia)
         getMatchingNibarCount(item) {
             const kode = this.getItemKode(item);
             if (!kode) return 0;
             return (this.nibarList || []).filter(n => 
-                n.kode === kode &&
-                (!n.ruang || n.ruang === '' || n.ruang === '-' || n.ruang === 'Belum Ditempatkan')
+                n.kode === kode && 
+                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
             ).length;
         },
 
@@ -337,13 +337,13 @@
             return this.getMatchingNibarCount(item) === 0;
         },
 
-        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih (Hanya yang belum ada penempatan)
+        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih (Khusus status_mutasi: Tersedia)
         getFilteredNibar(item, query) {
             const kode = this.getItemKode(item);
             if (!kode) return [];
             let list = (this.nibarList || []).filter(n => 
-                n.kode === kode &&
-                (!n.ruang || n.ruang === '' || n.ruang === '-' || n.ruang === 'Belum Ditempatkan')
+                n.kode === kode && 
+                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
             );
             // Exclude yang sudah dipilih di item ini
             const chosen = (item.nibar_selected || []).map(n => n.nibar);
@@ -643,7 +643,7 @@
                         tgl: `${d} ${m} ${y}`,
                         tgl_iso: tglStr,
                         penerima: this.formData.penerima || 'Petugas Ruangan',
-                        status: this.formData.status || storedList[idx].status || 'Draft',
+                        status: this.formData.status || storedList[idx].status || 'Telah Diterima',
                         bast_nomor: this.formData.bast_nomor || '-',
                         hari: dayName,
                         tanggal_angka: String(dateObj.getDate()),
@@ -668,7 +668,7 @@
                     tgl: `${d} ${m} ${y}`,
                     tgl_iso: tglStr,
                     penerima: this.formData.penerima || 'Petugas Ruangan',
-                    status: this.formData.status || 'Draft',
+                    status: this.formData.status || 'Telah Diterima',
                     bast_nomor: this.formData.bast_nomor || '-',
                     hari: dayName,
                     tanggal_angka: String(dateObj.getDate()),
@@ -697,46 +697,7 @@
             // Simpan ke localStorage
             localStorage.setItem('simat_distribusis', JSON.stringify(storedList));
 
-            // Sinkronisasi otomatis ke Database & update data astap_registers
-            try {
-                const targetUnit = this.selectedUnitObj || this.unitList.find(u => u.nama === this.formData.tujuan);
-                if (targetUnit && targetUnit.id) {
-                    const dbPayload = {
-                        _token: '{{ csrf_token() }}',
-                        kode: this.formData.kode,
-                        bast_nomor: this.formData.bast_nomor || '-',
-                        tanggal_distribusi: tglStr,
-                        unit_id: targetUnit.id,
-                        status: this.formData.status || 'Draft',
-                        keterangan: this.formData.keterangan || '-',
-                        items: this.formData.items.map(it => {
-                            const resolvedKode = this.getItemKode(it) || it.kode_barang || '';
-                            const astapObj = (this.dbAstapList || []).find(a => a.kode === resolvedKode || a.nama === it.nama_barang);
-                            return {
-                                astap_id: astapObj ? astapObj.id : 1,
-                                qty: parseInt(it.qty) || 1,
-                                kondisi: it.kondisi || 'Baik',
-                                keterangan: it.keterangan || '-',
-                                nibar_list: (it.nibar_selected || []).map(n => n.nibar)
-                            };
-                        })
-                    };
-
-                    fetch('{{ route('distribusi.save') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(dbPayload)
-                    }).catch(err => console.log('Database sync notice:', err));
-                }
-            } catch(e) {
-                console.log('Sync error:', e);
-            }
-
-            alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nData Register ASTAP & NIBAR telah otomatis diperbarui!');
+            alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)');
             window.location.href = '{{ route('distribusi.index') }}';
         }
     }" x-cloak class="space-y-6">
@@ -789,28 +750,28 @@
                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-teal-500">
                     </div>
 
-                    <!-- Status Distribusi (Hanya tampil di mode Edit) -->
-                    <template x-if="isEdit">
-                        <div>
-                            <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
-                                <span>Status Distribusi</span>
+                    <!-- Status Distribusi -->
+                    <div>
+                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                            <span>Status Distribusi</span>
+                            <template x-if="isEdit">
                                 <span class="text-teal-400 text-[10px] font-bold">⚡ Edit Status</span>
-                            </label>
-                            <select x-model="formData.status"
-                                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
-                                    :class="{
-                                        'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
-                                        'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
-                                        'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
-                                        'text-slate-400': formData.status === 'Draft'
-                                    }">
-                                <option value="Telah Diterima">🟢 Telah Diterima</option>
-                                <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
-                                <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
-                                <option value="Draft">📝 Draft</option>
-                            </select>
-                        </div>
-                    </template>
+                            </template>
+                        </label>
+                        <select x-model="formData.status"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
+                                :class="{
+                                    'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
+                                    'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
+                                    'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
+                                    'text-slate-400': formData.status === 'Draft'
+                                }">
+                            <option value="Telah Diterima">🟢 Telah Diterima</option>
+                            <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
+                            <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
+                            <option value="Draft">📝 Draft</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Autocomplete Input Unit & Data PIC Penerima -->
@@ -1240,6 +1201,53 @@
                                 <div>
                                     <label class="block text-slate-400 font-semibold text-xs mb-1.5">Keterangan / Catatan Peruntukan Barang (Opsional)</label>
                                     <input type="text" 
+                                           x-model="item.keterangan" 
+                                           placeholder="Contoh: u/ Ruang Tindakan IGD / Bed No. 04 / Pengadaan DAK Kesehatan..." 
+                                           class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all">
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Ringkasan Akumulasi Volume Multi-Barang & Tombol Tambah Bawah -->
+                <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-950 rounded-2xl border border-slate-800 text-xs">
+                    <div class="flex items-center space-x-3 text-slate-300">
+                        <span>Total Rincian: <strong class="text-teal-400 font-extrabold" x-text="formData.items.length + ' Jenis Barang'"></strong></span>
+                        <span>•</span>
+                        <span>Akumulasi Volume: <strong class="text-emerald-400 font-extrabold" x-text="getTotalItemVolume() + ' Total Item/Unit'"></strong></span>
+                    </div>
+
+                    <button type="button" @click="addItem()" 
+                            class="px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold flex items-center space-x-2 transition-all active:scale-95 self-start sm:self-auto">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>Tambah Barang Lagi</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- BAGIAN 3: CATATAN UMUM PENEMPATAN -->
+            <div class="pt-4 border-t border-slate-800">
+                <label class="block text-slate-300 font-semibold text-xs mb-1.5">Catatan Umum / Keterangan Penempatan</label>
+                <textarea x-model="formData.keterangan" rows="2" placeholder="Contoh: Pengadaan DAK Kesehatan / BLUD untuk kelengkapan ruangan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500"></textarea>
+            </div>
+
+            <!-- Tombol Aksi Batal & Simpan (Hanya di Bagian Bawah Form Sesuai Permintaan) -->
+            <div class="pt-6 border-t border-slate-800 flex items-center justify-end space-x-3">
+                <a href="{{ route('distribusi.index') }}" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
+                    Batal
+                </a>
+                <button type="button" @click="submitForm()" class="px-6 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span x-text="isEdit ? 'Simpan Perubahan' : 'Simpan Distribusi Baru'"></span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</x-layout>
                                            x-model="item.keterangan" 
                                            placeholder="Contoh: u/ Ruang Tindakan IGD / Bed No. 04 / Pengadaan DAK Kesehatan..." 
                                            class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all">
