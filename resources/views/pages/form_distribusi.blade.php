@@ -88,62 +88,6 @@
             ]
         },
 
-        getDefaultDistribusiList() {
-            return [
-                {
-                    id: 1,
-                    kode: 'DST-2026-004',
-                    nama: 'Kasur Matras spoon & Ranjang Pasien',
-                    tujuan: 'Front Office (FO) & Rawat Inap',
-                    tgl: '13 Ags 2026',
-                    penerima: 'ESTU PRATIKA SARI, SST',
-                    status: 'Telah Diterima',
-                    bast_nomor: '032 / 034 / 430.10.7 / 2026',
-                    hari: 'Kamis',
-                    tanggal_angka: '13',
-                    bulan: 'Agustus',
-                    tahun: '2026',
-                    tahun_anggaran: '2025',
-                    sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                    sk_bupati_tanggal: '02 Januari 2025',
-                    pengurus_nama: 'BUDI HARTONO, S.Sos',
-                    pengurus_nip: '19760229 200801 1 010',
-                    pengurus_jabatan: 'Pengurus Barang',
-                    pengurus_ruangan: 'Gudang Perbekalan',
-                    pj_nama: 'ESTU PRATIKA SARI, SST',
-                    pj_nip: '199409242023212002',
-                    pj_jabatan: 'Supervisor Front Office',
-                    pj_ruangan: 'FO',
-                    pj_jabatan_ttd: 'Kepala Ruangan FO R.Inap',
-                    signed: true,
-                    tgl_signed: '13/08/2026 11:30 WIB',
-                    keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap',
-                    items: [
-                        {
-                            no: 1,
-                            jenis_astap_nama: 'PERALATAN DAN MESIN',
-                            nama_barang: 'Kasur Matras spoon',
-                            merk_type: 'Mattres Cover (Matras Spon) / Mattress Foam Adult 200x90x10',
-                            qty: 2,
-                            satuan: 'Unit',
-                            kondisi: 'Baik',
-                            keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap'
-                        },
-                        {
-                            no: 2,
-                            jenis_astap_nama: 'PERALATAN DAN MESIN',
-                            nama_barang: 'Bed Patient Manual 2 Crank',
-                            merk_type: 'Paramount Bed Model Standard with Side Rail',
-                            qty: 2,
-                            satuan: 'Unit',
-                            kondisi: 'Baik',
-                            keterangan: 'Ruang Rawat Observasi FO'
-                        }
-                    ]
-                }
-            ];
-        },
-
         init() {
             // Jika ada data master dari database, gabungkan dengan katalog
             if (this.dbAstapList && this.dbAstapList.length > 0) {
@@ -163,10 +107,6 @@
                     if (stored) storedList = JSON.parse(stored);
                 } catch(e) {
                     storedList = [];
-                }
-
-                if (!storedList || storedList.length === 0) {
-                    storedList = this.getDefaultDistribusiList();
                 }
 
                 const found = storedList.find(d => String(d.id) === String(this.editId) || d.kode === String(this.editId));
@@ -627,8 +567,8 @@
                 storedList = [];
             }
 
-            if (!storedList || storedList.length === 0) {
-                storedList = this.getDefaultDistribusiList();
+            if (!Array.isArray(storedList)) {
+                storedList = [];
             }
 
             if (this.isEdit && this.editId) {
