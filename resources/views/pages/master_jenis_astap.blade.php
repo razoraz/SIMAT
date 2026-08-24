@@ -5,7 +5,6 @@
     <div x-data="{
         showAddModal: false,
         showEditModal: false,
-        showDetailModal: false,
         showImportModal: false,
         selectedKode: null,
 
@@ -26,11 +25,6 @@
             uraian_sub_rincian: '',
             sub_sub_rincian_objek: '',
             uraian_sub_sub_rincian: ''
-        },
-
-        openDetail(item) {
-            this.selectedKode = item;
-            this.showDetailModal = true;
         },
 
         openEdit(item) {
@@ -312,12 +306,6 @@
                                 </td>
 
                                 <td class="px-3 py-4 text-center space-x-1 whitespace-nowrap">
-                                    <button type="button" @click="openDetail({{ json_encode($item) }})"
-                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <span>Detail</span>
-                                    </button>
-
                                     <button type="button" @click="openEdit({{ json_encode($item) }})"
                                         class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -355,49 +343,7 @@
                 </div>
             @endif
         </div>
-
-        <!-- ========================================================================= -->
-        <!-- MODAL DETAIL KLASIFIKASI KODE 108 BMD                                     -->
-        <!-- ========================================================================= -->
-        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 relative">
-                <button type="button" @click="showDetailModal = false" class="absolute right-5 top-5 w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition-all">&times;</button>
-
-                <div class="text-center pb-3 border-b border-slate-800">
-                    <h3 class="text-base font-extrabold text-white">Detail Klasifikasi Kode 108 BMD</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Hierarki Standar Permendagri No. 108</p>
-                </div>
-
-                <template x-if="selectedKode">
-                    <div class="space-y-3.5 text-xs">
-                        <div class="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-1">
-                            <div class="flex items-center justify-between">
-                                <span class="font-bold text-emerald-400 uppercase tracking-wider text-[10px]">1. Jenis Utama</span>
-                                <span class="font-mono font-bold text-emerald-300" x-text="selectedKode.jenis"></span>
-                            </div>
-                            <p class="font-bold text-white text-sm uppercase" x-text="selectedKode.nama_jenis"></p>
-                        </div>
-
-                        <div class="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 space-y-1">
-                            <div class="flex items-center justify-between">
-                                <span class="font-bold text-amber-400 uppercase tracking-wider text-[10px]">2. Sub Rincian Objek</span>
-                                <span class="font-mono font-bold text-amber-300" x-text="selectedKode.sub_rincian_objek"></span>
-                            </div>
-                            <p class="font-semibold text-white text-xs uppercase" x-text="selectedKode.uraian_sub_rincian"></p>
-                        </div>
-
-                        <div class="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-1">
-                            <div class="flex items-center justify-between">
-                                <span class="font-bold text-purple-400 uppercase tracking-wider text-[10px]">3. Sub - Sub Rincian Objek (Spesifik)</span>
-                                <span class="font-mono font-bold text-purple-300" x-text="selectedKode.sub_sub_rincian_objek"></span>
-                            </div>
-                            <p class="font-bold text-white text-sm" x-text="selectedKode.uraian_sub_sub_rincian"></p>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
+        
         <!-- ========================================================================= -->
         <!-- MODAL TAMBAH JENIS ASTAP KODE 108 BMD                                     -->
         <!-- ========================================================================= -->

@@ -42,7 +42,7 @@ class JenisAstapController extends Controller
             }
         }
 
-        $kode108List = $query->paginate(50)->withQueryString();
+        $kode108List = $query->paginate(10)->withQueryString();
         $uniqueJenis = JenisAstap::select('jenis', 'nama_jenis')->distinct()->get();
         $totalCount = JenisAstap::count();
 

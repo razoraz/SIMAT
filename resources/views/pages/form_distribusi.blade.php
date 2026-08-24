@@ -322,7 +322,7 @@
                         <div x-show="isSearchingUnit" 
                              x-transition 
                              class="absolute left-0 right-0 z-30 mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
-                            <template x-for="u in filteredUnitList" :key="u.id">
+                            <template x-for="u in filteredUnitList.slice(0, 5)" :key="u.id">
                                 <div @click="selectUnit(u)" 
                                      class="p-3 hover:bg-teal-500/15 cursor-pointer transition-colors flex items-center justify-between group">
                                     <div>
@@ -441,7 +441,7 @@
                                                 <span class="text-teal-400 font-mono" x-text="getFilteredAstap(item.nama_barang).length + ' barang tersedia'"></span>
                                             </div>
 
-                                            <template x-for="ast in getFilteredAstap(item.nama_barang)" :key="ast.kode">
+                                            <template x-for="ast in getFilteredAstap(item.nama_barang).slice(0, 5)" :key="ast.kode">
                                                 <div @click="selectAstapItem(item, ast)"
                                                      class="px-4 py-2.5 hover:bg-teal-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3">
                                                     <div class="space-y-0.5">
