@@ -16,10 +16,9 @@ return new class extends Migration
             $table->foreignId('astap_id')->constrained('astaps')->cascadeOnDelete();
             $table->foreignId('unit_id')->nullable()->constrained('units')->nullOnDelete();
 
-            // Kunci Auto-Increment NIBAR (Tahun & Kode 108)
-            $table->string('kode_108', 30);
+            // Kunci Auto-Increment NIBAR
             $table->year('tahun_perolehan');
-            $table->unsignedInteger('no_register_int'); // 1, 2, 3, 4, 5... (Auto-increment per kode 108 & tahun)
+            $table->unsignedInteger('no_register_int'); // 1, 2, 3, 4, 5... (Auto-increment per jenis astap & tahun)
             $table->string('no_register', 10); // '0000001', '0000002'...
             
             // NIBAR Resmi 45 Digit Unik
@@ -29,12 +28,12 @@ return new class extends Migration
             // Status Fisik & Penempatan Unit Ruangan
             $table->string('ruang_pemegang', 255)->nullable();
             $table->enum('kondisi', ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Dalam Renovasi'])->default('Baik');
-            $table->enum('status_mutasi', ['Tersedia', 'Dimutasi', 'Dihapuskan'])->default('Tersedia');
+            $table->enum('status', ['Tersedia', 'Dimutasi', 'Dihapuskan'])->default('Tersedia');
             $table->string('qr_code_path', 255)->nullable();
             
             $table->timestamps();
             
-            $table->index(['kode_108', 'tahun_perolehan', 'no_register_int']);
+            $table->index(['tahun_perolehan', 'no_register_int']);
         });
     }
 

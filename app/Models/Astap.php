@@ -56,4 +56,9 @@ class Astap extends Model
     {
         return $this->hasMany(AstapRegister::class);
     }
+
+    public function getKode108Attribute(): string
+    {
+        return $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
+    }
 }

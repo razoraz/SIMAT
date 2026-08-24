@@ -18,11 +18,9 @@ return new class extends Migration
             $table->foreignId('jenis_pengadaan_id')->nullable()->constrained('jenis_pengadaans')->nullOnDelete();
             $table->foreignId('rekening_belanja_id')->nullable()->constrained('rekening_belanjas')->nullOnDelete();
             $table->foreignId('jenis_astap_id')->nullable()->constrained('jenis_astaps')->nullOnDelete();
-            $table->foreignId('unit_id')->nullable()->constrained('units')->nullOnDelete();
 
-            // Klasifikasi KIB & Identitas Barang (Kode PMDN 108)
+            // Klasifikasi KIB & Identitas Barang
             $table->string('category', 25); // 'KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E', 'KIB F', 'ATB', 'EXTRACOM'
-            $table->string('kode_108', 30); // Ambil dari jenis_astaps.sub_sub_rincian_objek (12 Digit)
             $table->string('nama_barang', 255);
             $table->year('tahun_perolehan');
             

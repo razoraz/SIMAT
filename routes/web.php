@@ -212,7 +212,7 @@ Route::middleware('auth')->group(function () {
             ->map(function($a) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
                 $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ''));
-                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5);
+                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : '';
                 $jenisNama = $a->jenisAstap ? $a->jenisAstap->nama_jenis : '';
                 return [
                     'id' => $a->id,
@@ -226,19 +226,19 @@ Route::middleware('auth')->group(function () {
                 ];
             });
 
-        $nibarList = \App\Models\AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->where('status_mutasi', 'Tersedia')
-            ->orderBy('kode_108')
+        $nibarList = \App\Models\AstapRegister::with('astap.jenisAstap')
+            ->where('status', 'Tersedia')
             ->orderBy('no_register_int')
             ->get()
             ->map(function($r) {
                 return [
                     'id'      => $r->id,
+                    'unit_id' => $r->unit_id,
                     'nibar'   => $r->nibar,
                     'kode'    => $r->kode_108,
                     'ruang'   => $r->ruang_pemegang ?: '-',
                     'kondisi' => $r->kondisi,
-                    'status'  => $r->status_mutasi,
+                    'status'  => $r->status,
                 ];
             });
 
@@ -292,7 +292,7 @@ Route::middleware('auth')->group(function () {
             ->map(function($a) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
                 $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ''));
-                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5);
+                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : '';
                 $jenisNama = $a->jenisAstap ? $a->jenisAstap->nama_jenis : '';
                 return [
                     'id' => $a->id,
@@ -306,19 +306,19 @@ Route::middleware('auth')->group(function () {
                 ];
             });
 
-        $nibarList = \App\Models\AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->where('status_mutasi', 'Tersedia')
-            ->orderBy('kode_108')
+        $nibarList = \App\Models\AstapRegister::with('astap.jenisAstap')
+            ->where('status', 'Tersedia')
             ->orderBy('no_register_int')
             ->get()
             ->map(function($r) {
                 return [
                     'id'      => $r->id,
+                    'unit_id' => $r->unit_id,
                     'nibar'   => $r->nibar,
                     'kode'    => $r->kode_108,
                     'ruang'   => $r->ruang_pemegang ?: '-',
                     'kondisi' => $r->kondisi,
-                    'status'  => $r->status_mutasi,
+                    'status'  => $r->status,
                 ];
             });
 

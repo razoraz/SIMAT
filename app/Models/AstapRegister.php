@@ -25,4 +25,9 @@ class AstapRegister extends Model
     {
         return $this->hasMany(AstapMutasi::class);
     }
+
+    public function getKode108Attribute(): string
+    {
+        return $this->astap ? ($this->astap->kode_108 ?? '') : '';
+    }
 }
