@@ -4,6 +4,7 @@
 
     <div x-data="{
         isEdit: {{ request()->routeIs('distribusi.edit') ? 'true' : 'false' }},
+        editId: {{ isset($id) ? Js::from($id) : 'null' }},
         
         // Autocomplete Search Unit / Paviliun State
         unitSearch: '',
@@ -11,30 +12,49 @@
         selectedUnitObj: null,
 
         // Active Autocomplete Dropdown Index for Items
+        activeJenisDropdownIndex: null,
         activeDropdownIndex: null,
 
-        // Database Master Katalog Barang ASTAP RSUD (Lengkap dengan Satuan Resminya)
+        // Database Master Jenis ASTAP (Dari Tabel jenis_astaps)
+        jenisAstapList: {{ Js::from($jenisAstapList ?? []) }},
+
+        // Database Master Data ASTAP (Dari Tabel astaps)
+        dbAstapList: {{ Js::from($astapList ?? []) }},
+
+        // Database NIBAR dari astap_registers (Status Tersedia)
+        nibarList: {{ Js::from($nibarList ?? []) }},
+
+        // Active Dropdown Index untuk NIBAR
+        activeNibarDropdownIndex: null,
+        nibarSearch: {},
+
+        // Database Master Katalog Barang ASTAP RSUD (Lengkap dengan Satuan & Kode Jenis)
         katalogAstap: [
-            { kode: '1.3.2.05.01.04.008', nama: 'Kasur Matras spoon (Mattress Foam Adult 200x90x10)', kategori: 'Perlengkapan Kamar Pasien', merk: 'Mattres Cover Spon FO R.Inap', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.08.001', nama: 'Bed Patient Electric 3 Crank Acare', kategori: 'Perlengkapan Kamar Rawat Inap', merk: 'Acare Electric Medical Bed with Side Rail', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.08.002', nama: 'Bed Patient Manual 2 Crank Paramount', kategori: 'Perlengkapan Kamar Rawat Inap', merk: 'Paramount Bed Standard with Side Rail', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.01.025', nama: 'Emergency Crash Cart Trolley Kit Lengkap', kategori: 'Alat Kedokteran Gawat Darurat', merk: 'Paramount Emergency 5 Laci + Tiang Infus', satuan: 'Set' },
-            { kode: '1.3.2.02.01.01.008', nama: 'Patient Monitor 6 Parameter Mindray', kategori: 'Alat Monitoring Medis', merk: 'Mindray ePM 12 / Display 12.1 Inch Multi-Lead', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.01.012', nama: 'Infusion Pump Digital Otomatis Terumo', kategori: 'Alat Kedokteran Tindakan Medis', merk: 'Terumo TE-LM700 / TE-112', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.01.015', nama: 'Syringe Pump Terumo TE-331', kategori: 'Alat Kedokteran Tindakan Medis', merk: 'Terumo TE-331 Digital Infusion System', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.02.007', nama: 'Suction Pump Portable Medis Thomas', kategori: 'Alat Penghisap Lendir Medis', merk: 'Thomas 1632 Aspirator Heavy Duty', satuan: 'Unit' },
-            { kode: '1.3.2.01.03.05.005', nama: 'Submersible Pump 7.5 HP Franklin Electric', kategori: 'Peralatan Mesin & Sanitasi', merk: 'Franklin Electric 4 Inch 3-Phase', satuan: 'Unit' },
-            { kode: '1.3.2.01.03.05.012', nama: 'Ball Valve Kuningan Heavy Duty 3 Inch', kategori: 'Peralatan Perpipaan & Sarpras', merk: 'Kitz Heavy Duty Brass 10K', satuan: 'Pcs' },
-            { kode: '1.3.2.10.01.02.003', nama: 'Laptop Operasional ASUS ExpertBook Core i7', kategori: 'Peralatan Komputer & IT', merk: 'ASUS ExpertBook B1402CBA / 16GB / 512GB SSD', satuan: 'Unit' },
-            { kode: '1.3.2.10.02.01.005', nama: 'Printer Thermal Resep & Label Rekam Medis', kategori: 'Peralatan IT & Farmasi', merk: 'Epson TM-T82X Thermal Auto-Cutter USB', satuan: 'Unit' },
-            { kode: '1.3.2.05.01.01.012', nama: 'Kursi Tunggu Stainless 4 Dudukan Ruang Poli', kategori: 'Mebelair & Sarana Pasien', merk: 'Indachi Stainless Steel 4-Seater', satuan: 'Unit' },
-            { kode: '1.3.2.05.01.02.006', nama: 'Lemari Obat Kaca 2 Pintu Farmasi Rawat Inap', kategori: 'Mebelair Medis & Farmasi', merk: 'Baja Coating Glass Door Cabinet', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.04.005', nama: 'Meja Tindakan Stainless Steel IGD', kategori: 'Alat Medis & Tindakan', merk: 'Stainless 304 Examination Table', satuan: 'Unit' },
-            { kode: '1.3.2.02.01.01.018', nama: 'Tensimeter Digital Stand Mobile Riester', kategori: 'Alat Diagnostik & TTV', merk: 'Riester Ri-Champion Mobile Stand', satuan: 'Set' },
-            { kode: '1.3.2.02.01.06.004', nama: 'Tabung Oksigen Medis 6m3 + Regulator Flowmeter', kategori: 'Gas Medis & Resusitasi', merk: 'Samator Medical Gas Cylinder 6m3', satuan: 'Tabung' },
-            { kode: '1.3.2.05.02.01.004', nama: 'Ember Plastik Tertutup Medis / Non-Medis (50 Liter)', kategori: 'Peralatan Sanitasi & Kebersihan', merk: 'Clio Plastik / Lion Star 50L', satuan: 'Buah' },
-            { kode: '1.3.2.03.01.02.001', nama: 'Kabel Listrik NYMHY 3x2.5mm', kategori: 'Perlengkapan Elektrikal & Sarpras', merk: 'Supreme Kabel Standar PLN', satuan: 'Meter' },
-            { kode: '1.3.2.05.02.02.009', nama: 'Kain Sprei Kamar Rawat Inap Katun Polos', kategori: 'Linen & Perlengkapan Kamar', merk: 'Linen RS Putih Anti Noda', satuan: 'Lembar' }
+            { kode: '1.3.2.05.01.04.008', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kasur Matras spoon (Mattress Foam Adult 200x90x10)', kategori: 'Perlengkapan Kamar Pasien', merk: 'Mattres Cover Spon FO R.Inap', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.08.001', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Bed Patient Electric 3 Crank Acare', kategori: 'Perlengkapan Kamar Rawat Inap', merk: 'Acare Electric Medical Bed with Side Rail', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.08.002', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Bed Patient Manual 2 Crank Paramount', kategori: 'Perlengkapan Kamar Rawat Inap', merk: 'Paramount Bed Standard with Side Rail', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.01.025', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Emergency Crash Cart Trolley Kit Lengkap', kategori: 'Alat Kedokteran Gawat Darurat', merk: 'Paramount Emergency 5 Laci + Tiang Infus', satuan: 'Set' },
+            { kode: '1.3.2.02.01.01.008', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Patient Monitor 6 Parameter Mindray', kategori: 'Alat Monitoring Medis', merk: 'Mindray ePM 12 / Display 12.1 Inch Multi-Lead', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.01.012', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Infusion Pump Digital Otomatis Terumo', kategori: 'Alat Kedokteran Tindakan Medis', merk: 'Terumo TE-LM700 / TE-112', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.01.015', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Syringe Pump Terumo TE-331', kategori: 'Alat Kedokteran Tindakan Medis', merk: 'Terumo TE-331 Digital Infusion System', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.02.007', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Suction Pump Portable Medis Thomas', kategori: 'Alat Penghisap Lendir Medis', merk: 'Thomas 1632 Aspirator Heavy Duty', satuan: 'Unit' },
+            { kode: '1.3.2.01.03.05.005', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Submersible Pump 7.5 HP Franklin Electric', kategori: 'Peralatan Mesin & Sanitasi', merk: 'Franklin Electric 4 Inch 3-Phase', satuan: 'Unit' },
+            { kode: '1.3.2.01.03.05.012', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Ball Valve Kuningan Heavy Duty 3 Inch', kategori: 'Peralatan Perpipaan & Sarpras', merk: 'Kitz Heavy Duty Brass 10K', satuan: 'Pcs' },
+            { kode: '1.3.2.10.01.02.003', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Laptop Operasional ASUS ExpertBook Core i7', kategori: 'Peralatan Komputer & IT', merk: 'ASUS ExpertBook B1402CBA / 16GB / 512GB SSD', satuan: 'Unit' },
+            { kode: '1.3.2.10.02.01.005', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Printer Thermal Resep & Label Rekam Medis', kategori: 'Peralatan IT & Farmasi', merk: 'Epson TM-T82X Thermal Auto-Cutter USB', satuan: 'Unit' },
+            { kode: '1.3.2.05.01.01.012', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kursi Tunggu Stainless 4 Dudukan Ruang Poli', kategori: 'Mebelair & Sarana Pasien', merk: 'Indachi Stainless Steel 4-Seater', satuan: 'Unit' },
+            { kode: '1.3.2.05.01.02.006', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Lemari Obat Kaca 2 Pintu Farmasi Rawat Inap', kategori: 'Mebelair Medis & Farmasi', merk: 'Baja Coating Glass Door Cabinet', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.04.005', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Meja Tindakan Stainless Steel IGD', kategori: 'Alat Medis & Tindakan', merk: 'Stainless 304 Examination Table', satuan: 'Unit' },
+            { kode: '1.3.2.02.01.01.018', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Tensimeter Digital Stand Mobile Riester', kategori: 'Alat Diagnostik & TTV', merk: 'Riester Ri-Champion Mobile Stand', satuan: 'Set' },
+            { kode: '1.3.2.02.01.06.004', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Tabung Oksigen Medis 6m3 + Regulator Flowmeter', kategori: 'Gas Medis & Resusitasi', merk: 'Samator Medical Gas Cylinder 6m3', satuan: 'Tabung' },
+            { kode: '1.3.2.05.02.01.004', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Ember Plastik Tertutup Medis / Non-Medis (50 Liter)', kategori: 'Peralatan Sanitasi & Kebersihan', merk: 'Clio Plastik / Lion Star 50L', satuan: 'Buah' },
+            { kode: '1.3.2.03.01.02.001', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kabel Listrik NYMHY 3x2.5mm', kategori: 'Perlengkapan Elektrikal & Sarpras', merk: 'Supreme Kabel Standar PLN', satuan: 'Meter' },
+            { kode: '1.3.2.05.02.02.009', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kain Sprei Kamar Rawat Inap Katun Polos', kategori: 'Linen & Perlengkapan Kamar', merk: 'Linen RS Putih Anti Noda', satuan: 'Lembar' },
+            { kode: '1.3.1.01.01.02.013', jenis_kode: '1.3.1', jenis_nama: 'TANAH', nama: 'Lahan Bangunan RSUD Dr. H. Koesnandi', kategori: 'Tanah Bangunan', merk: 'Sertifikat Hak Pakai HP-108/1984', satuan: 'Bidang' },
+            { kode: '1.3.3.01.01.01.008', jenis_kode: '1.3.3', jenis_nama: 'GEDUNG DAN BANGUNAN', nama: 'Gedung Paviliun Graha Amukti VIP', kategori: 'Bangunan Gedung', merk: 'Beton Bertulang 2 Lt', satuan: 'Gedung' },
+            { kode: '1.3.4.01.01.01.002', jenis_kode: '1.3.4', jenis_nama: 'JALAN, IRIGASI DAN JARINGAN', nama: 'Jaringan Pipa Distribusi Air Bersih Sentral', kategori: 'Jaringan Distribusi', merk: 'Pipa HDPE Medis', satuan: 'Meter' },
+            { kode: '1.3.5.01.01.01.005', jenis_kode: '1.3.5', jenis_nama: 'ASET TETAP LAINNYA', nama: 'Buku Pedoman Tata Kelola Rumah Sakit', kategori: 'Buku Perpustakaan', merk: 'Kemenkes RI', satuan: 'Buku' },
+            { kode: '1.5.3.01.01.01.001', jenis_kode: '1.5.3', jenis_nama: 'ASET TIDAK BERWUJUD', nama: 'Lisensi Sistem Informasi Rekam Medis Elektronik (RME)', kategori: 'Software Aplikasi', merk: 'SIMAT-RME Cloud Enterprise', satuan: 'Lisensi' }
         ],
 
         // Database Master Unit & Pegawai Penerima (Dinamis dari Tabel Units)
@@ -55,6 +75,8 @@
             items: [
                 {
                     id: 1,
+                    jenis_astap_kode: '1.3.2',
+                    jenis_astap_nama: 'PERALATAN DAN MESIN',
                     nama_barang: 'Patient Monitor 6 Parameter Mindray',
                     kode_barang: '1.3.2.02.01.01.008',
                     merk_type: 'Mindray ePM 12 / Display 12.1 Inch Multi-Lead',
@@ -62,21 +84,169 @@
                     satuan: 'Unit',
                     kondisi: 'Baik',
                     keterangan: 'Zona Kritis Resusitasi IGD'
-                },
-                {
-                    id: 2,
-                    nama_barang: 'Emergency Crash Cart Trolley Kit Lengkap',
-                    kode_barang: '1.3.2.02.01.01.025',
-                    merk_type: 'Paramount Emergency 5 Laci + Tiang Infus',
-                    qty: 2,
-                    satuan: 'Set',
-                    kondisi: 'Baik',
-                    keterangan: 'Peralatan Siaga Resusitasi IGD'
                 }
             ]
         },
 
+        getDefaultDistribusiList() {
+            return [
+                {
+                    id: 1,
+                    kode: 'DST-2026-004',
+                    nama: 'Kasur Matras spoon & Ranjang Pasien',
+                    tujuan: 'Front Office (FO) & Rawat Inap',
+                    tgl: '13 Ags 2026',
+                    penerima: 'ESTU PRATIKA SARI, SST',
+                    status: 'Telah Diterima',
+                    bast_nomor: '032 / 034 / 430.10.7 / 2026',
+                    hari: 'Kamis',
+                    tanggal_angka: '13',
+                    bulan: 'Agustus',
+                    tahun: '2026',
+                    tahun_anggaran: '2025',
+                    sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                    sk_bupati_tanggal: '02 Januari 2025',
+                    pengurus_nama: 'BUDI HARTONO, S.Sos',
+                    pengurus_nip: '19760229 200801 1 010',
+                    pengurus_jabatan: 'Pengurus Barang',
+                    pengurus_ruangan: 'Gudang Perbekalan',
+                    pj_nama: 'ESTU PRATIKA SARI, SST',
+                    pj_nip: '199409242023212002',
+                    pj_jabatan: 'Supervisor Front Office',
+                    pj_ruangan: 'FO',
+                    pj_jabatan_ttd: 'Kepala Ruangan FO R.Inap',
+                    signed: true,
+                    tgl_signed: '13/08/2026 11:30 WIB',
+                    keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap',
+                    items: [
+                        {
+                            no: 1,
+                            jenis_astap_nama: 'PERALATAN DAN MESIN',
+                            nama_barang: 'Kasur Matras spoon',
+                            merk_type: 'Mattres Cover (Matras Spon) / Mattress Foam Adult 200x90x10',
+                            qty: 2,
+                            satuan: 'Unit',
+                            kondisi: 'Baik',
+                            keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap'
+                        },
+                        {
+                            no: 2,
+                            jenis_astap_nama: 'PERALATAN DAN MESIN',
+                            nama_barang: 'Bed Patient Manual 2 Crank',
+                            merk_type: 'Paramount Bed Model Standard with Side Rail',
+                            qty: 2,
+                            satuan: 'Unit',
+                            kondisi: 'Baik',
+                            keterangan: 'Ruang Rawat Observasi FO'
+                        }
+                    ]
+                }
+            ];
+        },
+
         init() {
+            // Jika ada data master dari database, gabungkan dengan katalog
+            if (this.dbAstapList && this.dbAstapList.length > 0) {
+                const existingCodes = new Set(this.katalogAstap.map(k => k.kode));
+                this.dbAstapList.forEach(dbItem => {
+                    if (!existingCodes.has(dbItem.kode)) {
+                        this.katalogAstap.unshift(dbItem);
+                    }
+                });
+            }
+
+            // Jika dalam mode edit, muat data dari localStorage
+            if (this.isEdit && this.editId) {
+                let storedList = [];
+                try {
+                    const stored = localStorage.getItem('simat_distribusis');
+                    if (stored) storedList = JSON.parse(stored);
+                } catch(e) {
+                    storedList = [];
+                }
+
+                if (!storedList || storedList.length === 0) {
+                    storedList = this.getDefaultDistribusiList();
+                }
+
+                const found = storedList.find(d => String(d.id) === String(this.editId) || d.kode === String(this.editId));
+                if (found) {
+                    this.formData = {
+                        kode: found.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100)),
+                        bast_nomor: found.bast_nomor || '',
+                        tujuan: found.tujuan || '',
+                        tgl: new Date().toISOString().split('T')[0],
+                        penerima: found.penerima || found.pj_nama || '',
+                        penerima_nip: found.pj_nip || '',
+                        penerima_jabatan: found.pj_jabatan || '',
+                        keterangan: found.keterangan || '',
+                        items: (found.items && found.items.length > 0) ? found.items.map((it, idx) => {
+                            let resolvedKode = it.kode_barang || '';
+                            let resolvedMerk = it.merk_type || '';
+                            let resolvedSatuan = it.satuan || 'Unit';
+                            let resolvedJenisNama = it.jenis_astap_nama || '';
+                            let resolvedJenisKode = it.jenis_astap_kode || '';
+
+                            if ((!resolvedKode || resolvedKode === '') && it.nama_barang) {
+                                const q = it.nama_barang.toLowerCase().trim();
+                                const match = (this.katalogAstap || []).find(k => 
+                                    (k.nama && k.nama.toLowerCase().trim() === q) ||
+                                    (k.nama && k.nama.toLowerCase().includes(q)) ||
+                                    (q.includes(k.nama ? k.nama.toLowerCase() : ''))
+                                );
+                                if (match) {
+                                    resolvedKode = match.kode || '';
+                                    if (!resolvedMerk) resolvedMerk = match.merk || '';
+                                    if (resolvedSatuan === 'Unit' && match.satuan) resolvedSatuan = match.satuan;
+                                    if (!resolvedJenisNama && match.jenis_nama) resolvedJenisNama = match.jenis_nama;
+                                    if (!resolvedJenisKode && match.jenis_kode) resolvedJenisKode = match.jenis_kode;
+                                }
+                            }
+
+                            return {
+                                id: Date.now() + idx,
+                                jenis_astap_kode: resolvedJenisKode,
+                                jenis_astap_nama: resolvedJenisNama || 'PERALATAN DAN MESIN',
+                                nama_barang: it.nama_barang || '',
+                                kode_barang: resolvedKode,
+                                merk_type: resolvedMerk,
+                                qty: it.qty || 1,
+                                satuan: resolvedSatuan,
+                                kondisi: it.kondisi || 'Baik',
+                                keterangan: it.keterangan || '',
+                                nibar_selected: it.nibar_selected || []
+                            };
+                        }) : [
+                            {
+                                id: Date.now(),
+                                jenis_astap_kode: '',
+                                jenis_astap_nama: 'PERALATAN DAN MESIN',
+                                nama_barang: found.nama || '',
+                                kode_barang: (() => {
+                                    if (!found.nama) return '';
+                                    const q = found.nama.toLowerCase().trim();
+                                    const match = (this.katalogAstap || []).find(k => 
+                                        (k.nama && k.nama.toLowerCase().trim() === q) ||
+                                        (k.nama && k.nama.toLowerCase().includes(q)) ||
+                                        (q.includes(k.nama ? k.nama.toLowerCase() : ''))
+                                    );
+                                    return match ? match.kode : '';
+                                })(),
+                                merk_type: '',
+                                qty: 1,
+                                satuan: 'Unit',
+                                kondisi: 'Baik',
+                                keterangan: '',
+                                nibar_selected: []
+                            }
+                        ]
+                    };
+                    this.unitSearch = this.formData.tujuan;
+                    this.selectedUnitObj = this.unitList.find(u => u.nama === this.formData.tujuan) || null;
+                    return;
+                }
+            }
+
             if (!this.isEdit) {
                 this.formData = {
                     kode: 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100),
@@ -90,26 +260,21 @@
                     items: [
                         {
                             id: Date.now(),
+                            jenis_astap_kode: '',
+                            jenis_astap_nama: '',
                             nama_barang: '',
                             kode_barang: '',
                             merk_type: '',
                             qty: 1,
                             satuan: 'Unit',
                             kondisi: 'Baik',
-                            keterangan: ''
+                            keterangan: '',
+                            nibar_selected: []
                         }
                     ]
                 };
                 this.unitSearch = '';
                 this.selectedUnitObj = null;
-            } else {
-                this.unitSearch = this.formData.tujuan;
-                this.selectedUnitObj = this.unitList.find(u => u.nama === this.formData.tujuan) || null;
-                if (this.selectedUnitObj) {
-                    this.formData.penerima = this.selectedUnitObj.kepala;
-                    this.formData.penerima_nip = this.selectedUnitObj.nip;
-                    this.formData.penerima_jabatan = this.selectedUnitObj.jabatan;
-                }
             }
         },
 
@@ -117,14 +282,90 @@
         addItem() {
             this.formData.items.push({
                 id: Date.now() + Math.random(),
+                jenis_astap_kode: '',
+                jenis_astap_nama: '',
                 nama_barang: '',
                 kode_barang: '',
                 merk_type: '',
                 qty: 1,
                 satuan: 'Unit',
                 kondisi: 'Baik',
-                keterangan: ''
+                keterangan: '',
+                nibar_selected: []
             });
+        },
+
+        // ─── NIBAR Methods ───────────────────────────────────────────────────
+
+        // Dapatkan / auto-resolve kode_barang jika barang sudah memiliki nama_barang
+        getItemKode(item) {
+            if (!item) return '';
+            if (item.kode_barang && item.kode_barang.trim() !== '') return item.kode_barang.trim();
+            if (item.nama_barang && item.nama_barang.trim() !== '') {
+                const q = item.nama_barang.toLowerCase().trim();
+                const match = (this.katalogAstap || []).find(k => 
+                    (k.nama && k.nama.toLowerCase().trim() === q) ||
+                    (k.nama && k.nama.toLowerCase().includes(q)) ||
+                    (q.includes(k.nama ? k.nama.toLowerCase() : ''))
+                );
+                if (match && match.kode) {
+                    item.kode_barang = match.kode;
+                    if (!item.satuan || item.satuan === 'Unit') item.satuan = match.satuan || 'Unit';
+                    if (!item.merk_type) item.merk_type = match.merk || '';
+                    if (!item.jenis_astap_nama && match.jenis_nama) item.jenis_astap_nama = match.jenis_nama;
+                    return match.kode;
+                }
+            }
+            return '';
+        },
+
+        // Hitung total NIBAR yang terdaftar di database untuk barang ini
+        getMatchingNibarCount(item) {
+            const kode = this.getItemKode(item);
+            if (!kode) return 0;
+            return (this.nibarList || []).filter(n => n.kode === kode).length;
+        },
+
+        // Cek apakah data NIBAR kosong untuk barang yang dipilih
+        isNibarEmpty(item) {
+            if (!item || (!item.nama_barang && !item.kode_barang)) return false;
+            return this.getMatchingNibarCount(item) === 0;
+        },
+
+        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih
+        getFilteredNibar(item, query) {
+            const kode = this.getItemKode(item);
+            if (!kode) return [];
+            let list = (this.nibarList || []).filter(n => n.kode === kode);
+            // Exclude yang sudah dipilih di item ini
+            const chosen = (item.nibar_selected || []).map(n => n.nibar);
+            list = list.filter(n => !chosen.includes(n.nibar));
+            if (query && query.trim() !== '') {
+                const q = query.toLowerCase().trim();
+                list = list.filter(n =>
+                    (n.nibar || '').toLowerCase().includes(q) ||
+                    (n.ruang || '').toLowerCase().includes(q)
+                );
+            }
+            return list.slice(0, 20);
+        },
+
+        // Pilih NIBAR untuk item (max sesuai qty)
+        selectNibar(item, n) {
+            if (!item.nibar_selected) item.nibar_selected = [];
+            const maxQty = parseInt(item.qty) || 1;
+            if (item.nibar_selected.length >= maxQty) {
+                alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai volume barang (' + maxQty + '). Tambah volume atau hapus salah satu NIBAR terlebih dahulu.');
+                return;
+            }
+            item.nibar_selected.push({ nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
+            this.activeNibarDropdownIndex = null;
+            if (this.nibarSearch) this.nibarSearch[item.id] = '';
+        },
+
+        // Hapus NIBAR yang sudah dipilih
+        removeNibar(item, nibarStr) {
+            item.nibar_selected = (item.nibar_selected || []).filter(n => n.nibar !== nibarStr);
         },
 
         // Hapus Baris Barang
@@ -136,26 +377,102 @@
             this.formData.items.splice(index, 1);
         },
 
-        // Filter Daftar ASTAP Secara Real-time untuk Autocomplete
-        getFilteredAstap(query) {
+        // Filter Daftar Master Jenis ASTAP untuk Autocomplete (Berdasarkan Nama Jenis Saja, Tanpa Null/Kosong)
+        getFilteredJenisAstap(query) {
+            if (!this.jenisAstapList || this.jenisAstapList.length === 0) return [];
+            const validList = this.jenisAstapList.filter(j => j && j.nama && j.nama.trim() !== '' && j.nama.trim().toLowerCase() !== 'null' && j.nama.trim() !== '-');
             if (!query || query.trim() === '') {
-                return this.katalogAstap.slice(0, 8);
+                return validList;
             }
             const q = query.toLowerCase().trim();
-            return this.katalogAstap.filter(ast => 
+            return validList.filter(j => 
+                (j.nama || '').toLowerCase().includes(q)
+            );
+        },
+
+        // Pilih Jenis ASTAP
+        selectJenisAstap(item, j) {
+            const isChanged = item.jenis_astap_nama !== j.nama;
+            item.jenis_astap_kode = j.kode;
+            item.jenis_astap_nama = j.nama;
+            this.activeJenisDropdownIndex = null;
+            
+            // Jika jenis ASTAP berubah dan barang sebelumnya tidak cocok dengan jenis baru, kosongkan pilihan barang
+            if (isChanged && item.kode_barang && j.kode && !item.kode_barang.startsWith(j.kode)) {
+                item.nama_barang = '';
+                item.kode_barang = '';
+                item.merk_type = '';
+                item.satuan = 'Unit';
+                item.nibar_selected = [];
+            }
+        },
+
+        // Kosongkan Pilihan Jenis ASTAP
+        clearJenisAstap(item, idx) {
+            item.jenis_astap_kode = '';
+            item.jenis_astap_nama = '';
+            item.nama_barang = '';
+            item.kode_barang = '';
+            item.merk_type = '';
+            item.satuan = 'Unit';
+            if (idx !== undefined) {
+                this.activeJenisDropdownIndex = idx;
+            }
+        },
+
+        // Filter Daftar ASTAP Secara Real-time (Dibatasi oleh Jenis ASTAP yang dipilih)
+        getFilteredAstap(item, query) {
+            let list = this.katalogAstap || [];
+            
+            // Filter ketat berdasarkan Jenis ASTAP yang dipilih pada baris ini
+            if (item && (item.jenis_astap_kode || item.jenis_astap_nama)) {
+                list = list.filter(ast => {
+                    const astJenisKode = ast.jenis_kode || (ast.kode ? ast.kode.substring(0, 5) : '');
+                    const astJenisNama = (ast.jenis_nama || '').toUpperCase();
+                    const selectedNama = (item.jenis_astap_nama || '').toUpperCase();
+                    
+                    if (item.jenis_astap_kode && (astJenisKode === item.jenis_astap_kode || (ast.kode && ast.kode.startsWith(item.jenis_astap_kode)))) {
+                        return true;
+                    }
+                    if (selectedNama && astJenisNama && astJenisNama.includes(selectedNama)) {
+                        return true;
+                    }
+                    return false;
+                });
+            }
+
+            if (!query || query.trim() === '') {
+                return list.slice(0, 10);
+            }
+
+            const q = query.toLowerCase().trim();
+            return list.filter(ast => 
                 (ast.nama || '').toLowerCase().includes(q) || 
                 (ast.kode || '').toLowerCase().includes(q) ||
                 (ast.merk || '').toLowerCase().includes(q) ||
                 (ast.kategori || '').toLowerCase().includes(q)
-            );
+            ).slice(0, 15);
         },
 
         // Pilih Barang dari Hasil Ketik Filter Dropdown
         selectAstapItem(item, ast) {
             item.nama_barang = ast.nama;
             item.kode_barang = ast.kode;
-            item.merk_type = ast.merk;
+            item.merk_type = ast.merk || '';
             item.satuan = ast.satuan || 'Unit';
+
+            // Jika jenis astap belum dipilih, otomatis sinkronkan dengan jenis barang yang dipilih
+            if (!item.jenis_astap_nama) {
+                const jenisKode = ast.jenis_kode || (ast.kode ? ast.kode.substring(0, 5) : '');
+                const matchedJenis = (this.jenisAstapList || []).find(j => j.kode === jenisKode || (ast.jenis_nama && j.nama.toLowerCase() === ast.jenis_nama.toLowerCase()));
+                if (matchedJenis) {
+                    item.jenis_astap_kode = matchedJenis.kode;
+                    item.jenis_astap_nama = matchedJenis.nama;
+                } else if (ast.jenis_nama) {
+                    item.jenis_astap_nama = ast.jenis_nama;
+                }
+            }
+
             this.activeDropdownIndex = null;
         },
 
@@ -164,6 +481,7 @@
             item.kode_barang = '';
             item.merk_type = '';
             item.satuan = 'Unit';
+            item.nibar_selected = [];
             if (idx !== undefined) {
                 this.activeDropdownIndex = idx;
             }
@@ -176,14 +494,30 @@
                 return;
             }
             const query = item.nama_barang.toLowerCase().trim();
-            const exactMatch = this.katalogAstap.find(ast => 
+            let pool = this.katalogAstap || [];
+            if (item.jenis_astap_kode) {
+                pool = pool.filter(ast => {
+                    const astJenis = ast.jenis_kode || (ast.kode ? ast.kode.substring(0, 5) : '');
+                    return astJenis === item.jenis_astap_kode || (ast.kode && ast.kode.startsWith(item.jenis_astap_kode));
+                });
+            }
+            const exactMatch = pool.find(ast => 
                 ast.nama.toLowerCase().trim() === query ||
                 ast.kode.toLowerCase().trim() === query
             );
             if (exactMatch) {
                 item.kode_barang = exactMatch.kode;
-                item.merk_type = exactMatch.merk;
+                item.merk_type = exactMatch.merk || '';
                 item.satuan = exactMatch.satuan || 'Unit';
+
+                if (!item.jenis_astap_kode) {
+                    const jenisKode = exactMatch.jenis_kode || (exactMatch.kode ? exactMatch.kode.substring(0, 5) : '');
+                    const matchedJenis = (this.jenisAstapList || []).find(j => j.kode === jenisKode);
+                    if (matchedJenis) {
+                        item.jenis_astap_kode = matchedJenis.kode;
+                        item.jenis_astap_nama = matchedJenis.label || (matchedJenis.kode + ' - ' + matchedJenis.nama);
+                    }
+                }
             }
         },
 
@@ -237,6 +571,121 @@
                 alert('⚠️ Ada baris barang yang belum diisi nama barangnya. Silakan lengkapi atau hapus baris yang kosong!');
                 return;
             }
+
+            // Format tanggal
+            let tglStr = this.formData.tgl || new Date().toISOString().split('T')[0];
+            const dateObj = new Date(tglStr);
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            const fullMonths = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            
+            const m = months[dateObj.getMonth()] || 'Ags';
+            const fullM = fullMonths[dateObj.getMonth()] || 'Agustus';
+            const y = dateObj.getFullYear() || 2026;
+            const dayName = days[dateObj.getDay()] || 'Senin';
+
+            // Nama ringkasan dari barang-barang yang dipilih
+            const itemNames = this.formData.items.map(it => it.nama_barang).filter(Boolean);
+            let ringkasanNama = itemNames.length > 2 
+                ? (itemNames[0] + ' & ' + itemNames[1] + ' (' + itemNames.length + ' Barang)')
+                : (itemNames.join(' & ') || 'Distribusi ASTAP');
+
+            const itemRecords = this.formData.items.map((it, idx) => {
+                const resolvedKode = this.getItemKode(it) || it.kode_barang || '';
+                return {
+                    no: idx + 1,
+                    jenis_astap_nama: it.jenis_astap_nama || 'PERALATAN DAN MESIN',
+                    nama_barang: it.nama_barang,
+                    kode_barang: resolvedKode,
+                    merk_type: it.merk_type || (resolvedKode ? ('Kode 108: ' + resolvedKode) : '-'),
+                    qty: parseInt(it.qty) || 1,
+                    satuan: it.satuan || 'Unit',
+                    kondisi: it.kondisi || 'Baik',
+                    keterangan: it.keterangan || '-',
+                    nibar_selected: it.nibar_selected || []
+                };
+            });
+
+            // Ambil data distribusi dari localStorage
+            let storedList = [];
+            try {
+                const stored = localStorage.getItem('simat_distribusis');
+                if (stored) {
+                    storedList = JSON.parse(stored);
+                }
+            } catch(e) {
+                storedList = [];
+            }
+
+            if (!storedList || storedList.length === 0) {
+                storedList = this.getDefaultDistribusiList();
+            }
+
+            if (this.isEdit && this.editId) {
+                // Update record yang diedit
+                const idx = storedList.findIndex(d => String(d.id) === String(this.editId) || d.kode === this.formData.kode);
+                if (idx !== -1) {
+                    storedList[idx] = {
+                        ...storedList[idx],
+                        kode: this.formData.kode,
+                        nama: ringkasanNama,
+                        tujuan: this.formData.tujuan,
+                        tgl: `${d} ${m} ${y}`,
+                        tgl_iso: tglStr,
+                        penerima: this.formData.penerima || 'Petugas Ruangan',
+                        bast_nomor: this.formData.bast_nomor || '-',
+                        hari: dayName,
+                        tanggal_angka: String(dateObj.getDate()),
+                        bulan: fullM,
+                        tahun: String(y),
+                        pj_nama: this.formData.penerima,
+                        pj_nip: this.formData.penerima_nip || '-',
+                        pj_jabatan: this.formData.penerima_jabatan || ('Kepala Ruangan ' + this.formData.tujuan),
+                        pj_ruangan: this.formData.tujuan,
+                        pj_jabatan_ttd: this.formData.penerima_jabatan || ('Kepala Ruangan ' + this.formData.tujuan),
+                        keterangan: this.formData.keterangan || '-',
+                        items: itemRecords
+                    };
+                }
+            } else {
+                // Tambah record baru di urutan paling atas
+                const newRecord = {
+                    id: Date.now(),
+                    kode: this.formData.kode,
+                    nama: ringkasanNama,
+                    tujuan: this.formData.tujuan,
+                    tgl: `${d} ${m} ${y}`,
+                    tgl_iso: tglStr,
+                    penerima: this.formData.penerima || 'Petugas Ruangan',
+                    status: 'Menunggu Konfirmasi',
+                    bast_nomor: this.formData.bast_nomor || '-',
+                    hari: dayName,
+                    tanggal_angka: String(dateObj.getDate()),
+                    bulan: fullM,
+                    tahun: String(y),
+                    tahun_anggaran: String(y),
+                    sk_bupati_nomor: '188.45/969/430.4.2/2024',
+                    sk_bupati_tanggal: '02 Januari ' + y,
+                    pengurus_nama: 'BUDI HARTONO, S.Sos',
+                    pengurus_nip: '19760229 200801 1 010',
+                    pengurus_jabatan: 'Pengurus Barang',
+                    pengurus_ruangan: 'Gudang Perbekalan',
+                    pj_nama: this.formData.penerima,
+                    pj_nip: this.formData.penerima_nip || '-',
+                    pj_jabatan: this.formData.penerima_jabatan || ('Kepala Ruangan ' + this.formData.tujuan),
+                    pj_ruangan: this.formData.tujuan,
+                    pj_jabatan_ttd: this.formData.penerima_jabatan || ('Kepala Ruangan ' + this.formData.tujuan),
+                    signed: false,
+                    tgl_signed: '-',
+                    keterangan: this.formData.keterangan || 'Distribusi alokasi sarana prasarana',
+                    items: itemRecords
+                };
+                storedList.unshift(newRecord);
+            }
+
+            // Simpan ke localStorage
+            localStorage.setItem('simat_distribusis', JSON.stringify(storedList));
 
             alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)');
             window.location.href = '{{ route('distribusi.index') }}';
@@ -366,22 +815,27 @@
                     <h3 class="text-sm font-extrabold text-teal-300 uppercase tracking-wider flex items-center space-x-2">
                         <span>2. Rincian Barang Aset yang Didistribusikan</span>
                     </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Ketik langsung nama barang untuk memfilter master ASTAP — Satuan, kode 108, dan spesifikasi terisi otomatis</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Pilih Jenis ASTAP untuk membatasi daftar nama barang — Satuan, kode 108, dan spesifikasi terisi otomatis</p>
                 </div>
 
                 <!-- Daftar Input Multi-Barang (Layout Card Terstruktur & Rapi) -->
                 <div class="space-y-5">
                     <template x-for="(item, idx) in formData.items" :key="item.id">
                         <div class="bg-slate-950/90 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-5 sm:p-6 transition-all shadow-lg space-y-5">
-                            
-                            <!-- Card Header: Nomor Barang, Nama Terpilih Dinamis, Badge Kode 108 & Tombol Hapus -->
+
+                            <!-- Card Header: Nomor Barang, Nama Terpilih Dinamis, Badge Kode 108 & Tombol Hapus Barang di Pojok Kanan -->
                             <div class="flex items-center justify-between pb-3 border-b border-slate-800 gap-3">
                                 <div class="flex items-center space-x-3 min-w-0">
                                     <span class="w-7 h-7 rounded-xl bg-teal-500/20 text-teal-300 font-extrabold text-xs flex items-center justify-center border border-teal-500/30 shrink-0" x-text="idx + 1"></span>
                                     
                                     <!-- Judul Dinamis Mengikuti Barang yang Dipilih -->
-                                    <span class="text-sm font-extrabold text-white tracking-wide truncate" 
-                                          x-text="item.nama_barang ? item.nama_barang : ('Rincian Barang #' + (idx + 1))"></span>
+                                    <div class="min-w-0 flex items-center space-x-2">
+                                        <span class="text-sm font-extrabold text-white tracking-wide truncate" 
+                                              x-text="item.nama_barang ? item.nama_barang : ('Rincian Barang #' + (idx + 1))"></span>
+                                        <template x-if="item.jenis_astap_nama">
+                                            <span class="px-2.5 py-0.5 rounded-md bg-teal-500/10 border border-teal-500/20 text-teal-300 text-[10px] font-bold hidden md:inline-block truncate max-w-[220px]" x-text="item.jenis_astap_nama"></span>
+                                        </template>
+                                    </div>
                                     
                                     <!-- Badge Otomatis Kode 108 -->
                                     <template x-if="item.kode_barang">
@@ -389,42 +843,115 @@
                                     </template>
                                 </div>
 
+                                <!-- Tombol Hapus Barang — Masuk di Dalam Form Pojok Kanan Atas Header -->
                                 <button type="button" @click="removeItem(idx)"
-                                        class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center space-x-1.5 transition-all active:scale-95 shrink-0"
+                                        class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center space-x-1.5 transition-all active:scale-95 shrink-0"
                                         title="Hapus baris barang ini">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    <span>Hapus</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    <span class="hidden sm:inline">Hapus</span>
                                 </button>
                             </div>
 
                             <!-- Grid Form Input Barang -->
                             <div class="space-y-4">
                                 
+                                <!-- Baris 0: Jenis ASTAP (Diatas Nama Barang, Format Sama Seperti Nama Barang) -->
+                                <div class="relative" @click.away="if (activeJenisDropdownIndex === idx) activeJenisDropdownIndex = null">
+                                    <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                        <span class="flex items-center space-x-1.5">
+                                            <span class="text-teal-400">🏷️</span>
+                                            <span>Jenis ASTAP</span>
+                                            <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">(Pilih jenis untuk memfilter daftar barang)</span>
+                                        </span>
+                                        <span class="text-teal-400 font-mono text-[10px] hidden sm:inline">⚡ Pilih Jenis Aset</span>
+                                    </label>
+                                    <div class="relative flex items-center">
+                                        <input type="text" 
+                                               x-model="item.jenis_astap_nama" 
+                                               @focus="activeJenisDropdownIndex = idx"
+                                               @input="activeJenisDropdownIndex = idx"
+                                               placeholder="Ketik atau pilih Jenis ASTAP (contoh: Peralatan dan Mesin, Gedung, Tanah)..." 
+                                               class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-bold placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all cursor-pointer">
+                                        
+                                        <svg class="w-4 h-4 text-teal-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                        </svg>
+
+                                        <!-- Tombol Silang Bersihkan Jenis ASTAP di Pojok Kanan Dalam Input -->
+                                        <template x-if="item.jenis_astap_nama && item.jenis_astap_nama.trim() !== ''">
+                                            <button type="button" 
+                                                    @click.stop="clearJenisAstap(item, idx)" 
+                                                    style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
+                                                    class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all cursor-pointer shadow-sm border border-slate-700/60 hover:border-rose-500/40"
+                                                    title="Kosongkan jenis ASTAP">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </template>
+                                    </div>
+
+                                    <!-- Floating Dropdown Hasil Filter Jenis ASTAP (Hanya Menampilkan Nama Jenis) -->
+                                    <div x-show="activeJenisDropdownIndex === idx" 
+                                         x-transition 
+                                         class="absolute left-0 right-0 z-50 mt-1.5 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
+                                        
+                                        <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                                            <span>Pilih Master Jenis ASTAP</span>
+                                            <span class="text-teal-400 font-mono" x-text="getFilteredJenisAstap(item.jenis_astap_nama).length + ' jenis tersedia'"></span>
+                                        </div>
+
+                                        <template x-for="j in getFilteredJenisAstap(item.jenis_astap_nama)" :key="j.kode || j.nama">
+                                            <div @click="selectJenisAstap(item, j)"
+                                                 class="px-4 py-3 hover:bg-teal-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3"
+                                                 :class="{'bg-teal-500/10': item.jenis_astap_nama === j.nama}">
+                                                <div class="flex items-center space-x-2.5">
+                                                    <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+                                                    <p class="font-bold text-xs text-white group-hover:text-teal-300" x-text="j.nama"></p>
+                                                </div>
+                                                <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-teal-300 text-[10px] font-bold shrink-0">Pilih &rarr;</span>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="getFilteredJenisAstap(item.jenis_astap_nama).length === 0">
+                                            <div class="p-4 text-center text-xs text-slate-400">
+                                                <p class="text-amber-400 font-semibold">Tidak ditemukan Jenis ASTAP</p>
+                                                <p class="text-[10px] text-slate-500 mt-0.5">Coba gunakan kata kunci pencarian yang lain</p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
                                 <!-- Baris 1: Nama Barang & Kode Rekening 108 (Selalu Sejajar Berdampingan) -->
                                 <div class="flex flex-row items-end gap-3 w-full">
                                     
-                                    <!-- 1. Nama Barang / Aset (Autocomplete Search Langsung) -->
+                                    <!-- 1. Nama Barang / Aset (Autocomplete Search Langsung Berdasarkan Filter Jenis ASTAP) -->
                                     <div class="flex-1 min-w-0 relative" @click.away="if (activeDropdownIndex === idx) activeDropdownIndex = null">
                                         <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
-                                            <span>Nama Barang / Aset ASTAP</span>
-                                            <span class="text-teal-400 font-mono text-[10px] hidden sm:inline">⚡ Ketik untuk filter</span>
+                                            <span class="flex items-center space-x-1.5">
+                                                <span>Nama Barang / Aset ASTAP</span>
+                                                <template x-if="item.jenis_astap_nama">
+                                                    <span class="text-teal-400 text-[10px] bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20 font-semibold" x-text="'Filter: ' + item.jenis_astap_nama"></span>
+                                                </template>
+                                            </span>
+                                            <span class="text-teal-400 font-mono text-[10px] hidden sm:inline" x-text="item.jenis_astap_nama ? '⚡ Sesuai Jenis Terpilih' : '⚡ Ketik untuk filter'"></span>
                                         </label>
-                                        <div class="relative">
+                                        <div class="relative flex items-center">
                                             <input type="text" 
                                                    x-model="item.nama_barang" 
                                                    @focus="activeDropdownIndex = idx"
                                                    @input="activeDropdownIndex = idx; onNamaBarangInput(item)"
-                                                   placeholder="Ketik nama barang aset (contoh: laptop, monitor, kasur, bed, pompa)..." 
+                                                   :placeholder="item.jenis_astap_nama ? ('Ketik nama barang dari ' + item.jenis_astap_nama + '...') : 'Ketik nama barang aset (contoh: laptop, monitor, kasur)...'" 
                                                    class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-bold placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
                                             
-                                            <svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4 text-teal-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                             </svg>
 
+                                            <!-- Tombol Silang Bersihkan Nama Barang di Pojok Kanan Dalam Input -->
                                             <template x-if="item.nama_barang && item.nama_barang.trim() !== ''">
                                                 <button type="button" 
                                                         @click.stop="clearItemBarang(item, idx)" 
-                                                        class="absolute right-2.5 top-2.5 z-20 w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                                        style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
+                                                        class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all cursor-pointer shadow-sm border border-slate-700/60 hover:border-rose-500/40"
                                                         title="Kosongkan nama barang">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                                 </button>
@@ -437,24 +964,24 @@
                                              class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
                                             
                                             <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
-                                                <span>Pilih Data Master ASTAP</span>
-                                                <span class="text-teal-400 font-mono" x-text="getFilteredAstap(item.nama_barang).length + ' barang tersedia'"></span>
+                                                <span x-text="item.jenis_astap_nama ? ('Pilih Master ASTAP (' + item.jenis_astap_nama + ')') : 'Pilih Data Master ASTAP'"></span>
+                                                <span class="text-teal-400 font-mono" x-text="getFilteredAstap(item, item.nama_barang).length + ' barang tersedia'"></span>
                                             </div>
 
-                                            <template x-for="ast in getFilteredAstap(item.nama_barang).slice(0, 5)" :key="ast.kode">
+                                            <template x-for="ast in getFilteredAstap(item, item.nama_barang).slice(0, 5)" :key="ast.kode">
                                                 <div @click="selectAstapItem(item, ast)"
                                                      class="px-4 py-2.5 hover:bg-teal-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3">
                                                     <div class="space-y-0.5">
                                                         <p class="font-bold text-xs text-white group-hover:text-teal-300" x-text="ast.nama"></p>
-                                                        <p class="text-[10px] text-slate-400" x-text="ast.kode + ' • ' + ast.kategori + (ast.merk ? ' • ' + ast.merk : '')"></p>
+                                                        <p class="text-[10px] text-slate-400" x-text="ast.kode + (ast.jenis_nama ? ' • ' + ast.jenis_nama : (ast.kategori ? ' • ' + ast.kategori : '')) + (ast.merk ? ' • ' + ast.merk : '')"></p>
                                                     </div>
-                                                    <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-teal-300 font-mono text-[10px] font-bold shrink-0" x-text="ast.satuan"></span>
+                                                    <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-teal-300 font-mono text-[10px] font-bold shrink-0" x-text="ast.satuan || 'Unit'"></span>
                                                 </div>
                                             </template>
 
-                                            <template x-if="getFilteredAstap(item.nama_barang).length === 0">
+                                            <template x-if="getFilteredAstap(item, item.nama_barang).length === 0">
                                                 <div class="p-4 text-center text-xs text-slate-400">
-                                                    <p class="text-amber-400 font-semibold">Tidak ditemukan barang ASTAP</p>
+                                                    <p class="text-amber-400 font-semibold" x-text="item.jenis_astap_nama ? ('Tidak ditemukan barang untuk ' + item.jenis_astap_nama) : 'Tidak ditemukan barang ASTAP'"></p>
                                                     <p class="text-[10px] text-slate-500 mt-0.5">Ketik nama lain atau isi nama barang secara manual</p>
                                                 </div>
                                             </template>
@@ -467,6 +994,137 @@
                                         <input type="text" x-model="item.kode_barang" placeholder="Terisi otomatis..."
                                                class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-cyan-300 font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all">
                                     </div>
+                                </div>
+
+                                <!-- Baris 1b: NIBAR Multi-Select (Selalu Ditampilkan, Beri Keterangan jika Barang Kosong) -->
+                                <div class="relative" @click.away="if(activeNibarDropdownIndex === idx) activeNibarDropdownIndex = null">
+                                    <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                        <span class="flex items-center space-x-1.5">
+                                            <span class="text-amber-400">🔖</span>
+                                            <span>NIBAR (Nomor Induk Barang)</span>
+                                            <template x-if="!item.nama_barang && !item.kode_barang">
+                                                <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih nama barang terlebih dahulu</span>
+                                            </template>
+                                            <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
+                                                <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih maks. sesuai Volume (Qty)</span>
+                                            </template>
+                                        </span>
+                                        
+                                        <!-- Status Badge -->
+                                        <div>
+                                            <template x-if="!item.nama_barang && !item.kode_barang">
+                                                <span class="text-slate-500 font-mono text-[10px]">Pilih barang dulu</span>
+                                            </template>
+                                            <template x-if="(item.nama_barang || item.kode_barang) && isNibarEmpty(item)">
+                                                <span class="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-bold">
+                                                    ⚠️ Barang Kosong (0 NIBAR)
+                                                </span>
+                                            </template>
+                                            <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
+                                                <span class="text-amber-400 font-mono text-[10px]" x-text="(item.nibar_selected || []).length + ' / ' + (item.qty || 1) + ' dipilih'"></span>
+                                            </template>
+                                        </div>
+                                    </label>
+
+                                    <!-- Chips: NIBAR yang sudah dipilih -->
+                                    <template x-if="(item.nibar_selected || []).length > 0">
+                                        <div class="flex flex-wrap gap-2 mb-2">
+                                            <template x-for="n in item.nibar_selected" :key="n.nibar">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold">
+                                                    <span x-text="n.nibar"></span>
+                                                    <button type="button" @click.stop="removeNibar(item, n.nibar)"
+                                                            class="w-3.5 h-3.5 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition-all"
+                                                            title="Hapus NIBAR ini">
+                                                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                    </button>
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    <!-- KONDISI 1: Belum Pilih Barang -->
+                                    <template x-if="!item.nama_barang && !item.kode_barang">
+                                        <div class="relative flex items-center">
+                                            <input type="text" 
+                                                   disabled
+                                                   placeholder="Pilih nama barang di atas terlebih dahulu untuk memilih NIBAR..." 
+                                                   class="w-full h-11 bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-4 text-xs text-slate-500 placeholder-slate-600 cursor-not-allowed">
+                                            <svg class="w-4 h-4 text-slate-600 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                                        </div>
+                                    </template>
+
+                                    <!-- KONDISI 2: Barang Terpilih Tapi Data NIBAR Kosong -->
+                                    <template x-if="(item.nama_barang || item.kode_barang) && isNibarEmpty(item)">
+                                        <div class="space-y-1.5">
+                                            <div class="relative flex items-center">
+                                                <input type="text" 
+                                                       disabled
+                                                       value="⚠️ Barang Kosong — Data NIBAR belum tersedia di sistem" 
+                                                       class="w-full h-11 bg-rose-950/20 border border-rose-500/40 rounded-xl px-4 py-2.5 pl-10 pr-4 text-xs text-rose-300 font-semibold cursor-not-allowed">
+                                                <svg class="w-4 h-4 text-rose-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                            </div>
+                                            <p class="text-[11px] text-rose-400/90 flex items-center space-x-1.5 pl-1">
+                                                <span>ℹ️ Tidak ditemukan register NIBAR aktif untuk barang <span class="font-mono font-bold text-white" x-text="getItemKode(item) || item.nama_barang"></span>. Anda tetap dapat mendistribusikan barang dengan mengisi Volume (Qty).</span>
+                                            </p>
+                                        </div>
+                                    </template>
+
+                                    <!-- KONDISI 3: Barang Terpilih & Ada NIBAR Tersedia -->
+                                    <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
+                                        <div>
+                                            <!-- Input Pencarian NIBAR -->
+                                            <div class="relative flex items-center">
+                                                <input type="text" 
+                                                       :value="nibarSearch[item.id] || ''"
+                                                       @input="nibarSearch = {...nibarSearch, [item.id]: $event.target.value}; activeNibarDropdownIndex = idx"
+                                                       @focus="activeNibarDropdownIndex = idx"
+                                                       :placeholder="(item.nibar_selected || []).length >= (item.qty || 1) ? '✅ Sudah memilih ' + (item.qty || 1) + ' NIBAR (sesuai volume)' : 'Ketik atau klik untuk pilih NIBAR...'" 
+                                                       :disabled="(item.nibar_selected || []).length >= (item.qty || 1)"
+                                                       class="w-full h-11 bg-slate-900 border border-amber-500/40 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <svg class="w-4 h-4 text-amber-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+
+                                                <!-- Tombol Silang Reset Input Pencarian NIBAR di Pojok Kanan Dalam Input -->
+                                                <template x-if="(nibarSearch[item.id] || '').trim() !== ''">
+                                                    <button type="button" 
+                                                            @click.stop="nibarSearch[item.id] = ''" 
+                                                            style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
+                                                            class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all cursor-pointer shadow-sm border border-slate-700/60 hover:border-rose-500/40"
+                                                            title="Bersihkan pencarian NIBAR">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                    </button>
+                                                </template>
+                                            </div>
+
+                                            <!-- Dropdown NIBAR -->
+                                            <div x-show="activeNibarDropdownIndex === idx"
+                                                 x-transition
+                                                 class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
+
+                                                <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                                                    <span x-text="'NIBAR tersedia untuk ' + (item.nama_barang || '-')"></span>
+                                                    <span class="text-amber-400 font-mono" x-text="getFilteredNibar(item, nibarSearch[item.id] || '').length + ' tersedia'"></span>
+                                                </div>
+
+                                                <template x-for="n in getFilteredNibar(item, nibarSearch[item.id] || '')" :key="n.nibar">
+                                                    <div @click="selectNibar(item, n)"
+                                                         class="px-4 py-2.5 hover:bg-amber-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3">
+                                                        <div class="space-y-0.5">
+                                                            <p class="font-mono font-bold text-xs text-white group-hover:text-amber-300" x-text="n.nibar"></p>
+                                                            <p class="text-[10px] text-slate-400" x-text="'Ruang: ' + n.ruang + ' • ' + n.kondisi"></p>
+                                                        </div>
+                                                        <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0">Pilih →</span>
+                                                    </div>
+                                                </template>
+
+                                                <template x-if="getFilteredNibar(item, nibarSearch[item.id] || '').length === 0">
+                                                    <div class="p-4 text-center text-xs text-slate-400">
+                                                        <p class="text-amber-400 font-semibold">Tidak ada NIBAR yang cocok</p>
+                                                        <p class="text-[10px] text-slate-500 mt-0.5">Semua NIBAR mungkin sudah dipilih</p>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
 
                                 <!-- Baris 2: Kondisi Fisik, Volume, & Satuan (Selalu Sejajar Berdampingan dalam 1 Baris) -->
