@@ -232,12 +232,21 @@ Route::middleware('auth')->group(function () {
         // Form Tambah & Edit ASTAP
         Route::get('/astap/create', function () {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
-            return view('pages.form_astap', compact('dbMaster108'));
+            $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
+            $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+            return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas'));
         })->name('astap.create');
 
         Route::get('/astap/{id}/edit', function ($id) {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
-            return view('pages.form_astap', ['id' => $id, 'dbMaster108' => $dbMaster108]);
+            $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
+            $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+            return view('pages.form_astap', [
+                'id' => $id, 
+                'dbMaster108' => $dbMaster108,
+                'dbJenisPengadaans' => $dbJenisPengadaans,
+                'dbRekeningBelanjas' => $dbRekeningBelanjas
+            ]);
         })->name('astap.edit');
 
         Route::delete('/astap/{id}', function ($id) {

@@ -4,871 +4,620 @@
 
     <script>
         window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : []);
+        window.dbJenisPengadaans = @json(!empty($dbJenisPengadaans) ? $dbJenisPengadaans : []);
+        window.dbRekeningBelanjas = @json(!empty($dbRekeningBelanjas) ? $dbRekeningBelanjas : []);
+
+        function astapForm() {
+            return {
+                isEdit: {{ request()->routeIs('astap.edit') ? 'true' : 'false' }},
+                currentStep: 1,
+                totalSteps: 4,
+
+                // Master Data Hierarki SIPD Langkah 1 (Diisi dinamis 100% dari SQLite Database)
+                sipdData: [],
+
+                // Master Data Rekening Belanja SIPD Langkah 2 (Diisi dinamis 100% dari SQLite Database)
+                masterRekeningBelanja: (window.dbRekeningBelanjas && window.dbRekeningBelanjas.length > 0)
+                    ? window.dbRekeningBelanjas.map(item => ({
+                        id: item.id,
+                        kode_rek: item.kode_rek,
+                        nama_belanja: item.nama_belanja,
+                        kelompok: item.kelompok,
+                        default_jenis_kode: item.kelompok === 'Tanah' ? '1.3.1' : (item.kelompok === 'Bangunan' ? '1.3.3' : '1.3.2')
+                      }))
+                    : [
+                        { kode_rek: '5.2.01.01.01.0002', nama_belanja: 'Belanja Modal Pengadaan Tanah Fasilitas Pelayanan Kesehatan', default_jenis_kode: '1.3.1' },
+                        { kode_rek: '5.2.02.08.01.0005', nama_belanja: 'Belanja Modal Alat Kedokteran Radiologi & Imaging (CT-Scan / X-Ray)', default_jenis_kode: '1.3.2' },
+                        { kode_rek: '5.2.03.01.01.0001', nama_belanja: 'Belanja Modal Bangunan Gedung Rawat Inap & Poliklinik', default_jenis_kode: '1.3.3' },
+                        { kode_rek: '5.2.04.03.01.0004', nama_belanja: 'Belanja Modal Instalasi Jaringan Pipa Gas Oksigen Sentral Medis', default_jenis_kode: '1.3.4' },
+                        { kode_rek: '5.2.05.01.01.0003', nama_belanja: 'Belanja Modal Bahan Pustaka dan Jurnal Ilmiah Kedokteran', default_jenis_kode: '1.3.5' },
+                        { kode_rek: '5.2.06.01.01.0001', nama_belanja: 'Belanja Modal Lisensi Software SIMRS & Aset Tidak Berwujud', default_jenis_kode: '1.5.3' },
+                        { kode_rek: '5.2.07.01.01.0001', nama_belanja: 'Belanja Modal Konstruksi Dalam Pengerjaan Gedung Rawat Inap', default_jenis_kode: '1.3.6' }
+                      ],
+
+                // Master Data Jenis ASTAP & Sub Rincian Objek PMDN 108 Langkah 2
+                masterJenisAstap108: (window.dbMasterJenisAstap108 && window.dbMasterJenisAstap108.length > 0)
+                    ? window.dbMasterJenisAstap108
+                    : [
+                        {
+                            kode: '1.3.1',
+                            nama: 'TANAH',
+                            subRincian: [
+                                { 
+                                    kode: '1.3.1.01.01.02', 
+                                    nama: 'TANAH UNTUK BANGUNAN GEDUNG RSUD & FASILITAS',
+                                    subSubRincian: [
+                                        { kode: '1.3.1.01.01.02.013', nama: 'Tanah Bangunan Apotik / Rumah Sakit' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            kode: '1.3.2',
+                            nama: 'PERALATAN DAN MESIN',
+                            subRincian: [
+                                { 
+                                    kode: '1.3.2.02.01.01', 
+                                    nama: 'ALAT KEDOKTERAN UMUM & RADIOLOGI',
+                                    subSubRincian: [
+                                        { kode: '1.3.2.02.01.01.005', nama: 'CT-Scan 128 Slice High Resolution' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            kode: '1.3.3',
+                            nama: 'GEDUNG DAN BANGUNAN',
+                            subRincian: [
+                                { 
+                                    kode: '1.3.3.01.01.08', 
+                                    nama: 'BANGUNAN GEDUNG RAWAT INAP VIP & PAVILIUN',
+                                    subSubRincian: [
+                                        { kode: '1.3.3.01.01.08.001', nama: 'Gedung Rawat Inap VIP Terpadu Lt 2' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            kode: '1.3.4',
+                            nama: 'JALAN, IRIGASI DAN JARINGAN',
+                            subRincian: [
+                                { 
+                                    kode: '1.3.4.03.01.04', 
+                                    nama: 'JARINGAN DISTRIBUSI GAS MEDIS & OKSIGEN',
+                                    subSubRincian: [
+                                        { kode: '1.3.4.03.01.04.004', nama: 'Jaringan Pipa Oksigen Sentral Medis & Vakum' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            kode: '1.3.5',
+                            nama: 'ASET TETAP LAINNYA',
+                            subRincian: [
+                                { 
+                                    kode: '1.3.5.01.01.01', 
+                                    nama: 'BUKU PERPUSTAKAAN & JURNAL RISET KEDOKTERAN',
+                                    subSubRincian: [
+                                        { kode: '1.3.5.01.01.01.002', nama: 'Buku Jurnal Kedokteran, Farmakologi & Riset Klinis' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            kode: '1.3.6',
+                            nama: 'KONSTRUKSI DALAM PENGERJAAN',
+                            subRincian: [
+                                { 
+                                    kode: '1.3.6.01.01.01', 
+                                    nama: 'KONSTRUKSI DALAM PENGERJAAN (KDP)',
+                                    subSubRincian: [
+                                        { kode: '1.3.6.01.01.01.001', nama: 'Pembangunan Gedung Rawat Inap Baru Lt 3 (KDP)' }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            kode: '1.5.3',
+                            nama: 'ASET TIDAK BERWUJUD',
+                            subRincian: [
+                                { 
+                                    kode: '1.5.3.01.01.01', 
+                                    nama: 'SOFTWARE SISTEM INFORMASI KESEHATAN (SIMRS)',
+                                    subSubRincian: [
+                                        { kode: '1.5.3.01.01.01.001', nama: 'Software SIMAT-RK RSUD Dr. H. Koesnandi' }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+
+                // Data Model Multi-Step
+                formData: {
+                    // ===============================================================
+                    // LANGKAH 1: MEMILIH JENIS PENGADAAN (FILTER BERTINGKAT SIPD)
+                    // ===============================================================
+                    jenis_pengadaan_id: 1,
+                    program_kode: '',
+                    program_nama: '',
+                    kegiatan_kode: '',
+                    kegiatan_nama: '',
+                    sub_kegiatan_kode: '',
+                    sub_kegiatan_nama: '',
+                    keterangan_pengadaan: '',
+
+                    // ===============================================================
+                    // LANGKAH 2: REKENING BELANJA SIPD & JENIS ASTAP (FILTER BERTINGKAT)
+                    // ===============================================================
+                    kode_rek: '5.2.01.01.01.0002',
+                    nama_belanja: 'Belanja Modal Pengadaan Tanah Fasilitas Pelayanan Kesehatan',
+                    jenis_aset_kode: '1.3.1',
+                    jenis_aset_nama: 'TANAH',
+                    sub_rincian_kode: '1.3.1.01.01.02',
+                    sub_rincian_nama: 'TANAH UNTUK BANGUNAN GEDUNG RSUD & FASILITAS',
+                    jumlah_anggaran: 8500000000,
+                    jumlah_realisasi: 8500000000,
+
+                    // ===============================================================
+                    // LANGKAH 3: RINCIAN BELANJA MODAL / DOKUMEN PENGADAAN (PMDN 108)
+                    // ===============================================================
+                    // 1. Khusus Tanah (PMDN 108 KIB A)
+                    tanah_nama_barang: 'Tanah Bangunan Apotik / Rumah Sakit',
+                    tanah_kode_barang: '1.3.1.01.01.02.013',
+                    tanah_hak: 'Hak Pakai',
+                    tanah_sertifikat_tgl: '1984-03-12',
+                    tanah_sertifikat_no: 'HP-108/1984',
+                    tanah_kondisi: 'B',
+                    tanah_penggunaan: 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
+                    tanah_jumlah_bidang: 1,
+                    tanah_luas_m2: 35400,
+                    tanah_nilai_perencanaan: 150000000,
+                    tanah_nilai_fisik: 8200000000,
+                    tanah_nilai_pengawasan: 150000000,
+
+                    // 2. Khusus Peralatan dan Mesin (PMDN 108 KIB B)
+                    mesin_nama_barang: 'CT-Scan 128 Slice High Resolution',
+                    mesin_kode_barang: '1.3.2.02.01.01.005',
+                    mesin_merk: 'Siemens SOMATOM go.Now',
+                    mesin_type: '128 Slice Dual Energy',
+                    mesin_ukuran: '128 Slices / 0.33s',
+                    mesin_no_pabrik: 'SN-RAD-2026-88192',
+                    mesin_bahan: 'Logam & Komponen Elektronik Medis',
+                    mesin_kondisi: 'B',
+                    ruang_pemegang: 'Instalasi Radiologi & Imaging Sentral',
+                    mesin_jumlah_barang: 1,
+                    mesin_satuan: 'Unit',
+                    mesin_nilai_satuan: 8475000000,
+                    mesin_administrasi_proyek: 25000000,
+
+                    // 3. Khusus Gedung dan Bangunan (PMDN 108 KIB C)
+                    gedung_nama_barang: 'Gedung Rawat Inap VIP Terpadu Lt 2',
+                    gedung_kode_barang: '1.3.3.01.01.08.001',
+                    gedung_luas_m2: 850,
+                    gedung_kondisi: 'B',
+                    gedung_bertingkat: 'Bertingkat',
+                    gedung_beton: 'Beton',
+                    gedung_status_tanah: 'Tanah Hak Pakai Pemkab',
+                    gedung_kode_aset_tanah: '1.3.1.01.01.02.013',
+                    gedung_is_baru: 'Baru',
+                    gedung_kapitalisasi_tahun_induk: '2020',
+                    gedung_kapitalisasi_nilai_induk: 3500000000,
+                    gedung_jumlah_bangunan: 1,
+                    gedung_satuan: 'Gedung',
+                    gedung_nilai_perencanaan: 75000000,
+                    gedung_nilai_fisik: 1850000000,
+                    gedung_nilai_pengawasan: 50000000,
+                    gedung_nilai_pip: 25000000,
+
+                    // 4. Khusus Jalan, Irigasi dan Jaringan (PMDN 108 KIB D)
+                    jaringan_nama_barang: 'Jaringan Pipa Oksigen Sentral Medis & Vakum',
+                    jaringan_kode_barang: '1.3.4.03.01.04.004',
+                    jaringan_konstruksi: 'Pipa Tembaga Medis ASTM B819 & Box Zone Valve',
+                    jaringan_panjang_m: 450,
+                    jaringan_lebar_m: 0,
+                    jaringan_luas_m2: 0,
+                    jaringan_kondisi: 'B',
+                    jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
+                    jaringan_kode_aset_tanah: '1.3.1.01.01.02.013',
+                    jaringan_is_baru: 'Baru',
+                    jaringan_kapitalisasi_tahun_induk: '2021',
+                    jaringan_kapitalisasi_nilai_induk: 850000000,
+                    jaringan_jumlah: 1,
+                    jaringan_satuan: 'Paket',
+                    jaringan_nilai_perencanaan: 35000000,
+                    jaringan_nilai_fisik: 620000000,
+                    jaringan_nilai_pengawasan: 25000000,
+                    jaringan_nilai_pip: 15000000,
+
+                    // 5. Khusus Aset Tetap Lainnya (PMDN 108 KIB E)
+                    lainnya_nama_barang: 'Buku Jurnal Kedokteran, Farmakologi & Riset Klinis',
+                    lainnya_kode_barang: '1.3.5.01.01.01.002',
+                    lainnya_buku_judul: 'Pedoman Standar Pelayanan Klinis & Formularium RSUD Dr. H. Koesnandi',
+                    lainnya_buku_pencipta: 'Komite Medik & Tim Farmasi Klinis RSUD',
+                    lainnya_buku_spesifikasi: 'Edisi Revisi 2026 / Hardcover Lux / 850 Halaman',
+                    lainnya_kesenian_asal: 'Jawa Timur / Bondowoso',
+                    lainnya_kesenian_pencipta: 'Sanggar Seni Budaya Daerah',
+                    lainnya_kesenian_spesifikasi: 'Lukisan Sejarah Rumah Sakit & Tokoh Pendiri',
+                    lainnya_kesenian_bahan: 'Kanvas & Cat Minyak / Frame Kayu Jati',
+                    lainnya_kesenian_ukuran: '200 x 120 cm',
+                    lainnya_hewan_jenis: 'Tanaman Peneduh & Taman Herbal Medis',
+                    lainnya_hewan_spesifikasi: 'Pohon Tabebuya & Palem Raja Tinggi 3M',
+                    ruang_pemegang_lainnya: 'Instalasi Perpustakaan Medis & Diklat RSUD',
+                    lainnya_jumlah_barang: 15,
+                    lainnya_satuan: 'Eksemplar',
+                    lainnya_nilai_satuan: 450000,
+                    lainnya_administrasi_proyek: 250000,
+
+                    // 6. Khusus Aset Tidak Berwujud (PMDN 108 ATB / 1.5.3)
+                    atb_nama_barang: 'Software SIMAT-RK RSUD Dr. H. Koesnandi',
+                    atb_kode_barang: '1.5.3.01.01.01.001',
+                    atb_judul_nama: 'Aplikasi SIMAT-RK (Sistem Informasi Manajemen Aset Tetap Terintegrasi)',
+                    atb_pencipta: 'Tim IT SIMRS RSUD & Tim Pengembang Sistem',
+                    atb_spesifikasi: 'Web-Based (Laravel 12, Alpine.js, Tailwind), Role-Based Access Control, Realtime ASTAP Export & Integrasi SatuSehat',
+                    ruang_pemegang_atb: 'Instalasi SIMRS & Rekam Medis RSUD Dr. H. Koesnandi',
+                    atb_jumlah: 1,
+                    atb_satuan: 'Paket',
+                    atb_nilai_satuan: 145000000,
+                    atb_administrasi_proyek: 5000000,
+
+                    // 7. Khusus Konstruksi Dalam Pengerjaan (PMDN 108 KIB F / 1.3.6)
+                    kdp_nama_barang: 'Pembangunan Gedung Rawat Inap Baru Lt 3 (KDP)',
+                    kdp_kode_barang: '1.3.6.01.01.01.001',
+                    kdp_bangunan: 'Bertingkat',
+                    kdp_beton: 'Beton',
+                    kdp_luas_m2: 1200,
+                    kdp_progres_persen: 65,
+                    kdp_status_tanah: 'Tanah Hak Pakai RSUD',
+                    kdp_sertifikat_no: 'HP-108/1984',
+                    kdp_sertifikat_tgl: '1984-03-12',
+                    kdp_kode_aset_tanah: '1.3.1.01.01.02.013',
+                    kdp_tgl_mulai: '2026-02-01',
+                    kdp_tgl_target_selesai: '2026-11-30',
+                    kdp_jumlah_bangunan: 1,
+                    kdp_satuan: 'Gedung',
+                    kdp_nilai_perencanaan: 125000000,
+                    kdp_nilai_fisik: 2450000000,
+                    kdp_nilai_pengawasan: 85000000,
+                    kdp_nilai_pip: 40000000,
+
+                    // 8. Riwayat Pembelian (SPK, SP, Kwitansi, Invoice)
+                    spk_nomor: '028/SPK-KTR/V/2026',
+                    spk_tanggal: '2026-05-12',
+                    surat_pesanan_nomor: '028/SP-RSUD/V/2026',
+                    surat_pesanan_tanggal: '2026-05-15',
+                    kwitansi_nomor: 'KW-028/KTR/2026',
+                    kwitansi_tanggal: '2026-06-02',
+                    faktur_nomor: 'INV-2026-028',
+                    faktur_tanggal: '2026-06-05',
+
+                    // 9. SP2D & BAST
+                    sp2d_nomor: '0129/SP2D/BLUD/2026',
+                    sp2d_tanggal: '2026-06-15',
+                    bast_dokumen_nomor: '000.2.3.2/224/430.10.7/2026',
+                    bast_dokumen_tanggal: '2026-06-30',
+
+                    // ===============================================================
+                    // LANGKAH 4: LOKASI, PIHAK PENYEDIA, PPK & KETERANGAN
+                    // ===============================================================
+                    alamat_barang: 'Jl. Piere Tendean No. 3, Kel. Badean, Kec. Bondowoso (Area Paviliun RSUD Dr. H. Koesnandi)',
+                    penyedia_nama: 'PT. Medika Sarana Utama',
+                    penyedia_pemilik: 'Ir. H. Budi Santoso, M.T.',
+                    penyedia_rekening_nama: 'PT. Medika Sarana Utama',
+                    penyedia_rekening_nomor: '143-00-9876543-2 (Bank Jatim Cab. Bondowoso)',
+                    penyedia_alamat: 'Jl. Raya Darmo No. 45, Wonokromo, Kota Surabaya, Jawa Timur',
+                    ppk_nama: 'dr. Slamet Widodo, M.Kes',
+                    ppk_nip: '19760229 200801 1 010',
+                    keterangan_tambahan: 'Aset telah selesai diverifikasi dan siap dibukukan ke dalam KIB RSUD Dr. H. Koesnandi Tahun Anggaran 2026.'
+                },
+
+                init() {
+                    // 1. Membangun Hirarki SIPD Langkah 1 murni dari Database SQLite (jenis_pengadaans)
+                    if (window.dbJenisPengadaans && window.dbJenisPengadaans.length > 0) {
+                        const dynamicSipd = [];
+                        window.dbJenisPengadaans.forEach(item => {
+                            let prog = dynamicSipd.find(p => p.kode === item.program_kode);
+                            if (!prog) {
+                                prog = { kode: item.program_kode, nama: item.program_nama, kegiatans: [] };
+                                dynamicSipd.push(prog);
+                            }
+                            let keg = prog.kegiatans.find(k => k.kode === item.kegiatan_kode);
+                            if (!keg) {
+                                keg = { kode: item.kegiatan_kode, nama: item.kegiatan_nama, subKegiatans: [] };
+                                prog.kegiatans.push(keg);
+                            }
+                            let sub = keg.subKegiatans.find(s => s.kode === item.sub_kegiatan_kode);
+                            if (!sub) {
+                                keg.subKegiatans.push({
+                                    id: item.id,
+                                    kode: item.sub_kegiatan_kode,
+                                    nama: item.sub_kegiatan_nama,
+                                    keterangan: 'Alokasi Pengadaan SIPD ' + item.sub_kegiatan_nama + ' (' + item.sub_kegiatan_kode + ')'
+                                });
+                            }
+                        });
+                        this.sipdData = dynamicSipd;
+
+                        // Set default terpilih pada Langkah 1 jika data tersedia
+                        if (this.sipdData.length > 0) {
+                            const firstProg = this.sipdData[0];
+                            this.formData.program_kode = firstProg.kode;
+                            this.formData.program_nama = firstProg.nama;
+                            if (firstProg.kegiatans && firstProg.kegiatans.length > 0) {
+                                const firstKeg = firstProg.kegiatans[0];
+                                this.formData.kegiatan_kode = firstKeg.kode;
+                                this.formData.kegiatan_nama = firstKeg.nama;
+                                if (firstKeg.subKegiatans && firstKeg.subKegiatans.length > 0) {
+                                    const firstSub = firstKeg.subKegiatans[0];
+                                    this.formData.sub_kegiatan_kode = firstSub.kode;
+                                    this.formData.sub_kegiatan_nama = firstSub.nama;
+                                    this.formData.keterangan_pengadaan = firstSub.keterangan;
+                                    this.formData.jenis_pengadaan_id = firstSub.id;
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Membangun Rekening Belanja Langkah 2 murni dari Database SQLite (rekening_belanjas)
+                    if (window.dbRekeningBelanjas && window.dbRekeningBelanjas.length > 0) {
+                        this.masterRekeningBelanja = window.dbRekeningBelanjas.map(item => ({
+                            id: item.id,
+                            kode_rek: item.kode_rek,
+                            nama_belanja: item.nama_belanja,
+                            kelompok: item.kelompok,
+                            default_jenis_kode: item.kelompok === 'Tanah' ? '1.3.1' : (item.kelompok === 'Bangunan' ? '1.3.3' : '1.3.2')
+                        }));
+                        if (this.masterRekeningBelanja.length > 0) {
+                            this.formData.kode_rek = this.masterRekeningBelanja[0].kode_rek;
+                            this.formData.nama_belanja = this.masterRekeningBelanja[0].nama_belanja;
+                        }
+                    }
+
+                    // 3. Membangun Jenis ASTAP PMDN 108 murni dari Database SQLite (jenis_astaps)
+                    if (window.dbMasterJenisAstap108 && window.dbMasterJenisAstap108.length > 0) {
+                        const currentJenis = window.dbMasterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode);
+                        if (!currentJenis) {
+                            this.onJenisAstapChange(window.dbMasterJenisAstap108[0].kode);
+                        } else {
+                            const currentSub = currentJenis.subRincian ? currentJenis.subRincian.find(s => s.kode === this.formData.sub_rincian_kode) : null;
+                            if (!currentSub && currentJenis.subRincian && currentJenis.subRincian.length > 0) {
+                                this.onSubRincianChange(currentJenis.subRincian[0].kode);
+                            }
+                        }
+                    }
+                },
+
+                get isTanah() {
+                    return this.formData.jenis_aset_kode === '1.3.1' || this.formData.jenis_aset_nama.includes('TANAH');
+                },
+
+                get isMesin() {
+                    return this.formData.jenis_aset_kode === '1.3.2' || this.formData.jenis_aset_nama.includes('PERALATAN');
+                },
+
+                get isGedung() {
+                    return this.formData.jenis_aset_kode === '1.3.3' || this.formData.jenis_aset_nama.includes('GEDUNG') || this.formData.jenis_aset_nama.includes('BANGUNAN');
+                },
+
+                get isJaringan() {
+                    return this.formData.jenis_aset_kode === '1.3.4' || this.formData.jenis_aset_nama.includes('JARINGAN') || this.formData.jenis_aset_nama.includes('JALAN') || this.formData.jenis_aset_nama.includes('IRIGASI');
+                },
+
+                get isAsetLainnya() {
+                    return this.formData.jenis_aset_kode === '1.3.5' || this.formData.jenis_aset_nama.includes('ASET TETAP LAINNYA') || this.formData.jenis_aset_nama.includes('LAINNYA');
+                },
+
+                get isAtb() {
+                    return this.formData.jenis_aset_kode === '1.5.3' || this.formData.jenis_aset_nama.includes('TIDAK BERWUJUD') || this.formData.jenis_aset_nama.includes('ATB');
+                },
+
+                get isKdp() {
+                    return this.formData.jenis_aset_kode === '1.3.6' || this.formData.jenis_aset_nama.includes('KONSTRUKSI') || this.formData.jenis_aset_nama.includes('KDP');
+                },
+
+                get totalNilaiTanah() {
+                    return Number(this.formData.tanah_nilai_perencanaan || 0) + 
+                           Number(this.formData.tanah_nilai_fisik || 0) + 
+                           Number(this.formData.tanah_nilai_pengawasan || 0);
+                },
+
+                get totalNilaiMesin() {
+                    return (Number(this.formData.mesin_jumlah_barang || 1) * Number(this.formData.mesin_nilai_satuan || 0)) + 
+                           Number(this.formData.mesin_administrasi_proyek || 0);
+                },
+
+                get totalNilaiGedung() {
+                    return Number(this.formData.gedung_nilai_perencanaan || 0) + 
+                           Number(this.formData.gedung_nilai_fisik || 0) + 
+                           Number(this.formData.gedung_nilai_pengawasan || 0) + 
+                           Number(this.formData.gedung_nilai_pip || 0);
+                },
+
+                get totalNilaiJaringan() {
+                    return Number(this.formData.jaringan_nilai_perencanaan || 0) + 
+                           Number(this.formData.jaringan_nilai_fisik || 0) + 
+                           Number(this.formData.jaringan_nilai_pengawasan || 0) + 
+                           Number(this.formData.jaringan_nilai_pip || 0);
+                },
+
+                get totalNilaiAsetLainnya() {
+                    return (Number(this.formData.lainnya_jumlah_barang || 1) * Number(this.formData.lainnya_nilai_satuan || 0)) + 
+                           Number(this.formData.lainnya_administrasi_proyek || 0);
+                },
+
+                get totalNilaiAtb() {
+                    return (Number(this.formData.atb_jumlah || 1) * Number(this.formData.atb_nilai_satuan || 0)) + 
+                           Number(this.formData.atb_administrasi_proyek || 0);
+                },
+
+                get totalNilaiKdp() {
+                    return Number(this.formData.kdp_nilai_perencanaan || 0) + 
+                           Number(this.formData.kdp_nilai_fisik || 0) + 
+                           Number(this.formData.kdp_nilai_pengawasan || 0) + 
+                           Number(this.formData.kdp_nilai_pip || 0);
+                },
+
+                get currentProgram() {
+                    if (!this.sipdData || this.sipdData.length === 0) return null;
+                    return this.sipdData.find(p => p.kode === this.formData.program_kode) || this.sipdData[0];
+                },
+
+                get availableKegiatans() {
+                    return this.currentProgram ? this.currentProgram.kegiatans : [];
+                },
+
+                get currentKegiatan() {
+                    if (!this.availableKegiatans || this.availableKegiatans.length === 0) return null;
+                    return this.availableKegiatans.find(k => k.kode === this.formData.kegiatan_kode) || this.availableKegiatans[0];
+                },
+
+                get availableSubKegiatans() {
+                    return this.currentKegiatan ? this.currentKegiatan.subKegiatans : [];
+                },
+
+                onProgramChange(kode) {
+                    this.formData.program_kode = kode;
+                    const prog = this.sipdData.find(p => p.kode === kode);
+                    if (prog) {
+                        this.formData.program_nama = prog.nama;
+                        if (prog.kegiatans && prog.kegiatans.length > 0) {
+                            this.onKegiatanChange(prog.kegiatans[0].kode);
+                        }
+                    }
+                },
+
+                onKegiatanChange(kode) {
+                    this.formData.kegiatan_kode = kode;
+                    const keg = this.availableKegiatans.find(k => k.kode === kode);
+                    if (keg) {
+                        this.formData.kegiatan_nama = keg.nama;
+                        if (keg.subKegiatans && keg.subKegiatans.length > 0) {
+                            this.onSubKegiatanChange(keg.subKegiatans[0].kode);
+                        }
+                    }
+                },
+
+                onSubKegiatanChange(kode) {
+                    this.formData.sub_kegiatan_kode = kode;
+                    const sub = this.availableSubKegiatans.find(s => s.kode === kode);
+                    if (sub) {
+                        this.formData.sub_kegiatan_nama = sub.nama;
+                        this.formData.keterangan_pengadaan = sub.keterangan;
+                        this.formData.jenis_pengadaan_id = sub.id || 1;
+                    }
+                },
+
+                get currentJenisAstap() {
+                    if (!window.dbMasterJenisAstap108 || window.dbMasterJenisAstap108.length === 0) return null;
+                    return window.dbMasterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode) || window.dbMasterJenisAstap108[0];
+                },
+
+                get availableSubRincian108() {
+                    return (this.currentJenisAstap && this.currentJenisAstap.subRincian) ? this.currentJenisAstap.subRincian : [];
+                },
+
+                get currentSubRincianObj() {
+                    if (this.availableSubRincian108.length === 0) return null;
+                    return this.availableSubRincian108.find(s => s.kode === this.formData.sub_rincian_kode) || this.availableSubRincian108[0];
+                },
+
+                get availableSubSubRincian108() {
+                    return (this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian) ? this.currentSubRincianObj.subSubRincian : [];
+                },
+
+                onRekeningBelanjaChange(kodeRek) {
+                    this.formData.kode_rek = kodeRek;
+                    const found = this.masterRekeningBelanja.find(r => r.kode_rek === kodeRek);
+                    if (found) {
+                        this.formData.nama_belanja = found.nama_belanja;
+                        if (found.default_jenis_kode) {
+                            this.onJenisAstapChange(found.default_jenis_kode);
+                        }
+                    }
+                },
+
+                onJenisAstapChange(kodeJenis) {
+                    this.formData.jenis_aset_kode = kodeJenis;
+                    const found = (window.dbMasterJenisAstap108 || []).find(j => j.kode === kodeJenis);
+                    if (found) {
+                        this.formData.jenis_aset_nama = found.nama;
+                        if (found.subRincian && found.subRincian.length > 0) {
+                            this.onSubRincianChange(found.subRincian[0].kode);
+                        } else {
+                            this.formData.sub_rincian_kode = '';
+                            this.formData.sub_rincian_nama = '';
+                        }
+                    }
+                },
+
+                onSubRincianChange(kodeSub) {
+                    this.formData.sub_rincian_kode = kodeSub;
+                    const found = this.availableSubRincian108.find(s => s.kode === kodeSub);
+                    if (found) {
+                        this.formData.sub_rincian_nama = found.nama;
+                        if (found.subSubRincian && found.subSubRincian.length > 0) {
+                            this.onSubSubRincianChange(found.subSubRincian[0].kode);
+                        }
+                    }
+                },
+
+                onSubSubRincianChange(kodeSubSub) {
+                    const found = this.availableSubSubRincian108.find(s => s.kode === kodeSubSub);
+                    if (this.isTanah) {
+                        this.formData.tanah_kode_barang = kodeSubSub;
+                        if (found) this.formData.tanah_nama_barang = found.nama;
+                    } else if (this.isMesin) {
+                        this.formData.mesin_kode_barang = kodeSubSub;
+                        if (found) this.formData.mesin_nama_barang = found.nama;
+                    } else if (this.isGedung) {
+                        this.formData.gedung_kode_barang = kodeSubSub;
+                        if (found) this.formData.gedung_nama_barang = found.nama;
+                    } else if (this.isJaringan) {
+                        this.formData.jaringan_kode_barang = kodeSubSub;
+                        if (found) this.formData.jaringan_nama_barang = found.nama;
+                    } else if (this.isAsetLainnya) {
+                        this.formData.lainnya_kode_barang = kodeSubSub;
+                        if (found) this.formData.lainnya_nama_barang = found.nama;
+                    } else if (this.isAtb) {
+                        this.formData.atb_kode_barang = kodeSubSub;
+                        if (found) this.formData.atb_nama_barang = found.nama;
+                    } else if (this.isKdp) {
+                        this.formData.kdp_kode_barang = kodeSubSub;
+                        if (found) this.formData.kdp_nama_barang = found.nama;
+                    }
+                },
+
+                autoFillDokumen() {
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    const randomNo = Math.floor(100 + Math.random() * 900);
+                    this.formData.spk_nomor = '0' + randomNo.toString().slice(0, 2) + '/SPK-KTR/VI/2026';
+                    this.formData.spk_tanggal = dateStr;
+                    this.formData.surat_pesanan_nomor = '0' + randomNo.toString().slice(0, 2) + '/SP-RSUD/VI/2026';
+                    this.formData.surat_pesanan_tanggal = dateStr;
+                    this.formData.kwitansi_nomor = 'KW-' + randomNo + '/RSUD/2026';
+                    this.formData.kwitansi_tanggal = dateStr;
+                    this.formData.faktur_nomor = 'INV-2026-' + randomNo;
+                    this.formData.faktur_tanggal = dateStr;
+                    this.formData.sp2d_nomor = '0' + randomNo + '/SP2D/BLUD/2026';
+                    this.formData.sp2d_tanggal = dateStr;
+                    this.formData.bast_dokumen_nomor = '000.2.3.2/' + randomNo + '/430.10.7/2026';
+                    this.formData.bast_dokumen_tanggal = dateStr;
+                    alert('✨ Dokumen pembelian terisi otomatis dengan format resmi!');
+                },
+
+                formatRupiah(val) {
+                    return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
+                },
+
+                submitForm() {
+                    const namaBarang = this.isTanah ? this.formData.tanah_nama_barang : (this.isMesin ? this.formData.mesin_nama_barang : (this.isGedung ? this.formData.gedung_nama_barang : (this.isJaringan ? this.formData.jaringan_nama_barang : (this.isAsetLainnya ? this.formData.lainnya_nama_barang : (this.isAtb ? this.formData.atb_nama_barang : (this.isKdp ? this.formData.kdp_nama_barang : 'Aset Belanja Modal'))))));
+                    alert('✅ Data ASTAP (' + namaBarang + ') berhasil disimpan ke database SIMAT-RK!');
+                    window.location.href = '{{ route('astap.index') }}';
+                }
+            };
+        }
     </script>
 
-    <div x-data="{
-        isEdit: {{ request()->routeIs('astap.edit') ? 'true' : 'false' }},
-        currentStep: 1,
-        totalSteps: 4,
-
-        // Master Data Hierarki SIPD Langkah 1 (Program ➔ Kegiatan ➔ Sub Kegiatan / Jenis Pengadaan)
-        sipdData: [
-            {
-                kode: '0.00.01',
-                nama: 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota',
-                kegiatans: [
-                    {
-                        kode: '0.00.01.2.10',
-                        nama: 'Peningkatan Pelayanan BLUD',
-                        subKegiatans: [
-                            {
-                                kode: '0.00.01.2.10.0001',
-                                nama: 'Pelayanan dan Penunjang Pelayanan BLUD',
-                                keterangan: 'Alokasi pengadaan operasional, sarana dan prasarana penunjang BLUD RSUD Dr. H. Koesnandi'
-                            },
-                            {
-                                kode: '0.00.01.2.10.0002',
-                                nama: 'Pengadaan Sarana dan Prasarana Pendukung Fasilitas Pelayanan Kesehatan',
-                                keterangan: 'Belanja modal alat medis ICU, Bed Patient, Instalasi Gas Medis dan Genset Cadangan'
-                            },
-                            {
-                                kode: '0.00.01.2.10.0003',
-                                nama: 'Penyediaan Peralatan dan Perlengkapan Kantor Rumah Sakit',
-                                keterangan: 'Belanja modal komputer, AC, printer, meja kerja dan perlengkapan perkantoran'
-                            }
-                        ]
-                    },
-                    {
-                        kode: '0.00.01.2.06',
-                        nama: 'Pengadaan Barang Milik Daerah Penunjang Urusan Pemerintah Daerah',
-                        subKegiatans: [
-                            {
-                                kode: '0.00.01.2.06.0001',
-                                nama: 'Pengadaan Kendaraan Dinas Operasional / Ambulans',
-                                keterangan: 'Pengadaan mobil ambulans transport & jenazah rumah sakit'
-                            },
-                            {
-                                kode: '0.00.01.2.06.0002',
-                                nama: 'Pengadaan Sarana Gedung Kantor Rumah Sakit',
-                                keterangan: 'Pengadaan lift pengunjung, genset sentral, dan chiller AC'
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.02.02',
-                nama: 'Program Pemenuhan Upaya Kesehatan Perorangan dan Upaya Kesehatan Masyarakat',
-                kegiatans: [
-                    {
-                        kode: '1.02.02.2.02',
-                        nama: 'Penyediaan Fasilitas Pelayanan Kesehatan untuk UKP dan UKM Rujukan',
-                        subKegiatans: [
-                            {
-                                kode: '1.02.02.2.02.0005',
-                                nama: 'Pembangunan / Renovasi Gedung Rumah Sakit dan Sarana Penunjang',
-                                keterangan: 'Alokasi APBD/DAK untuk pekerjaan fisik renovasi paviliun dan gedung poliklinik'
-                            },
-                            {
-                                kode: '1.02.02.2.02.0012',
-                                nama: 'Pengadaan Alat Kesehatan / Alat Penunjang Medik Fasilitas Pelayanan Kesehatan',
-                                keterangan: 'Pengadaan CT-Scan 128 Slice, USG Doppler 4D, Radiologi & Alat Kamar Operasi (IBS)'
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.02.03',
-                nama: 'Program Peningkatan Kapasitas Sumber Daya Manusia Kesehatan',
-                kegiatans: [
-                    {
-                        kode: '1.02.03.2.01',
-                        nama: 'Pengembangan Mutu dan Akreditasi Fasilitas Pelayanan Kesehatan',
-                        subKegiatans: [
-                            {
-                                kode: '1.02.03.2.01.0003',
-                                nama: 'Pengadaan Sistem Informasi Kesehatan & Software Manajemen SIMRS',
-                                keterangan: 'Pengadaan lisensi server, software Rekam Medis Elektronik (RME) & Integrasi SatuSehat'
-                            },
-                            {
-                                kode: '1.02.03.2.01.0004',
-                                nama: 'Pengadaan Buku, Literatur Medis & Jurnal Ilmiah Kedokteran',
-                                keterangan: 'Pengadaan koleksi pustaka medis, e-library dan modul diklit tenaga medis'
-                            }
-                        ]
-                    }
-                ]
-            }
-        ],
-
-        // Master Data Rekening Belanja SIPD (Kolom 8 & 9)
-        masterRekeningBelanja: [
-            {
-                kode_rek: '5.2.01.01.01.0002',
-                nama_belanja: 'Belanja Modal Pengadaan Tanah Fasilitas Pelayanan Kesehatan',
-                default_jenis_kode: '1.3.1'
-            },
-            {
-                kode_rek: '5.2.02.08.01.0005',
-                nama_belanja: 'Belanja Modal Alat Kedokteran Radiologi & Imaging (CT-Scan / X-Ray)',
-                default_jenis_kode: '1.3.2'
-            },
-            {
-                kode_rek: '5.2.02.05.01.0005',
-                nama_belanja: 'Belanja Modal Alat Kantor Lainnya',
-                default_jenis_kode: '1.3.2'
-            },
-            {
-                kode_rek: '5.2.02.05.02.0006',
-                nama_belanja: 'Belanja Modal Alat Rumah Tangga Lainnya (Home Use)',
-                default_jenis_kode: '1.3.2'
-            },
-            {
-                kode_rek: '5.2.02.08.01.0012',
-                nama_belanja: 'Belanja Modal Alat Kedokteran ICU & Ruang Rawat Intensif',
-                default_jenis_kode: '1.3.2'
-            },
-            {
-                kode_rek: '5.2.03.01.01.0001',
-                nama_belanja: 'Belanja Modal Bangunan Gedung Rawat Inap & Poliklinik',
-                default_jenis_kode: '1.3.3'
-            },
-            {
-                kode_rek: '5.2.04.03.01.0004',
-                nama_belanja: 'Belanja Modal Instalasi Jaringan Pipa Gas Oksigen Sentral Medis',
-                default_jenis_kode: '1.3.4'
-            },
-            {
-                kode_rek: '5.2.05.01.01.0003',
-                nama_belanja: 'Belanja Modal Bahan Pustaka dan Jurnal Ilmiah Kedokteran',
-                default_jenis_kode: '1.3.5'
-            },
-            {
-                kode_rek: '5.2.05.02.01.0001',
-                nama_belanja: 'Belanja Modal Barang Bercorak Kesenian dan Kebudayaan',
-                default_jenis_kode: '1.3.5'
-            },
-            {
-                kode_rek: '5.2.05.03.01.0001',
-                nama_belanja: 'Belanja Modal Hewan Ternak dan Tanaman Penghijauan',
-                default_jenis_kode: '1.3.5'
-            },
-            {
-                kode_rek: '5.2.06.01.01.0001',
-                nama_belanja: 'Belanja Modal Pengadaan Software Sistem Informasi Manajemen RS (SIMRS)',
-                default_jenis_kode: '1.5.3'
-            },
-            {
-                kode_rek: '5.2.06.01.01.0002',
-                nama_belanja: 'Belanja Modal Aplikasi Sistem Informasi & Lisensi RME SatuSehat',
-                default_jenis_kode: '1.5.3'
-            },
-            {
-                kode_rek: '5.2.06.02.01.0001',
-                nama_belanja: 'Belanja Modal Kajian, Riset Klinis & Hak Cipta Medis Rumah Sakit',
-                default_jenis_kode: '1.5.3'
-            }
-        ],
-
-        // Master Data Jenis ASTAP & Sub Rincian Objek PMDN 108 (Diambil Otomatis dari Database Master Jenis ASTAP)
-        masterJenisAstap108: (window.dbMasterJenisAstap108 && window.dbMasterJenisAstap108.length > 0) ? window.dbMasterJenisAstap108 : [
-            {
-                kode: '1.3.1',
-                nama: 'TANAH',
-                subRincian: [
-                    { 
-                        kode: '1.3.1.01.01.01', 
-                        nama: 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL',
-                        subSubRincian: [
-                            { kode: '1.3.1.01.01.01.001', nama: 'Tanah Bangunan Rumah Negara Golongan I' },
-                            { kode: '1.3.1.01.01.01.002', nama: 'Tanah Bangunan Rumah Negara Golongan II' },
-                            { kode: '1.3.1.01.01.01.003', nama: 'Tanah Bangunan Rumah Negara Golongan III' },
-                            { kode: '1.3.1.01.01.01.004', nama: 'Tanah Bangunan Rumah Negara Tanpa Golongan' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.1.01.01.02', 
-                        nama: 'TANAH UNTUK BANGUNAN GEDUNG RSUD & FASILITAS',
-                        subSubRincian: [
-                            { kode: '1.3.1.01.01.02.013', nama: 'Tanah Bangunan Apotik / Rumah Sakit' },
-                            { kode: '1.3.1.01.01.02.014', nama: 'Tanah Bangunan Gedung Rawat Inap & Poli Terpadu' },
-                            { kode: '1.3.1.01.01.02.015', nama: 'Tanah Bangunan Instalasi Radiologi & Laboratorium' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.1.01.01.03', 
-                        nama: 'TANAH BANGUNAN SARANA PENUNJANG RUMAH SAKIT',
-                        subSubRincian: [
-                            { kode: '1.3.1.01.01.03.001', nama: 'Tanah Bangunan Area Parkir & Drop-Off Ambulans' },
-                            { kode: '1.3.1.01.01.03.002', nama: 'Tanah Bangunan Instalasi Pengolahan Air Limbah (IPAL)' },
-                            { kode: '1.3.1.01.01.03.003', nama: 'Tanah Bangunan Gardu Listrik & Central Genset RSUD' }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.3.2',
-                nama: 'PERALATAN DAN MESIN',
-                subRincian: [
-                    { 
-                        kode: '1.3.2.02.01.01', 
-                        nama: 'ALAT KEDOKTERAN UMUM & RADIOLOGI',
-                        subSubRincian: [
-                            { kode: '1.3.2.02.01.01.005', nama: 'CT-Scan 128 Slice High Resolution' },
-                            { kode: '1.3.2.02.01.01.006', nama: 'USG Doppler 4D Color Imaging' },
-                            { kode: '1.3.2.02.01.01.007', nama: 'Stationary Digital X-Ray System' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.2.02.01.02', 
-                        nama: 'ALAT KEDOKTERAN ICU & MONITOR PASIEN',
-                        subSubRincian: [
-                            { kode: '1.3.2.02.01.02.012', nama: 'Patient Monitor uMEC 12 & Defibrillator' },
-                            { kode: '1.3.2.02.01.02.013', nama: 'Ventilator ICU Adult & Pediatric' },
-                            { kode: '1.3.2.02.01.02.014', nama: 'Syringe Pump & Infusion Pump Medis' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.2.05.01.05', 
-                        nama: 'ALAT KANTOR LAINNYA',
-                        subSubRincian: [
-                            { kode: '1.3.2.05.01.05.001', nama: 'Paket Komputer PC All-in-One Administrasi' },
-                            { kode: '1.3.2.05.01.05.002', nama: 'Printer Laser High-Speed Multifungsi' },
-                            { kode: '1.3.2.05.01.05.003', nama: 'Scanner Dokumen Berkas Rekam Medis' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.2.05.02.06', 
-                        nama: 'ALAT RUMAH TANGGA LAINNYA (HOME USE)',
-                        subSubRincian: [
-                            { kode: '1.3.2.05.02.06.001', nama: 'AC Split Inverter 2 PK Ruang Rawat' },
-                            { kode: '1.3.2.05.02.06.002', nama: 'Kulkas Penyimpan Vaksin Medis Farmasi' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.2.01.03.05', 
-                        nama: 'ALAT POMPA AIR & UTILITY SENTRAL',
-                        subSubRincian: [
-                            { kode: '1.3.2.01.03.05.001', nama: 'Pompa Booster Distribusi Air & Hydrant 7.5 HP' },
-                            { kode: '1.3.2.01.03.05.002', nama: 'Genset Silent Central 500 kVA' }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.3.3',
-                nama: 'GEDUNG DAN BANGUNAN',
-                subRincian: [
-                    { 
-                        kode: '1.3.3.01.01.01', 
-                        nama: 'BANGUNAN GEDUNG TEMPAT KERJA/PELAYANAN',
-                        subSubRincian: [
-                            { kode: '1.3.3.01.01.01.008', nama: 'Gedung Rumah Sakit / Paviliun Graha Amukti' },
-                            { kode: '1.3.3.01.01.01.009', nama: 'Gedung Instalasi Farmasi Sentral' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.3.01.01.08', 
-                        nama: 'BANGUNAN GEDUNG RAWAT INAP VIP & PAVILIUN',
-                        subSubRincian: [
-                            { kode: '1.3.3.01.01.08.001', nama: 'Gedung Rawat Inap VIP Terpadu Lt 2' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.3.01.01.12', 
-                        nama: 'BANGUNAN GEDUNG INSTALASI GAWAT DARURAT (IGD)',
-                        subSubRincian: [
-                            { kode: '1.3.3.01.01.12.001', nama: 'Gedung Pelayanan IGD PONEK 24 Jam' }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.3.4',
-                nama: 'JALAN, IRIGASI DAN JARINGAN',
-                subRincian: [
-                    { 
-                        kode: '1.3.4.03.01.04', 
-                        nama: 'JARINGAN DISTRIBUSI GAS MEDIS & OKSIGEN',
-                        subSubRincian: [
-                            { kode: '1.3.4.03.01.04.004', nama: 'Jaringan Pipa Oksigen Sentral Medis & Vakum' },
-                            { kode: '1.3.4.03.01.04.005', nama: 'Instalasi Manifold & Automatic Switch Gas Medis' },
-                            { kode: '1.3.4.03.01.04.006', nama: 'Instalasi Master Alarm & Box Valve Gas Medis' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.4.03.01.01', 
-                        nama: 'JARINGAN AIR BERSIH & DISTRIBUSI',
-                        subSubRincian: [
-                            { kode: '1.3.4.03.01.01.001', nama: 'Jaringan Distribusi Air Bersih Sentral RSUD' },
-                            { kode: '1.3.4.03.01.01.002', nama: 'Instalasi Reservoir & Booster Pompa Air' },
-                            { kode: '1.3.4.03.01.01.003', nama: 'Jaringan Pipa Distribusi Gedung Rawat Inap' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.4.02.01.02', 
-                        nama: 'INSTALASI PENGOLAHAN AIR LIMBAH (IPAL)',
-                        subSubRincian: [
-                            { kode: '1.3.4.02.01.02.001', nama: 'Instalasi IPAL Bioreaktor Medis Sentral' },
-                            { kode: '1.3.4.02.01.02.002', nama: 'Jaringan Pipa Saluran Drainase Limbah Medis' },
-                            { kode: '1.3.4.02.01.02.003', nama: 'Instalasi Bak Pengolahan & Pengendapan Limbah' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.4.01.01.01', 
-                        nama: 'JALAN KOMPLEKS RSUD & AREA PARKIR',
-                        subSubRincian: [
-                            { kode: '1.3.4.01.01.01.001', nama: 'Jalan Akses IGD & Drop-Off Ambulans RSUD' },
-                            { kode: '1.3.4.01.01.01.002', nama: 'Pavingisasi Jalur Evakuasi Pasien & Parkir' },
-                            { kode: '1.3.4.01.01.01.003', nama: 'Jalan Lingkungan Paviliun & Poliklinik' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.4.03.01.02', 
-                        nama: 'JARINGAN LISTRIK & TELEKOMUNIKASI SENTRAL RSUD',
-                        subSubRincian: [
-                            { kode: '1.3.4.03.01.02.001', nama: 'Jaringan Kabel Bawah Tanah Sentral Gardu Listrik' },
-                            { kode: '1.3.4.03.01.02.002', nama: 'Instalasi Jaringan Fiber Optik & LAN SIMRS Sentral' }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.3.5',
-                nama: 'ASET TETAP LAINNYA',
-                subRincian: [
-                    { 
-                        kode: '1.3.5.01.01.01', 
-                        nama: 'BUKU PERPUSTAKAAN & JURNAL RISET KEDOKTERAN',
-                        subSubRincian: [
-                            { kode: '1.3.5.01.01.01.002', nama: 'Buku Jurnal Kedokteran, Farmakologi & Riset Klinis' },
-                            { kode: '1.3.5.01.01.01.003', nama: 'Buku Literatur Keperawatan & Kebidanan' },
-                            { kode: '1.3.5.01.01.01.004', nama: 'Buku Pedoman Standar Pelayanan Rumah Sakit' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.5.02.01.01', 
-                        nama: 'BARANG BERCORAK KESENIAN / KEBUDAYAAN',
-                        subSubRincian: [
-                            { kode: '1.3.5.02.01.01.001', nama: 'Lukisan & Ornamen Sejarah Pelayanan RSUD' },
-                            { kode: '1.3.5.02.01.01.002', nama: 'Patung & Relief Tokoh Kesehatan Dr. H. Koesnandi' }
-                        ]
-                    },
-                    { 
-                        kode: '1.3.5.03.01.01', 
-                        nama: 'HEWAN TERNAK & TANAMAN PENATAAN LINGKUNGAN RSUD',
-                        subSubRincian: [
-                            { kode: '1.3.5.03.01.01.001', nama: 'Tanaman Peneduh & Taman Herbal Medis Rumah Sakit' },
-                            { kode: '1.3.5.03.01.01.002', nama: 'Pohon Penghijauan Lingkungan RSUD' }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.3.6',
-                nama: 'KONSTRUKSI DALAM PENGERJAAN',
-                subRincian: [
-                    { 
-                        kode: '1.3.6.01.01.01', 
-                        nama: 'KONSTRUKSI DALAM PENGERJAAN (KDP)',
-                        subSubRincian: [
-                            { kode: '1.3.6.01.01.01.001', nama: 'Pembangunan Gedung Rawat Inap Baru Lt 3 (KDP)' }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.5.3',
-                nama: 'ASET TIDAK BERWUJUD',
-                subRincian: [
-                    { 
-                        kode: '1.5.3.01.01.01', 
-                        nama: 'SOFTWARE SISTEM INFORMASI KESEHATAN (SIMRS)',
-                        subSubRincian: [
-                            { kode: '1.5.3.01.01.01.001', nama: 'Software SIMAT-RK RSUD Dr. H. Koesnandi' },
-                            { kode: '1.5.3.01.01.01.002', nama: 'Lisensi Rekam Medis Elektronik (RME) & SatuSehat' },
-                            { kode: '1.5.3.01.01.01.003', nama: 'Software PACS & Integrasi Radiologi Imaging' }
-                        ]
-                    },
-                    { 
-                        kode: '1.5.3.02.01.01', 
-                        nama: 'LISENSI, HAK CIPTA & KAJIAN MEDIS RUMAH SAKIT',
-                        subSubRincian: [
-                            { kode: '1.5.3.02.01.01.001', nama: 'Lisensi Database Clinical Decision Support System' },
-                            { kode: '1.5.3.02.01.01.002', nama: 'Hak Cipta Pedoman & Algoritma Klinis RSUD' }
-                        ]
-                    }
-                ]
-            },
-            {
-                kode: '1.3.7',
-                nama: 'ASET TETAP DALAM RENOVASI',
-                subRincian: [
-                    { 
-                        kode: '1.3.7.01.01.01', 
-                        nama: 'REHABILITASI DAN RENOVASI GEDUNG',
-                        subSubRincian: [
-                            { kode: '1.3.7.01.01.01.002', nama: 'Rehabilitasi & Renovasi Gedung Poliklinik Lt 2' }
-                        ]
-                    }
-                ]
-            }
-        ],
-
-        // Data Model Multi-Step
-        formData: {
-            // ===============================================================
-            // LANGKAH 1: MEMILIH JENIS PENGADAAN (FILTER BERTINGKAT SIPD)
-            // ===============================================================
-            program_kode: '0.00.01',
-            program_nama: 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota',
-            kegiatan_kode: '0.00.01.2.10',
-            kegiatan_nama: 'Peningkatan Pelayanan BLUD',
-            sub_kegiatan_kode: '0.00.01.2.10.0001',
-            sub_kegiatan_nama: 'Pelayanan dan Penunjang Pelayanan BLUD',
-            keterangan_pengadaan: 'Alokasi pengadaan operasional, sarana dan prasarana penunjang BLUD RSUD Dr. H. Koesnandi',
-
-            // ===============================================================
-            // LANGKAH 2: REKENING BELANJA SIPD & JENIS ASTAP (FILTER BERTINGKAT)
-            // ===============================================================
-            kode_rek: '5.2.01.01.01.0002',
-            nama_belanja: 'Belanja Modal Pengadaan Tanah Fasilitas Pelayanan Kesehatan',
-            jenis_aset_kode: '1.3.1',
-            jenis_aset_nama: 'TANAH',
-            sub_rincian_kode: '1.3.1.01.01.02',
-            sub_rincian_nama: 'TANAH UNTUK BANGUNAN GEDUNG RSUD & FASILITAS',
-            jumlah_anggaran: 8500000000,
-            jumlah_realisasi: 8500000000,
-
-            // ===============================================================
-            // LANGKAH 3: RINCIAN BELANJA MODAL / DOKUMEN PENGADAAN (PMDN 108)
-            // ===============================================================
-            // 1. Khusus Tanah (PMDN 108 KIB A)
-            tanah_nama_barang: 'Tanah Bangunan Apotik / Rumah Sakit',
-            tanah_kode_barang: '1.3.1.01.01.02.013',
-            tanah_hak: 'Hak Pakai',
-            tanah_sertifikat_tgl: '1984-03-12',
-            tanah_sertifikat_no: 'HP-108/1984',
-            tanah_kondisi: 'B',
-            tanah_penggunaan: 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
-            tanah_jumlah_bidang: 1,
-            tanah_luas_m2: 35400,
-            tanah_nilai_perencanaan: 150000000,
-            tanah_nilai_fisik: 8200000000,
-            tanah_nilai_pengawasan: 150000000,
-
-            // 2. Khusus Peralatan dan Mesin (PMDN 108 KIB B)
-            mesin_nama_barang: 'CT-Scan 128 Slice High Resolution',
-            mesin_kode_barang: '1.3.2.02.01.01.005',
-            mesin_merk: 'Siemens SOMATOM go.Now',
-            mesin_type: '128 Slice Dual Energy',
-            mesin_ukuran: '128 Slices / 0.33s',
-            mesin_no_pabrik: 'SN-RAD-2026-88192',
-            mesin_bahan: 'Logam & Komponen Elektronik Medis',
-            mesin_kondisi: 'B',
-            ruang_pemegang: 'Instalasi Radiologi & Imaging Sentral',
-            mesin_jumlah_barang: 1,
-            mesin_satuan: 'Unit',
-            mesin_nilai_satuan: 8475000000,
-            mesin_administrasi_proyek: 25000000,
-
-            // 3. Khusus Gedung dan Bangunan (PMDN 108 KIB C)
-            gedung_nama_barang: 'Gedung Rawat Inap VIP Terpadu Lt 2',
-            gedung_kode_barang: '1.3.3.01.01.08.001',
-            gedung_luas_m2: 850,
-            gedung_kondisi: 'B',
-            gedung_bertingkat: 'Bertingkat',
-            gedung_beton: 'Beton',
-            gedung_status_tanah: 'Tanah Hak Pakai Pemkab',
-            gedung_kode_aset_tanah: '1.3.1.01.01.02.013',
-            gedung_is_baru: 'Baru',
-            gedung_kapitalisasi_tahun_induk: '2020',
-            gedung_kapitalisasi_nilai_induk: 3500000000,
-            gedung_jumlah_bangunan: 1,
-            gedung_satuan: 'Gedung',
-            gedung_nilai_perencanaan: 75000000,
-            gedung_nilai_fisik: 1850000000,
-            gedung_nilai_pengawasan: 50000000,
-            gedung_nilai_pip: 25000000,
-
-            // 4. Khusus Jalan, Irigasi dan Jaringan (PMDN 108 KIB D)
-            jaringan_nama_barang: 'Jaringan Pipa Oksigen Sentral Medis & Vakum',
-            jaringan_kode_barang: '1.3.4.03.01.04.004',
-            jaringan_konstruksi: 'Pipa Tembaga Medis ASTM B819 & Box Zone Valve',
-            jaringan_panjang_m: 450,
-            jaringan_lebar_m: 0,
-            jaringan_luas_m2: 0,
-            jaringan_kondisi: 'B',
-            jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
-            jaringan_kode_aset_tanah: '1.3.1.01.01.02.013',
-            jaringan_is_baru: 'Baru',
-            jaringan_kapitalisasi_tahun_induk: '2021',
-            jaringan_kapitalisasi_nilai_induk: 850000000,
-            jaringan_jumlah: 1,
-            jaringan_satuan: 'Paket',
-            jaringan_nilai_perencanaan: 35000000,
-            jaringan_nilai_fisik: 620000000,
-            jaringan_nilai_pengawasan: 25000000,
-            jaringan_nilai_pip: 15000000,
-
-            // 5. Khusus Aset Tetap Lainnya (PMDN 108 KIB E)
-            lainnya_nama_barang: 'Buku Jurnal Kedokteran, Farmakologi & Riset Klinis',
-            lainnya_kode_barang: '1.3.5.01.01.01.002',
-            // Buku Perpustakaan
-            lainnya_buku_judul: 'Pedoman Standar Pelayanan Klinis & Formularium RSUD Dr. H. Koesnandi',
-            lainnya_buku_pencipta: 'Komite Medik & Tim Farmasi Klinis RSUD',
-            lainnya_buku_spesifikasi: 'Edisi Revisi 2026 / Hardcover Lux / 850 Halaman',
-            // Barang Bercorak Kesenian / Kebudayaan
-            lainnya_kesenian_asal: 'Jawa Timur / Bondowoso',
-            lainnya_kesenian_pencipta: 'Sanggar Seni Budaya Daerah',
-            lainnya_kesenian_spesifikasi: 'Lukisan Sejarah Rumah Sakit & Tokoh Pendiri',
-            lainnya_kesenian_bahan: 'Kanvas & Cat Minyak / Frame Kayu Jati',
-            lainnya_kesenian_ukuran: '200 x 120 cm',
-            // Hewan Ternak / Tumbuhan
-            lainnya_hewan_jenis: 'Tanaman Peneduh & Taman Herbal Medis',
-            lainnya_hewan_spesifikasi: 'Pohon Tabebuya & Palem Raja Tinggi 3M',
-            // Ruang / Pemegang
-            ruang_pemegang_lainnya: 'Instalasi Perpustakaan Medis & Diklat RSUD',
-            // Volume & Nilai
-            lainnya_jumlah_barang: 15,
-            lainnya_satuan: 'Eksemplar',
-            lainnya_nilai_satuan: 450000,
-            lainnya_administrasi_proyek: 250000,
-
-            // 6. Khusus Aset Tidak Berwujud (PMDN 108 ATB / 1.5.3)
-            atb_nama_barang: 'Software SIMAT-RK RSUD Dr. H. Koesnandi',
-            atb_kode_barang: '1.5.3.01.01.01.001',
-            atb_judul_nama: 'Aplikasi SIMAT-RK (Sistem Informasi Manajemen Aset Tetap Terintegrasi)',
-            atb_pencipta: 'Tim IT SIMRS RSUD & Tim Pengembang Sistem',
-            atb_spesifikasi: 'Web-Based (Laravel 12, Alpine.js, Tailwind), Role-Based Access Control, Realtime ASTAP Export & Integrasi SatuSehat',
-            ruang_pemegang_atb: 'Instalasi SIMRS & Rekam Medis RSUD Dr. H. Koesnandi',
-            atb_jumlah: 1,
-            atb_satuan: 'Paket',
-            atb_nilai_satuan: 145000000,
-            atb_administrasi_proyek: 5000000,
-
-            // 7. Khusus Konstruksi Dalam Pengerjaan (PMDN 108 KIB F / 1.3.6)
-            kdp_nama_barang: 'Pembangunan Gedung Rawat Inap Baru Lt 3 (KDP)',
-            kdp_kode_barang: '1.3.6.01.01.01.001',
-            kdp_bangunan: 'Bertingkat',
-            kdp_beton: 'Beton',
-            kdp_luas_m2: 1200,
-            kdp_progres_persen: 65,
-            kdp_status_tanah: 'Tanah Hak Pakai RSUD',
-            kdp_sertifikat_no: 'HP-108/1984',
-            kdp_sertifikat_tgl: '1984-03-12',
-            kdp_kode_aset_tanah: '1.3.1.01.01.02.013',
-            kdp_tgl_mulai: '2026-02-01',
-            kdp_tgl_target_selesai: '2026-11-30',
-            kdp_jumlah_bangunan: 1,
-            kdp_satuan: 'Gedung',
-            kdp_nilai_perencanaan: 125000000,
-            kdp_nilai_fisik: 2450000000,
-            kdp_nilai_pengawasan: 85000000,
-            kdp_nilai_pip: 40000000,
-
-            // 8. Riwayat Pembelian (SPK, SP, Kwitansi, Invoice)
-            spk_nomor: '028/SPK-KTR/V/2026',
-            spk_tanggal: '2026-05-12',
-            surat_pesanan_nomor: '028/SP-RSUD/V/2026',
-            surat_pesanan_tanggal: '2026-05-15',
-            kwitansi_nomor: 'KW-028/KTR/2026',
-            kwitansi_tanggal: '2026-06-02',
-            faktur_nomor: 'INV-2026-028',
-            faktur_tanggal: '2026-06-05',
-
-            // 9. SP2D & BAST
-            sp2d_nomor: '0129/SP2D/BLUD/2026',
-            sp2d_tanggal: '2026-06-15',
-            bast_dokumen_nomor: '000.2.3.2/224/430.10.7/2026',
-            bast_dokumen_tanggal: '2026-06-30',
-
-            // ===============================================================
-            // LANGKAH 4: LOKASI, PIHAK PENYEDIA, PPK & KETERANGAN (SESUAI GAMBAR)
-            // ===============================================================
-            // 1. Letak / Alamat Barang (Tanah / Bangunan / Jaringan / KDP)
-            alamat_barang: 'Jl. Piere Tendean No. 3, Kel. Badean, Kec. Bondowoso (Area Paviliun RSUD Dr. H. Koesnandi)',
-
-            // 2. Pihak Penyedia
-            penyedia_nama: 'PT. Medika Sarana Utama',
-            penyedia_pemilik: 'Ir. H. Budi Santoso, M.T.',
-            penyedia_rekening_nama: 'PT. Medika Sarana Utama',
-            penyedia_rekening_nomor: '143-00-9876543-2 (Bank Jatim Cab. Bondowoso)',
-            penyedia_alamat: 'Jl. Raya Darmo No. 45, Wonokromo, Kota Surabaya, Jawa Timur',
-
-            // 3. Pejabat Pembuat Komitmen (PPK)
-            ppk_nama: 'dr. Slamet Widodo, M.Kes',
-            ppk_nip: '19760229 200801 1 010',
-
-            // 4. Keterangan
-            keterangan_tambahan: 'Aset telah selesai diverifikasi dan siap dibukukan ke dalam KIB RSUD Dr. H. Koesnandi Tahun Anggaran 2026.'
-        },
-
-        init() {
-            if (this.masterJenisAstap108 && this.masterJenisAstap108.length > 0) {
-                const currentJenis = this.masterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode);
-                if (!currentJenis) {
-                    this.onJenisAstapChange(this.masterJenisAstap108[0].kode);
-                } else {
-                    const currentSub = currentJenis.subRincian ? currentJenis.subRincian.find(s => s.kode === this.formData.sub_rincian_kode) : null;
-                    if (!currentSub && currentJenis.subRincian && currentJenis.subRincian.length > 0) {
-                        this.onSubRincianChange(currentJenis.subRincian[0].kode);
-                    }
-                }
-            }
-        },
-
-        // Cek apakah kategori yang dipilih di Langkah 2 adalah Tanah (KIB A)
-        get isTanah() {
-            return this.formData.jenis_aset_kode === '1.3.1' || this.formData.jenis_aset_nama.includes('TANAH');
-        },
-
-        // Cek apakah kategori yang dipilih di Langkah 2 adalah Peralatan dan Mesin (KIB B)
-        get isMesin() {
-            return this.formData.jenis_aset_kode === '1.3.2' || this.formData.jenis_aset_nama.includes('PERALATAN');
-        },
-
-        // Cek apakah kategori yang dipilih di Langkah 2 adalah Gedung dan Bangunan (KIB C)
-        get isGedung() {
-            return this.formData.jenis_aset_kode === '1.3.3' || this.formData.jenis_aset_nama.includes('GEDUNG') || this.formData.jenis_aset_nama.includes('BANGUNAN');
-        },
-
-        // Cek apakah kategori yang dipilih di Langkah 2 adalah Jalan, Irigasi dan Jaringan (KIB D)
-        get isJaringan() {
-            return this.formData.jenis_aset_kode === '1.3.4' || this.formData.jenis_aset_nama.includes('JARINGAN') || this.formData.jenis_aset_nama.includes('JALAN') || this.formData.jenis_aset_nama.includes('IRIGASI');
-        },
-
-        // Cek apakah kategori yang dipilih di Langkah 2 adalah Aset Tetap Lainnya (KIB E)
-        get isAsetLainnya() {
-            return this.formData.jenis_aset_kode === '1.3.5' || this.formData.jenis_aset_nama.includes('ASET TETAP LAINNYA') || this.formData.jenis_aset_nama.includes('LAINNYA');
-        },
-
-        // Cek apakah kategori yang dipilih di Langkah 2 adalah Aset Tidak Berwujud (1.5.3)
-        get isAtb() {
-            return this.formData.jenis_aset_kode === '1.5.3' || this.formData.jenis_aset_nama.includes('TIDAK BERWUJUD') || this.formData.jenis_aset_nama.includes('ATB');
-        },
-
-        // Cek apakah kategori yang dipilih di Langkah 2 adalah Konstruksi Dalam Pengerjaan (KIB F / 1.3.6)
-        get isKdp() {
-            return this.formData.jenis_aset_kode === '1.3.6' || this.formData.jenis_aset_nama.includes('KONSTRUKSI') || this.formData.jenis_aset_nama.includes('KDP');
-        },
-
-        // Total Nilai Barang Tanah (Perencanaan + Fisik + Pengawasan)
-        get totalNilaiTanah() {
-            return Number(this.formData.tanah_nilai_perencanaan || 0) + 
-                   Number(this.formData.tanah_nilai_fisik || 0) + 
-                   Number(this.formData.tanah_nilai_pengawasan || 0);
-        },
-
-        // Total Nilai Barang Peralatan & Mesin ((Jumlah * Nilai Satuan) + Administrasi Proyek)
-        get totalNilaiMesin() {
-            return (Number(this.formData.mesin_jumlah_barang || 1) * Number(this.formData.mesin_nilai_satuan || 0)) + 
-                   Number(this.formData.mesin_administrasi_proyek || 0);
-        },
-
-        // Total Nilai Barang Gedung & Bangunan (Perencanaan + Fisik + Pengawasan + PIP)
-        get totalNilaiGedung() {
-            return Number(this.formData.gedung_nilai_perencanaan || 0) + 
-                   Number(this.formData.gedung_nilai_fisik || 0) + 
-                   Number(this.formData.gedung_nilai_pengawasan || 0) + 
-                   Number(this.formData.gedung_nilai_pip || 0);
-        },
-
-        // Total Nilai Barang Jalan, Irigasi & Jaringan (Perencanaan + Fisik + Pengawasan + PIP)
-        get totalNilaiJaringan() {
-            return Number(this.formData.jaringan_nilai_perencanaan || 0) + 
-                   Number(this.formData.jaringan_nilai_fisik || 0) + 
-                   Number(this.formData.jaringan_nilai_pengawasan || 0) + 
-                   Number(this.formData.jaringan_nilai_pip || 0);
-        },
-
-        // Total Nilai Barang Aset Tetap Lainnya ((Jumlah * Nilai Satuan) + Administrasi Proyek)
-        get totalNilaiAsetLainnya() {
-            return (Number(this.formData.lainnya_jumlah_barang || 1) * Number(this.formData.lainnya_nilai_satuan || 0)) + 
-                   Number(this.formData.lainnya_administrasi_proyek || 0);
-        },
-
-        // Total Nilai Barang Aset Tidak Berwujud ((Jumlah * Nilai Satuan) + Administrasi Proyek)
-        get totalNilaiAtb() {
-            return (Number(this.formData.atb_jumlah || 1) * Number(this.formData.atb_nilai_satuan || 0)) + 
-                   Number(this.formData.atb_administrasi_proyek || 0);
-        },
-
-        // Total Nilai Barang Konstruksi Dalam Pengerjaan / KDP (Perencanaan + Fisik + Pengawasan + PIP)
-        get totalNilaiKdp() {
-            return Number(this.formData.kdp_nilai_perencanaan || 0) + 
-                   Number(this.formData.kdp_nilai_fisik || 0) + 
-                   Number(this.formData.kdp_nilai_pengawasan || 0) + 
-                   Number(this.formData.kdp_nilai_pip || 0);
-        },
-
-        // Helper Getters untuk Cascading Dropdown Langkah 1 (SIPD)
-        get currentProgram() {
-            return this.sipdData.find(p => p.kode === this.formData.program_kode) || this.sipdData[0];
-        },
-
-        get availableKegiatans() {
-            return this.currentProgram ? this.currentProgram.kegiatans : [];
-        },
-
-        get currentKegiatan() {
-            return this.availableKegiatans.find(k => k.kode === this.formData.kegiatan_kode) || (this.availableKegiatans[0] || null);
-        },
-
-        get availableSubKegiatans() {
-            return this.currentKegiatan ? this.currentKegiatan.subKegiatans : [];
-        },
-
-        // Handler saat Program Berubah (Level 1 ➔ Level 2 ➔ Level 3)
-        onProgramChange(kode) {
-            this.formData.program_kode = kode;
-            const prog = this.sipdData.find(p => p.kode === kode);
-            if (prog) {
-                this.formData.program_nama = prog.nama;
-                if (prog.kegiatans.length > 0) {
-                    this.onKegiatanChange(prog.kegiatans[0].kode);
-                }
-            }
-        },
-
-        // Handler saat Kegiatan Berubah (Level 2 ➔ Level 3)
-        onKegiatanChange(kode) {
-            this.formData.kegiatan_kode = kode;
-            const keg = this.availableKegiatans.find(k => k.kode === kode);
-            if (keg) {
-                this.formData.kegiatan_nama = keg.nama;
-                if (keg.subKegiatans.length > 0) {
-                    this.onSubKegiatanChange(keg.subKegiatans[0].kode);
-                }
-            }
-        },
-
-        // Handler saat Sub Kegiatan Berubah (Level 3)
-        onSubKegiatanChange(kode) {
-            this.formData.sub_kegiatan_kode = kode;
-            const sub = this.availableSubKegiatans.find(s => s.kode === kode);
-            if (sub) {
-                this.formData.sub_kegiatan_nama = sub.nama;
-                this.formData.keterangan_pengadaan = sub.keterangan;
-            }
-        },
-
-        // Helper Getters untuk Cascading Dropdown Langkah 2 & 3 (Rekening & 108)
-        get currentJenisAstap() {
-            if (!this.masterJenisAstap108 || this.masterJenisAstap108.length === 0) return null;
-            return this.masterJenisAstap108.find(j => j.kode === this.formData.jenis_aset_kode) || this.masterJenisAstap108[0];
-        },
-
-        get availableSubRincian108() {
-            return (this.currentJenisAstap && this.currentJenisAstap.subRincian) ? this.currentJenisAstap.subRincian : [];
-        },
-
-        get currentSubRincianObj() {
-            if (this.availableSubRincian108.length === 0) return null;
-            return this.availableSubRincian108.find(s => s.kode === this.formData.sub_rincian_kode) || this.availableSubRincian108[0];
-        },
-
-        // Mengambil daftar Sub-Sub Rincian (Level 6 Kode 108) sesuai Sub-Rincian Objek yang dipilih di Langkah 2
-        get availableSubSubRincian108() {
-            return (this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian) ? this.currentSubRincianObj.subSubRincian : [];
-        },
-
-        // Handler saat Rekening Belanja Dipilih di Langkah 2
-        onRekeningBelanjaChange(kodeRek) {
-            this.formData.kode_rek = kodeRek;
-            const found = this.masterRekeningBelanja.find(r => r.kode_rek === kodeRek);
-            if (found) {
-                this.formData.nama_belanja = found.nama_belanja;
-                if (found.default_jenis_kode) {
-                    this.onJenisAstapChange(found.default_jenis_kode);
-                }
-            }
-        },
-
-        // Handler saat Jenis Aset PMDN 108 Berubah di Langkah 2
-        onJenisAstapChange(kodeJenis) {
-            this.formData.jenis_aset_kode = kodeJenis;
-            const found = (this.masterJenisAstap108 || []).find(j => j.kode === kodeJenis);
-            if (found) {
-                this.formData.jenis_aset_nama = found.nama;
-                if (found.subRincian && found.subRincian.length > 0) {
-                    this.onSubRincianChange(found.subRincian[0].kode);
-                } else {
-                    this.formData.sub_rincian_kode = '';
-                    this.formData.sub_rincian_nama = '';
-                }
-            }
-        },
-
-        // Handler saat Sub Rincian Objek Berubah di Langkah 2
-        onSubRincianChange(kodeSub) {
-            this.formData.sub_rincian_kode = kodeSub;
-            const found = this.availableSubRincian108.find(s => s.kode === kodeSub);
-            if (found) {
-                this.formData.sub_rincian_nama = found.nama;
-                if (found.subSubRincian && found.subSubRincian.length > 0) {
-                    this.onSubSubRincianChange(found.subSubRincian[0].kode);
-                }
-            }
-        },
-
-        // Handler saat Sub-Sub Rincian Dipilih di Langkah 3 (Identitas Barang Kode 108)
-        onSubSubRincianChange(kodeSubSub) {
-            const found = this.availableSubSubRincian108.find(s => s.kode === kodeSubSub);
-            if (this.isTanah) {
-                this.formData.tanah_kode_barang = kodeSubSub;
-                if (found) this.formData.tanah_nama_barang = found.nama;
-            } else if (this.isMesin) {
-                this.formData.mesin_kode_barang = kodeSubSub;
-                if (found) this.formData.mesin_nama_barang = found.nama;
-            } else if (this.isGedung) {
-                this.formData.gedung_kode_barang = kodeSubSub;
-                if (found) this.formData.gedung_nama_barang = found.nama;
-            } else if (this.isJaringan) {
-                this.formData.jaringan_kode_barang = kodeSubSub;
-                if (found) this.formData.jaringan_nama_barang = found.nama;
-            } else if (this.isAsetLainnya) {
-                this.formData.lainnya_kode_barang = kodeSubSub;
-                if (found) this.formData.lainnya_nama_barang = found.nama;
-            } else if (this.isAtb) {
-                this.formData.atb_kode_barang = kodeSubSub;
-                if (found) this.formData.atb_nama_barang = found.nama;
-            } else if (this.isKdp) {
-                this.formData.kdp_kode_barang = kodeSubSub;
-                if (found) this.formData.kdp_nama_barang = found.nama;
-            }
-        },
-
-        // Tombol Cepat Otomatis Nomor Dokumen
-        autoFillDokumen() {
-            const dateStr = new Date().toISOString().slice(0, 10);
-            const randomNo = Math.floor(100 + Math.random() * 900);
-            this.formData.spk_nomor = '0' + randomNo.toString().slice(0, 2) + '/SPK-KTR/VI/2026';
-            this.formData.spk_tanggal = dateStr;
-            this.formData.surat_pesanan_nomor = '0' + randomNo.toString().slice(0, 2) + '/SP-RSUD/VI/2026';
-            this.formData.surat_pesanan_tanggal = dateStr;
-            this.formData.kwitansi_nomor = 'KW-' + randomNo + '/RSUD/2026';
-            this.formData.kwitansi_tanggal = dateStr;
-            this.formData.faktur_nomor = 'INV-2026-' + randomNo;
-            this.formData.faktur_tanggal = dateStr;
-            this.formData.sp2d_nomor = '0' + randomNo + '/SP2D/BLUD/2026';
-            this.formData.sp2d_tanggal = dateStr;
-            this.formData.bast_dokumen_nomor = '000.2.3.2/' + randomNo + '/430.10.7/2026';
-            this.formData.bast_dokumen_tanggal = dateStr;
-            alert('✨ Dokumen pembelian terisi otomatis dengan format resmi!');
-        },
-
-        formatRupiah(val) {
-            return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
-        },
-
-        submitForm() {
-            const namaBarang = this.isTanah ? this.formData.tanah_nama_barang : (this.isMesin ? this.formData.mesin_nama_barang : (this.isGedung ? this.formData.gedung_nama_barang : (this.isJaringan ? this.formData.jaringan_nama_barang : (this.isAsetLainnya ? this.formData.lainnya_nama_barang : (this.isAtb ? this.formData.atb_nama_barang : (this.isKdp ? this.formData.kdp_nama_barang : 'Aset Belanja Modal'))))));
-            alert('✅ Data ASTAP (' + namaBarang + ') berhasil disimpan ke database SIMAT-RK!');
-            window.location.href = '{{ route('astap.index') }}';
-        }
-    }" x-cloak class="space-y-6">
+    <div x-data="astapForm()" x-cloak class="space-y-6">
 
         <!-- Top Navigation Bar (Back + Title) -->
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
