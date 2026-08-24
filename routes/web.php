@@ -8,6 +8,7 @@ use App\Http\Controllers\JenisAstapController;
 use App\Http\Controllers\JenisPengadaanController;
 use App\Http\Controllers\RekeningBelanjaController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\DistribusiController;
 use App\Http\Middleware\RoleMiddleware;
 
 // Auth Routes (Guest)
@@ -151,179 +152,13 @@ Route::middleware('auth')->group(function () {
 
     // 2. Distribusi Pages & Forms
     Route::get('/distribusi', function () {
-        $units = \App\Models\Unit::orderBy('id', 'asc')->get()->map(function($u, $idx) {
-            return [
-                'id' => $u->id,
-                'kode' => $u->kode_unit ?: ('UNIT-' . str_pad($u->id, 3, '0', STR_PAD_LEFT)),
-                'nama' => $u->nama,
-                'tipe' => $u->tipe ?: 'Rawat Inap & Paviliun',
-                'kepala' => $u->kepala,
-                'nip' => $u->nip ?: '-',
-                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
-            ];
-        });
+        $units = \App\Models\Unit::orderBy('id', 'asc')->get();
         return view('pages.distribusi', compact('units'));
     })->name('distribusi.index');
 
-    Route::get('/distribusi/create', function () {
-        $units = \App\Models\Unit::orderBy('id', 'asc')->get()->map(function($u) {
-            return [
-                'id' => $u->id,
-                'nama' => $u->nama,
-                'tipe' => $u->tipe,
-                'kepala' => $u->kepala,
-                'nip' => $u->nip ?: '-',
-                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
-            ];
-        });
-
-        $jenisAstapList = \App\Models\JenisAstap::whereNotNull('nama_jenis')
-            ->where('nama_jenis', '!=', '')
-            ->where('nama_jenis', '!=', '-')
-            ->select('jenis', 'nama_jenis')
-            ->distinct()
-            ->orderBy('jenis')
-            ->get()
-            ->filter(fn($j) => !empty(trim($j->nama_jenis ?? '')))
-            ->map(function($j) {
-                return [
-                    'kode' => $j->jenis,
-                    'nama' => trim($j->nama_jenis),
-                ];
-            })
-            ->unique('nama')
-            ->values();
-
-        if ($jenisAstapList->isEmpty()) {
-            $jenisAstapList = collect([
-                ['kode' => '1.3.1', 'nama' => 'TANAH'],
-                ['kode' => '1.3.2', 'nama' => 'PERALATAN DAN MESIN'],
-                ['kode' => '1.3.3', 'nama' => 'GEDUNG DAN BANGUNAN'],
-                ['kode' => '1.3.4', 'nama' => 'JALAN, IRIGASI DAN JARINGAN'],
-                ['kode' => '1.3.5', 'nama' => 'ASET TETAP LAINNYA'],
-                ['kode' => '1.3.6', 'nama' => 'KONSTRUKSI DALAM PENGERJAAN'],
-                ['kode' => '1.5.3', 'nama' => 'ASET TIDAK BERWUJUD'],
-            ]);
-        }
-
-        $astapList = \App\Models\Astap::with('jenisAstap')
-            ->orderBy('nama_barang', 'asc')
-            ->get()
-            ->map(function($a) {
-                $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
-                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ''));
-                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5);
-                $jenisNama = $a->jenisAstap ? $a->jenisAstap->nama_jenis : '';
-                return [
-                    'id' => $a->id,
-                    'kode' => $a->kode_108,
-                    'nama' => $a->nama_barang,
-                    'jenis_kode' => $jenisKode,
-                    'jenis_nama' => $jenisNama,
-                    'kategori' => $a->category,
-                    'merk' => $merk,
-                    'satuan' => $a->satuan ?: 'Unit',
-                ];
-            });
-
-        $nibarList = \App\Models\AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->where('status_mutasi', 'Tersedia')
-            ->orderBy('kode_108')
-            ->orderBy('no_register_int')
-            ->get()
-            ->map(function($r) {
-                return [
-                    'id'      => $r->id,
-                    'nibar'   => $r->nibar,
-                    'kode'    => $r->kode_108,
-                    'ruang'   => $r->ruang_pemegang ?: '-',
-                    'kondisi' => $r->kondisi,
-                    'status'  => $r->status_mutasi,
-                ];
-            });
-
-        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList'));
-    })->name('distribusi.create');
-
-    Route::get('/distribusi/{id}/edit', function ($id) {
-        $units = \App\Models\Unit::orderBy('id', 'asc')->get()->map(function($u) {
-            return [
-                'id' => $u->id,
-                'nama' => $u->nama,
-                'tipe' => $u->tipe,
-                'kepala' => $u->kepala,
-                'nip' => $u->nip ?: '-',
-                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
-            ];
-        });
-
-        $jenisAstapList = \App\Models\JenisAstap::whereNotNull('nama_jenis')
-            ->where('nama_jenis', '!=', '')
-            ->where('nama_jenis', '!=', '-')
-            ->select('jenis', 'nama_jenis')
-            ->distinct()
-            ->orderBy('jenis')
-            ->get()
-            ->filter(fn($j) => !empty(trim($j->nama_jenis ?? '')))
-            ->map(function($j) {
-                return [
-                    'kode' => $j->jenis,
-                    'nama' => trim($j->nama_jenis),
-                ];
-            })
-            ->unique('nama')
-            ->values();
-
-        if ($jenisAstapList->isEmpty()) {
-            $jenisAstapList = collect([
-                ['kode' => '1.3.1', 'nama' => 'TANAH'],
-                ['kode' => '1.3.2', 'nama' => 'PERALATAN DAN MESIN'],
-                ['kode' => '1.3.3', 'nama' => 'GEDUNG DAN BANGUNAN'],
-                ['kode' => '1.3.4', 'nama' => 'JALAN, IRIGASI DAN JARINGAN'],
-                ['kode' => '1.3.5', 'nama' => 'ASET TETAP LAINNYA'],
-                ['kode' => '1.3.6', 'nama' => 'KONSTRUKSI DALAM PENGERJAAN'],
-                ['kode' => '1.5.3', 'nama' => 'ASET TIDAK BERWUJUD'],
-            ]);
-        }
-
-        $astapList = \App\Models\Astap::with('jenisAstap')
-            ->orderBy('nama_barang', 'asc')
-            ->get()
-            ->map(function($a) {
-                $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
-                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ''));
-                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5);
-                $jenisNama = $a->jenisAstap ? $a->jenisAstap->nama_jenis : '';
-                return [
-                    'id' => $a->id,
-                    'kode' => $a->kode_108,
-                    'nama' => $a->nama_barang,
-                    'jenis_kode' => $jenisKode,
-                    'jenis_nama' => $jenisNama,
-                    'kategori' => $a->category,
-                    'merk' => $merk,
-                    'satuan' => $a->satuan ?: 'Unit',
-                ];
-            });
-
-        $nibarList = \App\Models\AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->where('status_mutasi', 'Tersedia')
-            ->orderBy('kode_108')
-            ->orderBy('no_register_int')
-            ->get()
-            ->map(function($r) {
-                return [
-                    'id'      => $r->id,
-                    'nibar'   => $r->nibar,
-                    'kode'    => $r->kode_108,
-                    'ruang'   => $r->ruang_pemegang ?: '-',
-                    'kondisi' => $r->kondisi,
-                    'status'  => $r->status_mutasi,
-                ];
-            });
-
-        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'id'));
-    })->name('distribusi.edit');
+    Route::get('/distribusi/create', [DistribusiController::class, 'create'])->name('distribusi.create');
+    Route::get('/distribusi/{id}/edit', [DistribusiController::class, 'edit'])->name('distribusi.edit');
+    Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
 
     // 4. Mutasi Aset Pages & Forms
     Route::get('/mutasi-aset', function () {

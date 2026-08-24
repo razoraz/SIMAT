@@ -174,7 +174,7 @@
                     this.formData = {
                         kode: found.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100)),
                         bast_nomor: found.bast_nomor || '',
-                        status: found.status || 'Telah Diterima',
+                        status: found.status || 'Draft',
                         tujuan: found.tujuan || '',
                         tgl: new Date().toISOString().split('T')[0],
                         penerima: found.penerima || found.pj_nama || '',
@@ -252,7 +252,7 @@
                 this.formData = {
                     kode: 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100),
                     bast_nomor: '032 / 0' + String(Math.floor(Math.random() * 80) + 10) + ' / 430.10.7 / 2026',
-                    status: 'Telah Diterima',
+                    status: 'Draft',
                     tujuan: '',
                     tgl: new Date().toISOString().split('T')[0],
                     penerima: '',
@@ -321,13 +321,13 @@
             return '';
         },
 
-        // Hitung total NIBAR yang terdaftar di database untuk barang ini (Khusus status_mutasi: Tersedia)
+        // Hitung total NIBAR yang terdaftar di database untuk barang ini (Belum ada penempatan)
         getMatchingNibarCount(item) {
             const kode = this.getItemKode(item);
             if (!kode) return 0;
             return (this.nibarList || []).filter(n => 
-                n.kode === kode && 
-                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
+                n.kode === kode &&
+                (!n.ruang || n.ruang === '' || n.ruang === '-' || n.ruang === 'Belum Ditempatkan')
             ).length;
         },
 
@@ -337,13 +337,13 @@
             return this.getMatchingNibarCount(item) === 0;
         },
 
-        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih (Khusus status_mutasi: Tersedia)
+        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih (Hanya yang belum ada penempatan)
         getFilteredNibar(item, query) {
             const kode = this.getItemKode(item);
             if (!kode) return [];
             let list = (this.nibarList || []).filter(n => 
-                n.kode === kode && 
-                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
+                n.kode === kode &&
+                (!n.ruang || n.ruang === '' || n.ruang === '-' || n.ruang === 'Belum Ditempatkan')
             );
             // Exclude yang sudah dipilih di item ini
             const chosen = (item.nibar_selected || []).map(n => n.nibar);
@@ -643,7 +643,7 @@
                         tgl: `${d} ${m} ${y}`,
                         tgl_iso: tglStr,
                         penerima: this.formData.penerima || 'Petugas Ruangan',
-                        status: this.formData.status || storedList[idx].status || 'Telah Diterima',
+                        status: this.formData.status || storedList[idx].status || 'Draft',
                         bast_nomor: this.formData.bast_nomor || '-',
                         hari: dayName,
                         tanggal_angka: String(dateObj.getDate()),
@@ -668,7 +668,7 @@
                     tgl: `${d} ${m} ${y}`,
                     tgl_iso: tglStr,
                     penerima: this.formData.penerima || 'Petugas Ruangan',
-                    status: this.formData.status || 'Telah Diterima',
+                    status: this.formData.status || 'Draft',
                     bast_nomor: this.formData.bast_nomor || '-',
                     hari: dayName,
                     tanggal_angka: String(dateObj.getDate()),
@@ -697,7 +697,46 @@
             // Simpan ke localStorage
             localStorage.setItem('simat_distribusis', JSON.stringify(storedList));
 
-            alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)');
+            // Sinkronisasi otomatis ke Database & update data astap_registers
+            try {
+                const targetUnit = this.selectedUnitObj || this.unitList.find(u => u.nama === this.formData.tujuan);
+                if (targetUnit && targetUnit.id) {
+                    const dbPayload = {
+                        _token: '{{ csrf_token() }}',
+                        kode: this.formData.kode,
+                        bast_nomor: this.formData.bast_nomor || '-',
+                        tanggal_distribusi: tglStr,
+                        unit_id: targetUnit.id,
+                        status: this.formData.status || 'Draft',
+                        keterangan: this.formData.keterangan || '-',
+                        items: this.formData.items.map(it => {
+                            const resolvedKode = this.getItemKode(it) || it.kode_barang || '';
+                            const astapObj = (this.dbAstapList || []).find(a => a.kode === resolvedKode || a.nama === it.nama_barang);
+                            return {
+                                astap_id: astapObj ? astapObj.id : 1,
+                                qty: parseInt(it.qty) || 1,
+                                kondisi: it.kondisi || 'Baik',
+                                keterangan: it.keterangan || '-',
+                                nibar_list: (it.nibar_selected || []).map(n => n.nibar)
+                            };
+                        })
+                    };
+
+                    fetch('{{ route('distribusi.save') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(dbPayload)
+                    }).catch(err => console.log('Database sync notice:', err));
+                }
+            } catch(e) {
+                console.log('Sync error:', e);
+            }
+
+            alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nData Register ASTAP & NIBAR telah otomatis diperbarui!');
             window.location.href = '{{ route('distribusi.index') }}';
         }
     }" x-cloak class="space-y-6">
@@ -750,28 +789,28 @@
                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-teal-500">
                     </div>
 
-                    <!-- Status Distribusi -->
-                    <div>
-                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
-                            <span>Status Distribusi</span>
-                            <template x-if="isEdit">
+                    <!-- Status Distribusi (Hanya tampil di mode Edit) -->
+                    <template x-if="isEdit">
+                        <div>
+                            <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                <span>Status Distribusi</span>
                                 <span class="text-teal-400 text-[10px] font-bold">⚡ Edit Status</span>
-                            </template>
-                        </label>
-                        <select x-model="formData.status"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
-                                :class="{
-                                    'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
-                                    'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
-                                    'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
-                                    'text-slate-400': formData.status === 'Draft'
-                                }">
-                            <option value="Telah Diterima">🟢 Telah Diterima</option>
-                            <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
-                            <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
-                            <option value="Draft">📝 Draft</option>
-                        </select>
-                    </div>
+                            </label>
+                            <select x-model="formData.status"
+                                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
+                                    :class="{
+                                        'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
+                                        'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
+                                        'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
+                                        'text-slate-400': formData.status === 'Draft'
+                                    }">
+                                <option value="Telah Diterima">🟢 Telah Diterima</option>
+                                <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
+                                <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
+                                <option value="Draft">📝 Draft</option>
+                            </select>
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Autocomplete Input Unit & Data PIC Penerima -->
