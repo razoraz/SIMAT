@@ -78,13 +78,8 @@ class DistribusiController extends Controller
                 ];
             });
 
-        // Hanya tampilkan NIBAR yang belum memiliki status penempatan (unit_id kosong & ruang_pemegang kosong)
-        $nibarList = AstapRegister::select('id', 'nibar', 'kode_108', 'unit_id', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->whereNull('unit_id')
-            ->where(function($q) {
-                $q->whereNull('ruang_pemegang')
-                  ->orWhere('ruang_pemegang', '');
-            })
+        $nibarList = AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
+            ->where('status_mutasi', 'Tersedia')
             ->orderBy('kode_108')
             ->orderBy('no_register_int')
             ->get()
@@ -93,7 +88,7 @@ class DistribusiController extends Controller
                     'id'      => $r->id,
                     'nibar'   => $r->nibar,
                     'kode'    => $r->kode_108,
-                    'ruang'   => $r->ruang_pemegang ?: 'Belum Ditempatkan',
+                    'ruang'   => $r->ruang_pemegang ?: '-',
                     'kondisi' => $r->kondisi,
                     'status'  => $r->status_mutasi,
                 ];
@@ -155,13 +150,8 @@ class DistribusiController extends Controller
                 ];
             });
 
-        // Hanya tampilkan NIBAR yang belum memiliki status penempatan (unit_id kosong & ruang_pemegang kosong)
-        $nibarList = AstapRegister::select('id', 'nibar', 'kode_108', 'unit_id', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->whereNull('unit_id')
-            ->where(function($q) {
-                $q->whereNull('ruang_pemegang')
-                  ->orWhere('ruang_pemegang', '');
-            })
+        $nibarList = AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
+            ->where('status_mutasi', 'Tersedia')
             ->orderBy('kode_108')
             ->orderBy('no_register_int')
             ->get()
@@ -170,7 +160,7 @@ class DistribusiController extends Controller
                     'id'      => $r->id,
                     'nibar'   => $r->nibar,
                     'kode'    => $r->kode_108,
-                    'ruang'   => $r->ruang_pemegang ?: 'Belum Ditempatkan',
+                    'ruang'   => $r->ruang_pemegang ?: '-',
                     'kondisi' => $r->kondisi,
                     'status'  => $r->status_mutasi,
                 ];
