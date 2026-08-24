@@ -20,7 +20,11 @@ class JenisAstap extends Model
      */
     public static function getNested108(): array
     {
-        $all = self::orderBy('jenis')
+        $all = self::whereNotNull('jenis')
+            ->where('jenis', '!=', '')
+            ->whereNotNull('nama_jenis')
+            ->where('nama_jenis', '!=', '')
+            ->orderBy('jenis')
             ->orderBy('sub_rincian_objek')
             ->orderBy('sub_sub_rincian_objek')
             ->get();
@@ -31,16 +35,26 @@ class JenisAstap extends Model
 
         return $all->groupBy('jenis')->map(function ($items, $jenisKode) {
             $firstItem = $items->first();
-            $namaJenis = $firstItem->nama_jenis;
+            $namaJenis = trim($firstItem->nama_jenis ?? '');
+
+            if (empty($jenisKode) || empty($namaJenis)) {
+                return null;
+            }
 
             $subRincians = $items->groupBy('sub_rincian_objek')->map(function ($subItems, $subKode) {
                 $firstSub = $subItems->first();
-                $namaSub = $firstSub->uraian_sub_rincian;
+                $namaSub = trim($firstSub->uraian_sub_rincian ?? '');
 
-                $subSubRincians = $subItems->map(function ($item) {
+                if (empty($subKode) || empty($namaSub)) {
+                    return null;
+                }
+
+                $subSubRincians = $subItems->filter(function ($item) {
+                    return !empty($item->sub_sub_rincian_objek) && !empty(trim($item->uraian_sub_sub_rincian ?? ''));
+                })->map(function ($item) {
                     return [
                         'kode' => $item->sub_sub_rincian_objek,
-                        'nama' => $item->uraian_sub_sub_rincian,
+                        'nama' => trim($item->uraian_sub_sub_rincian),
                     ];
                 })->values()->toArray();
 
@@ -49,13 +63,13 @@ class JenisAstap extends Model
                     'nama' => $namaSub,
                     'subSubRincian' => $subSubRincians,
                 ];
-            })->values()->toArray();
+            })->filter()->values()->toArray();
 
             return [
                 'kode' => $jenisKode,
                 'nama' => $namaJenis,
                 'subRincian' => $subRincians,
             ];
-        })->values()->toArray();
+        })->filter()->values()->toArray();
     }
 }
