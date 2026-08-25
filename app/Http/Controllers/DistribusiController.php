@@ -78,19 +78,20 @@ class DistribusiController extends Controller
                 ];
             });
 
-        $nibarList = AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->where('status_mutasi', 'Tersedia')
-            ->orderBy('kode_108')
+        $nibarList = AstapRegister::with('astap')
+            ->orderBy('astap_id')
             ->orderBy('no_register_int')
             ->get()
             ->map(function($r) {
                 return [
-                    'id'      => $r->id,
-                    'nibar'   => $r->nibar,
-                    'kode'    => $r->kode_108,
-                    'ruang'   => $r->ruang_pemegang ?: '-',
-                    'kondisi' => $r->kondisi,
-                    'status'  => $r->status_mutasi,
+                    'id'          => $r->id,
+                    'astap_id'    => $r->astap_id,
+                    'nibar'       => $r->nibar ?: $r->no_register,
+                    'kode'        => $r->astap ? $r->astap->kode_108 : '',
+                    'nama_barang' => $r->astap ? $r->astap->nama_barang : '',
+                    'ruang'       => $r->ruang_pemegang ?: 'Belum Ditempatkan / Di Gudang',
+                    'kondisi'     => $r->kondisi ?: 'Baik',
+                    'status'      => $r->status_mutasi ?: 'Tersedia',
                 ];
             });
 
@@ -150,23 +151,26 @@ class DistribusiController extends Controller
                 ];
             });
 
-        $nibarList = AstapRegister::select('id', 'nibar', 'kode_108', 'ruang_pemegang', 'kondisi', 'status_mutasi')
-            ->where('status_mutasi', 'Tersedia')
-            ->orderBy('kode_108')
+        $nibarList = AstapRegister::with('astap')
+            ->orderBy('astap_id')
             ->orderBy('no_register_int')
             ->get()
             ->map(function($r) {
                 return [
-                    'id'      => $r->id,
-                    'nibar'   => $r->nibar,
-                    'kode'    => $r->kode_108,
-                    'ruang'   => $r->ruang_pemegang ?: '-',
-                    'kondisi' => $r->kondisi,
-                    'status'  => $r->status_mutasi,
+                    'id'          => $r->id,
+                    'astap_id'    => $r->astap_id,
+                    'nibar'       => $r->nibar ?: $r->no_register,
+                    'kode'        => $r->astap ? $r->astap->kode_108 : '',
+                    'nama_barang' => $r->astap ? $r->astap->nama_barang : '',
+                    'ruang'       => $r->ruang_pemegang ?: 'Belum Ditempatkan / Di Gudang',
+                    'kondisi'     => $r->kondisi ?: 'Baik',
+                    'status'      => $r->status_mutasi ?: 'Tersedia',
                 ];
             });
 
-        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'id'));
+        $distribusiData = Distribusi::with(['unit', 'items.astap.jenisAstap'])->find($id);
+
+        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'id', 'distribusiData'));
     }
 
     /**

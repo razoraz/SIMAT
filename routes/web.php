@@ -138,11 +138,12 @@ Route::middleware('auth')->group(function () {
                     'registers' => $a->registers ? $a->registers->map(function($r) {
                         return [
                             'id' => $r->id,
-                            'no_register' => $r->no_register,
+                            'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
                             'ruang_pemegang' => $r->ruang_pemegang,
                             'kondisi' => $r->kondisi,
-                            'status_mutasi' => $r->status_mutasi
+                            'status_mutasi' => $r->status_mutasi,
+                            'qr_code_path' => $r->qr_code_path
                         ];
                     })->values() : []
                 ];
@@ -218,13 +219,96 @@ Route::middleware('auth')->group(function () {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+            $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->find($id);
             return view('pages.form_astap', [
                 'id' => $id, 
+                'astap' => $astap,
                 'dbMaster108' => $dbMaster108,
                 'dbJenisPengadaans' => $dbJenisPengadaans,
                 'dbRekeningBelanjas' => $dbRekeningBelanjas
             ]);
         })->name('astap.edit');
+
+        Route::post('/astap', function (\Illuminate\Http\Request $request) {
+            $data = $request->all();
+            
+            $jenisPengadaanId = $data['jenis_pengadaan_id'] ?? null;
+            if (!$jenisPengadaanId && !empty($data['sub_kegiatan_kode'])) {
+                $jenisPengadaanId = \App\Models\JenisPengadaan::where('sub_kegiatan_kode', 'LIKE', '%'.$data['sub_kegiatan_kode'].'%')->value('id');
+            }
+            $rekeningBelanjaId = null;
+            if (!empty($data['kode_rek'])) {
+                $rekeningBelanjaId = \App\Models\RekeningBelanja::where('kode_rek', $data['kode_rek'])->value('id');
+            }
+            $jenisAstapId = null;
+            if (!empty($data['sub_rincian_kode'])) {
+                $jenisAstapId = \App\Models\JenisAstap::where('sub_sub_rincian_objek', $data['sub_rincian_kode'])->value('id')
+                    ?? \App\Models\JenisAstap::where('jenis', substr($data['sub_rincian_kode'], 0, 5))->value('id');
+            }
+
+            $namaBarang = $data['tanah_nama_barang'] ?? ($data['mesin_nama_barang'] ?? ($data['gedung_nama_barang'] ?? ($data['jaringan_nama_barang'] ?? ($data['lainnya_nama_barang'] ?? ($data['atb_nama_barang'] ?? ($data['kdp_nama_barang'] ?? ($data['nama_barang'] ?? 'Aset Baru')))))));
+
+            $astap = \App\Models\Astap::create([
+                'jenis_pengadaan_id' => $jenisPengadaanId,
+                'rekening_belanja_id' => $rekeningBelanjaId,
+                'jenis_astap_id' => $jenisAstapId,
+                'nama_barang' => $namaBarang,
+                'tahun_perolehan' => $data['tahun_perolehan'] ?? date('Y'),
+                'jumlah_volume' => $data['jumlah_volume'] ?? 1,
+                'satuan' => $data['satuan'] ?? 'Unit',
+                'harga_satuan' => $data['harga_satuan'] ?? 0,
+                'total_realisasi' => $data['jumlah_realisasi'] ?? ($data['total_realisasi'] ?? 0),
+                'biaya_administrasi_proyek' => $data['biaya_administrasi_proyek'] ?? 0,
+                'is_extracomtable' => !empty($data['is_extracomtable']),
+                'spk_nomor' => $data['spk_nomor'] ?? null,
+                'spk_tanggal' => $data['spk_tanggal'] ?? null,
+                'surat_pesanan_nomor' => $data['surat_pesanan_nomor'] ?? null,
+                'surat_pesanan_tanggal' => $data['surat_pesanan_tanggal'] ?? null,
+                'kwitansi_nomor' => $data['kwitansi_nomor'] ?? null,
+                'kwitansi_tanggal' => $data['kwitansi_tanggal'] ?? null,
+                'faktur_nomor' => $data['faktur_nomor'] ?? null,
+                'faktur_tanggal' => $data['faktur_tanggal'] ?? null,
+                'keterangan_tambahan' => $data['keterangan'] ?? ($data['keterangan_tambahan'] ?? null),
+                'user_id' => auth()->id()
+            ]);
+
+            $vol = (int) ($data['jumlah_volume'] ?? 1);
+            $kode108Clean = str_replace('.', '', $astap->kode_108 ?: '132000000000');
+            for ($i = 1; $i <= max(1, $vol); $i++) {
+                $noRegStr = str_pad($i, 7, '0', STR_PAD_LEFT);
+                $nibar = "1201351102000000280000{$astap->tahun_perolehan}{$kode108Clean}{$noRegStr}";
+                $qrPath = "/scan/{$nibar}";
+                \App\Models\AstapRegister::create([
+                    'astap_id' => $astap->id,
+                    'tahun_perolehan' => $astap->tahun_perolehan,
+                    'no_register_int' => $i,
+                    'no_register' => $nibar,
+                    'nibar' => $nibar,
+                    'qr_code_path' => $qrPath,
+                    'ruang_pemegang' => $data['ruang_pemegang'] ?? null,
+                    'kondisi' => in_array($data['kondisi'] ?? '', ['Baik', 'Rusak Ringan', 'Rusak Berat']) ? $data['kondisi'] : 'Baik',
+                    'status' => 'Tersedia'
+                ]);
+            }
+
+            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil disimpan ke database SIMAT-RK!']);
+        })->name('astap.store');
+
+        Route::put('/astap/{id}', function (\Illuminate\Http\Request $request, $id) {
+            $astap = \App\Models\Astap::find($id);
+            if (!$astap) {
+                return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
+            }
+
+            $data = $request->all();
+            if (!empty($data['nama_barang'])) $astap->nama_barang = $data['nama_barang'];
+            if (!empty($data['tahun_perolehan'])) $astap->tahun_perolehan = $data['tahun_perolehan'];
+            if (isset($data['jumlah_realisasi'])) $astap->total_realisasi = $data['jumlah_realisasi'];
+            if (!empty($data['keterangan'])) $astap->keterangan_tambahan = $data['keterangan'];
+            $astap->save();
+
+            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil diperbarui!']);
+        })->name('astap.update');
 
         Route::delete('/astap/{id}', function ($id) {
             $astap = \App\Models\Astap::find($id);
@@ -234,6 +318,31 @@ Route::middleware('auth')->group(function () {
             }
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dihapus.']);
         })->name('astap.destroy');
+
+        // Route Update & Delete Register ASTAP (NIBAR Per-Unit)
+        Route::put('/astap-register/{id}', function (\Illuminate\Http\Request $request, $id) {
+            $reg = \App\Models\AstapRegister::find($id);
+            if (!$reg) {
+                return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
+            }
+            $data = $request->all();
+            if (isset($data['ruang_pemegang'])) $reg->ruang_pemegang = $data['ruang_pemegang'];
+            if (isset($data['kondisi']) && in_array($data['kondisi'], ['Baik', 'Rusak Ringan', 'Rusak Berat'])) {
+                $reg->kondisi = $data['kondisi'];
+            }
+            if (isset($data['unit_id'])) $reg->unit_id = $data['unit_id'];
+            $reg->save();
+
+            return response()->json(['success' => true, 'message' => 'Data register NIBAR berhasil diperbarui!']);
+        })->name('astap_register.update');
+
+        Route::delete('/astap-register/{id}', function ($id) {
+            $reg = \App\Models\AstapRegister::find($id);
+            if ($reg) {
+                $reg->delete();
+            }
+            return response()->json(['success' => true, 'message' => 'Unit register berhasil dihapus.']);
+        })->name('astap_register.destroy');
 
         // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
         Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');

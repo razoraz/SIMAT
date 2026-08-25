@@ -61,4 +61,23 @@ class Astap extends Model
     {
         return $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
     }
+
+    public function getCategoryAttribute(): string
+    {
+        if ($this->is_extracomtable) {
+            return 'EXTRACOM';
+        }
+
+        $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
+
+        if (str_starts_with($jenisKode, '1.3.1')) return 'KIB A';
+        if (str_starts_with($jenisKode, '1.3.2')) return 'KIB B';
+        if (str_starts_with($jenisKode, '1.3.3')) return 'KIB C';
+        if (str_starts_with($jenisKode, '1.3.4')) return 'KIB D';
+        if (str_starts_with($jenisKode, '1.3.5')) return 'KIB E';
+        if (str_starts_with($jenisKode, '1.3.6')) return 'KIB F';
+        if (str_starts_with($jenisKode, '1.5.3')) return 'ATB';
+
+        return 'KIB B';
+    }
 }

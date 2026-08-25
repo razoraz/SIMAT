@@ -1,3 +1,7 @@
+<script>
+    window.editingDistribusi = {{ Js::from($distribusiData ?? null) }};
+</script>
+
 <x-layout :title="request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP - SIMAT-RK' : 'Input Distribusi Baru - SIMAT-RK'">
     @section('page-title', request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP' : 'Input Distribusi Baru')
     @section('breadcrumb', request()->routeIs('distribusi.edit') ? 'Master Utama / Distribusi ASTAP / Ubah' : 'Master Utama / Distribusi ASTAP / Input Baru')
@@ -99,8 +103,55 @@
                 });
             }
 
-            // Jika dalam mode edit, muat data dari localStorage
-            if (this.isEdit && this.editId) {
+            // Jika dalam mode edit, muat data dari database (window.editingDistribusi) atau localStorage
+            if (this.isEdit) {
+                const dbFound = window.editingDistribusi || null;
+                if (dbFound) {
+                    const uObj = this.unitList.find(u => u.id === dbFound.unit_id || u.nama === (dbFound.unit ? dbFound.unit.nama : ''));
+                    const tglStr = dbFound.tanggal_distribusi ? String(dbFound.tanggal_distribusi).substring(0, 10) : new Date().toISOString().split('T')[0];
+                    this.formData = {
+                        kode: dbFound.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100)),
+                        bast_nomor: dbFound.bast_nomor || '',
+                        status: dbFound.status || 'Draft',
+                        tujuan: dbFound.unit ? dbFound.unit.nama : (uObj ? uObj.nama : ''),
+                        unit_id: dbFound.unit_id || (uObj ? uObj.id : null),
+                        tgl: tglStr,
+                        penerima: uObj ? (uObj.kepala || '') : '',
+                        penerima_nip: uObj ? (uObj.nip || '') : '',
+                        penerima_jabatan: uObj ? ('Kepala / Penanggung Jawab ' + uObj.nama) : '',
+                        keterangan: dbFound.keterangan || '',
+                        items: (dbFound.items && dbFound.items.length > 0) ? dbFound.items.map((it, idx) => {
+                            const astapObj = it.astap || null;
+                            const nibarArr = Array.isArray(it.nibar_list) ? it.nibar_list : [];
+                            const nibarSelectedObj = nibarArr.map(nStr => {
+                                const regMatch = (this.nibarList || []).find(nr => nr.nibar === nStr);
+                                return {
+                                    nibar: nStr,
+                                    ruang: regMatch ? regMatch.ruang : 'Belum Ditempatkan / Di Gudang Aset',
+                                    kondisi: regMatch ? regMatch.kondisi : (it.kondisi || 'Baik')
+                                };
+                            });
+                            return {
+                                id: Date.now() + idx,
+                                astap_id: it.astap_id || (astapObj ? astapObj.id : null),
+                                jenis_astap_kode: astapObj && astapObj.jenis_astap ? astapObj.jenis_astap.jenis : '1.3.2',
+                                jenis_astap_nama: astapObj && astapObj.jenis_astap ? astapObj.jenis_astap.nama_jenis : 'PERALATAN DAN MESIN',
+                                nama_barang: astapObj ? astapObj.nama_barang : (it.nama_barang || ''),
+                                kode_barang: astapObj ? astapObj.kode_108 : (it.kode_barang || ''),
+                                merk_type: '',
+                                qty: it.qty || 1,
+                                satuan: astapObj ? (astapObj.satuan || 'Unit') : 'Unit',
+                                kondisi: it.kondisi || 'Baik',
+                                keterangan: it.keterangan || '',
+                                nibar_selected: nibarSelectedObj
+                            };
+                        }) : []
+                    };
+                    this.unitSearch = this.formData.tujuan;
+                    this.selectedUnitObj = uObj;
+                    return;
+                }
+
                 let storedList = [];
                 try {
                     const stored = localStorage.getItem('simat_distribusis');
@@ -157,30 +208,7 @@
                                 keterangan: it.keterangan || '',
                                 nibar_selected: it.nibar_selected || []
                             };
-                        }) : [
-                            {
-                                id: Date.now(),
-                                jenis_astap_kode: '',
-                                jenis_astap_nama: 'PERALATAN DAN MESIN',
-                                nama_barang: found.nama || '',
-                                kode_barang: (() => {
-                                    if (!found.nama) return '';
-                                    const q = found.nama.toLowerCase().trim();
-                                    const match = (this.katalogAstap || []).find(k => 
-                                        (k.nama && k.nama.toLowerCase().trim() === q) ||
-                                        (k.nama && k.nama.toLowerCase().includes(q)) ||
-                                        (q.includes(k.nama ? k.nama.toLowerCase() : ''))
-                                    );
-                                    return match ? match.kode : '';
-                                })(),
-                                merk_type: '',
-                                qty: 1,
-                                satuan: 'Unit',
-                                kondisi: 'Baik',
-                                keterangan: '',
-                                nibar_selected: []
-                            }
-                        ]
+                        }) : []
                     };
                     this.unitSearch = this.formData.tujuan;
                     this.selectedUnitObj = this.unitList.find(u => u.nama === this.formData.tujuan) || null;
@@ -261,14 +289,24 @@
             return '';
         },
 
+        // Logika mencocokkan NIBAR dengan item barang
+        isNibarMatch(n, item) {
+            if (!item || !n) return false;
+            if (item.astap_id && n.astap_id && String(item.astap_id) === String(n.astap_id)) return true;
+            const itemKode = this.getItemKode(item);
+            if (itemKode && n.kode && itemKode.trim() === n.kode.trim()) return true;
+            if (item.nama_barang && n.nama_barang) {
+                const iNama = item.nama_barang.toLowerCase().trim();
+                const nNama = n.nama_barang.toLowerCase().trim();
+                if (iNama === nNama || iNama.includes(nNama) || nNama.includes(iNama)) return true;
+            }
+            return false;
+        },
+
         // Hitung total NIBAR yang terdaftar di database untuk barang ini (Khusus status_mutasi: Tersedia)
         getMatchingNibarCount(item) {
-            const kode = this.getItemKode(item);
-            if (!kode) return 0;
-            return (this.nibarList || []).filter(n => 
-                n.kode === kode && 
-                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
-            ).length;
+            if (!item) return 0;
+            return (this.nibarList || []).filter(n => this.isNibarMatch(n, item)).length;
         },
 
         // Cek apakah data NIBAR kosong untuk barang yang dipilih
@@ -277,17 +315,15 @@
             return this.getMatchingNibarCount(item) === 0;
         },
 
-        // Filter NIBAR berdasarkan kode_barang (kode_108) item yang dipilih (Khusus status_mutasi: Tersedia)
+        // Filter NIBAR berdasarkan barang yang dipilih
         getFilteredNibar(item, query) {
-            const kode = this.getItemKode(item);
-            if (!kode) return [];
-            let list = (this.nibarList || []).filter(n => 
-                n.kode === kode && 
-                (!n.status || n.status.toLowerCase().trim() === 'tersedia')
-            );
+            if (!item) return [];
+            let list = (this.nibarList || []).filter(n => this.isNibarMatch(n, item));
+            
             // Exclude yang sudah dipilih di item ini
             const chosen = (item.nibar_selected || []).map(n => n.nibar);
             list = list.filter(n => !chosen.includes(n.nibar));
+            
             if (query && query.trim() !== '') {
                 const q = query.toLowerCase().trim();
                 list = list.filter(n =>
@@ -296,7 +332,7 @@
                     (n.kondisi || '').toLowerCase().includes(q)
                 );
             }
-            return list.slice(0, 20);
+            return list;
         },
 
         // Pilih NIBAR untuk item (max sesuai qty)

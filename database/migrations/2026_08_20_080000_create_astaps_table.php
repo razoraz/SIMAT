@@ -19,8 +19,7 @@ return new class extends Migration
             $table->foreignId('rekening_belanja_id')->nullable()->constrained('rekening_belanjas')->nullOnDelete();
             $table->foreignId('jenis_astap_id')->nullable()->constrained('jenis_astaps')->nullOnDelete();
 
-            // Klasifikasi KIB & Identitas Barang
-            $table->string('category', 25); // 'KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E', 'KIB F', 'ATB', 'EXTRACOM'
+            // Identitas & Nama Barang
             $table->string('nama_barang', 255);
             $table->year('tahun_perolehan');
             

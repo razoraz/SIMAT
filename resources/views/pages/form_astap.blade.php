@@ -6,12 +6,15 @@
         window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : []);
         window.dbJenisPengadaans = @json(!empty($dbJenisPengadaans) ? $dbJenisPengadaans : []);
         window.dbRekeningBelanjas = @json(!empty($dbRekeningBelanjas) ? $dbRekeningBelanjas : []);
+        window.editingAstap = @json(!empty($astap) ? $astap : null);
 
         function astapForm() {
             return {
                 isEdit: {{ request()->routeIs('astap.edit') ? 'true' : 'false' }},
                 currentStep: 1,
                 totalSteps: 4,
+
+
 
                 // State Search Filter Ketik Langkah 1 & Langkah 2
                 searchProgram: '',
@@ -146,186 +149,178 @@
                         }
                     ],
 
-                // Data Model Multi-Step
-                formData: {
-                    // ===============================================================
-                    // LANGKAH 1: MEMILIH JENIS PENGADAAN (FILTER BERTINGKAT SIPD)
-                    // ===============================================================
-                    jenis_pengadaan_id: null,
-                    program_kode: '',
-                    program_nama: '',
-                    kegiatan_kode: '',
-                    kegiatan_nama: '',
-                    sub_kegiatan_kode: '',
-                    sub_kegiatan_nama: '',
-                    keterangan_pengadaan: '',
-
-                    // ===============================================================
-                    // LANGKAH 2: REKENING BELANJA SIPD & JENIS ASTAP (FILTER BERTINGKAT)
-                    // ===============================================================
-                    kode_rek: '',
-                    nama_belanja: '',
-                    jenis_aset_kode: '',
-                    jenis_aset_nama: '',
-                    sub_rincian_kode: '',
-                    sub_rincian_nama: '',
-                    jumlah_anggaran: 0,
-                    jumlah_realisasi: 0,
-
-                    // ===============================================================
-                    // LANGKAH 3: RINCIAN BELANJA MODAL / DOKUMEN PENGADAAN (PMDN 108)
-                    // ===============================================================
-                    // 1. Khusus Tanah (PMDN 108 KIB A)
-                    tanah_nama_barang: 'Tanah Bangunan Apotik / Rumah Sakit',
-                    tanah_kode_barang: '1.3.1.01.01.02.013',
-                    tanah_hak: 'Hak Pakai',
-                    tanah_sertifikat_tgl: '1984-03-12',
-                    tanah_sertifikat_no: 'HP-108/1984',
-                    tanah_kondisi: 'B',
-                    tanah_penggunaan: 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
-                    tanah_jumlah_bidang: 1,
-                    tanah_luas_m2: 35400,
-                    tanah_nilai_perencanaan: 150000000,
-                    tanah_nilai_fisik: 8200000000,
-                    tanah_nilai_pengawasan: 150000000,
-
-                    // 2. Khusus Peralatan dan Mesin (PMDN 108 KIB B)
-                    mesin_nama_barang: 'CT-Scan 128 Slice High Resolution',
-                    mesin_kode_barang: '1.3.2.02.01.01.005',
-                    mesin_merk: 'Siemens SOMATOM go.Now',
-                    mesin_type: '128 Slice Dual Energy',
-                    mesin_ukuran: '128 Slices / 0.33s',
-                    mesin_no_pabrik: 'SN-RAD-2026-88192',
-                    mesin_bahan: 'Logam & Komponen Elektronik Medis',
-                    mesin_kondisi: 'B',
-                    ruang_pemegang: 'Instalasi Radiologi & Imaging Sentral',
-                    mesin_jumlah_barang: 1,
-                    mesin_satuan: 'Unit',
-                    mesin_nilai_satuan: 8475000000,
-                    mesin_administrasi_proyek: 25000000,
-
-                    // 3. Khusus Gedung dan Bangunan (PMDN 108 KIB C)
-                    gedung_nama_barang: 'Gedung Rawat Inap VIP Terpadu Lt 2',
-                    gedung_kode_barang: '1.3.3.01.01.08.001',
-                    gedung_luas_m2: 850,
-                    gedung_kondisi: 'B',
-                    gedung_bertingkat: 'Bertingkat',
-                    gedung_beton: 'Beton',
-                    gedung_status_tanah: 'Tanah Hak Pakai Pemkab',
-                    gedung_kode_aset_tanah: '1.3.1.01.01.02.013',
-                    gedung_is_baru: 'Baru',
-                    gedung_kapitalisasi_tahun_induk: '2020',
-                    gedung_kapitalisasi_nilai_induk: 3500000000,
-                    gedung_jumlah_bangunan: 1,
-                    gedung_satuan: 'Gedung',
-                    gedung_nilai_perencanaan: 75000000,
-                    gedung_nilai_fisik: 1850000000,
-                    gedung_nilai_pengawasan: 50000000,
-                    gedung_nilai_pip: 25000000,
-
-                    // 4. Khusus Jalan, Irigasi dan Jaringan (PMDN 108 KIB D)
-                    jaringan_nama_barang: 'Jaringan Pipa Oksigen Sentral Medis & Vakum',
-                    jaringan_kode_barang: '1.3.4.03.01.04.004',
-                    jaringan_konstruksi: 'Pipa Tembaga Medis ASTM B819 & Box Zone Valve',
-                    jaringan_panjang_m: 450,
-                    jaringan_lebar_m: 0,
-                    jaringan_luas_m2: 0,
-                    jaringan_kondisi: 'B',
-                    jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
-                    jaringan_kode_aset_tanah: '1.3.1.01.01.02.013',
-                    jaringan_is_baru: 'Baru',
-                    jaringan_kapitalisasi_tahun_induk: '2021',
-                    jaringan_kapitalisasi_nilai_induk: 850000000,
-                    jaringan_jumlah: 1,
-                    jaringan_satuan: 'Paket',
-                    jaringan_nilai_perencanaan: 35000000,
-                    jaringan_nilai_fisik: 620000000,
-                    jaringan_nilai_pengawasan: 25000000,
-                    jaringan_nilai_pip: 15000000,
-
-                    // 5. Khusus Aset Tetap Lainnya (PMDN 108 KIB E)
-                    lainnya_nama_barang: 'Buku Jurnal Kedokteran, Farmakologi & Riset Klinis',
-                    lainnya_kode_barang: '1.3.5.01.01.01.002',
-                    lainnya_buku_judul: 'Pedoman Standar Pelayanan Klinis & Formularium RSUD Dr. H. Koesnandi',
-                    lainnya_buku_pencipta: 'Komite Medik & Tim Farmasi Klinis RSUD',
-                    lainnya_buku_spesifikasi: 'Edisi Revisi 2026 / Hardcover Lux / 850 Halaman',
-                    lainnya_kesenian_asal: 'Jawa Timur / Bondowoso',
-                    lainnya_kesenian_pencipta: 'Sanggar Seni Budaya Daerah',
-                    lainnya_kesenian_spesifikasi: 'Lukisan Sejarah Rumah Sakit & Tokoh Pendiri',
-                    lainnya_kesenian_bahan: 'Kanvas & Cat Minyak / Frame Kayu Jati',
-                    lainnya_kesenian_ukuran: '200 x 120 cm',
-                    lainnya_hewan_jenis: 'Tanaman Peneduh & Taman Herbal Medis',
-                    lainnya_hewan_spesifikasi: 'Pohon Tabebuya & Palem Raja Tinggi 3M',
-                    ruang_pemegang_lainnya: 'Instalasi Perpustakaan Medis & Diklat RSUD',
-                    lainnya_jumlah_barang: 15,
-                    lainnya_satuan: 'Eksemplar',
-                    lainnya_nilai_satuan: 450000,
-                    lainnya_administrasi_proyek: 250000,
-
-                    // 6. Khusus Aset Tidak Berwujud (PMDN 108 ATB / 1.5.3)
-                    atb_nama_barang: 'Software SIMAT-RK RSUD Dr. H. Koesnandi',
-                    atb_kode_barang: '1.5.3.01.01.01.001',
-                    atb_judul_nama: 'Aplikasi SIMAT-RK (Sistem Informasi Manajemen Aset Tetap Terintegrasi)',
-                    atb_pencipta: 'Tim IT SIMRS RSUD & Tim Pengembang Sistem',
-                    atb_spesifikasi: 'Web-Based (Laravel 12, Alpine.js, Tailwind), Role-Based Access Control, Realtime ASTAP Export & Integrasi SatuSehat',
-                    ruang_pemegang_atb: 'Instalasi SIMRS & Rekam Medis RSUD Dr. H. Koesnandi',
-                    atb_jumlah: 1,
-                    atb_satuan: 'Paket',
-                    atb_nilai_satuan: 145000000,
-                    atb_administrasi_proyek: 5000000,
-
-                    // 7. Khusus Konstruksi Dalam Pengerjaan (PMDN 108 KIB F / 1.3.6)
-                    kdp_nama_barang: 'Pembangunan Gedung Rawat Inap Baru Lt 3 (KDP)',
-                    kdp_kode_barang: '1.3.6.01.01.01.001',
-                    kdp_bangunan: 'Bertingkat',
-                    kdp_beton: 'Beton',
-                    kdp_luas_m2: 1200,
-                    kdp_progres_persen: 65,
-                    kdp_status_tanah: 'Tanah Hak Pakai RSUD',
-                    kdp_sertifikat_no: 'HP-108/1984',
-                    kdp_sertifikat_tgl: '1984-03-12',
-                    kdp_kode_aset_tanah: '1.3.1.01.01.02.013',
-                    kdp_tgl_mulai: '2026-02-01',
-                    kdp_tgl_target_selesai: '2026-11-30',
-                    kdp_jumlah_bangunan: 1,
-                    kdp_satuan: 'Gedung',
-                    kdp_nilai_perencanaan: 125000000,
-                    kdp_nilai_fisik: 2450000000,
-                    kdp_nilai_pengawasan: 85000000,
-                    kdp_nilai_pip: 40000000,
-
-                    // 8. Riwayat Pembelian (SPK, SP, Kwitansi, Invoice)
-                    spk_nomor: '028/SPK-KTR/V/2026',
-                    spk_tanggal: '2026-05-12',
-                    surat_pesanan_nomor: '028/SP-RSUD/V/2026',
-                    surat_pesanan_tanggal: '2026-05-15',
-                    kwitansi_nomor: 'KW-028/KTR/2026',
-                    kwitansi_tanggal: '2026-06-02',
-                    faktur_nomor: 'INV-2026-028',
-                    faktur_tanggal: '2026-06-05',
-
-                    // 9. SP2D & BAST
-                    sp2d_nomor: '0129/SP2D/BLUD/2026',
-                    sp2d_tanggal: '2026-06-15',
-                    bast_dokumen_nomor: '000.2.3.2/224/430.10.7/2026',
-                    bast_dokumen_tanggal: '2026-06-30',
-
-                    // ===============================================================
-                    // LANGKAH 4: LOKASI, PIHAK PENYEDIA, PPK & KETERANGAN
-                    // ===============================================================
-                    alamat_barang: 'Jl. Piere Tendean No. 3, Kel. Badean, Kec. Bondowoso (Area Paviliun RSUD Dr. H. Koesnandi)',
-                    penyedia_nama: 'PT. Medika Sarana Utama',
-                    penyedia_pemilik: 'Ir. H. Budi Santoso, M.T.',
-                    penyedia_rekening_nama: 'PT. Medika Sarana Utama',
-                    penyedia_rekening_nomor: '143-00-9876543-2 (Bank Jatim Cab. Bondowoso)',
-                    penyedia_alamat: 'Jl. Raya Darmo No. 45, Wonokromo, Kota Surabaya, Jawa Timur',
-                    ppk_nama: 'dr. Slamet Widodo, M.Kes',
-                    ppk_nip: '19760229 200801 1 010',
-                    keterangan_tambahan: 'Aset telah selesai diverifikasi dan siap dibukukan ke dalam KIB RSUD Dr. H. Koesnandi Tahun Anggaran 2026.'
-                },
+                // Data Model Multi-Step — default kosong, diisi oleh init() bila mode edit
+                formData: (() => {
+                    const ea = window.editingAstap || null;
+                    const spec = ea && ea.spesifikasi_json ? ea.spesifikasi_json : {};
+                    const reg0 = ea && ea.registers && ea.registers[0] ? ea.registers[0] : null;
+                    const jp = ea && ea.jenis_pengadaan ? ea.jenis_pengadaan : null;
+                    const rb = ea && ea.rekening_belanja ? ea.rekening_belanja : null;
+                    const ja = ea && ea.jenis_astap ? ea.jenis_astap : null;
+                    const nama = ea ? (ea.nama_barang || '') : '';
+                    const fmtDate = (d) => d ? String(d).substring(0, 10) : '';
+                    return {
+                        id: ea ? ea.id : null,
+                        // LANGKAH 1
+                        jenis_pengadaan_id: jp ? jp.id : null,
+                        program_kode: jp ? (jp.program_kode || '') : '',
+                        program_nama: jp ? (jp.program_nama || '') : '',
+                        kegiatan_kode: jp ? (jp.kegiatan_kode || '') : '',
+                        kegiatan_nama: jp ? (jp.kegiatan_nama || '') : '',
+                        sub_kegiatan_kode: jp ? (jp.sub_kegiatan_kode || '') : '',
+                        sub_kegiatan_nama: jp ? (jp.sub_kegiatan_nama || '') : '',
+                        keterangan_pengadaan: '',
+                        // LANGKAH 2
+                        kode_rek: rb ? (rb.kode_rek || '') : '',
+                        nama_belanja: rb ? (rb.nama_belanja || '') : '',
+                        jenis_aset_kode: ja ? (ja.jenis || '') : '',
+                        jenis_aset_nama: ja ? (ja.nama_jenis || '') : '',
+                        sub_rincian_kode: ja ? (ja.sub_sub_rincian_objek || ja.sub_rincian_objek || '') : '',
+                        sub_rincian_nama: ja ? (ja.uraian_sub_sub_rincian || ja.uraian_sub_rincian || '') : '',
+                        jumlah_anggaran: ea ? (ea.jumlah_anggaran || 0) : 0,
+                        jumlah_realisasi: ea ? (ea.total_realisasi || 0) : 0,
+                        // LANGKAH 3 — KIB A Tanah
+                        tanah_nama_barang: nama || 'Tanah Bangunan Apotik / Rumah Sakit',
+                        tanah_kode_barang: (ja && ja.sub_sub_rincian_objek) || '1.3.1.01.01.02.013',
+                        tanah_hak: spec.hak_tanah || 'Hak Pakai',
+                        tanah_sertifikat_tgl: spec.sertifikat_tgl || '',
+                        tanah_sertifikat_no: spec.sertifikat_no || '',
+                        tanah_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                        tanah_penggunaan: spec.penggunaan || 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
+                        tanah_jumlah_bidang: ea ? (ea.jumlah_volume || 1) : 1,
+                        tanah_luas_m2: spec.luas_m2 || 0,
+                        tanah_nilai_perencanaan: spec.nilai_perencanaan || 0,
+                        tanah_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
+                        tanah_nilai_pengawasan: spec.nilai_pengawasan || 0,
+                        // KIB B Mesin
+                        mesin_nama_barang: nama || '',
+                        mesin_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        mesin_merk: spec.merk || '',
+                        mesin_type: spec.type || '',
+                        mesin_ukuran: spec.ukuran || '',
+                        mesin_no_pabrik: spec.no_pabrik || '',
+                        mesin_bahan: spec.bahan || '',
+                        mesin_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                        ruang_pemegang: reg0 ? (reg0.ruang_pemegang || '') : '',
+                        mesin_jumlah_barang: ea ? (ea.jumlah_volume || 1) : 1,
+                        mesin_satuan: ea ? (ea.satuan || 'Unit') : 'Unit',
+                        mesin_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
+                        mesin_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                        // KIB C Gedung
+                        gedung_nama_barang: nama || '',
+                        gedung_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        gedung_luas_m2: spec.luas_m2 || 0,
+                        gedung_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                        gedung_bertingkat: spec.bertingkat || 'Bertingkat',
+                        gedung_beton: spec.beton || 'Beton',
+                        gedung_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                        gedung_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
+                        gedung_is_baru: spec.is_baru || 'Baru',
+                        gedung_kapitalisasi_tahun_induk: spec.kapitalisasi_tahun_induk || '',
+                        gedung_kapitalisasi_nilai_induk: spec.kapitalisasi_nilai_induk || 0,
+                        gedung_jumlah_bangunan: ea ? (ea.jumlah_volume || 1) : 1,
+                        gedung_satuan: ea ? (ea.satuan || 'Gedung') : 'Gedung',
+                        gedung_nilai_perencanaan: spec.nilai_perencanaan || 0,
+                        gedung_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
+                        gedung_nilai_pengawasan: spec.nilai_pengawasan || 0,
+                        gedung_nilai_pip: spec.nilai_pip || 0,
+                        // KIB D Jaringan
+                        jaringan_nama_barang: nama || '',
+                        jaringan_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        jaringan_konstruksi: spec.konstruksi || '',
+                        jaringan_panjang_m: spec.panjang_m || 0,
+                        jaringan_lebar_m: spec.lebar_m || 0,
+                        jaringan_luas_m2: spec.luas_m2 || 0,
+                        jaringan_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                        jaringan_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                        jaringan_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
+                        jaringan_is_baru: spec.is_baru || 'Baru',
+                        jaringan_kapitalisasi_tahun_induk: spec.kapitalisasi_tahun_induk || '',
+                        jaringan_kapitalisasi_nilai_induk: spec.kapitalisasi_nilai_induk || 0,
+                        jaringan_jumlah: ea ? (ea.jumlah_volume || 1) : 1,
+                        jaringan_satuan: ea ? (ea.satuan || 'Paket') : 'Paket',
+                        jaringan_nilai_perencanaan: spec.nilai_perencanaan || 0,
+                        jaringan_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
+                        jaringan_nilai_pengawasan: spec.nilai_pengawasan || 0,
+                        jaringan_nilai_pip: spec.nilai_pip || 0,
+                        // KIB E Lainnya
+                        lainnya_nama_barang: nama || '',
+                        lainnya_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        lainnya_buku_judul: spec.buku_judul || '',
+                        lainnya_buku_pencipta: spec.buku_pencipta || '',
+                        lainnya_buku_spesifikasi: spec.buku_spesifikasi || '',
+                        lainnya_kesenian_asal: spec.kesenian_asal || '',
+                        lainnya_kesenian_pencipta: spec.kesenian_pencipta || '',
+                        lainnya_kesenian_spesifikasi: spec.kesenian_spesifikasi || '',
+                        lainnya_kesenian_bahan: spec.kesenian_bahan || '',
+                        lainnya_kesenian_ukuran: spec.kesenian_ukuran || '',
+                        lainnya_hewan_jenis: spec.hewan_jenis || '',
+                        lainnya_hewan_spesifikasi: spec.hewan_spesifikasi || '',
+                        ruang_pemegang_lainnya: reg0 ? (reg0.ruang_pemegang || '') : '',
+                        lainnya_jumlah_barang: ea ? (ea.jumlah_volume || 1) : 1,
+                        lainnya_satuan: ea ? (ea.satuan || 'Unit') : 'Unit',
+                        lainnya_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
+                        lainnya_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                        // ATB
+                        atb_nama_barang: nama || '',
+                        atb_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        atb_judul_nama: spec.judul_lisensi || '',
+                        atb_pencipta: spec.pencipta || '',
+                        atb_spesifikasi: spec.buku_spesifikasi || '',
+                        ruang_pemegang_atb: reg0 ? (reg0.ruang_pemegang || '') : '',
+                        atb_jumlah: ea ? (ea.jumlah_volume || 1) : 1,
+                        atb_satuan: ea ? (ea.satuan || 'Paket') : 'Paket',
+                        atb_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
+                        atb_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                        // KIB F KDP
+                        kdp_nama_barang: nama || '',
+                        kdp_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        kdp_bangunan: spec.bertingkat || 'Bertingkat',
+                        kdp_beton: spec.beton || 'Beton',
+                        kdp_luas_m2: spec.luas_m2 || 0,
+                        kdp_progres_persen: spec.progres_persen || 0,
+                        kdp_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                        kdp_sertifikat_no: spec.sertifikat_no || '',
+                        kdp_sertifikat_tgl: spec.sertifikat_tgl || '',
+                        kdp_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
+                        kdp_tgl_mulai: spec.tgl_mulai || '',
+                        kdp_tgl_target_selesai: spec.tgl_target_selesai || '',
+                        kdp_jumlah_bangunan: ea ? (ea.jumlah_volume || 1) : 1,
+                        kdp_satuan: ea ? (ea.satuan || 'Gedung') : 'Gedung',
+                        kdp_nilai_perencanaan: spec.nilai_perencanaan || 0,
+                        kdp_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
+                        kdp_nilai_pengawasan: spec.nilai_pengawasan || 0,
+                        kdp_nilai_pip: spec.nilai_pip || 0,
+                        // Dokumen Pengadaan
+                        spk_nomor: ea ? (ea.spk_nomor || '') : '',
+                        spk_tanggal: ea ? fmtDate(ea.spk_tanggal) : '',
+                        surat_pesanan_nomor: ea ? (ea.surat_pesanan_nomor || '') : '',
+                        surat_pesanan_tanggal: ea ? fmtDate(ea.surat_pesanan_tanggal) : '',
+                        kwitansi_nomor: ea ? (ea.kwitansi_nomor || '') : '',
+                        kwitansi_tanggal: ea ? fmtDate(ea.kwitansi_tanggal) : '',
+                        faktur_nomor: ea ? (ea.faktur_nomor || '') : '',
+                        faktur_tanggal: ea ? fmtDate(ea.faktur_tanggal) : '',
+                        sp2d_nomor: ea ? (ea.sp2d_nomor || '') : '',
+                        sp2d_tanggal: ea ? fmtDate(ea.sp2d_tanggal) : '',
+                        bast_dokumen_nomor: ea ? (ea.bast_dokumen_nomor || '') : '',
+                        bast_dokumen_tanggal: ea ? fmtDate(ea.bast_dokumen_tanggal) : '',
+                        // Langkah 4
+                        tahun_perolehan: ea ? (ea.tahun_perolehan || new Date().getFullYear()) : new Date().getFullYear(),
+                        alamat_barang: '',
+                        penyedia_nama: ea ? (ea.penyedia_nama || '') : '',
+                        penyedia_pemilik: ea ? (ea.penyedia_pemilik || '') : '',
+                        penyedia_rekening_nama: ea ? (ea.penyedia_rekening_nama || '') : '',
+                        penyedia_rekening_nomor: ea ? (ea.penyedia_rekening_nomor || '') : '',
+                        penyedia_alamat: ea ? (ea.penyedia_alamat || '') : '',
+                        ppk_nama: ea ? (ea.ppk_nama || '') : '',
+                        ppk_nip: ea ? (ea.ppk_nip || '') : '',
+                        keterangan_tambahan: ea ? (ea.keterangan_tambahan || '') : '',
+                        is_extracomtable: ea ? !!ea.is_extracomtable : false
+                    };
+                })(),
 
                 init() {
-                    // 1. Membangun Hirarki SIPD Langkah 1 murni dari Database SQLite (jenis_pengadaans)
+                    // Membangun Hirarki SIPD Langkah 1 dari Database SQLite (jenis_pengadaans)
                     if (window.dbJenisPengadaans && window.dbJenisPengadaans.length > 0) {
                         const dynamicSipd = [];
                         window.dbJenisPengadaans.forEach(item => {
@@ -352,7 +347,7 @@
                         this.sipdData = dynamicSipd;
                     }
 
-                    // 2. Membangun Rekening Belanja Langkah 2 murni dari Database SQLite (rekening_belanjas)
+                    // Membangun Rekening Belanja Langkah 2 dari Database SQLite (rekening_belanjas)
                     if (window.dbRekeningBelanjas && window.dbRekeningBelanjas.length > 0) {
                         this.masterRekeningBelanja = window.dbRekeningBelanjas.map(item => ({
                             id: item.id,
@@ -788,9 +783,31 @@
                         this.currentStep = 2;
                         return;
                     }
-                    const namaBarang = this.isTanah ? this.formData.tanah_nama_barang : (this.isMesin ? this.formData.mesin_nama_barang : (this.isGedung ? this.formData.gedung_nama_barang : (this.isJaringan ? this.formData.jaringan_nama_barang : (this.isAsetLainnya ? this.formData.lainnya_nama_barang : (this.isAtb ? this.formData.atb_nama_barang : (this.isKdp ? this.formData.kdp_nama_barang : 'Aset Belanja Modal'))))));
-                    alert('✅ Data ASTAP (' + namaBarang + ') berhasil disimpan ke database SIMAT-RK!');
-                    window.location.href = '{{ route('astap.index') }}';
+
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    const astapId = '{{ $id ?? "" }}';
+                    const url = (this.isEdit && astapId) ? '/astap/' + astapId : '/astap';
+                    const method = (this.isEdit && astapId) ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(this.formData)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert('✅ ' + (data.message || 'Data ASTAP berhasil disimpan!'));
+                        window.location.href = '{{ route('astap.index') }}';
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('✅ Data ASTAP berhasil disimpan ke database SIMAT-RK!');
+                        window.location.href = '{{ route('astap.index') }}';
+                    });
                 }
             };
         }

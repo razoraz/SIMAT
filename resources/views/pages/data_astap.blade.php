@@ -428,6 +428,28 @@
 
                 astaps: window.__simatAstaps || [],
 
+                // Hitung statistik kondisi dari registers suatu aset (Baik, Rusak Ringan, Rusak Berat)
+                getKondisiStats(item) {
+                    const regs = item.registers || [];
+                    const total = regs.length;
+                    if (total === 0) {
+                        const k = item.kondisi || 'Baik';
+                        return { total: 1, baik: k==='Baik'?1:0, rusak_ringan: k==='Rusak Ringan'?1:0, rusak_berat: k==='Rusak Berat'?1:0, pct_baik: k==='Baik'?100:0, pct_rr: k==='Rusak Ringan'?100:0, pct_rb: k==='Rusak Berat'?100:0, kondisi_dominan: k };
+                    }
+                    const baik = regs.filter(r => (r.kondisi||'Baik') === 'Baik').length;
+                    const rr   = regs.filter(r => r.kondisi === 'Rusak Ringan').length;
+                    const rb   = regs.filter(r => r.kondisi === 'Rusak Berat').length;
+                    const dominan = baik >= rr && baik >= rb ? 'Baik' : (rr >= rb ? 'Rusak Ringan' : 'Rusak Berat');
+                    return {
+                        total,
+                        baik, rusak_ringan: rr, rusak_berat: rb,
+                        pct_baik: Math.round(baik / total * 100),
+                        pct_rr:   Math.round(rr   / total * 100),
+                        pct_rb:   Math.round(rb   / total * 100),
+                        kondisi_dominan: dominan
+                    };
+                },
+
                 get filteredAstaps() {
                     const query = (this.searchQuery || '').toLowerCase();
                     return this.astaps.filter(item => {
@@ -438,7 +460,9 @@
                                             (item.merk || '').toLowerCase().includes(query);
                                             
                         const matchCategory = this.categoryFilter === 'all' || item.category === this.categoryFilter;
-                        const matchKondisi = this.kondisiFilter === 'all' || item.kondisi === this.kondisiFilter;
+                        // Filter kondisi berdasarkan kondisi dominan dari registers
+                        const stats = this.getKondisiStats(item);
+                        const matchKondisi = this.kondisiFilter === 'all' || stats.kondisi_dominan === this.kondisiFilter;
                         const matchAsalUsul = this.asalUsulFilter === 'all' || item.asal_usul === this.asalUsulFilter;
                         const matchTahun = this.tahunFilter === 'all' || item.tahun_perolehan === this.tahunFilter;
                         
@@ -551,6 +575,70 @@
                     exportAstapToExcel();
                 },
 
+                editRegister(reg) {
+                    if (!reg) return;
+                    const newRuang = prompt('✏️ UBAH LOKASI PENEMPATAN RUANGAN:\n\nUnit NIBAR: ' + (reg.nibar || reg.no_register) + '\n\nMasukkan nama ruangan / penempatan baru:', reg.ruang_pemegang || '');
+                    if (newRuang === null) return;
+                    
+                    const newKondisi = prompt('⚙️ UBAH KONDISI UNIT:\n\nPilihan kondisi valid: Baik, Rusak Ringan, Rusak Berat\n\nMasukkan kondisi baru:', reg.kondisi || 'Baik');
+                    if (newKondisi === null) return;
+
+                    const cleanedKondisi = newKondisi.trim();
+                    if (!['Baik', 'Rusak Ringan', 'Rusak Berat'].includes(cleanedKondisi)) {
+                        alert('⚠️ Kondisi tidak valid! Mohon masukkan salah satu: Baik, Rusak Ringan, atau Rusak Berat.');
+                        return;
+                    }
+
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch('/astap-register/' + reg.id, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ruang_pemegang: newRuang.trim(),
+                            kondisi: cleanedKondisi
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            reg.ruang_pemegang = newRuang.trim();
+                            reg.kondisi = cleanedKondisi;
+                            alert('✅ Data register unit berhasil diperbarui!');
+                        } else {
+                            alert('⚠️ Gagal memperbarui: ' + (data.message || 'Terjadi kesalahan'));
+                        }
+                    })
+                    .catch(err => console.log(err));
+                },
+
+                deleteRegister(reg) {
+                    if (!reg) return;
+                    if (confirm('⚠️ HAPUS REGISTER UNIT NIBAR?\n\nApakah Anda yakin ingin menghapus unit register:\nNIBAR: ' + (reg.nibar || reg.no_register) + '?')) {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        fetch('/astap-register/' + reg.id, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
+                                    this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
+                                }
+                                alert('✅ Unit register NIBAR berhasil dihapus.');
+                            }
+                        })
+                        .catch(err => console.log(err));
+                    }
+                },
+
                 deleteAstap(item) {
                     if (!item) return;
                     if (confirm('⚠️ HAPUS DATA ASTAP?\n\nApakah Anda yakin ingin menghapus data aset:\n"' + item.nama_barang + '" (' + item.kode_barang + ')?\n\nSemua data register NIBAR terkait juga akan dihapus secara permanen.')) {
@@ -568,8 +656,8 @@
                 },
 
                 openEdit(item) {
-                    this.selectedAstap = { ...item };
-                    this.showEditModal = true;
+                    if (!item || !item.id) return;
+                    window.location.href = '/astap/' + item.id + '/edit';
                 }
             };
         }
@@ -766,9 +854,9 @@
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi Aset</label>
                         <select x-model="kondisiFilter" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
                             <option value="all">Semua Kondisi</option>
-                            <option value="Baik">Baik (B)</option>
-                            <option value="Rusak Ringan">Rusak Ringan (RR)</option>
-                            <option value="Rusak Berat">Rusak Berat (RB)</option>
+                            <option value="Baik">Baik</option>
+                            <option value="Rusak Ringan">Rusak Ringan</option>
+                            <option value="Rusak Berat">Rusak Berat</option>
                             <option value="Dalam Renovasi">Dalam Renovasi</option>
                         </select>
                     </div>
@@ -849,24 +937,54 @@
                             <!-- Nilai Realisasi -->
                             <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.jumlah_realisasi"></td>
 
-                            <!-- Kondisi (Non-wrapping badge) -->
+                            <!-- Kondisi — progress bar persentase dari registers -->
                             <td class="px-4 py-4 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
-                                      :class="{
-                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.kondisi === 'Baik',
-                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': item.kondisi === 'Rusak Ringan',
-                                          'bg-rose-500/15 text-rose-300 border-rose-500/30': item.kondisi === 'Rusak Berat',
-                                          'bg-purple-500/15 text-purple-300 border-purple-500/30': item.kondisi === 'Dalam Renovasi'
-                                      }">
-                                    <span class="w-1.5 h-1.5 rounded-full mr-1.5"
-                                          :class="{
-                                              'bg-emerald-400': item.kondisi === 'Baik',
-                                              'bg-amber-400': item.kondisi === 'Rusak Ringan',
-                                              'bg-rose-400': item.kondisi === 'Rusak Berat',
-                                              'bg-purple-400': item.kondisi === 'Dalam Renovasi'
-                                          }"></span>
-                                    <span x-text="item.kondisi"></span>
-                                </span>
+                                <template x-data="{}" x-if="true">
+                                    <div x-data="{ st: getKondisiStats(item) }">
+                                        <!-- Jika hanya 1 unit / semua kondisi sama: tampilkan badge tunggal -->
+                                        <template x-if="st.total <= 1 || (st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-bold border shadow-sm select-none"
+                                                  :class="{
+                                                      'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': st.kondisi_dominan === 'Baik',
+                                                      'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Rusak Ringan',
+                                                      'bg-rose-500/15 text-rose-300 border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
+                                                  }">
+                                                <span class="w-1.5 h-1.5 rounded-full mr-1.5"
+                                                      :class="{
+                                                          'bg-emerald-400': st.kondisi_dominan === 'Baik',
+                                                          'bg-amber-400': st.kondisi_dominan === 'Rusak Ringan',
+                                                          'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
+                                                      }"></span>
+                                                <span x-text="st.kondisi_dominan + (st.total > 1 ? ' 100%' : '')"></span>
+                                            </span>
+                                        </template>
+                                        <!-- Jika multi kondisi: tampilkan progress bar breakdown -->
+                                        <template x-if="st.total > 1 && !(st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                            <div class="min-w-[130px]">
+                                                <!-- Mini progress bar gabungan -->
+                                                <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1.5">
+                                                    <div x-show="st.pct_baik > 0" class="bg-emerald-400 transition-all" :style="'width:' + st.pct_baik + '%'"></div>
+                                                    <div x-show="st.pct_rr > 0"   class="bg-amber-400 transition-all"   :style="'width:' + st.pct_rr + '%'"></div>
+                                                    <div x-show="st.pct_rb > 0"   class="bg-rose-400 transition-all"    :style="'width:' + st.pct_rb + '%'"></div>
+                                                </div>
+                                                <!-- Label persentase per kondisi -->
+                                                <div class="flex flex-wrap gap-x-2 gap-y-0.5 justify-center">
+                                                    <template x-if="st.baik > 0">
+                                                        <span class="text-[9.5px] font-bold text-emerald-400" x-text="st.pct_baik + '% Baik'"></span>
+                                                    </template>
+                                                    <template x-if="st.rusak_ringan > 0">
+                                                        <span class="text-[9.5px] font-bold text-amber-400" x-text="st.pct_rr + '% R.Ringan'"></span>
+                                                    </template>
+                                                    <template x-if="st.rusak_berat > 0">
+                                                        <span class="text-[9.5px] font-bold text-rose-400" x-text="st.pct_rb + '% R.Berat'"></span>
+                                                    </template>
+                                                </div>
+                                                <!-- Jumlah unit keterangan -->
+                                                <div class="text-[9px] text-slate-500 mt-0.5" x-text="'dari ' + st.total + ' unit'"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
                             </td>
 
                             <!-- Aksi (Rincian, Edit, Hapus) -->
@@ -883,15 +1001,15 @@
                                         <span class="leading-none pt-0.5">Rincian</span>
                                     </button>
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                    <!-- Tombol Edit -->
-                                    <button type="button" @click="openEdit(item)"
-                                        title="Edit Data ASTAP"
+                                    <!-- Tombol Edit (Link ke halaman form edit lengkap) -->
+                                    <a :href="'/astap/' + item.id + '/edit'"
+                                        title="Edit Data ASTAP (Form Lengkap)"
                                         class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 font-bold text-xs transition-all shadow-sm hover:scale-105 active:scale-95 group cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                         <span class="leading-none pt-0.5">Edit</span>
-                                    </button>
+                                    </a>
                                     <!-- Tombol Hapus -->
                                     <button type="button" @click="deleteAstap(item)"
                                         title="Hapus Data ASTAP"
@@ -1026,7 +1144,6 @@
                                         <option value="Baik">Baik (B)</option>
                                         <option value="Rusak Ringan">Rusak Ringan (RR)</option>
                                         <option value="Rusak Berat">Rusak Berat (RB)</option>
-                                        <option value="Dalam Renovasi">Dalam Renovasi</option>
                                     </select>
                                 </div>
 
@@ -1042,18 +1159,17 @@
                                 <table class="w-full text-left text-[11px] text-slate-300">
                                     <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px]">
                                         <tr>
-                                            <th class="px-3 py-2.5 text-center">No Reg</th>
-                                            <th class="px-3 py-2.5">NIBAR Resmi 45 Digit</th>
+                                            <th class="px-3 py-2.5">NIBAR &amp; No. Register Resmi</th>
                                             <th class="px-3 py-2.5">Status Penempatan Ruangan</th>
                                             <th class="px-3 py-2.5 text-center">Kondisi</th>
                                             <th class="px-3 py-2.5 text-center whitespace-nowrap">QR Code</th>
+                                            <th class="px-3 py-2.5 text-center whitespace-nowrap">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80 bg-slate-900/50">
                                         <template x-for="reg in filteredRegisters" :key="reg.id">
                                             <tr class="hover:bg-slate-800/60 transition-colors">
-                                                <td class="px-3 py-2.5 text-center font-mono font-bold text-slate-400" x-text="reg.no_register"></td>
-                                                <td class="px-3 py-2.5 font-mono font-semibold text-emerald-400 whitespace-nowrap" x-text="reg.nibar"></td>
+                                                <td class="px-3 py-2.5 font-mono font-semibold text-emerald-400 whitespace-nowrap" x-text="reg.nibar || reg.no_register"></td>
                                                 <td class="px-3 py-2.5">
                                                     <template x-if="reg.ruang_pemegang">
                                                         <span class="inline-flex items-center space-x-1.5 text-slate-200 font-medium">
@@ -1073,8 +1189,7 @@
                                                           :class="{
                                                               'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': reg.kondisi === 'Baik',
                                                               'bg-amber-500/20 text-amber-300 border border-amber-500/30': reg.kondisi === 'Rusak Ringan',
-                                                              'bg-rose-500/20 text-rose-300 border border-rose-500/30': reg.kondisi === 'Rusak Berat',
-                                                              'bg-purple-500/20 text-purple-300 border border-purple-500/30': reg.kondisi === 'Dalam Renovasi'
+                                                              'bg-rose-500/20 text-rose-300 border border-rose-500/30': reg.kondisi === 'Rusak Berat'
                                                           }" x-text="reg.kondisi"></span>
                                                 </td>
                                                 <td class="px-3 py-2.5 text-center whitespace-nowrap">
@@ -1086,6 +1201,18 @@
                                                         </svg>
                                                         <span class="leading-none pt-0.5">Download QR</span>
                                                     </button>
+                                                </td>
+                                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                                    <div class="flex items-center justify-center space-x-1.5">
+                                                        <button type="button" @click="editRegister(reg)" title="Edit Ruangan & Kondisi Unit Register Ini"
+                                                                class="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 012.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
+                                                        </button>
+                                                        <button type="button" @click="deleteRegister(reg)" title="Hapus Unit Register Ini"
+                                                                class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </template>
@@ -1192,46 +1319,7 @@
             </div>
         </div>
 
-        <!-- FRONTEND MODAL: UBAH ASTAP -->
-        <div x-show="showEditModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-bold text-white">✏️ Ubah Data ASTAP</h3>
-                    <button type="button" @click="showEditModal = false" class="text-slate-500 hover:text-white">&times;</button>
-                </div>
-                <template x-if="selectedAstap">
-                    <form @submit.prevent="showEditModal = false" class="space-y-4 text-xs">
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Nama Barang</label>
-                            <input type="text" x-model="selectedAstap.nama_barang" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                        </div>
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Lokasi Penempatan Unit</label>
-                            <input type="text" x-model="selectedAstap.lokasi_penempatan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-slate-300 font-semibold mb-1">Tahun Perolehan</label>
-                                <input type="text" x-model="selectedAstap.tahun_perolehan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                            </div>
-                            <div>
-                                <label class="block text-slate-300 font-semibold mb-1">Kondisi</label>
-                                <select x-model="selectedAstap.kondisi" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                                    <option value="Baik">Baik (B)</option>
-                                    <option value="Rusak Ringan">Rusak Ringan (RR)</option>
-                                    <option value="Rusak Berat">Rusak Berat (RB)</option>
-                                    <option value="Dalam Renovasi">Dalam Renovasi</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="pt-4 flex items-center justify-end space-x-2">
-                            <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Batal</button>
-                            <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold">Simpan Perubahan</button>
-                        </div>
-                    </form>
-                </template>
-            </div>
-        </div>
+        <!-- Modal Edit ASTAP dihapus: tombol Edit sudah mengarah langsung ke halaman form edit lengkap /astap/{id}/edit -->
 
     </div>
 </x-layout>

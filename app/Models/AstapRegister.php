@@ -30,4 +30,9 @@ class AstapRegister extends Model
     {
         return $this->astap ? ($this->astap->kode_108 ?? '') : '';
     }
+
+    public function getQrCodePathAttribute($value): string
+    {
+        return $value ?: '/scan/' . ($this->nibar ?? $this->no_register ?? '');
+    }
 }
