@@ -11,9 +11,7 @@ class DistribusiItem extends Model
 
     protected $guarded = ['id'];
 
-    protected $casts = [
-        'nibar_list' => 'array',
-    ];
+    // Tidak ada lagi cast nibar_list — data NIBAR kini ada di distribusi_item_registers
 
     /**
      * Relasi ke Header Distribusi
@@ -24,7 +22,7 @@ class DistribusiItem extends Model
     }
 
     /**
-     * Relasi ke Master Data ASTAP (Cukup simpan astap_id)
+     * Relasi ke Master Data ASTAP (cukup simpan astap_id)
      */
     public function astap()
     {
@@ -32,56 +30,56 @@ class DistribusiItem extends Model
     }
 
     /**
-     * Accessor: Nama Barang (Langsung dari data Master ASTAP)
+     * Relasi ke pivot unit fisik NIBAR yang terdistribusi
+     * (menggantikan kolom JSON nibar_list)
      */
-    public function getNamaBarangAttribute()
+    public function registers()
+    {
+        return $this->hasMany(DistribusiItemRegister::class);
+    }
+
+    /**
+     * Akses langsung ke AstapRegister melalui pivot
+     */
+    public function astapRegisters()
+    {
+        return $this->hasManyThrough(
+            AstapRegister::class,
+            DistribusiItemRegister::class,
+            'distribusi_item_id',   // FK di distribusi_item_registers
+            'id',                   // PK di astap_registers
+            'id',                   // PK di distribusi_items
+            'astap_register_id'     // FK di distribusi_item_registers
+        );
+    }
+
+    // ── Accessor: Baca dari relasi, tidak duplikasi data ──
+
+    public function getNamaBarangAttribute(): string
     {
         return $this->astap?->nama_barang ?? '-';
     }
 
-    /**
-     * Accessor: Kode Rekening 108 (Langsung dari data Master ASTAP)
-     */
-    public function getKodeBarangAttribute()
+    public function getKodeBarangAttribute(): string
     {
         return $this->astap?->kode_108 ?? '-';
     }
 
-    /**
-     * Accessor: Jenis ASTAP (Langsung dari Master ASTAP -> JenisAstap)
-     */
-    public function getJenisAstapNamaAttribute()
+    public function getJenisAstapNamaAttribute(): string
     {
         return $this->astap?->jenisAstap?->nama_jenis ?? '-';
     }
 
-    /**
-     * Accessor: Satuan Barang (Langsung dari Master ASTAP)
-     */
-    public function getSatuanAttribute()
+    public function getSatuanAttribute(): string
     {
         return $this->astap?->satuan ?? 'Unit';
     }
 
-    /**
-     * Accessor: Spesifikasi / Merk (Langsung dari Master ASTAP)
-     */
-    public function getMerkTypeAttribute()
+    public function getMerkTypeAttribute(): string
     {
-        $spec = is_array($this->astap?->spesifikasi_json) 
-            ? $this->astap->spesifikasi_json 
+        $spec = is_array($this->astap?->spesifikasi_json)
+            ? $this->astap->spesifikasi_json
             : (json_decode($this->astap?->spesifikasi_json ?? '', true) ?? []);
         return $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? '-'));
-    }
-
-    /**
-     * Relasi/Helper: Mengambil Model Register NIBAR dari data ASTAP
-     */
-    public function getRegistersAttribute()
-    {
-        if (empty($this->nibar_list)) {
-            return collect();
-        }
-        return AstapRegister::whereIn('nibar', $this->nibar_list)->get();
     }
 }

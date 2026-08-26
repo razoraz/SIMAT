@@ -118,15 +118,29 @@
                         keterangan: dbFound.keterangan || '',
                         items: (dbFound.items && dbFound.items.length > 0) ? dbFound.items.map((it, idx) => {
                             const astapObj = it.astap || null;
-                            const nibarArr = Array.isArray(it.nibar_list) ? it.nibar_list : [];
-                            const nibarSelectedObj = nibarArr.map(nStr => {
-                                const regMatch = (this.nibarList || []).find(nr => nr.nibar === nStr);
-                                return {
-                                    nibar: nStr,
-                                    ruang: regMatch ? regMatch.ruang : 'Belum Ditempatkan / Di Gudang Aset',
-                                    kondisi: regMatch ? regMatch.kondisi : (it.kondisi || 'Baik')
-                                };
-                            });
+                            let nibarSelectedObj = [];
+                            if (it.registers && Array.isArray(it.registers)) {
+                                nibarSelectedObj = it.registers.map(dir => {
+                                    const reg = dir.astap_register || dir.astapRegister || (this.nibarList || []).find(nr => nr.id === dir.astap_register_id);
+                                    return {
+                                        id: dir.astap_register_id || (reg ? reg.id : null),
+                                        nibar: reg ? (reg.nibar || reg.no_register) : (dir.nibar || '-'),
+                                        ruang: reg ? (reg.ruang_pemegang || reg.ruang) : 'Gudang Aset',
+                                        kondisi: reg ? reg.kondisi : 'Baik'
+                                    };
+                                });
+                            }
+                            if (nibarSelectedObj.length === 0 && Array.isArray(it.nibar_list)) {
+                                nibarSelectedObj = it.nibar_list.map(nStr => {
+                                    const regMatch = (this.nibarList || []).find(nr => nr.nibar === nStr);
+                                    return {
+                                        id: regMatch ? regMatch.id : null,
+                                        nibar: nStr,
+                                        ruang: regMatch ? regMatch.ruang : 'Belum Ditempatkan / Di Gudang Aset',
+                                        kondisi: regMatch ? regMatch.kondisi : (it.kondisi || 'Baik')
+                                    };
+                                });
+                            }
                             return {
                                 id: Date.now() + idx,
                                 astap_id: it.astap_id || (astapObj ? astapObj.id : null),
@@ -343,7 +357,7 @@
                 alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai volume barang (' + maxQty + '). Tambah volume atau hapus salah satu NIBAR terlebih dahulu.');
                 return;
             }
-            item.nibar_selected.push({ nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
+            item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
             this.activeNibarDropdownIndex = null;
             if (this.nibarSearch) this.nibarSearch[item.id] = '';
         },
@@ -688,16 +702,17 @@
                         items: this.formData.items.map(it => {
                             const resolvedKode = this.getItemKode(it) || it.kode_barang || '';
                             const astapObj = (this.dbAstapList || []).find(a => a.kode === resolvedKode || a.nama === it.nama_barang);
+                            const registerIds = (it.nibar_selected || []).map(n => {
+                                if (n.id) return parseInt(n.id);
+                                const match = (this.nibarList || []).find(nr => nr.nibar === n.nibar);
+                                return match ? parseInt(match.id) : null;
+                            }).filter(Boolean);
+
                             return {
                                 astap_id: astapObj ? astapObj.id : (it.astap_id || 1),
                                 qty: parseInt(it.qty) || 1,
-                                kondisi: it.kondisi || 'Baik',
                                 keterangan: it.keterangan || '-',
-                                nibar_list: (it.nibar_selected || []).map(n => n.nibar),
-                                nibar_items: (it.nibar_selected || []).map(n => ({
-                                    nibar: n.nibar,
-                                    kondisi: n.kondisi || it.kondisi || 'Baik'
-                                }))
+                                register_ids: registerIds
                             };
                         })
                     };

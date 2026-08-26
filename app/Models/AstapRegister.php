@@ -26,6 +26,11 @@ class AstapRegister extends Model
         return $this->hasMany(AstapMutasi::class);
     }
 
+    public function distribusiItemRegisters()
+    {
+        return $this->hasMany(DistribusiItemRegister::class);
+    }
+
     public function getKode108Attribute(): string
     {
         return $this->astap ? ($this->astap->kode_108 ?? '') : '';
