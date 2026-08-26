@@ -320,7 +320,12 @@ Route::middleware('auth')->group(function () {
                     'type' => $data['mesin_type'] ?? null,
                     'ukuran' => $data['mesin_ukuran'] ?? ($data['lainnya_kesenian_ukuran'] ?? null),
                     'no_pabrik' => $data['mesin_no_pabrik'] ?? null,
+                    'no_rangka' => $data['mesin_no_rangka'] ?? null,
+                    'no_mesin' => $data['mesin_no_mesin'] ?? null,
+                    'no_bpkb' => $data['mesin_no_bpkb'] ?? null,
+                    'no_polisi' => $data['mesin_no_polisi'] ?? null,
                     'bahan' => $data['mesin_bahan'] ?? ($data['lainnya_kesenian_bahan'] ?? null),
+                    'kondisi' => $data['tanah_kondisi'] ?? ($data['mesin_kondisi'] ?? ($data['gedung_kondisi'] ?? ($data['jaringan_kondisi'] ?? ($data['kdp_kondisi'] ?? null)))),
                     'bertingkat' => $data['gedung_bertingkat'] ?? ($data['kdp_bangunan'] ?? null),
                     'beton' => $data['gedung_beton'] ?? ($data['kdp_beton'] ?? null),
                     'status_tanah' => $data['gedung_status_tanah'] ?? ($data['jaringan_status_tanah'] ?? ($data['kdp_status_tanah'] ?? null)),
@@ -339,13 +344,14 @@ Route::middleware('auth')->group(function () {
                     'kesenian_spesifikasi' => $data['lainnya_kesenian_spesifikasi'] ?? null,
                     'hewan_jenis' => $data['lainnya_hewan_jenis'] ?? null,
                     'hewan_spesifikasi' => $data['lainnya_hewan_spesifikasi'] ?? null,
-                    'atb_judul' => $data['atb_judul'] ?? null,
+                    'atb_judul' => $data['atb_judul_nama'] ?? ($data['atb_judul'] ?? null),
                     'atb_pencipta' => $data['atb_pencipta'] ?? null,
                     'atb_jenis_lisensi' => $data['atb_jenis_lisensi'] ?? null,
                     'atb_spesifikasi' => $data['atb_spesifikasi'] ?? null,
                     'progres_persen' => $data['kdp_progres_persen'] ?? null,
                     'tgl_mulai' => $data['kdp_tgl_mulai'] ?? null,
                     'tgl_target_selesai' => $data['kdp_tgl_target_selesai'] ?? null,
+                    'ruang_pemegang' => $data['ruang_pemegang_mesin'] ?? ($data['ruang_pemegang_lainnya'] ?? ($data['ruang_pemegang_atb'] ?? null)),
                 ];
 
                 $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
