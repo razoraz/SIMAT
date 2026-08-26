@@ -200,9 +200,14 @@
                         mesin_type: spec.type || '',
                         mesin_ukuran: spec.ukuran || '',
                         mesin_no_pabrik: spec.no_pabrik || '',
+                        mesin_no_rangka: spec.no_rangka || '',
+                        mesin_no_mesin: spec.no_mesin || '',
+                        mesin_no_bpkb: spec.no_bpkb || '',
+                        mesin_no_polisi: spec.no_polisi || '',
                         mesin_bahan: spec.bahan || '',
                         mesin_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
-                        ruang_pemegang: reg0 ? (reg0.ruang_pemegang || '') : '',
+                        ruang_pemegang_mesin: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                        ruang_pemegang: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
                         mesin_jumlah_barang: ea ? (ea.jumlah_volume || 1) : 1,
                         mesin_satuan: ea ? (ea.satuan || 'Unit') : 'Unit',
                         mesin_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
@@ -257,7 +262,7 @@
                         lainnya_kesenian_ukuran: spec.kesenian_ukuran || '',
                         lainnya_hewan_jenis: spec.hewan_jenis || '',
                         lainnya_hewan_spesifikasi: spec.hewan_spesifikasi || '',
-                        ruang_pemegang_lainnya: reg0 ? (reg0.ruang_pemegang || '') : '',
+                        ruang_pemegang_lainnya: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
                         lainnya_jumlah_barang: ea ? (ea.jumlah_volume || 1) : 1,
                         lainnya_satuan: ea ? (ea.satuan || 'Eksemplar') : 'Eksemplar',
                         lainnya_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
@@ -265,11 +270,12 @@
                         // ATB
                         atb_nama_barang: nama || '',
                         atb_kode_barang: kode108Val || '',
+                        atb_judul_nama: spec.atb_judul || '',
                         atb_judul: spec.atb_judul || '',
                         atb_pencipta: spec.atb_pencipta || '',
                         atb_jenis_lisensi: spec.atb_jenis_lisensi || '',
                         atb_spesifikasi: spec.atb_spesifikasi || '',
-                        ruang_pemegang_atb: reg0 ? (reg0.ruang_pemegang || '') : '',
+                        ruang_pemegang_atb: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
                         atb_jumlah: ea ? (ea.jumlah_volume || 1) : 1,
                         atb_satuan: ea ? (ea.satuan || 'Lisensi') : 'Lisensi',
                         atb_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
@@ -747,6 +753,16 @@
 
                 onSubRincianChange(kodeSub) {
                     this.formData.sub_rincian_kode = kodeSub;
+                    if (kodeSub && kodeSub.length >= 5) {
+                        const parentJenisKode = kodeSub.substring(0, 5);
+                        if (!this.formData.jenis_aset_kode || !kodeSub.startsWith(this.formData.jenis_aset_kode)) {
+                            this.formData.jenis_aset_kode = parentJenisKode;
+                            const foundJenis = (window.dbMasterJenisAstap108 || []).find(j => j.kode === parentJenisKode);
+                            if (foundJenis) {
+                                this.formData.jenis_aset_nama = foundJenis.nama;
+                            }
+                        }
+                    }
                     const found = (this.availableSubRincian108 || []).find(s => s.kode === kodeSub);
                     if (found) {
                         this.formData.sub_rincian_nama = found.nama;
@@ -1623,80 +1639,111 @@
 
                         </div>
 
-                        <!-- Riwayat Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (4 Kartu Pilihan Utama) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
-                            
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
-                                <button type="button" @click="selectDocType('spk')" 
-                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📄 SPK</span>
-                                </button>
-                                <button type="button" @click="selectDocType('surat_pesanan')" 
-                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📦 Surat Pesanan</span>
-                                </button>
-                                <button type="button" @click="selectDocType('kwitansi')" 
-                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>🧾 Kwitansi</span>
-                                </button>
-                                <button type="button" @click="selectDocType('faktur')" 
-                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📑 Invoice</span>
-                                </button>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
                             </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_a" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
 
-                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
-                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_a" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                     <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
-                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_a" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_a" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
                             </div>
@@ -1944,108 +1991,169 @@
                                 </div>
                             </div>
 
-                            <!-- 3. No Pabrik, Bahan & Kondisi -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
+                            <!-- 3. No Pabrik, Kendaraan, Bahan & Kondisi -->
+                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">🏷️ 3. No Pabrik, Bahan & Kondisi:</span>
+                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">🏷️ 3. No Pabrik, Kendaraan, Bahan & Kondisi:</span>
                                 </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">No Pabrik / Serial Number (SN)</label>
-                                    <input type="text" x-model="formData.mesin_no_pabrik" placeholder="SN-RAD-2026-88192"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
+
+                                <div class="grid grid-cols-2 gap-2.5">
                                     <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Bahan Pembuatan</label>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">No Pabrik / SN</label>
+                                        <input type="text" x-model="formData.mesin_no_pabrik" placeholder="SN-RAD-2026-88192"
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">Bahan Pembuatan</label>
                                         <input type="text" x-model="formData.mesin_bahan" placeholder="Logam & Elektronik"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kondisi (B/KB/RB)</label>
-                                        <select x-model="formData.mesin_kondisi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
-                                            <option value="B">B (Baik)</option>
-                                            <option value="KB">KB (Kurang Baik)</option>
-                                            <option value="RB">RB (Rusak Berat)</option>
-                                        </select>
+                                </div>
+
+                                <!-- Detail Kendaraan (2x2 Grid Rapi) -->
+                                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                                    <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">🚗 Legality Kendaraan (Jika Ada):</span>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-slate-500 text-[9px] mb-0.5">No Rangka</label>
+                                            <input type="text" x-model="formData.mesin_no_rangka" placeholder="MH1JM..."
+                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                                        </div>
+                                        <div>
+                                            <label class="block text-slate-500 text-[9px] mb-0.5">No Mesin</label>
+                                            <input type="text" x-model="formData.mesin_no_mesin" placeholder="JM51E..."
+                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                                        </div>
+                                        <div>
+                                            <label class="block text-slate-500 text-[9px] mb-0.5">No BPKB</label>
+                                            <input type="text" x-model="formData.mesin_no_bpkb" placeholder="BPKB-88..."
+                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
+                                        </div>
+                                        <div>
+                                            <label class="block text-slate-500 text-[9px] mb-0.5">No POLISI / Plat</label>
+                                            <input type="text" x-model="formData.mesin_no_polisi" placeholder="P 1234 WB"
+                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono font-bold">
+                                        </div>
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Barang</label>
+                                    <select x-model="formData.mesin_kondisi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold">
+                                        <option value="B">B (Baik)</option>
+                                        <option value="KB">KB (Kurang Baik)</option>
+                                        <option value="RB">RB (Rusak Berat)</option>
+                                    </select>
                                 </div>
                             </div>
 
                         </div>
 
-                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (4 Kartu Pilihan Utama) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
-                            
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
-                                <button type="button" @click="selectDocType('spk')" 
-                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📄 SPK</span>
-                                </button>
-                                <button type="button" @click="selectDocType('surat_pesanan')" 
-                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📦 Surat Pesanan</span>
-                                </button>
-                                <button type="button" @click="selectDocType('kwitansi')" 
-                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>🧾 Kwitansi</span>
-                                </button>
-                                <button type="button" @click="selectDocType('faktur')" 
-                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📑 Invoice</span>
-                                </button>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
                             </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
 
-                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
-                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                     <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
-                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
                             </div>
@@ -2317,80 +2425,111 @@
 
                         </div>
 
-                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (4 Kartu Pilihan Utama) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
-                            
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
-                                <button type="button" @click="selectDocType('spk')" 
-                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📄 SPK</span>
-                                </button>
-                                <button type="button" @click="selectDocType('surat_pesanan')" 
-                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📦 Surat Pesanan</span>
-                                </button>
-                                <button type="button" @click="selectDocType('kwitansi')" 
-                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>🧾 Kwitansi</span>
-                                </button>
-                                <button type="button" @click="selectDocType('faktur')" 
-                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📑 Invoice</span>
-                                </button>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
                             </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_c" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
 
-                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
-                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_c" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                     <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
-                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_c" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_c" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
                             </div>
@@ -2723,80 +2862,111 @@
 
                         </div>
 
-                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (4 Kartu Pilihan Utama) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
-                            
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
-                                <button type="button" @click="selectDocType('spk')" 
-                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📄 SPK</span>
-                                </button>
-                                <button type="button" @click="selectDocType('surat_pesanan')" 
-                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📦 Surat Pesanan</span>
-                                </button>
-                                <button type="button" @click="selectDocType('kwitansi')" 
-                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>🧾 Kwitansi</span>
-                                </button>
-                                <button type="button" @click="selectDocType('faktur')" 
-                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
-                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
-                                    <span>📑 Invoice</span>
-                                </button>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
                             </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_d" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
 
-                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
-                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_d" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                     <div>
-                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
-                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_d" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_d" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
                             </div>
@@ -3141,68 +3311,115 @@
                                 </div>
                             </div>
 
-                            <!-- 5. RIWAYAT PEMBELIAN (SPK, SP, KWITANSI, INVOICE) -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">5. Riwayat Pembelian</span>
-                                    </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">SPK, SP, KW, INV</span>
-                                </div>
-                                <!-- SPK -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">SPK - Nomor</label>
-                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-cyan-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">SPK - Tanggal</label>
-                                        <input type="date" x-model="formData.spk_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
-                                    </div>
-                                </div>
-                                <!-- Surat Pesanan -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Surat Pesanan - Nomor</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-purple-300 font-mono">
+                        <!-- 5. Riwayat Dokumen Pembelian (4 Kartu Pilihan Utama) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg lg:col-span-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">5. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_e" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Surat Pesanan - Tanggal</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <!-- Kwitansi -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kwitansi - Nomor</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-amber-300 font-mono">
+
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_e" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kwitansi - Tanggal</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <!-- Invoice -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Invoice - Nomor</label>
-                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-emerald-300 font-mono">
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_e" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Invoice - Tanggal</label>
-                                        <input type="date" x-model="formData.faktur_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_e" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
                             <!-- 6. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -3486,68 +3703,115 @@
                                 </div>
                             </div>
 
-                            <!-- 3. RIWAYAT PEMBELIAN (SPK, SP, KWITANSI, INVOICE) -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">3. Riwayat Pembelian</span>
-                                    </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">SPK, SP, KW, INV</span>
-                                </div>
-                                <!-- SPK -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">SPK - Nomor</label>
-                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-cyan-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">SPK - Tanggal</label>
-                                        <input type="date" x-model="formData.spk_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
-                                    </div>
-                                </div>
-                                <!-- Surat Pesanan -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Surat Pesanan - Nomor</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-purple-300 font-mono">
+                        <!-- 3. Riwayat Dokumen Pembelian (4 Kartu Pilihan Utama) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg lg:col-span-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">3. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_atb" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Surat Pesanan - Tanggal</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <!-- Kwitansi -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kwitansi - Nomor</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-amber-300 font-mono">
+
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_atb" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kwitansi - Tanggal</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
-                                <!-- Invoice -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Invoice - Nomor</label>
-                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-[11px] text-emerald-300 font-mono">
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_atb" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Invoice - Tanggal</label>
-                                        <input type="date" x-model="formData.faktur_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-[11px] text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_atb" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
                             <!-- 4. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -3868,60 +4132,111 @@
 
                         </div>
 
-                        <!-- 4. Riwayat Dokumen Kontrak & Pembelian (SPK, SP/BAP, Kwitansi, Invoice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (4 Kartu Pilihan Utama) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Kontrak & Pembelian Termin:</span>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
+                            </div>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                <!-- SPK -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-cyan-400 block">SPK (Kontrak Konstruksi)</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor SPK</label>
-                                        <input type="text" x-model="formData.spk_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_f" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                </div>
-
-                                <!-- Surat Pesanan / BAP -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-purple-400 block">Surat Pesanan / BAP</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                </div>
-
-                                <!-- Kwitansi Termin -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-amber-400 block">Kwitansi Pembayaran Termin</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
 
-                                <!-- Invoice Kontraktor -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-emerald-400 block">Invoice Kontraktor</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Invoice</label>
-                                        <input type="text" x-model="formData.faktur_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono">
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_f" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan / BAP</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_f" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi Termin</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_f" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
                             </div>
