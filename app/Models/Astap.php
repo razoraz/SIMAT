@@ -64,11 +64,11 @@ class Astap extends Model
 
     public function getCategoryAttribute(): string
     {
-        if ($this->is_extracomtable) {
+        $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
+
+        if ($this->is_extracomtable || (str_starts_with($jenisKode, '1.3.2') && $this->harga_satuan > 0 && $this->harga_satuan < 300000)) {
             return 'EXTRACOM';
         }
-
-        $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
 
         if (str_starts_with($jenisKode, '1.3.1')) return 'KIB A';
         if (str_starts_with($jenisKode, '1.3.2')) return 'KIB B';
