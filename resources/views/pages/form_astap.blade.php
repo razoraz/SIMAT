@@ -308,7 +308,7 @@
                         bast_dokumen_tanggal: ea ? fmtDate(ea.bast_dokumen_tanggal) : '',
                         // Langkah 4
                         tahun_perolehan: ea ? (ea.tahun_perolehan || new Date().getFullYear()) : new Date().getFullYear(),
-                        alamat_barang: '',
+                        alamat_barang: ea ? (ea.alamat_barang || '') : '',
                         penyedia_nama: ea ? (ea.penyedia_nama || '') : '',
                         penyedia_pemilik: ea ? (ea.penyedia_pemilik || '') : '',
                         penyedia_rekening_nama: ea ? (ea.penyedia_rekening_nama || '') : '',
@@ -317,7 +317,8 @@
                         ppk_nama: ea ? (ea.ppk_nama || '') : '',
                         ppk_nip: ea ? (ea.ppk_nip || '') : '',
                         keterangan_tambahan: ea ? (ea.keterangan_tambahan || '') : '',
-                        is_extracomtable: ea ? !!ea.is_extracomtable : false
+                        is_extracomtable: ea ? !!ea.is_extracomtable : false,
+                        doc_type: ea ? (ea.spk_nomor ? 'spk' : (ea.surat_pesanan_nomor ? 'surat_pesanan' : (ea.kwitansi_nomor ? 'kwitansi' : (ea.faktur_nomor ? 'faktur' : 'spk')))) : 'spk'
                     };
                 })(),
 
@@ -379,6 +380,40 @@
                             } else if (ja && ja.uraian_sub_rincian) {
                                 this.formData.sub_rincian_nama = ja.uraian_sub_rincian;
                             }
+                        }
+                    }
+
+                    this.updateExtracomStatus();
+                },
+
+                selectDocType(type) {
+                    this.formData.doc_type = type;
+                    if (type !== 'spk') { this.formData.spk_nomor = ''; this.formData.spk_tanggal = ''; }
+                    if (type !== 'surat_pesanan') { this.formData.surat_pesanan_nomor = ''; this.formData.surat_pesanan_tanggal = ''; }
+                    if (type !== 'kwitansi') { this.formData.kwitansi_nomor = ''; this.formData.kwitansi_tanggal = ''; }
+                    if (type !== 'faktur') { this.formData.faktur_nomor = ''; this.formData.faktur_tanggal = ''; }
+                },
+
+                onDocDateChange(dateStr) {
+                    if (dateStr && dateStr.length >= 4) {
+                        const year = parseInt(dateStr.substring(0, 4));
+                        if (year > 1900 && year < 2100) {
+                            this.formData.tahun_perolehan = year;
+                        }
+                    }
+                },
+
+                updateExtracomStatus() {
+                    const unitPrice = this.isMesin ? Number(this.formData.mesin_nilai_satuan || 0)
+                        : (this.isAsetLainnya ? Number(this.formData.lainnya_nilai_satuan || 0)
+                        : (this.isAtb ? Number(this.formData.atb_nilai_satuan || 0)
+                        : Number(this.formData.harga_satuan || 0)));
+
+                    if (this.isMesin) {
+                        if (unitPrice > 0 && unitPrice < 300000) {
+                            this.formData.is_extracomtable = true;
+                        } else if (unitPrice >= 300000) {
+                            this.formData.is_extracomtable = false;
                         }
                     }
                 },
@@ -1588,60 +1623,80 @@
 
                         </div>
 
-                        <!-- Riwayat Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice) -->
+                        <!-- Riwayat Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian:</span>
+                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                <!-- SPK -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-cyan-400 block">SPK (Kontrak)</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
+                                <button type="button" @click="selectDocType('spk')" 
+                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📄 SPK</span>
+                                </button>
+                                <button type="button" @click="selectDocType('surat_pesanan')" 
+                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📦 Surat Pesanan</span>
+                                </button>
+                                <button type="button" @click="selectDocType('kwitansi')" 
+                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>🧾 Kwitansi</span>
+                                </button>
+                                <button type="button" @click="selectDocType('faktur')" 
+                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📑 Invoice</span>
+                                </button>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor SPK</label>
-                                        <input type="text" x-model="formData.spk_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Surat Pesanan -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-purple-400 block">Surat Pesanan</span>
+                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                </div>
-
-                                <!-- Kwitansi -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-amber-400 block">Kwitansi</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Invoice -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-emerald-400 block">Invoice / Faktur</span>
+                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Invoice</label>
-                                        <input type="text" x-model="formData.faktur_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -1905,7 +1960,6 @@
                                         <input type="text" x-model="formData.mesin_bahan" placeholder="Logam & Elektronik"
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
                                     </div>
-                                    <div>
                                         <label class="block text-slate-400 text-[10px] mb-1">Kondisi (B/KB/RB)</label>
                                         <select x-model="formData.mesin_kondisi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
                                             <option value="B">B (Baik)</option>
@@ -1918,107 +1972,86 @@
 
                         </div>
 
-                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian:</span>
+                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                <!-- SPK -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-cyan-400 block">SPK (Kontrak)</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
+                                <button type="button" @click="selectDocType('spk')" 
+                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📄 SPK</span>
+                                </button>
+                                <button type="button" @click="selectDocType('surat_pesanan')" 
+                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📦 Surat Pesanan</span>
+                                </button>
+                                <button type="button" @click="selectDocType('kwitansi')" 
+                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>🧾 Kwitansi</span>
+                                </button>
+                                <button type="button" @click="selectDocType('faktur')" 
+                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📑 Invoice</span>
+                                </button>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor SPK</label>
-                                        <input type="text" x-model="formData.spk_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Surat Pesanan -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-purple-400 block">Surat Pesanan</span>
+                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                </div>
-
-                                <!-- Kwitansi -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-amber-400 block">Kwitansi</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Invoice -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-emerald-400 block">Invoice / Faktur</span>
+                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Invoice</label>
-                                        <input type="text" x-model="formData.faktur_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- 5. Volume, Administrasi Proyek, Nilai Total & SP2D/BAST -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            
-                            <!-- Volume & Nilai Barang -->
-                            <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-lg">
-                                <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">5. Volume & Nilai Satuan Barang (Rp):</span>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Jumlah Barang</label>
-                                        <input type="number" x-model.number="formData.mesin_jumlah_barang" placeholder="1"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Nama Satuan Barang</label>
-                                        <select x-model="formData.mesin_satuan" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
-                                            <option value="Unit">Unit</option>
-                                            <option value="Set">Set</option>
-                                            <option value="Buah">Buah</option>
-                                            <option value="Pcs">Pcs</option>
-                                            <option value="Paket">Paket</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Nilai Satuan Barang (Rp)</label>
-                                        <input type="number" x-model.number="formData.mesin_nilai_satuan" placeholder="8475000000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Administrasi Proyek (Rp)</label>
-                                        <input type="number" x-model.number="formData.mesin_administrasi_proyek" placeholder="25000000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono">
-                                    </div>
-                                </div>
-                                <div class="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between">
-                                    <span class="text-[11px] font-bold text-emerald-300">Total Nilai Barang (Rp):</span>
-                                    <span class="text-sm font-extrabold text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
-                                </div>
-                            </div>
-
-                            <!-- SP2D & BAST -->
                             <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-lg">
                                 <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">6. Dokumen SP2D & BAST:</span>
                                 <div class="grid grid-cols-2 gap-3">
@@ -2284,60 +2317,80 @@
 
                         </div>
 
-                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian:</span>
+                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                <!-- SPK -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-cyan-400 block">SPK (Kontrak)</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
+                                <button type="button" @click="selectDocType('spk')" 
+                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📄 SPK</span>
+                                </button>
+                                <button type="button" @click="selectDocType('surat_pesanan')" 
+                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📦 Surat Pesanan</span>
+                                </button>
+                                <button type="button" @click="selectDocType('kwitansi')" 
+                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>🧾 Kwitansi</span>
+                                </button>
+                                <button type="button" @click="selectDocType('faktur')" 
+                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📑 Invoice</span>
+                                </button>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor SPK</label>
-                                        <input type="text" x-model="formData.spk_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Surat Pesanan -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-purple-400 block">Surat Pesanan</span>
+                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                </div>
-
-                                <!-- Kwitansi -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-amber-400 block">Kwitansi</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Invoice -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-emerald-400 block">Invoice / Faktur</span>
+                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Invoice</label>
-                                        <input type="text" x-model="formData.faktur_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -2670,60 +2723,80 @@
 
                         </div>
 
-                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice) -->
+                        <!-- 4. Riwayat Dokumen Pembelian (SPK, Surat Pesanan, Kwitansi, Invoice - Single Choice) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 shadow-lg">
-                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian:</span>
+                            <span class="text-xs font-bold text-purple-300 block uppercase tracking-wider">4. Riwayat Dokumen Pembelian (Pilih 1 Dokumen Utama):</span>
                             
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                <!-- SPK -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-cyan-400 block">SPK (Kontrak)</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-b border-slate-800 pb-3">
+                                <button type="button" @click="selectDocType('spk')" 
+                                        :class="formData.doc_type === 'spk' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📄 SPK</span>
+                                </button>
+                                <button type="button" @click="selectDocType('surat_pesanan')" 
+                                        :class="formData.doc_type === 'surat_pesanan' ? 'bg-purple-500/20 text-purple-300 border-purple-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📦 Surat Pesanan</span>
+                                </button>
+                                <button type="button" @click="selectDocType('kwitansi')" 
+                                        :class="formData.doc_type === 'kwitansi' ? 'bg-amber-500/20 text-amber-300 border-amber-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>🧾 Kwitansi</span>
+                                </button>
+                                <button type="button" @click="selectDocType('faktur')" 
+                                        :class="formData.doc_type === 'faktur' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500 font-extrabold shadow-sm' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'" 
+                                        class="py-2.5 px-3 rounded-xl border text-xs text-center transition-all flex items-center justify-center space-x-1.5">
+                                    <span>📑 Invoice</span>
+                                </button>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <div x-show="formData.doc_type === 'spk'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor SPK</label>
-                                        <input type="text" x-model="formData.spk_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Nomor SPK (Kontrak)</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="Contoh: 028/SPK-KTR/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-cyan-400 text-xs font-bold mb-1">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Surat Pesanan -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-purple-400 block">Surat Pesanan</span>
+                                <div x-show="formData.doc_type === 'surat_pesanan'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Surat Pesanan</label>
-                                        <input type="text" x-model="formData.surat_pesanan_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="Contoh: 028/SP-RSUD/V/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                </div>
-
-                                <!-- Kwitansi -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-amber-400 block">Kwitansi</span>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Kwitansi</label>
-                                        <input type="text" x-model="formData.kwitansi_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-purple-400 text-xs font-bold mb-1">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
-
-                                <!-- Invoice -->
-                                <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
-                                    <span class="text-[11px] font-bold text-emerald-400 block">Invoice / Faktur</span>
+                                <div x-show="formData.doc_type === 'kwitansi'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Nomor Invoice</label>
-                                        <input type="text" x-model="formData.faktur_nomor" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="Contoh: KW-028/KTR/2026"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-500 text-[9px]">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                        <label class="block text-amber-400 text-xs font-bold mb-1">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div x-show="formData.doc_type === 'faktur'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Nomor Invoice / Faktur</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="Contoh: INV-2026-028"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-emerald-400 text-xs font-bold mb-1">Tanggal Invoice / Faktur</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
