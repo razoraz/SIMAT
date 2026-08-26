@@ -483,7 +483,7 @@
                             <th class="px-4 py-3.5 text-center whitespace-nowrap">Tgl Distribusi</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap">Penerima</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800" style="position: sticky; right: 0; z-index: 20; background-color: #020617; box-shadow: -4px 0 10px rgba(0,0,0,0.4);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -524,7 +524,8 @@
                                         }"
                                         x-text="item.status || 'Draft'"></span>
                                 </td>
-                                <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
+                                <!-- Kolom Aksi — FREEZE STICKY RIGHT -->
+                                <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap border-l border-slate-800 bg-slate-900" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a; box-shadow: -4px 0 8px rgba(0,0,0,0.3);">
                                     
                                     <!-- 1. Tombol Cetak Berita Acara (BAST) di Kolom Aksi -->
                                     <button type="button" @click="openPrintBast(item)"

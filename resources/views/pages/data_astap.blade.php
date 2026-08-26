@@ -884,7 +884,7 @@
         <!-- TABEL KATALOG DATA ASTAP                                                  -->
         <!-- ========================================================================= -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: calc(100vh - 340px); min-height: 440px; overflow-y: auto; overflow-x: auto;">
                 <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                     <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                         <tr>
@@ -894,7 +894,7 @@
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Volume / Kuantitas</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Realisasi</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Kondisi</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Aksi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800" style="position: sticky; right: 0; z-index: 30; background-color: #020617; box-shadow: -4px 0 10px rgba(0,0,0,0.4);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -988,8 +988,8 @@
                                     </template>
                                 </td>
 
-                                <!-- Aksi (Rincian, Edit, Hapus) -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <!-- Aksi (Rincian, Edit, Hapus) — FREEZE STICKY RIGHT -->
+                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800 bg-slate-900" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a; box-shadow: -4px 0 8px rgba(0,0,0,0.3);">
                                     <div class="flex items-center justify-center space-x-2">
                                         <!-- Tombol Rincian / Detail -->
                                         <button type="button" @click="openDetail(item)"
