@@ -158,6 +158,7 @@
                     const rb = ea && ea.rekening_belanja ? ea.rekening_belanja : null;
                     const ja = ea && ea.jenis_astap ? ea.jenis_astap : null;
                     const nama = ea ? (ea.nama_barang || '') : '';
+                    const kode108Val = ea ? (ea.kode_108 || (ja ? (ja.sub_sub_rincian_objek || ja.jenis) : '')) : '';
                     const fmtDate = (d) => d ? String(d).substring(0, 10) : '';
                     return {
                         id: ea ? ea.id : null,
@@ -173,15 +174,15 @@
                         // LANGKAH 2
                         kode_rek: rb ? (rb.kode_rek || '') : '',
                         nama_belanja: rb ? (rb.nama_belanja || '') : '',
-                        jenis_aset_kode: ja ? (ja.jenis || '') : '',
+                        jenis_aset_kode: ja ? (ja.jenis || (kode108Val ? kode108Val.substring(0, 5) : '')) : (kode108Val ? kode108Val.substring(0, 5) : ''),
                         jenis_aset_nama: ja ? (ja.nama_jenis || '') : '',
-                        sub_rincian_kode: ja ? (ja.sub_sub_rincian_objek || ja.sub_rincian_objek || '') : '',
+                        sub_rincian_kode: ja ? (ja.sub_sub_rincian_objek || ja.sub_rincian_objek || (kode108Val ? kode108Val.substring(0, 14) : '')) : (kode108Val ? kode108Val.substring(0, 14) : ''),
                         sub_rincian_nama: ja ? (ja.uraian_sub_sub_rincian || ja.uraian_sub_rincian || '') : '',
                         jumlah_anggaran: ea ? (ea.jumlah_anggaran || 0) : 0,
                         jumlah_realisasi: ea ? (ea.total_realisasi || 0) : 0,
                         // LANGKAH 3 — KIB A Tanah
                         tanah_nama_barang: nama || 'Tanah Bangunan Apotik / Rumah Sakit',
-                        tanah_kode_barang: (ja && ja.sub_sub_rincian_objek) || '1.3.1.01.01.02.013',
+                        tanah_kode_barang: kode108Val || '1.3.1.01.01.02.013',
                         tanah_hak: spec.hak_tanah || 'Hak Pakai',
                         tanah_sertifikat_tgl: spec.sertifikat_tgl || '',
                         tanah_sertifikat_no: spec.sertifikat_no || '',
@@ -194,7 +195,7 @@
                         tanah_nilai_pengawasan: spec.nilai_pengawasan || 0,
                         // KIB B Mesin
                         mesin_nama_barang: nama || '',
-                        mesin_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        mesin_kode_barang: kode108Val || '',
                         mesin_merk: spec.merk || '',
                         mesin_type: spec.type || '',
                         mesin_ukuran: spec.ukuran || '',
@@ -208,7 +209,7 @@
                         mesin_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
                         // KIB C Gedung
                         gedung_nama_barang: nama || '',
-                        gedung_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        gedung_kode_barang: kode108Val || '',
                         gedung_luas_m2: spec.luas_m2 || 0,
                         gedung_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
                         gedung_bertingkat: spec.bertingkat || 'Bertingkat',
@@ -226,7 +227,7 @@
                         gedung_nilai_pip: spec.nilai_pip || 0,
                         // KIB D Jaringan
                         jaringan_nama_barang: nama || '',
-                        jaringan_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        jaringan_kode_barang: kode108Val || '',
                         jaringan_konstruksi: spec.konstruksi || '',
                         jaringan_panjang_m: spec.panjang_m || 0,
                         jaringan_lebar_m: spec.lebar_m || 0,
@@ -245,7 +246,7 @@
                         jaringan_nilai_pip: spec.nilai_pip || 0,
                         // KIB E Lainnya
                         lainnya_nama_barang: nama || '',
-                        lainnya_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        lainnya_kode_barang: kode108Val || '',
                         lainnya_buku_judul: spec.buku_judul || '',
                         lainnya_buku_pencipta: spec.buku_pencipta || '',
                         lainnya_buku_spesifikasi: spec.buku_spesifikasi || '',
@@ -258,23 +259,24 @@
                         lainnya_hewan_spesifikasi: spec.hewan_spesifikasi || '',
                         ruang_pemegang_lainnya: reg0 ? (reg0.ruang_pemegang || '') : '',
                         lainnya_jumlah_barang: ea ? (ea.jumlah_volume || 1) : 1,
-                        lainnya_satuan: ea ? (ea.satuan || 'Unit') : 'Unit',
+                        lainnya_satuan: ea ? (ea.satuan || 'Eksemplar') : 'Eksemplar',
                         lainnya_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
                         lainnya_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
                         // ATB
                         atb_nama_barang: nama || '',
-                        atb_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
-                        atb_judul_nama: spec.judul_lisensi || '',
-                        atb_pencipta: spec.pencipta || '',
-                        atb_spesifikasi: spec.buku_spesifikasi || '',
+                        atb_kode_barang: kode108Val || '',
+                        atb_judul: spec.atb_judul || '',
+                        atb_pencipta: spec.atb_pencipta || '',
+                        atb_jenis_lisensi: spec.atb_jenis_lisensi || '',
+                        atb_spesifikasi: spec.atb_spesifikasi || '',
                         ruang_pemegang_atb: reg0 ? (reg0.ruang_pemegang || '') : '',
                         atb_jumlah: ea ? (ea.jumlah_volume || 1) : 1,
-                        atb_satuan: ea ? (ea.satuan || 'Paket') : 'Paket',
+                        atb_satuan: ea ? (ea.satuan || 'Lisensi') : 'Lisensi',
                         atb_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
                         atb_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
                         // KIB F KDP
                         kdp_nama_barang: nama || '',
-                        kdp_kode_barang: (ja && ja.sub_sub_rincian_objek) || '',
+                        kdp_kode_barang: kode108Val || '',
                         kdp_bangunan: spec.bertingkat || 'Bertingkat',
                         kdp_beton: spec.beton || 'Beton',
                         kdp_luas_m2: spec.luas_m2 || 0,
@@ -356,6 +358,28 @@
                             kelompok: item.kelompok,
                             default_jenis_kode: item.kelompok === 'Tanah' ? '1.3.1' : (item.kelompok === 'Bangunan' ? '1.3.3' : '1.3.2')
                         }));
+                    }
+
+                    // Pre-fill Mode Edit untuk Langkah 2 Sub Rincian Objek PMDN 108 (6 segmen / 14 karakter)
+                    if (window.editingAstap) {
+                        const ea = window.editingAstap;
+                        const ja = ea.jenis_astap || null;
+                        const kode108Val = ea.kode_108 || (ja ? (ja.sub_sub_rincian_objek || ja.jenis) : '');
+
+                        let srKode = ja ? (ja.sub_rincian_objek || '') : '';
+                        if (!srKode && kode108Val && kode108Val.length >= 14) {
+                            srKode = kode108Val.substring(0, 14);
+                        }
+                        
+                        if (srKode) {
+                            this.formData.sub_rincian_kode = srKode;
+                            const foundSub = (this.availableSubRincian108 || []).find(s => s.kode === srKode);
+                            if (foundSub) {
+                                this.formData.sub_rincian_nama = foundSub.nama;
+                            } else if (ja && ja.uraian_sub_rincian) {
+                                this.formData.sub_rincian_nama = ja.uraian_sub_rincian;
+                            }
+                        }
                     }
                 },
 
@@ -518,7 +542,40 @@
                 },
 
                 get availableSubSubRincian108() {
-                    return (this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian) ? this.currentSubRincianObj.subSubRincian : [];
+                    let list = [];
+
+                    // 1. Ambil dari currentSubRincianObj jika sudah memilih sub-rincian spesifik
+                    if (this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian) {
+                        list = [...this.currentSubRincianObj.subSubRincian];
+                    }
+
+                    // 2. Jika belum, filter HANYA dari kelompok jenis ASTAP yang dipilih di Langkah 2 (currentJenisAstap)
+                    if (list.length === 0 && this.currentJenisAstap && this.currentJenisAstap.subRincian) {
+                        this.currentJenisAstap.subRincian.forEach(s => {
+                            if (s.subSubRincian) list = list.concat(s.subSubRincian);
+                        });
+                    }
+
+                    // 3. Fallback berdasarkan kelompok jenis aset (Tanah 1.3.1, Mesin 1.3.2, Gedung 1.3.3, Jaringan 1.3.4, Lainnya 1.3.5, ATB 1.5.3, KDP 1.3.6)
+                    if (list.length === 0) {
+                        const targetGroupKode = this.isTanah ? '1.3.1' : (this.isMesin ? '1.3.2' : (this.isGedung ? '1.3.3' : (this.isJaringan ? '1.3.4' : (this.isAsetLainnya ? '1.3.5' : (this.isAtb ? '1.5.3' : (this.isKdp ? '1.3.6' : ''))))));
+                        const matchedGroup = (window.dbMasterJenisAstap108 || []).find(j => j.kode === targetGroupKode);
+                        if (matchedGroup && matchedGroup.subRincian) {
+                            matchedGroup.subRincian.forEach(s => {
+                                if (s.subSubRincian) list = list.concat(s.subSubRincian);
+                            });
+                        }
+                    }
+
+                    // 4. Pastikan barang aktif saat ini terdaftar di list agar opsi select terisi otomatis
+                    const activeKode = this.isTanah ? this.formData.tanah_kode_barang : (this.isMesin ? this.formData.mesin_kode_barang : (this.isGedung ? this.formData.gedung_kode_barang : (this.isJaringan ? this.formData.jaringan_kode_barang : (this.isAsetLainnya ? this.formData.lainnya_kode_barang : (this.isAtb ? this.formData.atb_kode_barang : (this.isKdp ? this.formData.kdp_kode_barang : ''))))));
+                    const activeNama = this.isTanah ? this.formData.tanah_nama_barang : (this.isMesin ? this.formData.mesin_nama_barang : (this.isGedung ? this.formData.gedung_nama_barang : (this.isJaringan ? this.formData.jaringan_nama_barang : (this.isAsetLainnya ? this.formData.lainnya_nama_barang : (this.isAtb ? this.formData.atb_nama_barang : (this.isKdp ? this.formData.kdp_nama_barang : ''))))));
+
+                    if (activeKode && !list.some(item => item.kode === activeKode)) {
+                        list.unshift({ kode: activeKode, nama: activeNama || ('Barang Terpilih (' + activeKode + ')') });
+                    }
+
+                    return list;
                 },
 
                 // Getters Filter Pencarian Langkah 1 (SIPD)
@@ -1354,16 +1411,14 @@
                              :class="isTanah ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : (isMesin ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : (isGedung ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : (isJaringan ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' : (isAsetLainnya ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : (isAtb ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : (isKdp ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'))))))">
                             <span x-text="isTanah ? '🌾 RINCIAN KHUSUS BELANJA MODAL TANAH (KIB A)' : (isMesin ? '⚙️ RINCIAN KHUSUS PERALATAN DAN MESIN (KIB B)' : (isGedung ? '🏢 RINCIAN KHUSUS GEDUNG DAN BANGUNAN (KIB C)' : (isJaringan ? '🚰 RINCIAN KHUSUS JALAN, IRIGASI & JARINGAN (KIB D)' : (isAsetLainnya ? '📚 RINCIAN KHUSUS ASET TETAP LAINNYA (KIB E)' : (isAtb ? '💻 RINCIAN KHUSUS ASET TIDAK BERWUJUD (1.5.3)' : (isKdp ? '🏗️ RINCIAN KHUSUS KONSTRUKSI DALAM PENGERJAAN (KIB F)' : '📑 DOKUMEN PEMBELIAN BARANG'))))))"></span>
                         </div>
-                        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-                            <span class="p-2 rounded-xl text-sm" :class="isTanah ? 'bg-emerald-500/10 text-emerald-400' : (isMesin ? 'bg-amber-500/10 text-amber-400' : (isGedung ? 'bg-indigo-500/10 text-indigo-400' : (isJaringan ? 'bg-teal-500/10 text-teal-400' : (isAsetLainnya ? 'bg-rose-500/10 text-rose-400' : (isAtb ? 'bg-violet-500/10 text-violet-400' : (isKdp ? 'bg-amber-500/10 text-amber-400' : 'bg-cyan-500/10 text-cyan-400'))))))">💻</span>
-                            <span x-text="isTanah ? 'Langkah 3: Rincian Belanja Modal Tanah Sesuai SPK / Surat Pesanan / Kwitansi / Invoice' : (isMesin ? 'Langkah 3: Rincian Peralatan dan Mesin Sesuai SPK / Surat Pesanan / Kwitansi / Invoice' : (isGedung ? 'Langkah 3: Rincian Belanja Gedung dan Bangunan Sesuai SPK / Invoice' : (isJaringan ? 'Langkah 3: Rincian Belanja Jalan, Irigasi dan Jaringan Sesuai SPK / Invoice' : (isAsetLainnya ? 'Langkah 3: Rincian Aset Tetap Lainnya (Buku / Kesenian / Hewan & Tumbuhan) Sesuai SPK / Invoice' : (isAtb ? 'Langkah 3: Rincian Aset Tidak Berwujud (Software / Lisensi / Hak Cipta) Sesuai SPK / Invoice' : (isKdp ? 'Langkah 3: Rincian Konstruksi Dalam Pengerjaan (KDP / Fisik & Termin Kontrak) Sesuai SPK / MC' : 'Langkah 3: Dokumen Pengadaan & Bukti Transaksi')))))))"></span>
-                        </h2>
+                        <h2 class="text-base sm:text-lg font-bold text-white tracking-tight"
+                            x-text="isTanah ? 'Langkah 3: Rincian Belanja Modal Tanah Sesuai SPK / Kwitansi / Invoice' : (isMesin ? 'Langkah 3: Rincian Peralatan dan Mesin Sesuai SPK / Kwitansi / Invoice' : (isGedung ? 'Langkah 3: Rincian Belanja Gedung dan Bangunan Sesuai SPK / Invoice' : (isJaringan ? 'Langkah 3: Rincian Belanja Jalan, Irigasi dan Jaringan Sesuai SPK / Invoice' : (isAsetLainnya ? 'Langkah 3: Rincian Aset Tetap Lainnya Sesuai SPK / Invoice' : (isAtb ? 'Langkah 3: Rincian Aset Tidak Berwujud Sesuai SPK / Invoice' : (isKdp ? 'Langkah 3: Rincian Konstruksi Dalam Pengerjaan Sesuai SPK / MC' : 'Langkah 3: Dokumen Pengadaan & Bukti Transaksi'))))))"></h2>
                         <p class="text-xs text-slate-400 mt-1" x-text="isTanah ? 'Pilih Sub-Sub Rincian (Nama/Kode Barang 108), letak/alamat tanah, status tanah, sertifikat, riwayat pembelian, dan nilai barang:' : (isMesin ? 'Pilih Sub-Sub Rincian 108, spesifikasi (merk, type, ukuran, bahan), riwayat pembelian, volume, administrasi proyek dan ruangan:' : (isGedung ? 'Pilih Sub-Sub Rincian 108, luas m2, kondisi, status tanah KIB A, kapitalisasi, riwayat pembelian, volume dan rincian nilai bangunan:' : (isJaringan ? 'Pilih Sub-Sub Rincian 108, konstruksi, panjang/luas, status tanah KIB A, riwayat pembelian, volume dan rincian nilai jaringan:' : (isAsetLainnya ? 'Pilih Sub-Sub Rincian 108, buku perpustakaan, kesenian/kebudayaan, tanaman/hewan, riwayat pembelian, volume dan administrasi proyek:' : (isAtb ? 'Pilih Sub-Sub Rincian 108, judul/nama software, pencipta, spesifikasi, riwayat pembelian, volume, administrasi proyek dan ruangan:' : (isKdp ? 'Pilih Sub-Sub Rincian 108, spesifikasi konstruksi, luas rencana, progres %, status tanah KIB A, periode pengerjaan, dan akumulasi nilai realisasi:' : 'Lengkapi nomor dokumen pembelian atau klik tombol otomatis di kanan:'))))))))"></p>
                     </div>
 
                     <!-- Tombol Cepat Otomatis -->
                     <button type="button" @click="autoFillDokumen()"
-                            class="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center space-x-1.5 active:scale-95">
+                            class="px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all flex items-center space-x-1.5 active:scale-95 shrink-0">
                         <span>✨ Isi Otomatis Format Nomor Dokumen</span>
                     </button>
                 </div>
@@ -1398,28 +1453,24 @@
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
                                 </div>
 
-                                <!-- Filter Dropdown Sub-Sub Rincian dari Master Jenis ASTAP -->
+                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
                                 <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Pilih Barang (Sub-Sub Rincian 108):</label>
+                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
                                     <select :value="formData.tanah_kode_barang"
                                             @change="onSubSubRincianChange($event.target.value)"
                                             class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-400 transition-all">
+                                        <option value="" disabled>-- Pilih Nama Barang --</option>
                                         <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.tanah_kode_barang" x-text="item.kode + ' - ' + item.nama"></option>
+                                            <option :value="item.kode" :selected="item.kode === formData.tanah_kode_barang" x-text="item.nama"></option>
                                         </template>
                                     </select>
                                 </div>
 
-                                <!-- Tampilan Nama Barang & Kode Barang yang Terpilih -->
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Nama Barang (Uraian Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.tanah_nama_barang" placeholder="Tanah Bangunan Apotik / Rumah Sakit"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-emerald-500">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Kode Barang (Kode Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.tanah_kode_barang" placeholder="1.3.1.01.01.02.013"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <div class="space-y-1">
+                                    <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
+                                    <input type="text" x-model="formData.tanah_kode_barang" readonly placeholder="Kode 108 otomatis..."
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
 
@@ -1742,28 +1793,24 @@
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
                                 </div>
 
-                                <!-- Filter Dropdown Sub-Sub Rincian dari Master Jenis ASTAP -->
+                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
                                 <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Pilih Barang (Sub-Sub Rincian 108):</label>
+                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
                                     <select :value="formData.mesin_kode_barang"
                                             @change="onSubSubRincianChange($event.target.value)"
                                             class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-400 transition-all">
+                                        <option value="" disabled>-- Pilih Nama Barang --</option>
                                         <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.mesin_kode_barang" x-text="item.kode + ' - ' + item.nama"></option>
+                                            <option :value="item.kode" :selected="item.kode === formData.mesin_kode_barang" x-text="item.nama"></option>
                                         </template>
                                     </select>
                                 </div>
 
-                                <!-- Tampilan Nama Barang & Kode Barang yang Terpilih -->
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Nama Barang (Uraian Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.mesin_nama_barang" placeholder="CT-Scan 128 Slice High Resolution"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-emerald-500">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Kode Barang (Kode Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.mesin_kode_barang" placeholder="1.3.2.02.01.01.005"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <div class="space-y-1">
+                                    <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
+                                    <input type="text" x-model="formData.mesin_kode_barang" readonly placeholder="Kode 108 otomatis..."
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
 
@@ -2087,28 +2134,24 @@
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
                                 </div>
 
-                                <!-- Filter Dropdown Sub-Sub Rincian dari Master Jenis ASTAP -->
+                                <!-- 1. Nama Bangunan (Filter Murni dari Nama) -->
                                 <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Pilih Bangunan (Sub-Sub Rincian 108):</label>
+                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Bangunan (Uraian Sub-Sub Rincian 108):</label>
                                     <select :value="formData.gedung_kode_barang"
                                             @change="onSubSubRincianChange($event.target.value)"
                                             class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-400 transition-all">
+                                        <option value="" disabled>-- Pilih Nama Bangunan --</option>
                                         <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.gedung_kode_barang" x-text="item.kode + ' - ' + item.nama"></option>
+                                            <option :value="item.kode" :selected="item.kode === formData.gedung_kode_barang" x-text="item.nama"></option>
                                         </template>
                                     </select>
                                 </div>
 
-                                <!-- Tampilan Nama Barang & Kode Barang yang Terpilih -->
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Nama Barang (Uraian Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.gedung_nama_barang" placeholder="Gedung Rawat Inap VIP Terpadu Lt 2"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-emerald-500">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Kode Barang (Kode Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.gedung_kode_barang" placeholder="1.3.3.01.01.08.001"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <div class="space-y-1">
+                                    <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
+                                    <input type="text" x-model="formData.gedung_kode_barang" readonly placeholder="Kode 108 otomatis..."
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
 
@@ -2478,28 +2521,24 @@
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Terfilter dari Langkah 2</span>
                                 </div>
 
-                                <!-- Filter Dropdown Sub-Sub Rincian dari Master Jenis ASTAP -->
+                                <!-- 1. Nama Jaringan (Filter Murni dari Nama) -->
                                 <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Pilih Jaringan / Jalan (Sub-Sub Rincian 108):</label>
+                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Jaringan / Jalan (Uraian Sub-Sub Rincian 108):</label>
                                     <select :value="formData.jaringan_kode_barang"
                                             @change="onSubSubRincianChange($event.target.value)"
                                             class="w-full bg-slate-900 border border-teal-500/60 hover:border-teal-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-teal-400 transition-all">
+                                        <option value="" disabled>-- Pilih Nama Jaringan / Jalan --</option>
                                         <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.jaringan_kode_barang" x-text="item.kode + ' - ' + item.nama"></option>
+                                            <option :value="item.kode" :selected="item.kode === formData.jaringan_kode_barang" x-text="item.nama"></option>
                                         </template>
                                     </select>
                                 </div>
 
-                                <!-- Tampilan Nama Barang & Kode Barang yang Terpilih -->
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Nama Barang (Uraian Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.jaringan_nama_barang" placeholder="Jaringan Pipa Oksigen Sentral Medis & Vakum"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-teal-500">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Kode Barang (Kode Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.jaringan_kode_barang" placeholder="1.3.4.03.01.04.004"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-teal-400 font-mono font-bold focus:outline-none focus:border-teal-500">
+                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <div class="space-y-1">
+                                    <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
+                                    <input type="text" x-model="formData.jaringan_kode_barang" readonly placeholder="Kode 108 otomatis..."
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-teal-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
 
@@ -2870,25 +2909,24 @@
                                     </div>
                                     <span class="text-[9px] font-mono text-rose-400 font-bold">PMDN 108</span>
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="block text-slate-300 font-semibold text-xs">Pilih Sub-Sub Rincian Barang:</label>
+                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
+                                <div class="space-y-1">
+                                    <label class="block text-slate-300 font-bold text-[11px]">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
                                     <select :value="formData.lainnya_kode_barang" 
                                             @change="onSubSubRincianChange($event.target.value)"
                                             class="w-full bg-slate-900 border border-rose-500/50 hover:border-rose-400 rounded-xl px-3 py-2.5 text-xs text-rose-300 font-bold focus:outline-none focus:border-rose-400 transition-all">
+                                        <option value="" disabled>-- Pilih Nama Barang --</option>
                                         <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.lainnya_kode_barang" x-text="item.kode + ' - ' + item.nama"></option>
+                                            <option :value="item.kode" :selected="item.kode === formData.lainnya_kode_barang" x-text="item.nama"></option>
                                         </template>
                                     </select>
                                 </div>
+
+                                <!-- 2. Kode Barang (Otomatis Terisi) -->
                                 <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Nama Barang (Uraian Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.lainnya_nama_barang" placeholder="Buku Jurnal Kedokteran..."
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-rose-500">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Kode Barang (Kode Sub-Sub Rincian 108)</label>
-                                    <input type="text" x-model="formData.lainnya_kode_barang" placeholder="1.3.5.01.01.01.002"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-rose-300 font-mono font-bold focus:outline-none focus:border-rose-500">
+                                    <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
+                                    <input type="text" x-model="formData.lainnya_kode_barang" readonly placeholder="Kode 108 otomatis..."
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-rose-300 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
 
@@ -3277,25 +3315,24 @@
                                     </div>
                                     <span class="text-[9px] font-mono text-violet-400 font-bold">PMDN 108</span>
                                 </div>
-                                <div class="space-y-1.5">
-                                    <label class="block text-slate-300 font-semibold text-xs">Pilih Sub-Sub Rincian Barang:</label>
+                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
+                                <div class="space-y-1">
+                                    <label class="block text-slate-300 font-bold text-[11px]">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
                                     <select :value="formData.atb_kode_barang" 
                                             @change="onSubSubRincianChange($event.target.value)"
                                             class="w-full bg-slate-900 border border-violet-500/50 hover:border-violet-400 rounded-xl px-3 py-2.5 text-xs text-violet-300 font-bold focus:outline-none focus:border-violet-400 transition-all">
+                                        <option value="" disabled>-- Pilih Nama Barang --</option>
                                         <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.atb_kode_barang" x-text="item.kode + ' - ' + item.nama"></option>
+                                            <option :value="item.kode" :selected="item.kode === formData.atb_kode_barang" x-text="item.nama"></option>
                                         </template>
                                     </select>
                                 </div>
+
+                                <!-- 2. Kode Barang (Otomatis Terisi) -->
                                 <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Nama Barang (Uraian Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.atb_nama_barang" placeholder="Software SIMAT-RK..."
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-violet-500">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Kode Barang (Kode Sub-Sub Rincian 108)</label>
-                                    <input type="text" x-model="formData.atb_kode_barang" placeholder="1.5.3.01.01.01.001"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-violet-300 font-mono font-bold focus:outline-none focus:border-violet-500">
+                                    <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
+                                    <input type="text" x-model="formData.atb_kode_barang" readonly placeholder="Kode 108 otomatis..."
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-violet-300 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
 
@@ -3605,28 +3642,24 @@
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Terfilter dari Langkah 2</span>
                                 </div>
 
-                                <!-- Filter Dropdown Sub-Sub Rincian dari Master Jenis ASTAP -->
+                                <!-- 1. Nama Proyek (Filter Murni dari Nama) -->
                                 <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Pilih Proyek KDP (Sub-Sub Rincian 108):</label>
+                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Proyek KDP (Uraian Sub-Sub Rincian 108):</label>
                                     <select :value="formData.kdp_kode_barang"
                                             @change="onSubSubRincianChange($event.target.value)"
                                             class="w-full bg-slate-900 border border-amber-500/60 hover:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 transition-all">
+                                        <option value="" disabled>-- Pilih Nama Proyek KDP --</option>
                                         <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.kdp_kode_barang" x-text="item.kode + ' - ' + item.nama"></option>
+                                            <option :value="item.kode" :selected="item.kode === formData.kdp_kode_barang" x-text="item.nama"></option>
                                         </template>
                                     </select>
                                 </div>
 
-                                <!-- Tampilan Nama Barang & Kode Barang yang Terpilih -->
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Nama Proyek KDP (Uraian Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.kdp_nama_barang" placeholder="Pembangunan Gedung Rawat Inap Baru Lt 3 (KDP)"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Kode Barang (Kode Sub-Sub Rincian)</label>
-                                    <input type="text" x-model="formData.kdp_kode_barang" placeholder="1.3.6.01.01.01.001"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500">
+                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <div class="space-y-1">
+                                    <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
+                                    <input type="text" x-model="formData.kdp_kode_barang" readonly placeholder="Kode 108 otomatis..."
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-amber-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
 

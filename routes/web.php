@@ -112,7 +112,7 @@ Route::middleware('auth')->group(function () {
                     'id' => $a->id,
                     'category' => $a->category,
                     'kode_barang' => $a->kode_108,
-                    'nama_barang' => $a->nama_barang,
+                    'nama_barang' => ($a->jenisAstap && !empty($a->jenisAstap->uraian_sub_sub_rincian)) ? $a->jenisAstap->uraian_sub_sub_rincian : $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
                     'volume_satuan' => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
                     'jenis_aset_nama' => $a->jenisAstap ? $a->jenisAstap->nama_jenis : ($a->category === 'ATB' ? 'ASET TIDAK BERWUJUD' : ($a->category === 'EXTRACOM' ? 'EKSTRAKOMTABEL (< RP 300.000)' : 'PERALATAN DAN MESIN')),
@@ -240,13 +240,36 @@ Route::middleware('auth')->group(function () {
             if (!empty($data['kode_rek'])) {
                 $rekeningBelanjaId = \App\Models\RekeningBelanja::where('kode_rek', $data['kode_rek'])->value('id');
             }
-            $jenisAstapId = null;
-            if (!empty($data['sub_rincian_kode'])) {
-                $jenisAstapId = \App\Models\JenisAstap::where('sub_sub_rincian_objek', $data['sub_rincian_kode'])->value('id')
-                    ?? \App\Models\JenisAstap::where('jenis', substr($data['sub_rincian_kode'], 0, 5))->value('id');
-            }
 
-            $namaBarang = $data['tanah_nama_barang'] ?? ($data['mesin_nama_barang'] ?? ($data['gedung_nama_barang'] ?? ($data['jaringan_nama_barang'] ?? ($data['lainnya_nama_barang'] ?? ($data['atb_nama_barang'] ?? ($data['kdp_nama_barang'] ?? ($data['nama_barang'] ?? 'Aset Baru')))))));
+            // Dapatkan Kode 108 Sub-Sub Rincian yang dipilih dari Langkah 3
+            $kode108Submitted = $data['tanah_kode_barang'] ?? ($data['mesin_kode_barang'] ?? ($data['gedung_kode_barang'] ?? ($data['jaringan_kode_barang'] ?? ($data['lainnya_kode_barang'] ?? ($data['atb_kode_barang'] ?? ($data['kdp_kode_barang'] ?? null))))));
+            
+            $jenisAstapRecord = null;
+            if ($kode108Submitted) {
+                $jenisAstapRecord = \App\Models\JenisAstap::where('sub_sub_rincian_objek', $kode108Submitted)->first();
+            }
+            if (!$jenisAstapRecord && !empty($data['sub_rincian_kode'])) {
+                $jenisAstapRecord = \App\Models\JenisAstap::where('sub_rincian_objek', $data['sub_rincian_kode'])->first()
+                    ?? \App\Models\JenisAstap::where('jenis', substr($data['sub_rincian_kode'], 0, 5))->first();
+            }
+            $jenisAstapId = $jenisAstapRecord ? $jenisAstapRecord->id : null;
+
+            // Nama barang diutamakan dari Uraian Sub-Sub Rincian 108
+            $jenisPrefix = substr($data['jenis_aset_kode'] ?? ($data['sub_rincian_kode'] ?? ''), 0, 5);
+            $namaInputForm = match(true) {
+                $jenisPrefix === '1.3.1' => $data['tanah_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.2' => $data['mesin_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.3' => $data['gedung_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.4' => $data['jaringan_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.5' => $data['lainnya_nama_barang'] ?? null,
+                $jenisPrefix === '1.5.3' => $data['atb_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.6' => $data['kdp_nama_barang'] ?? null,
+                default => null
+            };
+
+            $namaBarang = ($jenisAstapRecord && !empty($jenisAstapRecord->uraian_sub_sub_rincian)) 
+                ? $jenisAstapRecord->uraian_sub_sub_rincian 
+                : ($namaInputForm ?? ($data['nama_barang'] ?? 'Aset Baru'));
 
             $astap = \App\Models\Astap::create([
                 'jenis_pengadaan_id' => $jenisPengadaanId,
@@ -301,7 +324,18 @@ Route::middleware('auth')->group(function () {
             }
 
             $data = $request->all();
-            if (!empty($data['nama_barang'])) $astap->nama_barang = $data['nama_barang'];
+
+            // Dapatkan Kode 108 Sub-Sub Rincian yang dipilih dari Langkah 3
+            $kode108Submitted = $data['tanah_kode_barang'] ?? ($data['mesin_kode_barang'] ?? ($data['gedung_kode_barang'] ?? ($data['jaringan_kode_barang'] ?? ($data['lainnya_kode_barang'] ?? ($data['atb_kode_barang'] ?? ($data['kdp_kode_barang'] ?? null))))));
+
+            if ($kode108Submitted) {
+                $jaRec = \App\Models\JenisAstap::where('sub_sub_rincian_objek', $kode108Submitted)->first();
+                if ($jaRec) {
+                    $astap->jenis_astap_id = $jaRec->id;
+                    $astap->nama_barang = $jaRec->uraian_sub_sub_rincian ?: $astap->nama_barang;
+                }
+            }
+
             if (!empty($data['tahun_perolehan'])) $astap->tahun_perolehan = $data['tahun_perolehan'];
             if (isset($data['jumlah_realisasi'])) $astap->total_realisasi = $data['jumlah_realisasi'];
             if (!empty($data['keterangan'])) $astap->keterangan_tambahan = $data['keterangan'];
