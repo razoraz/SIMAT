@@ -292,14 +292,25 @@ Route::middleware('auth')->group(function () {
 
             $vol = (int) ($data['jumlah_volume'] ?? 1);
             $kode108Clean = str_replace('.', '', $astap->kode_108 ?: '132000000000');
-            for ($i = 1; $i <= max(1, $vol); $i++) {
-                $noRegStr = str_pad($i, 7, '0', STR_PAD_LEFT);
-                $nibar = "1201351102000000280000{$astap->tahun_perolehan}{$kode108Clean}{$noRegStr}";
+            $tahun = $astap->tahun_perolehan;
+
+            // Cari nomor register terakhir untuk kode 108 + tahun yang sama di SELURUH ASTAP
+            $maxRegInt = \App\Models\AstapRegister::whereHas('astap', function($q) use ($astap) {
+                $q->where('jenis_astap_id', $astap->jenis_astap_id)
+                  ->where('tahun_perolehan', $astap->tahun_perolehan);
+            })->max('no_register_int') ?? 0;
+
+            $startFrom = $maxRegInt + 1;
+
+            for ($i = 0; $i < max(1, $vol); $i++) {
+                $regNum = $startFrom + $i;
+                $noRegStr = str_pad($regNum, 7, '0', STR_PAD_LEFT);
+                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
                 $qrPath = "/scan/{$nibar}";
                 \App\Models\AstapRegister::create([
                     'astap_id' => $astap->id,
-                    'tahun_perolehan' => $astap->tahun_perolehan,
-                    'no_register_int' => $i,
+                    'tahun_perolehan' => $tahun,
+                    'no_register_int' => $regNum,
                     'no_register' => $nibar,
                     'nibar' => $nibar,
                     'qr_code_path' => $qrPath,
@@ -311,6 +322,44 @@ Route::middleware('auth')->group(function () {
 
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil disimpan ke database SIMAT-RK!']);
         })->name('astap.store');
+
+        // API: Cek duplikat kode 108 + tahun untuk konfirmasi sebelum submit
+        Route::post('/astap/check-duplicate', function (\Illuminate\Http\Request $request) {
+            $kode108 = $request->input('kode_108');
+            $tahun = $request->input('tahun');
+
+            if (empty($kode108) || empty($tahun)) {
+                return response()->json(['exists' => false]);
+            }
+
+            $jenisAstap = \App\Models\JenisAstap::where('sub_sub_rincian_objek', $kode108)->first();
+            if (!$jenisAstap) {
+                return response()->json(['exists' => false]);
+            }
+
+            $existingAstaps = \App\Models\Astap::where('jenis_astap_id', $jenisAstap->id)
+                ->where('tahun_perolehan', $tahun)
+                ->get();
+
+            if ($existingAstaps->isEmpty()) {
+                return response()->json(['exists' => false]);
+            }
+
+            $totalUnit = \App\Models\AstapRegister::whereIn('astap_id', $existingAstaps->pluck('id'))
+                ->count();
+
+            $maxReg = \App\Models\AstapRegister::whereIn('astap_id', $existingAstaps->pluck('id'))
+                ->max('no_register_int') ?? 0;
+
+            return response()->json([
+                'exists' => true,
+                'nama_barang' => $existingAstaps->first()->nama_barang,
+                'total_unit' => $totalUnit,
+                'nibar_terakhir' => $maxReg,
+                'nibar_selanjutnya' => $maxReg + 1,
+                'jumlah_astap' => $existingAstaps->count()
+            ]);
+        })->name('astap.checkDuplicate');
 
         Route::put('/astap/{id}', function (\Illuminate\Http\Request $request, $id) {
             $astap = \App\Models\Astap::find($id);

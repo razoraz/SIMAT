@@ -829,7 +829,7 @@
                     return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
                 },
 
-                submitForm() {
+                async submitForm() {
                     if (!this.formData.program_kode || !this.formData.kegiatan_kode || !this.formData.sub_kegiatan_kode) {
                         alert('⚠️ Mohon lengkapi pilihan pada Langkah 1 terlebih dahulu!');
                         this.currentStep = 1;
@@ -843,8 +843,59 @@
 
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                     const astapId = '{{ $id ?? "" }}';
-                    const url = (this.isEdit && astapId) ? '/astap/' + astapId : '/astap';
-                    const method = (this.isEdit && astapId) ? 'PUT' : 'POST';
+                    const isEdit = this.isEdit && astapId;
+
+                    // Ambil kode 108 aktif berdasarkan jenis aset
+                    const activeKode108 = this.isTanah ? this.formData.tanah_kode_barang 
+                        : (this.isMesin ? this.formData.mesin_kode_barang 
+                        : (this.isGedung ? this.formData.gedung_kode_barang 
+                        : (this.isJaringan ? this.formData.jaringan_kode_barang 
+                        : (this.isAsetLainnya ? this.formData.lainnya_kode_barang 
+                        : (this.isAtb ? this.formData.atb_kode_barang 
+                        : (this.isKdp ? this.formData.kdp_kode_barang : ''))))));
+
+                    const tahun = this.formData.tahun_perolehan || new Date().getFullYear();
+
+                    // Cek duplikat hanya saat TAMBAH BARU (bukan edit)
+                    if (!isEdit && activeKode108) {
+                        try {
+                            const checkRes = await fetch('/astap/check-duplicate', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ kode_108: activeKode108, tahun: tahun })
+                            });
+                            const checkData = await checkRes.json();
+
+                            if (checkData.exists) {
+                                const vol = parseInt(this.formData.jumlah_volume || this.formData.tanah_jumlah_bidang || 1);
+                                const nibarMulai = checkData.nibar_selanjutnya;
+                                const nibarAkhir = nibarMulai + vol - 1;
+                                const konfirmasi = confirm(
+                                    `⚠️ BARANG SERUPA SUDAH ADA!\n\n` +
+                                    `Nama: ${checkData.nama_barang}\n` +
+                                    `Kode 108: ${activeKode108}\n` +
+                                    `Tahun: ${tahun}\n` +
+                                    `Sudah terdaftar: ${checkData.total_unit} unit (${checkData.jumlah_astap} ASTAP)\n` +
+                                    `NIBAR terakhir: ...${String(checkData.nibar_terakhir).padStart(7, '0')}\n\n` +
+                                    `Jika Anda lanjutkan, akan dibuat ASTAP baru dengan ${vol} unit.\n` +
+                                    `NIBAR akan dilanjutkan: ...${String(nibarMulai).padStart(7, '0')} s/d ...${String(nibarAkhir).padStart(7, '0')}\n\n` +
+                                    `Lanjutkan simpan?`
+                                );
+                                if (!konfirmasi) return;
+                            }
+                        } catch (e) {
+                            console.warn('Gagal cek duplikat:', e);
+                            // Lanjut simpan meskipun cek gagal
+                        }
+                    }
+
+                    // Simpan data
+                    const url = isEdit ? '/astap/' + astapId : '/astap';
+                    const method = isEdit ? 'PUT' : 'POST';
 
                     fetch(url, {
                         method: method,
