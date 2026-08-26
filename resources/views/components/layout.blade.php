@@ -23,6 +23,29 @@
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+        /* Global Elegant Dark Scrollbar */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #0b1120;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b1120;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0d9488;
+        }
+
+
         @media print {
             .no-print, aside, header, footer, #topbar, nav, button, .no-print * {
                 display: none !important;
