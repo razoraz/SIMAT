@@ -2160,6 +2160,42 @@
                         </div>
 
                         <!-- 5. Volume, Administrasi Proyek, Nilai Total & SP2D/BAST -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            
+                            <!-- 5. Volume & Nilai Satuan Barang -->
+                            <div class="p-5 rounded-2xl bg-slate-950/70 border border-emerald-500/40 space-y-3 shadow-lg">
+                                <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">5. Volume & Nilai Satuan Barang (Rp):</span>
+                                <div class="grid grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Barang (Volume)</label>
+                                        <input type="number" min="1" x-model.number="formData.mesin_jumlah_barang" @input="updateExtracomStatus()" placeholder="1"
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
+                                        <input type="text" x-model="formData.mesin_satuan" placeholder="Unit / Buah / Set / Paket"
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan Barang (Rp)</label>
+                                        <input type="number" x-model.number="formData.mesin_nilai_satuan" @input="updateExtracomStatus()" placeholder="185000000"
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Administrasi Proyek (Rp)</label>
+                                        <input type="number" x-model.number="formData.mesin_administrasi_proyek" placeholder="0"
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                    </div>
+                                </div>
+                                <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-between shadow-inner">
+                                    <span class="text-xs font-bold text-emerald-300">Total Nilai Barang (Rp):</span>
+                                    <span class="text-base font-extrabold text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
+                                </div>
+                            </div>
+
+                            <!-- 6. Dokumen SP2D & BAST -->
                             <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-lg">
                                 <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">6. Dokumen SP2D & BAST:</span>
                                 <div class="grid grid-cols-2 gap-3">
@@ -2167,7 +2203,7 @@
                                         <span class="text-[10px] font-bold text-slate-300 block">SP2D</span>
                                         <div>
                                             <label class="block text-slate-500 text-[9px]">Nomor SP2D</label>
-                                            <input type="text" x-model="formData.sp2d_nomor" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                            <input type="text" x-model="formData.sp2d_nomor" placeholder="SP2D-2026-..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                         </div>
                                         <div>
                                             <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
@@ -2178,7 +2214,7 @@
                                         <span class="text-[10px] font-bold text-slate-300 block">BAST</span>
                                         <div>
                                             <label class="block text-slate-500 text-[9px]">Nomor BAST</label>
-                                            <input type="text" x-model="formData.bast_dokumen_nomor" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                            <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="BAST-2026-..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                         </div>
                                         <div>
                                             <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
