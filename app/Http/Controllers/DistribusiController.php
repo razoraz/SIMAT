@@ -18,11 +18,86 @@ class DistribusiController extends Controller
      */
     public function index()
     {
+        $units = Unit::orderBy('id', 'asc')->get()->map(function($u) {
+            return [
+                'id'      => $u->id,
+                'kode'    => $u->kode_unit ?: ('UNIT-' . str_pad($u->id, 3, '0', STR_PAD_LEFT)),
+                'nama'    => $u->nama,
+                'tipe'    => $u->tipe,
+                'kepala'  => $u->kepala,
+                'nip'     => $u->nip ?: '-',
+                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
+            ];
+        });
+
         $distribusis = Distribusi::with(['unit', 'items.astap.jenisAstap'])
             ->orderBy('id', 'desc')
-            ->get();
+            ->get()
+            ->map(function($d) {
+                $itemsMapped = $d->items->map(function($it) {
+                    $spec = is_array($it->astap?->spesifikasi_json) 
+                        ? $it->astap->spesifikasi_json 
+                        : (json_decode($it->astap?->spesifikasi_json ?? '', true) ?? []);
+                    $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? '-'));
+                    return [
+                        'id'          => $it->id,
+                        'astap_id'    => $it->astap_id,
+                        'nama_barang' => $it->astap?->nama_barang ?? '-',
+                        'kode_barang' => $it->astap?->kode_108 ?? '-',
+                        'jenis_nama'  => $it->astap?->jenisAstap?->nama_jenis ?? '-',
+                        'qty'         => $it->qty,
+                        'satuan'      => $it->astap?->satuan ?: 'Unit',
+                        'merk'        => $merk,
+                        'kondisi'     => $it->kondisi ?: 'Baik',
+                        'nibar_list'  => $it->nibar_list ?: [],
+                        'keterangan'  => $it->keterangan,
+                    ];
+                });
 
-        return view('pages.distribusi', compact('distribusis'));
+                $firstItemName = $itemsMapped->first()['nama_barang'] ?? 'Barang Aset';
+                $moreCount = $itemsMapped->count() > 1 ? ' + ' . ($itemsMapped->count() - 1) . ' item lainnya' : '';
+
+                // Tanggal format Indonesia
+                $tglCarbon = $d->tanggal_distribusi;
+                $bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                $hariIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+                $hariStr = $tglCarbon ? ($hariIndo[$tglCarbon->dayOfWeek] ?? 'Kamis') : 'Kamis';
+                $tglAngka = $tglCarbon ? (string)$tglCarbon->day : '13';
+                $bulanStr = $tglCarbon ? ($bulanIndo[$tglCarbon->month] ?? 'Agustus') : 'Agustus';
+                $tahunStr = $tglCarbon ? (string)$tglCarbon->year : '2026';
+
+                return [
+                    'id'                 => $d->id,
+                    'kode'               => $d->kode,
+                    'bast_nomor'         => $d->bast_nomor ?: ($d->kode . '/BAST/2026'),
+                    'nomor_bast'         => $d->bast_nomor ?: ($d->kode . '/BAST/2026'),
+                    'tgl'                => $tglCarbon ? $tglCarbon->format('d/m/Y') : '-',
+                    'tanggal_distribusi' => $tglCarbon ? $tglCarbon->format('Y-m-d') : null,
+                    'hari'               => $hariStr,
+                    'tanggal_angka'      => $tglAngka,
+                    'bulan'              => $bulanStr,
+                    'tahun'              => $tahunStr,
+                    'tahun_anggaran'     => $tahunStr,
+                    'sk_bupati_nomor'    => '188.45/430.10.7/2026',
+                    'nama'               => $firstItemName . $moreCount,
+                    'unit_id'            => $d->unit_id,
+                    'tujuan'             => $d->unit?->nama ?? '-',
+                    'penerima'           => $d->unit?->kepala ?? '-',
+                    'pj_nama'            => $d->unit?->kepala ?? '-',
+                    'pj_nip'             => $d->unit?->nip ?? '-',
+                    'pj_ruangan'         => $d->unit?->nama ?? '-',
+                    'pj_jabatan'         => 'Kepala / Penanggung Jawab ' . ($d->unit?->nama ?? ''),
+                    'status'             => $d->status,
+                    'signed'             => (bool)$d->signed,
+                    'tgl_signed'         => $d->tgl_signed ?: ($d->signed ? ($d->updated_at ? $d->updated_at->format('d/m/Y H:i') . ' WIB' : '16/06/2026 10:15 WIB') : '-'),
+                    'qr_hash'            => $d->signed ? ('BSRE-KOESNANDI-' . $d->kode) : '',
+                    'keterangan'         => $d->keterangan,
+                    'items'              => $itemsMapped->toArray(),
+                ];
+            });
+
+        return view('pages.distribusi', compact('distribusis', 'units'));
     }
 
     /**

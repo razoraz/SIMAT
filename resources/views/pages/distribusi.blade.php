@@ -20,14 +20,19 @@
 
                 unitList: {{ Js::from($units ?? []) }},
 
-                distribusis: [],
+                distribusis: {{ Js::from($distribusis ?? []) }},
 
                 init() {
+                    // Prioritaskan data yang dikirim dari database backend
+                    if (this.distribusis && this.distribusis.length > 0) {
+                        localStorage.setItem('simat_distribusis', JSON.stringify(this.distribusis));
+                        return;
+                    }
                     const stored = localStorage.getItem('simat_distribusis');
                     if (stored) {
                         try {
                             const parsed = JSON.parse(stored);
-                            if (Array.isArray(parsed)) {
+                            if (Array.isArray(parsed) && parsed.length > 0) {
                                 this.distribusis = parsed;
                             }
                         } catch (e) {
@@ -138,6 +143,10 @@
                 openPrintBast(item) {
                     this.selectedDistribusi = { ...item };
                     this.showPrintBastModal = true;
+                },
+
+                terimaDistribusi(item) {
+                    this.toggleSignDistribusi(item);
                 },
 
                 toggleSignDistribusi(item) {
