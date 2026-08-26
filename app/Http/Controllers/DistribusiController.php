@@ -287,6 +287,9 @@ class DistribusiController extends Controller
      */
     public function saveDistribusi(Request $request)
     {
+        $user = auth()->user();
+        $isSubAdmin = $user && $user->isSubAdmin();
+
         $validated = $request->validate([
             'kode'                         => 'required|string|max:50',
             'bast_nomor'                   => 'nullable|string|max:100',
@@ -298,13 +301,22 @@ class DistribusiController extends Controller
             'items.*.astap_id'             => 'required|exists:astaps,id',
             'items.*.qty'                  => 'required|integer|min:1',
             'items.*.keterangan'           => 'nullable|string',
-            // register_ids: array of integer FK ke astap_registers.id
+            // register_ids: array of integer FK ke astap_registers.id (hanya diisi oleh Admin/Master Admin)
             'items.*.register_ids'         => 'nullable|array',
             'items.*.register_ids.*'       => 'nullable|integer|exists:astap_registers,id',
         ]);
 
-        return DB::transaction(function () use ($validated) {
-            $unit = Unit::findOrFail($validated['unit_id']);
+        return DB::transaction(function () use ($validated, $user, $isSubAdmin) {
+            // Jika sub_admin, kunci unit_id sesuai unit akun yang sedang login
+            $finalUnitId = ($isSubAdmin && $user->unit_id) ? $user->unit_id : $validated['unit_id'];
+            $unit = Unit::findOrFail($finalUnitId);
+
+            // Jika sub_admin, status dikunci ke 'Menunggu Konfirmasi' untuk pengajuan baru
+            $finalStatus = $validated['status'];
+            if ($isSubAdmin) {
+                $existing = Distribusi::where('kode', $validated['kode'])->first();
+                $finalStatus = $existing ? $existing->status : 'Menunggu Konfirmasi';
+            }
 
             // 1. Simpan / Update Header Distribusi
             $distribusi = Distribusi::updateOrCreate(
@@ -312,8 +324,8 @@ class DistribusiController extends Controller
                 [
                     'bast_nomor'         => $validated['bast_nomor'],
                     'tanggal_distribusi' => $validated['tanggal_distribusi'],
-                    'unit_id'            => $validated['unit_id'],
-                    'status'             => $validated['status'],
+                    'unit_id'            => $finalUnitId,
+                    'status'             => $finalStatus,
                     'keterangan'         => $validated['keterangan'] ?? null,
                 ]
             );

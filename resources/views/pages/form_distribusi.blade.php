@@ -5,6 +5,16 @@
         return {
             isEdit: {{ request()->routeIs('distribusi.edit') ? 'true' : 'false' }},
             editId: {{ isset($id) ? Js::from($id) : 'null' }},
+            userRole: {{ Js::from(Auth::user()->role ?? 'admin') }},
+            isSubAdmin: {{ Js::from(Auth::user() ? Auth::user()->isSubAdmin() : false) }},
+            userUnit: {{ Js::from(Auth::user()?->unitModel ? [
+                'id' => Auth::user()->unitModel->id,
+                'nama' => Auth::user()->unitModel->nama,
+                'tipe' => Auth::user()->unitModel->tipe,
+                'kepala' => Auth::user()->unitModel->kepala,
+                'nip' => Auth::user()->unitModel->nip ?: '-',
+                'jabatan' => 'Kepala / Penanggung Jawab ' . Auth::user()->unitModel->nama
+            ] : null) }},
         
         // Autocomplete Search Unit / Paviliun State
         unitSearch: '',
@@ -227,15 +237,17 @@
             }
 
             if (!this.isEdit) {
+                const autoUnit = (this.isSubAdmin && this.userUnit) ? this.userUnit : null;
                 this.formData = {
                     kode: 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100),
-                    bast_nomor: '032 / 0' + String(Math.floor(Math.random() * 80) + 10) + ' / 430.10.7 / 2026',
-                    status: 'Draft',
-                    tujuan: '',
+                    bast_nomor: this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : ('032 / 0' + String(Math.floor(Math.random() * 80) + 10) + ' / 430.10.7 / 2026'),
+                    status: this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Draft',
+                    tujuan: autoUnit ? autoUnit.nama : '',
+                    unit_id: autoUnit ? autoUnit.id : null,
                     tgl: new Date().toISOString().split('T')[0],
-                    penerima: '',
-                    penerima_nip: '',
-                    penerima_jabatan: '',
+                    penerima: autoUnit ? (autoUnit.kepala || '') : '',
+                    penerima_nip: autoUnit ? (autoUnit.nip || '') : '',
+                    penerima_jabatan: autoUnit ? (autoUnit.jabatan || ('Kepala / PJ ' + autoUnit.nama)) : '',
                     keterangan: '',
                     items: [
                         {
@@ -253,8 +265,8 @@
                         }
                     ]
                 };
-                this.unitSearch = '';
-                this.selectedUnitObj = null;
+                this.unitSearch = autoUnit ? autoUnit.nama : '';
+                this.selectedUnitObj = autoUnit;
             }
         },
 
@@ -735,7 +747,11 @@
                 console.log('Database sync error:', e);
             }
 
-            alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nData Register ASTAP & Kondisi Fisik NIBAR telah otomatis diperbarui di database!');
+            if (this.isSubAdmin) {
+                alert('✅ Berhasil mengirim pengajuan permohonan distribusi barang:\n- No. Registrasi: ' + this.formData.kode + '\n- Unit Pengaju: ' + this.formData.tujuan + '\n- Pemohon: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nPermohonan telah berstatus "Menunggu Konfirmasi" dan akan segera diverifikasi oleh Pengurus Barang / Admin!');
+            } else {
+                alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nData Register ASTAP & Kondisi Fisik NIBAR telah otomatis diperbarui di database!');
+            }
             window.location.href = '{{ route('distribusi.index') }}';
         }
     };
@@ -748,7 +764,7 @@
 
     <div x-data="formDistribusiApp()" x-cloak class="space-y-6">
 
-        <!-- Top Navigation Bar (Bersih, Tanpa Tombol Simpan/Batal di Atas) -->
+        <!-- Top Navigation Bar -->
         <div class="flex items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
             <div class="flex items-center space-x-4">
                 <a href="{{ route('distribusi.index') }}" 
@@ -757,10 +773,12 @@
                 </a>
                 <div>
                     <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold mb-1">
-                        <span x-text="isEdit ? '✏️ UBAH DISTRIBUSI BARANG' : '🚚 INPUT DISTRIBUSI MULTI-BARANG'"></span>
+                        <span x-text="isSubAdmin ? '📋 PENGAJUAN PERMINTAAN ASTAP RUANGAN' : (isEdit ? '✏️ UBAH DISTRIBUSI BARANG' : '🚚 INPUT DISTRIBUSI MULTI-BARANG')"></span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Form Distribusi & Penyerahan ASTAP</h1>
-                    <p class="text-xs text-slate-400 mt-0.5">Dapat memasukkan beberapa barang berbeda sekaligus dalam satu transaksi penyerahan ke ruangan</p>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight"
+                        x-text="isSubAdmin ? 'Form Pengajuan Permintaan Distribusi ASTAP' : 'Form Distribusi & Penyerahan ASTAP'"></h1>
+                    <p class="text-xs text-slate-400 mt-0.5"
+                       x-text="isSubAdmin ? 'Pengajuan kebutuhan barang untuk unit ruangan Anda — penentuan NIBAR & verifikasi fisik diproses oleh Admin.' : 'Dapat memasukkan beberapa barang berbeda sekaligus dalam satu transaksi penyerahan ke ruangan.'"></p>
                 </div>
             </div>
         </div>
@@ -771,7 +789,7 @@
             <!-- BAGIAN 1: INFORMASI TRANSAKSI & TUJUAN PENERIMA (AUTOFILL DATA UNIT) -->
             <div class="space-y-4">
                 <h3 class="text-sm font-extrabold text-teal-300 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-800 pb-3">
-                    <span>1. Informasi Penyerahan & Pegawai Penerima Ruangan</span>
+                    <span x-text="isSubAdmin ? '1. Informasi Pengajuan & Pegawai Ruangan' : '1. Informasi Penyerahan & Pegawai Penerima Ruangan'"></span>
                 </h3>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -784,25 +802,41 @@
 
                     <!-- Nomor BAST Rujukan -->
                     <div>
-                        <label class="block text-slate-300 font-semibold text-xs mb-1.5">No. BAST Distribusi</label>
+                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                            <span>No. BAST Distribusi</span>
+                            <template x-if="isSubAdmin">
+                                <span class="text-[10px] text-slate-400 font-normal">Dibuat oleh Admin</span>
+                            </template>
+                        </label>
                         <input type="text" x-model="formData.bast_nomor"
-                               class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-teal-500">
+                               :readonly="isSubAdmin"
+                               :class="isSubAdmin ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed' : 'bg-slate-950 text-white'"
+                               class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-teal-500">
                     </div>
 
-                    <!-- Tanggal Distribusi -->
+                    <!-- Tanggal Distribusi / Pengajuan -->
                     <div>
-                        <label class="block text-slate-300 font-semibold text-xs mb-1.5">Tanggal Penyerahan</label>
+                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                            <span x-text="isSubAdmin ? 'Tanggal Pengajuan' : 'Tanggal Penyerahan'"></span>
+                            <template x-if="isSubAdmin">
+                                <span class="text-[10px] text-slate-400 font-normal">Auto Hari Ini</span>
+                            </template>
+                        </label>
                         <input type="date" x-model="formData.tgl"
-                               class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-teal-500">
+                               :readonly="isSubAdmin"
+                               :class="isSubAdmin ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed pointer-events-none' : 'bg-slate-950 text-white'"
+                               class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-teal-500">
                     </div>
 
-                    <!-- Status Distribusi (Hanya tampil di mode Edit) -->
-                    <template x-if="isEdit">
-                        <div>
-                            <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
-                                <span>Status Distribusi</span>
-                                <span class="text-teal-400 text-[10px] font-bold">⚡ Edit Status</span>
-                            </label>
+                    <!-- Status Distribusi -->
+                    <div>
+                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                            <span>Status Distribusi</span>
+                            <span class="text-teal-400 text-[10px] font-bold" x-text="isSubAdmin ? '🔒 Dikelola Admin' : '⚡ Status Transaksi'"></span>
+                        </label>
+                        
+                        <!-- Dropdown Status (Hanya untuk Admin & Master Admin) -->
+                        <template x-if="!isSubAdmin">
                             <select x-model="formData.status"
                                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
                                     :class="{
@@ -811,77 +845,119 @@
                                         'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
                                         'text-slate-400': formData.status === 'Draft'
                                     }">
-                                <option value="Telah Diterima">🟢 Telah Diterima</option>
-                                <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
                                 <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
+                                <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
+                                <option value="Telah Diterima">🟢 Telah Diterima</option>
                                 <option value="Draft">📝 Draft</option>
                             </select>
-                        </div>
-                    </template>
+                        </template>
+
+                        <!-- Readonly Badge Status (Untuk Sub Admin Ruangan) -->
+                        <template x-if="isSubAdmin">
+                            <div class="w-full h-10 bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 flex items-center text-xs font-bold space-x-2 cursor-not-allowed"
+                                 :class="{
+                                     'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
+                                     'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
+                                     'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
+                                     'text-slate-400': formData.status === 'Draft'
+                                 }">
+                                <span>⏳</span>
+                                <span x-text="formData.status || 'Menunggu Konfirmasi'"></span>
+                            </div>
+                        </template>
+                    </div>
                 </div>
 
-                <!-- Autocomplete Input Unit & Data PIC Penerima -->
+                <!-- Input Unit & Data PIC Penerima -->
                 <div class="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
                     
-                    <!-- Search Unit Target -->
-                    <div class="relative" @click.away="isSearchingUnit = false">
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label class="block text-xs font-bold text-slate-300 flex items-center space-x-1.5">
-                                <span>🏥 Unit / Ruangan / Paviliun Tujuan</span>
-                                <span class="text-teal-400 font-mono text-[11px]" x-text="'(' + unitList.length + ' Unit Terdaftar)'"></span>
-                            </label>
-                            <template x-if="formData.tujuan">
-                                <button type="button" @click="clearUnit()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">
-                                    ✕ Ganti Unit
-                                </button>
-                            </template>
+                    <!-- KONDISI A: Akun Sub Admin (Unit Terkunci Otomatis Sesuai Akun Login) -->
+                    <template x-if="isSubAdmin">
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold text-slate-300 flex items-center space-x-1.5">
+                                    <span>🏥 Unit / Ruangan Anda</span>
+                                    <span class="text-teal-400 font-mono text-[10px] bg-teal-500/20 px-2 py-0.5 rounded-full border border-teal-500/30">🔒 Terkunci Otomatis Sesuai Akun</span>
+                                </label>
+                            </div>
+                            <div class="relative flex items-center">
+                                <input type="text" :value="formData.tujuan || (userUnit ? userUnit.nama : 'Unit Ruangan')" readonly
+                                       class="w-full bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-xs text-teal-300 font-extrabold cursor-not-allowed">
+                                <svg class="w-4 h-4 text-teal-400 absolute left-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
                         </div>
+                    </template>
 
-                        <div class="relative">
-                            <input type="text" x-model="unitSearch" 
-                                   @focus="isSearchingUnit = true" 
-                                   @input="isSearchingUnit = true" 
-                                   placeholder="Ketik nama unit / ruangan (contoh: IGD, Melati, Radiologi, Bedah)..." 
-                                   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all font-semibold">
-                            <svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        </div>
+                    <!-- KONDISI B: Admin & Master Admin (Bisa Cari & Pilih Unit Bebas) -->
+                    <template x-if="!isSubAdmin">
+                        <div class="relative" @click.away="isSearchingUnit = false">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold text-slate-300 flex items-center space-x-1.5">
+                                    <span>🏥 Unit / Ruangan / Paviliun Tujuan</span>
+                                    <span class="text-teal-400 font-mono text-[11px]" x-text="'(' + unitList.length + ' Unit Terdaftar)'"></span>
+                                </label>
+                                <template x-if="formData.tujuan">
+                                    <button type="button" @click="clearUnit()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">
+                                        ✕ Ganti Unit
+                                    </button>
+                                </template>
+                            </div>
 
-                        <!-- Dropdown Autocomplete Unit (Dark Themed) -->
-                        <div x-show="isSearchingUnit" 
-                             x-transition 
-                             class="absolute left-0 right-0 z-30 mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
-                            <template x-for="u in filteredUnitList.slice(0, 5)" :key="u.id">
-                                <div @click="selectUnit(u)" 
-                                     class="p-3 hover:bg-teal-500/15 cursor-pointer transition-colors flex items-center justify-between group">
-                                    <div>
-                                        <p class="font-bold text-white text-xs group-hover:text-teal-300" x-text="u.nama"></p>
-                                        <p class="text-[10px] text-slate-400" x-text="(u.kode || 'UNIT') + ' • ' + (u.tipe || 'Unit') + ' • PJ: ' + u.kepala"></p>
+                            <div class="relative">
+                                <input type="text" x-model="unitSearch" 
+                                       @focus="isSearchingUnit = true" 
+                                       @input="isSearchingUnit = true" 
+                                       placeholder="Ketik nama unit / ruangan (contoh: IGD, Melati, Radiologi, Bedah)..." 
+                                       class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all font-semibold">
+                                <svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+
+                            <!-- Dropdown Autocomplete Unit (Dark Themed) -->
+                            <div x-show="isSearchingUnit" 
+                                 x-transition 
+                                 class="absolute left-0 right-0 z-30 mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
+                                <template x-for="u in filteredUnitList.slice(0, 5)" :key="u.id">
+                                    <div @click="selectUnit(u)" 
+                                         class="p-3 hover:bg-teal-500/15 cursor-pointer transition-colors flex items-center justify-between group">
+                                        <div>
+                                            <p class="font-bold text-white text-xs group-hover:text-teal-300" x-text="u.nama"></p>
+                                            <p class="text-[10px] text-slate-400" x-text="(u.kode || 'UNIT') + ' • ' + (u.tipe || 'Unit') + ' • PJ: ' + u.kepala"></p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded bg-teal-500/20 text-teal-300 text-[10px] font-bold">Pilih &rarr;</span>
                                     </div>
-                                    <span class="px-2 py-1 rounded bg-teal-500/20 text-teal-300 text-[10px] font-bold">Pilih &rarr;</span>
-                                </div>
-                            </template>
-                            <template x-if="filteredUnitList.length === 0">
-                                <div class="p-3 text-center text-xs text-slate-500">Unit tidak ditemukan</div>
-                            </template>
+                                </template>
+                                <template x-if="filteredUnitList.length === 0">
+                                    <div class="p-3 text-center text-xs text-slate-500">Unit tidak ditemukan</div>
+                                </template>
+                            </div>
                         </div>
-                    </div>
+                    </template>
 
-                    <!-- Auto-filled PIC Penerima Details -->
+                    <!-- Auto-filled PIC Penerima Details (Readonly untuk Sub Admin) -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80">
                         <div>
                             <span class="text-[10px] text-slate-400 block font-semibold mb-1">Pegawai Penerima (Kepala/PJ)</span>
-                            <input type="text" x-model="formData.penerima" placeholder="Terisi otomatis..." 
-                                   class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-emerald-400 font-bold focus:outline-none">
+                            <input type="text" x-model="formData.penerima" 
+                                   :readonly="isSubAdmin"
+                                   :class="isSubAdmin ? 'bg-slate-900/60 text-slate-300 cursor-not-allowed' : 'bg-slate-900 text-emerald-400'"
+                                   placeholder="Terisi otomatis..." 
+                                   class="w-full border border-slate-800 rounded-lg px-3 py-2 text-xs font-bold focus:outline-none">
                         </div>
                         <div>
                             <span class="text-[10px] text-slate-400 block font-semibold mb-1">NIP Pegawai</span>
-                            <input type="text" x-model="formData.penerima_nip" placeholder="Terisi otomatis..." 
-                                   class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 font-mono focus:outline-none">
+                            <input type="text" x-model="formData.penerima_nip" 
+                                   :readonly="isSubAdmin"
+                                   :class="isSubAdmin ? 'bg-slate-900/60 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-slate-300'"
+                                   placeholder="Terisi otomatis..." 
+                                   class="w-full border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none">
                         </div>
                         <div>
                             <span class="text-[10px] text-slate-400 block font-semibold mb-1">Jabatan Penerima</span>
-                            <input type="text" x-model="formData.penerima_jabatan" placeholder="Terisi otomatis..." 
-                                   class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none">
+                            <input type="text" x-model="formData.penerima_jabatan" 
+                                   :readonly="isSubAdmin"
+                                   :class="isSubAdmin ? 'bg-slate-900/60 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-slate-300'"
+                                   placeholder="Terisi otomatis..." 
+                                   class="w-full border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none">
                         </div>
                     </div>
 
@@ -1075,8 +1151,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Baris 1b: NIBAR Multi-Select (Hanya Ditampilkan Pada Fitur Edit Distribusi) -->
-                                <template x-if="isEdit">
+                                <!-- Baris 1b: NIBAR Multi-Select (Hanya Ditampilkan untuk Admin & Master Admin) -->
+                                <template x-if="!isSubAdmin">
                                     <div class="relative" @click.away="if(activeNibarDropdownIndex === idx) activeNibarDropdownIndex = null">
                                         <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
                                             <span class="flex items-center space-x-1.5">
@@ -1263,6 +1339,22 @@
                                     </div>
                                 </template>
 
+                                <!-- Notice Box Khusus Akun Sub Admin Ruangan (NIBAR Dikelola Admin) -->
+                                <template x-if="isSubAdmin">
+                                    <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs text-slate-400 flex items-start space-x-3 shadow-inner">
+                                        <span class="text-teal-400 text-base shrink-0 mt-0.5">ℹ️</span>
+                                        <div class="space-y-0.5">
+                                            <p class="font-extrabold text-slate-200 text-xs flex items-center space-x-2">
+                                                <span>Penomoran NIBAR 45 Karakter Dikelola Pengurus Barang</span>
+                                                <span class="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 text-[10px] font-bold">Admin Only</span>
+                                            </p>
+                                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                                Alokasi nomor register fisik NIBAR dan verifikasi kondisi unit akan diproses oleh <strong>Pengurus Barang / Admin</strong> saat permohonan disetujui. Cukup pilih nama barang dan volume (qty) yang diajukan.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </template>
+
                                 <!-- Baris 2: Kondisi Fisik, Volume, & Satuan (Selalu Sejajar Berdampingan dalam 1 Baris) -->
                                 <div class="flex flex-row items-end gap-3 w-full">
                                     
@@ -1339,7 +1431,7 @@
                 </a>
                 <button type="button" @click="submitForm()" class="px-6 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span x-text="isEdit ? 'Simpan Perubahan' : 'Simpan Distribusi Baru'"></span>
+                    <span x-text="isSubAdmin ? 'Kirim Pengajuan Distribusi' : (isEdit ? 'Simpan Perubahan' : 'Simpan Distribusi Baru')"></span>
                 </button>
             </div>
         </div>
