@@ -794,9 +794,9 @@
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-xl">
+                    <div class="rounded-2xl border border-slate-700 shadow-xl custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
                         <table class="w-full text-left text-xs border-collapse min-w-[900px]">
-                            <thead class="bg-slate-950 text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700 text-[11px]">
+                            <thead class="text-slate-300 font-bold uppercase tracking-wider border-b border-slate-700 text-[11px]" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                                 <tr>
                                     <th class="px-3 py-2.5 text-center w-10 border-r border-slate-800">No</th>
                                     <th class="px-3 py-2.5 border-r border-slate-800">Tgl & No SPK</th>
@@ -876,9 +876,10 @@
             </div>
 
             <!-- Tabel Daftar BAST Distribusi ke Unit / Ruangan -->
-            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+                <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
+                    <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                        <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12">No</th>
                             <th class="px-4 py-3.5 text-left">Nomor BAST Distribusi</th>
@@ -940,6 +941,7 @@
                     </tbody>
                 </table>
             </div>
+        </div>
 
         </div>
 
@@ -977,9 +979,10 @@
             </div>
 
             <!-- Tabel Daftar BAST Mutasi Aset -->
-            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <div class="no-print bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+                <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
+                    <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                        <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12">No</th>
                             <th class="px-4 py-3.5 text-left">Nomor BAST Mutasi</th>
@@ -1038,6 +1041,7 @@
                     </tbody>
                 </table>
             </div>
+        </div>
 
         </div>
 

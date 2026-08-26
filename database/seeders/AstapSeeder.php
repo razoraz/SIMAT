@@ -20,9 +20,16 @@ class AstapSeeder extends Seeder
         $userId = $user ? $user->id : null;
 
         // Helper Resolvers Relasi Foreign Key
-        $getJenisAstapId = function(string $kode108) {
-            return JenisAstap::where('sub_sub_rincian_objek', $kode108)->value('id') 
-                ?? JenisAstap::where('jenis', substr($kode108, 0, 5))->value('id')
+        $getJenisAstapId = function(string $kode108, ?string $fallbackKeyword = null) {
+            $exact = JenisAstap::where('sub_sub_rincian_objek', $kode108)->value('id');
+            if ($exact) return $exact;
+
+            if ($fallbackKeyword) {
+                $byNama = JenisAstap::where('uraian_sub_sub_rincian', 'LIKE', '%' . $fallbackKeyword . '%')->value('id');
+                if ($byNama) return $byNama;
+            }
+
+            return JenisAstap::where('jenis', substr($kode108, 0, 5))->value('id')
                 ?? JenisAstap::first()?->id;
         };
 
@@ -84,7 +91,7 @@ class AstapSeeder extends Seeder
         $astapLaptop = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0002'),
             'rekening_belanja_id' => $getRekeningId('5.2.02.08'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.2.05.02.06.001'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.2.05.01.05.094', 'Laptop'),
             'nama_barang' => 'Laptop Operasional Asus ExpertBook B1',
             'tahun_perolehan' => 2026,
             'jumlah_volume' => 5,
@@ -153,7 +160,7 @@ class AstapSeeder extends Seeder
         $astapPompa = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0001'),
             'rekening_belanja_id' => $getRekeningId('5.2.02.01'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.2.01.03.05.005'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.2.01.03.05.004', 'Pompa'),
             'nama_barang' => 'Submersible Pump 7.5 HP Sentral',
             'tahun_perolehan' => 2025,
             'jumlah_volume' => 1,
@@ -184,7 +191,7 @@ class AstapSeeder extends Seeder
             'user_id' => $userId
         ]);
 
-        $nibarPompa = '120135110200000028000020251320103050050000001';
+        $nibarPompa = '120135110200000028000020251320103050040000001';
         $ruangPompa = 'Instalasi Sanitasi & IPSRS RSUD';
         AstapRegister::create([
             'astap_id' => $astapPompa->id,
@@ -203,7 +210,7 @@ class AstapSeeder extends Seeder
         $astapCtscan = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0012'),
             'rekening_belanja_id' => $getRekeningId('5.2.02.02'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.2.02.01.01.005'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.2.07.01.15.037', 'Radiologi'),
             'nama_barang' => 'CT-Scan 128 Slice High Resolution',
             'tahun_perolehan' => 2024,
             'jumlah_volume' => 1,
@@ -233,7 +240,7 @@ class AstapSeeder extends Seeder
             'user_id' => $userId
         ]);
 
-        $nibarCt = '120135110200000028000020241320201010050000001';
+        $nibarCt = '120135110200000028000020241320701150370000001';
         $ruangCt = 'Instalasi Radiologi & Imaging Sentral';
         AstapRegister::create([
             'astap_id' => $astapCtscan->id,
@@ -252,7 +259,7 @@ class AstapSeeder extends Seeder
         $astapTanah = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0001'),
             'rekening_belanja_id' => $getRekeningId('5.2.01.01'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.1.01.01.02.013'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.1.01.01.01.001', 'Bangunan'),
             'nama_barang' => 'Lahan Bangunan RSUD Dr. H. Koesnandi',
             'tahun_perolehan' => 1984,
             'jumlah_volume' => 1,
@@ -280,7 +287,7 @@ class AstapSeeder extends Seeder
             'user_id' => $userId
         ]);
 
-        $nibarTanah = '120135110200000028000019841310101020130000001';
+        $nibarTanah = '120135110200000028000019841310101010010000001';
         $ruangTanah = 'Kompleks Utama RSUD Dr. H. Koesnandi';
         AstapRegister::create([
             'astap_id' => $astapTanah->id,
@@ -299,7 +306,7 @@ class AstapSeeder extends Seeder
         $astapGedung = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0005'),
             'rekening_belanja_id' => $getRekeningId('5.2.03.01'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.3.01.01.01.008'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.3.01.01.01.001', 'Gedung'),
             'nama_barang' => 'Gedung Paviliun Graha Amukti VIP',
             'tahun_perolehan' => 2018,
             'jumlah_volume' => 1,
@@ -327,7 +334,7 @@ class AstapSeeder extends Seeder
             'user_id' => $userId
         ]);
 
-        $nibarGedung = '120135110200000028000020181330101010080000001';
+        $nibarGedung = '120135110200000028000020181330101010010000001';
         $ruangGedung = 'Paviliun Graha Amukti VIP';
         AstapRegister::create([
             'astap_id' => $astapGedung->id,
@@ -346,7 +353,7 @@ class AstapSeeder extends Seeder
         $astapJaringan = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0001'),
             'rekening_belanja_id' => $getRekeningId('5.2.04.03'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.4.03.01.01.004'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.4.01.01.01.004', 'Jaringan'),
             'nama_barang' => 'Jaringan Pipa Oksigen Sentral Medis',
             'tahun_perolehan' => 2020,
             'jumlah_volume' => 1,
@@ -373,7 +380,7 @@ class AstapSeeder extends Seeder
             'user_id' => $userId
         ]);
 
-        $nibarJaringan = '120135110200000028000020201340301010040000001';
+        $nibarJaringan = '120135110200000028000020201340101010040000001';
         $ruangJaringan = 'Instalasi Gas Medis & IPSRS';
         AstapRegister::create([
             'astap_id' => $astapJaringan->id,
@@ -392,7 +399,7 @@ class AstapSeeder extends Seeder
         $astapBuku = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0001'),
             'rekening_belanja_id' => $getRekeningId('5.2.05.01'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.5.01.01.01.002'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.5.01.01.01.002', 'Buku'),
             'nama_barang' => 'Buku Jurnal Kedokteran & Farmakologi',
             'tahun_perolehan' => 2021,
             'jumlah_volume' => 50,
@@ -440,7 +447,7 @@ class AstapSeeder extends Seeder
         $astapKdp = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0005'),
             'rekening_belanja_id' => $getRekeningId('5.2.07.01'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.6.01.01.01.001'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.6.01.01.01.002', 'Pengerjaan'),
             'nama_barang' => 'Pembangunan Gedung Rawat Inap Terpadu Lt 3',
             'tahun_perolehan' => 2026,
             'jumlah_volume' => 1,
@@ -468,7 +475,7 @@ class AstapSeeder extends Seeder
             'user_id' => $userId
         ]);
 
-        $nibarKdp = '120135110200000028000020261360101010010000001';
+        $nibarKdp = '120135110200000028000020261360101010020000001';
         $ruangKdp = 'Area Proyek KDP Belakang Paviliun Melati';
         AstapRegister::create([
             'astap_id' => $astapKdp->id,
@@ -487,7 +494,7 @@ class AstapSeeder extends Seeder
         $astapAtb = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0003'),
             'rekening_belanja_id' => $getRekeningId('5.2.06.01'),
-            'jenis_astap_id' => $getJenisAstapId('1.5.3.01.01.01.005'),
+            'jenis_astap_id' => $getJenisAstapId('1.5.3.01.01.01.005', 'Software'),
             'nama_barang' => 'Software SIMRS Terintegrasi & EMR Cloud',
             'tahun_perolehan' => 2024,
             'jumlah_volume' => 1,
@@ -532,7 +539,7 @@ class AstapSeeder extends Seeder
         $astapGunting = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0012'),
             'rekening_belanja_id' => $getRekeningId('5.2.02.02'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.2.02.01.01.099'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.2.03.01.01.026', 'Gunting'),
             'nama_barang' => 'Gunting Angkat Jahitan Littauer 14cm',
             'tahun_perolehan' => 2026,
             'jumlah_volume' => 10,
@@ -561,7 +568,7 @@ class AstapSeeder extends Seeder
 
         for ($i = 1; $i <= 3; $i++) {
             $noRegStr = str_pad($i, 7, '0', STR_PAD_LEFT);
-            $nibar = "12013511020000002800002026132020101099{$noRegStr}";
+            $nibar = "12013511020000002800002026132030101026{$noRegStr}";
             $ruangGunting = ($i == 1) ? 'IGD & Poliklinik Bedah' : null;
             AstapRegister::create([
                 'astap_id' => $astapGunting->id,
@@ -581,7 +588,7 @@ class AstapSeeder extends Seeder
         $astapTimbangan = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0012'),
             'rekening_belanja_id' => $getRekeningId('5.2.02.02'),
-            'jenis_astap_id' => $getJenisAstapId('1.3.2.02.01.02.045'),
+            'jenis_astap_id' => $getJenisAstapId('1.3.2.03.03.10.006', 'Timbangan'),
             'nama_barang' => 'Timbangan Bayi Analog Akurat',
             'tahun_perolehan' => 2026,
             'jumlah_volume' => 5,

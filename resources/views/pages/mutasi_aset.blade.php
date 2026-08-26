@@ -340,9 +340,10 @@
         </template>
 
         <!-- Table Mutasi -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-300">
-                <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
+                <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                    <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                     <tr>
                         <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
                         <th class="px-4 py-3.5 text-center whitespace-nowrap">No. Mutasi</th>
@@ -412,48 +413,122 @@
                                         <button type="button" @click="approveAdmin(item)"
                                             title="Sahkan &amp; Verifikasi Akhir Admin"
                                             class="px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 font-bold text-xs transition-all flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                            <span>✅ Sahkan Admin</span>
-                                        </button>
-                                    </template>
-
-                                    <!-- Tombol Tolak Mutasi -->
-                                    <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
-                                        <button type="button" @click="rejectMutasi(item)"
-                                            title="Tolak Pengajuan Mutasi"
-                                            class="px-2 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs transition-all flex items-center space-x-1 cursor-pointer">
-                                            <span>❌ Tolak</span>
-                                        </button>
-                                    </template>
-
-                                    <!-- Tombol Cetak BAST Mutasi (Jika sudah disetujui) -->
-                                    <template x-if="item.status === 'Disetujui Admin (Selesai)' || item.status === 'Disetujui 2 Pihak (Menunggu Admin)'">
-                                        <button type="button" @click="openPrintBast(item)"
-                                            class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                            <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                            </svg>
-                                            <span>Cetak BAST</span>
-                                        </button>
-                                    </template>
-
-                                    <button type="button" @click="openDetail(item)"
-                                        class="px-2 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                        <span>Detail</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </template>
-                    <template x-if="filteredMutasis.length === 0">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 340px; overflow-y: auto; overflow-x: auto;">
+                <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                    <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic text-xs">
-                                Tidak ditemukan data mutasi aset yang sesuai dengan kriteria / wewenang unit Anda.
-                            </td>
+                            <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">No. Mutasi</th>
+                            <th class="px-4 py-3.5 text-left min-w-[200px] bg-slate-950">Nama Barang</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Ruangan Asal</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Ruangan Tujuan</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Alur Mutasi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Status Persetujuan</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Aksi &amp; Persetujuan</th>
                         </tr>
-                    </template>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/80">
+                        <template x-for="(item, index) in filteredMutasis" :key="item.id">
+                            <tr class="hover:bg-slate-800/30 transition-colors">
+                                <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
+                                <td class="px-4 py-4 text-center font-mono font-semibold text-rose-400 whitespace-nowrap" x-text="item.kode"></td>
+                                <td class="px-4 py-4 font-bold text-white">
+                                    <span x-text="item.nama"></span>
+                                    <span class="text-[10.5px] text-slate-400 block font-normal font-mono" x-text="'Kode: ' + item.kode_barang"></span>
+                                </td>
+                                <td class="px-4 py-4 text-center text-slate-300 whitespace-nowrap font-medium" x-text="item.asal"></td>
+                                <td class="px-4 py-4 text-center font-semibold text-rose-300 whitespace-nowrap" x-text="item.tujuan"></td>
+                                
+                                <!-- Indikator Arah Mutasi (Keluar/Masuk) khusus Sub Admin -->
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <template x-if="userRole === 'sub_admin'">
+                                        <span>
+                                            <template x-if="(item.asal || '').toLowerCase().includes((userUnit || '').toLowerCase())">
+                                                <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/40">📤 Mutasi Keluar</span>
+                                            </template>
+                                            <template x-if="(item.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase())">
+                                                <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold bg-teal-500/20 text-teal-300 border border-teal-500/40">📥 Mutasi Masuk</span>
+                                            </template>
+                                        </span>
+                                    </template>
+                                    <template x-if="userRole !== 'sub_admin'">
+                                        <span class="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">Antar Unit</span>
+                                    </template>
+                                </td>
+
+                                <!-- Status Persetujuan Bertingkat -->
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
+                                        :class="{
+                                            'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Disetujui Admin (Selesai)',
+                                            'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': item.status === 'Disetujui 2 Pihak (Menunggu Admin)',
+                                            'bg-amber-500/15 text-amber-300 border-amber-500/30': item.status === 'Menunggu Persetujuan Penerima',
+                                            'bg-rose-500/15 text-rose-300 border-rose-500/30': item.status === 'Ditolak'
+                                        }"
+                                        x-text="item.status"></span>
+                                </td>
+
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <div class="flex items-center justify-center space-x-1.5">
+
+                                        <!-- Tombol Persetujuan Pihak 2 (Penerima Sub Admin) -->
+                                        <template x-if="!item.persetujuan_penerima && item.status !== 'Ditolak' && (userRole !== 'sub_admin' || (item.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase()))">
+                                            <button type="button" @click="approvePenerima(item)"
+                                                title="Persetujuan Pihak Penerima Barang"
+                                                class="px-2.5 py-1.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/35 text-teal-300 border border-teal-500/40 font-bold text-xs transition-all flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <span>🤝 Terima &amp; Setujui</span>
+                                            </button>
+                                        </template>
+
+                                        <!-- Tombol Persetujuan Admin (Master Admin / Admin Operasional) -->
+                                        <template x-if="item.persetujuan_penerima && !item.persetujuan_admin && item.status !== 'Ditolak' && (userRole === 'admin' || userRole === 'master_admin')">
+                                            <button type="button" @click="approveAdmin(item)"
+                                                title="Sahkan &amp; Verifikasi Akhir Admin"
+                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 font-bold text-xs transition-all flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <span>✅ Sahkan Admin</span>
+                                            </button>
+                                        </template>
+
+                                        <!-- Tombol Tolak Mutasi -->
+                                        <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
+                                            <button type="button" @click="rejectMutasi(item)"
+                                                title="Tolak Pengajuan Mutasi"
+                                                class="px-2 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs transition-all flex items-center space-x-1 cursor-pointer">
+                                                <span>❌ Tolak</span>
+                                            </button>
+                                        </template>
+
+                                        <!-- Tombol Cetak BAST Mutasi (Jika sudah disetujui) -->
+                                        <template x-if="item.status === 'Disetujui Admin (Selesai)' || item.status === 'Disetujui 2 Pihak (Menunggu Admin)'">
+                                            <button type="button" @click="openPrintBast(item)"
+                                                class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                                <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                                </svg>
+                                                <span>Cetak BAST</span>
+                                            </button>
+                                        </template>
+
+                                        <button type="button" @click="openDetail(item)"
+                                            class="px-2 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <span>Detail</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="filteredMutasis.length === 0">
+                            <tr>
+                                <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic text-xs">
+                                    Tidak ditemukan data mutasi aset yang sesuai dengan kriteria / wewenang unit Anda.
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- MODAL DETAIL MUTASI -->
