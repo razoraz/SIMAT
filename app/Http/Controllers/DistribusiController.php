@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Distribusi;
 use App\Models\DistribusiItem;
+use App\Models\DistribusiItemRegister;
 use App\Models\Astap;
 use App\Models\AstapRegister;
 use App\Models\Unit;
@@ -26,40 +27,40 @@ class DistribusiController extends Controller
                 'tipe'    => $u->tipe,
                 'kepala'  => $u->kepala,
                 'nip'     => $u->nip ?: '-',
-                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
+                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama,
             ];
         });
 
-        $distribusis = Distribusi::with(['unit', 'items.astap.jenisAstap'])
+        // Eager load: registers → astapRegister agar kondisi, nibar, ruang dibaca dari FK (tidak query N+1)
+        $distribusis = Distribusi::with([
+                'unit',
+                'items.astap.jenisAstap',
+                'items.registers.astapRegister',
+            ])
             ->orderBy('id', 'desc')
             ->get()
             ->map(function($d) {
                 $itemsMapped = $d->items->map(function($it) {
-                    $spec = is_array($it->astap?->spesifikasi_json) 
-                        ? $it->astap->spesifikasi_json 
+                    $spec = is_array($it->astap?->spesifikasi_json)
+                        ? $it->astap->spesifikasi_json
                         : (json_decode($it->astap?->spesifikasi_json ?? '', true) ?? []);
                     $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? '-'));
-                    $nibarList = is_array($it->nibar_list) ? $it->nibar_list : (json_decode($it->nibar_list ?? '', true) ?: []);
 
-                    // Ambil kondisi & register_id dari astap_registers per NIBAR (live DB)
-                    $registers = \App\Models\AstapRegister::whereIn('nibar', $nibarList)
-                        ->get()
-                        ->keyBy('nibar');
-
-                    // Kondisi item = kondisi dari register pertama di nibar_list (atau fallback)
-                    $firstReg = $registers->first();
-                    $kondisiLive = $firstReg ? ($firstReg->kondisi ?: 'Baik') : ($it->kondisi ?: 'Baik');
-
-                    // Bangun nibar_registers: [{nibar, id, kondisi, ruang}] untuk live sync
-                    $nibarRegisters = collect($nibarList)->map(function($nibar) use ($registers) {
-                        $reg = $registers->get($nibar);
+                    // Baca register NIBAR melalui relasi FK (bukan whereIn string)
+                    $nibarRegisters = $it->registers->map(function($dir) {
+                        $reg = $dir->astapRegister;
                         return [
-                            'nibar'   => $nibar,
-                            'reg_id'  => $reg ? $reg->id : null,
-                            'kondisi' => $reg ? ($reg->kondisi ?: 'Baik') : 'Baik',
-                            'ruang'   => $reg ? ($reg->ruang_pemegang ?: 'Gudang Aset') : '-',
+                            'nibar'   => $reg?->nibar   ?? '-',
+                            'reg_id'  => $reg?->id      ?? null,
+                            'kondisi' => $reg?->kondisi ?? 'Baik',
+                            'ruang'   => $reg?->ruang_pemegang ?? 'Gudang Aset',
                         ];
                     })->values()->all();
+
+                    $nibarList = collect($nibarRegisters)->pluck('nibar')->filter()->values()->all();
+
+                    // Kondisi dominan dari register pertama
+                    $firstKondisi = $nibarRegisters[0]['kondisi'] ?? 'Baik';
 
                     return [
                         'id'              => $it->id,
@@ -71,9 +72,9 @@ class DistribusiController extends Controller
                         'satuan'          => $it->astap?->satuan ?: 'Unit',
                         'merk'            => $merk,
                         'merk_type'       => $merk,
-                        'kondisi'         => $kondisiLive,
-                        'nibar_list'      => $nibarList,
-                        'nibar_registers' => $nibarRegisters,
+                        'kondisi'         => $firstKondisi,
+                        'nibar_list'      => $nibarList,           // Untuk kompatibilitas tampilan
+                        'nibar_registers' => $nibarRegisters,       // Detail per NIBAR dari FK
                         'keterangan'      => $it->keterangan,
                     ];
                 });
@@ -81,12 +82,11 @@ class DistribusiController extends Controller
                 $firstItemName = $itemsMapped->first()['nama_barang'] ?? 'Barang Aset';
                 $moreCount = $itemsMapped->count() > 1 ? ' + ' . ($itemsMapped->count() - 1) . ' item lainnya' : '';
 
-                // Tanggal format Indonesia
                 $tglCarbon = $d->tanggal_distribusi;
                 $bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                $hariIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                $hariIndo  = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-                $hariStr = $tglCarbon ? ($hariIndo[$tglCarbon->dayOfWeek] ?? 'Kamis') : 'Kamis';
+                $hariStr  = $tglCarbon ? ($hariIndo[$tglCarbon->dayOfWeek] ?? 'Kamis') : 'Kamis';
                 $tglAngka = $tglCarbon ? (string)$tglCarbon->day : '13';
                 $bulanStr = $tglCarbon ? ($bulanIndo[$tglCarbon->month] ?? 'Agustus') : 'Agustus';
                 $tahunStr = $tglCarbon ? (string)$tglCarbon->year : '2026';
@@ -136,7 +136,7 @@ class DistribusiController extends Controller
                 'tipe'    => $u->tipe,
                 'kepala'  => $u->kepala,
                 'nip'     => $u->nip ?: '-',
-                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
+                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama,
             ];
         });
 
@@ -149,10 +149,7 @@ class DistribusiController extends Controller
             ->get()
             ->filter(fn($j) => !empty(trim($j->nama_jenis ?? '')))
             ->map(function($j) {
-                return [
-                    'kode' => $j->jenis,
-                    'nama' => trim($j->nama_jenis),
-                ];
+                return ['kode' => $j->jenis, 'nama' => trim($j->nama_jenis)];
             })
             ->unique('nama')
             ->values();
@@ -163,20 +160,19 @@ class DistribusiController extends Controller
             ->map(function($a) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
                 $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ''));
-                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5);
-                $jenisNama = $a->jenisAstap ? $a->jenisAstap->nama_jenis : '';
                 return [
                     'id'         => $a->id,
                     'kode'       => $a->kode_108,
                     'nama'       => $a->nama_barang,
-                    'jenis_kode' => $jenisKode,
-                    'jenis_nama' => $jenisNama,
+                    'jenis_kode' => $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5),
+                    'jenis_nama' => $a->jenisAstap ? $a->jenisAstap->nama_jenis : '',
                     'kategori'   => $a->category,
                     'merk'       => $merk,
                     'satuan'     => $a->satuan ?: 'Unit',
                 ];
             });
 
+        // Kirim register list dengan id (bukan nibar string) sebagai referensi FK
         $nibarList = AstapRegister::with('astap')
             ->orderBy('astap_id')
             ->orderBy('no_register_int')
@@ -184,7 +180,7 @@ class DistribusiController extends Controller
             ->map(function($r) {
                 $isTersedia = empty($r->ruang_pemegang) || $r->status === 'Tersedia';
                 return [
-                    'id'          => $r->id,
+                    'id'          => $r->id,            // ← FK integer yang akan disimpan
                     'astap_id'    => $r->astap_id,
                     'nibar'       => $r->nibar ?: $r->no_register,
                     'kode'        => $r->astap ? $r->astap->kode_108 : '',
@@ -201,19 +197,22 @@ class DistribusiController extends Controller
     /**
      * Form Ubah Distribusi
      */
-    /**
-     * Form Ubah Distribusi
-     */
     public function edit($id)
     {
-        $distribusiData = Distribusi::with(['unit', 'items.astap.jenisAstap'])->find($id);
+        $distribusiData = Distribusi::with([
+            'unit',
+            'items.astap.jenisAstap',
+            'items.registers.astapRegister',
+        ])->find($id);
 
-        // Ambil semua NIBAR yang sudah ada di distribusi ini agar tetap Tersedia saat diedit
-        $currentDistribNibar = [];
+        // Ambil register_id yang sudah dipakai di distribusi ini agar status Tersedia saat edit
+        $currentRegisterIds = [];
         if ($distribusiData && $distribusiData->items) {
             foreach ($distribusiData->items as $it) {
-                $arr = is_array($it->nibar_list) ? $it->nibar_list : (json_decode($it->nibar_list ?? '', true) ?: []);
-                $currentDistribNibar = array_merge($currentDistribNibar, $arr);
+                $currentRegisterIds = array_merge(
+                    $currentRegisterIds,
+                    $it->registers->pluck('astap_register_id')->toArray()
+                );
             }
         }
 
@@ -224,7 +223,7 @@ class DistribusiController extends Controller
                 'tipe'    => $u->tipe,
                 'kepala'  => $u->kepala,
                 'nip'     => $u->nip ?: '-',
-                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama
+                'jabatan' => 'Kepala / Penanggung Jawab ' . $u->nama,
             ];
         });
 
@@ -237,10 +236,7 @@ class DistribusiController extends Controller
             ->get()
             ->filter(fn($j) => !empty(trim($j->nama_jenis ?? '')))
             ->map(function($j) {
-                return [
-                    'kode' => $j->jenis,
-                    'nama' => trim($j->nama_jenis),
-                ];
+                return ['kode' => $j->jenis, 'nama' => trim($j->nama_jenis)];
             })
             ->unique('nama')
             ->values();
@@ -251,14 +247,12 @@ class DistribusiController extends Controller
             ->map(function($a) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
                 $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ''));
-                $jenisKode = $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5);
-                $jenisNama = $a->jenisAstap ? $a->jenisAstap->nama_jenis : '';
                 return [
                     'id'         => $a->id,
                     'kode'       => $a->kode_108,
                     'nama'       => $a->nama_barang,
-                    'jenis_kode' => $jenisKode,
-                    'jenis_nama' => $jenisNama,
+                    'jenis_kode' => $a->jenisAstap ? $a->jenisAstap->jenis : substr($a->kode_108, 0, 5),
+                    'jenis_nama' => $a->jenisAstap ? $a->jenisAstap->nama_jenis : '',
                     'kategori'   => $a->category,
                     'merk'       => $merk,
                     'satuan'     => $a->satuan ?: 'Unit',
@@ -269,8 +263,8 @@ class DistribusiController extends Controller
             ->orderBy('astap_id')
             ->orderBy('no_register_int')
             ->get()
-            ->map(function($r) use ($currentDistribNibar) {
-                $isOwn = in_array($r->nibar, $currentDistribNibar) || in_array($r->no_register, $currentDistribNibar);
+            ->map(function($r) use ($currentRegisterIds) {
+                $isOwn      = in_array($r->id, $currentRegisterIds);
                 $isTersedia = empty($r->ruang_pemegang) || $r->status === 'Tersedia' || $isOwn;
                 return [
                     'id'          => $r->id,
@@ -288,26 +282,28 @@ class DistribusiController extends Controller
     }
 
     /**
-     * Simpan / Perbarui Transaksi Distribusi & Otomatis Update Tabel astap_registers
+     * Simpan / Perbarui Transaksi Distribusi
+     * Menggunakan FK ke distribusi_item_registers (bukan nibar_list JSON)
      */
     public function saveDistribusi(Request $request)
     {
         $validated = $request->validate([
-            'kode'                 => 'required|string|max:50',
-            'bast_nomor'           => 'nullable|string|max:100',
-            'tanggal_distribusi'   => 'required|date',
-            'unit_id'              => 'required|exists:units,id',
-            'status'               => 'required|in:Telah Diterima,Dalam Pengiriman,Menunggu Konfirmasi,Draft',
-            'keterangan'           => 'nullable|string',
-            'items'                => 'required|array|min:1',
-            'items.*.astap_id'     => 'required|exists:astaps,id',
-            'items.*.qty'          => 'required|integer|min:1',
-            'items.*.kondisi'      => 'nullable|string',
-            'items.*.nibar_list'   => 'nullable|array',
-            'items.*.nibar_items'  => 'nullable|array',
+            'kode'                         => 'required|string|max:50',
+            'bast_nomor'                   => 'nullable|string|max:100',
+            'tanggal_distribusi'           => 'required|date',
+            'unit_id'                      => 'required|exists:units,id',
+            'status'                       => 'required|in:Telah Diterima,Dalam Pengiriman,Menunggu Konfirmasi,Draft',
+            'keterangan'                   => 'nullable|string',
+            'items'                        => 'required|array|min:1',
+            'items.*.astap_id'             => 'required|exists:astaps,id',
+            'items.*.qty'                  => 'required|integer|min:1',
+            'items.*.keterangan'           => 'nullable|string',
+            // register_ids: array of integer FK ke astap_registers.id
+            'items.*.register_ids'         => 'nullable|array',
+            'items.*.register_ids.*'       => 'nullable|integer|exists:astap_registers,id',
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
+        return DB::transaction(function () use ($validated) {
             $unit = Unit::findOrFail($validated['unit_id']);
 
             // 1. Simpan / Update Header Distribusi
@@ -322,57 +318,46 @@ class DistribusiController extends Controller
                 ]
             );
 
-            // 2. Simpan Item Rincian Distribusi
+            // 2. Hapus item lama (cascade akan hapus distribusi_item_registers juga)
             $distribusi->items()->delete();
 
             foreach ($validated['items'] as $itemData) {
-                $nibarList = $itemData['nibar_list'] ?? [];
-                $nibarItems = $itemData['nibar_items'] ?? [];
-                
-                $allowedKondisi = ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'];
-                $kondisiUmum = in_array($itemData['kondisi'] ?? 'Baik', $allowedKondisi) 
-                    ? ($itemData['kondisi'] ?? 'Baik') 
-                    : 'Baik';
+                $registerIds = array_filter(array_map('intval', $itemData['register_ids'] ?? []));
 
+                // Simpan baris item (tanpa kondisi/nibar — baca dari astap_registers via FK)
                 $distribusiItem = DistribusiItem::create([
                     'distribusi_id' => $distribusi->id,
                     'astap_id'      => $itemData['astap_id'],
                     'qty'           => $itemData['qty'],
-                    'nibar_list'    => $nibarList,
-                    'kondisi'       => $kondisiUmum,
                     'keterangan'    => $itemData['keterangan'] ?? null,
                 ]);
 
-                // 3. UPDATE OTOMATIS TABEL astap_registers UNTUK SETIAP NIBAR BESERTA KONDISINYA MASING-MASING
-                if (!empty($nibarItems)) {
-                    foreach ($nibarItems as $nb) {
-                        $nibarStr = is_array($nb) ? ($nb['nibar'] ?? null) : $nb;
-                        if (!$nibarStr) continue;
-                        
-                        $nbKondisi = (is_array($nb) && isset($nb['kondisi']) && in_array($nb['kondisi'], $allowedKondisi))
-                            ? $nb['kondisi']
-                            : $kondisiUmum;
+                // 3. Simpan pivot FK ke setiap register NIBAR yang dipilih
+                foreach ($registerIds as $regId) {
+                    DistribusiItemRegister::create([
+                        'distribusi_item_id' => $distribusiItem->id,
+                        'astap_register_id'  => $regId,
+                    ]);
+                }
 
-                        AstapRegister::where('nibar', $nibarStr)->update([
-                            'unit_id'        => $unit->id,             // Update Unit ID Ruangan Tujuan
-                            'ruang_pemegang' => $unit->nama,           // Update Nama Ruang Pemegang
-                            'kondisi'        => $nbKondisi,            // Update Kondisi Fisik Terkini Spesifik NIBAR
-                        ]);
-                    }
-                } elseif (!empty($nibarList)) {
-                    AstapRegister::whereIn('nibar', $nibarList)->update([
-                        'unit_id'        => $unit->id,             // Update Unit ID Ruangan Tujuan
-                        'ruang_pemegang' => $unit->nama,           // Update Nama Ruang Pemegang
-                        'kondisi'        => $kondisiUmum,          // Update Kondisi Fisik Terkini
+                // 4. Update astap_registers: set unit_id & ruang_pemegang dari FK unit
+                //    (kondisi TIDAK diubah — kondisi tetap di astap_registers, tidak ada duplikasi)
+                if (!empty($registerIds)) {
+                    AstapRegister::whereIn('id', $registerIds)->update([
+                        'unit_id'        => $unit->id,
+                        'ruang_pemegang' => $unit->nama,
+                        'status'         => 'Tidak Tersedia',
                     ]);
                 }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi distribusi berhasil disimpan dan database astap_registers telah diperbarui.',
-                'data'    => $distribusi->load('items.astap', 'unit')
+                'message' => 'Transaksi distribusi berhasil disimpan. Data astap_registers diperbarui via FK.',
+                'data'    => $distribusi->load('items.registers.astapRegister', 'unit'),
             ]);
         });
     }
 }
+
+
