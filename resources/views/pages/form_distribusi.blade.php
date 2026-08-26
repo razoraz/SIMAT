@@ -241,7 +241,7 @@
                 this.formData = {
                     kode: 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100),
                     bast_nomor: this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : ('032 / 0' + String(Math.floor(Math.random() * 80) + 10) + ' / 430.10.7 / 2026'),
-                    status: this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Draft',
+                    status: 'Draft',
                     tujuan: autoUnit ? autoUnit.nama : '',
                     unit_id: autoUnit ? autoUnit.id : null,
                     tgl: new Date().toISOString().split('T')[0],
@@ -748,7 +748,7 @@
             }
 
             if (this.isSubAdmin) {
-                alert('✅ Berhasil mengirim pengajuan permohonan distribusi barang:\n- No. Registrasi: ' + this.formData.kode + '\n- Unit Pengaju: ' + this.formData.tujuan + '\n- Pemohon: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nPermohonan telah berstatus "Menunggu Konfirmasi" dan akan segera diverifikasi oleh Pengurus Barang / Admin!');
+                alert('✅ Berhasil membuat pengajuan permohonan distribusi barang:\n- No. Registrasi: ' + this.formData.kode + '\n- Unit Pengaju: ' + this.formData.tujuan + '\n- Pemohon: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nPermohonan berstatus "Draft" dan akan diproses & diverifikasi oleh Pengurus Barang / Admin!');
             } else {
                 alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nData Register ASTAP & Kondisi Fisik NIBAR telah otomatis diperbarui di database!');
             }
@@ -859,10 +859,10 @@
                                      'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
                                      'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
                                      'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
-                                     'text-slate-400': formData.status === 'Draft'
+                                     'text-slate-400': formData.status === 'Draft' || !formData.status
                                  }">
-                                <span>⏳</span>
-                                <span x-text="formData.status || 'Menunggu Konfirmasi'"></span>
+                                <span x-text="formData.status === 'Draft' || !formData.status ? '📝' : '⏳'"></span>
+                                <span x-text="formData.status || 'Draft'"></span>
                             </div>
                         </template>
                     </div>

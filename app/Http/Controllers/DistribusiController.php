@@ -10,6 +10,7 @@ use App\Models\AstapRegister;
 use App\Models\Unit;
 use App\Models\JenisAstap;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DistribusiController extends Controller
@@ -31,13 +32,22 @@ class DistribusiController extends Controller
             ];
         });
 
+        $user = Auth::user();
+        $isSubAdmin = $user && $user->isSubAdmin();
+
         // Eager load: registers → astapRegister agar kondisi, nibar, ruang dibaca dari FK (tidak query N+1)
-        $distribusis = Distribusi::with([
+        $distribusiQuery = Distribusi::with([
                 'unit',
                 'items.astap.jenisAstap',
                 'items.registers.astapRegister',
-            ])
-            ->orderBy('id', 'desc')
+            ]);
+
+        // Jika sub admin, batasi data hanya untuk unit miliknya
+        if ($isSubAdmin && $user->unit_id) {
+            $distribusiQuery->where('unit_id', $user->unit_id);
+        }
+
+        $distribusis = $distribusiQuery->orderBy('id', 'desc')
             ->get()
             ->map(function($d) {
                 $itemsMapped = $d->items->map(function($it) {
@@ -311,11 +321,11 @@ class DistribusiController extends Controller
             $finalUnitId = ($isSubAdmin && $user->unit_id) ? $user->unit_id : $validated['unit_id'];
             $unit = Unit::findOrFail($finalUnitId);
 
-            // Jika sub_admin, status dikunci ke 'Menunggu Konfirmasi' untuk pengajuan baru
+            // Jika sub_admin, status default untuk pengajuan baru adalah 'Draft'
             $finalStatus = $validated['status'];
             if ($isSubAdmin) {
                 $existing = Distribusi::where('kode', $validated['kode'])->first();
-                $finalStatus = $existing ? $existing->status : 'Menunggu Konfirmasi';
+                $finalStatus = $existing ? $existing->status : 'Draft';
             }
 
             // 1. Simpan / Update Header Distribusi

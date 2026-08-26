@@ -3,13 +3,13 @@
     @section('breadcrumb', 'Beranda / Sub Admin')
 
     @php
-        $unitNama = $unit->nama ?? 'Instalasi Gawat Darurat (IGD)';
-        $unitKode = $unit->kode_unit ?? 'UNIT-010';
-        $unitTipe = $unit->tipe ?? 'Pelayanan Kritis & Tindakan Medis';
+        $unitNama = $unit->nama ?? 'Unit Ruangan';
+        $unitKode = $unit->kode_unit ?? ('UNIT-' . str_pad($unit->id ?? 1, 3, '0', STR_PAD_LEFT));
+        $unitTipe = $unit->tipe ?? 'Unit Pelayanan Medis / Operasional';
         $unitKepala = $unit->kepala ?? Auth::user()->name;
-        $unitNip = $unit->nip ?? Auth::user()->nip ?? '198410272009021003';
-        $unitTotalAset = $unit->total_aset ?? 48;
-        $unitTotalNilai = $unit->total_nilai ?? 'Rp 420.500.000';
+        $unitNip = $unit->nip ?? Auth::user()->nip ?? '-';
+        $unitTotalAset = $totalAsetCount ?? 0;
+        $unitTotalNilai = $totalNilaiFormatted ?? 'Rp 0';
     @endphp
 
     <div x-data="{
@@ -18,72 +18,11 @@
         showDetailModal: false,
         selectedDistribusi: null,
 
-        // Data Distribusi Khusus Unit Sub Admin Ini
-        distribusis: [
-            {
-                id: 1,
-                kode: 'DST-2026-092',
-                nama: 'Patient Monitor 5 Parameter & Printer Thermal Lab',
-                qty: '2 Unit',
-                tgl: '16 Ags 2026',
-                status: 'Menunggu Verifikasi',
-                keterangan: 'Permohonan penggantian monitor ruang resusitasi yang error sensor SpO2',
-                pengaju: '{{ $unitKepala }}',
-                ruangan: '{{ $unitNama }}',
-                items: [
-                    { nama: 'Patient Monitor 5 Parameter', merk: 'Mindray BeneVision N12', qty: '1 Unit', kondisi: 'Baru' },
-                    { nama: 'Printer Thermal Cetak Lab & Rekam Medik', merk: 'Epson TM-T82X', qty: '1 Unit', kondisi: 'Baru' }
-                ]
-            },
-            {
-                id: 2,
-                kode: 'DST-2026-089',
-                nama: 'Infusion Pump Digital Otomatis',
-                qty: '2 Unit',
-                tgl: '14 Ags 2026',
-                status: 'Disetujui Admin',
-                keterangan: 'Alokasi tambahan untuk penanganan pasien ICU/IGD rujukan intensif',
-                pengaju: '{{ $unitKepala }}',
-                ruangan: '{{ $unitNama }}',
-                items: [
-                    { nama: 'Infusion Pump Digital', merk: 'Terumo TE-LM700', qty: '2 Unit', kondisi: 'Baru' }
-                ]
-            },
-            {
-                id: 3,
-                kode: 'DST-2026-064',
-                nama: 'Bed Pasien Manual 2 Crank with Side Rail',
-                qty: '3 Unit',
-                tgl: '02 Ags 2026',
-                status: 'Telah Diterima',
-                keterangan: 'Pengadaan APBD BLUD 2026 telah diterima dan terpasang di ruangan',
-                pengaju: '{{ $unitKepala }}',
-                ruangan: '{{ $unitNama }}',
-                items: [
-                    { nama: 'Bed Pasien Manual 2 Crank', merk: 'Paramount Bed Standard', qty: '3 Unit', kondisi: 'Baik (Aktif)' }
-                ]
-            },
-            {
-                id: 4,
-                kode: 'DST-2026-031',
-                nama: 'Lampu Tindakan Medis Mobile LED',
-                qty: '1 Unit',
-                tgl: '18 Jul 2026',
-                status: 'Telah Diterima',
-                keterangan: 'Penerimaan distribusi reguler semester I',
-                pengaju: '{{ $unitKepala }}',
-                ruangan: '{{ $unitNama }}',
-                items: [
-                    { nama: 'Lampu Tindakan Medis Mobile LED', merk: 'HyLED 7 Series', qty: '1 Unit', kondisi: 'Baik (Aktif)' }
-                ]
-            }
-        ],
+        // Data Distribusi Khusus Unit Sub Admin Ini dari Database Backend
+        distribusis: {{ Js::from($distribusisList ?? []) }},
 
-        // Daftar Aset Ruangan yang Perlu Perhatian / Pemeliharaan
-        attentionAssets: [
-            { id: 1, kode: 'AST-MED-042', nama: 'Syringe Pump Terumo TE-331', status: 'Rusak Ringan', lokasi: 'Bed 03', catatan: 'Alarm baterai berbunyi abnormal, dilaporkan ke IPSRS' },
-            { id: 2, kode: 'AST-ELK-019', nama: 'AC Split 2 PK Daikin Inverter', status: 'Dalam Servis', lokasi: 'Ruang Dokter Jaga', catatan: 'Pembersihan evaporator & pengisian freon teknisi IPSRS' }
-        ],
+        // Daftar Aset Ruangan yang Perlu Perhatian / Pemeliharaan dari Database Backend
+        attentionAssets: {{ Js::from($attentionAssets ?? []) }},
 
         get filteredDistribusis() {
             const q = (this.searchQuery || '').toLowerCase();
@@ -96,16 +35,20 @@
             });
         },
 
-        get countMenunggu() {
-            return this.distribusis.filter(d => d.status === 'Menunggu Verifikasi').length;
+        get countDraft() {
+            return this.distribusis.filter(d => d.status === 'Draft').length;
         },
 
-        get countDisetujui() {
-            return this.distribusis.filter(d => d.status === 'Disetujui Admin').length;
+        get countMenunggu() {
+            return this.distribusis.filter(d => d.status === 'Menunggu Konfirmasi' || d.status === 'Pending').length;
+        },
+
+        get countDalamPengiriman() {
+            return this.distribusis.filter(d => d.status === 'Dalam Pengiriman' || d.status === 'Dikirim').length;
         },
 
         get countDiterima() {
-            return this.distribusis.filter(d => d.status === 'Telah Diterima').length;
+            return this.distribusis.filter(d => d.status === 'Telah Diterima' || d.status === 'Diterima').length;
         },
 
         openDetail(item) {
@@ -202,11 +145,11 @@
                     </div>
                 </div>
                 <div class="flex items-baseline justify-between">
-                    <p class="text-2xl sm:text-3xl font-black text-white">44 <span class="text-xs font-bold text-emerald-400">Baik</span></p>
-                    <span class="text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">4 Rusak</span>
+                    <p class="text-2xl sm:text-3xl font-black text-white">{{ $kondisiBaik ?? 0 }} <span class="text-xs font-bold text-emerald-400">Baik</span></p>
+                    <span class="text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">{{ $totalRusak ?? 0 }} Rusak/Servis</span>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2">
-                    3 Rusak Ringan · 1 Rusak Berat
+                    {{ $kondisiKurangBaik ?? 0 }} Kurang Baik · {{ $kondisiRusakRingan ?? 0 }} Rusak Ringan · {{ $kondisiRusakBerat ?? 0 }} Rusak Berat
                 </p>
             </div>
 
@@ -239,11 +182,11 @@
                     </div>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <p class="text-2xl sm:text-3xl font-black text-white" x-text="distribusis.length">4</p>
+                    <p class="text-2xl sm:text-3xl font-black text-white" x-text="distribusis.length">0</p>
                     <span class="text-xs font-bold text-amber-400">Permohonan</span>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
-                    <span><strong class="text-amber-400" x-text="countMenunggu">1</strong> Menunggu · <strong class="text-emerald-400" x-text="countDisetujui">1</strong> Di-acc</span>
+                    <span><strong class="text-slate-400" x-text="countDraft">0</strong> Draft · <strong class="text-amber-400" x-text="countMenunggu">0</strong> Menunggu · <strong class="text-emerald-400" x-text="countDiterima">0</strong> Diterima</span>
                     <a href="{{ route('distribusi.create') }}" class="text-amber-400 hover:underline font-semibold">+ Baru</a>
                 </p>
             </div>
@@ -283,19 +226,26 @@
                                 class="px-2.5 py-1 rounded-lg transition-all">
                                 Semua (<span x-text="distribusis.length"></span>)
                             </button>
-                            <button type="button" @click="statusFilter = 'Menunggu Verifikasi'"
-                                :class="statusFilter === 'Menunggu Verifikasi' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                            <button type="button" @click="statusFilter = 'Draft'"
+                                :class="statusFilter === 'Draft' ? 'bg-slate-700 text-white font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                                class="px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1">
+                                <span>Draft</span>
+                                <span class="px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 text-[10px]" x-show="countDraft > 0" x-text="countDraft"></span>
+                            </button>
+                            <button type="button" @click="statusFilter = 'Menunggu Konfirmasi'"
+                                :class="statusFilter === 'Menunggu Konfirmasi' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
                                 class="px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1">
                                 <span>Menunggu</span>
-                                <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px]" x-show="countMenunggu > 0" x-text="countMenunggu"></span>
+                                <span class="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px]" x-show="countMenunggu > 0" x-text="countMenunggu"></span>
                             </button>
-                            <button type="button" @click="statusFilter = 'Disetujui Admin'"
-                                :class="statusFilter === 'Disetujui Admin' ? 'bg-teal-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                                class="px-2.5 py-1 rounded-lg transition-all">
-                                Disetujui
+                            <button type="button" @click="statusFilter = 'Dalam Pengiriman'"
+                                :class="statusFilter === 'Dalam Pengiriman' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                                class="px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1">
+                                <span>Dikirim</span>
+                                <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px]" x-show="countDalamPengiriman > 0" x-text="countDalamPengiriman"></span>
                             </button>
                             <button type="button" @click="statusFilter = 'Telah Diterima'"
-                                :class="statusFilter === 'Telah Diterima' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                                :class="statusFilter === 'Telah Diterima' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
                                 class="px-2.5 py-1 rounded-lg transition-all">
                                 Diterima
                             </button>
@@ -337,19 +287,24 @@
                                         <td class="px-3.5 py-3.5 text-center font-semibold text-slate-200 whitespace-nowrap" x-text="item.qty"></td>
                                         <td class="px-3.5 py-3.5 text-center font-mono text-slate-400 whitespace-nowrap text-[11px]" x-text="item.tgl"></td>
                                         <td class="px-3.5 py-3.5 text-center whitespace-nowrap">
-                                            <template x-if="item.status === 'Menunggu Verifikasi'">
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                            <template x-if="item.status === 'Draft'">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                                                    📝 Draft Permohonan
+                                                </span>
+                                            </template>
+                                            <template x-if="item.status === 'Menunggu Konfirmasi' || item.status === 'Pending' || item.status === 'Menunggu Verifikasi'">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
                                                     ⏳ Menunggu Verifikasi
                                                 </span>
                                             </template>
-                                            <template x-if="item.status === 'Disetujui Admin'">
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-teal-500/15 text-teal-300 border border-teal-500/30">
-                                                    🚚 Disetujui (Siap Kirim)
+                                            <template x-if="item.status === 'Dalam Pengiriman' || item.status === 'Dikirim' || item.status === 'Disetujui Admin'">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                                    🚚 Dalam Pengiriman
                                                 </span>
                                             </template>
-                                            <template x-if="item.status === 'Telah Diterima'">
+                                            <template x-if="item.status === 'Telah Diterima' || item.status === 'Diterima'">
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                                                    ✅ Telah Diterima (KIR)
+                                                    🟢 Telah Diterima (KIR)
                                                 </span>
                                             </template>
                                         </td>
@@ -427,20 +382,21 @@
                             <span class="text-lg">🛠️</span>
                             <h4 class="text-sm font-extrabold text-white">Aset Perlu Perhatian</h4>
                         </div>
-                        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full">2 Item</span>
+                        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full"
+                              x-text="attentionAssets.length + ' Item'"></span>
                     </div>
 
                     <p class="text-xs text-slate-400 mb-3">
-                        Barang di ruangan Anda yang mengalami kendala atau sedang dalam penanganan teknisi IPSRS:
+                        Barang di ruangan Anda yang mengalami kendala atau membutuhkan servis berkala:
                     </p>
 
                     <div class="space-y-2.5">
-                        <template x-for="item in attentionAssets" :key="item.id">
+                        <template x-for="item in attentionAssets.slice(0, 4)" :key="item.id">
                             <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs hover:border-slate-700 transition-all">
                                 <div class="flex items-start justify-between gap-2">
                                     <p class="font-bold text-white text-xs" x-text="item.nama"></p>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold shrink-0"
-                                        :class="item.status === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'"
+                                        :class="item.status === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : (item.status === 'Rusak Berat' || item.status === 'Rusak' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')"
                                         x-text="item.status">
                                     </span>
                                 </div>
@@ -449,6 +405,13 @@
                                     <span class="font-mono text-emerald-400" x-text="item.kode"></span>
                                     <span x-text="'Lokasi: ' + item.lokasi"></span>
                                 </div>
+                            </div>
+                        </template>
+
+                        <template x-if="attentionAssets.length === 0">
+                            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                                <p class="text-emerald-400 font-bold">✅ Seluruh Aset Baik</p>
+                                <p class="text-[11px] text-slate-500 mt-1">Tidak ada aset rusak yang tercatat di ruangan ini.</p>
                             </div>
                         </template>
                     </div>

@@ -86,14 +86,122 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
             $unit = \App\Models\Unit::find($user->unit_id);
         }
         
-        // Fallback jika akun subadmin universal / belum memiliki unit_id
-        if (!$unit) {
-            $unit = \App\Models\Unit::where('nama', 'like', '%IGD%')->first() 
-                ?? \App\Models\Unit::where('nama', 'like', '%Melati%')->first()
-                ?? \App\Models\Unit::first();
+        // Jika sub_admin belum memiliki unit_id, tampilkan dashboard kosong
+        // (JANGAN fallback ke unit lain — berbahaya untuk keamanan data)
+        $unitId   = $unit ? $unit->id   : null;
+        $unitNama = $unit ? $unit->nama  : '';
+
+        // Jika tidak ada unit, kembalikan view dengan data kosong
+        if (!$unitId) {
+            return view('dashboards.sub_admin', [
+                'unit'                => null,
+                'user'                => $user,
+                'distribusisList'     => [],
+                'totalAsetCount'      => 0,
+                'totalNilaiFormatted' => 'Rp 0',
+                'kondisiBaik'         => 0,
+                'kondisiKurangBaik'   => 0,
+                'kondisiRusakRingan'  => 0,
+                'kondisiRusakBerat'   => 0,
+                'totalRusak'          => 0,
+                'attentionAssets'     => [],
+                'unitNama'            => '',
+            ]);
         }
 
-        return view('dashboards.sub_admin', compact('unit', 'user'));
+        // 1. Distribusi data riil khusus unit ini
+        $dbDistribusis = \App\Models\Distribusi::with([
+                'unit',
+                'items.astap.jenisAstap',
+                'items.registers.astapRegister'
+            ])
+            ->where('unit_id', $unitId)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $distribusisList = $dbDistribusis->map(function($d) use ($unit, $user) {
+            $itemsMapped = $d->items->map(function($it) {
+                $spec = is_array($it->astap?->spesifikasi_json)
+                    ? $it->astap->spesifikasi_json
+                    : (json_decode($it->astap?->spesifikasi_json ?? '', true) ?? []);
+                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? '-'));
+                
+                $nibarList = $it->registers->map(fn($r) => $r->astapRegister?->nibar)->filter()->values()->all();
+                $firstKondisi = $it->registers->first()?->astapRegister?->kondisi ?? 'Baik';
+
+                return [
+                    'nama'       => $it->astap?->nama_barang ?? 'Barang ASTAP',
+                    'merk'       => $merk,
+                    'qty'        => $it->qty . ' ' . ($it->astap?->satuan ?: 'Unit'),
+                    'kondisi'    => $firstKondisi,
+                    'nibar_list' => $nibarList
+                ];
+            });
+
+            $firstItemName = $itemsMapped->first()['nama'] ?? 'Barang ASTAP';
+            $moreCount = $itemsMapped->count() > 1 ? ' + ' . ($itemsMapped->count() - 1) . ' item lainnya' : '';
+            $totalVol = $d->items->sum('qty');
+
+            $tglCarbon = $d->tanggal_distribusi;
+            $bulanIndo = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            $tglStr = $tglCarbon ? ($tglCarbon->day . ' ' . ($bulanIndo[$tglCarbon->month] ?? '') . ' ' . $tglCarbon->year) : '-';
+
+            return [
+                'id'         => $d->id,
+                'kode'       => $d->kode,
+                'bast_nomor' => $d->bast_nomor ?: '-',
+                'nama'       => $firstItemName . $moreCount,
+                'qty'        => $totalVol . ' Item',
+                'tgl'        => $tglStr,
+                'status'     => $d->status,
+                'keterangan' => $d->keterangan ?: 'Permohonan kebutuhan inventaris ruangan',
+                'pengaju'    => $unit?->kepala ?? $user->name,
+                'ruangan'    => $unit?->nama ?? 'Ruangan',
+                'items'      => $itemsMapped->values()->all()
+            ];
+        })->values()->all();
+
+        // 2. Data Register Aset di Ruangan Ini — HANYA berdasarkan unit_id (ketat, tidak pakai OR)
+        $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+            ->where('unit_id', $unitId)
+            ->get();
+
+        $totalAsetCount = $registers->count();
+        $totalNilaiNum = $registers->sum(fn($r) => $r->astap ? (float) ($r->astap->harga_satuan ?: ($r->astap->total_realisasi / max(1, $r->astap->jumlah_volume))) : 0);
+        $totalNilaiFormatted = 'Rp ' . number_format($totalNilaiNum, 0, ',', '.');
+
+        $kondisiBaik = $registers->where('kondisi', 'Baik')->count();
+        $kondisiKurangBaik = $registers->where('kondisi', 'Kurang Baik')->count();
+        $kondisiRusakRingan = $registers->where('kondisi', 'Rusak Ringan')->count();
+        $kondisiRusakBerat = $registers->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
+        $totalRusak = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
+
+        // 3. Aset yang perlu perhatian / rusak di ruangan ini
+        $attentionAssets = $registers->filter(fn($r) => $r->kondisi !== 'Baik')->map(function($r) {
+            return [
+                'id'      => $r->id,
+                'kode'    => $r->nibar ?: $r->no_register,
+                'nama'    => $r->astap?->nama_barang ?? 'Barang Inventaris',
+                'status'  => $r->kondisi,
+                'lokasi'  => $r->ruang_pemegang ?: 'Ruangan',
+                'catatan' => 'Kondisi fisik unit tercatat: ' . $r->kondisi . ' (Perlu pengecekan berkala / servis)'
+            ];
+        })->values()->all();
+
+        return view('dashboards.sub_admin', [
+            'unit'                => $unit,
+            'user'                => $user,
+            'distribusisList'     => $distribusisList,
+            'totalAsetCount'      => $totalAsetCount,
+            'totalNilaiFormatted' => $totalNilaiFormatted,
+            'kondisiBaik'         => $kondisiBaik,
+            'kondisiKurangBaik'   => $kondisiKurangBaik,
+            'kondisiRusakRingan'  => $kondisiRusakRingan,
+            'kondisiRusakBerat'   => $kondisiRusakBerat,
+            'totalRusak'          => $totalRusak,
+            'attentionAssets'     => $attentionAssets,
+            'unitNama'            => $unitNama,
+        ]);
     })->name('subadmin.dashboard');
 });
 

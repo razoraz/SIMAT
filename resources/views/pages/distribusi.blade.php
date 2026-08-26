@@ -23,7 +23,14 @@
                 distribusis: {{ Js::from($distribusis ?? []) }},
 
                 init() {
-                    // Prioritaskan data yang dikirim dari database backend
+                    // Sub admin: SELALU gunakan data dari backend (jangan baca localStorage)
+                    // karena localStorage bisa berisi data sesi admin/user lain
+                    if (this.userRole === 'sub_admin') {
+                        localStorage.removeItem('simat_distribusis');
+                        return; // distribusis sudah di-set dari {{ Js::from($distribusis) }}
+                    }
+
+                    // Admin/Master: prioritaskan data dari DB, fallback ke localStorage
                     if (this.distribusis && this.distribusis.length > 0) {
                         localStorage.setItem('simat_distribusis', JSON.stringify(this.distribusis));
                         return;
@@ -42,6 +49,8 @@
                 },
 
                 saveToStorage() {
+                    // Sub admin: jangan simpan ke localStorage
+                    if (this.userRole === 'sub_admin') return;
                     localStorage.setItem('simat_distribusis', JSON.stringify(this.distribusis));
                 },
 
