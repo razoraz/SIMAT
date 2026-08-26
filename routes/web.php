@@ -157,6 +157,29 @@ Route::middleware('auth')->group(function () {
     Route::get('/distribusi/{id}/edit', [DistribusiController::class, 'edit'])->name('distribusi.edit');
     Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
 
+    // API: Update kondisi per Register NIBAR (dari halaman distribusi — semua role terautentikasi)
+    Route::patch('/distribusi/register-kondisi/{id}', function (\Illuminate\Http\Request $request, $id) {
+        $reg = \App\Models\AstapRegister::find($id);
+        if (!$reg) {
+            return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
+        }
+        $kondisi = $request->input('kondisi');
+        $allowed = ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'];
+        if (!in_array($kondisi, $allowed)) {
+            return response()->json(['success' => false, 'message' => 'Kondisi tidak valid.'], 422);
+        }
+        $reg->kondisi = $kondisi;
+        $reg->save();
+        return response()->json(['success' => true, 'kondisi' => $reg->kondisi, 'updated_at' => $reg->updated_at->toISOString()]);
+    })->name('distribusi.register_kondisi.update');
+
+    // API: Ambil kondisi terkini satu astap_register dari DB (untuk refresh realtime)
+    Route::get('/distribusi/register-kondisi/{id}', function ($id) {
+        $reg = \App\Models\AstapRegister::select('id','nibar','kondisi','ruang_pemegang','updated_at')->find($id);
+        if (!$reg) return response()->json(['success' => false], 404);
+        return response()->json(['success' => true, 'kondisi' => $reg->kondisi, 'ruang' => $reg->ruang_pemegang, 'updated_at' => $reg->updated_at]);
+    })->name('distribusi.register_kondisi.show');
+
     // 4. Mutasi Aset Pages & Forms
     Route::get('/mutasi-aset', function () {
         return view('pages.mutasi_aset');

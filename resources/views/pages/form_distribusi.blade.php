@@ -1,14 +1,10 @@
 <script>
     window.editingDistribusi = {{ Js::from($distribusiData ?? null) }};
-</script>
 
-<x-layout :title="request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP - SIMAT-RK' : 'Input Distribusi Baru - SIMAT-RK'">
-    @section('page-title', request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP' : 'Input Distribusi Baru')
-    @section('breadcrumb', request()->routeIs('distribusi.edit') ? 'Master Utama / Distribusi ASTAP / Ubah' : 'Master Utama / Distribusi ASTAP / Input Baru')
-
-    <div x-data="{
-        isEdit: {{ request()->routeIs('distribusi.edit') ? 'true' : 'false' }},
-        editId: {{ isset($id) ? Js::from($id) : 'null' }},
+    function formDistribusiApp() {
+        return {
+            isEdit: {{ request()->routeIs('distribusi.edit') ? 'true' : 'false' }},
+            editId: {{ isset($id) ? Js::from($id) : 'null' }},
         
         // Autocomplete Search Unit / Paviliun State
         unitSearch: '',
@@ -337,6 +333,10 @@
 
         // Pilih NIBAR untuk item (max sesuai qty)
         selectNibar(item, n) {
+            if (n.status === 'Tidak Tersedia') {
+                alert('⚠️ NIBAR ' + n.nibar + ' berstatus TIDAK TERSEDIA karena sudah ditempatkan di: ' + (n.ruang || 'Ruangan Lain') + '.\n\nHanya unit yang berada di Gudang Aset (berstatus "Tersedia") yang dapat dipilih untuk didistribusikan.');
+                return;
+            }
             if (!item.nibar_selected) item.nibar_selected = [];
             const maxQty = parseInt(item.qty) || 1;
             if (item.nibar_selected.length >= maxQty) {
@@ -545,7 +545,7 @@
             return this.formData.items.reduce((acc, curr) => acc + (parseInt(curr.qty) || 0), 0);
         },
 
-        submitForm() {
+        async submitForm() {
             if (!this.formData.tujuan || this.formData.tujuan.trim() === '') {
                 alert('⚠️ Silakan pilih Tujuan Unit / Paviliun penerima barang!');
                 return;
@@ -673,7 +673,7 @@
             // Simpan ke localStorage
             localStorage.setItem('simat_distribusis', JSON.stringify(storedList));
 
-            // Sinkronisasi otomatis ke Database & update data astap_registers
+            // Sinkronisasi ke Database & update data astap_registers (kondisi per masing-masing NIBAR)
             try {
                 const targetUnit = this.selectedUnitObj || this.unitList.find(u => u.nama === this.formData.tujuan);
                 if (targetUnit && targetUnit.id) {
@@ -689,16 +689,20 @@
                             const resolvedKode = this.getItemKode(it) || it.kode_barang || '';
                             const astapObj = (this.dbAstapList || []).find(a => a.kode === resolvedKode || a.nama === it.nama_barang);
                             return {
-                                astap_id: astapObj ? astapObj.id : 1,
+                                astap_id: astapObj ? astapObj.id : (it.astap_id || 1),
                                 qty: parseInt(it.qty) || 1,
                                 kondisi: it.kondisi || 'Baik',
                                 keterangan: it.keterangan || '-',
-                                nibar_list: (it.nibar_selected || []).map(n => n.nibar)
+                                nibar_list: (it.nibar_selected || []).map(n => n.nibar),
+                                nibar_items: (it.nibar_selected || []).map(n => ({
+                                    nibar: n.nibar,
+                                    kondisi: n.kondisi || it.kondisi || 'Baik'
+                                }))
                             };
                         })
                     };
 
-                    fetch('{{ route('distribusi.save') }}', {
+                    const response = await fetch('{{ route('distribusi.save') }}', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -706,16 +710,28 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify(dbPayload)
-                    }).catch(err => console.log('Database sync notice:', err));
+                    });
+                    const result = await response.json();
+                    if (!result.success) {
+                        console.warn('Database save warning:', result.message);
+                    }
                 }
             } catch(e) {
-                console.log('Sync error:', e);
+                console.log('Database sync error:', e);
             }
 
-            alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nData Register ASTAP & NIBAR telah otomatis diperbarui!');
+            alert('✅ Berhasil menyimpan distribusi barang:\n- No. Distribusi: ' + this.formData.kode + '\n- Tujuan Unit: ' + this.formData.tujuan + '\n- Penerima: ' + this.formData.penerima + '\n- Jumlah Barang: ' + this.formData.items.length + ' Jenis Barang (' + this.getTotalItemVolume() + ' Total Volume)\n\nData Register ASTAP & Kondisi Fisik NIBAR telah otomatis diperbarui di database!');
             window.location.href = '{{ route('distribusi.index') }}';
         }
-    }" x-cloak class="space-y-6">
+    };
+}
+</script>
+
+<x-layout :title="request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP - SIMAT-RK' : 'Input Distribusi Baru - SIMAT-RK'">
+    @section('page-title', request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP' : 'Input Distribusi Baru')
+    @section('breadcrumb', request()->routeIs('distribusi.edit') ? 'Master Utama / Distribusi ASTAP / Ubah' : 'Master Utama / Distribusi ASTAP / Input Baru')
+
+    <div x-data="formDistribusiApp()" x-cloak class="space-y-6">
 
         <!-- Top Navigation Bar (Bersih, Tanpa Tombol Simpan/Batal di Atas) -->
         <div class="flex items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
@@ -1075,19 +1091,55 @@
                                             </div>
                                         </label>
 
-                                        <!-- Chips: NIBAR yang sudah dipilih -->
+                                        <!-- List NIBAR yang Dipilih dengan Pengaturan Kondisi Fisik Per Unit -->
                                         <template x-if="(item.nibar_selected || []).length > 0">
-                                            <div class="flex flex-wrap gap-2 mb-2">
-                                                <template x-for="n in item.nibar_selected" :key="n.nibar">
-                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold">
-                                                        <span x-text="n.nibar"></span>
-                                                        <button type="button" @click.stop="removeNibar(item, n.nibar)"
-                                                                class="w-3.5 h-3.5 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition-all"
-                                                                title="Hapus NIBAR ini">
-                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                        </button>
+                                            <div class="space-y-2 mb-3 p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+                                                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-slate-800/60">
+                                                    <span class="flex items-center space-x-1.5">
+                                                        <span>📋</span>
+                                                        <span>Kondisi Fisik Per Unit NIBAR:</span>
                                                     </span>
-                                                </template>
+                                                    <span class="text-amber-400 font-mono text-[10.5px]" x-text="(item.nibar_selected || []).length + ' / ' + (item.qty || 1) + ' Unit'"></span>
+                                                </div>
+                                                
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                                                    <template x-for="(n, nIdx) in item.nibar_selected" :key="n.nibar">
+                                                        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-amber-500/40 transition-all shadow-sm">
+                                                            <!-- Info Nomor NIBAR & Ruang -->
+                                                            <div class="min-w-0 flex-1">
+                                                                <div class="flex items-center space-x-1.5">
+                                                                    <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-[9px] font-bold font-mono" x-text="nIdx + 1"></span>
+                                                                    <span class="font-mono font-bold text-xs text-amber-300 truncate" x-text="n.nibar"></span>
+                                                                </div>
+                                                                <p class="text-[9.5px] text-slate-400 truncate mt-0.5 pl-5" x-text="'Ruang: ' + (n.ruang || 'Gudang Aset')"></p>
+                                                            </div>
+
+                                                            <!-- Dropdown Edit Kondisi Per Unit NIBAR -->
+                                                            <div class="shrink-0 flex items-center space-x-1.5">
+                                                                <select x-model="n.kondisi"
+                                                                        class="text-[10px] font-bold rounded-lg border px-2 py-1 focus:outline-none focus:ring-1 appearance-none cursor-pointer transition-all"
+                                                                        :class="{
+                                                                            'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 focus:ring-emerald-400': n.kondisi === 'Baik' || !n.kondisi,
+                                                                            'bg-amber-500/15 text-amber-300 border-amber-500/40 focus:ring-amber-400': n.kondisi === 'Kurang Baik',
+                                                                            'bg-orange-500/15 text-orange-300 border-orange-500/40 focus:ring-orange-400': n.kondisi === 'Rusak Ringan',
+                                                                            'bg-rose-500/15 text-rose-300 border-rose-500/40 focus:ring-rose-400': n.kondisi === 'Rusak Berat' || n.kondisi === 'Rusak'
+                                                                        }">
+                                                                    <option value="Baik">🟢 Baik</option>
+                                                                    <option value="Kurang Baik">🟡 Kurang Baik</option>
+                                                                    <option value="Rusak Ringan">🟠 Rusak Ringan</option>
+                                                                    <option value="Rusak Berat">🔴 Rusak Berat</option>
+                                                                </select>
+
+                                                                <!-- Tombol Hapus NIBAR -->
+                                                                <button type="button" @click.stop="removeNibar(item, n.nibar)"
+                                                                        class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all border border-slate-700 hover:border-rose-500/40"
+                                                                        title="Hapus NIBAR ini">
+                                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </template>
+                                                </div>
                                             </div>
                                         </template>
 
@@ -1147,24 +1199,40 @@
                                                 <!-- Dropdown NIBAR -->
                                                 <div x-show="activeNibarDropdownIndex === idx"
                                                      x-transition
-                                                     class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
+                                                     class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
 
                                                     <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
-                                                        <span x-text="'NIBAR tersedia untuk ' + (item.nama_barang || '-')"></span>
-                                                        <span class="text-amber-400 font-mono" x-text="getFilteredNibar(item, nibarSearch[item.id] || '').length + ' tersedia'"></span>
+                                                        <span x-text="'NIBAR untuk ' + (item.nama_barang || '-')"></span>
+                                                        <div class="flex items-center space-x-2 font-mono text-[10px]">
+                                                            <span class="text-emerald-400 font-bold" x-text="getFilteredNibar(item, nibarSearch[item.id] || '').filter(n => n.status === 'Tersedia').length + ' Tersedia'"></span>
+                                                            <span class="text-slate-600">•</span>
+                                                            <span class="text-slate-400" x-text="getFilteredNibar(item, nibarSearch[item.id] || '').length + ' Total'"></span>
+                                                        </div>
                                                     </div>
 
                                                     <template x-for="n in getFilteredNibar(item, nibarSearch[item.id] || '')" :key="n.nibar">
                                                         <div @click="selectNibar(item, n)"
-                                                             class="px-4 py-2.5 hover:bg-amber-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3">
-                                                            <div class="space-y-0.5">
+                                                             class="px-4 py-2.5 cursor-pointer transition-colors group flex items-center justify-between gap-3"
+                                                             :class="n.status === 'Tersedia' ? 'hover:bg-amber-500/15' : 'hover:bg-rose-500/10 bg-slate-950/40'">
+                                                            <div class="space-y-0.5 min-w-0">
                                                                 <div class="flex items-center space-x-2">
-                                                                    <p class="font-mono font-bold text-xs text-white group-hover:text-amber-300" x-text="n.nibar"></p>
-                                                                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-semibold" x-text="n.status || 'Tersedia'"></span>
+                                                                    <p class="font-mono font-bold text-xs truncate" 
+                                                                       :class="n.status === 'Tersedia' ? 'text-white group-hover:text-amber-300' : 'text-slate-400'" 
+                                                                       x-text="n.nibar"></p>
+                                                                    <span class="text-[9px] px-2 py-0.5 rounded font-extrabold shrink-0"
+                                                                          :class="n.status === 'Tersedia' ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400' : 'bg-rose-500/15 border border-rose-500/30 text-rose-400'"
+                                                                          x-text="n.status || 'Tersedia'"></span>
                                                                 </div>
-                                                                <p class="text-[10px] text-slate-400" x-text="'Ruang: ' + n.ruang + ' • ' + n.kondisi"></p>
+                                                                <p class="text-[10px] truncate" 
+                                                                   :class="n.status === 'Tersedia' ? 'text-slate-400' : 'text-rose-400/80'" 
+                                                                   x-text="'Ruang: ' + n.ruang + ' • ' + n.kondisi"></p>
                                                             </div>
-                                                            <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0">Pilih →</span>
+                                                            <template x-if="n.status === 'Tersedia'">
+                                                                <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-amber-500/30 text-amber-300 text-[10px] font-bold shrink-0 shadow-sm">Pilih →</span>
+                                                            </template>
+                                                            <template x-if="n.status !== 'Tersedia'">
+                                                                <span class="px-2 py-0.5 rounded bg-rose-950/60 border border-rose-800/80 text-rose-400 text-[9.5px] font-semibold shrink-0">Di Ruangan</span>
+                                                            </template>
                                                         </div>
                                                     </template>
 

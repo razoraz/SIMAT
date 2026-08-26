@@ -196,6 +196,63 @@
                     alert('❌ BAST Distribusi (' + (item.kode || item.bast_nomor) + ') ditolak! Tanda tangan digital telah dihapus.');
                 },
 
+                copiedNibar: null,
+                copyNibar(nibar) {
+                    navigator.clipboard.writeText(nibar).then(() => {
+                        this.copiedNibar = nibar;
+                        setTimeout(() => {
+                            if (this.copiedNibar === nibar) {
+                                this.copiedNibar = null;
+                            }
+                        }, 2000);
+                    });
+                },
+
+                kondisiSaving: {},   // { reg_id: true/false }
+                kondisiSaved: {},    // { reg_id: true } — tampil centang sesaat
+
+                updateKondisiRegister(regId, newKondisi, item) {
+                    if (!regId) {
+                        alert('⚠️ Register ID tidak ditemukan untuk NIBAR ini. Kondisi tidak dapat disimpan ke database.');
+                        return;
+                    }
+                    this.kondisiSaving[regId] = true;
+
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch('/distribusi/register-kondisi/' + regId, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ kondisi: newKondisi })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        this.kondisiSaving[regId] = false;
+                        if (data.success) {
+                            this.kondisiSaved[regId] = true;
+                            // Update kondisi di nibar_registers item yang bersangkutan
+                            if (item && item.nibar_registers) {
+                                const reg = item.nibar_registers.find(r => r.reg_id == regId);
+                                if (reg) reg.kondisi = newKondisi;
+                            }
+                            // Update kondisi ringkasan item (ambil dari register pertama)
+                            if (item && item.nibar_registers && item.nibar_registers.length > 0) {
+                                item.kondisi = item.nibar_registers[0].kondisi;
+                            }
+                            setTimeout(() => { delete this.kondisiSaved[regId]; }, 2000);
+                        } else {
+                            alert('⚠️ Gagal menyimpan kondisi: ' + (data.message || 'Terjadi kesalahan.'));
+                        }
+                    })
+                    .catch(() => {
+                        this.kondisiSaving[regId] = false;
+                        alert('⚠️ Koneksi gagal. Pastikan server berjalan dan coba kembali.');
+                    });
+                },
+
                 printCurrentBast() {
                     window.print();
                 }
@@ -862,80 +919,206 @@
             </div>
         </div>
 
-        <!-- MODAL DETAIL RINCIAN DISTRIBUSI BARANG (MENDUKUNG MULTI-BARANG) -->
+        <!-- MODAL DETAIL RINCIAN DISTRIBUSI BARANG (MENDUKUNG MULTI-BARANG & NIBAR REGISTER) -->
         <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                    <div class="flex items-center space-x-2.5">
-                        <span class="p-2 rounded-xl bg-teal-500/20 text-teal-300 text-lg">🚚</span>
+                    <div class="flex items-center space-x-3">
+                        <span class="p-2.5 rounded-2xl bg-teal-500/20 text-teal-300 text-xl border border-teal-500/30">🚚</span>
                         <div>
-                            <h3 class="text-base sm:text-lg font-extrabold text-white">Detail Alokasi Penyerahan Barang</h3>
-                            <p class="text-xs text-slate-400" x-text="selectedDistribusi ? ('Nomor Registrasi: ' + selectedDistribusi.kode) : ''"></p>
+                            <h3 class="text-base sm:text-lg font-extrabold text-white">Detail Alokasi Penyerahan & Register NIBAR</h3>
+                            <p class="text-xs text-slate-400 font-mono" x-text="selectedDistribusi ? ('Nomor Registrasi: ' + selectedDistribusi.kode + ' • BAST: ' + (selectedDistribusi.bast_nomor || selectedDistribusi.nomor_bast)) : ''"></p>
                         </div>
                     </div>
                     <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold">&times;</button>
                 </div>
 
                 <template x-if="selectedDistribusi">
-                    <div class="space-y-4 text-xs">
+                    <div class="space-y-5 text-xs">
                         
                         <!-- Informasi Ringkas Transaksi -->
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 bg-slate-950 p-4 sm:p-5 rounded-2xl border border-slate-800">
                             <div>
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Tujuan Unit / Ruangan</span>
-                                <span class="font-bold text-teal-300 text-xs" x-text="selectedDistribusi.tujuan"></span>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Tujuan Unit / Ruangan</span>
+                                <span class="font-bold text-teal-300 text-xs block mt-0.5" x-text="selectedDistribusi.tujuan"></span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Pegawai Penerima (PJ)</span>
-                                <span class="font-bold text-white text-xs" x-text="selectedDistribusi.penerima"></span>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Pegawai Penerima (PJ)</span>
+                                <span class="font-bold text-white text-xs block mt-0.5" x-text="selectedDistribusi.penerima || selectedDistribusi.pj_nama"></span>
+                                <span class="text-[10px] text-slate-400 font-mono" x-text="selectedDistribusi.pj_nip ? ('NIP: ' + selectedDistribusi.pj_nip) : ''"></span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Tanggal Distribusi</span>
-                                <span class="font-mono text-slate-300" x-text="selectedDistribusi.tgl"></span>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Tanggal Distribusi</span>
+                                <span class="font-mono text-slate-300 text-xs block mt-0.5" x-text="selectedDistribusi.tgl || selectedDistribusi.tanggal_distribusi"></span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Status Penyerahan</span>
-                                <span class="font-bold text-emerald-400" x-text="selectedDistribusi.status"></span>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Status Penyerahan</span>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold border mt-0.5"
+                                      :class="{
+                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': selectedDistribusi.status === 'Telah Diterima' || selectedDistribusi.status === 'Diterima',
+                                          'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': selectedDistribusi.status === 'Dalam Pengiriman' || selectedDistribusi.status === 'Dikirim',
+                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': selectedDistribusi.status === 'Menunggu Konfirmasi' || selectedDistribusi.status === 'Pending',
+                                          'bg-slate-500/15 text-slate-300 border-slate-500/30': selectedDistribusi.status === 'Draft' || !selectedDistribusi.status
+                                      }"
+                                      x-text="selectedDistribusi.status"></span>
                             </div>
-                            <div class="col-span-2">
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold">Catatan</span>
-                                <span class="text-slate-300 italic" x-text="selectedDistribusi.keterangan"></span>
+                            <div class="col-span-2 sm:col-span-4 pt-2 border-t border-slate-900 flex items-center justify-between">
+                                <div class="text-slate-400 text-[11px]">
+                                    <span class="font-bold text-slate-300">Catatan:</span>
+                                    <span class="italic ml-1" x-text="selectedDistribusi.keterangan || '-'"></span>
+                                </div>
+                                <template x-if="selectedDistribusi.signed">
+                                    <span class="inline-flex items-center space-x-1 text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                        <span>✍️ E-Sign BSrE Sah:</span>
+                                        <span x-text="selectedDistribusi.tgl_signed || 'Terverifikasi'"></span>
+                                    </span>
+                                </template>
                             </div>
                         </div>
 
-                        <!-- Tabel Rincian Semua Barang yang Didistribusikan -->
+                        <!-- Tabel Rincian Semua Barang & Register NIBAR yang Didistribusikan -->
                         <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-slate-300 font-extrabold text-xs flex items-center space-x-1.5">
-                                    <span>📦 Daftar Barang yang Diserahkan</span>
-                                    <span class="text-teal-400" x-text="'(' + (selectedDistribusi.items ? selectedDistribusi.items.length : 0) + ' Jenis Barang)'"></span>
+                            <div class="flex items-center justify-between mb-2.5">
+                                <span class="text-slate-200 font-extrabold text-xs flex items-center space-x-2">
+                                    <span>📦 Rincian Barang & Nomor NIBAR 45 Karakter</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold"
+                                          x-text="(selectedDistribusi.items ? selectedDistribusi.items.length : 0) + ' Jenis Barang'"></span>
                                 </span>
-                                <span class="text-[11px] text-emerald-400 font-bold" x-text="'Total Volume: ' + getTotalQty(selectedDistribusi.items) + ' Item'"></span>
+                                <span class="text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20"
+                                      x-text="'Total Volume: ' + getTotalQty(selectedDistribusi.items) + ' Item'"></span>
                             </div>
 
-                            <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
+                            <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 shadow-inner">
                                 <table class="w-full text-left text-xs text-slate-300">
-                                    <thead class="bg-slate-900 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
+                                    <thead class="bg-slate-900/90 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800">
                                         <tr>
-                                            <th class="px-3 py-2.5 text-center w-8">No</th>
-                                            <th class="px-3 py-2.5 text-left">Nama Barang</th>
-                                            <th class="px-3 py-2.5 text-left">Merk / Tipe</th>
-                                            <th class="px-3 py-2.5 text-center">Vol</th>
-                                            <th class="px-3 py-2.5 text-center">Satuan</th>
-                                            <th class="px-3 py-2.5 text-center">Kondisi</th>
+                                            <th class="px-3.5 py-3 text-center w-8">No</th>
+                                            <th class="px-3.5 py-3 text-left min-w-[180px]">Nama Barang & Kode 108</th>
+                                            <th class="px-3.5 py-3 text-left min-w-[140px]">Merk / Spesifikasi</th>
+                                            <th class="px-3.5 py-3 text-left min-w-[320px]">Nomor Register NIBAR (45 Digit) &amp; Kondisi</th>
+                                            <th class="px-3.5 py-3 text-center w-16">Vol</th>
+                                            <th class="px-3.5 py-3 text-center w-16">Satuan</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80">
                                         <template x-for="(item, idx) in selectedDistribusi.items" :key="idx">
-                                            <tr class="hover:bg-slate-900/50">
-                                                <td class="px-3 py-2.5 text-center font-bold text-slate-500" x-text="idx + 1"></td>
-                                                <td class="px-3 py-2.5 font-bold text-white" x-text="item.nama_barang"></td>
-                                                <td class="px-3 py-2.5 text-slate-400 text-[11px]" x-text="item.merk_type || '-'"></td>
-                                                <td class="px-3 py-2.5 text-center font-bold text-emerald-400" x-text="item.qty"></td>
-                                                <td class="px-3 py-2.5 text-center text-slate-300" x-text="item.satuan"></td>
-                                                <td class="px-3 py-2.5 text-center">
-                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" x-text="item.kondisi"></span>
+                                            <tr class="hover:bg-slate-900/40 transition-colors">
+                                                <td class="px-3.5 py-3 text-center font-bold text-slate-500 align-top" x-text="idx + 1"></td>
+                                                
+                                                <!-- Nama Barang & Kode 108 -->
+                                                <td class="px-3.5 py-3 align-top">
+                                                    <p class="font-extrabold text-white text-xs leading-snug" x-text="item.nama_barang"></p>
+                                                    <p class="text-[10px] text-teal-400 font-mono mt-0.5" x-text="'Kode 108: ' + (item.kode_barang || '-')"></p>
+                                                    <template x-if="item.jenis_nama">
+                                                        <span class="text-[9.5px] text-slate-500 block truncate max-w-xs" x-text="item.jenis_nama"></span>
+                                                    </template>
                                                 </td>
+
+                                                <!-- Merk & Spesifikasi -->
+                                                <td class="px-3.5 py-3 text-slate-300 text-[11px] align-top">
+                                                    <span class="font-semibold text-slate-200" x-text="item.merk_type || item.merk || '-'"></span>
+                                                    <template x-if="item.keterangan">
+                                                        <p class="text-[10px] text-slate-500 italic mt-0.5" x-text="'Ket: ' + item.keterangan"></p>
+                                                    </template>
+                                                </td>
+
+                                                <!-- NIBAR + Kondisi (digabung dalam 1 kolom) -->
+                                                <td class="px-3.5 py-3 align-top">
+                                                    <!-- Ada nibar_registers: tampil NIBAR + badge kondisi inline -->
+                                                    <template x-if="item.nibar_registers && item.nibar_registers.length > 0">
+                                                        <div class="space-y-1">
+                                                            <div class="flex items-center justify-between text-[10px] text-slate-400 font-medium mb-1">
+                                                                <span class="text-teal-300 font-semibold" x-text="item.nibar_registers.length + ' Unit NIBAR Terdaftar:'"></span>
+                                                                <span class="text-[9.5px] text-slate-500 font-mono">Klik NIBAR untuk detail barang</span>
+                                                            </div>
+                                                            <template x-for="(reg, nIdx) in item.nibar_registers" :key="reg.nibar || nIdx">
+                                                                <div class="flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-teal-500/50 rounded-xl px-2.5 transition-all group h-[30px]">
+                                                                    <!-- Kiri: nomor urut + link NIBAR -->
+                                                                    <div class="flex items-center space-x-1.5 overflow-hidden min-w-0">
+                                                                        <span class="text-slate-500 font-mono text-[9.5px] shrink-0" x-text="'#' + (nIdx + 1)"></span>
+                                                                        <a :href="'/scan/' + reg.nibar" target="_blank"
+                                                                           class="font-mono text-[10.5px] font-bold text-teal-300 group-hover:text-teal-200 group-hover:underline tracking-tight select-all truncate"
+                                                                           title="Buka Detail Barang Aset"
+                                                                           x-text="reg.nibar">
+                                                                        </a>
+                                                                    </div>
+                                                                    <!-- Kanan: badge kondisi + tombol aksi -->
+                                                                    <div class="flex items-center space-x-1.5 shrink-0 ml-2">
+                                                                        <!-- Badge Kondisi inline -->
+                                                                        <span class="px-2 py-0.5 rounded-lg text-[9px] font-bold whitespace-nowrap"
+                                                                              :class="{
+                                                                                  'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30': reg.kondisi === 'Baik' || !reg.kondisi,
+                                                                                  'bg-amber-500/15 text-amber-300 border border-amber-500/30': reg.kondisi === 'Kurang Baik',
+                                                                                  'bg-orange-500/15 text-orange-300 border border-orange-500/30': reg.kondisi === 'Rusak Ringan',
+                                                                                  'bg-rose-500/15 text-rose-300 border border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'Rusak'
+                                                                              }"
+                                                                              x-text="reg.kondisi || 'Baik'"></span>
+                                                                        <!-- Salin NIBAR -->
+                                                                        <button type="button" @click="copyNibar(reg.nibar)"
+                                                                                class="p-1 rounded-md bg-slate-800 hover:bg-teal-500 text-slate-400 hover:text-slate-950 transition-all text-[9.5px]"
+                                                                                :title="copiedNibar === reg.nibar ? 'Tersalin!' : 'Salin NIBAR'">
+                                                                            <span x-show="copiedNibar !== reg.nibar">📋</span>
+                                                                            <span x-show="copiedNibar === reg.nibar" class="text-emerald-400 font-bold">✓</span>
+                                                                        </button>
+                                                                        <!-- Detail Barang -->
+                                                                        <a :href="'/scan/' + reg.nibar" target="_blank"
+                                                                           class="p-1 rounded-md bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-slate-950 transition-all text-[9.5px]"
+                                                                           title="Lihat Detail Barang Aset">
+                                                                            <span>🔍</span>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- Fallback: hanya nibar_list tanpa kondisi -->
+                                                    <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && item.nibar_list && item.nibar_list.length > 0">
+                                                        <div class="space-y-1">
+                                                            <div class="flex items-center justify-between text-[10px] text-slate-400 font-medium mb-1">
+                                                                <span class="text-teal-300 font-semibold" x-text="item.nibar_list.length + ' Unit NIBAR Terdaftar:'"></span>
+                                                                <span class="text-[9.5px] text-slate-500 font-mono">Klik NIBAR untuk detail barang</span>
+                                                            </div>
+                                                            <template x-for="(nibar, nIdx) in item.nibar_list" :key="nIdx">
+                                                                <div class="flex items-center justify-between bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-teal-500/50 rounded-xl px-2.5 transition-all group h-[30px]">
+                                                                    <div class="flex items-center space-x-1.5 overflow-hidden min-w-0">
+                                                                        <span class="text-slate-500 font-mono text-[9.5px] shrink-0" x-text="'#' + (nIdx + 1)"></span>
+                                                                        <a :href="'/scan/' + nibar" target="_blank"
+                                                                           class="font-mono text-[10.5px] font-bold text-teal-300 group-hover:text-teal-200 group-hover:underline tracking-tight select-all truncate"
+                                                                           title="Buka Detail Barang Aset"
+                                                                           x-text="nibar">
+                                                                        </a>
+                                                                    </div>
+                                                                    <div class="flex items-center space-x-1 shrink-0 ml-2">
+                                                                        <button type="button" @click="copyNibar(nibar)"
+                                                                                class="p-1 rounded-md bg-slate-800 hover:bg-teal-500 text-slate-400 hover:text-slate-950 transition-all text-[9.5px]"
+                                                                                :title="copiedNibar === nibar ? 'Tersalin!' : 'Salin NIBAR'">
+                                                                            <span x-show="copiedNibar !== nibar">📋</span>
+                                                                            <span x-show="copiedNibar === nibar" class="text-emerald-400 font-bold">✓</span>
+                                                                        </button>
+                                                                        <a :href="'/scan/' + nibar" target="_blank"
+                                                                           class="p-1 rounded-md bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-slate-950 transition-all text-[9.5px]"
+                                                                           title="Lihat Detail Barang Aset">
+                                                                            <span>🔍</span>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- Belum ada NIBAR sama sekali -->
+                                                    <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && (!item.nibar_list || item.nibar_list.length === 0)">
+                                                        <div class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10.5px] font-mono">
+                                                            <span>⚠️</span>
+                                                            <span>Belum ditentukan</span>
+                                                        </div>
+                                                    </template>
+                                                </td>
+
+                                                <!-- Volume & Satuan -->
+                                                <td class="px-3.5 py-3 text-center font-bold text-emerald-400 text-xs align-top" x-text="item.qty"></td>
+                                                <td class="px-3.5 py-3 text-center text-slate-300 text-xs align-top" x-text="item.satuan"></td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -946,8 +1129,11 @@
                     </div>
                 </template>
 
-                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-2">
-                    <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all">
+                <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+                    <div class="text-[11px] text-slate-500 font-mono">
+                        <span>Format NIBAR: 45 Digit Kode BMD RSUD dr. H. Koesnandi</span>
+                    </div>
+                    <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all shadow-md active:scale-95">
                         Tutup
                     </button>
                 </div>
