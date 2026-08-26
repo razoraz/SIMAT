@@ -178,8 +178,8 @@
                         jenis_aset_nama: ja ? (ja.nama_jenis || '') : '',
                         sub_rincian_kode: ja ? (ja.sub_sub_rincian_objek || ja.sub_rincian_objek || (kode108Val ? kode108Val.substring(0, 14) : '')) : (kode108Val ? kode108Val.substring(0, 14) : ''),
                         sub_rincian_nama: ja ? (ja.uraian_sub_sub_rincian || ja.uraian_sub_rincian || '') : '',
-                        jumlah_anggaran: ea ? (ea.jumlah_anggaran || 0) : 0,
-                        jumlah_realisasi: ea ? (ea.total_realisasi || 0) : 0,
+                        jumlah_anggaran: ea ? (ea.jumlah_anggaran ?? (spec.jumlah_anggaran ?? (ea.total_realisasi || 0))) : 0,
+                        jumlah_realisasi: ea ? (ea.jumlah_realisasi ?? (ea.total_realisasi || 0)) : 0,
                         // LANGKAH 3 — KIB A Tanah
                         tanah_nama_barang: nama || 'Tanah Bangunan Apotik / Rumah Sakit',
                         tanah_kode_barang: kode108Val || '1.3.1.01.01.02.013',

@@ -9,6 +9,7 @@ use App\Http\Controllers\JenisPengadaanController;
 use App\Http\Controllers\RekeningBelanjaController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\DistribusiController;
+use App\Http\Controllers\MutasiController;
 use App\Http\Middleware\RoleMiddleware;
 
 // Auth Routes (Guest)
@@ -289,17 +290,16 @@ Route::middleware('auth')->group(function () {
     })->name('distribusi.register_kondisi.show');
 
     // 4. Mutasi Aset Pages & Forms
-    Route::get('/mutasi-aset', function () {
-        return view('pages.mutasi_aset');
-    })->name('mutasi.index');
-
-    Route::get('/mutasi-aset/create', function () {
-        return view('pages.form_mutasi_aset');
-    })->name('mutasi.create');
-
-    Route::get('/mutasi-aset/{id}/edit', function ($id) {
-        return view('pages.form_mutasi_aset', ['id' => $id]);
-    })->name('mutasi.edit');
+    Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');
+    Route::get('/mutasi-aset/create',          [MutasiController::class, 'create'])->name('mutasi.create');
+    Route::post('/mutasi-aset',                [MutasiController::class, 'store'])->name('mutasi.store');
+    Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
+    Route::put('/mutasi-aset/{id}',            [MutasiController::class, 'update'])->name('mutasi.update');
+    Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy');
+    Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
+    Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');
+    Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');
+    Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
 
     // 5. Unit & Paviliun Index (Read-only for Sub Admin, full for Admin)
     Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index');
@@ -375,6 +375,31 @@ Route::middleware('auth')->group(function () {
             if ($kode108Submitted) {
                 $jenisAstapRecord = \App\Models\JenisAstap::where('sub_sub_rincian_objek', $kode108Submitted)->first();
             }
+            if (!$jenisAstapRecord && !empty($data['sub_rincian_kode'])) {
+                $jenisAstapRecord = \App\Models\JenisAstap::where('sub_rincian_objek', $data['sub_rincian_kode'])->first()
+                    ?? \App\Models\JenisAstap::where('jenis', substr($data['sub_rincian_kode'], 0, 5))->first();
+            }
+            $jenisAstapId = $jenisAstapRecord ? $jenisAstapRecord->id : null;
+
+            $namaInput = match(true) {
+                $jenisPrefix === '1.3.1' => $data['tanah_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.2' => $data['mesin_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.3' => $data['gedung_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.4' => $data['jaringan_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.5' => $data['lainnya_nama_barang'] ?? null,
+                $jenisPrefix === '1.5.3' => $data['atb_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.6' => $data['kdp_nama_barang'] ?? null,
+                default => null
+            };
+
+            $namaBarang = 'Barang ASTAP';
+            if ($jenisAstapRecord && !empty($jenisAstapRecord->uraian_sub_sub_rincian)) {
+                $namaBarang = $jenisAstapRecord->uraian_sub_sub_rincian;
+            } elseif ($namaInput) {
+                $namaBarang = $namaInput;
+            } elseif (!empty($data['nama_barang'])) {
+                $namaBarang = $data['nama_barang'];
+            }
             $extractAstapPayload = function($data, $jenisPrefix, $jenisAstapRecord) {
                 // 1. Volume & Satuan
                 $volume = (int) match(true) {
@@ -416,6 +441,7 @@ Route::middleware('auth')->group(function () {
 
                 // Spesifikasi JSON
                 $specJson = [
+                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
                     'luas_m2' => $data['tanah_luas_m2'] ?? ($data['gedung_luas_m2'] ?? ($data['jaringan_luas_m2'] ?? ($data['kdp_luas_m2'] ?? null))),
                     'hak_tanah' => $data['tanah_hak'] ?? null,
                     'sertifikat_no' => $data['tanah_sertifikat_no'] ?? ($data['kdp_sertifikat_no'] ?? null),
@@ -666,6 +692,7 @@ Route::middleware('auth')->group(function () {
                 $extracom = !empty($d['is_extracomtable']) || ($prefix === '1.3.2' && $hrgSat > 0 && $hrgSat < 300000);
 
                 $spec = [
+                    'jumlah_anggaran' => $d['jumlah_anggaran'] ?? null,
                     'luas_m2' => $d['tanah_luas_m2'] ?? ($d['gedung_luas_m2'] ?? ($d['jaringan_luas_m2'] ?? ($d['kdp_luas_m2'] ?? null))),
                     'hak_tanah' => $d['tanah_hak'] ?? null,
                     'sertifikat_no' => $d['tanah_sertifikat_no'] ?? ($d['kdp_sertifikat_no'] ?? null),

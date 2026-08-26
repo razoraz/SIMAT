@@ -584,7 +584,7 @@ class AstapSeeder extends Seeder
             ]);
         }
 
-        // 11. EXTRACOM: Timbangan Bayi Analog (5 Unit < Rp 300rb)
+        // 11. Timbangan Bayi Analog (5 Unit >= Rp 300rb — Intrakomtabel)
         $astapTimbangan = Astap::create([
             'jenis_pengadaan_id' => $getJenisPengadaanId('0012'),
             'rekening_belanja_id' => $getRekeningId('5.2.02.02'),
@@ -593,10 +593,10 @@ class AstapSeeder extends Seeder
             'tahun_perolehan' => 2026,
             'jumlah_volume' => 5,
             'satuan' => 'Unit',
-            'harga_satuan' => 245000,
-            'total_realisasi' => 1225000,
+            'harga_satuan' => 350000,
+            'total_realisasi' => 1750000,
             'biaya_administrasi_proyek' => 0,
-            'is_extracomtable' => true,
+            'is_extracomtable' => false,
             'spk_nomor' => '012/SPK-EXT/2026',
             'spk_tanggal' => '2026-02-15',
             'sp2d_nomor' => '012/SP2D/2026',
@@ -605,7 +605,7 @@ class AstapSeeder extends Seeder
             'penyedia_nama' => 'CV Tri Bintang Medika',
             'ppk_nama' => 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
             'ppk_nip' => '19771002 200604 1 006',
-            'keterangan_tambahan' => 'Nilai per unit Rp 245.000 (< Rp 300.000 masuk Ekstrakomtabel)',
+            'keterangan_tambahan' => 'Nilai per unit Rp 350.000 (>= Rp 300.000 masuk Intrakomtabel)',
             'spesifikasi_json' => [
                 'merk' => 'Crown Baby',
                 'type' => 'CR-20 Analog',
