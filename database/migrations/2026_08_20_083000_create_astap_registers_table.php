@@ -19,16 +19,16 @@ return new class extends Migration
             // Kunci Auto-Increment NIBAR
             $table->year('tahun_perolehan');
             $table->unsignedInteger('no_register_int'); // 1, 2, 3, 4, 5... (Auto-increment per jenis astap & tahun)
-            $table->string('no_register', 10); // '0000001', '0000002'...
+            $table->string('no_register', 60); // 45 digit NIBAR / register
             
             // NIBAR Resmi 45 Digit Unik
-            // Format: 12013511.0200000028.00002026.132050206001.0000001
+            // Format: 120135110200000028000020261320502060010000001
             $table->string('nibar', 60)->unique();
 
             // Status Fisik & Penempatan Unit Ruangan
             $table->string('ruang_pemegang', 255)->nullable();
-            $table->enum('kondisi', ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Dalam Renovasi'])->default('Baik');
-            $table->enum('status', ['Tersedia', 'Dimutasi', 'Dihapuskan'])->default('Tersedia');
+            $table->string('kondisi')->default('Baik');
+            $table->string('status')->default('Tersedia');
             $table->string('qr_code_path', 255)->nullable();
             
             $table->timestamps();

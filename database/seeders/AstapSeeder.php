@@ -145,7 +145,7 @@ class AstapSeeder extends Seeder
                 'qr_code_path' => "/scan/{$nibar}",
                 'ruang_pemegang' => $ruang,
                 'kondisi' => ($i == 3) ? 'Rusak Ringan' : 'Baik',
-                'status' => 'Tersedia'
+                'status' => !empty($ruang) ? 'Tidak Tersedia' : 'Tersedia'
             ]);
         }
 
@@ -196,7 +196,7 @@ class AstapSeeder extends Seeder
             'qr_code_path' => "/scan/{$nibarPompa}",
             'ruang_pemegang' => $ruangPompa,
             'kondisi' => 'Baik',
-            'status' => 'Tersedia'
+            'status' => !empty($ruangPompa) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
         // 3. KIB B: CT-Scan 128 Slice High Resolution (1 Unit)
@@ -245,7 +245,7 @@ class AstapSeeder extends Seeder
             'qr_code_path' => "/scan/{$nibarCt}",
             'ruang_pemegang' => $ruangCt,
             'kondisi' => 'Baik',
-            'status' => 'Tersedia'
+            'status' => !empty($ruangCt) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
         // 4. KIB A: Lahan Bangunan RSUD Dr. H. Koesnandi (1 Bidang)
@@ -292,7 +292,7 @@ class AstapSeeder extends Seeder
             'qr_code_path' => "/scan/{$nibarTanah}",
             'ruang_pemegang' => $ruangTanah,
             'kondisi' => 'Baik',
-            'status' => 'Tersedia'
+            'status' => !empty($ruangTanah) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
         // 5. KIB C: Gedung Paviliun Graha Amukti VIP (1 Gedung)
@@ -339,7 +339,7 @@ class AstapSeeder extends Seeder
             'qr_code_path' => "/scan/{$nibarGedung}",
             'ruang_pemegang' => $ruangGedung,
             'kondisi' => 'Baik',
-            'status' => 'Tersedia'
+            'status' => !empty($ruangGedung) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
         // 6. KIB D: Jaringan Pipa Oksigen Sentral Medis (1 Paket)
@@ -385,7 +385,7 @@ class AstapSeeder extends Seeder
             'qr_code_path' => "/scan/{$nibarJaringan}",
             'ruang_pemegang' => $ruangJaringan,
             'kondisi' => 'Rusak Ringan',
-            'status' => 'Tersedia'
+            'status' => !empty($ruangJaringan) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
         // 7. KIB E: Buku Jurnal Kedokteran & Farmakologi (50 Eksemplar)
@@ -432,7 +432,7 @@ class AstapSeeder extends Seeder
                 'qr_code_path' => "/scan/{$nibar}",
                 'ruang_pemegang' => $ruangBuku,
                 'kondisi' => 'Baik',
-                'status' => 'Tersedia'
+                'status' => !empty($ruangBuku) ? 'Tidak Tersedia' : 'Tersedia'
             ]);
         }
 
@@ -480,7 +480,7 @@ class AstapSeeder extends Seeder
             'qr_code_path' => "/scan/{$nibarKdp}",
             'ruang_pemegang' => $ruangKdp,
             'kondisi' => 'Rusak Berat',
-            'status' => 'Tersedia'
+            'status' => !empty($ruangKdp) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
         // 9. ATB: Software SIMRS Terintegrasi & EMR Cloud (1 Lisensi)
@@ -525,7 +525,7 @@ class AstapSeeder extends Seeder
             'qr_code_path' => "/scan/{$nibarAtb}",
             'ruang_pemegang' => $ruangAtb,
             'kondisi' => 'Baik',
-            'status' => 'Tersedia'
+            'status' => !empty($ruangAtb) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
         // 10. EXTRACOM: Gunting Angkat Jahitan Littauer 14cm (10 Pcs < Rp 300rb)
@@ -573,7 +573,7 @@ class AstapSeeder extends Seeder
                 'qr_code_path' => "/scan/{$nibar}",
                 'ruang_pemegang' => $ruangGunting,
                 'kondisi' => 'Baik',
-                'status' => 'Tersedia'
+                'status' => !empty($ruangGunting) ? 'Tidak Tersedia' : 'Tersedia'
             ]);
         }
 
@@ -623,7 +623,7 @@ class AstapSeeder extends Seeder
                 'qr_code_path' => "/scan/{$nibar}",
                 'ruang_pemegang' => $ruangTimbangan,
                 'kondisi' => $kondisiSample,
-                'status' => 'Tersedia'
+                'status' => !empty($ruangTimbangan) ? 'Tidak Tersedia' : 'Tersedia'
             ]);
         }
     }

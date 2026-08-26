@@ -1172,16 +1172,26 @@
                                                 <td class="px-3 py-2.5 font-mono font-semibold text-emerald-400 whitespace-nowrap" x-text="reg.nibar || reg.no_register"></td>
                                                 <td class="px-3 py-2.5">
                                                     <template x-if="reg.ruang_pemegang">
-                                                        <span class="inline-flex items-center space-x-1.5 text-slate-200 font-medium">
-                                                            <span class="text-teal-400 text-xs">📍</span>
-                                                            <span x-text="reg.ruang_pemegang"></span>
-                                                        </span>
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="inline-flex items-center space-x-1.5 text-slate-200 font-medium">
+                                                                <span class="text-teal-400 text-xs">📍</span>
+                                                                <span x-text="reg.ruang_pemegang"></span>
+                                                            </span>
+                                                            <span class="inline-block px-2 py-0.5 text-[9.5px] font-extrabold rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 shrink-0">
+                                                                Tidak Tersedia
+                                                            </span>
+                                                        </div>
                                                     </template>
                                                     <template x-if="!reg.ruang_pemegang">
-                                                        <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px]">
-                                                            <span>⚠️</span>
-                                                            <span>Belum Ditempatkan / Di Gudang Aset</span>
-                                                        </span>
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px]">
+                                                                <span>⚠️</span>
+                                                                <span>Belum Ditempatkan / Di Gudang Aset</span>
+                                                            </span>
+                                                            <span class="inline-block px-2 py-0.5 text-[9.5px] font-extrabold rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                                                Tersedia
+                                                            </span>
+                                                        </div>
                                                     </template>
                                                 </td>
                                                 <td class="px-3 py-2.5 text-center whitespace-nowrap">
