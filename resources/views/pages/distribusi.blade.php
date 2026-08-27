@@ -1,6 +1,12 @@
-<x-layout title="Distribusi ASTAP - SIMAT-RK">
-    @section('page-title', 'Distribusi ASTAP')
-    @section('breadcrumb', 'Master Utama / Distribusi ASTAP')
+@php
+    $isSubAdmin = (Auth::user()->role ?? '') === 'sub_admin';
+    $pageTitle = $isSubAdmin ? 'Pengajuan Baru' : 'Distribusi ASTAP';
+    $breadcrumbTitle = $isSubAdmin ? 'Master Utama / Pengajuan Baru' : 'Master Utama / Distribusi ASTAP';
+@endphp
+
+<x-layout :title="$pageTitle . ' - SIMAT-RK'">
+    @section('page-title', $pageTitle)
+    @section('breadcrumb', $breadcrumbTitle)
 
     <script>
         function distribusiCatalog() {
@@ -277,11 +283,13 @@
                 <div>
                     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-bold mb-3">
                         <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
-                        <span>PENYERAHAN & ALOKASI BARANG ASET RSUD</span>
+                        <span>{{ $isSubAdmin ? 'PENGAJUAN & PERMOHONAN BARANG ASET RUANGAN' : 'PENYERAHAN & ALOKASI BARANG ASET RSUD' }}</span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Distribusi ASTAP</h1>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{{ $isSubAdmin ? 'Katalog Pengajuan Baru' : 'Katalog Distribusi ASTAP' }}</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Pengelolaan alokasi penyerahan barang aset dari inventaris ke paviliun rawat inap, unit RSUD, dan instalasi RSUD. Mendukung distribusi beberapa barang sekaligus dalam satu transaksi.
+                        {{ $isSubAdmin 
+                            ? 'Daftar pengajuan permohonan alokasi barang aset ruangan. Anda dapat mengajukan permintaan kebutuhan barang baru untuk unit/ruangan Anda.' 
+                            : 'Pengelolaan alokasi penyerahan barang aset dari inventaris ke paviliun rawat inap, unit RSUD, dan instalasi RSUD. Mendukung distribusi beberapa barang sekaligus dalam satu transaksi.' }}
                     </p>
                 </div>
                 
@@ -290,7 +298,7 @@
                     <a href="{{ route('distribusi.create') }}"
                         class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>Input Distribusi Baru</span>
+                        <span>{{ $isSubAdmin ? 'Input Pengajuan Baru' : 'Input Distribusi Baru' }}</span>
                     </a>
                 </div>
             </div>
@@ -465,25 +473,11 @@
             </div>
         </div>
 
-        <!-- Sub Admin Context Banner -->
-        <template x-if="userRole === 'sub_admin'">
-            <div class="mb-5 p-4 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-                <div class="flex items-center space-x-2.5">
-                    <span class="text-lg">🚚</span>
-                    <div>
-                        <span class="font-extrabold text-white block text-sm">Mode Akses Distribusi Unit: <span x-text="userUnit || 'Sub Admin Ruangan'"></span></span>
-                        <span class="text-slate-400 text-[11px]">Hanya menampilkan transaksi distribusi barang yang ditujukan ke unit / ruangan Anda.</span>
-                    </div>
-                </div>
-                <span class="text-[10.5px] font-mono font-bold px-3 py-1 rounded-xl bg-teal-500/20 text-teal-200 border border-teal-500/40 shrink-0">Sub Admin Restricted</span>
-            </div>
-        </template>
-
         <!-- Tabel Distribusi ASTAP (Multi-Barang / Transaksi) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-            <div class="overflow-x-auto overflow-y-auto rounded-2xl border border-slate-800/80" style="max-height: calc(100vh - 340px); overflow-y: auto;">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
+            <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40 min-h-[380px]">
+                <table class="w-full text-left text-xs text-slate-300 min-h-[350px]">
+                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm shrink-0">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap">No. Distribusi</th>
@@ -555,7 +549,7 @@
                                     <!-- 3. Tombol Ubah Form -->
                                     <a :href="'/distribusi/' + item.id + '/edit'"
                                         class="px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         <span>Ubah</span>
                                     </a>
                                     
@@ -568,10 +562,17 @@
                                 </td>
                             </tr>
                         </template>
+
+                        <!-- Empty State Baris Penuh Tinggi -->
                         <template x-if="filteredDistribusis.length === 0">
                             <tr>
-                                <td colspan="8" class="px-4 py-8 text-center text-slate-500 text-xs font-medium">
-                                    Tidak ada data transaksi distribusi yang sesuai kriteria pencarian/filter.
+                                <td colspan="8" class="text-center align-middle py-28 text-slate-400">
+                                    <div class="flex flex-col items-center justify-center space-y-2 py-4">
+                                        <p class="text-sm font-semibold text-slate-300">
+                                            {{ $isSubAdmin ? 'Belum ada data permohonan pengajuan baru.' : 'Tidak ada data transaksi distribusi yang cocok.' }}
+                                        </p>
+                                        <p class="text-xs text-slate-500">Coba sesuaikan kata kunci pencarian atau filter status Anda.</p>
+                                    </div>
                                 </td>
                             </tr>
                         </template>
