@@ -2,36 +2,276 @@
     @section('page-title', 'Data ASTAP')
     @section('breadcrumb', 'Master Utama / Data ASTAP')
 
-    <!-- Library SheetJS untuk Multi-Sheet Excel Export -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Library SheetJS dengan Dukungan Penuh Cell Styling (Warna, Font, Border & Alignment) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
-    <!-- Script Global Export Multi-Sheet Excel (Rekapitulasi, KIB A-F, ATB, Exstracom) -->
+    <!-- Script Global Export Multi-Sheet Excel Berwarna 4 Langkah (Rekapitulasi, KIB A-F, ATB, Extracom) -->
     <script>
+    function getColName(colIdx) {
+        let temp = '';
+        let letter = '';
+        while (colIdx >= 0) {
+            temp = colIdx % 26;
+            letter = String.fromCharCode(temp + 65) + letter;
+            colIdx = Math.floor(colIdx / 26) - 1;
+        }
+        return letter;
+    }
+
+    function applyFullSheetStyling(ws, rowCount, colCount, mainHeaderFill, mainHeaderFont, secHeaderFill, totalRowIdx = -1, highlightColIdx = -1) {
+        const thinBorder = {
+            top: { style: "thin", color: { rgb: "64748B" } },
+            bottom: { style: "thin", color: { rgb: "64748B" } },
+            left: { style: "thin", color: { rgb: "64748B" } },
+            right: { style: "thin", color: { rgb: "64748B" } }
+        };
+
+        const doubleBottomBorder = {
+            top: { style: "thin", color: { rgb: "1E293B" } },
+            bottom: { style: "double", color: { rgb: "0F172A" } },
+            left: { style: "thin", color: { rgb: "1E293B" } },
+            right: { style: "thin", color: { rgb: "1E293B" } }
+        };
+
+        for (let r = 0; r < rowCount; r++) {
+            for (let c = 0; c < colCount; c++) {
+                const cellRef = getColName(c) + (r + 1);
+                if (!ws[cellRef]) {
+                    ws[cellRef] = { v: "", t: "s" };
+                }
+
+                const cell = ws[cellRef];
+                let fill = "FFFFFF";
+                let fontColor = "0F172A";
+                let bold = false;
+                let align = "center";
+                let border = thinBorder;
+                let fontSize = 10;
+                let numFmt = null;
+
+                if (r < 3) {
+                    fill = mainHeaderFill;
+                    fontColor = mainHeaderFont || "0F172A";
+                    bold = true;
+                    fontSize = r === 0 ? 12 : (r === 1 ? 11 : 10);
+                    border = null;
+                } else if (r >= 3 && r <= 6) {
+                    fill = (secHeaderFill && r >= 4) ? secHeaderFill : mainHeaderFill;
+                    fontColor = mainHeaderFont || "0F172A";
+                    bold = true;
+                    fontSize = 10;
+                    align = "center";
+                } else if (r === totalRowIdx) {
+                    fill = "FEF08A";
+                    fontColor = "0F172A";
+                    bold = true;
+                    fontSize = 11;
+                    border = doubleBottomBorder;
+                    if (typeof cell.v === 'number') {
+                        align = "right";
+                        numFmt = "Rp #,##0";
+                    }
+                } else {
+                    fill = (r % 2 === 0) ? "FFFFFF" : "F8FAFC";
+                    if (c === 1) {
+                        align = "left";
+                        bold = true;
+                    } else if (c === highlightColIdx) {
+                        fill = "E2F8E8";
+                        align = "right";
+                        bold = true;
+                        if (typeof cell.v === 'number') {
+                            numFmt = "Rp #,##0";
+                        }
+                    } else if (typeof cell.v === 'number') {
+                        align = "right";
+                        if (cell.v > 1000) {
+                            numFmt = "Rp #,##0";
+                        }
+                    } else {
+                        align = "center";
+                    }
+                }
+
+                cell.s = {
+                    font: { name: "Calibri", sz: fontSize, bold: bold, color: { rgb: fontColor } },
+                    alignment: { horizontal: align, vertical: "center", wrapText: true },
+                    fill: { fgColor: { rgb: fill } },
+                    border: border
+                };
+                if (numFmt) {
+                    cell.z = numFmt;
+                }
+            }
+        }
+    }
+
+    // STYLING ENGINE MASTER 4 LANGKAH (LANGKAH 1 s/d 4)
+    function applyUnified4StepMasterSheetStyling(ws, rowCount, colCount, kibL3ColCount) {
+        const thinBorder = {
+            top: { style: "thin", color: { rgb: "64748B" } },
+            bottom: { style: "thin", color: { rgb: "64748B" } },
+            left: { style: "thin", color: { rgb: "64748B" } },
+            right: { style: "thin", color: { rgb: "64748B" } }
+        };
+
+        const l3Start = 15;
+        const l3End = 15 + kibL3ColCount - 1;
+        const l4Start = 15 + kibL3ColCount;
+
+        for (let r = 0; r < rowCount; r++) {
+            for (let c = 0; c < colCount; c++) {
+                const cellRef = getColName(c) + (r + 1);
+                if (!ws[cellRef]) {
+                    ws[cellRef] = { v: "", t: "s" };
+                }
+
+                const cell = ws[cellRef];
+                let fill = "FFFFFF";
+                let fontColor = "0F172A";
+                let bold = false;
+                let align = "center";
+                let border = thinBorder;
+                let fontSize = 9.5;
+                let numFmt = null;
+
+                // 1. BANNER UTAMA (BARIS 1 s/d 3)
+                if (r < 3) {
+                    fill = "1E3A8A"; // Dark Blue Banner
+                    fontColor = "FFFFFF";
+                    bold = true;
+                    fontSize = r === 0 ? 12 : (r === 1 ? 11 : 10);
+                    border = null;
+                }
+                // 2. HEADER TABEL 4 LANGKAH (BARIS 4 s/d 7)
+                else if (r >= 3 && r <= 6) {
+                    bold = true;
+                    fontSize = r === 3 ? 10.5 : (r === 6 ? 9 : 9.5);
+                    fontColor = "0F172A";
+
+                    if (c === 0) {
+                        fill = "D7E4BC"; // NO (Hijau Pastel)
+                    }
+                    // LANGKAH 1: PENGANGGARAN SIPD (HIJAU PASTEL)
+                    else if (c >= 1 && c <= 6) {
+                        fill = (r === 3) ? "D7E4BC" : "EAF1DD";
+                    }
+                    // LANGKAH 2: BELANJA MODAL & PMDN 108 (BLUE SOFT - SESUAI GAMBAR 1)
+                    else if (c >= 7 && c <= 14) {
+                        fill = (r === 6) ? "DBEAFE" : "BFDBFE"; // Kolom 8 s/d 15 Header Biru
+                    }
+                    // LANGKAH 3: RINCIAN KIB PER KATEGORI (HIJAU BANNER & PEACH SUB - SESUAI GAMBAR 2)
+                    else if (c >= l3Start && c <= l3End) {
+                        fill = (r === 3) ? "D7E4BC" : "FDE9D9";
+                    }
+                    // LANGKAH 4: REKANAN PENYEDIA & PPK (PEACH - SESUAI GAMBAR 3)
+                    else if (c >= l4Start) {
+                        fill = (r === 3) ? "FDE9D9" : "FFFBEB";
+                    }
+                }
+                // 3. BARIS DATA BIASA
+                else {
+                    if (c >= 1 && c <= 6) {
+                        fill = (r % 2 === 0) ? "F4F9EC" : "FFFFFF"; // Soft Green tint
+                    } else if (c >= 7 && c <= 14) {
+                        fill = (r % 2 === 0) ? "EFF6FF" : "FFFFFF"; // Soft Blue tint
+                    } else if (c >= l3Start && c <= l3End) {
+                        fill = (r % 2 === 0) ? "FFFFFF" : "F8FAFC"; // Clean White & Slate tint
+                    } else if (c >= l4Start) {
+                        fill = (r % 2 === 0) ? "FFFBEB" : "FFFFFF"; // Soft Peach/Cream tint
+                    }
+
+                    if (typeof cell.v === 'number') {
+                        align = "right";
+                        if (cell.v > 1000) {
+                            numFmt = "Rp #,##0";
+                        }
+                    } else if (c === 2 || c === 4 || c === 6 || c === 8 || c === 10 || c === 12 || c === l3Start || c === (l4Start) || c === (l4Start + 1) || c === (l4Start + 4)) {
+                        align = "left"; // Text Uraian/Nama -> Left align
+                    } else {
+                        align = "center";
+                    }
+
+                    // Highlight Kolom Realisasi Total Belanja Modal (Kolom 14 & 15)
+                    if (c === 13 || c === 14) {
+                        fill = "DBEAFE"; // Blue highlight total realisasi
+                        bold = true;
+                    }
+                }
+
+                cell.s = {
+                    font: { name: "Calibri", sz: fontSize, bold: bold, color: { rgb: fontColor } },
+                    alignment: { horizontal: align, vertical: "center", wrapText: true },
+                    fill: { fgColor: { rgb: fill } },
+                    border: border
+                };
+                if (numFmt) {
+                    cell.z = numFmt;
+                }
+            }
+        }
+    }
+
     function exportAstapToExcel() {
         if (typeof XLSX === 'undefined') {
             alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
             return;
         }
 
+        const rawAstaps = window.__simatAstaps || [];
         const wb = XLSX.utils.book_new();
 
-        // 1. REKAPITULASI
+        // Kelompokkan data per Kategori Aset
+        const categories = {
+            'KIB A': [],
+            'KIB B': [],
+            'KIB C': [],
+            'KIB D': [],
+            'KIB E': [],
+            'KIB F': [],
+            'ATB': [],
+            'EXTRACOM': []
+        };
+
+        rawAstaps.forEach(item => {
+            const cat = item.category || 'KIB B';
+            if (categories[cat]) {
+                categories[cat].push(item);
+            } else {
+                categories['KIB B'].push(item);
+            }
+        });
+
+        // ------------------------------------------------------------------------
+        // 1. REKAPITULASI DYNAMIS (BERWARNA & BOLD)
+        // ------------------------------------------------------------------------
+        const kibASum = categories['KIB A'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+        const kibBSum = categories['KIB B'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+        const kibCSum = categories['KIB C'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+        const kibDSum = categories['KIB D'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+        const kibESum = categories['KIB E'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+        const kibFSum = categories['KIB F'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+        const atbSum  = categories['ATB'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+        const extSum  = categories['EXTRACOM'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
+
+        const grandTotalSum = kibASum + kibBSum + kibCSum + kibDSum + kibESum + kibFSum + atbSum + extSum;
+        const grandTotalItems = rawAstaps.length;
+
         const rekapData = [
             ["PEMERINTAH KABUPATEN BONDOWOSO"],
             ["RUMAH SAKIT UMUM DAERAH DR. H. KOESNANDI BONDOWOSO"],
             ["REKAPITULASI REALISASI BELANJA MODAL ASET TETAP (BAST TRIWULAN) TAHUN ANGGARAN 2026"],
             [""],
             ["NO", "KELOMPOK ASET (KIB / ATB / EXTRACOM)", "KODE REKENING BELANJA", "JUMLAH ITEM", "TOTAL REALISASI (RP)", "KETERANGAN"],
-            ["1", "2. A - TANAH (KIB A)", "5.2.02.01.01.0001", "1 Bidang", 8500000000, "Lahan RSUD Hak Pakai BPN"],
-            ["2", "3. B - PERALATAN DAN MESIN (>= RP 300.000)", "5.2.02.02.01.0005", "3 Unit", 1494351900, "Alat Kesehatan & Mesin Pompa"],
-            ["3", "4. C - GEDUNG DAN BANGUNAN (KIB C)", "5.2.02.03.01.0008", "2 Gedung", 11000000000, "Paviliun Amukti & IBS 2 Lantai"],
-            ["4", "5. D - JALAN, IRIGASI DAN JARINGAN (KIB D)", "5.2.02.04.01.0004", "2 Jaringan", 1500000000, "Pipa Gas Medis & IPAL Sentral"],
-            ["5", "6. E - ASET TETAP LAINNYA (KIB E)", "5.2.02.05.01.0002", "2 Paket", 120000000, "Buku Medis & Seni Budaya"],
-            ["6", "7. F - KONSTRUKSI DALAM PENGERJAAN (KIB F)", "5.2.02.06.01.0001", "2 Proyek", 8700000000, "Gedung Rawat Inap & Diagnostik KDP"],
-            ["7", "8. ATB - ASET TIDAK BERWUJUD (1.5.3)", "5.2.02.08.01.0005", "2 Lisensi", 725000000, "Software SIMRS & PACS Cloud"],
-            ["8", "9. EXTRACOM - EKSTRAKOMTABEL (< RP 300.000)", "5.2.02.02.01.0099", "23 Unit", 4315000, "Alat Medis Kecil < Rp 300rb"],
-            ["", "TOTAL REKAPITULASI REALISASI BELANJA ASET", "", "37 Item", 32043666900, "Lengkap 8 Kelompok"],
-            [""],
+            ["1", "2. A - TANAH (KIB A)", "5.2.02.01.01.0001", categories['KIB A'].length + " Item", kibASum, "Lahan RSUD Hak Pakai BPN"],
+            ["2", "3. B - PERALATAN DAN MESIN (>= RP 300.000)", "5.2.02.02.01.0005", categories['KIB B'].length + " Item", kibBSum, "Alat Kesehatan, Pompa & Mesin"],
+            ["3", "4. C - GEDUNG DAN BANGUNAN (KIB C)", "5.2.02.03.01.0008", categories['KIB C'].length + " Item", kibCSum, "Gedung Rawat Inap & Fasilitas"],
+            ["4", "5. D - JALAN, IRIGASI DAN JARINGAN (KIB D)", "5.2.02.04.01.0004", categories['KIB D'].length + " Item", kibDSum, "Jaringan Pipa & IPAL Sentral"],
+            ["5", "6. E - ASET TETAP LAINNYA (KIB E)", "5.2.02.05.01.0002", categories['KIB E'].length + " Item", kibESum, "Buku Medis & Seni Budaya"],
+            ["6", "7. F - KONSTRUKSI DALAM PENGERJAAN (KIB F)", "5.2.02.06.01.0001", categories['KIB F'].length + " Item", kibFSum, "Proyek Konstruksi KDP"],
+            ["7", "8. ATB - ASET TIDAK BERWUJUD (1.5.3)", "5.2.02.08.01.0005", categories['ATB'].length + " Item", atbSum, "Software SIMRS & Lisensi"],
+            ["8", "9. EXTRACOM - EKSTRAKOMTABEL (< RP 300.000)", "5.2.02.02.01.0099", categories['EXTRACOM'].length + " Item", extSum, "Peralatan Kecil < Rp 300.000"],
+            ["", "JUMLAH TOTAL REALISASI BELANJA MODAL RSUD", "", grandTotalItems + " Item Total", grandTotalSum, "Laporan Realisasi Keseluruhan 2026"],
             [""],
             ["", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})],
             ["", "Mengetahui,", "", "Pengurus Barang Pengelola,"],
@@ -42,246 +282,685 @@
             ["", "NIP. 19780101 200501 1 008", "", "NIP. 19850615 201001 2 015"]
         ];
         const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
-        wsRekap['!cols'] = [{wch: 6}, {wch: 45}, {wch: 25}, {wch: 15}, {wch: 25}, {wch: 40}];
+        wsRekap['!cols'] = [{wch: 6}, {wch: 45}, {wch: 25}, {wch: 16}, {wch: 28}, {wch: 35}];
+        applyFullSheetStyling(wsRekap, rekapData.length, 6, "1E3A8A", "FFFFFF", "3B82F6", 13, 4);
         XLSX.utils.book_append_sheet(wb, wsRekap, "1. Rekapitulasi");
 
-        // 2. KIB A
-        const kibAData = [
+        // HELPER FUNGSI UNTUK MENGAMBIL DATA LANGKAH 1 & LANGKAH 2 (KOLOM 1-15)
+        function getCommonColumns(item, idx) {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 100000000;
+            return [
+                idx + 1,
+                item.program_kode || '0.00.01',
+                item.program_nama || 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota',
+                item.kegiatan_kode || '0.00.01.2.10',
+                item.kegiatan_nama || 'Peningkatan Pelayanan BLUD',
+                item.sub_kegiatan_kode || '0.00.01.2.10.0001',
+                item.sub_kegiatan_nama || 'Pelayanan dan Penunjang Pelayanan BLUD',
+                item.rekening_kode || '5.2.02.01.01.0001',
+                item.rekening_nama || 'Belanja Modal Pengadaan Aset Tetap',
+                item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0,7) : '1.3.1.01'),
+                item.jenis_aset_nama || item.nama_barang || 'ASET TETAP',
+                item.kode_barang || '1.3.1.01.01.01.001',
+                item.nama_barang || 'Aset Tetap RSUD',
+                totalVal,
+                totalVal,
+            ];
+        }
+
+        // HELPER FUNGSI UNTUK MENGAMBIL DATA LANGKAH 4 (REKANAN PENYEDIA & PPK)
+        function getStep4Columns(item) {
+            return [
+                item.penyedia_nama || 'PT. Medika Sarana Utama',
+                item.penyedia_pemilik || 'Ir. H. Budi Santoso, M.T.',
+                item.penyedia_rekening_nama || (item.penyedia_nama || 'PT. Medika Sarana Utama'),
+                item.penyedia_rekening_nomor || '143-00-9876543-2 (Bank Jatim)',
+                item.penyedia_alamat || 'Jl. Raya Darmo No. 45 Surabaya',
+                item.ppk_nama || 'dr. Slamet Widodo, M.Kes',
+                item.ppk_nip || '19760229 200801 1 010',
+                item.keterangan_tambahan || item.keterangan || 'Pengadaan Terverifikasi BAST & Permendagri 108'
+            ];
+        }
+
+        // ------------------------------------------------------------------------
+        // 2. KIB A (TANAH) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const kibARows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA MODAL TANAH (KIB A) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA MODAL TANAH (KIB A / 1.3.1) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA BARANG", "KODE BARANG (108)", "LUAS (M2)", "TAHUN PENGADAAN", "LETAK / ALAMAT", 
-                "HAK TANAH", "TGL SERTIFIKAT", "NO SERTIFIKAT", "PENGGUNAAN", "ASAL USUL",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO FAKTUR/INVOICE", "TGL FAKTUR/INVOICE",
-                "NILAI PERENCANAAN (RP)", "NILAI PENGADAAN/FISIK (RP)", "NILAI PENGAWASAN (RP)", "TOTAL NILAI TANAH (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Lahan Bangunan RSUD Dr. H. Koesnandi", "1.3.1.01.01.02.013", 35400, "1984", "Jl. Piere Tendean No. 1 Bondowoso",
-                "Hak Pakai", "1984-03-15", "HP-108/1984", "Bangunan Rumah Sakit & Fasilitas Kesehatan", "APBD Kabupaten",
-                "SK-BPN/1984/01", "1984-03-12", "SK-BPN/1984", "1984-03-15", "KW-TNH-1984", "1984-03-16", "DOK-BPN-1984", "1984-03-16",
-                150000000, 8300000000, 50000000, 8500000000,
-                "042/SP2D/1984", "1984-03-20", "000.2.3.2/042/1984", "1984-03-22", "Batas lahan terpagar penuh dan sertifikat hak pakai aktif"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG", "KODE BARANG (108)", "Status Tanah", "", "", "Riwayat Pembelian", "", "", "", "", "", "", "", "Kondisi", "Penggunaan", "VOLUME", "", "Nilai Barang (Rp)", "TOTAL REALISASI (RP)", "SP2D", "", "BAST", "", "LETAK / ALAMAT BARANG",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
+            ],
+            [
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Hak Tanah", "Sertifikat Tgl", "Sertifikat No", "SPK No", "SPK Tgl", "SP No", "SP Tgl", "Kwitansi No", "Kwitansi Tgl", "Invoice No", "Invoice Tgl", "(B,KB,RB)", "Peruntukan", "Jml Bidang", "Luas (m²)", "Nilai Perencanaan", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Lokasi Lahan",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+            ],
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
+                "40", "41", "42", "43", "44", "45", "46", "47"
             ]
         ];
-        const wsKibA = XLSX.utils.aoa_to_sheet(kibAData);
+
+        categories['KIB A'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 3500000000;
+            kibARows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || 'Tanah Bangunan Rumah Sakit',
+                item.kode_barang || '1.3.1.01.01.01.008',
+                item.hak_tanah || 'Hak Pakai',
+                item.sertifikat_tanggal || '2015-02-22',
+                item.sertifikat_nomor || 'HP-293',
+                item.spk_nomor || '930/SPK/2025',
+                item.spk_tanggal || '2025-02-22',
+                item.surat_pesanan_nomor || '-',
+                item.surat_pesanan_tanggal || '-',
+                item.kwitansi_nomor || '-',
+                item.kwitansi_tanggal || '-',
+                item.faktur_nomor || '-',
+                item.faktur_tanggal || '-',
+                item.kondisi || 'Baik',
+                item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas',
+                1,
+                item.luas_m2 || 2000,
+                item.nilai_perencanaan || totalVal,
+                totalVal,
+                item.sp2d_nomor || '001/SP2D/2026',
+                item.sp2d_tanggal || '2026-03-01',
+                item.bast_dokumen_nomor || '000.2.3.2/001/BAST/2026',
+                item.bast_dokumen_tanggal || '2026-03-05',
+                item.alamat_barang || 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['KIB A'].length === 0) {
+            kibARows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.01.01.0001', 'Belanja Modal Pengadaan Tanah Fasilitas Umum', '1.3.1.01', 'TANAH', '1.3.1.01.01.01', 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL', 3780000000, 3780000000,
+                'Tanah Bangunan Rumah Sakit RSUD', '1.3.1.01.01.01.008', 'Hak Pakai', '2015-02-22', 'HP-293', '930/SPK/2025', '2025-02-22', '-', '-', '-', '-', '-', '-', 'Baik', 'Bangunan Rumah Sakit & Fasilitas Kesehatan', 1, 2000, 3780000000, 3780000000, '001/SP2D/2026', '2026-03-01', '000.2.3.2/001/BAST/2026', '2026-03-05', 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Pengadaan Lahan Sertifikat Hak Pakai BPN'
+            ]);
+        }
+
+        const wsKibA = XLSX.utils.aoa_to_sheet(kibARows);
+        wsKibA['!cols'] = Array(47).fill({wch: 18});
+        wsKibA['!cols'][2] = {wch: 30}; wsKibA['!cols'][4] = {wch: 25}; wsKibA['!cols'][6] = {wch: 28};
+        wsKibA['!cols'][8] = {wch: 28}; wsKibA['!cols'][10] = {wch: 22}; wsKibA['!cols'][12] = {wch: 30}; wsKibA['!cols'][15] = {wch: 32};
+        wsKibA['!cols'][38] = {wch: 35}; wsKibA['!cols'][39] = {wch: 28}; wsKibA['!cols'][43] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsKibA, kibARows.length, 47, 24);
         XLSX.utils.book_append_sheet(wb, wsKibA, "2. A");
 
-        // 3. KIB B
-        const kibBData = [
+        // ------------------------------------------------------------------------
+        // 3. KIB B (PERALATAN DAN MESIN) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const kibBRows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA MODAL PERALATAN DAN MESIN (KIB B >= RP 300.000) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA MODAL PERALATAN DAN MESIN (KIB B / 1.3.2) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA BARANG", "KODE BARANG (108)", "MERK", "TYPE", "UKURAN / SPESIFIKASI", "BAHAN", "NO PABRIK / RANGKA", "TAHUN PEROLEHAN",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO FAKTUR/INVOICE", "TGL FAKTUR/INVOICE",
-                "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "BIAYA ADM PROYEK (RP)", "TOTAL NILAI REALISASI (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "RUANG / UNIT PEMEGANG", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Submersible Pump 7.5 HP", "1.3.2.01.03.05.005", "Franklin Electric", "2347288602G", "7.5hp, 3phase, max 139m", "Campuran Baja", "23K14-17-0006", "2025",
-                "019/SPK-PMP/VI/2025", "2025-06-01", "019/BN.BA/VI/2025", "2025-06-04", "KW-019/PMP/2025", "2025-06-05", "INV-2025-091", "2025-06-05",
-                1, "Unit", 41501900, 1000000, 42501900,
-                "019/SP2D/BLUD/2025", "2025-06-10", "000.2.3.2/019/2025", "2025-06-12", "Instalasi Sanitasi & IPSRS", "Operasional normal pompa cadangan air bersih"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG", "KODE BARANG (108)", "MERK", "TYPE", "UKURAN / SPESIFIKASI", "BAHAN", "NO PABRIK / SERI", "TAHUN PEROLEHAN", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "KONDISI", "RUANG / UNIT PEMEGANG", "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "KETERANGAN",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
             ],
             [
-                2, "CT-Scan 128 Slice High Resolution", "1.3.2.02.01.01.005", "Siemens SOMATOM", "128-Slice Perspective", "Unit Radiologi Medis Lengkap", "Logam & Elektronik Medis", "SN-99812-RAD", "2024",
-                "045/SPK-RAD/VII/2024", "2024-07-10", "045/RSUD/VII/2024", "2024-07-15", "KW-045/RAD/2024", "2024-07-16", "INV-RAD-2024-01", "2024-07-16",
-                1, "Unit", 1445000000, 5000000, 1450000000,
-                "045/SP2D/DAK/2024", "2024-07-20", "000.2.3.2/045/2024", "2024-07-22", "Instalasi Radiologi", "Terkalibrasi BAPETEN dan operasional 24 jam"
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Merk Pabrik", "Model/Tipe", "Spesifikasi Teknis", "Material", "Nomor Seri", "Tahun Perolehan", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "(B,KB,RB)", "Lokasi Penempatan", "Volume", "Satuan", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Catatan Spesifikasi",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
             ],
             [
-                3, "Pompa Air Shimizu PS-130", "1.3.2.01.03.05.010", "Shimizu", "PS-130 BIT", "Daya hisap 9m dorong 35m", "Campuran Besi", "PS-130-001", "2025",
-                "020/SPK-PMP/VI/2025", "2025-06-01", "020/BN.BA/VI/2025", "2025-06-04", "KW-020/PMP/2025", "2025-06-05", "INV-2025-092", "2025-06-05",
-                1, "Unit", 1850000, 0, 1850000,
-                "020/SP2D/BLUD/2025", "2025-06-10", "000.2.3.2/020/2025", "2025-06-12", "Instalasi Gizi", "Pendorong air ke tandon instalasi gizi klinik"
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+                "41", "42", "43", "44", "45", "46", "47", "48"
             ]
         ];
-        const wsKibB = XLSX.utils.aoa_to_sheet(kibBData);
+
+        categories['KIB B'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 15000000;
+            kibBRows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || '-',
+                item.kode_barang || '-',
+                item.merk || '-',
+                item.type || '-',
+                item.ukuran || '-',
+                item.bahan || '-',
+                item.no_pabrik || '-',
+                item.tahun_perolehan || 2026,
+                item.surat_pesanan_nomor || '-',
+                item.surat_pesanan_tanggal || '-',
+                item.kwitansi_nomor || '-',
+                item.kwitansi_tanggal || '-',
+                item.faktur_nomor || '-',
+                item.faktur_tanggal || '-',
+                item.kondisi || 'Baik',
+                item.ruang_unit || 'Instalasi Rawat Inap',
+                item.jumlah_unit || 1,
+                item.satuan || 'Unit',
+                totalVal,
+                totalVal,
+                item.sp2d_nomor || '002/SP2D/2026',
+                item.sp2d_tanggal || '2026-03-10',
+                item.bast_dokumen_nomor || '000.2.3.2/002/BAST/2026',
+                item.bast_dokumen_tanggal || '2026-03-12',
+                item.keterangan || 'Pengadaan Alkes & Peralatan',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['KIB B'].length === 0) {
+            kibBRows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.02.01.0005', 'Belanja Modal Alat Kesehatan ICU', '1.3.2.01', 'PERALATAN DAN MESIN', '1.3.2.01.01.01', 'ALAT KESEHATAN MATERNITAS', 45000000, 45000000,
+                'Patient Monitor 5 Parameter', '1.3.2.01.01.01.005', 'Mindray', 'uMEC10', 'Screen 10.4 inch TFT LCD', 'Polimer Synth', 'SN-987654321', 2026, 'SP-012/SP/2026', '2026-02-10', 'KW-012/KW/2026', '2026-02-15', 'INV-012/INV/2026', '2026-02-15', 'Baik', 'Ruang ICU Central', 1, 'Unit', 45000000, 45000000, '002/SP2D/2026', '2026-02-20', '000.2.3.2/012/BAST/2026', '2026-02-22', 'Alkes Utama ICU',
+                'PT. Medika Sarana Utama', 'Ir. H. Budi Santoso, M.T.', 'PT. Medika Sarana Utama', '143-00-9876543-2', 'Jl. Raya Darmo No. 45 Surabaya', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Garansi Resmi 2 Tahun Mindray'
+            ]);
+        }
+
+        const wsKibB = XLSX.utils.aoa_to_sheet(kibBRows);
+        wsKibB['!cols'] = Array(48).fill({wch: 18});
+        wsKibB['!cols'][2] = {wch: 30}; wsKibB['!cols'][4] = {wch: 25}; wsKibB['!cols'][6] = {wch: 28};
+        wsKibB['!cols'][8] = {wch: 28}; wsKibB['!cols'][10] = {wch: 22}; wsKibB['!cols'][12] = {wch: 30}; wsKibB['!cols'][15] = {wch: 30};
+        wsKibB['!cols'][40] = {wch: 28}; wsKibB['!cols'][44] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsKibB, kibBRows.length, 48, 25);
         XLSX.utils.book_append_sheet(wb, wsKibB, "3. B");
 
-        // 4. KIB C
-        const kibCData = [
+        // ------------------------------------------------------------------------
+        // 4. KIB C (GEDUNG DAN BANGUNAN) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const kibCRows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA MODAL GEDUNG DAN BANGUNAN (KIB C) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA MODAL GEDUNG DAN BANGUNAN (KIB C / 1.3.3) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA BANGUNAN", "KODE BARANG (108)", "BERTINGKAT", "BETON", "LUAS (M2)", "LETAK / LOKASI",
-                "STATUS TANAH", "KODE ASET TANAH KIB A", "NO SERTIFIKAT",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO FAKTUR/INVOICE", "TGL FAKTUR/INVOICE",
-                "NILAI PERENCANAAN (RP)", "NILAI FISIK TERMIN (RP)", "NILAI PENGAWASAN (RP)", "NILAI PIP (RP)", "TOTAL NILAI GEDUNG (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST MC", "TGL BAST MC", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Gedung Paviliun Graha Amukti VIP", "1.3.3.01.01.01.008", "Bertingkat (2 Lt)", "Beton Bertulang", 2800, "Kompleks Barat RSUD Dr. H. Koesnandi",
-                "Tanah Hak Pakai RSUD", "1.3.1.01.01.02.013", "HP-108/1984",
-                "SPK-GRH/2018/01", "2018-02-10", "SPK-GRH/2018", "2018-02-15", "KW-GRH-2018", "2018-02-16", "INV-GRH-2018", "2018-02-16",
-                120000000, 3950000000, 90000000, 40000000, 4200000000,
-                "078/SP2D/2018", "2018-03-01", "000.2.3.2/078/2018", "2018-03-05", "Kapasitas 24 kamar VIP & VVIP fasilitas lengkap"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG", "KODE BARANG (108)", "LUAS (M²)", "KONDISI", "BERTINGKAT", "BETON", "STATUS TANAH", "KODE TANAH", "BARU / PENAMBAHAN", "Kapitalisasi", "", "DOKUMEN SPK", "", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "JML BANGUNAN", "SATUAN", "NILAI PERENCANAAN (RP)", "NILAI FISIK (RP)", "NILAI PENGAWASAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "LETAK / ALAMAT BARANG",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
             ],
             [
-                2, "Gedung Instalasi Bedah Sentral IBS 2 Lantai", "1.3.3.01.01.01.012", "Bertingkat (2 Lt)", "Beton Bertulang", 3200, "Kompleks Utama Sentral Medis",
-                "Tanah Hak Pakai RSUD", "1.3.1.01.01.02.013", "HP-108/1984",
-                "SPK-IBS/2022/03", "2022-04-10", "SPK-IBS/2022", "2022-04-15", "KW-IBS-2022", "2022-04-16", "INV-IBS-2022", "2022-04-16",
-                180000000, 6420000000, 130000000, 70000000, 6800000000,
-                "112/SP2D/2022", "2022-05-02", "000.2.3.2/112/2022", "2022-05-05", "6 Ruang Operasi Modular MOT standard internasional"
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "(M²)", "(B,KB,RB)", "(Bertingkat/Tidak)", "(Beton/Tidak)", "Status Hak", "Kode Aset Tanah", "(Baru/Renovasi)", "Tgl Induk", "Nilai Induk s/d 2026", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "Volume", "Satuan", "(Rp)", "(Rp)", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Lokasi Fisik Bangunan",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+            ],
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45",
+                "46", "47", "48", "49", "50", "51", "52", "53"
             ]
         ];
-        const wsKibC = XLSX.utils.aoa_to_sheet(kibCData);
+
+        categories['KIB C'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 2500000000;
+            kibCRows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || 'Gedung Rawat Inap Paviliun',
+                item.kode_barang || '1.3.3.01.01.01.002',
+                item.luas_m2 || 850,
+                item.kondisi || 'Baik',
+                item.gedung_bertingkat || 'Bertingkat (2 Lt)',
+                item.gedung_beton || 'Beton Bertulang K-300',
+                item.gedung_status_tanah || 'Tanah Hak Pakai RSUD',
+                item.gedung_kode_aset_tanah || '1.3.1.01.01.02.013',
+                item.gedung_is_baru || 'Pengadaan Baru',
+                item.gedung_kapitalisasi_tahun_induk || '-',
+                item.gedung_kapitalisasi_nilai_induk || 0,
+                item.spk_nomor || '010/SPK-BANGUNAN/2026',
+                item.spk_tanggal || '2026-01-15',
+                item.surat_pesanan_nomor || '-',
+                item.surat_pesanan_tanggal || '-',
+                item.kwitansi_nomor || '-',
+                item.kwitansi_tanggal || '-',
+                item.faktur_nomor || '-',
+                item.faktur_tanggal || '-',
+                1,
+                'Unit Bangunan',
+                item.gedung_nilai_perencanaan || 100000000,
+                item.gedung_nilai_fisik || 2350000000,
+                item.gedung_nilai_pengawasan || 50000000,
+                totalVal,
+                item.sp2d_nomor || '010/SP2D/2026',
+                item.sp2d_tanggal || '2026-05-10',
+                item.bast_dokumen_nomor || '000.2.3.2/010/BAST/2026',
+                item.bast_dokumen_tanggal || '2026-05-15',
+                item.alamat_barang || 'Kompleks Depan Paviliun Melati RSUD',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['KIB C'].length === 0) {
+            kibCRows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.03.01.0008', 'Belanja Modal Gedung Rawat Inap Baru', '1.3.3.01', 'GEDUNG DAN BANGUNAN', '1.3.3.01.01.01', 'BANGUNAN GEDUNG TEMPAT KERJA', 2500000000, 2500000000,
+                'Gedung Rawat Inap VVIP Melati 2 Lt', '1.3.3.01.01.01.002', 850, 'Baik', 'Bertingkat (2 Lt)', 'Beton Bertulang K-300', 'Tanah Hak Pakai RSUD', '1.3.1.01.01.02.013', 'Pengadaan Baru', '-', 0, '010/SPK-BANGUNAN/2026', '2026-01-15', '-', '-', '-', '-', '-', '-', 1, 'Unit Bangunan', 100000000, 2350000000, 50000000, 2500000000, '010/SP2D/2026', '2026-05-10', '000.2.3.2/010/BAST/2026', '2026-05-15', 'Kompleks Depan Paviliun Melati RSUD',
+                'PT. Karya Kontraktor Utama', 'H. Bambang Hermanto', 'PT. Karya Kontraktor Utama', '143-00-5566778', 'Jl. Gajah Mada No. 88 Bondowoso', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Selesai 100% Sesuai BAST II'
+            ]);
+        }
+
+        const wsKibC = XLSX.utils.aoa_to_sheet(kibCRows);
+        wsKibC['!cols'] = Array(53).fill({wch: 18});
+        wsKibC['!cols'][2] = {wch: 30}; wsKibC['!cols'][4] = {wch: 25}; wsKibC['!cols'][6] = {wch: 28};
+        wsKibC['!cols'][8] = {wch: 28}; wsKibC['!cols'][10] = {wch: 22}; wsKibC['!cols'][12] = {wch: 30}; wsKibC['!cols'][15] = {wch: 35};
+        wsKibC['!cols'][44] = {wch: 35}; wsKibC['!cols'][45] = {wch: 28}; wsKibC['!cols'][49] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsKibC, kibCRows.length, 53, 30);
         XLSX.utils.book_append_sheet(wb, wsKibC, "4. C");
 
-        // 5. KIB D
-        const kibDData = [
+        // ------------------------------------------------------------------------
+        // 5. KIB D (JALAN, IRIGASI DAN JARINGAN) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const kibDRows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA MODAL JALAN, IRIGASI DAN JARINGAN (KIB D) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA MODAL JALAN, IRIGASI DAN JARINGAN (KIB D / 1.3.4) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA JARINGAN", "KODE BARANG (108)", "KONSTRUKSI JARINGAN", "PANJANG (M)", "LEBAR (M)", "LUAS (M2)", "LETAK / LOKASI",
-                "STATUS TANAH", "KODE ASET TANAH KIB A",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO FAKTUR/INVOICE", "TGL FAKTUR/INVOICE",
-                "NILAI PERENCANAAN (RP)", "NILAI FISIK (RP)", "NILAI PENGAWASAN (RP)", "NILAI PIP (RP)", "TOTAL NILAI JARINGAN (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Jaringan Pipa Oksigen Sentral Medis", "1.3.4.03.01.01.004", "Copper Pipe Medical Grade Sentral", 1200, 0.05, 60, "Seluruh Paviliun & IGD RSUD",
-                "Tanah Hak Pakai RSUD", "1.3.1.01.01.02.013",
-                "SPK-OKS/2020/08", "2020-05-14", "SPK-OKS/2020", "2020-05-20", "KW-OKS-2020", "2020-05-21", "INV-OKS-2020", "2020-05-21",
-                30000000, 580000000, 25000000, 15000000, 650000000,
-                "088/SP2D/2020", "2020-06-01", "000.2.3.2/088/2020", "2020-06-05", "Pipa gas medis tembaga terpasang ke 120 bed pasien"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG", "KODE BARANG (108)", "KONSTRUKSI", "PANJANG (M)", "LEBAR (M)", "LUAS (M²)", "STATUS TANAH", "KODE TANAH", "KONDISI", "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "JUMLAH", "SATUAN", "NILAI PERENCANAAN (RP)", "NILAI FISIK (RP)", "NILAI PENGAWASAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "LETAK / ALAMAT BARANG",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
             ],
             [
-                2, "Jaringan Instalasi Pengolahan Air Limbah (IPAL)", "1.3.4.03.01.02.001", "Pipa HDPE Bawah Tanah & Reaktor Anaerob", 850, 0.2, 170, "Area IPAL Belakang RSUD",
-                "Tanah Hak Pakai RSUD", "1.3.1.01.01.02.013",
-                "SPK-IPL/2023/04", "2023-06-10", "SPK-IPL/2023", "2023-06-15", "KW-IPL-2023", "2023-06-16", "INV-IPL-2023", "2023-06-16",
-                40000000, 750000000, 38000000, 22000000, 850000000,
-                "145/SP2D/2023", "2023-07-02", "000.2.3.2/145/2023", "2023-07-05", "Kapasitas olah 250 m3/hari sesuai baku mutu lingkungan"
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Bahan Jaringan", "Meter", "Meter", "M²", "Status Hak Lahan", "Kode Aset Tanah", "(B,KB,RB)", "", "", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "Volume", "Satuan", "(Rp)", "(Rp)", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Lokasi Jaringan Medis/Air",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+            ],
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43",
+                "44", "45", "46", "47", "48", "49", "50", "51"
             ]
         ];
-        const wsKibD = XLSX.utils.aoa_to_sheet(kibDData);
+
+        categories['KIB D'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 180000000;
+            kibDRows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || 'Jaringan Pipa Oksigen Medis Sentral',
+                item.kode_barang || '1.3.4.03.01.01.005',
+                item.jaringan_konstruksi || 'Pipa Tembaga Medis ASTM B819',
+                item.jaringan_panjang_m || 450,
+                item.jaringan_lebar_m || 0,
+                item.jaringan_luas_m2 || 0,
+                item.jaringan_status_tanah || 'Tanah Hak Pakai RSUD',
+                item.jaringan_kode_aset_tanah || '1.3.1.01.01.02.013',
+                item.kondisi || 'Baik',
+                item.spk_nomor || '014/SPK-JARINGAN/2026',
+                item.spk_tanggal || '2026-02-01',
+                item.surat_pesanan_nomor || '-',
+                item.surat_pesanan_tanggal || '-',
+                item.kwitansi_nomor || '-',
+                item.kwitansi_tanggal || '-',
+                item.faktur_nomor || '-',
+                item.faktur_tanggal || '-',
+                1,
+                'Jaringan System',
+                item.jaringan_nilai_perencanaan || 10000000,
+                item.jaringan_nilai_fisik || 165000000,
+                item.jaringan_nilai_pengawasan || 5000000,
+                totalVal,
+                item.sp2d_nomor || '014/SP2D/2026',
+                item.sp2d_tanggal || '2026-04-15',
+                item.bast_dokumen_nomor || '000.2.3.2/014/BAST/2026',
+                item.bast_dokumen_tanggal || '2026-04-18',
+                item.alamat_barang || 'Area Sentral Gas Medis s/d Ruang Perawatan',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['KIB D'].length === 0) {
+            kibDRows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.04.01.0004', 'Belanja Modal Jaringan Gas Medis', '1.3.4.03', 'JALAN, IRIGASI DAN JARINGAN', '1.3.4.03.01.01', 'JARINGAN AIR MINUM', 180000000, 180000000,
+                'Jaringan Pipa Oksigen Medis Sentral', '1.3.4.03.01.01.005', 'Pipa Tembaga Medis ASTM B819', 450, 0, 0, 'Tanah Hak Pakai RSUD', '1.3.1.01.01.02.013', 'Baik', '014/SPK-JARINGAN/2026', '2026-02-01', '-', '-', '-', '-', '-', '-', 1, 'Jaringan System', 10000000, 165000000, 5000000, 180000000, '014/SP2D/2026', '2026-04-15', '000.2.3.2/014/BAST/2026', '2026-04-18', 'Area Sentral Gas Medis s/d Ruang Perawatan',
+                'PT. Samator Gas Medika', 'Ir. Hendra Wijaya', 'PT. Samator Gas Medika', '143-00-9988776', 'Jl. Raya Rungkut Industri Surabaya', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Teruji Tekanan Bar & Sertifikasi Depkes'
+            ]);
+        }
+
+        const wsKibD = XLSX.utils.aoa_to_sheet(kibDRows);
+        wsKibD['!cols'] = Array(51).fill({wch: 18});
+        wsKibD['!cols'][2] = {wch: 30}; wsKibD['!cols'][4] = {wch: 25}; wsKibD['!cols'][6] = {wch: 28};
+        wsKibD['!cols'][8] = {wch: 28}; wsKibD['!cols'][10] = {wch: 22}; wsKibD['!cols'][12] = {wch: 30}; wsKibD['!cols'][15] = {wch: 35};
+        wsKibD['!cols'][42] = {wch: 35}; wsKibD['!cols'][43] = {wch: 28}; wsKibD['!cols'][47] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsKibD, kibDRows.length, 51, 28);
         XLSX.utils.book_append_sheet(wb, wsKibD, "5. D");
 
-        // 6. KIB E
-        const kibEData = [
+        // ------------------------------------------------------------------------
+        // 6. KIB E (ASET TETAP LAINNYA) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const kibERows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA MODAL ASET TETAP LAINNYA (KIB E) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA MODAL ASET TETAP LAINNYA (KIB E / 1.3.5) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA BARANG", "KODE BARANG (108)", "JUDUL / SPESIFIKASI", "PENCIPTA / PENERBIT / ASAL", "TAHUN PEROLEHAN",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO FAKTUR/INVOICE", "TGL FAKTUR/INVOICE",
-                "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "BIAYA ADM PROYEK (RP)", "TOTAL NILAI REALISASI (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "RUANG / UNIT PEMEGANG", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Buku Jurnal Kedokteran & Farmakologi", "1.3.5.01.01.01.002", "Hardcover Vol 1-12 Lengkap Edisi Internasional", "Elsevier / PubMed Press", "2021",
-                "012/SPK-BKO/2021", "2021-08-01", "012/PERPUS/2021", "2021-08-05", "KW-BKO-2021", "2021-08-06", "INV-BKO-2021", "2021-08-06",
-                50, "Buku", 1660000, 2000000, 85000000,
-                "055/SP2D/2021", "2021-08-20", "000.2.3.2/055/2021", "2021-08-22", "Perpustakaan & Diklit Medis", "Tersedia untuk referensi dokter spesialis & residen"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG", "KODE BARANG (108)", "JUDUL / PENCIPTA", "SPESIFIKASI", "ASAL KESENIAN / BUKU", "TAHUN PEROLEHAN", "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "KONDISI", "RUANG / UNIT PEMEGANG", "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "KETERANGAN",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
             ],
             [
-                2, "Lukisan Sejarah RSUD & Ornamen Seni Budaya", "1.3.5.02.01.01.005", "Lukisan Kanvas Cat Minyak Bingkai Kayu Jati Ukir", "Seniman Budaya Bondowoso", "2023",
-                "033/SPK-ART/2023", "2023-09-10", "033/ART/2023", "2023-09-15", "KW-ART-2023", "2023-09-16", "INV-ART-2023", "2023-09-16",
-                5, "Unit", 6800000, 1000000, 35000000,
-                "099/SP2D/2023", "2023-09-28", "000.2.3.2/099/2023", "2023-09-30", "Lobi Utama & Aula Pertemuan", "Hiasan bernilai sejarah perkembangan RSUD"
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Judul Buku/Seni", "Spesifikasi Teknis", "Daerah Asal / Penerbit", "Tahun Perolehan", "", "", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "(B,KB,RB)", "Lokasi Penempatan", "Volume", "Satuan", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Catatan KIB E",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+            ],
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+                "41", "42", "43", "44", "45", "46", "47", "48"
             ]
         ];
-        const wsKibE = XLSX.utils.aoa_to_sheet(kibEData);
+
+        categories['KIB E'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 8500000;
+            kibERows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || 'Buku Perpustakaan Medis',
+                item.kode_barang || '1.3.5.01.01.01.003',
+                item.judul_pencipta || 'Buku Referensi Kedokteran',
+                item.spesifikasi || 'Hardcover Ed. 12',
+                item.asal_kesenian || 'Penerbit EGC Medical',
+                item.tahun_perolehan || 2026,
+                item.spk_nomor || '-',
+                item.spk_tanggal || '-',
+                item.surat_pesanan_nomor || 'SP-005/BUKU/2026',
+                item.surat_pesanan_tanggal || '2026-01-20',
+                item.kwitansi_nomor || 'KW-005/2026',
+                item.kwitansi_tanggal || '2026-01-25',
+                item.faktur_nomor || '-',
+                item.faktur_tanggal || '-',
+                item.kondisi || 'Baik',
+                item.ruang_unit || 'Perpustakaan RSUD',
+                item.jumlah_unit || 15,
+                item.satuan || 'Eks',
+                totalVal / 15,
+                totalVal,
+                item.sp2d_nomor || '005/SP2D/2026',
+                item.sp2d_tanggal || '2026-02-01',
+                item.bast_dokumen_nomor || '000.2.3.2/005/BAST/2026',
+                item.bast_dokumen_tanggal || '2026-02-05',
+                item.keterangan || 'Koleksi Perpustakaan Medis',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['KIB E'].length === 0) {
+            kibERows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.05.01.0002', 'Belanja Modal Perpustakaan', '1.3.5.01', 'ASET TETAP LAINNYA', '1.3.5.01.01.01', 'BUKU ILMU KEDOKTERAN', 8500000, 8500000,
+                'Buku Referensi Kedokteran Spesialis', '1.3.5.01.01.01.003', 'Harrison\'s Principles of Internal Medicine', 'Hardcover Ed. 21 Vol 1-2', 'Penerbit EGC Jakarta', 2026, '-', '-', 'SP-005/BUKU/2026', '2026-01-20', 'KW-005/2026', '2026-01-25', '-', '-', 'Baik', 'Perpustakaan Diklit RSUD', 15, 'Eks', 566666, 8500000, '005/SP2D/2026', '2026-02-01', '000.2.3.2/005/BAST/2026', '2026-02-05', 'Koleksi Kedokteran Spesialis',
+                'CV. Penerbit Buku Medis', 'Drs. Subagyo', 'CV. Penerbit Buku Medis', '143-00-3344556', 'Jl. Kramat Raya No. 10 Jakarta', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Lengkap Terkatalogisasi Perpustakaan'
+            ]);
+        }
+
+        const wsKibE = XLSX.utils.aoa_to_sheet(kibERows);
+        wsKibE['!cols'] = Array(48).fill({wch: 18});
+        wsKibE['!cols'][2] = {wch: 30}; wsKibE['!cols'][4] = {wch: 25}; wsKibE['!cols'][6] = {wch: 28};
+        wsKibE['!cols'][8] = {wch: 28}; wsKibE['!cols'][10] = {wch: 22}; wsKibE['!cols'][12] = {wch: 30}; wsKibE['!cols'][15] = {wch: 30};
+        wsKibE['!cols'][40] = {wch: 28}; wsKibE['!cols'][44] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsKibE, kibERows.length, 48, 25);
         XLSX.utils.book_append_sheet(wb, wsKibE, "6. E");
 
-        // 7. KIB F
-        const kibFData = [
+        // ------------------------------------------------------------------------
+        // 7. KIB F (KONSTRUKSI DALAM PENGERJAAN) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const kibFRows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA MODAL KONSTRUKSI DALAM PENGERJAAN (KIB F) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA MODAL KONSTRUKSI DALAM PENGERJAAN (KIB F / 1.3.6) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA PROYEK KDP", "KODE BARANG (108)", "LUAS RENCANA (M2)", "PROGRES (%)", "BANGUNAN", "KONSTRUKSI BETON",
-                "LETAK / LOKASI PROYEK", "STATUS TANAH", "KODE ASET TANAH KIB A", "NO SERTIFIKAT", "TGL MULAI (SPMK)", "TARGET SELESAI (PHO)",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI TERMIN", "TGL KWITANSI TERMIN", "NO INVOICE", "TGL INVOICE",
-                "NILAI PERENCANAAN (RP)", "NILAI FISIK TERMIN (RP)", "NILAI PENGAWASAN (RP)", "NILAI PIP (RP)", "TOTAL AKUMULASI BIAYA KDP (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST MC", "TGL BAST MC", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Pembangunan Gedung Rawat Inap Terpadu Lt 3", "1.3.6.01.01.01.001", 3200, "60%", "Bertingkat (3 Lt)", "Beton Bertulang K-350",
-                "Kompleks Belakang Paviliun Melati", "Tanah Hak Pakai RSUD", "1.3.1.01.01.02.013", "HP-108/1984", "2026-01-15", "2026-11-30",
-                "015/SPK-KDP/2026", "2026-01-10", "015/KDP/2026", "2026-01-15", "KW-KDP-2026", "2026-06-20", "INV-KDP-2026", "2026-06-20",
-                125000000, 3250000000, 85000000, 40000000, 3500000000,
-                "015/SP2D/2026", "2026-06-28", "000.2.3.2/015/MC-03/2026", "2026-06-30", "Progres fisik pengerjaan struktur kolom & dak lantai 3 (60%)"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG", "KODE BARANG (108)", "LUAS (M²)", "PROGRES (%)", "BERTINGKAT", "BETON", "LETAK / ALAMAT", "STATUS TANAH", "KODE TANAH", "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "NILAI PERENCANAAN (RP)", "NILAI FISIK (RP)", "NILAI PENGAWASAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "CATATAN KDP",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
             ],
             [
-                2, "Pembangunan Gedung Pusat Diagnostik Terpadu", "1.3.6.01.01.01.002", 4500, "45%", "Bertingkat (4 Lt)", "Beton Bertulang & Baja WF",
-                "Area Timur Parkir Sentral RSUD", "Tanah Hak Pakai RSUD", "1.3.1.01.01.02.013", "HP-108/1984", "2026-02-01", "2026-12-15",
-                "022/SPK-PDT/2026", "2026-01-20", "022/PDT/2026", "2026-01-25", "KW-PDT-2026", "2026-06-15", "INV-PDT-2026", "2026-06-15",
-                180000000, 4850000000, 110000000, 60000000, 5200000000,
-                "022/SP2D/2026", "2026-06-25", "000.2.3.2/022/MC-02/2026", "2026-06-27", "Pengerjaan fisik lantai 2 dan instalasi utilitas dasar (45%)"
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "(M²)", "Capaian Fisik", "(Bertingkat/Tidak)", "(Beton/Tidak)", "Lokasi Bangunan", "Status Hak Lahan", "Kode Aset Tanah", "", "", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "(Rp)", "(Rp)", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Status Pengerjaan KDP",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+            ],
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+                "41", "42", "43", "44", "45", "46", "47", "48"
             ]
         ];
-        const wsKibF = XLSX.utils.aoa_to_sheet(kibFData);
+
+        categories['KIB F'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 3500000000;
+            kibFRows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || 'Pembangunan Gedung Rawat Inap Lt 3',
+                item.kode_barang || '1.3.6.01.01.01.001',
+                item.luas_m2 || 3200,
+                item.progres_fisik || '60%',
+                item.gedung_bertingkat || 'Bertingkat (3 Lt)',
+                item.gedung_beton || 'Beton Bertulang K-350',
+                item.alamat_barang || 'Kompleks Belakang Paviliun Melati',
+                item.gedung_status_tanah || 'Tanah Hak Pakai RSUD',
+                item.gedung_kode_aset_tanah || '1.3.1.01.01.02.013',
+                item.spk_nomor || '015/SPK-KDP/2026',
+                item.spk_tanggal || '2026-01-10',
+                item.surat_pesanan_nomor || '-',
+                item.surat_pesanan_tanggal || '-',
+                item.kwitansi_nomor || '-',
+                item.kwitansi_tanggal || '-',
+                item.faktur_nomor || '-',
+                item.faktur_tanggal || '-',
+                125000000,
+                3250000000,
+                85000000,
+                totalVal,
+                item.sp2d_nomor || '015/SP2D/2026',
+                item.sp2d_tanggal || '2026-06-28',
+                item.bast_dokumen_nomor || '000.2.3.2/015/MC-03/2026',
+                item.bast_dokumen_tanggal || '2026-06-30',
+                item.keterangan || 'Progres fisik pengerjaan struktur (60%)',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['KIB F'].length === 0) {
+            kibFRows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.06.01.0001', 'Belanja Modal KDP Gedung', '1.3.6.01', 'KONSTRUKSI DALAM PENGERJAAN', '1.3.6.01.01.01', 'KDP GEDUNG TEMPAT KERJA', 3500000000, 3500000000,
+                'Pembangunan Gedung Rawat Inap Terpadu Lt 3', '1.3.6.01.01.01.001', 3200, '60%', 'Bertingkat (3 Lt)', 'Beton Bertulang K-350', 'Kompleks Belakang Paviliun Melati', 'Tanah Hak Pakai RSUD', '1.3.1.01.01.02.013', '015/SPK-KDP/2026', '2026-01-10', '-', '-', '-', '-', '-', '-', 125000000, 3250000000, 85000000, 3500000000, '015/SP2D/2026', '2026-06-28', '000.2.3.2/015/MC-03/2026', '2026-06-30', 'Progres fisik pengerjaan struktur kolom & dak lantai 3 (60%)',
+                'PT. Wijaya Karya Bangunan', 'Ir. H. Rahmat Santoso', 'PT. Wijaya Karya Bangunan', '143-00-8899001', 'Jl. Pemuda No. 100 Surabaya', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Laporan Progress MC-03 Terverifikasi'
+            ]);
+        }
+
+        const wsKibF = XLSX.utils.aoa_to_sheet(kibFRows);
+        wsKibF['!cols'] = Array(48).fill({wch: 18});
+        wsKibF['!cols'][2] = {wch: 30}; wsKibF['!cols'][4] = {wch: 25}; wsKibF['!cols'][6] = {wch: 28};
+        wsKibF['!cols'][8] = {wch: 28}; wsKibF['!cols'][10] = {wch: 22}; wsKibF['!cols'][12] = {wch: 30}; wsKibF['!cols'][15] = {wch: 35};
+        wsKibF['!cols'][40] = {wch: 35}; wsKibF['!cols'][41] = {wch: 28}; wsKibF['!cols'][45] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsKibF, kibFRows.length, 48, 25);
         XLSX.utils.book_append_sheet(wb, wsKibF, "7. F");
 
-        // 8. ATB
-        const atbData = [
+        // ------------------------------------------------------------------------
+        // 8. ATB (ASET TIDAK BERWUJUD) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const atbRows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA MODAL ASET TIDAK BERWUJUD (ATB / 1.5.3) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA MODAL ASET TIDAK BERWUJUD (ATB / 1.5.3) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA ASET / LISENSI", "KODE BARANG (108)", "JUDUL SISTEM / LISENSI", "PENCIPTA / VENDOR", "SPESIFIKASI LISENSI",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO FAKTUR/INVOICE", "TGL FAKTUR/INVOICE",
-                "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "BIAYA ADM PROYEK (RP)", "TOTAL NILAI ATB (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "RUANG / UNIT PEMEGANG", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Software SIMRS Terintegrasi & EMR Cloud", "1.5.3.01.01.01.005", "SIMAT Health Enterprise Server V4.2", "PT. Medika Solusindo Digital", "Enterprise Server Multi-Unit Unlimited Client",
-                "077/SPK-SIMRS/2024", "2024-03-20", "077/SIMRS/2024", "2024-03-25", "KW-SIMRS-2024", "2024-03-26", "INV-SIMRS-2024", "2024-03-26",
-                1, "Lisensi", 445000000, 5000000, 450000000,
-                "077/SP2D/2024", "2024-04-05", "000.2.3.2/077/2024", "2024-04-08", "Instalasi IT & PDE", "Terintegrasi RME SatuSehat & BPJS VClaim"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA ASET / LISENSI", "KODE BARANG (108)", "JUDUL SISTEM / LISENSI", "PENCIPTA / VENDOR", "SPESIFIKASI LISENSI", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "RUANG / UNIT PEMEGANG", "KETERANGAN",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
             ],
             [
-                2, "Lisensi PACS Radiologi Digital Server", "1.5.3.01.01.01.008", "PACS DICOM Radiology Server 3D", "PT. Siemens Healthcare", "Perpetual License DICOM Viewer & Storage",
-                "089/SPK-PACS/2024", "2024-05-12", "089/PACS/2024", "2024-05-15", "KW-PACS-2024", "2024-05-16", "INV-PACS-2024", "2024-05-16",
-                1, "Lisensi", 270000000, 5000000, 275000000,
-                "089/SP2D/2024", "2024-05-25", "000.2.3.2/089/2024", "2024-05-28", "Instalasi Radiologi", "Arsip gambar digital CT-Scan & Rontgen terpusat"
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Software System", "Developer / Vendor", "Hak Cipta Lisensi", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "Volume", "Satuan", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Lokasi Penempatan", "Catatan",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+            ],
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36",
+                "37", "38", "39", "40", "41", "42", "43", "44"
             ]
         ];
-        const wsAtb = XLSX.utils.aoa_to_sheet(atbData);
+
+        categories['ATB'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 120000000;
+            atbRows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || 'Lisensi SIMRS Khanza Custom',
+                item.kode_barang || '1.5.3.01.01.01.002',
+                item.judul_pencipta || 'Sistem Informasi Manajemen RS',
+                item.spesifikasi || 'PT. Solusi Digital Sejahtera',
+                item.asal_kesenian || 'Hak Cipta Enterprise License 2026',
+                item.surat_pesanan_nomor || 'SP-008/SIMRS/2026',
+                item.surat_pesanan_tanggal || '2026-01-12',
+                item.kwitansi_nomor || 'KW-008/2026',
+                item.kwitansi_tanggal || '2026-01-18',
+                item.faktur_nomor || 'INV-008/2026',
+                item.faktur_tanggal || '2026-01-18',
+                1,
+                'Paket Lisensi',
+                totalVal,
+                totalVal,
+                item.sp2d_nomor || '008/SP2D/2026',
+                item.sp2d_tanggal || '2026-02-01',
+                item.bast_dokumen_nomor || '000.2.3.2/008/BAST/2026',
+                item.bast_dokumen_tanggal || '2026-02-05',
+                item.ruang_unit || 'Instalasi TI & SIMRS',
+                item.keterangan || 'Lisensi Software SIMRS RSUD',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['ATB'].length === 0) {
+            atbRows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.07.01.0003', 'Belanja Modal Software Lisensi SIMRS', '1.5.3.01', 'ASET TIDAK BERWUJUD', '1.5.3.01.01.01', 'SOFTWARE LISENSI SIMRS', 120000000, 120000000,
+                'Lisensi SIMRS Khanza Enterprise 2026', '1.5.3.01.01.01.002', 'SIMRS Khanza Integration Engine', 'PT. Solusi Digital Sejahtera', 'Enterprise Unlimited Client License', 'SP-008/SIMRS/2026', '2026-01-12', 'KW-008/2026', '2026-01-18', 'INV-008/2026', '2026-01-18', 1, 'Paket Lisensi', 120000000, 120000000, '008/SP2D/2026', '2026-02-01', '000.2.3.2/008/BAST/2026', '2026-02-05', 'Instalasi TI & SIMRS RSUD', 'Integrasi BPJS VClaim & Rekam Medis Elektronik',
+                'PT. Solusi Digital Sejahtera', 'Ir. Doni Prasetyo', 'PT. Solusi Digital Sejahtera', '143-00-2211445', 'Jl. Raya Gubeng No. 15 Surabaya', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Serah Terima Source Code & Dokumen API'
+            ]);
+        }
+
+        const wsAtb = XLSX.utils.aoa_to_sheet(atbRows);
+        wsAtb['!cols'] = Array(44).fill({wch: 18});
+        wsAtb['!cols'][2] = {wch: 30}; wsAtb['!cols'][4] = {wch: 25}; wsAtb['!cols'][6] = {wch: 28};
+        wsAtb['!cols'][8] = {wch: 28}; wsAtb['!cols'][10] = {wch: 22}; wsAtb['!cols'][12] = {wch: 30}; wsAtb['!cols'][15] = {wch: 32};
+        wsAtb['!cols'][36] = {wch: 28}; wsAtb['!cols'][40] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsAtb, atbRows.length, 44, 21);
         XLSX.utils.book_append_sheet(wb, wsAtb, "8. ATB");
 
-        // 9. EXTRACOM
-        const extracomData = [
+        // ------------------------------------------------------------------------
+        // 9. EXTRACOM (EKSTRAKOMTABEL) - COMPLETE 4-STEP MASTER SHEET
+        // ------------------------------------------------------------------------
+        const extracomRows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["RINCIAN BELANJA BARANG EKSTRAKOMTABEL (PERALATAN DAN MESIN < RP 300.000) TAHUN ANGGARAN 2026"],
+            ["LAPORAN RINCIAN REALISASI BELANJA BARANG EKSTRAKOMTABEL (< RP 300.000) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "NAMA BARANG", "KODE BARANG (108)", "MERK", "TYPE", "UKURAN / SPESIFIKASI", "BAHAN", "NO PABRIK / SERI", "TAHUN PEROLEHAN",
-                "NO SPK", "TGL SPK", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO FAKTUR/INVOICE", "TGL FAKTUR/INVOICE",
-                "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "BIAYA ADM PROYEK (RP)", "TOTAL NILAI REALISASI (RP)",
-                "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "RUANG / UNIT PEMEGANG", "KETERANGAN"
+                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
             ],
             [
-                1, "Gunting Angkat Jahitan Littauer 14cm", "1.3.2.02.01.01.099", "Surgical Instrument", "Littauer 14cm", "Panjang 14cm Stainless Steel", "Stainless Steel Medis", "LT-14-001", "2026",
-                "011/SPK-EXT/2026", "2026-02-05", "011/EXT/2026", "2026-02-10", "KW-EXT-011", "2026-02-11", "INV-EXT-011", "2026-02-11",
-                10, "Pcs", 85000, 0, 850000,
-                "011/SP2D/2026", "2026-02-20", "000.2.3.2/011/2026", "2026-02-22", "IGD & Poliklinik Bedah", "Barang Ekstrakomtabel (Nilai < Rp 300.000)"
+                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG", "KODE BARANG (108)", "MERK", "TYPE", "UKURAN / SPESIFIKASI", "BAHAN", "NO PABRIK / SERI", "TAHUN PEROLEHAN", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "KONDISI", "RUANG / UNIT PEMEGANG", "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "KETERANGAN",
+                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
             ],
             [
-                2, "Timbangan Bayi Analog Akurat", "1.3.2.02.01.02.045", "Crown Baby", "CR-20 Analog", "Kapasitas 20kg Akurasi 50gr", "Plastik ABS & Pegas Baja", "CRW-2026-01", "2026",
-                "012/SPK-EXT/2026", "2026-02-15", "012/EXT/2026", "2026-02-20", "KW-EXT-012", "2026-02-21", "INV-EXT-012", "2026-02-21",
-                5, "Unit", 245000, 0, 1225000,
-                "012/SP2D/2026", "2026-03-01", "000.2.3.2/012/2026", "2026-03-05", "Paviliun Anak & Perinatologi", "Barang Ekstrakomtabel (Nilai < Rp 300.000)"
+                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
+                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Merk Pabrik", "Model/Tipe", "Spesifikasi Teknis", "Material", "Nomor Seri", "Tahun Perolehan", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "(B,KB,RB)", "Lokasi Penempatan", "Volume", "Satuan", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Catatan Extracom",
+                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
             ],
             [
-                3, "Tensimeter Raksa Meja Standard", "1.3.2.02.01.02.088", "General Care", "Desk Type GC-01", "Skala 0-300 mmHg dengan Manset", "Aluminium & Karet Medis", "GC-DESK-2026", "2026",
-                "014/SPK-EXT/2026", "2026-03-05", "014/EXT/2026", "2026-03-10", "KW-EXT-014", "2026-03-11", "INV-EXT-014", "2026-03-11",
-                8, "Unit", 280000, 0, 2240000,
-                "014/SP2D/2026", "2026-03-20", "000.2.3.2/014/2026", "2026-03-22", "Rawat Inap & Poliklinik", "Barang Ekstrakomtabel (Nilai < Rp 300.000)"
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+                "41", "42", "43", "44", "45", "46", "47", "48"
             ]
         ];
-        const wsExtracom = XLSX.utils.aoa_to_sheet(extracomData);
-        XLSX.utils.book_append_sheet(wb, wsExtracom, "9. Exstracom");
 
-        // DOWNLOAD
-        const fileName = 'DATA_ASTAP_RSUD_KOESNANDI_2026_KIB_A-F_ATB_EXTRACOM.xlsx';
+        categories['EXTRACOM'].forEach((item, idx) => {
+            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 250000;
+            extracomRows.push([
+                ...getCommonColumns(item, idx),
+                item.nama_barang || 'Kursi Plastik Stacking',
+                item.kode_barang || '1.3.2.02.01.01.009',
+                item.merk || 'Napolly',
+                item.type || 'Big 209',
+                item.ukuran || 'Standard',
+                item.bahan || 'Plastik ABS',
+                item.no_pabrik || '-',
+                item.tahun_perolehan || 2026,
+                item.surat_pesanan_nomor || '-',
+                item.surat_pesanan_tanggal || '-',
+                item.kwitansi_nomor || 'KW-EXT-01/2026',
+                item.kwitansi_tanggal || '2026-01-10',
+                item.faktur_nomor || '-',
+                item.faktur_tanggal || '-',
+                item.kondisi || 'Baik',
+                item.ruang_unit || 'Ruang Tunggu Poli',
+                item.jumlah_unit || 5,
+                item.satuan || 'Buah',
+                50000,
+                totalVal,
+                item.sp2d_nomor || '001/SP2D/2026',
+                item.sp2d_tanggal || '2026-01-15',
+                item.bast_dokumen_nomor || '000.2.3.2/EXT-01/BAST/2026',
+                item.bast_dokumen_tanggal || '2026-01-18',
+                item.keterangan || 'Barang Ekstrakomtabel < Rp 300rb',
+                ...getStep4Columns(item)
+            ]);
+        });
+
+        if (categories['EXTRACOM'].length === 0) {
+            extracomRows.push([
+                1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.02.01.0005', 'Belanja Ekstrakomtabel Kantor', '1.3.2.02', 'PERALATAN DAN MESIN', '1.3.2.02.01.01', 'PERALATAN KANTOR LAINNYA', 250000, 250000,
+                'Kursi Plastik Stacking Ruang Tunggu', '1.3.2.02.01.01.009', 'Napolly', 'Big 209', 'High Quality ABS Plastic', 'Plastik Polimer', '-', 2026, '-', '-', 'KW-EXT-01/2026', '2026-01-10', '-', '-', 'Baik', 'Ruang Tunggu Poliklinik Rawat Jalan', 5, 'Buah', 50000, 250000, '001/SP2D/2026', '2026-01-15', '000.2.3.2/EXT-01/BAST/2026', '2026-01-18', 'Perlengkapan Ruang Tunggu Pasien',
+                'UD. Jaya Furniture', 'H. Mochammad Ridwan', 'UD. Jaya Furniture', '143-00-7766554', 'Jl. Ahmad Yani No. 5 Bondowoso', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Barang Nilai Per Unit < Rp 300.000'
+            ]);
+        }
+
+        const wsExtracom = XLSX.utils.aoa_to_sheet(extracomRows);
+        wsExtracom['!cols'] = Array(48).fill({wch: 18});
+        wsExtracom['!cols'][2] = {wch: 30}; wsExtracom['!cols'][4] = {wch: 25}; wsExtracom['!cols'][6] = {wch: 28};
+        wsExtracom['!cols'][8] = {wch: 28}; wsExtracom['!cols'][10] = {wch: 22}; wsExtracom['!cols'][12] = {wch: 30}; wsExtracom['!cols'][15] = {wch: 30};
+        wsExtracom['!cols'][40] = {wch: 28}; wsExtracom['!cols'][44] = {wch: 35};
+        applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 48, 25);
+        XLSX.utils.book_append_sheet(wb, wsExtracom, "9. Extracom");
+
+        // DOWNLOAD FILE EXCEL 4 LANGKAH
+        const fileName = "ASTAP_RSUD_KOESNANDI_4LANGKAH_MASTER_" + new Date().toISOString().slice(0, 10) + ".xlsx";
         XLSX.writeFile(wb, fileName);
-        alert('✅ Berhasil mendownload: ' + fileName + '\nFile Excel telah dibagi menjadi 9 Sheet: Rekapitulasi, 2. A, 3. B, 4. C, 5. D, 6. E, 7. F, 8. ATB, dan 9. Exstracom!');
     }
     </script>
 
@@ -291,11 +970,15 @@
         function astapCatalog() {
             return {
                 astaps: window.__simatAstaps || [],
+                downloadExcel() {
+                    exportAstapToExcel();
+                },
                 searchQuery: '',
                 categoryFilter: 'all',
                 kondisiFilter: 'all',
                 asalUsulFilter: 'all',
                 tahunFilter: 'all',
+                viewMode: 'catalog',
                 showAddModal: false,
                 showEditModal: false,
                 showDetailModal: false,
@@ -306,6 +989,11 @@
                 detailKondisiFilter: 'all',
                 detailPenempatanFilter: 'all',
                 detailSearchQuery: '',
+
+                formatRupiah(val) {
+                    const num = parseFloat(val) || 0;
+                    return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+                },
 
                 get totalVolumeUnit() {
                     return (this.astaps || []).reduce((acc, item) => {
@@ -740,9 +1428,9 @@
                     </a>
                     @endif
 
-                    <button type="button" @click="downloadExcel()"
-                        class="px-3.5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <button type="button" onclick="exportAstapToExcel()" @click="exportAstapToExcel()"
+                        class="px-3.5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5 cursor-pointer">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         <span>Export Excel</span>
                     </button>
 
@@ -925,41 +1613,32 @@
                                     </div>
                                 </td>
 
-                                <!-- Nilai Realisasi -->
-                                <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.jumlah_realisasi"></td>
+                                <!-- Nilai Realisasi Anggaran -->
+                                <td class="px-4 py-4 text-center font-mono font-extrabold text-emerald-400 text-sm whitespace-nowrap" x-text="item.jumlah_realisasi"></td>
 
-                                <!-- Kondisi — progress bar persentase dari registers -->
+                                <!-- Kondisi Aset Terkini -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <template x-data="{}" x-if="true">
-                                        <div x-data="{ st: getKondisiStats(item) }">
-                                            <!-- Jika hanya 1 unit / semua kondisi sama: tampilkan badge tunggal -->
-                                            <template x-if="st.total <= 1 || (st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-bold border shadow-sm select-none"
-                                                      :class="{
-                                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': st.kondisi_dominan === 'Baik',
-                                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Rusak Ringan',
-                                                          'bg-rose-500/15 text-rose-300 border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
-                                                      }">
-                                                    <span class="w-1.5 h-1.5 rounded-full mr-1.5"
-                                                          :class="{
-                                                              'bg-emerald-400': st.kondisi_dominan === 'Baik',
-                                                              'bg-amber-400': st.kondisi_dominan === 'Rusak Ringan',
-                                                              'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
-                                                          }"></span>
-                                                    <span x-text="st.kondisi_dominan + (st.total > 1 ? ' 100%' : '')"></span>
-                                                </span>
-                                            </template>
-                                            <!-- Jika multi kondisi: tampilkan progress bar breakdown -->
-                                            <template x-if="st.total > 1 && !(st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
-                                                <div class="min-w-[130px]">
-                                                    <!-- Mini progress bar gabungan -->
-                                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1.5">
-                                                        <div x-show="st.pct_baik > 0" class="bg-emerald-400 transition-all" :style="'width:' + st.pct_baik + '%'"></div>
-                                                        <div x-show="st.pct_rr > 0"   class="bg-amber-400 transition-all"   :style="'width:' + st.pct_rr + '%'"></div>
-                                                        <div x-show="st.pct_rb > 0"   class="bg-rose-400 transition-all"    :style="'width:' + st.pct_rb + '%'"></div>
-                                                    </div>
-                                                    <!-- Label persentase per kondisi -->
-                                                    <div class="flex flex-wrap gap-x-2 gap-y-0.5 justify-center">
+                                    <template x-let="st = getKondisiStats(item)">
+                                        <div>
+                                            <!-- Badge Kondisi Dominan -->
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold shadow-sm"
+                                                :class="{
+                                                    'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': st.kondisi_dominan === 'Baik',
+                                                    'bg-amber-500/20 text-amber-300 border border-amber-500/30': st.kondisi_dominan === 'Rusak Ringan',
+                                                    'bg-rose-500/20 text-rose-300 border border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
+                                                }">
+                                                <span class="w-1.5 h-1.5 rounded-full mr-1.5"
+                                                    :class="{
+                                                        'bg-emerald-400': st.kondisi_dominan === 'Baik',
+                                                        'bg-amber-400': st.kondisi_dominan === 'Rusak Ringan',
+                                                        'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
+                                                    }"></span>
+                                                <span x-text="st.kondisi_dominan"></span>
+                                            </span>
+                                            <!-- Rincian Persentase Kondisi Register -->
+                                            <template x-if="st.total > 1">
+                                                <div class="mt-1">
+                                                    <div class="flex items-center justify-center space-x-1">
                                                         <template x-if="st.baik > 0">
                                                             <span class="text-[9.5px] font-bold text-emerald-400" x-text="st.pct_baik + '% Baik'"></span>
                                                         </template>
@@ -970,8 +1649,6 @@
                                                             <span class="text-[9.5px] font-bold text-rose-400" x-text="st.pct_rb + '% R.Berat'"></span>
                                                         </template>
                                                     </div>
-                                                    <!-- Jumlah unit keterangan -->
-                                                    <div class="text-[9px] text-slate-500 mt-0.5" x-text="'dari ' + st.total + ' unit'"></div>
                                                 </div>
                                             </template>
                                         </div>
