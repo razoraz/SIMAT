@@ -249,28 +249,28 @@
                 <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
                     <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Status:</span>
                     <button type="button" @click="statusFilter = 'all'"
-                        :class="statusFilter === 'all' ? 'bg-rose-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        :class="statusFilter === 'all' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30 border border-indigo-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
                         Semua Status
                     </button>
                     <button type="button" @click="statusFilter = 'selesai'"
-                        :class="statusFilter === 'selesai' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        :class="statusFilter === 'selesai' ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 border border-emerald-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
                         ✅ Selesai
                     </button>
                     <button type="button" @click="statusFilter = 'menunggu_admin'"
-                        :class="statusFilter === 'menunggu_admin' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        :class="statusFilter === 'menunggu_admin' ? 'bg-cyan-600 text-white font-bold shadow-md shadow-cyan-600/30 border border-cyan-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
                         ⏳ Menunggu Admin
                     </button>
                     <button type="button" @click="statusFilter = 'menunggu_penerima'"
-                        :class="statusFilter === 'menunggu_penerima' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        :class="statusFilter === 'menunggu_penerima' ? 'bg-amber-600 text-white font-bold shadow-md shadow-amber-600/30 border border-amber-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
                         ⏳ Menunggu Penerima
                     </button>
                     <button type="button" @click="statusFilter = 'ditolak'"
-                        :class="statusFilter === 'ditolak' ? 'bg-rose-500 text-slate-950 font-extrabold shadow-md' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all shrink-0">
+                        :class="statusFilter === 'ditolak' ? 'bg-rose-600 text-white font-bold shadow-md shadow-rose-600/30 border border-rose-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
                         ❌ Ditolak
                     </button>
                 </div>
@@ -278,17 +278,17 @@
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
                     <div class="relative flex-1 w-full">
                         <input type="text" x-model="searchQuery" placeholder="Cari nomor BAMB / nama aset / NIBAR / ruangan asal / tujuan..."
-                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-all">
-                        <svg class="w-4 h-4 text-rose-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all">
+                        <svg class="w-4 h-4 text-indigo-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
                     </div>
 
                     <div class="flex items-center space-x-2 shrink-0">
                         <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
-                            Menampilkan <span class="text-rose-400 font-bold" x-text="filteredMutasis.length"></span> dari <span class="text-white font-bold" x-text="mutasis.length"></span> Mutasi
+                            Menampilkan <span class="text-indigo-400 font-bold" x-text="filteredMutasis.length"></span> dari <span class="text-white font-bold" x-text="mutasis.length"></span> Mutasi
                         </span>
                         <button type="button" @click="resetFilters()"
-                            class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
+                            class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
                             🔄 Reset
                         </button>
                     </div>
@@ -305,29 +305,31 @@
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">No. BAMB</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Jenis</th>
-                            <th class="px-4 py-3.5 text-left min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
+                            <th class="px-4 py-3.5 text-left min-w-[240px] max-w-[280px] bg-slate-950">Nama Barang / ASTAP</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[190px] bg-slate-950">Asal → Tujuan</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[190px] bg-slate-950">Status Persetujuan</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800" style="position: sticky; right: 0; z-index: 20; background-color: #020617; box-shadow: -4px 0 10px rgba(0,0,0,0.4);">Aksi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[220px] bg-slate-950">Status Persetujuan</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap border-l border-slate-800 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 20; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredMutasis" :key="item.id">
-                            <tr class="hover:bg-slate-800/30 transition-colors">
+                            <tr class="group hover:bg-slate-800/40 transition-colors">
                                 {{-- No --}}
                                 <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
 
                                 {{-- No. BAMB --}}
-                                <td class="px-4 py-4 text-center font-mono font-semibold text-rose-400 whitespace-nowrap" x-text="item.kode"></td>
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <span class="px-2.5 py-1 rounded-lg bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-mono font-bold text-[11px] shadow-sm inline-block" x-text="item.kode"></span>
+                                </td>
 
                                 {{-- Jenis Mutasi — Badge Premium --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-extrabold border shadow-sm"
                                         :class="{
-                                            'bg-blue-500/15 text-blue-300 border-blue-500/30':     item.jenis === 'Pemindahan',
-                                            'bg-amber-500/15 text-amber-300 border-amber-500/30': item.jenis === 'Perbaikan',
-                                            'bg-teal-500/15 text-teal-300 border-teal-500/30':     item.jenis === 'Pengembalian',
-                                            'bg-rose-500/15 text-rose-300 border-rose-500/30':     item.jenis === 'Penghapusan',
+                                            'bg-blue-500/10 text-blue-300 border-blue-500/30':     item.jenis === 'Pemindahan',
+                                            'bg-amber-500/10 text-amber-300 border-amber-500/30': item.jenis === 'Perbaikan',
+                                            'bg-teal-500/10 text-teal-300 border-teal-500/30':     item.jenis === 'Pengembalian',
+                                            'bg-rose-500/10 text-rose-300 border-rose-500/30':     item.jenis === 'Penghapusan',
                                             'bg-slate-800 text-slate-400 border-slate-700':       !item.jenis
                                         }">
                                         <span x-text="item.jenis === 'Pemindahan' ? '🔄' : item.jenis === 'Perbaikan' ? '🔧' : item.jenis === 'Pengembalian' ? '↩️' : item.jenis === 'Penghapusan' ? '🗑️' : '•'"></span>
@@ -335,25 +337,27 @@
                                     </span>
                                 </td>
 
-                                {{-- Nama Barang --}}
-                                <td class="px-4 py-4">
-                                    <p class="font-bold text-white text-xs leading-tight" x-text="item.nama"></p>
-                                    <p class="text-[10px] text-slate-400 font-mono mt-0.5" x-text="item.kode_barang"></p>
+                                {{-- Nama Barang & NIBAR (Max Width & Line Clamp) --}}
+                                <td class="px-4 py-4 min-w-[240px] max-w-[280px]">
+                                    <p class="font-bold text-white text-xs leading-snug break-words" x-text="item.nama"></p>
+                                    <div class="mt-1">
+                                        <span class="text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800/80 inline-block max-w-full truncate" x-text="item.kode_barang" :title="item.kode_barang"></span>
+                                    </div>
                                 </td>
 
                                 {{-- Asal → Tujuan: Pill Card --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800">
+                                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 shadow-inner">
                                         <span class="text-[11px] text-slate-300 font-medium" x-text="item.asal" :title="item.asal"></span>
-                                        <div class="shrink-0 w-4 h-4 rounded-md bg-rose-500/15 border border-rose-500/30 flex items-center justify-center">
-                                            <svg class="w-2.5 h-2.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                                        <div class="shrink-0 w-4 h-4 rounded-md bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center">
+                                            <svg class="w-2.5 h-2.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                         </div>
-                                        <span class="text-[11px] text-rose-300 font-semibold" x-text="item.tujuan" :title="item.tujuan"></span>
+                                        <span class="text-[11px] text-indigo-300 font-semibold" x-text="item.tujuan" :title="item.tujuan"></span>
                                     </div>
                                 </td>
 
                                 {{-- Status Persetujuan: Badge + Step Indicator --}}
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <td class="px-4 py-4 text-center whitespace-nowrap min-w-[220px]">
                                     <div class="flex flex-col items-center gap-2">
                                         {{-- Badge Status --}}
                                         <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
@@ -400,61 +404,30 @@
                                     </div>
                                 </td>
 
-                                {{-- Kolom Aksi — FREEZE STICKY RIGHT --}}
-                                <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap border-l border-slate-800 bg-slate-900" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a; box-shadow: -4px 0 8px rgba(0,0,0,0.3);">
+                                {{-- Kolom Aksi — FREEZE STICKY RIGHT (3 TOMBOL: DETAIL, UBAH, HAPUS) --}}
+                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                     <div class="flex items-center justify-center gap-1.5">
 
-                                        {{-- 1. Tombol Cetak BAMB --}}
-                                        <template x-if="item.status === 'Disetujui Admin (Selesai)' || item.status === 'Disetujui 2 Pihak (Menunggu Admin)'">
-                                            <button type="button" @click="openPrintBast(item)" title="Cetak Berita Acara Mutasi Barang (BAMB)"
-                                                class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                                <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                                <span>BAMB</span>
-                                            </button>
-                                        </template>
-
-                                        {{-- 2. Tombol Detail Modal --}}
-                                        <button type="button" @click="openDetail(item)" title="Lihat Detail Mutasi"
-                                            class="px-2.5 py-1.5 rounded-xl bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 border border-teal-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                            <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        {{-- 1. Tombol Detail --}}
+                                        <button type="button" @click="openDetail(item)" title="Lihat Detail & BAMB Mutasi"
+                                            class="px-2.5 py-1.5 rounded-xl bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 border border-sky-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             <span>Detail</span>
                                         </button>
 
-                                        {{-- 3. Terima & Setujui (Penerima) --}}
-                                        <template x-if="!item.persetujuan_penerima && item.status !== 'Ditolak' && (userRole !== 'sub_admin' || (item.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase()))">
-                                            <button type="button" @click="approvePenerima(item)" title="Terima & Setujui (Pihak Penerima)"
-                                                class="px-2.5 py-1.5 rounded-xl bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                                <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                <span>Setujui</span>
-                                            </button>
-                                        </template>
+                                        {{-- 2. Tombol Ubah --}}
+                                        <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan Mutasi"
+                                            class="px-2.5 py-1.5 rounded-xl bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 border border-indigo-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            <span>Ubah</span>
+                                        </a>
 
-                                        {{-- 4. Sahkan Admin --}}
-                                        <template x-if="item.persetujuan_penerima && !item.persetujuan_admin && item.status !== 'Ditolak' && (userRole === 'admin' || userRole === 'master_admin')">
-                                            <button type="button" @click="approveAdmin(item)" title="Sahkan & Verifikasi Akhir (Admin)"
-                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                <span>Sahkan</span>
-                                            </button>
-                                        </template>
-
-                                        {{-- 5. Ubah Form --}}
-                                        <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
-                                            <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan"
-                                                class="px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                                <span>Ubah</span>
-                                            </a>
-                                        </template>
-
-                                        {{-- 6. Tolak --}}
-                                        <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
-                                            <button type="button" @click="rejectMutasi(item)" title="Tolak Pengajuan"
-                                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
-                                                <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                <span>Tolak</span>
-                                            </button>
-                                        </template>
+                                        {{-- 3. Tombol Hapus / Tolak --}}
+                                        <button type="button" @click="rejectMutasi(item)" title="Hapus / Batalkan Mutasi"
+                                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <span>Hapus</span>
+                                        </button>
 
                                     </div>
                                 </td>
@@ -483,7 +456,7 @@
             <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
                     <div class="flex items-center space-x-2">
-                        <span class="text-rose-400 font-bold">🔄</span>
+                        <span class="text-indigo-400 font-bold">🔄</span>
                         <h3 class="text-base font-bold text-white">Detail Pengajuan Mutasi</h3>
                     </div>
                     <button type="button" @click="showDetailModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
@@ -494,7 +467,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <span class="text-slate-400 text-[10.5px]">Nomor BAMB:</span>
-                                <p class="font-mono font-bold text-rose-400 text-sm" x-text="selectedMutasi.kode"></p>
+                                <p class="font-mono font-bold text-cyan-300 text-sm" x-text="selectedMutasi.kode"></p>
                             </div>
                             <div class="text-right">
                                 <span class="text-slate-400 text-[10.5px]">Jenis Mutasi:</span>
@@ -506,7 +479,7 @@
                             <span class="text-slate-400 text-[10.5px] block mb-0.5">Nama Barang / Aset:</span>
                             <p class="font-bold text-white text-sm" x-text="selectedMutasi.nama"></p>
                             <div class="flex items-center gap-3 mt-1 text-[10px]">
-                                <span class="font-mono text-rose-400" x-text="'NIBAR: ' + (selectedMutasi.kode_barang || '-')"></span>
+                                <span class="font-mono text-cyan-400" x-text="'NIBAR: ' + (selectedMutasi.kode_barang || '-')"></span>
                                 <span class="w-1 h-1 rounded-full bg-slate-600"></span>
                                 <span class="text-slate-400" x-text="'Kondisi: ' + (selectedMutasi.kondisi || 'Baik')"></span>
                             </div>
@@ -519,8 +492,8 @@
                                 <p class="text-[10px] text-slate-500 mt-0.5" x-text="'PJ: ' + (selectedMutasi.pemohon || '-')"></p>
                             </div>
                             <div>
-                                <span class="text-rose-400 text-[10.5px] font-semibold">Ruangan Tujuan (Penerima):</span>
-                                <p class="font-semibold text-rose-300 mt-0.5" x-text="selectedMutasi.tujuan"></p>
+                                <span class="text-indigo-400 text-[10.5px] font-semibold">Ruangan Tujuan (Penerima):</span>
+                                <p class="font-semibold text-indigo-300 mt-0.5" x-text="selectedMutasi.tujuan"></p>
                                 <p class="text-[10px] text-slate-500 mt-0.5" x-text="'PJ: ' + (selectedMutasi.penerima_pj || '-')"></p>
                             </div>
                             <div>
@@ -558,8 +531,25 @@
                     </div>
                 </template>
 
-                <div class="pt-4 mt-4 border-t border-slate-800 flex justify-end">
-                    <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all">Tutup</button>
+                <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <template x-if="selectedMutasi && (selectedMutasi.status === 'Disetujui Admin (Selesai)' || selectedMutasi.status === 'Disetujui 2 Pihak (Menunggu Admin)')">
+                            <button type="button" @click="showDetailModal = false; openPrintBast(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                                <span>📄 Cetak BAMB</span>
+                            </button>
+                        </template>
+                        <template x-if="selectedMutasi && !selectedMutasi.persetujuan_penerima && selectedMutasi.status !== 'Ditolak' && (userRole !== 'sub_admin' || (selectedMutasi.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase()))">
+                            <button type="button" @click="showDetailModal = false; approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                                <span>✓ Setujui (Penerima)</span>
+                            </button>
+                        </template>
+                        <template x-if="selectedMutasi && selectedMutasi.persetujuan_penerima && !selectedMutasi.persetujuan_admin && selectedMutasi.status !== 'Ditolak' && (userRole === 'admin' || userRole === 'master_admin')">
+                            <button type="button" @click="showDetailModal = false; approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                                <span>✓ Sahkan (Admin)</span>
+                            </button>
+                        </template>
+                    </div>
+                    <button type="button" @click="showDetailModal = false" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">Tutup</button>
                 </div>
             </div>
         </div>

@@ -1571,16 +1571,16 @@
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tahun Masuk</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Volume / Kuantitas</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Realisasi</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Kondisi</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800" style="position: sticky; right: 0; z-index: 30; background-color: #020617; box-shadow: -4px 0 10px rgba(0,0,0,0.4);">Aksi</th>
+                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Kondisi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredAstaps" :key="item.id">
-                            <tr class="hover:bg-slate-800/40 transition-colors">
+                            <tr class="group hover:bg-slate-800/40 transition-colors">
                                 <!-- Nomor Urut 1, 2, 3... -->
                                 <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
-                                
+
                                 <!-- Nama Barang / ASTAP -->
                                 <td class="px-4 py-4">
                                     <div class="font-bold text-white text-sm" x-text="item.nama_barang"></div>
@@ -1664,37 +1664,37 @@
                                     </template>
                                 </td>
 
-                                <!-- Aksi (Rincian, Edit, Hapus) — FREEZE STICKY RIGHT -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800 bg-slate-900" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a; box-shadow: -4px 0 8px rgba(0,0,0,0.3);">
-                                    <div class="flex items-center justify-center space-x-2">
-                                        <!-- Tombol Rincian / Detail -->
+                                <!-- Aksi (Detail, Ubah, Hapus) — FREEZE STICKY RIGHT -->
+                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <!-- 1. Tombol Detail -->
                                         <button type="button" @click="openDetail(item)"
-                                            title="Lihat Detail & Rincian NIBAR"
-                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-emerald-500 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-300 font-bold text-xs transition-all shadow-sm hover:scale-105 active:scale-95 group cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            title="Lihat Detail ASTAP"
+                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                             </svg>
-                                            <span class="leading-none pt-0.5">Rincian</span>
+                                            <span>Detail</span>
                                         </button>
                                         @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                        <!-- Tombol Edit (Link ke halaman form edit lengkap) -->
+                                        <!-- 2. Tombol Ubah (Form Edit) -->
                                         <a :href="'/astap/' + item.id + '/edit'"
-                                            title="Edit Data ASTAP (Form Lengkap)"
-                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 font-bold text-xs transition-all shadow-sm hover:scale-105 active:scale-95 group cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            title="Ubah Data ASTAP (Form Lengkap)"
+                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
-                                            <span class="leading-none pt-0.5">Edit</span>
+                                            <span>Ubah</span>
                                         </a>
-                                        <!-- Tombol Hapus -->
+                                        <!-- 3. Tombol Hapus -->
                                         <button type="button" @click="deleteAstap(item)"
                                             title="Hapus Data ASTAP"
-                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-rose-500 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 font-bold text-xs transition-all shadow-sm hover:scale-105 active:scale-95 group cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                             </svg>
-                                            <span class="leading-none pt-0.5">Hapus</span>
+                                            <span>Hapus</span>
                                         </button>
                                         @endif
                                     </div>

@@ -88,17 +88,18 @@ class UnitSeeder extends Seeder
                 ]
             );
 
-            // 2. Simpan atau perbarui Akun User Sub Admin dengan unit_id menunjuk ke unit
+            // 2. Simpan atau perbarui Akun User (Admin khusus untuk Bagian Rumah Tangga & Inst Perbekalan)
+            $isRumahTangga = str_contains(strtolower($item['nama']), 'rumah tangga') || str_contains(strtolower($item['nama']), 'perbekalan');
             User::updateOrCreate(
                 ['email' => $item['email']],
                 [
                     'name' => $item['kepala'],
-                    'role' => 'sub_admin',
+                    'role' => $isRumahTangga ? 'admin' : 'sub_admin',
                     'unit_id' => $unit->id,
-                    'penugasan' => 'Sub Admin Ruangan ' . $item['nama'],
+                    'penugasan' => $isRumahTangga ? 'Admin Pencatatan Aset & Rumah Tangga' : ('Sub Admin Ruangan ' . $item['nama']),
                     'status' => 'Aktif',
                     'password' => Hash::make('rsud123'),
-                    'deskripsi' => 'Akun Sub Admin Otomatis dari Pendaftaran Unit ' . $item['nama'],
+                    'deskripsi' => $isRumahTangga ? 'Akun Admin Resmi Pencatatan Barang & Rumah Tangga' : ('Akun Sub Admin Otomatis dari Pendaftaran Unit ' . $item['nama']),
                 ]
             );
         }

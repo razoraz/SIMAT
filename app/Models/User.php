@@ -82,6 +82,18 @@ class User extends Authenticatable
     }
 
     /**
+     * Dynamic Accessor Role: Otomatis berpangkat 'admin' jika bertugas di Bagian Rumah Tangga & Inst Perbekalan
+     */
+    public function getRoleAttribute($value): string
+    {
+        $role = $value ?? 'sub_admin';
+        if ($role === 'sub_admin' && str_contains(strtolower($this->unit ?? ''), 'rumah tangga')) {
+            return 'admin';
+        }
+        return $role;
+    }
+
+    /**
      * Cek apakah user adalah Master Admin
      */
     public function isMasterAdmin(): bool
@@ -90,11 +102,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Cek apakah user adalah Admin Operasional
+     * Cek apakah user adalah Admin Operasional (Termasuk Bagian Rumah Tangga & Inst Perbekalan)
      */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === 'admin' || str_contains(strtolower($this->unit ?? ''), 'rumah tangga');
     }
 
     /**
@@ -102,7 +114,7 @@ class User extends Authenticatable
      */
     public function isSubAdmin(): bool
     {
-        return $this->role === 'sub_admin';
+        return $this->role === 'sub_admin' && !str_contains(strtolower($this->unit ?? ''), 'rumah tangga');
     }
 
     /**
