@@ -1111,7 +1111,7 @@
                         </div>
 
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
-                        <div x-show="isProgramOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-purple-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                        <div x-show="isProgramOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-purple-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="p in filteredPrograms" :key="p.kode">
                                 <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
                                      :class="p.kode === formData.program_kode ? 'border-purple-500 bg-purple-950/40 shadow-lg' : 'border-slate-800 hover:border-purple-500/50'">
@@ -1160,7 +1160,7 @@
                         </div>
 
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
-                        <div x-show="isKegiatanOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                        <div x-show="isKegiatanOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="k in filteredKegiatans" :key="k.kode">
                                 <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
                                      :class="k.kode === formData.kegiatan_kode ? 'border-cyan-500 bg-cyan-950/40 shadow-lg' : 'border-slate-800 hover:border-cyan-500/50'">
@@ -1209,7 +1209,7 @@
                         </div>
 
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
-                        <div x-show="isSubKegiatanOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                        <div x-show="isSubKegiatanOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="s in filteredSubKegiatans" :key="s.kode">
                                 <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
                                      :class="s.kode === formData.sub_kegiatan_kode ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
@@ -1269,7 +1269,7 @@
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] font-black flex items-center justify-center">1</span>
-                                <span>Rekening Belanja Pengadaan SIPD (<span x-text="filteredRekeningBelanja.length"></span> Rekening Terdaftar)</span>
+                                <span>Rekening Belanja Pengadaan SIPD</span>
                             </label>
                             
                             <!-- Tombol Red ✕ Ganti Rekening (Muncul bila sudah terpilih) -->
@@ -1294,13 +1294,13 @@
                         </div>
 
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
-                        <div x-show="isRekeningOpen" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-blue-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                        <div x-show="isRekeningOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-blue-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="r in filteredRekeningBelanja" :key="r.kode_rek">
                                 <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
                                      :class="r.kode_rek === formData.kode_rek ? 'border-blue-500 bg-blue-950/40 shadow-lg' : 'border-slate-800 hover:border-blue-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-blue-300 transition-colors truncate" x-text="r.kode_rek + ' - ' + r.nama_belanja"></h4>
-                                        <p class="text-[10px] text-slate-400 truncate" x-text="'REKENING BELANJA • Kelompok: ' + r.kelompok"></p>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'REKENING BELANJA • ' + (r.kelompok || 'Kode Account SIPD')"></p>
                                     </div>
                                     <button type="button" 
                                             @click="selectRekening(r)" 
@@ -1318,7 +1318,7 @@
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center">2</span>
-                                <span>Jenis Aset PMDN 108 (<span x-text="filteredJenisAstap108.length"></span> Jenis Aset Terdaftar)</span>
+                                <span>Jenis Aset PMDN 108</span>
                             </label>
                             
                             <!-- Tombol Red ✕ Ganti Jenis Aset (Muncul bila sudah terpilih) -->
@@ -1343,7 +1343,7 @@
                         </div>
 
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
-                        <div x-show="isJenis108Open" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                        <div x-show="isJenis108Open" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="j in filteredJenisAstap108" :key="j.kode">
                                 <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
                                      :class="j.kode === formData.jenis_aset_kode ? 'border-cyan-500 bg-cyan-950/40 shadow-lg' : 'border-slate-800 hover:border-cyan-500/50'">
@@ -1367,7 +1367,7 @@
                         <div class="flex items-center justify-between">
                             <label class="block text-slate-200 font-bold text-xs flex items-center space-x-2">
                                 <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black flex items-center justify-center">3</span>
-                                <span>Sub Rincian Objek PMDN 108 (<span x-text="filteredSubRincian108.length"></span> Sub Rincian Terdaftar)</span>
+                                <span>Sub Rincian Objek PMDN 108</span>
                             </label>
                             
                             <!-- Tombol Red ✕ Ganti Sub Rincian (Muncul bila sudah terpilih) -->
@@ -1392,13 +1392,13 @@
                         </div>
 
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
-                        <div x-show="isSubRincian108Open" x-transition x-cloak class="absolute z-30 mt-2 w-full space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                        <div x-show="isSubRincian108Open" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="s in filteredSubRincian108" :key="s.kode">
                                 <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
                                      :class="s.kode === formData.sub_rincian_kode ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="s.kode + ' - ' + s.nama"></h4>
-                                        <p class="text-[10px] text-slate-400 truncate" x-text="'SUB RINCIAN OBJEK • ' + s.keterangan"></p>
+                                        <p class="text-[10px] text-slate-400 truncate" x-text="'SUB RINCIAN OBJEK • ' + (s.keterangan || s.kelompok || 'Kode Sub Rincian PMDN 108')"></p>
                                     </div>
                                     <button type="button" 
                                             @click="selectSubRincian(s)" 
