@@ -65,7 +65,41 @@ class DashboardController extends Controller
         $kondisiRusakBerat   = AstapRegister::whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
         $totalRusak          = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
 
-        // 5. Data ASTAP Terbaru dari SQLite DB
+        // 5. Data Grafik Peningkatan Aset (Harga & Kuantitas per Tahun)
+        $yearlyStats = Astap::selectRaw('tahun_perolehan, SUM(jumlah_volume) as total_volume, SUM(total_realisasi) as total_harga')
+            ->whereNotNull('tahun_perolehan')
+            ->where('tahun_perolehan', '>', 0)
+            ->groupBy('tahun_perolehan')
+            ->orderBy('tahun_perolehan', 'asc')
+            ->get();
+
+        $chartLabels = [];
+        $chartVolumeData = [];
+        $chartHargaDataJuta = [];
+        $chartKumulatifVolume = [];
+        $chartKumulatifHargaJuta = [];
+
+        $runningVolume = 0;
+        $runningHarga = 0;
+
+        foreach ($yearlyStats as $stat) {
+            $year = (string) $stat->tahun_perolehan;
+            $vol = (int) $stat->total_volume;
+            $harga = (float) $stat->total_harga;
+            $hargaJuta = round($harga / 1000000, 2);
+
+            $runningVolume += $vol;
+            $runningHarga += $harga;
+            $runningHargaJuta = round($runningHarga / 1000000, 2);
+
+            $chartLabels[] = 'Thn ' . $year;
+            $chartVolumeData[] = $vol;
+            $chartHargaDataJuta[] = $hargaJuta;
+            $chartKumulatifVolume[] = $runningVolume;
+            $chartKumulatifHargaJuta[] = $runningHargaJuta;
+        }
+
+        // 6. Data ASTAP Terbaru dari SQLite DB
         $recentAstaps = Astap::with(['jenisAstap', 'registers.unit'])
             ->orderBy('id', 'desc')
             ->get()
@@ -118,6 +152,11 @@ class DashboardController extends Controller
             'kondisiRusakBerat'        => $kondisiRusakBerat,
             'totalRusak'               => $totalRusak,
             'recentAstaps'             => $recentAstaps,
+            'chartLabels'              => $chartLabels,
+            'chartVolumeData'          => $chartVolumeData,
+            'chartHargaDataJuta'       => $chartHargaDataJuta,
+            'chartKumulatifVolume'     => $chartKumulatifVolume,
+            'chartKumulatifHargaJuta'  => $chartKumulatifHargaJuta,
         ];
     }
 }

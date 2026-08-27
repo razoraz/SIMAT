@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <!-- Metric Summary Stats Cards -->
+    <!-- Metric Summary Stats Cards (Posisi 1) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div class="flex items-center justify-between text-slate-400 mb-2">
@@ -73,7 +73,58 @@
         </div>
     </div>
 
-    <!-- Admin CRUD Action Cards -->
+    <!-- Grafik Peningkatan Aset (Posisi Kedua) -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 mb-8">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-xs font-bold mb-2">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>GRAFIK PERTUMBUHAN ASET TETAP</span>
+                </div>
+                <h3 class="text-lg font-extrabold text-white">Peningkatan Aset: Valuasi Harga & Kuantitas Volume</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Visualisasi tren pertumbuhan akumulasi nilai investasi dan jumlah unit aset RSUD Dr. H. Koesnandi</p>
+            </div>
+
+            <!-- Mode Selector Toggle Pills -->
+            <div class="inline-flex p-1 bg-slate-950 border border-slate-800 rounded-2xl shrink-0 text-xs font-semibold">
+                <button id="btnKumulatif" onclick="switchChartMode('kumulatif')" class="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold transition-all shadow-md">
+                    📈 Akumulasi Peningkatan
+                </button>
+                <button id="btnPerTahun" onclick="switchChartMode('pertahun')" class="px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">
+                    📊 Per Tahun Pengadaan
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Chart -->
+        <div class="relative w-full h-[320px] sm:h-[360px] p-3 bg-slate-950/50 rounded-2xl border border-slate-800/80">
+            <canvas id="astapGrowthChart"></canvas>
+        </div>
+
+        <!-- Tombol Alternatif (Di Bagian Bawah Chart) -->
+        <div class="mt-6 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2 text-xs text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span>Data Valuasi & Kuantitas Terhubung Real-Time dengan Database</span>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+                <a href="{{ route('astap.index') }}"
+                    class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition-all flex items-center justify-center space-x-2 shadow-md">
+                    <span>🔍 Lihat Semua ASTAP</span>
+                </a>
+                <a href="{{ route('astap.create') }}"
+                    class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Tambah ASTAP Baru</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin CRUD Action Cards (Posisi Ketiga) -->
     <div class="mb-8">
         <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center space-x-2">
             <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
@@ -211,83 +262,179 @@
         </div>
     </div>
 
-    <!-- Data ASTAP Table (READ & UPDATE Status Kerusakan) -->
-    <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div>
-                <h3 class="text-base font-extrabold text-white">Data ASTAP Full Format (Kelola Status & Kondisi)</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Admin berwenang memperbarui status kondisi aset (Baik / Rusak Ringan / Rusak Berat)</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2">
-                <a href="{{ route('astap.index') }}" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition-all flex items-center space-x-1.5">
-                    <span>🔍 Lihat Semua ASTAP</span>
-                </a>
-                <a href="{{ route('astap.create') }}" class="px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center space-x-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Tambah ASTAP Baru</span>
-                </a>
-            </div>
-        </div>
+    <!-- Script Inisialisasi Chart.js -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const labels = @json($chartLabels ?? []);
+        const hargaPerTahun = @json($chartHargaDataJuta ?? []);
+        const volPerTahun = @json($chartVolumeData ?? []);
+        const hargaKumulatif = @json($chartKumulatifHargaJuta ?? []);
+        const volKumulatif = @json($chartKumulatifVolume ?? []);
 
-        <div class="overflow-x-auto rounded-2xl border border-slate-800/80">
-            <table class="w-full text-left text-xs text-slate-300">
-                <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
-                    <tr>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap w-12">No</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Kode Barang</th>
-                        <th class="px-4 py-3.5 text-left min-w-[220px]">Nama ASTAP</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Jenis ASTAP</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Tahun</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Lokasi Unit</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Kondisi Saat Ini</th>
-                        <th class="px-4 py-3.5 text-center whitespace-nowrap">Aksi Admin (CRUD)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-800/80">
-                    @forelse($recentAstaps ?? [] as $index => $item)
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">{{ $index + 1 }}</td>
-                        <td class="px-4 py-4 text-center font-mono font-semibold text-cyan-400 whitespace-nowrap">
-                            {{ $item['kode_barang'] }}
-                        </td>
-                        <td class="px-4 py-4 font-bold text-white">{{ $item['nama_barang'] }}</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap leading-none bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-sm select-none">
-                                {{ $item['jenis_nama'] }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">{{ $item['tahun'] }}</td>
-                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">{{ $item['lokasi'] }}</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            @if($item['kondisi'] === 'Baik')
-                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
-                                    Baik
-                                </span>
-                            @elseif(in_array($item['kondisi'], ['Rusak Ringan', 'Kurang Baik']))
-                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm select-none">
-                                    {{ $item['kondisi'] }}
-                                </span>
-                            @else
-                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-sm select-none">
-                                    {{ $item['kondisi'] }}
-                                </span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-4 text-center space-x-1 whitespace-nowrap">
-                            <a href="{{ route('astap.edit', $item['id']) }}" class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                <span>Ubah</span>
-                            </a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-slate-500 italic">Belum ada data ASTAP terdaftar di database.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+        const ctx = document.getElementById('astapGrowthChart');
+        if (!ctx) return;
+
+        const chartCtx = ctx.getContext('2d');
+
+        // Linear Gradient Fills
+        const gradientHarga = chartCtx.createLinearGradient(0, 0, 0, 300);
+        gradientHarga.addColorStop(0, 'rgba(6, 182, 212, 0.45)');
+        gradientHarga.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+
+        const gradientVol = chartCtx.createLinearGradient(0, 0, 0, 300);
+        gradientVol.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+        gradientVol.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+        window.astapChart = new Chart(chartCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Valuasi Harga Aset (Rp Juta)',
+                        data: hargaKumulatif,
+                        borderColor: '#06b6d4',
+                        backgroundColor: gradientHarga,
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#06b6d4',
+                        pointBorderColor: '#020617',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        yAxisID: 'yHarga'
+                    },
+                    {
+                        label: 'Kuantitas Volume (Unit)',
+                        data: volKumulatif,
+                        borderColor: '#10b981',
+                        backgroundColor: gradientVol,
+                        borderWidth: 2.5,
+                        borderDash: [4, 4],
+                        fill: false,
+                        tension: 0.35,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#020617',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        yAxisID: 'yVol'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#94a3b8',
+                            font: { size: 11, weight: 'bold' },
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function (context) {
+                                let val = context.raw || 0;
+                                if (context.datasetIndex === 0) {
+                                    if (val >= 1000) {
+                                        return ` 💰 Valuasi Aset: Rp ${(val / 1000).toFixed(2).replace('.', ',')} Miliar (${val.toLocaleString('id-ID')} Juta)`;
+                                    }
+                                    return ` 💰 Valuasi Aset: Rp ${val.toLocaleString('id-ID')} Juta`;
+                                } else {
+                                    return ` 📏 Total Volume: ${val} Unit Barang`;
+                                }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                        ticks: { color: '#94a3b8', font: { size: 11, weight: '600' } }
+                    },
+                    yHarga: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                        ticks: {
+                            color: '#06b6d4',
+                            font: { size: 10, weight: 'bold' },
+                            callback: function (val) {
+                                if (val >= 1000) {
+                                    return 'Rp ' + (val / 1000).toFixed(1) + ' M';
+                                }
+                                return 'Rp ' + val + ' Jt';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Valuasi (Rupiah)',
+                            color: '#06b6d4',
+                            font: { size: 10, weight: 'bold' }
+                        }
+                    },
+                    yVol: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: '#10b981',
+                            font: { size: 10, weight: 'bold' },
+                            callback: function (val) { return val + ' Unit'; }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Kuantitas (Unit)',
+                            color: '#10b981',
+                            font: { size: 10, weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+
+        window.switchChartMode = function (mode) {
+            const btnKumulatif = document.getElementById('btnKumulatif');
+            const btnPerTahun = document.getElementById('btnPerTahun');
+            if (!btnKumulatif || !btnPerTahun || !window.astapChart) return;
+
+            if (mode === 'kumulatif') {
+                btnKumulatif.className = "px-3.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold transition-all shadow-md";
+                btnPerTahun.className = "px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all";
+
+                window.astapChart.data.datasets[0].label = 'Akumulasi Valuasi (Rp Juta)';
+                window.astapChart.data.datasets[0].data = hargaKumulatif;
+                window.astapChart.data.datasets[1].label = 'Akumulasi Kuantitas (Unit)';
+                window.astapChart.data.datasets[1].data = volKumulatif;
+            } else {
+                btnPerTahun.className = "px-3.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold transition-all shadow-md";
+                btnKumulatif.className = "px-3.5 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all";
+
+                window.astapChart.data.datasets[0].label = 'Pengadaan Valuasi (Rp Juta/Thn)';
+                window.astapChart.data.datasets[0].data = hargaPerTahun;
+                window.astapChart.data.datasets[1].label = 'Pengadaan Kuantitas (Unit/Thn)';
+                window.astapChart.data.datasets[1].data = volPerTahun;
+            }
+            window.astapChart.update();
+        };
+    });
+    </script>
 </x-layout>

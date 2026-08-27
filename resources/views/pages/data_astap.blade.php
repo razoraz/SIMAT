@@ -819,7 +819,7 @@
                 </div>
 
                 <!-- Advanced Filter Collapsible Bar -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-800/60">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-800/60">
                     
                     <!-- Filter KIB -->
                     <div>
@@ -837,43 +837,6 @@
                                 <option value="KIB F" class="bg-slate-900 text-rose-300 py-2 font-medium">KIB F - Konstruksi KDP</option>
                                 <option value="ATB" class="bg-slate-900 text-indigo-300 py-2 font-medium">ATB - Aset Tidak Berwujud</option>
                                 <option value="EXTRACOM" class="bg-slate-900 text-amber-400 py-2 font-medium">Extracom</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Filter Sumber Dana / Asal Usul -->
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sumber Dana / Asal Usul</label>
-                        <div class="relative">
-                            <select x-model="asalUsulFilter"
-                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
-                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Sumber Dana</option>
-                                <option value="BLUD RSUD" class="bg-slate-900 text-emerald-300 py-2 font-medium">BLUD RSUD</option>
-                                <option value="APBD Kabupaten" class="bg-slate-900 text-amber-300 py-2 font-medium">APBD Kabupaten</option>
-                                <option value="DAK Kesehatan" class="bg-slate-900 text-cyan-300 py-2 font-medium">DAK Kesehatan</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
-                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Filter Kondisi -->
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi Aset</label>
-                        <div class="relative">
-                            <select x-model="kondisiFilter"
-                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
-                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Kondisi</option>
-                                <option value="Baik" class="bg-slate-900 text-emerald-300 py-2 font-medium">Baik</option>
-                                <option value="Rusak Ringan" class="bg-slate-900 text-amber-300 py-2 font-medium">Rusak Ringan</option>
-                                <option value="Rusak Berat" class="bg-slate-900 text-rose-300 py-2 font-medium">Rusak Berat</option>
-                                <option value="Dalam Renovasi" class="bg-slate-900 text-purple-300 py-2 font-medium">Dalam Renovasi / KDP</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
