@@ -290,6 +290,7 @@
 
         function astapCatalog() {
             return {
+                astaps: window.__simatAstaps || [],
                 searchQuery: '',
                 categoryFilter: 'all',
                 kondisiFilter: 'all',
@@ -305,6 +306,54 @@
                 detailKondisiFilter: 'all',
                 detailPenempatanFilter: 'all',
                 detailSearchQuery: '',
+
+                get totalVolumeUnit() {
+                    return (this.astaps || []).reduce((acc, item) => {
+                        const vol = parseInt(item.volume_satuan) || 1;
+                        return acc + vol;
+                    }, 0);
+                },
+
+                get totalInvestasiRupiah() {
+                    const total = (this.astaps || []).reduce((acc, item) => acc + (parseFloat(item.total_realisasi_num) || 0), 0);
+                    if (total >= 1000000000) {
+                        return 'Rp ' + (total / 1000000000).toFixed(2).replace('.', ',') + ' M';
+                    } else if (total >= 1000000) {
+                        return 'Rp ' + (total / 1000000).toFixed(2).replace('.', ',') + ' Juta';
+                    }
+                    return 'Rp ' + Math.round(total).toLocaleString('id-ID');
+                },
+
+                get kondisiBaikPercent() {
+                    let totalReg = 0;
+                    let baikReg = 0;
+                    (this.astaps || []).forEach(item => {
+                        if (item.registers && item.registers.length > 0) {
+                            item.registers.forEach(r => {
+                                totalReg++;
+                                if (r.kondisi === 'Baik') baikReg++;
+                            });
+                        } else {
+                            totalReg++;
+                            if ((item.kondisi || 'Baik') === 'Baik') baikReg++;
+                        }
+                    });
+                    if (totalReg === 0) return '100% (0 Reg)';
+                    const pct = Math.round((baikReg / totalReg) * 100);
+                    return pct + '% (' + baikReg + ' Reg)';
+                },
+
+                get totalLokasiCount() {
+                    const lokasiSet = new Set();
+                    (this.astaps || []).forEach(item => {
+                        if (item.registers && item.registers.length > 0) {
+                            item.registers.forEach(r => {
+                                if (r.ruang_pemegang) lokasiSet.add(r.ruang_pemegang);
+                            });
+                        }
+                    });
+                    return lokasiSet.size > 0 ? (lokasiSet.size + ' Lokasi RSUD') : 'Gudang Aset';
+                },
                 
                 // Multi-Step Form State
                 currentStep: 1,
@@ -713,7 +762,7 @@
                     <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">📦</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Aset</span>
-                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="astaps.length + ' Item'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="totalVolumeUnit + ' Unit (' + astaps.length + ' Master)'"></span>
                     </div>
                 </div>
 
@@ -721,7 +770,7 @@
                     <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">💰</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Investasi</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-400 font-mono">Rp 15,87 M</span>
+                        <span class="text-sm sm:text-base font-extrabold text-emerald-400 font-mono" x-text="totalInvestasiRupiah"></span>
                     </div>
                 </div>
 
@@ -729,7 +778,7 @@
                     <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 text-lg">🟢</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Kondisi Baik</span>
-                        <span class="text-sm sm:text-base font-extrabold text-teal-300">75% (6 Aset)</span>
+                        <span class="text-sm sm:text-base font-extrabold text-teal-300" x-text="kondisiBaikPercent"></span>
                     </div>
                 </div>
 
@@ -737,7 +786,7 @@
                     <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">🏥</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Unit Tersebar</span>
-                        <span class="text-sm sm:text-base font-extrabold text-purple-300">6 Lokasi RSUD</span>
+                        <span class="text-sm sm:text-base font-extrabold text-purple-300" x-text="totalLokasiCount"></span>
                     </div>
                 </div>
             </div>
