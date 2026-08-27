@@ -296,71 +296,39 @@
             </div>
         </div>
 
-        <!-- Sub Admin Context Banner -->
-        <template x-if="userRole === 'sub_admin'">
-            <div class="mb-5 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-                <div class="flex items-center space-x-2.5">
-                    <span class="text-lg">🏛️</span>
-                    <div>
-                        <span class="font-extrabold text-white block text-sm">Mode Akses Unit: <span x-text="userUnit || 'Sub Admin Ruangan'"></span></span>
-                        <span class="text-slate-400 text-[11px]">Hanya menampilkan transaksi mutasi aset yang dikirim dari atau ditujukan ke unit Anda.</span>
-                    </div>
-                </div>
-                <span class="text-[10.5px] font-mono font-bold px-3 py-1 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-500/40 shrink-0">Sub Admin Restricted</span>
-            </div>
-        </template>
-
-        <!-- Table Mutasi -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
-
-            {{-- Table Header Bar --}}
-            <div class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between" style="background: linear-gradient(135deg, #0f172a 60%, #1e0a0a 100%);">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center">
-                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                    </div>
-                    <div>
-                        <p class="text-white font-bold text-sm">Daftar Pengajuan Mutasi Aset</p>
-                        <p class="text-slate-500 text-[10px]" x-text="filteredMutasis.length + ' pengajuan ditemukan'"></p>
-                    </div>
-                </div>
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[10px] font-bold">
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
-                    Live
-                </span>
-            </div>
-
-            <div class="custom-scrollbar" style="max-height: 440px; overflow-y: auto; overflow-x: auto;">
-                <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
-                    <thead style="position: sticky; top: 0; z-index: 20;">
-                        <tr style="background: linear-gradient(90deg, #020617 0%, #0d0814 50%, #020617 100%);">
-                            <th class="px-4 py-3 text-center w-10 text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800/80">No</th>
-                            <th class="px-4 py-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-rose-500/70 border-b border-slate-800/80 whitespace-nowrap">No. BAMB</th>
-                            <th class="px-4 py-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800/80">Jenis</th>
-                            <th class="px-4 py-3 text-left text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800/80 min-w-[200px]">Nama Barang</th>
-                            <th class="px-4 py-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800/80 whitespace-nowrap min-w-[190px]">Asal → Tujuan</th>
-                            <th class="px-4 py-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800/80 whitespace-nowrap min-w-[200px]">Status Persetujuan</th>
-                            <th class="px-4 py-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-slate-500 border-b border-slate-800/80 w-36">Aksi</th>
+        <!-- Tabel Mutasi Aset -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+            <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40 min-h-[380px]">
+                <table class="w-full text-left text-xs text-slate-300 min-h-[350px]">
+                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm shrink-0">
+                        <tr>
+                            <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">No. BAMB</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Jenis</th>
+                            <th class="px-4 py-3.5 text-left min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[190px] bg-slate-950">Asal → Tujuan</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[190px] bg-slate-950">Status Persetujuan</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800" style="position: sticky; right: 0; z-index: 20; background-color: #020617; box-shadow: -4px 0 10px rgba(0,0,0,0.4);">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-800/50">
+                    <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredMutasis" :key="item.id">
-                            <tr class="group transition-all duration-150 cursor-default" :class="index % 2 === 0 ? 'bg-transparent hover:bg-rose-950/10' : 'bg-slate-950/30 hover:bg-rose-950/10'">
+                            <tr class="hover:bg-slate-800/30 transition-colors">
                                 {{-- No --}}
-                                <td class="px-4 py-3 text-center font-bold text-slate-500 whitespace-nowrap" x-text="index + 1"></td>
+                                <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
 
                                 {{-- No. BAMB --}}
-                                <td class="px-4 py-3 text-center font-mono font-semibold text-rose-400 whitespace-nowrap text-[11px]" x-text="item.kode"></td>
+                                <td class="px-4 py-4 text-center font-mono font-semibold text-rose-400 whitespace-nowrap" x-text="item.kode"></td>
 
                                 {{-- Jenis Mutasi — Badge Premium --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-extrabold border shadow-sm"
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-extrabold border shadow-sm"
                                         :class="{
-                                            'bg-blue-500/10 text-blue-300 border-blue-500/25 shadow-blue-500/10':     item.jenis === 'Pemindahan',
-                                            'bg-amber-500/10 text-amber-300 border-amber-500/25 shadow-amber-500/10': item.jenis === 'Perbaikan',
-                                            'bg-teal-500/10 text-teal-300 border-teal-500/25 shadow-teal-500/10':     item.jenis === 'Pengembalian',
-                                            'bg-rose-500/10 text-rose-300 border-rose-500/25 shadow-rose-500/10':     item.jenis === 'Penghapusan',
-                                            'bg-slate-800 text-slate-400 border-slate-700':                           !item.jenis
+                                            'bg-blue-500/15 text-blue-300 border-blue-500/30':     item.jenis === 'Pemindahan',
+                                            'bg-amber-500/15 text-amber-300 border-amber-500/30': item.jenis === 'Perbaikan',
+                                            'bg-teal-500/15 text-teal-300 border-teal-500/30':     item.jenis === 'Pengembalian',
+                                            'bg-rose-500/15 text-rose-300 border-rose-500/30':     item.jenis === 'Penghapusan',
+                                            'bg-slate-800 text-slate-400 border-slate-700':       !item.jenis
                                         }">
                                         <span x-text="item.jenis === 'Pemindahan' ? '🔄' : item.jenis === 'Perbaikan' ? '🔧' : item.jenis === 'Pengembalian' ? '↩️' : item.jenis === 'Penghapusan' ? '🗑️' : '•'"></span>
                                         <span x-text="item.jenis || '—'"></span>
@@ -369,32 +337,31 @@
 
                                 {{-- Nama Barang --}}
                                 <td class="px-4 py-4">
-                                    <p class="font-bold text-white text-[12px] leading-tight group-hover:text-rose-100 transition-colors" x-text="item.nama"></p>
-                                    <p class="text-[10px] text-slate-500 font-mono mt-0.5" x-text="item.kode_barang"></p>
+                                    <p class="font-bold text-white text-xs leading-tight" x-text="item.nama"></p>
+                                    <p class="text-[10px] text-slate-400 font-mono mt-0.5" x-text="item.kode_barang"></p>
                                 </td>
 
                                 {{-- Asal → Tujuan: Pill Card --}}
-                                <td class="px-4 py-4 text-center">
-                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60">
-                                        <span class="max-w-[75px] truncate text-[10.5px] text-slate-300 font-medium" x-text="item.asal" :title="item.asal"></span>
-                                        <div class="shrink-0 w-5 h-5 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center">
-                                            <svg class="w-2.5 h-2.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800">
+                                        <span class="text-[11px] text-slate-300 font-medium" x-text="item.asal" :title="item.asal"></span>
+                                        <div class="shrink-0 w-4 h-4 rounded-md bg-rose-500/15 border border-rose-500/30 flex items-center justify-center">
+                                            <svg class="w-2.5 h-2.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                                         </div>
-                                        <span class="max-w-[75px] truncate text-[10.5px] text-rose-300 font-semibold" x-text="item.tujuan" :title="item.tujuan"></span>
+                                        <span class="text-[11px] text-rose-300 font-semibold" x-text="item.tujuan" :title="item.tujuan"></span>
                                     </div>
                                 </td>
 
                                 {{-- Status Persetujuan: Badge + Step Indicator --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="flex flex-col items-center gap-2">
-
                                         {{-- Badge Status --}}
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-extrabold border shadow-sm"
+                                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
                                             :class="{
-                                                'bg-emerald-500/10 text-emerald-300 border-emerald-500/25 shadow-emerald-500/10': item.status === 'Disetujui Admin (Selesai)',
-                                                'bg-cyan-500/10 text-cyan-300 border-cyan-500/25 shadow-cyan-500/10':             item.status === 'Disetujui 2 Pihak (Menunggu Admin)',
-                                                'bg-amber-500/10 text-amber-300 border-amber-500/25 shadow-amber-500/10':         item.status === 'Menunggu Persetujuan Penerima',
-                                                'bg-rose-500/10 text-rose-300 border-rose-500/25':                                item.status === 'Ditolak'
+                                                'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Disetujui Admin (Selesai)',
+                                                'bg-cyan-500/15 text-cyan-300 border-cyan-500/30':         item.status === 'Disetujui 2 Pihak (Menunggu Admin)',
+                                                'bg-amber-500/15 text-amber-300 border-amber-500/30':     item.status === 'Menunggu Persetujuan Penerima',
+                                                'bg-rose-500/15 text-rose-300 border-rose-500/30':         item.status === 'Ditolak'
                                             }">
                                             <span x-text="item.status === 'Disetujui Admin (Selesai)' ? '✓ Selesai'
                                                          : item.status === 'Disetujui 2 Pihak (Menunggu Admin)' ? '⏳ Menunggu Admin'
@@ -407,80 +374,85 @@
                                         {{-- Step Track --}}
                                         <div class="flex items-center gap-0">
                                             <div class="flex flex-col items-center gap-0.5">
-                                                <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
                                                     :class="item.persetujuan_pengirim ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
-                                                    <svg x-show="item.persetujuan_pengirim" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    <svg x-show="item.persetujuan_pengirim" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                 </div>
-                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_pengirim ? 'text-emerald-400' : 'text-slate-600'">Kirim</span>
+                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_pengirim ? 'text-emerald-400' : 'text-slate-500'">Kirim</span>
                                             </div>
-                                            <div class="w-5 h-0.5 mb-3.5 transition-all" :class="item.persetujuan_penerima ? 'bg-emerald-500' : 'bg-slate-700'"></div>
+                                            <div class="w-4 h-0.5 mb-3 transition-all" :class="item.persetujuan_penerima ? 'bg-emerald-500' : 'bg-slate-700'"></div>
                                             <div class="flex flex-col items-center gap-0.5">
-                                                <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
                                                     :class="item.persetujuan_penerima ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
-                                                    <svg x-show="item.persetujuan_penerima" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    <svg x-show="item.persetujuan_penerima" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                 </div>
-                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_penerima ? 'text-emerald-400' : 'text-slate-600'">Terima</span>
+                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_penerima ? 'text-emerald-400' : 'text-slate-500'">Terima</span>
                                             </div>
-                                            <div class="w-5 h-0.5 mb-3.5 transition-all" :class="item.persetujuan_admin ? 'bg-emerald-500' : 'bg-slate-700'"></div>
+                                            <div class="w-4 h-0.5 mb-3 transition-all" :class="item.persetujuan_admin ? 'bg-emerald-500' : 'bg-slate-700'"></div>
                                             <div class="flex flex-col items-center gap-0.5">
-                                                <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
                                                     :class="item.persetujuan_admin ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
-                                                    <svg x-show="item.persetujuan_admin" class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    <svg x-show="item.persetujuan_admin" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                 </div>
-                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_admin ? 'text-emerald-400' : 'text-slate-600'">Admin</span>
+                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_admin ? 'text-emerald-400' : 'text-slate-500'">Admin</span>
                                             </div>
                                         </div>
-
                                     </div>
                                 </td>
 
-                                {{-- Kolom Aksi: Icon Buttons Premium --}}
-                                <td class="px-4 py-4 text-center">
+                                {{-- Kolom Aksi — FREEZE STICKY RIGHT --}}
+                                <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap border-l border-slate-800 bg-slate-900" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a; box-shadow: -4px 0 8px rgba(0,0,0,0.3);">
                                     <div class="flex items-center justify-center gap-1.5">
 
-                                        {{-- Detail --}}
+                                        {{-- 1. Tombol Cetak BAMB --}}
+                                        <template x-if="item.status === 'Disetujui Admin (Selesai)' || item.status === 'Disetujui 2 Pihak (Menunggu Admin)'">
+                                            <button type="button" @click="openPrintBast(item)" title="Cetak Berita Acara Mutasi Barang (BAMB)"
+                                                class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                                <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                                <span>BAMB</span>
+                                            </button>
+                                        </template>
+
+                                        {{-- 2. Tombol Detail Modal --}}
                                         <button type="button" @click="openDetail(item)" title="Lihat Detail Mutasi"
-                                            class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500 flex items-center justify-center transition-all shadow-sm active:scale-90">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            class="px-2.5 py-1.5 rounded-xl bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 border border-teal-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                            <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            <span>Detail</span>
                                         </button>
 
-                                        {{-- Terima & Setujui (Penerima) --}}
+                                        {{-- 3. Terima & Setujui (Penerima) --}}
                                         <template x-if="!item.persetujuan_penerima && item.status !== 'Ditolak' && (userRole !== 'sub_admin' || (item.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase()))">
                                             <button type="button" @click="approvePenerima(item)" title="Terima & Setujui (Pihak Penerima)"
-                                                class="w-8 h-8 rounded-xl bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 hover:text-teal-200 border border-teal-500/30 hover:border-teal-400/50 flex items-center justify-center transition-all shadow-sm active:scale-90">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                class="px-2.5 py-1.5 rounded-xl bg-teal-500/15 hover:bg-teal-500/30 text-teal-300 border border-teal-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                                <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                                <span>Setujui</span>
                                             </button>
                                         </template>
 
-                                        {{-- Sahkan Admin --}}
+                                        {{-- 4. Sahkan Admin --}}
                                         <template x-if="item.persetujuan_penerima && !item.persetujuan_admin && item.status !== 'Ditolak' && (userRole === 'admin' || userRole === 'master_admin')">
                                             <button type="button" @click="approveAdmin(item)" title="Sahkan & Verifikasi Akhir (Admin)"
-                                                class="w-8 h-8 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 hover:border-emerald-400/50 flex items-center justify-center transition-all shadow-sm active:scale-90">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span>Sahkan</span>
                                             </button>
                                         </template>
 
-                                        {{-- Tolak --}}
-                                        <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
-                                            <button type="button" @click="rejectMutasi(item)" title="Tolak Pengajuan"
-                                                class="w-8 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 border border-rose-500/25 hover:border-rose-400/50 flex items-center justify-center transition-all shadow-sm active:scale-90">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                            </button>
-                                        </template>
-
-                                        {{-- Edit (Jika belum selesai & belum ditolak) --}}
+                                        {{-- 5. Ubah Form --}}
                                         <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
                                             <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan"
-                                                class="w-8 h-8 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 text-amber-400 hover:text-amber-300 border border-amber-500/25 hover:border-amber-400/50 flex items-center justify-center transition-all shadow-sm active:scale-90">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                class="px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                <span>Ubah</span>
                                             </a>
                                         </template>
 
-                                        {{-- Cetak BAMB --}}
-                                        <template x-if="item.status === 'Disetujui Admin (Selesai)' || item.status === 'Disetujui 2 Pihak (Menunggu Admin)'">
-                                            <button type="button" @click="openPrintBast(item)" title="Cetak Berita Acara Mutasi Barang (BAMB)"
-                                                class="w-8 h-8 rounded-xl bg-purple-500/10 hover:bg-purple-500/25 text-purple-400 hover:text-purple-300 border border-purple-500/25 hover:border-purple-400/50 flex items-center justify-center transition-all shadow-sm active:scale-90">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                        {{-- 6. Tolak --}}
+                                        <template x-if="item.status !== 'Disetujui Admin (Selesai)' && item.status !== 'Ditolak'">
+                                            <button type="button" @click="rejectMutasi(item)" title="Tolak Pengajuan"
+                                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95">
+                                                <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                <span>Tolak</span>
                                             </button>
                                         </template>
 
@@ -489,15 +461,13 @@
                             </tr>
                         </template>
 
-                        {{-- Empty State --}}
+                        {{-- Empty State Baris Penuh Tinggi --}}
                         <template x-if="filteredMutasis.length === 0">
                             <tr>
-                                <td colspan="7" class="px-4 py-16 text-center">
-                                    <div class="flex flex-col items-center gap-3">
-                                        <div class="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center opacity-40">
-                                            <svg class="w-7 h-7 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                                        </div>
-                                        <p class="text-slate-500 text-xs font-medium">Tidak ada data mutasi yang ditemukan</p>
+                                <td colspan="7" class="text-center align-middle py-28 text-slate-400">
+                                    <div class="flex flex-col items-center justify-center space-y-2 py-4">
+                                        <p class="text-sm font-semibold text-slate-300">Tidak ada data transaksi mutasi aset yang sesuai kriteria pencarian / filter.</p>
+                                        <p class="text-xs text-slate-500">Coba sesuaikan kata kunci pencarian atau filter status Anda.</p>
                                     </div>
                                 </td>
                             </tr>
