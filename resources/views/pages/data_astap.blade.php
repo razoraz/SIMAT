@@ -826,17 +826,17 @@
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Klasifikasi KIB</label>
                         <div class="relative">
                             <select x-model="categoryFilter"
-                                style="background-image: none !important;"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 appearance-none cursor-pointer hover:bg-slate-900/80 transition-all">
-                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">📋 Semua KIB</option>
-                                <option value="KIB A" class="bg-slate-900 text-amber-300 py-2 font-medium">🌾 KIB A - Tanah (1.3.1)</option>
-                                <option value="KIB B" class="bg-slate-900 text-cyan-300 py-2 font-medium">🔬 KIB B - Peralatan &amp; Mesin (1.3.2)</option>
-                                <option value="KIB C" class="bg-slate-900 text-purple-300 py-2 font-medium">🏢 KIB C - Gedung &amp; Bangunan (1.3.3)</option>
-                                <option value="KIB D" class="bg-slate-900 text-teal-300 py-2 font-medium">🚰 KIB D - Jalan &amp; Jaringan (1.3.4)</option>
-                                <option value="KIB E" class="bg-slate-900 text-orange-300 py-2 font-medium">📦 KIB E - Aset Tetap Lainnya (1.3.5)</option>
-                                <option value="KIB F" class="bg-slate-900 text-rose-300 py-2 font-medium">🏗️ KIB F - Konstruksi KDP (1.3.6)</option>
-                                <option value="ATB" class="bg-slate-900 text-indigo-300 py-2 font-medium">💻 ATB - Aset Tidak Berwujud (1.5.3)</option>
-                                <option value="EXTRACOM" class="bg-slate-900 text-amber-400 py-2 font-medium">🏷️ Extracom</option>
+                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
+                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua</option>
+                                <option value="KIB A" class="bg-slate-900 text-amber-300 py-2 font-medium">KIB A - Tanah</option>
+                                <option value="KIB B" class="bg-slate-900 text-cyan-300 py-2 font-medium">KIB B - Peralatan &amp; Mesin</option>
+                                <option value="KIB C" class="bg-slate-900 text-purple-300 py-2 font-medium">KIB C - Gedung &amp; Bangunan</option>
+                                <option value="KIB D" class="bg-slate-900 text-teal-300 py-2 font-medium">KIB D - Jalan &amp; Jaringan</option>
+                                <option value="KIB E" class="bg-slate-900 text-orange-300 py-2 font-medium">KIB E - Aset Tetap Lainnya</option>
+                                <option value="KIB F" class="bg-slate-900 text-rose-300 py-2 font-medium">KIB F - Konstruksi KDP</option>
+                                <option value="ATB" class="bg-slate-900 text-indigo-300 py-2 font-medium">ATB - Aset Tidak Berwujud</option>
+                                <option value="EXTRACOM" class="bg-slate-900 text-amber-400 py-2 font-medium">Extracom</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -849,12 +849,12 @@
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sumber Dana / Asal Usul</label>
                         <div class="relative">
                             <select x-model="asalUsulFilter"
-                                style="background-image: none !important;"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 appearance-none cursor-pointer hover:bg-slate-900/80 transition-all">
-                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">🏦 Semua Sumber Dana</option>
-                                <option value="BLUD RSUD" class="bg-slate-900 text-emerald-300 py-2 font-medium">🏥 BLUD RSUD</option>
-                                <option value="APBD Kabupaten" class="bg-slate-900 text-amber-300 py-2 font-medium">🏛️ APBD Kabupaten</option>
-                                <option value="DAK Kesehatan" class="bg-slate-900 text-cyan-300 py-2 font-medium">🩺 DAK Kesehatan</option>
+                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
+                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Sumber Dana</option>
+                                <option value="BLUD RSUD" class="bg-slate-900 text-emerald-300 py-2 font-medium">BLUD RSUD</option>
+                                <option value="APBD Kabupaten" class="bg-slate-900 text-amber-300 py-2 font-medium">APBD Kabupaten</option>
+                                <option value="DAK Kesehatan" class="bg-slate-900 text-cyan-300 py-2 font-medium">DAK Kesehatan</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -867,13 +867,13 @@
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi Aset</label>
                         <div class="relative">
                             <select x-model="kondisiFilter"
-                                style="background-image: none !important;"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 appearance-none cursor-pointer hover:bg-slate-900/80 transition-all">
-                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">⚙️ Semua Kondisi</option>
-                                <option value="Baik" class="bg-slate-900 text-emerald-300 py-2 font-medium">🟢 Baik (Normal / Siap Pakai)</option>
-                                <option value="Rusak Ringan" class="bg-slate-900 text-amber-300 py-2 font-medium">🟡 Rusak Ringan (Perlu Servis)</option>
-                                <option value="Rusak Berat" class="bg-slate-900 text-rose-300 py-2 font-medium">🔴 Rusak Berat (Afkir / Habis)</option>
-                                <option value="Dalam Renovasi" class="bg-slate-900 text-purple-300 py-2 font-medium">🛠️ Dalam Renovasi / KDP</option>
+                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
+                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Kondisi</option>
+                                <option value="Baik" class="bg-slate-900 text-emerald-300 py-2 font-medium">Baik</option>
+                                <option value="Rusak Ringan" class="bg-slate-900 text-amber-300 py-2 font-medium">Rusak Ringan</option>
+                                <option value="Rusak Berat" class="bg-slate-900 text-rose-300 py-2 font-medium">Rusak Berat</option>
+                                <option value="Dalam Renovasi" class="bg-slate-900 text-purple-300 py-2 font-medium">Dalam Renovasi / KDP</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -886,16 +886,16 @@
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tahun Perolehan</label>
                         <div class="relative">
                             <select x-model="tahunFilter"
-                                style="background-image: none !important;"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 appearance-none cursor-pointer hover:bg-slate-900/80 transition-all">
-                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">📅 Semua Tahun Masuk</option>
-                                <option value="2026" class="bg-slate-900 text-cyan-300 py-2 font-medium">📅 Tahun 2026</option>
-                                <option value="2025" class="bg-slate-900 text-cyan-300 py-2 font-medium">📅 Tahun 2025</option>
-                                <option value="2024" class="bg-slate-900 text-cyan-300 py-2 font-medium">📅 Tahun 2024</option>
-                                <option value="2021" class="bg-slate-900 text-cyan-300 py-2 font-medium">📅 Tahun 2021</option>
-                                <option value="2020" class="bg-slate-900 text-cyan-300 py-2 font-medium">📅 Tahun 2020</option>
-                                <option value="2018" class="bg-slate-900 text-cyan-300 py-2 font-medium">📅 Tahun 2018</option>
-                                <option value="1984" class="bg-slate-900 text-cyan-300 py-2 font-medium">📅 Tahun 1984</option>
+                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
+                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Tahun</option>
+                                <option value="2026" class="bg-slate-900 text-cyan-300 py-2 font-medium">2026</option>
+                                <option value="2025" class="bg-slate-900 text-cyan-300 py-2 font-medium">2025</option>
+                                <option value="2024" class="bg-slate-900 text-cyan-300 py-2 font-medium">2024</option>
+                                <option value="2021" class="bg-slate-900 text-cyan-300 py-2 font-medium">2021</option>
+                                <option value="2020" class="bg-slate-900 text-cyan-300 py-2 font-medium">2020</option>
+                                <option value="2018" class="bg-slate-900 text-cyan-300 py-2 font-medium">2018</option>
+                                <option value="1984" class="bg-slate-900 text-cyan-300 py-2 font-medium">1984</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -946,7 +946,7 @@
                                                 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30': item.category === 'ATB',
                                                 'bg-amber-400/20 text-amber-300 border border-amber-400/30': item.category === 'EXTRACOM'
                                             }"
-                                            x-text="item.category === 'ATB' ? '8. ATB' : (item.category === 'EXTRACOM' ? '9. Exstracom' : item.category)"></span>
+                                            x-text="item.category === 'ATB' ? 'ATB' : (item.category === 'EXTRACOM' ? 'Extracom' : item.category)"></span>
                                         <span class="text-[11px] text-slate-400 truncate" x-text="item.jenis_aset_nama"></span>
                                     </div>
                                 </td>
