@@ -933,12 +933,12 @@
         <!-- TABEL KATALOG DATA ASTAP                                                  -->
         <!-- ========================================================================= -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: calc(100vh - 340px); min-height: 440px; overflow-y: auto; overflow-x: auto;">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: calc(100vh - 340px); overflow-y: auto; overflow-x: auto;">
                 <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
                     <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
-                            <th class="px-4 py-3.5 text-left min-w-[240px] bg-slate-950">Nama Barang / ASTAP</th>
+                            <th class="px-4 py-3.5 text-left min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tahun Masuk</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Volume / Kuantitas</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Realisasi</th>

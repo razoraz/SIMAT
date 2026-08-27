@@ -481,7 +481,7 @@
 
         <!-- Tabel Distribusi ASTAP (Multi-Barang / Transaksi) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-            <div class="overflow-x-auto overflow-y-auto rounded-2xl border border-slate-800/80" style="max-height: calc(100vh - 340px); min-height: 440px; overflow-y: auto;">
+            <div class="overflow-x-auto overflow-y-auto rounded-2xl border border-slate-800/80" style="max-height: calc(100vh - 340px); overflow-y: auto;">
                 <table class="w-full text-left text-xs text-slate-300">
                     <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                         <tr>
