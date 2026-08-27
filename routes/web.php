@@ -64,18 +64,16 @@ Route::middleware('auth')->get('/dashboard', function () {
     };
 });
 
+use App\Http\Controllers\DashboardController;
+
 // Dashboard Master Admin
 Route::middleware(['auth', RoleMiddleware::class . ':master_admin'])->group(function () {
-    Route::get('/master-admin/dashboard', function () {
-        return view('dashboards.master_admin');
-    })->name('masteradmin.dashboard');
+    Route::get('/master-admin/dashboard', [DashboardController::class, 'masterAdmin'])->name('masteradmin.dashboard');
 });
 
 // Dashboard Admin
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
-    Route::get('/admin/dashboard', function () {
-        return view('dashboards.admin');
-    })->name('admin.dashboard');
+    Route::get('/admin/dashboard', [DashboardController::class, 'admin'])->name('admin.dashboard');
 });
 
 // Dashboard Sub Admin

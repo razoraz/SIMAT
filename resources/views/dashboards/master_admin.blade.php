@@ -35,24 +35,24 @@
                             d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                     </svg></div>
             </div>
-            <p class="text-2xl font-black text-white">1,428 <span
+            <p class="text-2xl font-black text-white">{{ number_format($totalAsetVolumeCount ?? 0, 0, ',', '.') }} <span
                     class="text-xs font-normal text-emerald-400">Unit</span></p>
-            <p class="text-[11px] text-slate-400 mt-1">8 Kategori ASTAP Terdaftar</p>
+            <p class="text-[11px] text-slate-400 mt-1">Valuasi: <span class="text-emerald-400 font-bold">{{ $hargaAsetFormatted ?? 'Rp 0' }} {{ $hargaAsetUnit ?? '' }}</span> ({{ number_format($totalAstapMasterCount ?? 0, 0, ',', '.') }} Master)</p>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
             <div class="flex items-center justify-between text-slate-400 mb-2">
-                <span class="text-xs font-bold uppercase tracking-wider">Harga Aset Keseluruhan</span>
+                <span class="text-xs font-bold uppercase tracking-wider">Total Unit RSUD</span>
                 <div class="p-2 rounded-xl bg-cyan-500/10 text-cyan-400"><svg class="w-4 h-4" fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 4h4" />
                     </svg></div>
             </div>
-            <p class="text-xl sm:text-2xl font-black text-white">Rp 48,25 <span
-                    class="text-xs font-normal text-cyan-400">Miliar</span>
+            <p class="text-2xl font-black text-white">{{ number_format($totalUnitRsudCount ?? 0, 0, ',', '.') }} <span
+                    class="text-xs font-normal text-cyan-400">Unit</span>
             </p>
-            <p class="text-[11px] text-slate-400 mt-1">Total Nilai Valuasi Aset RSUD</p>
+            <p class="text-[11px] text-slate-400 mt-1">Master Unit & Ruang Kerja RSUD</p>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -64,9 +64,9 @@
                             d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg></div>
             </div>
-            <p class="text-2xl font-black text-white">312 <span
+            <p class="text-2xl font-black text-white">{{ number_format($totalTerdistribusiUnit ?? 0, 0, ',', '.') }} <span
                     class="text-xs font-normal text-teal-400">Terdistribusi</span></p>
-            <p class="text-[11px] text-slate-400 mt-1">Ke Unit & Ruang RSUD</p>
+            <p class="text-[11px] text-slate-400 mt-1">Ke {{ $totalUnitRsudCount ?? 0 }} Unit RSUD ({{ $totalTransaksiDistribusi ?? 0 }} Transaksi)</p>
         </div>
 
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -79,13 +79,13 @@
                     </svg></div>
             </div>
             <div class="flex items-baseline justify-between">
-                <p class="text-2xl font-black text-white">1,380 <span
+                <p class="text-2xl font-black text-white">{{ number_format($kondisiBaik ?? 0, 0, ',', '.') }} <span
                         class="text-xs font-bold text-emerald-400">Baik</span></p>
                 <span
-                    class="text-xs font-extrabold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">48
+                    class="text-xs font-extrabold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">{{ number_format($totalRusak ?? 0, 0, ',', '.') }}
                     Rusak</span>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">36 Rusak Ringan · 12 Rusak Berat</p>
+            <p class="text-[11px] text-slate-400 mt-1">{{ number_format($kondisiRusakRingan ?? 0, 0, ',', '.') }} Rusak Ringan · {{ number_format($kondisiRusakBerat ?? 0, 0, ',', '.') }} Rusak Berat</p>
         </div>
     </div>
 
@@ -307,115 +307,42 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80">
+                    @forelse($recentAstaps ?? [] as $index => $item)
                     <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">1</td>
+                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">{{ $index + 1 }}</td>
                         <td class="px-4 py-4 text-center font-mono font-semibold text-amber-400 whitespace-nowrap">
-                            AST-TNH-001</td>
-                        <td class="px-4 py-4 font-bold text-white">Lahan Bangunan Utama RSUD Koesnandi</td>
+                            {{ $item['kode_barang'] }}
+                        </td>
+                        <td class="px-4 py-4 font-bold text-white">{{ $item['nama_barang'] }}</td>
                         <td class="px-4 py-4 text-center whitespace-nowrap">
                             <span
                                 class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap leading-none bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm select-none">
-                                Aset Tanah
+                                {{ $item['jenis_nama'] }}
                             </span>
                         </td>
-                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">1984</td>
-                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">Kawasan Utama
-                            RSUD</td>
+                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">{{ $item['tahun'] }}</td>
+                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">{{ $item['lokasi'] }}</td>
                         <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
-                                Baik
-                            </span>
+                            @if($item['kondisi'] === 'Baik')
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
+                                    Baik
+                                </span>
+                            @elseif(in_array($item['kondisi'], ['Rusak Ringan', 'Kurang Baik']))
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm select-none">
+                                    {{ $item['kondisi'] }}
+                                </span>
+                            @else
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-rose-500/15 text-rose-300 border border-rose-500/30 shadow-sm select-none">
+                                    {{ $item['kondisi'] }}
+                                </span>
+                            @endif
                         </td>
                     </tr>
-
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">2</td>
-                        <td class="px-4 py-4 text-center font-mono font-semibold text-amber-400 whitespace-nowrap">
-                            AST-BGN-012</td>
-                        <td class="px-4 py-4 font-bold text-white">Gedung Paviliun Graha Amukti</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap leading-none bg-blue-500/15 text-blue-300 border border-blue-500/30 shadow-sm select-none">
-                                Gedung & Bangunan
-                            </span>
-                        </td>
-                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">2018</td>
-                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">Blok B Rawat
-                            Inap</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
-                                Baik
-                            </span>
-                        </td>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-slate-500 italic">Belum ada data ASTAP terdaftar di database.</td>
                     </tr>
-
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">3</td>
-                        <td class="px-4 py-4 text-center font-mono font-semibold text-amber-400 whitespace-nowrap">
-                            AST-MSN-045</td>
-                        <td class="px-4 py-4 font-bold text-white">CT-Scan 128 Slice High Resolution</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap leading-none bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-sm select-none">
-                                Peralatan & Mesin
-                            </span>
-                        </td>
-                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">2022</td>
-                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">Instalasi
-                            Radiologi</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
-                                Baik
-                            </span>
-                        </td>
-                    </tr>
-
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">4</td>
-                        <td class="px-4 py-4 text-center font-mono font-semibold text-amber-400 whitespace-nowrap">
-                            AST-JRN-004</td>
-                        <td class="px-4 py-4 font-bold text-white">Jaringan Pipa Oksigen Sentral Medis</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap leading-none bg-teal-500/15 text-teal-300 border border-teal-500/30 shadow-sm select-none">
-                                Jalan, Irigasi & Jaringan
-                            </span>
-                        </td>
-                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">2020</td>
-                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">Seluruh Ruang
-                            Rawat</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm select-none">
-                                Rusak Ringan
-                            </span>
-                        </td>
-                    </tr>
-
-                    <tr class="hover:bg-slate-800/30 transition-colors">
-                        <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap">5</td>
-                        <td class="px-4 py-4 text-center font-mono font-semibold text-amber-400 whitespace-nowrap">
-                            AST-TBW-002</td>
-                        <td class="px-4 py-4 font-bold text-white">LIS (Laboratory Information System) SIMAT</td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap leading-none bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm select-none">
-                                Aset Tak Berwujud
-                            </span>
-                        </td>
-                        <td class="px-4 py-4 text-center font-mono text-slate-300 whitespace-nowrap">2024</td>
-                        <td class="px-4 py-4 text-center font-semibold text-slate-200 whitespace-nowrap">IT Server RSUD
-                        </td>
-                        <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <span
-                                class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm select-none">
-                                Baik
-                            </span>
-                        </td>
-                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
