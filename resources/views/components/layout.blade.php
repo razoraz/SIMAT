@@ -121,7 +121,7 @@
             @include('partials.topbar')
 
             <!-- Slot Konten Utama -->
-            <main class="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+            <main class="flex-1 p-3 sm:p-6 lg:p-8 {{ ($fullWidth ?? false) ? 'w-full max-w-none' : 'max-w-7xl mx-auto w-full' }}">
                 {{ $slot }}
             </main>
 

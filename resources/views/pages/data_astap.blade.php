@@ -1,4 +1,4 @@
-<x-layout title="Data ASTAP - SIMAT-RK">
+<x-layout title="Data ASTAP - SIMAT-RK" :fullWidth="true">
     @section('page-title', 'Data ASTAP')
     @section('breadcrumb', 'Master Utama / Data ASTAP')
 
@@ -1562,9 +1562,9 @@
         <!-- TABEL KATALOG DATA ASTAP                                                  -->
         <!-- ========================================================================= -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: calc(100vh - 340px); overflow-y: auto; overflow-x: auto;">
-                <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
-                    <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
+            <div class="rounded-2xl border border-slate-800/80 bg-slate-950/40 custom-scrollbar min-h-[520px]" style="max-height: calc(100vh - 200px); overflow-y: auto; overflow-x: auto;">
+                <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-h-[480px]">
+                    <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
                             <th class="px-4 py-3.5 text-left min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
@@ -1618,27 +1618,36 @@
 
                                 <!-- Kondisi Aset Terkini -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <template x-let="st = getKondisiStats(item)">
-                                        <div>
-                                            <!-- Badge Kondisi Dominan -->
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold shadow-sm"
-                                                :class="{
-                                                    'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': st.kondisi_dominan === 'Baik',
-                                                    'bg-amber-500/20 text-amber-300 border border-amber-500/30': st.kondisi_dominan === 'Rusak Ringan',
-                                                    'bg-rose-500/20 text-rose-300 border border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
-                                                }">
-                                                <span class="w-1.5 h-1.5 rounded-full mr-1.5"
-                                                    :class="{
-                                                        'bg-emerald-400': st.kondisi_dominan === 'Baik',
-                                                        'bg-amber-400': st.kondisi_dominan === 'Rusak Ringan',
-                                                        'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
-                                                    }"></span>
-                                                <span x-text="st.kondisi_dominan"></span>
-                                            </span>
-                                            <!-- Rincian Persentase Kondisi Register -->
-                                            <template x-if="st.total > 1">
-                                                <div class="mt-1">
-                                                    <div class="flex items-center justify-center space-x-1">
+                                    <template x-data="{}" x-if="true">
+                                        <div x-data="{ st: getKondisiStats(item) }">
+                                            <!-- Jika hanya 1 unit / semua kondisi sama: tampilkan badge tunggal -->
+                                            <template x-if="st.total <= 1 || (st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-bold border shadow-sm select-none"
+                                                      :class="{
+                                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': st.kondisi_dominan === 'Baik',
+                                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Rusak Ringan',
+                                                          'bg-rose-500/15 text-rose-300 border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
+                                                      }">
+                                                    <span class="w-1.5 h-1.5 rounded-full mr-1.5"
+                                                          :class="{
+                                                              'bg-emerald-400': st.kondisi_dominan === 'Baik',
+                                                              'bg-amber-400': st.kondisi_dominan === 'Rusak Ringan',
+                                                              'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
+                                                          }"></span>
+                                                    <span x-text="st.kondisi_dominan + (st.total > 1 ? ' 100%' : '')"></span>
+                                                </span>
+                                            </template>
+                                            <!-- Jika multi kondisi: tampilkan progress bar breakdown -->
+                                            <template x-if="st.total > 1 && !(st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                                <div class="min-w-[130px]">
+                                                    <!-- Mini progress bar gabungan -->
+                                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1.5">
+                                                        <div x-show="st.pct_baik > 0" class="bg-emerald-400 transition-all" :style="'width:' + st.pct_baik + '%'"></div>
+                                                        <div x-show="st.pct_rr > 0"   class="bg-amber-400 transition-all"   :style="'width:' + st.pct_rr + '%'"></div>
+                                                        <div x-show="st.pct_rb > 0"   class="bg-rose-400 transition-all"    :style="'width:' + st.pct_rb + '%'"></div>
+                                                    </div>
+                                                    <!-- Label persentase per kondisi -->
+                                                    <div class="flex flex-wrap gap-x-2 gap-y-0.5 justify-center">
                                                         <template x-if="st.baik > 0">
                                                             <span class="text-[9.5px] font-bold text-emerald-400" x-text="st.pct_baik + '% Baik'"></span>
                                                         </template>
@@ -1688,6 +1697,18 @@
                                             <span class="leading-none pt-0.5">Hapus</span>
                                         </button>
                                         @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <!-- Empty State jika data tidak ditemukan -->
+                        <template x-if="filteredAstaps.length === 0">
+                            <tr>
+                                <td colspan="7" class="text-center align-middle py-28 text-slate-400">
+                                    <div class="flex flex-col items-center justify-center space-y-2 py-4">
+                                        <p class="text-sm font-semibold text-slate-300">Tidak ada data aset yang cocok dengan filter atau pencarian Anda.</p>
+                                        <p class="text-xs text-slate-500">Coba ubah kata kunci atau reset filter klasifikasi/tahun.</p>
                                     </div>
                                 </td>
                             </tr>

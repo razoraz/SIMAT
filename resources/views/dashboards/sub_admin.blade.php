@@ -93,14 +93,6 @@
 
                 <!-- Action Buttons Khusus Sub Admin -->
                 <div class="flex flex-wrap sm:flex-nowrap gap-2.5 shrink-0 w-full sm:w-auto">
-                    <a href="{{ route('distribusi.create') }}" 
-                        class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>Pengajuan Baru</span>
-                    </a>
-
                     <a href="{{ route('unit.index') }}" 
                         class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center space-x-2">
                         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,7 +122,6 @@
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
                     <span>Tercatat di Dokumen KIR</span>
-                    <a href="{{ route('unit.index') }}" class="text-emerald-400 hover:underline font-semibold">Cek KIR &rarr;</a>
                 </p>
             </div>
 
@@ -187,7 +178,6 @@
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
                     <span><strong class="text-slate-400" x-text="countDraft">0</strong> Draft · <strong class="text-amber-400" x-text="countMenunggu">0</strong> Menunggu · <strong class="text-emerald-400" x-text="countDiterima">0</strong> Diterima</span>
-                    <a href="{{ route('distribusi.create') }}" class="text-amber-400 hover:underline font-semibold">+ Baru</a>
                 </p>
             </div>
         </div>
@@ -197,7 +187,7 @@
             
             <!-- KOLOM KIRI (2/3): DAFTAR PENGAJUAN DISTRIBUSI BARANG RUANGAN SAYA -->
             <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
-                <div>
+                <div class="flex-1 flex flex-col">
                     <!-- Header Section & Filter -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div>
@@ -211,9 +201,9 @@
                         </div>
 
                         <a href="{{ route('distribusi.create') }}" 
-                            class="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all flex items-center space-x-1.5 w-fit">
+                            class="whitespace-nowrap px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all flex items-center space-x-1.5 w-fit">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span>+ Buat Usulan</span>
+                            <span>Pengajuan Baru</span>
                         </a>
                     </div>
 
@@ -252,19 +242,22 @@
                         </div>
 
                         <!-- Search Box -->
-                        <div class="relative min-w-[200px]">
-                            <input type="text" x-model="searchQuery" placeholder="Cari nama barang / no. usulan..."
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
-                            <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex items-center space-x-0.5 min-w-[220px]">
+                            <!-- Ikon di luar text box -->
+                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                             </svg>
+
+                            <!-- Text box (padding kembali normal) -->
+                            <input type="text" x-model="searchQuery" placeholder="Cari nama barang / no. usulan..."
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
                         </div>
                     </div>
 
                     <!-- Tabel Permohonan Distribusi -->
-                    <div class="overflow-x-auto rounded-2xl border border-slate-800/80">
+                    <div class="flex-1 flex flex-col min-h-[300px] overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40">
                         <table class="w-full text-left text-xs text-slate-300">
-                            <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+                            <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shrink-0">
                                 <tr>
                                     <th class="px-3.5 py-3 text-center whitespace-nowrap w-10">No</th>
                                     <th class="px-3.5 py-3 text-center whitespace-nowrap">No. Pengajuan</th>
@@ -317,17 +310,14 @@
                                         </td>
                                     </tr>
                                 </template>
-
-                                <template x-if="filteredDistribusis.length === 0">
-                                    <tr>
-                                        <td colspan="7" class="px-4 py-8 text-center text-slate-400">
-                                            <p class="text-sm font-semibold">Tidak ada data permohonan distribusi yang cocok.</p>
-                                            <p class="text-xs text-slate-500 mt-1">Coba ubah kata kunci pencarian atau filter status Anda.</p>
-                                        </td>
-                                    </tr>
-                                </template>
                             </tbody>
                         </table>
+
+                        <!-- Empty state jika kosong, mengisi sisa ruang secara fleksibel tepat di tengah -->
+                        <div x-show="filteredDistribusis.length === 0" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                            <p class="text-sm font-semibold">Tidak ada data permohonan distribusi yang cocok.</p>
+                            <p class="text-xs text-slate-500 mt-1">Coba ubah kata kunci pencarian atau filter status Anda.</p>
+                        </div>
                     </div>
                 </div>
 

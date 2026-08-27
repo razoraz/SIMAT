@@ -758,9 +758,19 @@
 }
 </script>
 
-<x-layout :title="request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP - SIMAT-RK' : 'Input Distribusi Baru - SIMAT-RK'">
-    @section('page-title', request()->routeIs('distribusi.edit') ? 'Ubah Distribusi ASTAP' : 'Input Distribusi Baru')
-    @section('breadcrumb', request()->routeIs('distribusi.edit') ? 'Master Utama / Distribusi ASTAP / Ubah' : 'Master Utama / Distribusi ASTAP / Input Baru')
+@php
+    $isSubAdmin = (Auth::user()->role ?? '') === 'sub_admin';
+    $pageTitle = request()->routeIs('distribusi.edit') 
+        ? 'Ubah Distribusi ASTAP' 
+        : ($isSubAdmin ? 'Input Pengajuan Baru' : 'Input Distribusi Baru');
+    $breadcrumbTitle = request()->routeIs('distribusi.edit') 
+        ? 'Master Utama / Distribusi ASTAP / Ubah' 
+        : ($isSubAdmin ? 'Master Utama / Pengajuan Baru / Input Baru' : 'Master Utama / Distribusi ASTAP / Input Baru');
+@endphp
+
+<x-layout :title="$pageTitle . ' - SIMAT-RK'">
+    @section('page-title', $pageTitle)
+    @section('breadcrumb', $breadcrumbTitle)
 
     <div x-data="formDistribusiApp()" x-cloak class="space-y-6">
 
@@ -776,7 +786,7 @@
                         <span x-text="isSubAdmin ? '📋 PENGAJUAN PERMINTAAN ASTAP RUANGAN' : (isEdit ? '✏️ UBAH DISTRIBUSI BARANG' : '🚚 INPUT DISTRIBUSI MULTI-BARANG')"></span>
                     </div>
                     <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight"
-                        x-text="isSubAdmin ? 'Form Pengajuan Permintaan Distribusi ASTAP' : 'Form Distribusi & Penyerahan ASTAP'"></h1>
+                        x-text="isSubAdmin ? 'Form Input Pengajuan Baru' : (isEdit ? 'Form Ubah Distribusi ASTAP' : 'Form Distribusi & Penyerahan ASTAP')"></h1>
                     <p class="text-xs text-slate-400 mt-0.5"
                        x-text="isSubAdmin ? 'Pengajuan kebutuhan barang untuk unit ruangan Anda — penentuan NIBAR & verifikasi fisik diproses oleh Admin.' : 'Dapat memasukkan beberapa barang berbeda sekaligus dalam satu transaksi penyerahan ke ruangan.'"></p>
                 </div>
@@ -1205,21 +1215,17 @@
                                                                 <p class="text-[9.5px] text-slate-400 truncate mt-0.5 pl-5" x-text="'Ruang: ' + (n.ruang || 'Gudang Aset')"></p>
                                                             </div>
 
-                                                            <!-- Dropdown Edit Kondisi Per Unit NIBAR -->
+                                                            <!-- Badge Kondisi Per Unit NIBAR (Read-Only / Tidak Bisa Diubah) -->
                                                             <div class="shrink-0 flex items-center space-x-1.5">
-                                                                <select x-model="n.kondisi"
-                                                                        class="text-[10px] font-bold rounded-lg border px-2 py-1 focus:outline-none focus:ring-1 appearance-none cursor-pointer transition-all"
-                                                                        :class="{
-                                                                            'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 focus:ring-emerald-400': n.kondisi === 'Baik' || !n.kondisi,
-                                                                            'bg-amber-500/15 text-amber-300 border-amber-500/40 focus:ring-amber-400': n.kondisi === 'Kurang Baik',
-                                                                            'bg-orange-500/15 text-orange-300 border-orange-500/40 focus:ring-orange-400': n.kondisi === 'Rusak Ringan',
-                                                                            'bg-rose-500/15 text-rose-300 border-rose-500/40 focus:ring-rose-400': n.kondisi === 'Rusak Berat' || n.kondisi === 'Rusak'
-                                                                        }">
-                                                                    <option value="Baik">🟢 Baik</option>
-                                                                    <option value="Kurang Baik">🟡 Kurang Baik</option>
-                                                                    <option value="Rusak Ringan">🟠 Rusak Ringan</option>
-                                                                    <option value="Rusak Berat">🔴 Rusak Berat</option>
-                                                                </select>
+                                                                <span class="text-[10px] font-bold rounded-lg border px-2 py-1 select-none flex items-center space-x-1"
+                                                                      :class="{
+                                                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/40': n.kondisi === 'Baik' || !n.kondisi,
+                                                                          'bg-amber-500/15 text-amber-300 border-amber-500/40': n.kondisi === 'Kurang Baik',
+                                                                          'bg-orange-500/15 text-orange-300 border-orange-500/40': n.kondisi === 'Rusak Ringan',
+                                                                          'bg-rose-500/15 text-rose-300 border-rose-500/40': n.kondisi === 'Rusak Berat' || n.kondisi === 'Rusak'
+                                                                      }">
+                                                                    <span x-text="n.kondisi === 'Baik' || !n.kondisi ? '🟢 Baik' : (n.kondisi === 'Kurang Baik' ? '🟡 Kurang Baik' : (n.kondisi === 'Rusak Ringan' ? '🟠 Rusak Ringan' : '🔴 Rusak Berat'))"></span>
+                                                                </span>
 
                                                                 <!-- Tombol Hapus NIBAR -->
                                                                 <button type="button" @click.stop="removeNibar(item, n.nibar)"
@@ -1355,35 +1361,24 @@
                                     </div>
                                 </template>
 
-                                <!-- Baris 2: Kondisi Fisik, Volume, & Satuan (Selalu Sejajar Berdampingan dalam 1 Baris) -->
-                                <div class="flex flex-row items-end gap-3 w-full">
-                                    
-                                    <!-- 3. Kondisi Fisik Barang (Flex-1) -->
-                                    <div class="flex-1 min-w-0">
-                                        <label class="block text-slate-300 font-semibold text-xs mb-1.5">Kondisi Fisik Barang</label>
-                                        <select x-model="item.kondisi" 
-                                                class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer">
-                                            <option value="Baik">🟢 Baik (Siap Pakai)</option>
-                                            <option value="Kurang Baik">🟡 Kurang Baik (Perlu Servis)</option>
-                                            <option value="Rusak">🔴 Rusak</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- 4. Volume (Qty) (Kecil) -->
-                                    <div class="w-28 sm:w-32 shrink-0">
-                                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 text-center">Volume (Qty)</label>
+                                <!-- Baris 2: Volume & Satuan -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                                    <!-- Volume (Qty) -->
+                                    <div>
+                                        <label class="block text-slate-300 font-semibold text-xs mb-1.5">Volume (Qty)</label>
                                         <input type="number" min="1" 
                                                x-model="item.qty" 
-                                               class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-3 py-2.5 text-xs text-center text-white font-mono font-bold focus:outline-none focus:border-teal-500 transition-all">
+                                               class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-teal-500 transition-all">
                                     </div>
 
-                                    <!-- 5. Satuan (Kompak - Otomatis ASTAP) -->
-                                    <div class="w-28 sm:w-32 shrink-0">
-                                        <label class="block text-teal-300 font-semibold text-xs mb-1.5 text-center">Satuan (⚡ Auto)</label>
+                                    <!-- Satuan (⚡ Auto) -->
+                                    <div>
+                                        <label class="block text-teal-300 font-semibold text-xs mb-1.5">Nama Satuan Barang</label>
                                         <input type="text" 
                                                x-model="item.satuan" 
-                                               placeholder="Unit" 
-                                               class="w-full h-11 bg-slate-900 border border-teal-500/50 rounded-xl px-3 py-2.5 text-xs text-center text-teal-300 font-bold focus:outline-none focus:border-teal-500 transition-all">
+                                               placeholder="satuan" 
+                                               readonly
+                                               class="w-full h-11 bg-slate-900 border border-teal-500/50 rounded-xl px-4 py-2.5 text-xs text-teal-300 font-bold focus:outline-none focus:border-teal-500 transition-all">
                                     </div>
                                 </div>
 
