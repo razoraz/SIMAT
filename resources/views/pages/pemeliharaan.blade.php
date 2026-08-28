@@ -2,49 +2,103 @@
     @section('page-title', 'Pemeliharaan ASTAP')
     @section('breadcrumb', 'Master Utama / Pemeliharaan ASTAP')
 
-    <div x-data="{
-        searchQuery: '',
-        statusFilter: 'all',
-        showAddModal: false,
-        showEditModal: false,
-        showDetailModal: false,
-        selectedPemeliharaan: null,
+    <script>
+        function pemeliharaanCatalog() {
+            return {
+                searchQuery: '',
+                statusFilter: 'all',
+                showAddModal: false,
+                showEditModal: false,
+                showDetailModal: false,
+                selectedPemeliharaan: null,
 
-        pemeliharaans: [],
+                pemeliharaans: [],
 
-        init() {
-            const stored = localStorage.getItem('simat_pemeliharaans');
-            if (stored) {
-                try {
-                    this.pemeliharaans = JSON.parse(stored);
-                } catch (e) {
-                    this.loadDefaultData();
-                }
-            } else {
-                this.loadDefaultData();
-            }
-        },
+                init() {
+                    const stored = localStorage.getItem('simat_pemeliharaans');
+                    if (stored) {
+                        try {
+                            this.pemeliharaans = JSON.parse(stored);
+                        } catch (e) {
+                            this.loadDefaultData();
+                        }
+                    } else {
+                        this.loadDefaultData();
+                    }
+                },
 
-        loadDefaultData() {
-            this.pemeliharaans = [
-                { id: 1, kode: 'MTN-2026-003', nama: 'CT-Scan 128 Slice Siemens', jenis: 'Kalibrasi Rutin & QC BAPETEN', tgl: '05 Ags 2026', tgl_selesai: '10 Ags 2026', biaya: 'Rp 25.000.000', pelaksana: 'PT. Siemens Healthcare Indonesia', status: 'Selesai', keterangan: 'Hasil uji fungsi akurat dan sertifikat kalibrasi terbit resmi' },
-                { id: 2, kode: 'MTN-2026-007', nama: 'Submersible Pump Pompa Sentral', jenis: 'Penggantian Seal & Bearing', tgl: '10 Ags 2026', tgl_selesai: '-', biaya: 'Rp 4.500.000', pelaksana: 'Teknisi IPSRS RSUD', status: 'Dalam Pengerjaan', keterangan: 'Sedang dibongkar untuk pembersihan kerak impeller' },
-                { id: 3, kode: 'MTN-2026-009', nama: 'Instalasi Jaringan Pipa Oksigen IGD', jenis: 'Perbaikan Kebocoran Valve Outlet', tgl: '14 Ags 2026', tgl_selesai: '-', biaya: 'Rp 8.200.000', pelaksana: 'CV. Gas Medika Sentosa', status: 'Menunggu Sparepart', keterangan: 'Menunggu pengiriman flowmeter dan digital sensor dari Surabaya' },
-                { id: 4, kode: 'MTN-2026-012', nama: 'Gedung Paviliun Graha Amukti Lt 1', jenis: 'Pengecatan & Perbaikan Plafon', tgl: '15 Ags 2026', tgl_selesai: '-', biaya: 'Rp 15.000.000', pelaksana: 'Tim Pemeliharaan Sarpras', status: 'Dalam Pengerjaan', keterangan: 'Perapian koridor utama ruang rawat inap VIP' }
-            ];
-            this.saveToStorage();
-        },
+                loadDefaultData() {
+                    this.pemeliharaans = [
+                        { id: 1, kode: 'MTN-2026-003', nama: 'CT-Scan 128 Slice Siemens', jenis: 'Kalibrasi Rutin & QC BAPETEN', tgl: '05 Ags 2026', tgl_selesai: '10 Ags 2026', biaya: 'Rp 25.000.000', pelaksana: 'PT. Siemens Healthcare Indonesia', status: 'Selesai', keterangan: 'Hasil uji fungsi akurat dan sertifikat kalibrasi terbit resmi' },
+                        { id: 2, kode: 'MTN-2026-007', nama: 'Submersible Pump Pompa Sentral', jenis: 'Penggantian Seal & Bearing', tgl: '10 Ags 2026', tgl_selesai: '-', biaya: 'Rp 4.500.000', pelaksana: 'Teknisi IPSRS RSUD', status: 'Dalam Pengerjaan', keterangan: 'Sedang dibongkar untuk pembersihan kerak impeller' },
+                        { id: 3, kode: 'MTN-2026-009', nama: 'Instalasi Jaringan Pipa Oksigen IGD', jenis: 'Perbaikan Kebocoran Valve Outlet', tgl: '14 Ags 2026', tgl_selesai: '-', biaya: 'Rp 8.200.000', pelaksana: 'CV. Gas Medika Sentosa', status: 'Menunggu Sparepart', keterangan: 'Menunggu pengiriman flowmeter dan digital sensor dari Surabaya' },
+                        { id: 4, kode: 'MTN-2026-012', nama: 'Gedung Paviliun Graha Amukti Lt 1', jenis: 'Pengecatan & Perbaikan Plafon', tgl: '15 Ags 2026', tgl_selesai: '-', biaya: 'Rp 15.000.000', pelaksana: 'Tim Pemeliharaan Sarpras', status: 'Dalam Pengerjaan', keterangan: 'Perapian koridor utama ruang rawat inap VIP' }
+                    ];
+                    this.saveToStorage();
+                },
 
-        saveToStorage() {
-            localStorage.setItem('simat_pemeliharaans', JSON.stringify(this.pemeliharaans));
-        },
+                saveToStorage() {
+                    localStorage.setItem('simat_pemeliharaans', JSON.stringify(this.pemeliharaans));
+                },
 
-        deletePemeliharaan(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus data log pemeliharaan ini?')) {
-                this.pemeliharaans = this.pemeliharaans.filter(p => p.id !== id);
-                this.saveToStorage();
-            }
-        },
+                showConfirmModal: false,
+                confirmData: {
+                    title: 'Konfirmasi Tindakan',
+                    message: 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                    itemName: '',
+                    type: 'danger',
+                    btnText: 'Ya, Lanjutkan',
+                    onConfirm: null
+                },
+
+                toast: {
+                    show: false,
+                    message: '',
+                    type: 'success'
+                },
+
+                askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
+                    this.confirmData = {
+                        title: title || 'Konfirmasi Tindakan',
+                        message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                        itemName: itemName || '',
+                        type: type,
+                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        onConfirm: onConfirm
+                    };
+                    this.showConfirmModal = true;
+                },
+
+                executeConfirmedAction() {
+                    if (typeof this.confirmData.onConfirm === 'function') {
+                        this.confirmData.onConfirm();
+                    }
+                    this.showConfirmModal = false;
+                },
+
+                showSimatToast(message, type = 'success') {
+                    this.toast = { show: true, message: message, type: type };
+                    setTimeout(() => { this.toast.show = false; }, 4000);
+                },
+
+                deletePemeliharaan(item) {
+                    if (!item) return;
+                    const targetId = (typeof item === 'object' && item !== null) ? item.id : item;
+                    const targetObj = (typeof item === 'object' && item !== null) ? item : this.pemeliharaans.find(p => p.id === targetId);
+
+                    this.askConfirmation({
+                        title: '⚠️ Konfirmasi Hapus Log Pemeliharaan',
+                        message: 'Apakah Anda yakin ingin menghapus catatan log servis / pemeliharaan aset ini?',
+                        itemName: targetObj ? ((targetObj.kode || 'MTN') + ' - ' + (targetObj.nama || 'Aset') + ' (' + (targetObj.jenis || 'Servis') + ')') : ('ID: ' + targetId),
+                        type: 'danger',
+                        btnText: '🗑️ Ya, Hapus Log Servis',
+                        onConfirm: () => {
+                            this.pemeliharaans = this.pemeliharaans.filter(p => p.id !== targetId);
+                            this.saveToStorage();
+                            this.showSimatToast('✅ Data log pemeliharaan berhasil dihapus.', 'success');
+                        }
+                    });
+                },
 
         formatDateToday() {
             const today = new Date();
@@ -96,7 +150,11 @@
             this.selectedPemeliharaan = { ...item };
             this.showEditModal = true;
         }
-    }" x-cloak>
+    };
+}
+</script>
+
+<div x-data="pemeliharaanCatalog()" x-cloak>
 
         <!-- Header Banner & Mini KPI Strip -->
         <div class="bg-gradient-to-r from-amber-600/15 via-slate-900 to-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
@@ -255,9 +313,9 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     <span>Ubah</span>
                                 </a>
-                                <button type="button" @click="deletePemeliharaan(item.id)"
-                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <button type="button" @click="deletePemeliharaan(item)"
+                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     <span>Hapus</span>
                                 </button>
                                 @endif
@@ -388,6 +446,91 @@
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
+        <div x-show="showConfirmModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <div @click.away="showConfirmModal = false"
+                 x-show="showConfirmModal"
+                 x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-slate-900 border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative"
+                 :class="{
+                     'border-rose-500/40': confirmData.type === 'danger',
+                     'border-amber-500/40': confirmData.type === 'warning',
+                     'border-emerald-500/40': confirmData.type === 'success',
+                     'border-cyan-500/40': confirmData.type === 'info'
+                 }">
+                
+                <!-- Header Icon & Title -->
+                <div class="flex items-start space-x-3.5">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 font-bold border"
+                         :class="{
+                             'bg-rose-500/20 text-rose-400 border-rose-500/30': confirmData.type === 'danger',
+                             'bg-amber-500/20 text-amber-300 border-amber-500/30': confirmData.type === 'warning',
+                             'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': confirmData.type === 'success',
+                             'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': confirmData.type === 'info'
+                         }">
+                        <span x-text="confirmData.type === 'danger' ? '🗑️' : (confirmData.type === 'warning' ? '✏️' : '➕')"></span>
+                    </div>
+                    <div class="space-y-1 min-w-0 flex-1">
+                        <h3 class="text-base font-extrabold text-white leading-snug" x-text="confirmData.title"></h3>
+                        <p class="text-slate-300 text-xs leading-relaxed" x-text="confirmData.message"></p>
+                    </div>
+                </div>
+
+                <!-- Item Target Preview Card -->
+                <template x-if="confirmData.itemName">
+                    <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Item Target:</span>
+                        <p class="text-xs font-bold text-cyan-300 truncate font-mono" x-text="confirmData.itemName"></p>
+                    </div>
+                </template>
+
+                <!-- Footer Action Buttons -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                    <button type="button" @click="showConfirmModal = false"
+                        class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" @click="executeConfirmedAction()"
+                        class="px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                        :class="{
+                            'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20': confirmData.type === 'danger',
+                            'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20': confirmData.type === 'warning',
+                            'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20': confirmData.type === 'success',
+                            'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20': confirmData.type === 'info'
+                        }">
+                        <span x-text="confirmData.btnText"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GLOBAL FLOATING TOAST NOTIFICATION POPUP -->
+        <div x-show="toast.show" x-cloak
+             x-transition:enter="transition ease-out duration-300 transform opacity-0 translate-y-4 scale-95"
+             x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200 transform opacity-100 translate-y-0 scale-100"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+             class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3"
+             :class="{
+                 'border-emerald-500/40 text-emerald-300': toast.type === 'success',
+                 'border-rose-500/40 text-rose-300': toast.type === 'error',
+                 'border-amber-500/40 text-amber-300': toast.type === 'warning',
+                 'border-cyan-500/40 text-cyan-300': toast.type === 'info'
+             }">
+            <div class="flex items-center space-x-2.5 min-w-0">
+                <span class="text-base shrink-0" x-text="toast.type === 'success' ? '✅' : (toast.type === 'error' ? '⚠️' : 'ℹ️')"></span>
+                <p class="text-xs font-bold leading-snug truncate" x-text="toast.message"></p>
+            </div>
+            <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
         </div>
 
     </div>

@@ -2,6 +2,426 @@
     @section('page-title', 'Manajemen Pengguna')
     @section('breadcrumb', 'Master Data System / Manajemen Pengguna')
 
+    <script>
+        function userManager() {
+            return {
+                searchQuery: '',
+                roleFilter: 'all',
+                showAddModal: false,
+                showEditModal: false,
+                showDetailModal: false,
+                selectedUser: null,
+                isSaving: false,
+
+                // Sesi Pengguna Aktif
+                currentUserRole: '{{ Auth::user()->role ?? "admin" }}',
+                currentUserId: {{ Auth::user()->id ?? 2 }},
+                currentUserEmail: '{{ Auth::user()->email ?? "admin@asimat.com" }}',
+                csrfToken: '{{ csrf_token() }}',
+
+                newFormData: {
+                    name: '',
+                    nip: '',
+                    email: '',
+                    role: 'sub_admin',
+                    unit: 'Pav. Anggrek',
+                    penugasan: '',
+                    password: '',
+                    status: 'Aktif'
+                },
+
+                editFormData: {
+                    id: null,
+                    name: '',
+                    nip: '',
+                    email: '',
+                    role: '',
+                    unit: '',
+                    penugasan: '',
+                    password: '',
+                    status: ''
+                },
+
+                // Data Users & Units dari Database Backend
+                users: @json($users ?? []),
+                unitsList: @json($units ?? []),
+
+                init() {
+                    if (this.unitsList && this.unitsList.length > 0) {
+                        this.newFormData.unit = this.unitsList[0];
+                    }
+                },
+
+                // Cek apakah user target adalah akun diri sendiri
+                isSelf(targetUser) {
+                    if (!targetUser) return false;
+                    return targetUser.id === this.currentUserId || targetUser.email === this.currentUserEmail;
+                },
+
+                // Cek hak akses untuk Mengubah Data (Edit)
+                canEditUser(targetUser) {
+                    if (!targetUser) return false;
+                    if (this.currentUserRole === 'master_admin') return true;
+
+                    if (this.currentUserRole === 'admin') {
+                        if (targetUser.role === 'master_admin') return false;
+                        if (targetUser.role === 'admin') {
+                            return this.isSelf(targetUser);
+                        }
+                        if (targetUser.role === 'sub_admin') return true;
+                    }
+
+                    return false;
+                },
+
+                // Cek hak akses untuk Menghapus Data (Delete)
+                canDeleteUser(targetUser) {
+                    if (!targetUser) return false;
+                    if (this.currentUserRole === 'master_admin') {
+                        return !this.isSelf(targetUser);
+                    }
+
+                    if (this.currentUserRole === 'admin') {
+                        if (targetUser.role === 'master_admin' || targetUser.role === 'admin') return false;
+                        return targetUser.role === 'sub_admin';
+                    }
+
+                    return false;
+                },
+
+                getEditTooltip(targetUser) {
+                    if (this.canEditUser(targetUser)) return '';
+                    if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin diproteksi khusus (Hanya Master Admin yang dapat mengubah)';
+                    if (targetUser.role === 'admin' && !this.isSelf(targetUser)) return '🔒 Admin tidak diizinkan mengubah akun Admin lain';
+                    return 'Akses dibatasi';
+                },
+
+                getDeleteTooltip(targetUser) {
+                    if (this.canDeleteUser(targetUser)) return '';
+                    if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin tidak dapat dihapus';
+                    if (targetUser.role === 'admin') return '🔒 Admin tidak diizinkan menghapus akun Admin';
+                    return 'Akses dibatasi';
+                },
+
+                get filteredUsers() {
+                    const query = (this.searchQuery || '').toLowerCase();
+                    const roleWeight = { 'master_admin': 1, 'admin': 2, 'sub_admin': 3 };
+
+                    return this.users
+                        .filter(item => {
+                            const matchSearch = (item.name || '').toLowerCase().includes(query) ||
+                                                (item.email || '').toLowerCase().includes(query) ||
+                                                (item.nip || '').toLowerCase().includes(query) ||
+                                                (item.unit || '').toLowerCase().includes(query) ||
+                                                (item.penugasan || '').toLowerCase().includes(query);
+
+                            const matchRole = this.roleFilter === 'all' || item.role === this.roleFilter;
+                            return matchSearch && matchRole;
+                        })
+                        .sort((a, b) => {
+                            const weightA = roleWeight[a.role] || 99;
+                            const weightB = roleWeight[b.role] || 99;
+                            if (weightA !== weightB) {
+                                return weightA - weightB;
+                            }
+                            return (a.id || 0) - (b.id || 0);
+                        });
+                },
+
+                get countMasterAdmin() {
+                    return this.users.filter(u => u.role === 'master_admin').length;
+                },
+
+                get countAdmin() {
+                    return this.users.filter(u => u.role === 'admin').length;
+                },
+
+                get countSubAdmin() {
+                    return this.users.filter(u => u.role === 'sub_admin').length;
+                },
+
+                resetFilters() {
+                    this.searchQuery = '';
+                    this.roleFilter = 'all';
+                },
+
+                openDetail(item) {
+                    this.selectedUser = item;
+                    this.showDetailModal = true;
+                },
+
+                openAddModal() {
+                    this.newFormData = {
+                        name: '',
+                        nip: '',
+                        email: '',
+                        role: 'sub_admin',
+                        unit: this.unitsList && this.unitsList.length > 0 ? this.unitsList[0] : 'Pav. Anggrek',
+                        penugasan: '',
+                        password: '',
+                        status: 'Aktif'
+                    };
+                    this.showAddModal = true;
+                },
+
+                openEdit(item) {
+                    if (!this.canEditUser(item)) {
+                        this.showToast('⛔ Akses Ditolak: ' + this.getEditTooltip(item), 'error');
+                        return;
+                    }
+                    this.editFormData = { 
+                        id: item.id,
+                        name: item.name || '',
+                        nip: item.nip || '',
+                        email: item.email || '',
+                        role: item.role || 'sub_admin',
+                        unit: item.unit || '',
+                        penugasan: item.penugasan || '',
+                        password: '',
+                        status: item.status || 'Aktif'
+                    };
+                    this.showEditModal = true;
+                },
+
+                // 1. Simpan Pengguna Baru ke Backend (CREATE)
+                async saveUser() {
+                    if (!this.newFormData.name || !this.newFormData.email || !this.newFormData.password) {
+                        this.showToast('⚠️ Harap lengkapi Nama Lengkap, Email, dan Password!', 'warning');
+                        return;
+                    }
+
+                    if (this.currentUserRole === 'admin' && this.newFormData.role !== 'sub_admin') {
+                        this.showToast('⛔ Admin Operasional hanya diizinkan menambah akun Sub Admin!', 'error');
+                        this.newFormData.role = 'sub_admin';
+                        return;
+                    }
+
+                    this.askConfirmation({
+                        title: '➕ Konfirmasi Tambah Akun Pengguna',
+                        message: 'Apakah Anda yakin ingin mendaftarkan akun pengguna baru ini ke dalam sistem?',
+                        itemName: this.newFormData.name + ' (' + this.newFormData.email + ')',
+                        type: 'success',
+                        btnText: '➕ Ya, Daftarkan Akun',
+                        onConfirm: async () => {
+                            this.isSaving = true;
+                            try {
+                                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                                const response = await fetch('{{ route("master.users.store") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    body: JSON.stringify({
+                                        _token: token,
+                                        ...this.newFormData
+                                    })
+                                });
+
+                                const res = await response.json();
+                                if (response.ok && res.success) {
+                                    this.users.unshift(res.user);
+                                    this.showAddModal = false;
+                                    this.showToast('✅ ' + res.message, 'success');
+                                } else {
+                                    this.showToast('⚠️ ' + (res.message || 'Gagal mendaftarkan akun baru.'), 'error');
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                this.showToast('❌ Terjadi kesalahan server saat mendaftarkan akun.', 'error');
+                            } finally {
+                                this.isSaving = false;
+                            }
+                        }
+                    });
+                },
+
+                // 2. Simpan Perubahan ke Backend (UPDATE)
+                saveEdit() {
+                    if (!this.editFormData.name || !this.editFormData.email) {
+                        this.showToast('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!', 'warning');
+                        return;
+                    }
+
+                    this.askConfirmation({
+                        title: '✏️ Konfirmasi Simpan Perubahan Akun',
+                        message: 'Apakah Anda yakin ingin menyimpan perubahan data pengguna ini?',
+                        itemName: this.editFormData.name + ' (' + this.editFormData.email + ')',
+                        type: 'warning',
+                        btnText: '✏️ Ya, Simpan Perubahan',
+                        onConfirm: async () => {
+                            this.isSaving = true;
+                            try {
+                                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                                const response = await fetch('/master-data/users/' + this.editFormData.id, {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    body: JSON.stringify({
+                                        _token: token,
+                                        ...this.editFormData
+                                    })
+                                });
+
+                                const res = await response.json();
+                                if (response.ok && res.success) {
+                                    const index = this.users.findIndex(i => i.id === this.editFormData.id);
+                                    if (index !== -1) {
+                                        this.users[index] = { ...res.user };
+                                    }
+                                    if (this.selectedUser && this.selectedUser.id === this.editFormData.id) {
+                                        this.selectedUser = { ...res.user };
+                                    }
+                                    this.showEditModal = false;
+                                    this.showToast('✅ ' + res.message, 'success');
+                                } else {
+                                    this.showToast('⚠️ ' + (res.message || 'Gagal menyimpan perubahan.'), 'error');
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                this.showToast('❌ Terjadi kesalahan server saat memperbarui akun.', 'error');
+                            } finally {
+                                this.isSaving = false;
+                            }
+                        }
+                    });
+                },
+
+                // 3. Hapus Pengguna dari Backend (DELETE)
+                deleteItem(item) {
+                    if (!this.canDeleteUser(item)) {
+                        this.showToast('⛔ Akses Ditolak: ' + this.getDeleteTooltip(item), 'error');
+                        return;
+                    }
+
+                    this.askConfirmation({
+                        title: '🗑️ Konfirmasi Hapus Akun Pengguna',
+                        message: 'Apakah Anda yakin ingin menghapus akun pengguna ini secara permanen dari sistem SIMAT-RK?',
+                        itemName: item.name + ' (' + (item.unit || item.role) + ')',
+                        type: 'danger',
+                        btnText: '🗑️ Ya, Hapus Akun',
+                        onConfirm: async () => {
+                            try {
+                                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                                const response = await fetch('/master-data/users/' + item.id, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    body: JSON.stringify({
+                                        _token: token
+                                    })
+                                });
+
+                                const res = await response.json();
+                                if (response.ok && res.success) {
+                                    this.users = this.users.filter(i => i.id !== item.id);
+                                    if (this.selectedUser && this.selectedUser.id === item.id) {
+                                        this.showDetailModal = false;
+                                    }
+                                    this.showToast('🗑️ ' + res.message, 'success');
+                                } else {
+                                    this.showToast('⚠️ ' + (res.message || 'Gagal menghapus akun pengguna.'), 'error');
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                this.showToast('❌ Terjadi kesalahan server saat menghapus akun.', 'error');
+                            }
+                        }
+                    });
+                },
+
+                showConfirmModal: false,
+                confirmData: {
+                    title: 'Konfirmasi Tindakan',
+                    message: 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                    itemName: '',
+                    type: 'danger',
+                    btnText: 'Ya, Lanjutkan',
+                    onConfirm: null
+                },
+
+                toast: {
+                    show: false,
+                    message: '',
+                    type: 'success'
+                },
+
+                askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
+                    this.confirmData = {
+                        title: title || 'Konfirmasi Tindakan',
+                        message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                        itemName: itemName || '',
+                        type: type,
+                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        onConfirm: onConfirm
+                    };
+                    this.showConfirmModal = true;
+                },
+
+                executeConfirmedAction() {
+                    if (typeof this.confirmData.onConfirm === 'function') {
+                        this.confirmData.onConfirm();
+                    }
+                    this.showConfirmModal = false;
+                },
+
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message: message, type: type };
+                    setTimeout(() => { this.toast.show = false; }, 4000);
+                },
+
+                // 4. Reset Password ke Default 'rsud123'
+                resetPasswordAction(item) {
+                    if (!item) return;
+                    this.askConfirmation({
+                        title: '🔑 Konfirmasi Reset Password',
+                        message: 'Apakah Anda yakin ingin mengembalikan password akun ini ke password default "rsud123"?',
+                        itemName: item.name + ' (' + item.email + ')',
+                        type: 'warning',
+                        btnText: '🔑 Ya, Reset Password',
+                        onConfirm: async () => {
+                            try {
+                                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
+                                const response = await fetch('/master-data/users/' + item.id + '/reset-password', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'X-Requested-With': 'XMLHttpRequest'
+                                    },
+                                    body: JSON.stringify({
+                                        _token: token
+                                    })
+                                });
+
+                                const res = await response.json();
+                                if (response.ok && res.success) {
+                                    this.showToast('🔑 ' + res.message, 'success');
+                                } else {
+                                    this.showToast('⚠️ ' + (res.message || 'Gagal mereset password.'), 'error');
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                this.showToast('❌ Terjadi kesalahan server saat mereset password.', 'error');
+                            }
+                        }
+                    });
+                }
+            };
+        }
+    </script>
+
     <div x-data="userManager()" x-cloak>
 
         <!-- Header Banner & Mini KPI Strip -->
@@ -129,10 +549,11 @@
         </div>
 
         <!-- Table Users -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6 overflow-x-auto mb-6">
-            <table class="w-full text-left text-xs text-slate-300">
-                <thead class="bg-slate-950/80 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
-                    <tr>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-5 mb-6">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 350px; overflow-y: auto; overflow-x: auto;">
+                <table class="w-full text-left text-xs text-slate-300 border-collapse">
+                    <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
+                        <tr>
                         <th class="px-4 py-3.5 text-center w-12">No</th>
                         <th class="px-4 py-3.5 text-left">Nama & NIP Pegawai</th>
                         <th class="px-4 py-3.5 text-left">Email Kredensial</th>
@@ -178,13 +599,13 @@
                                 </span>
                             </td>
                             <td class="px-4 py-4 font-semibold">
-                                <template x-if="item.unit && item.role === 'sub_admin'">
+                                <template x-if="item.unit">
                                     <span class="text-slate-200 flex items-center space-x-1.5">
                                         <span>🏥</span>
                                         <span x-text="item.unit"></span>
                                     </span>
                                 </template>
-                                <template x-if="!item.unit || item.role !== 'sub_admin'">
+                                <template x-if="!item.unit">
                                     <span class="text-slate-400 font-mono text-[11px] px-2 py-0.5 rounded-lg bg-slate-950/80 border border-slate-800">
                                         - Non-Unit (Pusat) -
                                     </span>
@@ -240,6 +661,7 @@
                     </template>
                 </tbody>
             </table>
+            </div>
         </div>
 
         <!-- ========================================================================= -->
@@ -460,7 +882,7 @@
                         </div>
                     </div>
 
-                    <template x-if="editFormData.unit && editFormData.role === 'sub_admin'">
+                    <template x-if="editFormData.unit">
                         <div class="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-200 flex items-center justify-between text-[11px]">
                             <span class="flex items-center space-x-1.5">
                                 <span>🏥</span>
@@ -489,356 +911,90 @@
             </div>
         </div>
 
+        <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
+        <div x-show="showConfirmModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <div @click.away="showConfirmModal = false"
+                 x-show="showConfirmModal"
+                 x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-slate-900 border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative"
+                 :class="{
+                     'border-rose-500/40': confirmData.type === 'danger',
+                     'border-amber-500/40': confirmData.type === 'warning',
+                     'border-emerald-500/40': confirmData.type === 'success',
+                     'border-cyan-500/40': confirmData.type === 'info'
+                 }">
+                
+                <!-- Header Icon & Title -->
+                <div class="flex items-start space-x-3.5">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 font-bold border"
+                         :class="{
+                             'bg-rose-500/20 text-rose-400 border-rose-500/30': confirmData.type === 'danger',
+                             'bg-amber-500/20 text-amber-300 border-amber-500/30': confirmData.type === 'warning',
+                             'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': confirmData.type === 'success',
+                             'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': confirmData.type === 'info'
+                         }">
+                        <span x-text="confirmData.type === 'danger' ? '🗑️' : (confirmData.type === 'warning' ? '✏️' : '➕')"></span>
+                    </div>
+                    <div class="space-y-1 min-w-0 flex-1">
+                        <h3 class="text-base font-extrabold text-white leading-snug" x-text="confirmData.title"></h3>
+                        <p class="text-slate-300 text-xs leading-relaxed" x-text="confirmData.message"></p>
+                    </div>
+                </div>
+
+                <!-- Item Target Preview Card -->
+                <template x-if="confirmData.itemName">
+                    <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Item Target:</span>
+                        <p class="text-xs font-bold text-cyan-300 truncate font-mono" x-text="confirmData.itemName"></p>
+                    </div>
+                </template>
+
+                <!-- Footer Action Buttons -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                    <button type="button" @click="showConfirmModal = false"
+                        class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" @click="executeConfirmedAction()"
+                        class="px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                        :class="{
+                            'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20': confirmData.type === 'danger',
+                            'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20': confirmData.type === 'warning',
+                            'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20': confirmData.type === 'success',
+                            'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20': confirmData.type === 'info'
+                        }">
+                        <span x-text="confirmData.btnText"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GLOBAL FLOATING TOAST NOTIFICATION POPUP -->
+        <div x-show="toast.show" x-cloak
+             x-transition:enter="transition ease-out duration-300 transform opacity-0 translate-y-4 scale-95"
+             x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200 transform opacity-100 translate-y-0 scale-100"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+             class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3"
+             :class="{
+                 'border-emerald-500/40 text-emerald-300': toast.type === 'success',
+                 'border-rose-500/40 text-rose-300': toast.type === 'error',
+                 'border-amber-500/40 text-amber-300': toast.type === 'warning',
+                 'border-cyan-500/40 text-cyan-300': toast.type === 'info'
+             }">
+            <div class="flex items-center space-x-2.5 min-w-0">
+                <span class="text-base shrink-0" x-text="toast.type === 'success' ? '✅' : (toast.type === 'error' ? '⚠️' : 'ℹ️')"></span>
+                <p class="text-xs font-bold leading-snug truncate" x-text="toast.message"></p>
+            </div>
+            <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
+        </div>
+
     </div>
-
-    <script>
-        function userManager() {
-            return {
-                searchQuery: '',
-                roleFilter: 'all',
-                showAddModal: false,
-                showEditModal: false,
-                showDetailModal: false,
-                selectedUser: null,
-                isSaving: false,
-
-                // Sesi Pengguna Aktif
-                currentUserRole: '{{ Auth::user()->role ?? "admin" }}',
-                currentUserId: {{ Auth::user()->id ?? 2 }},
-                currentUserEmail: '{{ Auth::user()->email ?? "admin@asimat.com" }}',
-                csrfToken: '{{ csrf_token() }}',
-
-                newFormData: {
-                    name: '',
-                    nip: '',
-                    email: '',
-                    role: 'sub_admin',
-                    unit: 'Pav. Anggrek',
-                    penugasan: '',
-                    password: '',
-                    status: 'Aktif'
-                },
-
-                editFormData: {
-                    id: null,
-                    name: '',
-                    nip: '',
-                    email: '',
-                    role: '',
-                    unit: '',
-                    penugasan: '',
-                    password: '',
-                    status: ''
-                },
-
-                // Data Users & Units dari Database Backend
-                users: @json($users ?? []),
-                unitsList: @json($units ?? []),
-
-                init() {
-                    if (this.unitsList && this.unitsList.length > 0) {
-                        this.newFormData.unit = this.unitsList[0];
-                    }
-                },
-
-                // Cek apakah user target adalah akun diri sendiri
-                isSelf(targetUser) {
-                    if (!targetUser) return false;
-                    return targetUser.id === this.currentUserId || targetUser.email === this.currentUserEmail;
-                },
-
-                // Cek hak akses untuk Mengubah Data (Edit)
-                canEditUser(targetUser) {
-                    if (!targetUser) return false;
-                    if (this.currentUserRole === 'master_admin') return true;
-
-                    if (this.currentUserRole === 'admin') {
-                        if (targetUser.role === 'master_admin') return false;
-                        if (targetUser.role === 'admin') {
-                            return this.isSelf(targetUser);
-                        }
-                        if (targetUser.role === 'sub_admin') return true;
-                    }
-
-                    return false;
-                },
-
-                // Cek hak akses untuk Menghapus Data (Delete)
-                canDeleteUser(targetUser) {
-                    if (!targetUser) return false;
-                    if (this.currentUserRole === 'master_admin') {
-                        return !this.isSelf(targetUser);
-                    }
-
-                    if (this.currentUserRole === 'admin') {
-                        if (targetUser.role === 'master_admin' || targetUser.role === 'admin') return false;
-                        return targetUser.role === 'sub_admin';
-                    }
-
-                    return false;
-                },
-
-                getEditTooltip(targetUser) {
-                    if (this.canEditUser(targetUser)) return '';
-                    if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin diproteksi khusus (Hanya Master Admin yang dapat mengubah)';
-                    if (targetUser.role === 'admin' && !this.isSelf(targetUser)) return '🔒 Admin tidak diizinkan mengubah akun Admin lain';
-                    return 'Akses dibatasi';
-                },
-
-                getDeleteTooltip(targetUser) {
-                    if (this.canDeleteUser(targetUser)) return '';
-                    if (targetUser.role === 'master_admin') return '🔒 Akun Master Admin tidak dapat dihapus';
-                    if (targetUser.role === 'admin') return '🔒 Admin tidak diizinkan menghapus akun Admin';
-                    return 'Akses dibatasi';
-                },
-
-                get filteredUsers() {
-                    const query = (this.searchQuery || '').toLowerCase();
-                    const roleWeight = { 'master_admin': 1, 'admin': 2, 'sub_admin': 3 };
-
-                    return this.users
-                        .filter(item => {
-                            const matchSearch = (item.name || '').toLowerCase().includes(query) ||
-                                                (item.email || '').toLowerCase().includes(query) ||
-                                                (item.nip || '').toLowerCase().includes(query) ||
-                                                (item.unit || '').toLowerCase().includes(query) ||
-                                                (item.penugasan || '').toLowerCase().includes(query);
-
-                            const matchRole = this.roleFilter === 'all' || item.role === this.roleFilter;
-                            return matchSearch && matchRole;
-                        })
-                        .sort((a, b) => {
-                            const weightA = roleWeight[a.role] || 99;
-                            const weightB = roleWeight[b.role] || 99;
-                            if (weightA !== weightB) {
-                                return weightA - weightB;
-                            }
-                            return (a.id || 0) - (b.id || 0);
-                        });
-                },
-
-                get countMasterAdmin() {
-                    return this.users.filter(u => u.role === 'master_admin').length;
-                },
-
-                get countAdmin() {
-                    return this.users.filter(u => u.role === 'admin').length;
-                },
-
-                get countSubAdmin() {
-                    return this.users.filter(u => u.role === 'sub_admin').length;
-                },
-
-                resetFilters() {
-                    this.searchQuery = '';
-                    this.roleFilter = 'all';
-                },
-
-                openDetail(item) {
-                    this.selectedUser = item;
-                    this.showDetailModal = true;
-                },
-
-                openAddModal() {
-                    this.newFormData = {
-                        name: '',
-                        nip: '',
-                        email: '',
-                        role: 'sub_admin',
-                        unit: this.unitsList && this.unitsList.length > 0 ? this.unitsList[0] : 'Pav. Anggrek',
-                        penugasan: '',
-                        password: '',
-                        status: 'Aktif'
-                    };
-                    this.showAddModal = true;
-                },
-
-                openEdit(item) {
-                    if (!this.canEditUser(item)) {
-                        alert('⛔ Akses Ditolak: ' + this.getEditTooltip(item));
-                        return;
-                    }
-                    this.editFormData = { 
-                        id: item.id,
-                        name: item.name || '',
-                        nip: item.nip || '',
-                        email: item.email || '',
-                        role: item.role || 'sub_admin',
-                        unit: item.unit || '',
-                        penugasan: item.penugasan || '',
-                        password: '',
-                        status: item.status || 'Aktif'
-                    };
-                    this.showEditModal = true;
-                },
-
-                // 1. Simpan Data Baru ke Backend (CREATE)
-                async saveNew() {
-                    if (!this.newFormData.name || !this.newFormData.email) {
-                        alert('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!');
-                        return;
-                    }
-
-                    if (this.currentUserRole === 'admin' && this.newFormData.role !== 'sub_admin') {
-                        alert('⛔ Sebagai Admin Operasional, Anda hanya diizinkan menambah akun Sub Admin (Kepala Ruangan/Paviliun)!');
-                        this.newFormData.role = 'sub_admin';
-                        return;
-                    }
-
-                    this.isSaving = true;
-                    try {
-                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
-                        const response = await fetch('{{ route("master.users.store") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': token,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({
-                                _token: token,
-                                ...this.newFormData
-                            })
-                        });
-
-                        const res = await response.json();
-                        if (response.ok && res.success) {
-                            this.users.unshift(res.user);
-                            this.showAddModal = false;
-                            alert('✅ ' + res.message);
-                        } else {
-                            alert('⚠️ ' + (res.message || 'Gagal mendaftarkan akun baru.'));
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('❌ Terjadi kesalahan jaringan / server saat mendaftarkan akun.');
-                    } finally {
-                        this.isSaving = false;
-                    }
-                },
-
-                // 2. Simpan Perubahan ke Backend (UPDATE)
-                async saveEdit() {
-                    if (!this.editFormData.name || !this.editFormData.email) {
-                        alert('⚠️ Harap lengkapi Nama Lengkap dan Email pengguna!');
-                        return;
-                    }
-
-                    this.isSaving = true;
-                    try {
-                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
-                        const response = await fetch('/master-data/users/' + this.editFormData.id, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': token,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({
-                                _token: token,
-                                ...this.editFormData
-                            })
-                        });
-
-                        const res = await response.json();
-                        if (response.ok && res.success) {
-                            const index = this.users.findIndex(i => i.id === this.editFormData.id);
-                            if (index !== -1) {
-                                this.users[index] = { ...res.user };
-                            }
-                            if (this.selectedUser && this.selectedUser.id === this.editFormData.id) {
-                                this.selectedUser = { ...res.user };
-                            }
-                            this.showEditModal = false;
-                            alert('✅ ' + res.message);
-                        } else {
-                            alert('⚠️ ' + (res.message || 'Gagal menyimpan perubahan.'));
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('❌ Terjadi kesalahan jaringan / server saat memperbarui akun.');
-                    } finally {
-                        this.isSaving = false;
-                    }
-                },
-
-                // 3. Hapus Pengguna dari Backend (DELETE)
-                async deleteItem(item) {
-                    if (!this.canDeleteUser(item)) {
-                        alert('⛔ Akses Ditolak: ' + this.getDeleteTooltip(item));
-                        return;
-                    }
-
-                    if (!confirm('Apakah Anda yakin ingin menghapus akun: ' + item.name + ' (' + (item.unit || item.role) + ')?')) {
-                        return;
-                    }
-
-                    try {
-                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
-                        const response = await fetch('/master-data/users/' + item.id, {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': token,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({
-                                _token: token
-                            })
-                        });
-
-                        const res = await response.json();
-                        if (response.ok && res.success) {
-                            this.users = this.users.filter(i => i.id !== item.id);
-                            if (this.selectedUser && this.selectedUser.id === item.id) {
-                                this.showDetailModal = false;
-                            }
-                            alert('🗑️ ' + res.message);
-                        } else {
-                            alert('⚠️ ' + (res.message || 'Gagal menghapus akun pengguna.'));
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('❌ Terjadi kesalahan jaringan / server saat menghapus akun.');
-                    }
-                },
-
-                // 4. Reset Password ke Default 'rsud123'
-                async resetPasswordAction(item) {
-                    if (!confirm('Reset password akun ' + item.name + ' menjadi default: rsud123 ?')) {
-                        return;
-                    }
-
-                    try {
-                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
-                        const response = await fetch('/master-data/users/' + item.id + '/reset-password', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': token,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({
-                                _token: token
-                            })
-                        });
-
-                        const res = await response.json();
-                        if (response.ok && res.success) {
-                            alert('🔑 ' + res.message);
-                        } else {
-                            alert('⚠️ ' + (res.message || 'Gagal mereset password.'));
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert('❌ Terjadi kesalahan jaringan / server saat mereset password.');
-                    }
-                }
-            };
-        }
-    </script>
 </x-layout>

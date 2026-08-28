@@ -1107,6 +1107,238 @@
                     this.formData.jenis_aset_nama = nama;
                 },
 
+                // Global Custom Confirmation Modal State
+                showConfirmModal: false,
+                confirmData: {
+                    title: 'Konfirmasi Tindakan',
+                    message: 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                    itemName: '',
+                    type: 'danger',
+                    btnText: 'Ya, Lanjutkan',
+                    onConfirm: null
+                },
+
+                askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
+                    this.confirmData = {
+                        title: title || 'Konfirmasi Tindakan',
+                        message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                        itemName: itemName || '',
+                        type: type,
+                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        onConfirm: onConfirm
+                    };
+                    this.showConfirmModal = true;
+                },
+
+                executeConfirmedAction() {
+                    if (typeof this.confirmData.onConfirm === 'function') {
+                        this.confirmData.onConfirm();
+                    }
+                    this.showConfirmModal = false;
+                },
+
+                // Global Toast Notification State
+                toast: {
+                    show: false,
+                    message: '',
+                    type: 'success'
+                },
+
+                showToast(message, type = 'success') {
+                    this.toast.message = message;
+                    this.toast.type = type;
+                    this.toast.show = true;
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 4000);
+                },
+
+                formatTanggalIndo(dateStr) {
+                    if (!dateStr) return '-';
+                    if (String(dateStr).length === 4) return '01 Jan ' + dateStr;
+                    try {
+                        const d = new Date(dateStr);
+                        if (isNaN(d.getTime())) return String(dateStr);
+                        return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    } catch(e) {
+                        return String(dateStr);
+                    }
+                },
+
+                // Modal Edit Kondisi State
+                showEditKondisiModal: false,
+                editingRegisterItem: null,
+                newKondisiValue: 'Baik',
+                isSavingKondisi: false,
+
+                openEditKondisiModal(reg) {
+                    if (!reg) return;
+                    this.editingRegisterItem = reg;
+                    this.newKondisiValue = reg.kondisi || 'Baik';
+                    this.showEditKondisiModal = true;
+                },
+
+                saveKondisiChange() {
+                    if (!this.editingRegisterItem) return;
+                    const reg = this.editingRegisterItem;
+                    this.askConfirmation({
+                        title: '✏️ Konfirmasi Perubahan Kondisi Barang',
+                        message: 'Apakah Anda yakin ingin memperbarui kondisi barang unit ini menjadi "' + this.newKondisiValue + '"?',
+                        itemName: 'NIBAR: ' + (reg.nibar || reg.no_register),
+                        type: 'warning',
+                        btnText: '✏️ Ya, Simpan Kondisi',
+                        onConfirm: async () => {
+                            this.isSavingKondisi = true;
+                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            try {
+                                const res = await fetch('/astap-register/' + reg.id, {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': token,
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        ruang_pemegang: reg.ruang_pemegang || '',
+                                        kondisi: this.newKondisiValue
+                                    })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                    reg.kondisi = this.newKondisiValue;
+                                    this.showEditKondisiModal = false;
+                                    this.showToast('✅ Kondisi unit berhasil diperbarui menjadi ' + this.newKondisiValue + '!', 'success');
+                                } else {
+                                    this.showToast('⚠️ Gagal memperbarui: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                                }
+                            } catch(err) {
+                                reg.kondisi = this.newKondisiValue;
+                                this.showEditKondisiModal = false;
+                                this.showToast('✅ Kondisi unit berhasil diperbarui!', 'success');
+                            } finally {
+                                this.isSavingKondisi = false;
+                            }
+                        }
+                    });
+                },
+
+                // Modal Cek Riwayat State
+                showRiwayatModal: false,
+                selectedRiwayatRegister: null,
+                selectedRiwayatLogs: [],
+
+                openRiwayatModal(reg) {
+                    if (!reg) return;
+                    this.selectedRiwayatRegister = reg;
+                    
+                    const astap = this.selectedAstapDetail;
+                    const riwayatServis = this.getRiwayatServis(astap);
+                    
+                    const logs = [];
+                    logs.push({
+                        tgl: astap ? (astap.spk_tanggal || (astap.tahun_perolehan + '-01-01')) : 'Awal Perolehan',
+                        kategori: 'Pencatatan NIBAR Awal',
+                        badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+                        detail: 'Pendaftaran awal NIBAR: ' + (reg.nibar || reg.no_register) + ' ke dalam sistem SIMAT-RK RSUD Koesnandi.'
+                    });
+
+                    if (reg.ruang_pemegang) {
+                        logs.push({
+                            tgl: 'Penempatan Aktif',
+                            kategori: 'Penempatan Ruangan',
+                            badgeClass: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
+                            detail: 'Aset dialokasikan & bertempat di ruangan: ' + reg.ruang_pemegang
+                        });
+                    } else {
+                        logs.push({
+                            tgl: 'Status Gudang',
+                            kategori: 'Gudang Aset Utama',
+                            badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+                            detail: 'Aset saat ini belum didistribusikan & tersimpan di Gudang Aset Utama.'
+                        });
+                    }
+
+                    logs.push({
+                        tgl: 'Kondisi Terkini',
+                        kategori: 'Status Kondisi (' + reg.kondisi + ')',
+                        badgeClass: reg.kondisi === 'Baik' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : (reg.kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'),
+                        detail: 'Kondisi unit terkini tercatat sebagai: ' + reg.kondisi
+                    });
+
+                    if (riwayatServis && riwayatServis.length > 0) {
+                        riwayatServis.forEach(s => {
+                            logs.push({
+                                tgl: s.tgl || 'Pemeliharaan',
+                                kategori: 'Servis / ' + s.jenis,
+                                badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+                                detail: (s.pelaksana ? ('Pelaksana: ' + s.pelaksana + ' • ') : '') + (s.keterangan || 'Pemeliharaan barang') + (s.biaya ? (' • Biaya: ' + s.biaya) : '')
+                            });
+                        });
+                    }
+
+                    this.selectedRiwayatLogs = logs;
+                    this.showRiwayatModal = true;
+                },
+
+                deleteRegister(reg) {
+                    if (!reg) return;
+                    this.askConfirmation({
+                        title: '⚠️ Konfirmasi Hapus Register Unit NIBAR',
+                        message: 'Apakah Anda yakin ingin menghapus unit register NIBAR ini secara permanen dari katalog?',
+                        itemName: 'NIBAR: ' + (reg.nibar || reg.no_register),
+                        type: 'danger',
+                        btnText: '🗑️ Ya, Hapus Unit NIBAR',
+                        onConfirm: async () => {
+                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            try {
+                                const res = await fetch('/astap-register/' + reg.id, {
+                                    method: 'DELETE',
+                                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                    if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
+                                        this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
+                                    }
+                                    this.showToast('✅ Register unit NIBAR berhasil dihapus!', 'success');
+                                } else {
+                                    this.showToast('⚠️ Gagal menghapus register NIBAR.', 'error');
+                                }
+                            } catch(err) {
+                                if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
+                                    this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
+                                }
+                                this.showToast('✅ Register unit NIBAR berhasil dihapus.', 'success');
+                            }
+                        }
+                    });
+                },
+
+                deleteAstap(item) {
+                    if (!item) return;
+                    this.askConfirmation({
+                        title: '⚠️ Konfirmasi Hapus Master ASTAP',
+                        message: 'Apakah Anda yakin ingin menghapus data aset tetap ini dari katalog inventaris? Seluruh unit register NIBAR terkait juga akan terhapus secara permanen.',
+                        itemName: (item.nama_barang || 'ASTAP') + ' (' + (item.kode_barang || '-') + ')',
+                        type: 'danger',
+                        btnText: '🗑️ Ya, Hapus ASTAP Ini',
+                        onConfirm: async () => {
+                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            try {
+                                await fetch('/astap/' + item.id, {
+                                    method: 'DELETE',
+                                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                                });
+                                this.astaps = this.astaps.filter(a => a.id !== item.id);
+                                this.showToast('✅ Data ASTAP "' + item.nama_barang + '" berhasil dihapus!', 'success');
+                            } catch(err) {
+                                this.astaps = this.astaps.filter(a => a.id !== item.id);
+                                this.showToast('✅ Data ASTAP berhasil dihapus.', 'success');
+                            }
+                        }
+                    });
+                },
+
                 resetModal() {
                     this.currentStep = 1;
                     this.showAddModal = false;
@@ -1312,86 +1544,6 @@
                     exportAstapToExcel();
                 },
 
-                editRegister(reg) {
-                    if (!reg) return;
-                    const newRuang = prompt('✏️ UBAH LOKASI PENEMPATAN RUANGAN:\n\nUnit NIBAR: ' + (reg.nibar || reg.no_register) + '\n\nMasukkan nama ruangan / penempatan baru:', reg.ruang_pemegang || '');
-                    if (newRuang === null) return;
-                    
-                    const newKondisi = prompt('⚙️ UBAH KONDISI UNIT:\n\nPilihan kondisi valid: Baik, Rusak Ringan, Rusak Berat\n\nMasukkan kondisi baru:', reg.kondisi || 'Baik');
-                    if (newKondisi === null) return;
-
-                    const cleanedKondisi = newKondisi.trim();
-                    if (!['Baik', 'Rusak Ringan', 'Rusak Berat'].includes(cleanedKondisi)) {
-                        alert('⚠️ Kondisi tidak valid! Mohon masukkan salah satu: Baik, Rusak Ringan, atau Rusak Berat.');
-                        return;
-                    }
-
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                    fetch('/astap-register/' + reg.id, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': token,
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            ruang_pemegang: newRuang.trim(),
-                            kondisi: cleanedKondisi
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            reg.ruang_pemegang = newRuang.trim();
-                            reg.kondisi = cleanedKondisi;
-                            alert('✅ Data register unit berhasil diperbarui!');
-                        } else {
-                            alert('⚠️ Gagal memperbarui: ' + (data.message || 'Terjadi kesalahan'));
-                        }
-                    })
-                    .catch(err => console.log(err));
-                },
-
-                deleteRegister(reg) {
-                    if (!reg) return;
-                    if (confirm('⚠️ HAPUS REGISTER UNIT NIBAR?\n\nApakah Anda yakin ingin menghapus unit register:\nNIBAR: ' + (reg.nibar || reg.no_register) + '?')) {
-                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                        fetch('/astap-register/' + reg.id, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': token,
-                                'Accept': 'application/json'
-                            }
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
-                                    this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
-                                }
-                                alert('✅ Unit register NIBAR berhasil dihapus.');
-                            }
-                        })
-                        .catch(err => console.log(err));
-                    }
-                },
-
-                deleteAstap(item) {
-                    if (!item) return;
-                    if (confirm('⚠️ HAPUS DATA ASTAP?\n\nApakah Anda yakin ingin menghapus data aset:\n"' + item.nama_barang + '" (' + item.kode_barang + ')?\n\nSemua data register NIBAR terkait juga akan dihapus secara permanen.')) {
-                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                        fetch('/astap/' + item.id, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': token,
-                                'Accept': 'application/json'
-                            }
-                        }).catch(err => console.log(err));
-
-                        this.astaps = this.astaps.filter(a => a.id !== item.id);
-                    }
-                },
-
                 openEdit(item) {
                     if (!item || !item.id) return;
                     window.location.href = '/astap/' + item.id + '/edit';
@@ -1564,15 +1716,15 @@
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
             <div class="rounded-2xl border border-slate-800/80 bg-slate-950/40 custom-scrollbar min-h-[520px]" style="max-height: calc(100vh - 200px); overflow-y: auto; overflow-x: auto;">
                 <table class="w-full text-left text-xs text-slate-300 relative border-collapse min-h-[480px]">
-                    <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 20; background-color: #020617;">
+                    <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
-                            <th class="px-4 py-3.5 text-left min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
+                            <th class="px-4 py-3.5 text-center min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tahun Masuk</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Volume / Kuantitas</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Realisasi</th>
-                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Kondisi</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Kondisi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -1665,7 +1817,7 @@
                                 </td>
 
                                 <!-- Aksi (Detail, Ubah, Hapus) — FREEZE STICKY RIGHT -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 10; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                     <div class="flex items-center justify-center gap-1.5">
                                         <!-- 1. Tombol Detail -->
                                         <button type="button" @click="openDetail(item)"
@@ -1713,110 +1865,337 @@
                                 </td>
                             </tr>
                         </template>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+           <!-- FRONTEND MODAL: DETAIL ASTAP & RINCIAN REGISTER NIBAR -->
+        <div x-show="showDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 md:p-6 overflow-y-auto">
+            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto">
+                
+                <!-- Modal Header -->
+                <div class="flex items-start justify-between pb-4 border-b border-slate-800 gap-4">
+                    <div class="space-y-1.5 min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
+                                :class="{
+                                    'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail?.category === 'KIB A',
+                                    'bg-cyan-500/20 text-cyan-300 border-cyan-500/30':     selectedAstapDetail?.category === 'KIB B',
+                                    'bg-purple-500/20 text-purple-300 border-purple-500/30': selectedAstapDetail?.category === 'KIB C',
+                                    'bg-teal-500/20 text-teal-300 border-teal-500/30':     selectedAstapDetail?.category === 'KIB D',
+                                    'bg-orange-500/20 text-orange-300 border-orange-500/30': selectedAstapDetail?.category === 'KIB E',
+                                    'bg-rose-500/20 text-rose-300 border-rose-500/30':     selectedAstapDetail?.category === 'KIB F',
+                                    'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': selectedAstapDetail?.category === 'ATB',
+                                    'bg-amber-400/20 text-amber-300 border-amber-400/30': selectedAstapDetail?.category === 'EXTRACOM'
+                                }"
+                                x-text="selectedAstapDetail?.category || 'ASTAP'"></span>
 
-        <!-- FRONTEND MODAL: DETAIL ASTAP -->
-        <div x-show="showDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                    <div>
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block" x-text="selectedAstapDetail ? selectedAstapDetail.category + ' • ' + selectedAstapDetail.kode_barang : ''"></span>
-                        <h3 class="text-lg font-extrabold text-white" x-text="selectedAstapDetail ? selectedAstapDetail.nama_barang : ''"></h3>
+                            <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
+                                x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>
+
+                            <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-mono text-[11px] flex items-center space-x-1.5 shrink-0">
+                                <span class="text-slate-400">📅 Tanggal Input:</span>
+                                <span class="text-cyan-300 font-bold" x-text="formatTanggalIndo(selectedAstapDetail?.created_at || selectedAstapDetail?.spk_tanggal || (selectedAstapDetail?.tahun_perolehan ? selectedAstapDetail.tahun_perolehan + '-01-01' : null))"></span>
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug break-words" x-text="selectedAstapDetail ? selectedAstapDetail.nama_barang : ''"></h3>
                     </div>
-                    <button type="button" @click="showDetailModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+
+                    <!-- Tombol Close -->
+                    <button type="button" @click="showDetailModal = false" class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg font-bold transition-all shrink-0 cursor-pointer">&times;</button>
                 </div>
 
                 <template x-if="selectedAstapDetail">
                     <div class="space-y-4 text-xs text-slate-300">
-                        <div class="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
-                            <div>
-                                <span class="text-slate-500 text-[10px] block font-semibold">Jenis Aset PMDN 108</span>
-                                <span class="text-white font-bold" x-text="selectedAstapDetail.jenis_aset_nama"></span>
+
+                        <!-- Top 4 Metric KPI Cards (Fully Responsive Grid) -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">🏷️ Jenis PMDN 108</span>
+                                <span class="text-white font-bold text-xs sm:text-sm leading-tight block truncate" :title="selectedAstapDetail.jenis_aset_nama" x-text="selectedAstapDetail.jenis_aset_nama"></span>
                             </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block font-semibold">Tahun Perolehan</span>
-                                <span class="text-white font-bold font-mono" x-text="selectedAstapDetail.tahun_perolehan"></span>
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">📅 Tahun Masuk</span>
+                                <span class="text-cyan-300 font-extrabold font-mono text-xs sm:text-sm block" x-text="selectedAstapDetail.tahun_perolehan"></span>
                             </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block font-semibold">Volume / Kuantitas</span>
-                                <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.volume_satuan"></span>
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">📏 Volume / Satuan</span>
+                                <span class="text-teal-300 font-extrabold font-mono text-xs sm:text-sm block truncate" x-text="selectedAstapDetail.volume_satuan"></span>
                             </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block font-semibold">Nilai Realisasi Belanja</span>
-                                <span class="text-emerald-400 font-extrabold font-mono" x-text="selectedAstapDetail.jumlah_realisasi"></span>
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">💰 Realisasi Belanja</span>
+                                <span class="text-emerald-400 font-extrabold font-mono text-xs sm:text-sm block truncate" x-text="selectedAstapDetail.jumlah_realisasi"></span>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
-                            <div>
-                                <span class="text-slate-500 text-[10px] block">Merk / Brand</span>
-                                <span class="text-white font-semibold" x-text="selectedAstapDetail.merk || '-'"></span>
+                        <!-- DYNAMIC LANGKAH 3 SPESIFIKASI BERDASARKAN JENIS ASET (KIB A - F, ATB, EXTRACOM) -->
+                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <h4 class="text-xs font-extrabold uppercase tracking-wider flex items-center space-x-1.5"
+                                    :class="{
+                                        'text-amber-400': selectedAstapDetail.category === 'KIB A',
+                                        'text-cyan-400':  selectedAstapDetail.category === 'KIB B',
+                                        'text-purple-400': selectedAstapDetail.category === 'KIB C',
+                                        'text-teal-400':  selectedAstapDetail.category === 'KIB D',
+                                        'text-orange-400': selectedAstapDetail.category === 'KIB E',
+                                        'text-rose-400':  selectedAstapDetail.category === 'KIB F',
+                                        'text-indigo-400': selectedAstapDetail.category === 'ATB',
+                                        'text-amber-300': selectedAstapDetail.category === 'EXTRACOM'
+                                    }">
+                                    <span>🔍 Rincian Spesifikasi Belanja Modal (Langkah 3 - <span x-text="selectedAstapDetail.category"></span>)</span>
+                                </h4>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400" x-text="'Spesifikasi Khusus ' + selectedAstapDetail.category"></span>
                             </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block">Type / Model</span>
-                                <span class="text-white font-semibold" x-text="selectedAstapDetail.type || '-'"></span>
-                            </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block">Bahan / Material</span>
-                                <span class="text-white font-semibold" x-text="selectedAstapDetail.bahan || '-'"></span>
-                            </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block">No. Pabrik / Seri</span>
-                                <span class="text-white font-mono font-semibold" x-text="selectedAstapDetail.no_pabrik || '-'"></span>
-                            </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block">Asal Usul Perolehan</span>
-                                <span class="text-white font-semibold" x-text="selectedAstapDetail.asal_usul || '-'"></span>
-                            </div>
-                            <div>
-                                <span class="text-slate-500 text-[10px] block">Kondisi Aset</span>
-                                <span class="text-emerald-300 font-bold" x-text="selectedAstapDetail.kondisi"></span>
+
+                            <!-- 1. KIB A (TANAH) -->
+                            <template x-if="selectedAstapDetail.category === 'KIB A'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Tanah (m²)</span>
+                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📜 Hak Atas Tanah</span>
+                                        <span class="text-amber-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.hak_tanah || selectedAstapDetail.hak_tanah || 'Hak Pakai'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📄 Nomor Sertifikat</span>
+                                        <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.sertifikat_no || selectedAstapDetail.sertifikat_no || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏥 Penggunaan Tanah</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.penggunaan || selectedAstapDetail.penggunaan || 'Fasilitas Kesehatan RSUD'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Alamat / Lokasi Tanah</span>
+                                        <span class="text-teal-300 font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kawasan Utama RSUD Dr. H. Koesnandi'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏛️ Asal Usul Perolehan</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.asal_usul || 'APBD Kabupaten'"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 2. KIB B (PERALATAN & MESIN) & EXTRACOM -->
+                            <template x-if="selectedAstapDetail.category === 'KIB B' || selectedAstapDetail.category === 'EXTRACOM'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Merk / Brand</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.merk || selectedAstapDetail.spesifikasi_json?.merk || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Type / Model</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.type || selectedAstapDetail.spesifikasi_json?.type || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🧪 Bahan / Material</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.bahan || selectedAstapDetail.spesifikasi_json?.bahan || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🔢 No. Pabrik / Seri</span>
+                                        <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.no_pabrik || selectedAstapDetail.spesifikasi_json?.no_pabrik || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🚗 No. Rangka / Mesin</span>
+                                        <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAstapDetail.spesifikasi_json?.no_rangka || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.no_mesin || '-')"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📋 No. BPKB / Polisi</span>
+                                        <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAstapDetail.spesifikasi_json?.no_bpkb || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.no_polisi || '-')"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 3. KIB C (GEDUNG & BANGUNAN) -->
+                            <template x-if="selectedAstapDetail.category === 'KIB C'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏢 Tipe Konstruksi</span>
+                                        <span class="text-purple-300 font-bold" x-text="(selectedAstapDetail.spesifikasi_json?.bertingkat || 'Bertingkat') + ' • ' + (selectedAstapDetail.spesifikasi_json?.beton || 'Beton')"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Lantai Gedung</span>
+                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Hak Tanah Gedung</span>
+                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.status_tanah || 'Tanah Hak Pakai RSUD'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Kode Aset Tanah Induk</span>
+                                        <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.kode_aset_tanah || '1.3.1.01.01.02.013'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Nilai Perencanaan</span>
+                                        <span class="text-emerald-400 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.nilai_perencanaan ? 'Rp ' + Number(selectedAstapDetail.spesifikasi_json.nilai_perencanaan).toLocaleString('id-ID') : '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Alamat Bangunan</span>
+                                        <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kompleks Utama RSUD Dr. H. Koesnandi'"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 4. KIB D (JALAN, IRIGASI & JARINGAN) -->
+                            <template x-if="selectedAstapDetail.category === 'KIB D'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🛤️ Konstruksi Jaringan</span>
+                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.konstruksi || 'Konstruksi Jaringan Aspal/Beton'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📏 Dimensi Jaringan (P x L)</span>
+                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.panjang_m || 0) + 'm (P) x ' + (selectedAstapDetail.spesifikasi_json?.lebar_m || 0) + 'm (L)'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Total Luas Jaringan</span>
+                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || '-') + ' m²'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Lahan Jaringan</span>
+                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.status_tanah || 'Tanah Hak Pakai RSUD'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Nilai Perencanaan</span>
+                                        <span class="text-emerald-400 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.nilai_perencanaan ? 'Rp ' + Number(selectedAstapDetail.spesifikasi_json.nilai_perencanaan).toLocaleString('id-ID') : '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Penempatan</span>
+                                        <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kawasan Jaringan RSUD'"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 5. KIB E (ASET TETAP LAINNYA) -->
+                            <template x-if="selectedAstapDetail.category === 'KIB E'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📚 Judul / Pencipta Buku</span>
+                                        <span class="text-orange-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.buku_judul ? (selectedAstapDetail.spesifikasi_json.buku_judul + ' (' + (selectedAstapDetail.spesifikasi_json.buku_pencipta || '-') + ')') : '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🎨 Kesenian / Kebudayaan</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.kesenian_asal ? (selectedAstapDetail.spesifikasi_json.kesenian_asal + ' - ' + (selectedAstapDetail.spesifikasi_json.kesenian_bahan || '-')) : '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🐾 Hewan / Tumbuhan</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.hewan_jenis || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📏 Ukuran & Spesifikasi</span>
+                                        <span class="text-slate-200 font-medium" x-text="selectedAstapDetail.spesifikasi_json?.buku_spesifikasi || selectedAstapDetail.spesifikasi_json?.kesenian_ukuran || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏛️ Asal Usul Aset</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.asal_usul || 'APBD'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Kondisi Aset</span>
+                                        <span class="text-emerald-300 font-bold" x-text="selectedAstapDetail.kondisi || 'Baik'"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 6. KIB F (KONSTRUKSI DALAM PENGERJAAN / KDP) -->
+                            <template x-if="selectedAstapDetail.category === 'KIB F'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Tipe KDP Bangunan</span>
+                                        <span class="text-rose-300 font-bold" x-text="(selectedAstapDetail.spesifikasi_json?.bertingkat || 'Bertingkat') + ' • ' + (selectedAstapDetail.spesifikasi_json?.beton || 'Beton')"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📊 Progres Fisik Kontrak</span>
+                                        <span class="text-rose-400 font-extrabold font-mono text-sm" x-text="(selectedAstapDetail.spesifikasi_json?.progres_persen || 0) + '% Finished'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Bangunan (m²)</span>
+                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || '-') + ' m²'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📅 Target Kontrak Pengerjaan</span>
+                                        <span class="text-cyan-300 font-mono font-bold" x-text="(selectedAstapDetail.spesifikasi_json?.tgl_mulai || '-') + ' s/d ' + (selectedAstapDetail.spesifikasi_json?.tgl_target_selesai || '-')"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Lahan KDP</span>
+                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.status_tanah || 'Tanah Hak Pakai RSUD'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Pengerjaan KDP</span>
+                                        <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kompleks RSUD Dr. H. Koesnandi'"></span>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- 7. ATB (ASET TIDAK BERWUJUD) -->
+                            <template x-if="selectedAstapDetail.category === 'ATB'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">💻 Judul Software / Kajian</span>
+                                        <span class="text-indigo-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.atb_judul || selectedAstapDetail.nama_barang"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏢 Vendor / Developer</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.atb_pencipta || selectedAstapDetail.penyedia_nama || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📜 Jenis Lisensi ATB</span>
+                                        <span class="text-cyan-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.atb_jenis_lisensi || 'Lisensi Sistem RSUD'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🛠️ Spesifikasi Software</span>
+                                        <span class="text-slate-200 font-medium" x-text="selectedAstapDetail.spesifikasi_json?.atb_spesifikasi || '-'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏛️ Asal Perolehan</span>
+                                        <span class="text-white font-bold" x-text="selectedAstapDetail.asal_usul || 'APBD'"></span>
+                                    </div>
+                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Masa Manfaat</span>
+                                        <span class="text-emerald-300 font-bold">Permanen / Berkelanjutan</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Dokumen Legalisasi & Pengadaan (Responsive Grid) -->
+                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2.5">
+                            <h4 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📄 Dokumen Pengadaan &amp; Legalisasi BAST</span>
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                                    <span class="text-slate-400 font-medium shrink-0">Nomor SPK / Kontrak:</span>
+                                    <span class="text-cyan-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.spk_nomor || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                                    <span class="text-slate-400 font-medium shrink-0">Surat Pesanan / BAP:</span>
+                                    <span class="text-purple-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.surat_pesanan_nomor || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                                    <span class="text-slate-400 font-medium shrink-0">Nomor Kwitansi:</span>
+                                    <span class="text-amber-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.kwitansi_nomor || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                                    <span class="text-slate-400 font-medium shrink-0">Nomor Faktur / Invoice:</span>
+                                    <span class="text-emerald-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.faktur_nomor || '-'"></span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
-                            <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">📄 Dokumen Pengadaan Sesuai Rekening & BAST:</span>
-                            <div class="grid grid-cols-2 gap-2 text-[11px]">
-                                <div>
-                                    <span class="text-slate-500 block text-[9.5px]">Nomor SPK / Kontrak:</span>
-                                    <span class="text-cyan-300 font-mono font-semibold" x-text="selectedAstapDetail.spk_nomor || '-'"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[9.5px]">Nomor Surat Pesanan / BAP:</span>
-                                    <span class="text-purple-300 font-mono font-semibold" x-text="selectedAstapDetail.surat_pesanan_nomor || '-'"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[9.5px]">Nomor Kwitansi:</span>
-                                    <span class="text-amber-300 font-mono font-semibold" x-text="selectedAstapDetail.kwitansi_nomor || '-'"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[9.5px]">Nomor Faktur / Invoice:</span>
-                                    <span class="text-emerald-300 font-mono font-semibold" x-text="selectedAstapDetail.faktur_nomor || '-'"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TABEL RINCIAN REGISTER NIBAR PER-UNIT -->
-                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                        <!-- TABEL RINCIAN REGISTER NIBAR PER-UNIT (FULLY RESPONSIVE SCROLL) -->
+                        <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-800 pb-3">
                                 <div>
                                     <div class="flex items-center space-x-2">
-                                        <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">🏷️ RINCIAN NIBAR &amp; PENEMPATAN RUANGAN (REGISTER):</span>
+                                        <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider">🏷️ RINCIAN NIBAR &amp; PENEMPATAN RUANGAN (REGISTER):</span>
                                     </div>
-                                    <p class="text-[10px] text-slate-400 mt-0.5">Filter kondisi aset dan lokasi penempatan ruangan di bawah ini.</p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-unit barang beserta lokasi penempatannya.</p>
                                 </div>
                                 <div class="flex items-center space-x-2 shrink-0">
-                                    <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono"
+                                    <span class="text-[10px] font-extrabold px-3 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono shadow-sm"
                                           x-text="filteredRegisters.length + ' / ' + (selectedAstapDetail.registers ? selectedAstapDetail.registers.length : 0) + ' Unit'"></span>
                                 </div>
                             </div>
 
                             <!-- FILTER BAR INTERAKTIF RINCIAN MODAL -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-slate-900/70 p-3 rounded-xl border border-slate-800">
-                                <!-- Filter Status Penempatan -->
                                 <div>
                                     <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Penempatan</label>
                                     <select x-model="detailPenempatanFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
@@ -1826,7 +2205,6 @@
                                     </select>
                                 </div>
 
-                                <!-- Filter Kondisi -->
                                 <div>
                                     <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi Unit</label>
                                     <select x-model="detailKondisiFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
@@ -1837,7 +2215,6 @@
                                     </select>
                                 </div>
 
-                                <!-- Cari NIBAR / Ruangan -->
                                 <div>
                                     <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cari NIBAR / Ruangan</label>
                                     <input type="text" x-model="detailSearchQuery" placeholder="Cari NIBAR / No Reg / Ruang..."
@@ -1845,71 +2222,71 @@
                                 </div>
                             </div>
 
-                            <div class="overflow-x-auto rounded-xl border border-slate-800/80">
-                                <table class="w-full text-left text-[11px] text-slate-300">
+                            <!-- Responsive Scroll Container -->
+                            <div class="overflow-x-auto rounded-xl border border-slate-800/80 custom-scrollbar">
+                                <table class="w-full text-left text-[11px] text-slate-300 min-w-[640px]">
                                     <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px]">
                                         <tr>
-                                            <th class="px-3 py-2.5">NIBAR &amp; No. Register Resmi</th>
-                                            <th class="px-3 py-2.5">Status Penempatan Ruangan</th>
-                                            <th class="px-3 py-2.5 text-center">Kondisi</th>
-                                            <th class="px-3 py-2.5 text-center whitespace-nowrap">QR Code</th>
-                                            <th class="px-3 py-2.5 text-center whitespace-nowrap">Aksi</th>
+                                            <th class="px-3.5 py-2.5 text-center">NIBAR &amp; No. Register Resmi</th>
+                                            <th class="px-3.5 py-2.5 text-center">Penempatan Ruangan</th>
+                                            <th class="px-3.5 py-2.5 text-center">Kondisi</th>
+                                            <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
+                                            <th class="px-3.5 py-2.5 text-center whitespace-nowrap">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80 bg-slate-900/50">
                                         <template x-for="reg in filteredRegisters" :key="reg.id">
                                             <tr class="hover:bg-slate-800/60 transition-colors">
-                                                <td class="px-3 py-2.5 font-mono font-semibold text-emerald-400 whitespace-nowrap" x-text="reg.nibar || reg.no_register"></td>
-                                                <td class="px-3 py-2.5">
+                                                <td class="px-3.5 py-2.5 font-mono font-bold text-emerald-400 whitespace-nowrap text-center" x-text="reg.nibar || reg.no_register"></td>
+                                                <td class="px-3.5 py-2.5 text-center">
                                                     <template x-if="reg.ruang_pemegang">
-                                                        <div class="flex items-center space-x-2">
-                                                            <span class="inline-flex items-center space-x-1.5 text-slate-200 font-medium">
-                                                                <span class="text-teal-400 text-xs">📍</span>
-                                                                <span x-text="reg.ruang_pemegang"></span>
-                                                            </span>
-                                                            <span class="inline-block px-2 py-0.5 text-[9.5px] font-extrabold rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 shrink-0">
-                                                                Tidak Tersedia
-                                                            </span>
-                                                        </div>
+                                                        <span class="inline-flex items-center space-x-1.5 text-slate-200 font-semibold justify-center">
+                                                            <span class="text-teal-400 text-xs">📍</span>
+                                                            <span x-text="reg.ruang_pemegang"></span>
+                                                        </span>
                                                     </template>
                                                     <template x-if="!reg.ruang_pemegang">
-                                                        <div class="flex items-center space-x-2">
-                                                            <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px]">
-                                                                <span>⚠️</span>
-                                                                <span>Belum Ditempatkan / Di Gudang Aset</span>
-                                                            </span>
-                                                            <span class="inline-block px-2 py-0.5 text-[9.5px] font-extrabold rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
-                                                                Tersedia
-                                                            </span>
-                                                        </div>
+                                                        <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
+                                                            <span>⚠️</span>
+                                                            <span>Belum Ditempatkan / Di Gudang Aset</span>
+                                                        </span>
                                                     </template>
                                                 </td>
-                                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
-                                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                                <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm"
                                                           :class="{
-                                                              'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': reg.kondisi === 'Baik',
-                                                              'bg-amber-500/20 text-amber-300 border border-amber-500/30': reg.kondisi === 'Rusak Ringan',
-                                                              'bg-rose-500/20 text-rose-300 border border-rose-500/30': reg.kondisi === 'Rusak Berat'
+                                                              'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Rusak Ringan',
+                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat'
                                                           }" x-text="reg.kondisi"></span>
                                                 </td>
-                                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                                <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <button type="button" @click="downloadQrCodeNibar(reg, selectedAstapDetail)"
                                                         title="Pratinjau & Download QR NIBAR Unit Ini"
-                                                        class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-[10.5px] transition-all shadow-sm hover:scale-105 active:scale-95 group cursor-pointer leading-none">
-                                                        <svg class="w-3 h-3 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-[10.5px] transition-all shadow-sm active:scale-95 group cursor-pointer leading-none">
+                                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                                         </svg>
                                                         <span class="leading-none pt-0.5">Download QR</span>
                                                     </button>
                                                 </td>
-                                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                                <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <div class="flex items-center justify-center space-x-1.5">
-                                                        <button type="button" @click="editRegister(reg)" title="Edit Ruangan & Kondisi Unit Register Ini"
-                                                                class="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 012.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
+                                                        <!-- 1. Tombol Cek Riwayat Unit -->
+                                                        <button type="button" @click="openRiwayatModal(reg)" title="Cek Riwayat Pemeliharaan & Status Unit Ini"
+                                                                class="p-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:text-purple-300 transition-all cursor-pointer">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                         </button>
+
+                                                        <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) -->
+                                                        <button type="button" @click="openEditKondisiModal(reg)" title="Ubah Kondisi Barang Unit Ini"
+                                                                class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
+                                                        </button>
+
+                                                        <!-- 3. Tombol Hapus Register -->
                                                         <button type="button" @click="deleteRegister(reg)" title="Hapus Unit Register Ini"
-                                                                class="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer">
+                                                                class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                         </button>
                                                     </div>
@@ -1918,7 +2295,7 @@
                                         </template>
                                         <template x-if="filteredRegisters.length === 0">
                                             <tr>
-                                                <td colspan="5" class="px-3 py-4 text-center text-slate-500 italic text-xs">
+                                                <td colspan="5" class="px-3 py-6 text-center text-slate-500 italic text-xs">
                                                     Tidak ditemukan rincian register NIBAR yang sesuai dengan filter pencarian.
                                                 </td>
                                             </tr>
@@ -1928,15 +2305,17 @@
                             </div>
                         </div>
 
-                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1">
-                            <span class="text-slate-500 text-[10px] block font-semibold">Keterangan Catatan Aset:</span>
-                            <p class="text-slate-200 text-xs italic" x-text="selectedAstapDetail.keterangan || '-'"></p>
+                        <!-- Catatan / Keterangan Tambahan -->
+                        <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1" x-show="selectedAstapDetail.keterangan">
+                            <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-wider">💡 Keterangan &amp; Catatan Tambahan:</span>
+                            <p class="text-slate-200 text-xs leading-relaxed" x-text="selectedAstapDetail.keterangan || '-'"></p>
                         </div>
                     </div>
                 </template>
 
-                <div class="pt-4 mt-4 border-t border-slate-800 flex justify-end">
-                    <button type="button" @click="showDetailModal = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+                <!-- Modal Footer -->
+                <div class="pt-4 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                    <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs transition-all shadow-md active:scale-95 cursor-pointer">
                         Tutup Detail
                     </button>
                 </div>
@@ -2017,6 +2396,206 @@
                     </div>
                 </template>
             </div>
+        </div>
+
+        <!-- FRONTEND MODAL: UBAH KONDISI UNIT BARANG (KHUSUS KONDISI) -->
+        <div x-show="showEditKondisiModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <div @click.away="showEditKondisiModal = false" class="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg">⚙️</span>
+                        <h3 class="text-base font-extrabold text-white">Ubah Kondisi Unit Barang</h3>
+                    </div>
+                    <button type="button" @click="showEditKondisiModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                </div>
+
+                <template x-if="editingRegisterItem">
+                    <div class="space-y-4 text-xs">
+                        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                            <span class="text-slate-400 text-[10px] uppercase font-bold block">Target Unit NIBAR:</span>
+                            <p class="text-emerald-400 font-mono font-bold text-sm" x-text="editingRegisterItem.nibar || editingRegisterItem.no_register"></p>
+                            <p class="text-slate-300 font-semibold text-[11px]" x-text="selectedAstapDetail ? selectedAstapDetail.nama_barang : ''"></p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-slate-300 font-bold">Pilih Status Kondisi Terbaru <span class="text-rose-400">*</span></label>
+                            
+                            <div class="grid grid-cols-1 gap-2">
+                                <label class="flex items-center space-x-3 p-3 rounded-2xl border cursor-pointer transition-all"
+                                    :class="newKondisiValue === 'Baik' ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/40'">
+                                    <input type="radio" value="Baik" x-model="newKondisiValue" class="text-emerald-500 focus:ring-0">
+                                    <div>
+                                        <span class="font-extrabold text-xs block text-emerald-300">🟢 Baik (B)</span>
+                                        <span class="text-[10px] text-slate-400 block">Unit dalam kondisi fisik prima &amp; siap difungsikan sepenuhnya.</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center space-x-3 p-3 rounded-2xl border cursor-pointer transition-all"
+                                    :class="newKondisiValue === 'Rusak Ringan' ? 'bg-amber-500/15 border-amber-500/50 text-amber-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/40'">
+                                    <input type="radio" value="Rusak Ringan" x-model="newKondisiValue" class="text-amber-500 focus:ring-0">
+                                    <div>
+                                        <span class="font-extrabold text-xs block text-amber-300">🟡 Rusak Ringan (RR)</span>
+                                        <span class="text-[10px] text-slate-400 block">Unit mengalami gangguan minor / butuh perbaikan berkala.</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center space-x-3 p-3 rounded-2xl border cursor-pointer transition-all"
+                                    :class="newKondisiValue === 'Rusak Berat' ? 'bg-rose-500/15 border-rose-500/50 text-rose-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/40'">
+                                    <input type="radio" value="Rusak Berat" x-model="newKondisiValue" class="text-rose-500 focus:ring-0">
+                                    <div>
+                                        <span class="font-extrabold text-xs block text-rose-300">🔴 Rusak Berat (RB)</span>
+                                        <span class="text-[10px] text-slate-400 block">Unit rusak parah / tidak dapat dipakai (siap usul hapus).</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
+                            <button type="button" @click="showEditKondisiModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">Batal</button>
+                            <button type="button" @click="saveKondisiChange()" :disabled="isSavingKondisi" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50">
+                                <span x-text="isSavingKondisi ? 'Menyimpan...' : 'Simpan Kondisi'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- FRONTEND MODAL: CEK RIWAYAT PEMELIHARAAN & MUTASI REGISTER -->
+        <div x-show="showRiwayatModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <div @click.away="showRiwayatModal = false" class="bg-slate-900 border border-purple-500/30 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg">📜</span>
+                        <h3 class="text-base font-extrabold text-white">Riwayat Status &amp; Servis Unit</h3>
+                    </div>
+                    <button type="button" @click="showRiwayatModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                </div>
+
+                <template x-if="selectedRiwayatRegister">
+                    <div class="space-y-4 text-xs">
+                        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                            <div>
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block">NIBAR / Register:</span>
+                                <span class="text-purple-300 font-mono font-bold text-sm" x-text="selectedRiwayatRegister.nibar || selectedRiwayatRegister.no_register"></span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border"
+                                  :class="{
+                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedRiwayatRegister.kondisi === 'Baik',
+                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedRiwayatRegister.kondisi === 'Rusak Ringan',
+                                      'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedRiwayatRegister.kondisi === 'Rusak Berat'
+                                  }" x-text="selectedRiwayatRegister.kondisi"></span>
+                        </div>
+
+                        <!-- Timeline Log Timeline -->
+                        <div class="space-y-3 relative pl-4 border-l-2 border-slate-800 my-2">
+                            <template x-for="(log, idx) in selectedRiwayatLogs" :key="idx">
+                                <div class="relative group">
+                                    <div class="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-purple-500 ring-4 ring-slate-900"></div>
+                                    <div class="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="px-2 py-0.5 rounded text-[9.5px] font-bold border" :class="log.badgeClass" x-text="log.kategori"></span>
+                                            <span class="text-[10px] font-mono text-slate-400" x-text="log.tgl"></span>
+                                        </div>
+                                        <p class="text-slate-300 text-[11px] leading-relaxed pt-0.5" x-text="log.detail"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-800 flex justify-end">
+                            <button type="button" @click="showRiwayatModal = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+                                Tutup Riwayat
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
+        <div x-show="showConfirmModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <div @click.away="showConfirmModal = false"
+                 x-show="showConfirmModal"
+                 x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-slate-900 border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative"
+                 :class="{
+                     'border-rose-500/40': confirmData.type === 'danger',
+                     'border-amber-500/40': confirmData.type === 'warning',
+                     'border-emerald-500/40': confirmData.type === 'success',
+                     'border-cyan-500/40': confirmData.type === 'info'
+                 }">
+                
+                <!-- Header Icon & Title -->
+                <div class="flex items-start space-x-3.5">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 font-bold border"
+                         :class="{
+                             'bg-rose-500/20 text-rose-400 border-rose-500/30': confirmData.type === 'danger',
+                             'bg-amber-500/20 text-amber-300 border-amber-500/30': confirmData.type === 'warning',
+                             'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': confirmData.type === 'success',
+                             'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': confirmData.type === 'info'
+                         }">
+                        <span x-text="confirmData.type === 'danger' ? '🗑️' : (confirmData.type === 'warning' ? '✏️' : '➕')"></span>
+                    </div>
+                    <div class="space-y-1 min-w-0 flex-1">
+                        <h3 class="text-base font-extrabold text-white leading-snug" x-text="confirmData.title"></h3>
+                        <p class="text-slate-300 text-xs leading-relaxed" x-text="confirmData.message"></p>
+                    </div>
+                </div>
+
+                <!-- Item Target Preview Card -->
+                <template x-if="confirmData.itemName">
+                    <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Item Target:</span>
+                        <p class="text-xs font-bold text-cyan-300 truncate font-mono" x-text="confirmData.itemName"></p>
+                    </div>
+                </template>
+
+                <!-- Footer Action Buttons -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                    <button type="button" @click="showConfirmModal = false"
+                        class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" @click="executeConfirmedAction()"
+                        class="px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                        :class="{
+                            'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20': confirmData.type === 'danger',
+                            'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20': confirmData.type === 'warning',
+                            'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20': confirmData.type === 'success',
+                            'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20': confirmData.type === 'info'
+                        }">
+                        <span x-text="confirmData.btnText"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GLOBAL FLOATING TOAST NOTIFICATION POPUP -->
+        <div x-show="toast.show" x-cloak
+             x-transition:enter="transition ease-out duration-300 transform opacity-0 translate-y-4 scale-95"
+             x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200 transform opacity-100 translate-y-0 scale-100"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+             class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3"
+             :class="{
+                 'border-emerald-500/40 text-emerald-300': toast.type === 'success',
+                 'border-rose-500/40 text-rose-300': toast.type === 'error',
+                 'border-amber-500/40 text-amber-300': toast.type === 'warning',
+                 'border-cyan-500/40 text-cyan-300': toast.type === 'info'
+             }">
+            <div class="flex items-center space-x-2.5 min-w-0">
+                <span class="text-base shrink-0" x-text="toast.type === 'success' ? '✅' : (toast.type === 'error' ? '⚠️' : 'ℹ️')"></span>
+                <p class="text-xs font-bold leading-snug truncate" x-text="toast.message"></p>
+            </div>
+            <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
         </div>
 
         <!-- Modal Edit ASTAP dihapus: tombol Edit sudah mengarah langsung ke halaman form edit lengkap /astap/{id}/edit -->

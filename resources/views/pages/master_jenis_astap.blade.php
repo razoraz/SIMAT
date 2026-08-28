@@ -2,71 +2,132 @@
     @section('page-title', 'Master Jenis ASTAP (Kode 108 BMD)')
     @section('breadcrumb', 'Master Data System / Jenis ASTAP Kode 108')
 
-    <div x-data="{
-        showAddModal: false,
-        showEditModal: false,
-        showImportModal: false,
-        selectedKode: null,
+    <script>
+        function masterJenisAstap() {
+            return {
+                showAddModal: false,
+                showEditModal: false,
+                showImportModal: false,
+                selectedKode: null,
 
-        newFormData: {
-            jenis: '1.3.1',
-            nama_jenis: 'TANAH',
-            sub_rincian_objek: '1.3.1.01.01.01',
-            uraian_sub_rincian: '',
-            sub_sub_rincian_objek: '1.3.1.01.01.01.001',
-            uraian_sub_sub_rincian: ''
-        },
+                newFormData: {
+                    jenis: '1.3.1',
+                    nama_jenis: 'TANAH',
+                    sub_rincian_objek: '1.3.1.01.01.01',
+                    uraian_sub_rincian: '',
+                    sub_sub_rincian_objek: '1.3.1.01.01.01.001',
+                    uraian_sub_sub_rincian: ''
+                },
 
-        editFormData: {
-            id: null,
-            jenis: '',
-            nama_jenis: '',
-            sub_rincian_objek: '',
-            uraian_sub_rincian: '',
-            sub_sub_rincian_objek: '',
-            uraian_sub_sub_rincian: ''
-        },
+                editFormData: {
+                    id: null,
+                    jenis: '',
+                    nama_jenis: '',
+                    sub_rincian_objek: '',
+                    uraian_sub_rincian: '',
+                    sub_sub_rincian_objek: '',
+                    uraian_sub_sub_rincian: ''
+                },
 
-        openEdit(item) {
-            this.editFormData = { ...item };
-            this.showEditModal = true;
-        },
+                openEdit(item) {
+                    this.editFormData = { ...item };
+                    this.showEditModal = true;
+                },
 
-        onJenisChangeNew() {
-            const lookup = {
-                '1.3.1': { nama: 'TANAH', sub_prefix: '1.3.1.01.01.01', sub_sub_prefix: '1.3.1.01.01.01.001' },
-                '1.3.2': { nama: 'PERALATAN DAN MESIN', sub_prefix: '1.3.2.02.01.01', sub_sub_prefix: '1.3.2.02.01.01.001' },
-                '1.3.3': { nama: 'GEDUNG DAN BANGUNAN', sub_prefix: '1.3.3.01.01.01', sub_sub_prefix: '1.3.3.01.01.01.001' },
-                '1.3.4': { nama: 'JALAN, IRIGASI DAN JARINGAN', sub_prefix: '1.3.4.03.01.01', sub_sub_prefix: '1.3.4.03.01.01.001' },
-                '1.3.5': { nama: 'ASET TETAP LAINNYA', sub_prefix: '1.3.5.01.01.01', sub_sub_prefix: '1.3.5.01.01.01.001' },
-                '1.3.6': { nama: 'KONSTRUKSI DALAM PENGERJAAN', sub_prefix: '1.3.6.01.01.01', sub_sub_prefix: '1.3.6.01.01.01.001' },
-                '1.5.3': { nama: 'ASET TIDAK BERWUJUD', sub_prefix: '1.5.3.01.01.01', sub_sub_prefix: '1.5.3.01.01.01.001' },
-                '1.3.7': { nama: 'ASET TETAP DALAM RENOVASI', sub_prefix: '1.3.7.01.01.01', sub_sub_prefix: '1.3.7.01.01.01.001' }
+                onJenisChangeNew() {
+                    const lookup = {
+                        '1.3.1': { nama: 'TANAH', sub_prefix: '1.3.1.01.01.01', sub_sub_prefix: '1.3.1.01.01.01.001' },
+                        '1.3.2': { nama: 'PERALATAN DAN MESIN', sub_prefix: '1.3.2.02.01.01', sub_sub_prefix: '1.3.2.02.01.01.001' },
+                        '1.3.3': { nama: 'GEDUNG DAN BANGUNAN', sub_prefix: '1.3.3.01.01.01', sub_sub_prefix: '1.3.3.01.01.01.001' },
+                        '1.3.4': { nama: 'JALAN, IRIGASI DAN JARINGAN', sub_prefix: '1.3.4.03.01.01', sub_sub_prefix: '1.3.4.03.01.01.001' },
+                        '1.3.5': { nama: 'ASET TETAP LAINNYA', sub_prefix: '1.3.5.01.01.01', sub_sub_prefix: '1.3.5.01.01.01.001' },
+                        '1.3.6': { nama: 'KONSTRUKSI DALAM PENGERJAAN', sub_prefix: '1.3.6.01.01.01', sub_sub_prefix: '1.3.6.01.01.01.001' },
+                        '1.5.3': { nama: 'ASET TIDAK BERWUJUD', sub_prefix: '1.5.3.01.01.01', sub_sub_prefix: '1.5.3.01.01.01.001' },
+                        '1.3.7': { nama: 'ASET TETAP DALAM RENOVASI', sub_prefix: '1.3.7.01.01.01', sub_sub_prefix: '1.3.7.01.01.01.001' }
+                    };
+                    const item = lookup[this.newFormData.jenis];
+                    if (item) {
+                        this.newFormData.nama_jenis = item.nama;
+                        this.newFormData.sub_rincian_objek = item.sub_prefix;
+                        this.newFormData.sub_sub_rincian_objek = item.sub_sub_prefix;
+                    }
+                },
+
+                onJenisChangeEdit() {
+                    const lookup = {
+                        '1.3.1': 'TANAH',
+                        '1.3.2': 'PERALATAN DAN MESIN',
+                        '1.3.3': 'GEDUNG DAN BANGUNAN',
+                        '1.3.4': 'JALAN, IRIGASI DAN JARINGAN',
+                        '1.3.5': 'ASET TETAP LAINNYA',
+                        '1.3.6': 'KONSTRUKSI DALAM PENGERJAAN',
+                        '1.5.3': 'ASET TIDAK BERWUJUD',
+                        '1.3.7': 'ASET TETAP DALAM RENOVASI'
+                    };
+                    if (lookup[this.editFormData.jenis]) {
+                        this.editFormData.nama_jenis = lookup[this.editFormData.jenis];
+                    }
+                },
+
+                showConfirmModal: false,
+                confirmData: {
+                    title: 'Konfirmasi Tindakan',
+                    message: 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                    itemName: '',
+                    type: 'danger',
+                    btnText: 'Ya, Lanjutkan',
+                    onConfirm: null
+                },
+
+                toast: {
+                    show: false,
+                    message: '',
+                    type: 'success'
+                },
+
+                askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
+                    this.confirmData = {
+                        title: title || 'Konfirmasi Tindakan',
+                        message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                        itemName: itemName || '',
+                        type: type,
+                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        onConfirm: onConfirm
+                    };
+                    this.showConfirmModal = true;
+                },
+
+                executeConfirmedAction() {
+                    if (typeof this.confirmData.onConfirm === 'function') {
+                        this.confirmData.onConfirm();
+                    }
+                    this.showConfirmModal = false;
+                },
+
+                showSimatToast(message, type = 'success') {
+                    this.toast = { show: true, message: message, type: type };
+                    setTimeout(() => { this.toast.show = false; }, 4000);
+                },
+
+                confirmDeleteForm(event, itemName) {
+                    event.preventDefault();
+                    const formElement = event.target;
+                    this.askConfirmation({
+                        title: '🗑️ Konfirmasi Hapus Kode 108',
+                        message: 'Apakah Anda yakin ingin menghapus data klasifikasi Kode 108 BMD ini dari master data?',
+                        itemName: itemName || '',
+                        type: 'danger',
+                        btnText: '🗑️ Ya, Hapus Kode 108',
+                        onConfirm: () => {
+                            formElement.submit();
+                        }
+                    });
+                }
             };
-            const item = lookup[this.newFormData.jenis];
-            if (item) {
-                this.newFormData.nama_jenis = item.nama;
-                this.newFormData.sub_rincian_objek = item.sub_prefix;
-                this.newFormData.sub_sub_rincian_objek = item.sub_sub_prefix;
-            }
-        },
-
-        onJenisChangeEdit() {
-            const lookup = {
-                '1.3.1': 'TANAH',
-                '1.3.2': 'PERALATAN DAN MESIN',
-                '1.3.3': 'GEDUNG DAN BANGUNAN',
-                '1.3.4': 'JALAN, IRIGASI DAN JARINGAN',
-                '1.3.5': 'ASET TETAP LAINNYA',
-                '1.3.6': 'KONSTRUKSI DALAM PENGERJAAN',
-                '1.5.3': 'ASET TIDAK BERWUJUD',
-                '1.3.7': 'ASET TETAP DALAM RENOVASI'
-            };
-            if (lookup[this.editFormData.jenis]) {
-                this.editFormData.nama_jenis = lookup[this.editFormData.jenis];
-            }
         }
-    }" x-cloak>
+    </script>
+
+    <div x-data="masterJenisAstap()" x-cloak>
 
         @if (session('success'))
             <div class="mb-4 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-between shadow-lg">
@@ -219,10 +280,10 @@
         <!-- ========================================================================= -->
         <!-- TABEL STRUKTUR KODE 108 BMD                                               -->
         <!-- ========================================================================= -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl overflow-hidden mb-6">
-            <div class="overflow-x-auto">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-5 mb-6">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 350px; overflow-y: auto; overflow-x: auto;">
                 <table class="w-full text-left text-xs text-slate-300 border-collapse">
-                    <thead>
+                    <thead class="shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                         <tr class="text-center font-extrabold uppercase tracking-wider text-xs border-b border-slate-800">
                             <th rowspan="2" class="px-4 py-3 bg-slate-950/90 text-slate-300 border-r border-slate-800 w-12 text-center align-middle">
                                 NO
@@ -312,11 +373,11 @@
                                         <span>Ubah</span>
                                     </button>
 
-                                    <form action="{{ route('master.jenis_astap.destroy', $item->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data Kode 108 ini?')">
+                                    <form action="{{ route('master.jenis_astap.destroy', $item->id) }}" method="POST" class="inline-block" @submit="confirmDeleteForm($event, '{{ $item->uraian_sub_sub_rincian }} ({{ $item->sub_sub_rincian_objek }})')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
+                                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             <span>Hapus</span>
                                         </button>
@@ -553,6 +614,91 @@
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
+        <div x-show="showConfirmModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <div @click.away="showConfirmModal = false"
+                 x-show="showConfirmModal"
+                 x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="bg-slate-900 border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative"
+                 :class="{
+                     'border-rose-500/40': confirmData.type === 'danger',
+                     'border-amber-500/40': confirmData.type === 'warning',
+                     'border-emerald-500/40': confirmData.type === 'success',
+                     'border-cyan-500/40': confirmData.type === 'info'
+                 }">
+                
+                <!-- Header Icon & Title -->
+                <div class="flex items-start space-x-3.5">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 font-bold border"
+                         :class="{
+                             'bg-rose-500/20 text-rose-400 border-rose-500/30': confirmData.type === 'danger',
+                             'bg-amber-500/20 text-amber-300 border-amber-500/30': confirmData.type === 'warning',
+                             'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': confirmData.type === 'success',
+                             'bg-cyan-500/20 text-cyan-300 border-cyan-500/30': confirmData.type === 'info'
+                         }">
+                        <span x-text="confirmData.type === 'danger' ? '🗑️' : (confirmData.type === 'warning' ? '✏️' : '➕')"></span>
+                    </div>
+                    <div class="space-y-1 min-w-0 flex-1">
+                        <h3 class="text-base font-extrabold text-white leading-snug" x-text="confirmData.title"></h3>
+                        <p class="text-slate-300 text-xs leading-relaxed" x-text="confirmData.message"></p>
+                    </div>
+                </div>
+
+                <!-- Item Target Preview Card -->
+                <template x-if="confirmData.itemName">
+                    <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Item Target:</span>
+                        <p class="text-xs font-bold text-cyan-300 truncate font-mono" x-text="confirmData.itemName"></p>
+                    </div>
+                </template>
+
+                <!-- Footer Action Buttons -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                    <button type="button" @click="showConfirmModal = false"
+                        class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" @click="executeConfirmedAction()"
+                        class="px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                        :class="{
+                            'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20': confirmData.type === 'danger',
+                            'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20': confirmData.type === 'warning',
+                            'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20': confirmData.type === 'success',
+                            'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20': confirmData.type === 'info'
+                        }">
+                        <span x-text="confirmData.btnText"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GLOBAL FLOATING TOAST NOTIFICATION POPUP -->
+        <div x-show="toast.show" x-cloak
+             x-transition:enter="transition ease-out duration-300 transform opacity-0 translate-y-4 scale-95"
+             x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200 transform opacity-100 translate-y-0 scale-100"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+             class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3"
+             :class="{
+                 'border-emerald-500/40 text-emerald-300': toast.type === 'success',
+                 'border-rose-500/40 text-rose-300': toast.type === 'error',
+                 'border-amber-500/40 text-amber-300': toast.type === 'warning',
+                 'border-cyan-500/40 text-cyan-300': toast.type === 'info'
+             }">
+            <div class="flex items-center space-x-2.5 min-w-0">
+                <span class="text-base shrink-0" x-text="toast.type === 'success' ? '✅' : (toast.type === 'error' ? '⚠️' : 'ℹ️')"></span>
+                <p class="text-xs font-bold leading-snug truncate" x-text="toast.message"></p>
+            </div>
+            <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
         </div>
 
     </div>
