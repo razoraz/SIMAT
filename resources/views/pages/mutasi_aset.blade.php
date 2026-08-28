@@ -420,13 +420,13 @@
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-extrabold border shadow-sm"
                                         :class="{
-                                            'bg-blue-500/10 text-blue-300 border-blue-500/30':     item.jenis === 'Pemindahan',
+                                            'bg-blue-500/10 text-blue-300 border-blue-500/30':   item.jenis === 'Ajukan Mutasi' || item.jenis === 'Pemindahan',
                                             'bg-amber-500/10 text-amber-300 border-amber-500/30': item.jenis === 'Perbaikan',
-                                            'bg-teal-500/10 text-teal-300 border-teal-500/30':     item.jenis === 'Pengembalian',
-                                            'bg-rose-500/10 text-rose-300 border-rose-500/30':     item.jenis === 'Penghapusan',
+                                            'bg-teal-500/10 text-teal-300 border-teal-500/30':   item.jenis === 'Minta Mutasi' || item.jenis === 'Minta_Mutasi',
+                                            'bg-rose-500/10 text-rose-300 border-rose-500/30':     item.jenis === 'Pengembalian' || item.jenis === 'Penghapusan',
                                             'bg-slate-800 text-slate-400 border-slate-700':       !item.jenis
                                         }">
-                                        <span x-text="item.jenis === 'Pemindahan' ? '🔄' : item.jenis === 'Perbaikan' ? '🔧' : item.jenis === 'Pengembalian' ? '↩️' : item.jenis === 'Penghapusan' ? '🗑️' : '•'"></span>
+                                        <span x-text="(item.jenis === 'Ajukan Mutasi' || item.jenis === 'Pemindahan') ? '🔄' : item.jenis === 'Perbaikan' ? '🔧' : (item.jenis === 'Minta Mutasi' || item.jenis === 'Minta_Mutasi') ? '📥' : '↩️'"></span>
                                         <span x-text="item.jenis || '—'"></span>
                                     </span>
                                 </td>

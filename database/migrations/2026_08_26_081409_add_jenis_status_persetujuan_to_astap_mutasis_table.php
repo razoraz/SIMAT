@@ -12,12 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('astap_mutasis', function (Blueprint $table) {
-            // Jenis Mutasi: Pemindahan | Perbaikan | Pengembalian | Penghapusan
-            $table->string('jenis_mutasi', 50)->default('Pemindahan')->after('astap_register_id');
-
-            // Kondisi barang sebelum & sesudah mutasi
-            $table->string('kondisi_sebelum', 30)->default('Baik')->after('ruangan_tujuan');
-            $table->string('kondisi_sesudah', 30)->nullable()->after('kondisi_sebelum');
+            // Jenis Mutasi: Ajukan Mutasi | Perbaikan | Minta Mutasi | Pengembalian
+            $table->string('jenis_mutasi', 50)->default('Ajukan Mutasi')->after('astap_register_id');
 
             // Catatan dari unit penerima setelah menerima barang
             $table->text('catatan_penerima')->nullable()->after('alasan_mutasi');
@@ -49,8 +45,6 @@ return new class extends Migration
         Schema::table('astap_mutasis', function (Blueprint $table) {
             $table->dropColumn([
                 'jenis_mutasi',
-                'kondisi_sebelum',
-                'kondisi_sesudah',
                 'catatan_penerima',
                 'persetujuan_pengirim',
                 'persetujuan_penerima',

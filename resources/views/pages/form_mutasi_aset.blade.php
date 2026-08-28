@@ -3,15 +3,16 @@
     @section('breadcrumb', isset($mutasi) ? 'Master Utama / Mutasi Aset / Ubah' : 'Master Utama / Mutasi Aset / Pengajuan Baru')
 
     <div x-data="{
+        step: 1,
         isEdit: {{ isset($mutasi) ? 'true' : 'false' }},
 
         /* ---- Jenis Mutasi ---- */
-        jenis_mutasi: '{{ old('jenis_mutasi', $mutasi->jenis_mutasi ?? 'Pemindahan') }}',
+        jenis_mutasi: '{{ old('jenis_mutasi', $mutasi->jenis_mutasi ?? 'Ajukan Mutasi') }}',
         jenisMutasiOptions: [
-            { value: 'Pemindahan',   emoji: '🔄', label: 'Pemindahan Kebutuhan', desc: 'Barang surplus dipindah ke unit yang lebih membutuhkan', color: 'blue' },
-            { value: 'Perbaikan',    emoji: '🔧', label: 'Perbaikan / Servis',   desc: 'Barang rusak dikirim ke unit/IPSRS yang bisa memperbaiki', color: 'amber' },
-            { value: 'Pengembalian', emoji: '↩️', label: 'Pengembalian Barang',  desc: 'Barang selesai diperbaiki dikembalikan ke unit asal', color: 'teal' },
-            { value: 'Penghapusan',  emoji: '🗑️', label: 'Penghapusan Aset',    desc: 'Barang rusak berat dimutasi ke Bagian Perbekalan/Admin', color: 'rose' }
+            { value: 'Ajukan Mutasi',  emoji: '🔄', label: 'Ajukan Mutasi',     desc: 'Unit asal mengajukan pemindahan/penyerahan barang miliknya ke unit tujuan', color: 'blue' },
+            { value: 'Perbaikan',      emoji: '🔧', label: 'Perbaikan / Servis',   desc: 'Barang rusak dikirim ke unit/IPSRS yang bisa memperbaiki', color: 'amber' },
+            { value: 'Minta Mutasi',   emoji: '📥', label: 'Minta Mutasi',      desc: 'Unit B meminta aset milik Unit A untuk dipindahkan ke Unit B', color: 'teal' },
+            { value: 'Pengembalian',   emoji: '↩️', label: 'Pengembalian Barang', desc: 'Barang yang tidak dibutuhkan / selesai dipakai dikembalikan ke Pengurus Barang / Admin Aset', color: 'rose' }
         ],
 
         /* ---- State Ruangan & PJ ---- */
@@ -41,6 +42,23 @@
                     this.kondisiPreview    = reg.kondisi;
                     this.unitAsalPreview   = reg.unit_nama;
                     this.kepalaAsalPreview = reg.unit_kepala;
+                }
+            }
+        },
+
+        selectJenisMutasi(val) {
+            this.jenis_mutasi = val;
+            if (val === 'Perbaikan') {
+                const ipsrs = this.units.find(u => (u.nama || '').toLowerCase().includes('ips') || (u.nama || '').toLowerCase().includes('sarana'));
+                if (ipsrs) {
+                    this.ruangan_tujuan = ipsrs.nama;
+                    this.penanggung_jawab_tujuan = ipsrs.kepala || 'TEKNISI IPSRS';
+                }
+            } else if (val === 'Pengembalian') {
+                const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
+                if (perbekalan) {
+                    this.ruangan_tujuan = perbekalan.nama;
+                    this.penanggung_jawab_tujuan = perbekalan.kepala || 'PENGURUS BARANG / ADMIN';
                 }
             }
         },
@@ -108,22 +126,88 @@
 
         get labelTujuan() {
             const map = {
-                'Pemindahan':   'Ruangan Tujuan (Unit Penerima)',
-                'Perbaikan':    'Ruangan Tujuan (Unit / IPSRS yang Memperbaiki)',
-                'Pengembalian': 'Ruangan Tujuan (Unit Asal / Kembali)',
-                'Penghapusan':  'Ruangan Tujuan (Bagian Rumah Tangga & Inst Perbekalan)'
+                'Ajukan Mutasi':   'Ruangan Tujuan (Unit Penerima Aset)',
+                'Pemindahan':      'Ruangan Tujuan (Unit Penerima Aset)',
+                'Perbaikan':       'Ruangan Tujuan (Unit / IPSRS yang Memperbaiki)',
+                'Minta Mutasi':    'Ruangan Asal (Unit Pemilik Aset yang Diminta)',
+                'Minta_Mutasi':    'Ruangan Asal (Unit Pemilik Aset yang Diminta)',
+                'Pengembalian':    'Ruangan Tujuan (Pengurus Barang / Admin Aset RSUD)',
+                'Penghapusan':     'Ruangan Tujuan (Pengurus Barang / Admin Aset RSUD)'
             };
             return map[this.jenis_mutasi] || 'Ruangan Tujuan';
         },
 
         get alasanPlaceholder() {
             const map = {
-                'Pemindahan':   'Contoh: Unit penerima sangat membutuhkan alat ini untuk peningkatan pelayanan pasien...',
-                'Perbaikan':    'Contoh: Alat mengalami gangguan fungsi / error, perlu perbaikan oleh teknisi...',
-                'Pengembalian': 'Contoh: Barang telah selesai diperbaiki dan siap difungsikan kembali di unit asal...',
-                'Penghapusan':  'Contoh: Barang mengalami kerusakan berat permanen, tidak ekonomis untuk diperbaiki dan diusulkan penghapusan aset...'
+                'Ajukan Mutasi':   'Contoh: Unit asal menyerahkan/memindahkan aset ini ke unit tujuan untuk mendukung operasional...',
+                'Pemindahan':      'Contoh: Unit asal menyerahkan/memindahkan aset ini ke unit tujuan untuk mendukung operasional...',
+                'Perbaikan':       'Contoh: Alat mengalami gangguan fungsi / error, perlu perbaikan oleh teknisi IPSRS...',
+                'Minta Mutasi':    'Contoh: Unit B membutuhkan aset milik Unit A dan mengajukan permohonan pemindahan barang...',
+                'Minta_Mutasi':    'Contoh: Unit B membutuhkan aset milik Unit A dan mengajukan permohonan pemindahan barang...',
+                'Pengembalian':    'Contoh: Barang tidak dibutuhkan lagi / selesai masa pakai dan dikembalikan ke Pengurus Barang / Admin Aset...',
+                'Penghapusan':     'Contoh: Barang tidak dibutuhkan lagi / selesai masa pakai dan dikembalikan ke Pengurus Barang / Admin Aset...'
             };
             return map[this.jenis_mutasi] || 'Alasan pemindahan / mutasi aset...';
+        },
+
+        get isStep1Valid() {
+            return !!this.jenis_mutasi;
+        },
+
+        get isStep2Valid() {
+            return !!this.selectedRegisterId;
+        },
+
+        get isStep3Valid() {
+            return !!this.ruangan_asal && !!this.ruangan_tujuan && (this.ruangan_asal !== this.ruangan_tujuan);
+        },
+
+        nextStep() {
+            if (this.step === 1 && !this.isStep1Valid) {
+                this.showToast('Silakan pilih salah satu Jenis Pengajuan Mutasi terlebih dahulu.', 'warning');
+                return;
+            }
+            if (this.step === 2 && !this.isStep2Valid) {
+                this.showToast('Silakan cari dan pilih aset dari register terlebih dahulu.', 'warning');
+                return;
+            }
+            if (this.step === 3) {
+                if (!this.ruangan_asal || !this.ruangan_tujuan) {
+                    this.showToast('Ruangan Asal dan Ruangan Tujuan wajib diisi.', 'warning');
+                    return;
+                }
+                if (this.ruangan_asal === this.ruangan_tujuan) {
+                    this.showToast('Ruangan Asal dan Ruangan Tujuan tidak boleh sama!', 'warning');
+                    return;
+                }
+            }
+            if (this.step < 4) {
+                this.step++;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        },
+
+        prevStep() {
+            if (this.step > 1) {
+                this.step--;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        },
+
+        goToStep(s) {
+            if (s < this.step) {
+                // Boleh kembali ke tahap yang sudah pernah diisi
+                this.step = s;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (s > this.step) {
+                // Tidak boleh melompat ke tahap berikutnya sebelum menekan tombol Lanjut!
+                this.showToast('⚠️ Mohon selesaikan pengisian dan tekan tombol Lanjut ke Langkah ' + (this.step + 1) + ' terlebih dahulu.', 'warning');
+            }
+        },
+
+        showToast(msg, type = 'warning') {
+            this.toast = { show: true, message: msg, type: type };
+            setTimeout(() => { this.toast.show = false; }, 4000);
         },
 
         showConfirmModal: false,
@@ -159,8 +243,7 @@
 
         validateBeforeSubmit(e) {
             if (this.ruangan_asal && this.ruangan_tujuan && this.ruangan_asal === this.ruangan_tujuan) {
-                this.toast = { show: true, message: '⚠️ Ruangan Asal dan Ruangan Tujuan tidak boleh sama! Silakan pilih ruangan tujuan yang berbeda.', type: 'warning' };
-                setTimeout(() => { this.toast.show = false; }, 4000);
+                this.showToast('⚠️ Ruangan Asal dan Ruangan Tujuan tidak boleh sama! Silakan pilih ruangan tujuan yang berbeda.', 'warning');
                 e.preventDefault();
                 return false;
             }
@@ -181,7 +264,7 @@
         }
     }" x-cloak class="space-y-6">
 
-        {{-- ===== TOP BAR ===== --}}
+        {{-- ===== TOP HEADER ===== --}}
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
             <div class="flex items-center space-x-4">
                 <a href="{{ route('mutasi.index') }}"
@@ -190,14 +273,87 @@
                 </a>
                 <div>
                     <div class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold mb-1">
-                        <span x-text="isEdit ? '✏️ UBAH PENGAJUAN MUTASI' : '🔄 PENGAJUAN MUTASI ASET'"></span>
+                        <span x-text="isEdit ? '✏️ UBAH PENGAJUAN MUTASI' : '🔄 PENGAJUAN MUTASI WIZARD (4 LANGKAH)'"></span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-white">Form Pengajuan Mutasi Aset</h1>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-white">Form Multi-Tahap Mutasi Aset</h1>
                 </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 text-xs text-slate-400 font-bold bg-slate-950 px-3.5 py-2 rounded-2xl border border-slate-800">
+                <span>Tahap saat ini:</span>
+                <span class="text-rose-400 font-mono text-sm font-black" x-text="'Langkah ' + step + ' dari 4'"></span>
             </div>
         </div>
 
+        {{-- ===== MULTI-STEP STEPPER HEADER (TEMA MERAH ROSE MUTASI) ===== --}}
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                
+                <!-- Step 1 Tab -->
+                <button type="button" @click="goToStep(1)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                             :class="step === 1 ? 'bg-rose-500 text-slate-950 shadow-lg shadow-rose-500/30 font-black' : (step > 1 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
+                            <span x-show="step <= 1">1</span>
+                            <span x-show="step > 1">✓</span>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 1 ? 'text-rose-400 font-black' : (step > 1 ? 'text-rose-400' : 'text-slate-500')">LANGKAH 1</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Jenis Pengajuan</span>
+                        </div>
+                    </div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 1 ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-slate-950'"></div>
+                </button>
 
+                <!-- Step 2 Tab -->
+                <button type="button" @click="goToStep(2)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                             :class="step === 2 ? 'bg-rose-500 text-slate-950 shadow-lg shadow-rose-500/30 font-black' : (step > 2 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
+                            <span x-show="step <= 2">2</span>
+                            <span x-show="step > 2">✓</span>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 2 ? 'text-rose-400 font-black' : (step > 2 ? 'text-rose-400' : 'text-slate-500')">LANGKAH 2</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Pilih Aset & Tanggal</span>
+                        </div>
+                    </div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 2 ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-slate-950'"></div>
+                </button>
+
+                <!-- Step 3 Tab -->
+                <button type="button" @click="goToStep(3)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                             :class="step === 3 ? 'bg-rose-500 text-slate-950 shadow-lg shadow-rose-500/30 font-black' : (step > 3 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
+                            <span x-show="step <= 3">3</span>
+                            <span x-show="step > 3">✓</span>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 3 ? 'text-rose-400 font-black' : (step > 3 ? 'text-rose-400' : 'text-slate-500')">LANGKAH 3</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Lokasi & Alasan</span>
+                        </div>
+                    </div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 3 ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-slate-950'"></div>
+                </button>
+
+                <!-- Step 4 Tab -->
+                <button type="button" @click="goToStep(4)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
+                    <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                             :class="step === 4 ? 'bg-rose-500 text-slate-950 shadow-lg shadow-rose-500/30 font-black' : 'bg-slate-950 text-slate-500 border border-slate-800'">
+                            <span>4</span>
+                        </div>
+                        <div class="min-w-0">
+                            <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 4 ? 'text-rose-400 font-black' : 'text-slate-500'">LANGKAH 4</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Review & BAMB</span>
+                        </div>
+                    </div>
+                    <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 4 ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-slate-950'"></div>
+                </button>
+
+            </div>
+        </div>
 
         @if(isset($errors) && $errors->any())
         <div class="bg-rose-500/10 border border-rose-500/30 rounded-2xl px-5 py-3 text-rose-300 text-xs font-semibold space-y-1">
@@ -216,39 +372,66 @@
             {{-- Field hidden astap_register_id --}}
             <input type="hidden" name="astap_register_id" :value="selectedRegisterId">
 
-            {{-- ===== SECTION 1: JENIS MUTASI ===== --}}
-            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
-                <div class="flex items-center space-x-2 pb-4 border-b border-slate-800">
-                    <div class="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">1</div>
-                    <h2 class="text-sm font-extrabold text-white">Jenis Pengajuan Mutasi</h2>
+            {{-- ========================================================================= --}}
+            {{-- ===== STEP 1: PILIH JENIS PENGAJUAN MUTASI ===== --}}
+            {{-- ========================================================================= --}}
+            <div x-show="step === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">1</div>
+                        <div>
+                            <h2 class="text-base font-extrabold text-white">Langkah 1: Pilih Jenis Pengajuan Mutasi</h2>
+                            <p class="text-xs text-slate-400">Pilih salah satu dari 4 opsi pengajuan mutasi di bawah ini terlebih dahulu.</p>
+                        </div>
+                    </div>
+                    <span class="text-[11px] px-3 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/30 font-bold">Wajib Pilih 1</span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <template x-for="opt in jenisMutasiOptions" :key="opt.value">
-                        <button type="button" @click="jenis_mutasi = opt.value"
+                        <button type="button" @click="selectJenisMutasi(opt.value)"
                             :class="{
-                                'border-blue-500/70 bg-blue-500/10 ring-1 ring-blue-500/30':   jenis_mutasi === opt.value && opt.color === 'blue',
-                                'border-amber-500/70 bg-amber-500/10 ring-1 ring-amber-500/30': jenis_mutasi === opt.value && opt.color === 'amber',
-                                'border-teal-500/70 bg-teal-500/10 ring-1 ring-teal-500/30':   jenis_mutasi === opt.value && opt.color === 'teal',
-                                'border-rose-500/70 bg-rose-500/10 ring-1 ring-rose-500/30':   jenis_mutasi === opt.value && opt.color === 'rose',
-                                'border-slate-700 bg-slate-950/60 opacity-55 hover:opacity-80': jenis_mutasi !== opt.value
+                                'border-blue-500 bg-blue-500/15 ring-2 ring-blue-500/40 shadow-xl shadow-blue-500/10':   jenis_mutasi === opt.value && opt.color === 'blue',
+                                'border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/40 shadow-xl shadow-amber-500/10': jenis_mutasi === opt.value && opt.color === 'amber',
+                                'border-teal-500 bg-teal-500/15 ring-2 ring-teal-500/40 shadow-xl shadow-teal-500/10':   jenis_mutasi === opt.value && opt.color === 'teal',
+                                'border-rose-500 bg-rose-500/15 ring-2 ring-rose-500/40 shadow-xl shadow-rose-500/10':   jenis_mutasi === opt.value && opt.color === 'rose',
+                                'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 hover:border-slate-700': jenis_mutasi !== opt.value
                             }"
-                            class="flex items-start space-x-3 p-4 rounded-2xl border-2 text-left transition-all w-full active:scale-[0.99]">
-                            <span class="text-xl shrink-0" x-text="opt.emoji"></span>
-                            <div>
-                                <p class="text-xs font-bold text-white" x-text="opt.label"></p>
-                                <p class="text-[10.5px] text-slate-400 mt-0.5 leading-relaxed" x-text="opt.desc"></p>
+                            class="relative flex items-start space-x-4 p-5 rounded-2xl border-2 text-left transition-all w-full active:scale-[0.99] cursor-pointer group">
+                            
+                            <!-- Selected Indicator Checkmark -->
+                            <div x-show="jenis_mutasi === opt.value" class="absolute top-4 right-4 w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-xs font-black shadow">✓</div>
+
+                            <span class="text-2xl shrink-0 p-3 rounded-2xl bg-slate-900 border border-slate-800 group-hover:scale-110 transition-transform" x-text="opt.emoji"></span>
+                            <div class="pr-6">
+                                <p class="text-sm font-extrabold text-white" x-text="opt.label"></p>
+                                <p class="text-xs text-slate-400 mt-1 leading-relaxed" x-text="opt.desc"></p>
                             </div>
                         </button>
                     </template>
                 </div>
+
+                {{-- Action Navigation Buttons --}}
+                <div class="flex items-center justify-end pt-4 border-t border-slate-800">
+                    <button type="button" @click="nextStep()"
+                        class="px-6 py-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        <span>Lanjut ke Langkah 2: Pilih Aset →</span>
+                    </button>
+                </div>
             </div>
 
-            {{-- ===== SECTION 2: TANGGAL & DATA BARANG ===== --}}
-            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
-                <div class="flex items-center space-x-2 pb-4 border-b border-slate-800">
-                    <div class="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">2</div>
-                    <h2 class="text-sm font-extrabold text-white">Tanggal & Data Barang yang Dimutasi</h2>
+            {{-- ========================================================================= --}}
+            {{-- ===== STEP 2: PILIH BARANG ASET & TANGGAL ===== --}}
+            {{-- ========================================================================= --}}
+            <div x-show="step === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">2</div>
+                        <div>
+                            <h2 class="text-base font-extrabold text-white">Langkah 2: Tanggal & Data Barang Aset yang Dimutasi</h2>
+                            <p class="text-xs text-slate-400">Pilih tanggal pengajuan dan cari barang aset dari inventaris register RSUD.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
@@ -263,7 +446,7 @@
                     {{-- Pencarian / Pilih Barang (Autocomplete) --}}
                     <div class="md:col-span-8 relative">
                         <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">
-                            Pilih Aset dari Register (Cari NIBAR / Nama Barang / Ruangan) <span class="text-rose-400">*</span>
+                            Cari Aset dari Register (Ketik NIBAR / Nama Barang / Unit Ruangan) <span class="text-rose-400">*</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none text-rose-400" style="padding-left: 1.1rem;">
@@ -283,7 +466,7 @@
                             class="absolute z-50 w-full mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
                             <template x-for="r in filteredRegisters" :key="r.id">
                                 <button type="button" @click="selectRegister(r)"
-                                    class="w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-800 text-left transition-colors border-b border-slate-800/60 last:border-b-0">
+                                    class="w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-800 text-left transition-colors border-b border-slate-800/60 last:border-b-0 cursor-pointer">
                                     <div class="shrink-0 w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
                                         <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                                     </div>
@@ -308,19 +491,23 @@
                     </div>
                 </div>
 
-                {{-- Preview Barang Dipilih (Kondisi diambil otomatis dari AstapRegister) --}}
+                {{-- Preview Barang Dipilih --}}
                 <div x-show="selectedRegisterId && namaBarangPreview"
-                    class="bg-slate-950/80 border border-rose-500/30 rounded-2xl p-4 flex items-start gap-4 mt-3">
-                    <div class="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    class="bg-slate-950/80 border border-rose-500/30 rounded-2xl p-5 flex items-start gap-4 shadow-lg">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0 text-xl font-bold text-rose-400">
+                        📦
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-white" x-text="namaBarangPreview"></p>
-                        <div class="flex items-center gap-3 mt-1.5 flex-wrap">
-                            <span class="text-[10.5px] text-slate-400">Unit Terdaftar: <span class="text-slate-200 font-semibold" x-text="unitAsalPreview || '-'"></span></span>
-                            <span class="w-1 h-1 rounded-full bg-slate-600 shrink-0"></span>
-                            <span class="text-[10.5px] text-slate-400">Kondisi Aset: 
-                                <span class="font-bold px-2 py-0.5 rounded-lg border text-[10px]"
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-rose-300 font-mono font-bold">Aset Terpilih</span>
+                            <span class="text-xs font-mono font-bold text-slate-400" x-text="searchBarang.split(' — ')[0]"></span>
+                        </div>
+                        <p class="text-base font-extrabold text-white mt-0.5" x-text="namaBarangPreview"></p>
+                        <div class="flex items-center gap-3 mt-2 flex-wrap text-xs">
+                            <span class="text-slate-400">Unit Asal/Terdaftar: <span class="text-white font-bold" x-text="unitAsalPreview || '-'"></span></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                            <span class="text-slate-400">Kondisi: 
+                                <span class="font-bold px-2 py-0.5 rounded-lg border text-[11px]"
                                     :class="{
                                         'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': kondisiPreview === 'Baik',
                                         'bg-amber-500/15 text-amber-300 border-amber-500/30':       kondisiPreview === 'Kurang Baik',
@@ -330,40 +517,51 @@
                                 </span>
                             </span>
                         </div>
-
-                        {{-- Peringatan kontekstual kondisi aset --}}
-                        <div x-show="jenis_mutasi === 'Penghapusan' && kondisiPreview !== 'Rusak Berat'"
-                            class="mt-2.5 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[10.5px] font-semibold flex items-center gap-2">
-                            <span>⚠️</span><span>Catatan: Mutasi <strong>Penghapusan</strong> umumnya ditujukan untuk aset dengan kondisi <strong>Rusak Berat</strong>.</span>
-                        </div>
-                        <div x-show="jenis_mutasi === 'Perbaikan' && kondisiPreview === 'Baik'"
-                            class="mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10.5px] font-semibold flex items-center gap-2">
-                            <span>⚠️</span><span>Catatan: Pengajuan <strong>Perbaikan</strong> umumnya untuk aset yang berkondisi <strong>Kurang Baik</strong> atau <strong>Rusak Berat</strong>.</span>
-                        </div>
                     </div>
                     <button type="button" @click="clearSelectedBarang()"
-                        class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-500 hover:text-rose-300 border border-slate-700 flex items-center justify-center transition-all shrink-0"
-                        title="Batal Pilih">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700 text-xs font-bold transition-all shrink-0 cursor-pointer">
+                        ✕ Ganti Barang
+                    </button>
+                </div>
+
+                {{-- Action Navigation Buttons --}}
+                <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+                    <button type="button" @click="prevStep()"
+                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
+                        ← Kembali ke Langkah 1
+                    </button>
+                    <button type="button" @click="nextStep()"
+                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        <span>Lanjut ke Langkah 3: Lokasi & Alasan →</span>
                     </button>
                 </div>
             </div>
 
-            {{-- ===== SECTION 3: LOKASI & PJ ===== --}}
-            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
-                <div class="flex items-center space-x-2 pb-4 border-b border-slate-800">
-                    <div class="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">3</div>
-                    <h2 class="text-sm font-extrabold text-white">Lokasi & Penanggung Jawab</h2>
+            {{-- ========================================================================= --}}
+            {{-- ===== STEP 3: LOKASI, PENANGGUNG JAWAB & ALASAN ===== --}}
+            {{-- ========================================================================= --}}
+            <div x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">3</div>
+                        <div>
+                            <h2 class="text-base font-extrabold text-white">Langkah 3: Lokasi, Penanggung Jawab & Alasan Mutasi</h2>
+                            <p class="text-xs text-slate-400">Atur unit ruangan pengirim, penerima, penanggung jawab, dan uraian alasan mutasi.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {{-- Pengirim (Asal) --}}
-                    <div class="space-y-4">
+                    <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-slate-800">
+                        <div class="border-b border-slate-800 pb-2">
+                            <label class="block text-slate-300 text-xs font-bold uppercase tracking-wider">📤 Ruangan Asal (Pengirim)</label>
+                        </div>
                         <div>
-                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">📤 Ruangan Asal (Pengirim) <span class="text-rose-400">*</span></label>
+                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Pilih Ruangan Asal <span class="text-rose-400">*</span></label>
                             <select name="ruangan_asal" id="ruangan_asal" x-model="ruangan_asal" required
                                 @change="onUnitAsalChange($event.target.value)"
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
                                 <option value="">— Pilih Unit / Ruangan Asal —</option>
                                 @foreach($units as $unit)
                                 <option value="{{ $unit->nama }}">{{ $unit->nama }}</option>
@@ -371,125 +569,153 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">👤 Penanggung Jawab Pengirim <span class="text-rose-400">*</span></label>
+                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Penanggung Jawab Ruangan Asal <span class="text-rose-400">*</span></label>
                             <input type="text" name="penanggung_jawab_asal" id="penanggung_jawab_asal" x-model="penanggung_jawab_asal" required
                                 placeholder="Nama penanggung jawab ruangan asal..."
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
                         </div>
                     </div>
 
                     {{-- Penerima (Tujuan) --}}
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-rose-400 text-[10.5px] font-bold uppercase tracking-wider mb-1.5">
-                                📥 <span x-text="labelTujuan"></span> <span class="text-rose-400">*</span>
+                    <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-rose-500/30">
+                        <div class="border-b border-rose-500/30 pb-2">
+                            <label class="block text-rose-300 text-xs font-bold uppercase tracking-wider">
+                                📥 <span x-text="labelTujuan"></span>
                             </label>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Pilih Ruangan Tujuan <span class="text-rose-400">*</span></label>
                             <select name="ruangan_tujuan" id="ruangan_tujuan" x-model="ruangan_tujuan" required
                                 @change="onUnitTujuanChange($event.target.value)"
-                                class="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-4 py-3 text-xs text-rose-200 font-bold focus:outline-none focus:border-rose-400 transition-all">
+                                class="w-full bg-slate-900 border border-rose-500/40 rounded-xl px-4 py-3 text-xs text-rose-200 font-bold focus:outline-none focus:border-rose-400 transition-all">
                                 <option value="">— Pilih Unit / Ruangan Tujuan —</option>
                                 @foreach($units as $unit)
                                 <option value="{{ $unit->nama }}">{{ $unit->nama }}</option>
                                 @endforeach
                             </select>
-                            <p x-show="jenis_mutasi === 'Penghapusan'" class="text-[10px] text-rose-400 mt-1 font-semibold">
-                                💡 Saran: Pilih <strong>Bagian Rumah Tangga & Inst Perbekalan</strong>
-                            </p>
-                            <p x-show="jenis_mutasi === 'Perbaikan'" class="text-[10px] text-amber-400 mt-1 font-semibold">
-                                💡 Saran: Pilih <strong>Inst. IPS RS</strong> atau unit teknis terkait
-                            </p>
                         </div>
                         <div>
-                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">👤 Penanggung Jawab Penerima <span class="text-rose-400">*</span></label>
+                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Penanggung Jawab Ruangan Tujuan <span class="text-rose-400">*</span></label>
                             <input type="text" name="penanggung_jawab_tujuan" id="penanggung_jawab_tujuan" x-model="penanggung_jawab_tujuan" required
                                 placeholder="Nama penanggung jawab ruangan tujuan..."
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
                         </div>
                     </div>
                 </div>
 
                 {{-- Visualisasi Alur Perpindahan --}}
-                <div class="flex items-center justify-center gap-3 pt-4 border-t border-slate-800/60 flex-wrap">
-                    <span class="px-3.5 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-[11px] font-bold border border-slate-700"
-                        x-text="ruangan_asal || 'Ruangan Asal'"></span>
-                    <div class="flex items-center space-x-1 text-rose-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+                    <span class="text-xs text-slate-400 font-semibold">Skema Alur Pemindahan:</span>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 rounded-xl bg-slate-900 text-white text-xs font-bold border border-slate-700" x-text="ruangan_asal || 'Asal'"></span>
+                        <span class="text-rose-400 font-bold">➔</span>
+                        <span class="px-3 py-1 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30" x-text="ruangan_tujuan || 'Tujuan'"></span>
                     </div>
-                    <span class="px-3.5 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 text-[11px] font-bold border border-rose-500/30"
-                        x-text="ruangan_tujuan || 'Ruangan Tujuan'"></span>
                 </div>
-            </div>
 
-            {{-- ===== SECTION 4: ALASAN ===== --}}
-            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
-                <div class="flex items-center space-x-2 pb-4 border-b border-slate-800">
-                    <div class="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">4</div>
-                    <h2 class="text-sm font-extrabold text-white">Alasan & Keterangan</h2>
-                </div>
-                <div>
+                {{-- Alasan Mutasi --}}
+                <div class="space-y-3">
                     <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">
-                        Alasan / Urgensi <span class="text-white" x-text="jenis_mutasi"></span> <span class="text-rose-400">*</span>
+                        Alasan / Urgensi Pengajuan Mutasi (<span class="text-white font-bold" x-text="jenis_mutasi"></span>) <span class="text-rose-400">*</span>
                     </label>
-                    <textarea name="alasan_mutasi" rows="4" :placeholder="alasanPlaceholder" required
+                    <textarea name="alasan_mutasi" rows="3" :placeholder="alasanPlaceholder" required
                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white resize-none focus:outline-none focus:border-rose-500 transition-all">{{ old('alasan_mutasi', $mutasi->alasan_mutasi ?? '') }}</textarea>
                 </div>
+
                 <div>
                     <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Catatan Tambahan (Opsional)</label>
                     <textarea name="catatan_penerima" rows="2"
-                        placeholder="Catatan tambahan untuk penerima / admin..."
+                        placeholder="Catatan khusus untuk verifikasi ruangan penerima atau admin..."
                         class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white resize-none focus:outline-none focus:border-rose-500 transition-all">{{ old('catatan_penerima', $mutasi->catatan_penerima ?? '') }}</textarea>
                 </div>
-            </div>
 
-            {{-- ===== SECTION 5: DIAGRAM ALUR PERSETUJUAN ===== --}}
-            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-                <div class="flex items-center space-x-2 pb-5 border-b border-slate-800 mb-5">
-                    <div class="w-7 h-7 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">5</div>
-                    <h2 class="text-sm font-extrabold text-white">Alur Persetujuan Setelah Pengajuan Dikirim</h2>
-                </div>
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-1">
-                    <div class="flex sm:flex-col items-center gap-3 sm:gap-2 flex-1 p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
-                        <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-lg shrink-0">📤</div>
-                        <div class="sm:text-center">
-                            <p class="text-[11px] font-extrabold text-white">Pengajuan Dikirim</p>
-                            <p class="text-[9.5px] text-slate-400 mt-0.5">Unit pengirim mengajukan mutasi</p>
-                        </div>
-                    </div>
-                    <div class="w-px h-6 sm:w-8 sm:h-px bg-gradient-to-b sm:bg-gradient-to-r from-slate-700 to-slate-600 mx-auto"></div>
-                    <div class="flex sm:flex-col items-center gap-3 sm:gap-2 flex-1 p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
-                        <div class="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center justify-center text-lg shrink-0">🤝</div>
-                        <div class="sm:text-center">
-                            <p class="text-[11px] font-extrabold text-white">Penerima Menyetujui</p>
-                            <p class="text-[9.5px] text-slate-400 mt-0.5">Ka. Ruangan unit tujuan setujui</p>
-                        </div>
-                    </div>
-                    <div class="w-px h-6 sm:w-8 sm:h-px bg-gradient-to-b sm:bg-gradient-to-r from-slate-700 to-slate-600 mx-auto"></div>
-                    <div class="flex sm:flex-col items-center gap-3 sm:gap-2 flex-1 p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">✅</div>
-                        <div class="sm:text-center">
-                            <p class="text-[11px] font-extrabold text-white">Admin Mengesahkan</p>
-                            <p class="text-[9.5px] text-slate-400 mt-0.5">Final oleh Inst. Pembekalan</p>
-                        </div>
-                    </div>
-                    <div class="w-px h-6 sm:w-8 sm:h-px bg-gradient-to-b sm:bg-gradient-to-r from-slate-700 to-slate-600 mx-auto"></div>
-                    <div class="flex sm:flex-col items-center gap-3 sm:gap-2 flex-1 p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
-                        <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center text-lg shrink-0">📄</div>
-                        <div class="sm:text-center">
-                            <p class="text-[11px] font-extrabold text-white">BAMB Dicetak</p>
-                            <p class="text-[9.5px] text-slate-400 mt-0.5">Berita Acara Mutasi selesai</p>
-                        </div>
-                    </div>
+                {{-- Action Navigation Buttons --}}
+                <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+                    <button type="button" @click="prevStep()"
+                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
+                        ← Kembali ke Langkah 2
+                    </button>
+                    <button type="button" @click="nextStep()"
+                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        <span>Lanjut ke Langkah 4: Preview & Konfirmasi →</span>
+                    </button>
                 </div>
             </div>
 
-            {{-- Tombol Submit --}}
-            <div class="flex items-center justify-end gap-3 pb-4">
-                <a href="{{ route('mutasi.index') }}" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">Batal</a>
-                <button type="submit"
-                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                    <span>{{ isset($mutasi) ? 'Simpan Perubahan' : 'Kirim Pengajuan Mutasi' }}</span>
-                </button>
+            {{-- ========================================================================= --}}
+            {{-- ===== STEP 4: PREVIEW & KONFIRMASI (RINGKASAN BAMB) ===== --}}
+            {{-- ========================================================================= --}}
+            <div x-show="step === 4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center text-xs font-extrabold">4</div>
+                        <div>
+                            <h2 class="text-base font-extrabold text-white">Langkah 4: Review & Konfirmasi Pengajuan Mutasi</h2>
+                            <p class="text-xs text-slate-400">Periksa kembali seluruh ringkasan data sebelum mengirimkan dokumen pengajuan mutasi aset.</p>
+                        </div>
+                    </div>
+                    <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-bold">Siap Dikirim</span>
+                </div>
+
+                {{-- Summary Card Review --}}
+                <div class="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-5">
+                    
+                    {{-- Jenis Mutasi Badge --}}
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <span class="text-xs font-bold text-slate-400">Jenis Pengajuan:</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl" x-text="selectedJenis?.emoji"></span>
+                            <span class="text-sm font-black text-white" x-text="jenis_mutasi"></span>
+                        </div>
+                    </div>
+
+                    {{-- Data Barang --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Barang Aset yang Dimutasi</span>
+                            <p class="text-sm font-extrabold text-white" x-text="namaBarangPreview || '-'"></p>
+                            <p class="text-xs text-rose-400 font-mono" x-text="searchBarang.split(' — ')[0] || '-'"></p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kondisi Aset Terdaftar</span>
+                            <p class="text-sm font-extrabold text-emerald-300" x-text="kondisiPreview || 'Baik'"></p>
+                            <p class="text-xs text-slate-400">Status Register Aset Tersedia</p>
+                        </div>
+                    </div>
+
+                    {{-- Alur Perpindahan --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">📤 Ruangan Pengirim (Asal)</span>
+                            <p class="text-sm font-bold text-white" x-text="ruangan_asal || '-'"></p>
+                            <p class="text-xs text-slate-400 mt-1" x-text="'PJ: ' + (penanggung_jawab_asal || '-')"></p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-900 border border-rose-500/30">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 block mb-1">📥 Ruangan Penerima (Tujuan)</span>
+                            <p class="text-sm font-bold text-white" x-text="ruangan_tujuan || '-'"></p>
+                            <p class="text-xs text-slate-400 mt-1" x-text="'PJ: ' + (penanggung_jawab_tujuan || '-')"></p>
+                        </div>
+                    </div>
+
+                    {{-- Alasan Mutasi --}}
+                    <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alasan & Urgensi Mutasi</span>
+                        <p class="text-xs text-slate-200 leading-relaxed italic" x-text="formData?.alasan_mutasi || document.querySelector('[name=alasan_mutasi]')?.value || '-'"></p>
+                    </div>
+
+                </div>
+
+                {{-- Action Navigation Buttons --}}
+                <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+                    <button type="button" @click="prevStep()"
+                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
+                        ← Kembali ke Langkah 3
+                    </button>
+                    <button type="submit"
+                        class="px-8 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-slate-950 font-black text-xs shadow-xl shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        <span>🚀 {{ isset($mutasi) ? 'Simpan Perubahan Mutasi' : 'Kirim Pengajuan Mutasi Sekarang' }}</span>
+                    </button>
+                </div>
             </div>
 
         </form>

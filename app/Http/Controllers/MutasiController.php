@@ -76,7 +76,7 @@ class MutasiController extends Controller
     {
         $request->validate([
             'astap_register_id'       => 'nullable|exists:astap_registers,id',
-            'jenis_mutasi'            => 'required|in:Pemindahan,Perbaikan,Pengembalian,Penghapusan',
+            'jenis_mutasi'            => 'required|in:Ajukan Mutasi,Pemindahan,Perbaikan,Minta Mutasi,Pengembalian,Penghapusan',
             'tanggal_mutasi'          => 'required|date',
             'ruangan_asal'            => 'required|string|max:255',
             'ruangan_tujuan'          => 'required|string|max:255|different:ruangan_asal',
@@ -147,7 +147,7 @@ class MutasiController extends Controller
 
         $request->validate([
             'astap_register_id'       => 'nullable|exists:astap_registers,id',
-            'jenis_mutasi'            => 'required|in:Pemindahan,Perbaikan,Pengembalian,Penghapusan',
+            'jenis_mutasi'            => 'required|in:Ajukan Mutasi,Pemindahan,Perbaikan,Minta Mutasi,Pengembalian,Penghapusan',
             'tanggal_mutasi'          => 'required|date',
             'ruangan_asal'            => 'required|string|max:255',
             'ruangan_tujuan'          => 'required|string|max:255|different:ruangan_asal',
