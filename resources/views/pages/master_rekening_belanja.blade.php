@@ -116,6 +116,38 @@
                             formElement.submit();
                         }
                     });
+                },
+
+                confirmAddForm(event) {
+                    event.preventDefault();
+                    const formElement = event.target;
+                    const itemPreview = (formElement.querySelector('[name="nama_belanja"]')?.value || 'Rekening Baru') + ' (' + (formElement.querySelector('[name="kode_rek"]')?.value || 'Kode Rek') + ')';
+                    this.askConfirmation({
+                        title: '➕ Konfirmasi Tambah Rekening Belanja',
+                        message: 'Apakah Anda yakin ingin mendaftarkan data rekening belanja SIPD baru ini ke master data?',
+                        itemName: itemPreview,
+                        type: 'success',
+                        btnText: '➕ Ya, Simpan Rekening',
+                        onConfirm: () => {
+                            formElement.submit();
+                        }
+                    });
+                },
+
+                confirmEditForm(event) {
+                    event.preventDefault();
+                    const formElement = event.target;
+                    const itemPreview = (this.editFormData.nama_belanja || 'Rekening Belanja') + ' (' + (this.editFormData.kode_rek || 'Kode Rek') + ')';
+                    this.askConfirmation({
+                        title: '✏️ Konfirmasi Simpan Perubahan Rekening',
+                        message: 'Apakah Anda yakin ingin menyimpan perubahan data rekening belanja SIPD ini?',
+                        itemName: itemPreview,
+                        type: 'warning',
+                        btnText: '✏️ Ya, Simpan Perubahan',
+                        onConfirm: () => {
+                            formElement.submit();
+                        }
+                    });
                 }
             };
         }
@@ -336,7 +368,7 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Input Kode Rekening & Nama Belanja Pengadaan SIPD</p>
                 </div>
 
-                <form method="POST" action="{{ route('master.rekening_belanja.store') }}" class="space-y-4 text-xs">
+                <form method="POST" action="{{ route('master.rekening_belanja.store') }}" class="space-y-4 text-xs" @submit="confirmAddForm($event)">
                     @csrf
                     <div>
                         <label class="block text-slate-400 mb-1.5 font-semibold">Kelompok Belanja Modal</label>
@@ -388,7 +420,7 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Perbarui Kode Rekening & Nama Belanja</p>
                 </div>
 
-                <form method="POST" :action="editActionUrl" class="space-y-4 text-xs">
+                <form method="POST" :action="editActionUrl" class="space-y-4 text-xs" @submit="confirmEditForm($event)">
                     @csrf
                     @method('PUT')
 

@@ -122,6 +122,38 @@
                             formElement.submit();
                         }
                     });
+                },
+
+                confirmAddForm(event) {
+                    event.preventDefault();
+                    const formElement = event.target;
+                    const itemPreview = (this.newFormData.uraian_sub_sub_rincian || 'Klasifikasi Baru') + ' (' + (this.newFormData.sub_sub_rincian_objek || 'Kode 108') + ')';
+                    this.askConfirmation({
+                        title: '➕ Konfirmasi Tambah Kode 108',
+                        message: 'Apakah Anda yakin ingin mendaftarkan data klasifikasi Kode 108 BMD baru ini?',
+                        itemName: itemPreview,
+                        type: 'success',
+                        btnText: '➕ Ya, Simpan Kode 108',
+                        onConfirm: () => {
+                            formElement.submit();
+                        }
+                    });
+                },
+
+                confirmEditForm(event) {
+                    event.preventDefault();
+                    const formElement = event.target;
+                    const itemPreview = (this.editFormData.uraian_sub_sub_rincian || 'Klasifikasi ASTAP') + ' (' + (this.editFormData.sub_sub_rincian_objek || 'Kode 108') + ')';
+                    this.askConfirmation({
+                        title: '✏️ Konfirmasi Simpan Perubahan Kode 108',
+                        message: 'Apakah Anda yakin ingin menyimpan perubahan data klasifikasi Kode 108 ini?',
+                        itemName: itemPreview,
+                        type: 'warning',
+                        btnText: '✏️ Ya, Simpan Perubahan',
+                        onConfirm: () => {
+                            formElement.submit();
+                        }
+                    });
                 }
             };
         }
@@ -417,7 +449,7 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Input Objek &amp; Uraian Kode 108 Baru</p>
                 </div>
 
-                <form action="{{ route('master.jenis_astap.store') }}" method="POST" class="space-y-4 text-xs">
+                <form action="{{ route('master.jenis_astap.store') }}" method="POST" class="space-y-4 text-xs" @submit="confirmAddForm($event)">
                     @csrf
                     <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
                         <span class="font-bold text-emerald-400 uppercase tracking-wider text-[10px] block">1. Jenis Utama</span>
@@ -494,7 +526,7 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Perbarui Data Klasifikasi Kode 108</p>
                 </div>
 
-                <form :action="'/master-data/jenis-astap/' + editFormData.id" method="POST" class="space-y-4 text-xs">
+                <form :action="'/master-data/jenis-astap/' + editFormData.id" method="POST" class="space-y-4 text-xs" @submit="confirmEditForm($event)">
                     @csrf
                     @method('PUT')
                     

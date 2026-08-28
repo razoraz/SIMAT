@@ -95,6 +95,38 @@
                             formElement.submit();
                         }
                     });
+                },
+
+                confirmAddForm(event) {
+                    event.preventDefault();
+                    const formElement = event.target;
+                    const itemPreview = (formElement.querySelector('[name="sub_kegiatan_nama"]')?.value || 'Sub Kegiatan Baru') + ' (' + (formElement.querySelector('[name="sub_kegiatan_kode"]')?.value || 'SIPD') + ')';
+                    this.askConfirmation({
+                        title: '➕ Konfirmasi Tambah Pengadaan SIPD',
+                        message: 'Apakah Anda yakin ingin mendaftarkan jenis pengadaan SIPD baru ini ke master data?',
+                        itemName: itemPreview,
+                        type: 'success',
+                        btnText: '➕ Ya, Simpan Pengadaan',
+                        onConfirm: () => {
+                            formElement.submit();
+                        }
+                    });
+                },
+
+                confirmEditForm(event) {
+                    event.preventDefault();
+                    const formElement = event.target;
+                    const itemPreview = (this.editFormData.sub_kegiatan_nama || 'Sub Kegiatan') + ' (' + (this.editFormData.sub_kegiatan_kode || 'SIPD') + ')';
+                    this.askConfirmation({
+                        title: '✏️ Konfirmasi Simpan Perubahan Pengadaan',
+                        message: 'Apakah Anda yakin ingin menyimpan perubahan data pengadaan SIPD ini?',
+                        itemName: itemPreview,
+                        type: 'warning',
+                        btnText: '✏️ Ya, Simpan Perubahan',
+                        onConfirm: () => {
+                            formElement.submit();
+                        }
+                    });
                 }
             };
         }
@@ -356,7 +388,7 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Input struktur 3 tingkatan (Program, Kegiatan, Sub Kegiatan)</p>
                 </div>
 
-                <form method="POST" action="{{ route('master.jenis_pengadaan.store') }}" class="space-y-3.5 text-xs">
+                <form method="POST" action="{{ route('master.jenis_pengadaan.store') }}" class="space-y-3.5 text-xs" @submit="confirmAddForm($event)">
                     @csrf
 
                     <!-- Blok 1: Program -->
@@ -431,7 +463,7 @@
                     <p class="text-[11px] text-slate-400 mt-0.5">Perbarui struktur 3 tingkatan (Program, Kegiatan, Sub Kegiatan)</p>
                 </div>
 
-                <form method="POST" :action="editActionUrl" class="space-y-3.5 text-xs">
+                <form method="POST" :action="editActionUrl" class="space-y-3.5 text-xs" @submit="confirmEditForm($event)">
                     @csrf
                     @method('PUT')
 
