@@ -11,3 +11,23 @@
 [x-cloak] {
     display: none !important;
 }
+
+/* Global Cursor Pointer for All Buttons and Interactive Elements */
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+a[role="button"],
+.btn,
+select,
+summary {
+    cursor: pointer;
+}
+
+button:disabled,
+[type="button"]:disabled,
+[type="submit"]:disabled,
+[type="reset"]:disabled,
+[disabled] {
+    cursor: not-allowed !important;
+}

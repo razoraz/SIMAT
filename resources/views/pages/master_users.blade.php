@@ -550,9 +550,9 @@
 
         <!-- Table Users -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-5 mb-6">
-            <div class="rounded-2xl border border-slate-800/80 overflow-x-auto overflow-y-auto max-h-[500px] custom-scrollbar">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 360px; overflow-y: auto; overflow-x: auto;">
                 <table class="w-full text-left text-xs text-slate-300 border-collapse">
-                    <thead class="text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-800 sticky top-0 z-10 bg-slate-950 shadow-md">
+                    <thead class="text-slate-400 font-bold uppercase tracking-wider text-[11px] border-b border-slate-800 sticky top-0 z-10 bg-slate-950 shadow-md" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
                             <th class="px-4 py-3.5 text-left min-w-[220px] whitespace-nowrap">Nama & NIP Pegawai</th>
@@ -560,12 +560,12 @@
                             <th class="px-4 py-3.5 text-center min-w-[160px] whitespace-nowrap">Role Otorisasi</th>
                             <th class="px-4 py-3.5 text-left min-w-[180px] whitespace-nowrap">Unit Penugasan</th>
                             <th class="px-4 py-3.5 text-center min-w-[90px] whitespace-nowrap">Status</th>
-                            <th class="px-4 py-3.5 text-center min-w-[200px] whitespace-nowrap">Aksi</th>
+                            <th class="px-4 py-3.5 text-center min-w-[200px] whitespace-nowrap border-l border-slate-800/60" style="position: sticky; right: 0; z-index: 20; background-color: #020617;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredUsers" :key="item.id">
-                            <tr class="hover:bg-slate-800/30 transition-colors">
+                            <tr class="group hover:bg-slate-800/50 transition-colors">
                                 <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="flex items-center space-x-3">
@@ -615,8 +615,8 @@
                                         x-text="item.status || 'Aktif'"></span>
                                 </td>
                                 
-                                <!-- Aksi dengan Granular Role Permission -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <!-- Aksi Frozen/Sticky di Sebelah Kanan -->
+                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/60 shadow-2xl" style="position: sticky; right: 0; z-index: 10; background-color: #0b1329;">
                                     <div class="inline-flex items-center space-x-1">
                                         <!-- Tombol Detail (Bisa untuk Semua Akun) -->
                                         <button type="button" @click="openDetail(item)"

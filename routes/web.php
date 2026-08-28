@@ -330,20 +330,23 @@ Route::middleware('auth')->group(function () {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
-            return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas'));
+            $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+            return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits'));
         })->name('astap.create');
 
         Route::get('/astap/{id}/edit', function ($id) {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+            $dbUnits = \App\Models\Unit::orderBy('nama')->get();
             $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->find($id);
             return view('pages.form_astap', [
                 'id' => $id, 
                 'astap' => $astap,
                 'dbMaster108' => $dbMaster108,
                 'dbJenisPengadaans' => $dbJenisPengadaans,
-                'dbRekeningBelanjas' => $dbRekeningBelanjas
+                'dbRekeningBelanjas' => $dbRekeningBelanjas,
+                'dbUnits' => $dbUnits
             ]);
         })->name('astap.edit');
 

@@ -246,7 +246,7 @@
         <!-- TABEL STRUKTUR JENIS PENGADAAN SIPD (3 BLOK SESUAI FORMAT EXCEL)          -->
         <!-- ========================================================================= -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-5 mb-6">
-            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 350px; overflow-y: auto; overflow-x: auto;">
+            <div class="rounded-2xl border border-slate-800/80 custom-scrollbar" style="max-height: 360px; overflow-y: auto; overflow-x: auto;">
                 <table class="w-full text-left text-xs text-slate-300 border-collapse">
                     
                     <!-- 2-Tier Header Sesuai Desain Gambar -->
@@ -274,7 +274,7 @@
                                     <span>Sub Kegiatan Pengadaan SIPD</span>
                                 </div>
                             </th>
-                            <th rowspan="2" class="px-4 py-3 bg-slate-950/90 text-slate-300 text-center align-middle w-28">
+                            <th rowspan="2" class="px-4 py-3 bg-slate-950 text-slate-300 text-center align-middle w-28 border-l border-slate-800/80" style="position: sticky; right: 0; z-index: 20; background-color: #020617;">
                                 Aksi
                             </th>
                         </tr>
@@ -333,7 +333,7 @@
                                 <td class="px-4 py-4 font-semibold text-white bg-purple-950/10 border-r border-slate-800/80">{{ $item->sub_kegiatan_nama }}</td>
 
                                 <!-- Kolom 8: Aksi -->
-                                <td class="px-3 py-4 text-center space-x-1 whitespace-nowrap">
+                                <td class="px-3 py-4 text-center space-x-1 whitespace-nowrap border-l border-slate-800/80 shadow-2xl" style="position: sticky; right: 0; z-index: 10; background-color: #0b1329;">
                                     <button type="button" @click="openEdit({{ json_encode($item) }})"
                                         class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>

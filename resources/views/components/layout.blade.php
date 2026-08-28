@@ -23,6 +23,26 @@
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+        /* Global Cursor Pointer untuk Semua Tombol & Elemen Interaktif */
+        button,
+        [type="button"],
+        [type="submit"],
+        [type="reset"],
+        a[role="button"],
+        .btn,
+        select,
+        summary {
+            cursor: pointer !important;
+        }
+
+        button:disabled,
+        [type="button"]:disabled,
+        [type="submit"]:disabled,
+        [type="reset"]:disabled,
+        [disabled] {
+            cursor: not-allowed !important;
+        }
+
         /* Global Elegant Dark Scrollbar */
         * {
             scrollbar-width: thin;

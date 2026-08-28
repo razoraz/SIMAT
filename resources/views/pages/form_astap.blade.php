@@ -6,6 +6,7 @@
         window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : []);
         window.dbJenisPengadaans = @json(!empty($dbJenisPengadaans) ? $dbJenisPengadaans : []);
         window.dbRekeningBelanjas = @json(!empty($dbRekeningBelanjas) ? $dbRekeningBelanjas : []);
+        window.dbUnits = @json(!empty($dbUnits) ? $dbUnits : []);
         window.editingAstap = @json(!empty($astap) ? $astap : null);
 
         function astapForm() {
@@ -14,7 +15,8 @@
                 currentStep: 1,
                 totalSteps: 4,
 
-
+                // Master Data Unit & Paviliun (Diisi dari Database RSUD)
+                masterUnits: window.dbUnits || [],
 
                 // State Search Filter Ketik Langkah 1 & Langkah 2
                 searchProgram: '',
@@ -29,6 +31,14 @@
                 isJenis108Open: false,
                 searchSubRincian108: '',
                 isSubRincian108Open: false,
+
+                // State Search Filter Unit & Paviliun untuk Ruang Pemegang (KIB B, KIB E, ATB)
+                searchRuangPemegang: '',
+                isRuangPemegangOpen: false,
+                searchRuangPemegangLainnya: '',
+                isRuangPemegangLainnyaOpen: false,
+                searchRuangPemegangAtb: '',
+                isRuangPemegangAtbOpen: false,
 
                 // Master Data Hierarki SIPD Langkah 1 (Diisi dinamis 100% dari SQLite Database)
                 sipdData: [],
@@ -695,6 +705,38 @@
                     );
                 },
 
+                // Getters Filter Unit & Paviliun RSUD untuk Ruang Pemegang (Mesin, Lainnya, ATB)
+                get filteredUnitsMesin() {
+                    let list = this.masterUnits || [];
+                    if (!this.searchRuangPemegang || this.searchRuangPemegang.trim() === '') return list;
+                    const q = this.searchRuangPemegang.toLowerCase().trim();
+                    return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+                },
+                get filteredUnitsLainnya() {
+                    let list = this.masterUnits || [];
+                    if (!this.searchRuangPemegangLainnya || this.searchRuangPemegangLainnya.trim() === '') return list;
+                    const q = this.searchRuangPemegangLainnya.toLowerCase().trim();
+                    return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+                },
+                get filteredUnitsAtb() {
+                    let list = this.masterUnits || [];
+                    if (!this.searchRuangPemegangAtb || this.searchRuangPemegangAtb.trim() === '') return list;
+                    const q = this.searchRuangPemegangAtb.toLowerCase().trim();
+                    return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+                },
+                selectUnitMesin(unit) {
+                    this.formData.ruang_pemegang = unit.nama;
+                    this.isRuangPemegangOpen = false;
+                },
+                selectUnitLainnya(unit) {
+                    this.formData.ruang_pemegang_lainnya = unit.nama;
+                    this.isRuangPemegangLainnyaOpen = false;
+                },
+                selectUnitAtb(unit) {
+                    this.formData.ruang_pemegang_atb = unit.nama;
+                    this.isRuangPemegangAtbOpen = false;
+                },
+
                 // Getters Filter Pencarian Langkah 2 (Rekening Belanja & PMDN 108)
                 get filteredRekeningBelanja() {
                     if (!this.searchRekening || this.searchRekening.trim() === '') {
@@ -710,6 +752,11 @@
 
                 get filteredJenisAstap108() {
                     let list = (this.masterJenisAstap108 || []).filter(j => j && j.kode && j.nama && j.nama.trim() !== '');
+                    // Exclude "Aset Tetap Dalam Renovasi" (1.3.5.07)
+                    list = list.filter(j => 
+                        !(j.kode && j.kode.includes('1.3.5.07')) && 
+                        !(j.nama && j.nama.toLowerCase().includes('dalam renovasi'))
+                    );
                     if (!this.searchJenis108 || this.searchJenis108.trim() === '') {
                         return list;
                     }
@@ -2014,16 +2061,60 @@
                 <template x-if="isMesin">
                     <div class="space-y-6">
                         
-                        <!-- 1. Ruang / Pemegang Aset (Sesuai Kolom Terakhir Gambar KIB B) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-2 shadow-lg">
+                        <!-- 1. Ruang / Pemegang Aset (Satu Sinkronisasi dengan Master Unit & Paviliun) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangOpen = false">
                             <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
                                 <label class="block text-amber-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
                                     <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
                                 </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Kolom Kanan KIB B</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                        <span>🏥</span>
+                                        <span>Tersinkron Unit & Paviliun</span>
+                                    </span>
+                                    <button type="button" 
+                                            x-show="formData.ruang_pemegang" 
+                                            @click="formData.ruang_pemegang = ''; searchRuangPemegang = ''; isRuangPemegangOpen = true" 
+                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                        ✕ Reset
+                                    </button>
+                                </div>
                             </div>
-                            <input type="text" x-model="formData.ruang_pemegang" placeholder="Contoh: Instalasi Radiologi & Imaging Sentral / dr. Hendra, Sp.Rad"
-                                   class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 transition-all">
+                            
+                            <div class="relative">
+                                <input type="text" 
+                                       :value="!isRuangPemegangOpen ? formData.ruang_pemegang : searchRuangPemegang"
+                                       @input="formData.ruang_pemegang = $event.target.value; searchRuangPemegang = $event.target.value; isRuangPemegangOpen = true"
+                                       @focus="isRuangPemegangOpen = true"
+                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                       class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
+                                <svg class="w-4 h-4 text-amber-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
+
+                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                            <div x-show="isRuangPemegangOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsMesin.length + ' Unit/Ruangan'"></span>
+                                </div>
+                                <template x-for="u in filteredUnitsMesin" :key="u.id">
+                                    <div @click="selectUnitMesin(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-amber-500/15 border border-slate-800/60 hover:border-amber-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                        <div class="min-w-0 pr-2">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate" x-text="u.nama"></span>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-amber-300 border border-amber-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                    </div>
+                                </template>
+                                <template x-if="filteredUnitsMesin.length === 0">
+                                    <div class="p-3 text-center text-xs text-slate-400">
+                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin -->
@@ -3307,16 +3398,60 @@
                 <template x-if="isAsetLainnya">
                     <div class="space-y-6">
                         
-                        <!-- Ruang / Pemegang (KIB E Sesuai Kolom Terakhir Excel) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-2 shadow-lg">
+                        <!-- Ruang / Pemegang (KIB E Satu Sinkronisasi dengan Master Unit & Paviliun) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangLainnyaOpen = false">
                             <div class="flex items-center justify-between border-b border-rose-500/30 pb-2">
                                 <label class="block text-rose-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
                                     <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
                                 </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">Kolom Kanan Tabel (KIB E)</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                        <span>🏥</span>
+                                        <span>Tersinkron Unit & Paviliun</span>
+                                    </span>
+                                    <button type="button" 
+                                            x-show="formData.ruang_pemegang_lainnya" 
+                                            @click="formData.ruang_pemegang_lainnya = ''; searchRuangPemegangLainnya = ''; isRuangPemegangLainnyaOpen = true" 
+                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                        ✕ Reset
+                                    </button>
+                                </div>
                             </div>
-                            <input type="text" x-model="formData.ruang_pemegang_lainnya" placeholder="Contoh: Instalasi Perpustakaan Medis & Diklat RSUD Dr. H. Koesnandi"
-                                   class="w-full bg-slate-900 border border-slate-700 hover:border-rose-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-rose-500 transition-all">
+                            
+                            <div class="relative">
+                                <input type="text" 
+                                       :value="!isRuangPemegangLainnyaOpen ? formData.ruang_pemegang_lainnya : searchRuangPemegangLainnya"
+                                       @input="formData.ruang_pemegang_lainnya = $event.target.value; searchRuangPemegangLainnya = $event.target.value; isRuangPemegangLainnyaOpen = true"
+                                       @focus="isRuangPemegangLainnyaOpen = true"
+                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                       class="w-full bg-slate-900 border border-slate-700 hover:border-rose-500 focus:border-rose-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
+                                <svg class="w-4 h-4 text-rose-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
+
+                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                            <div x-show="isRuangPemegangLainnyaOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-rose-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsLainnya.length + ' Unit/Ruangan'"></span>
+                                </div>
+                                <template x-for="u in filteredUnitsLainnya" :key="u.id">
+                                    <div @click="selectUnitLainnya(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-rose-500/15 border border-slate-800/60 hover:border-rose-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                        <div class="min-w-0 pr-2">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-bold text-white group-hover:text-rose-300 truncate" x-text="u.nama"></span>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-rose-300 border border-rose-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                    </div>
+                                </template>
+                                <template x-if="filteredUnitsLainnya.length === 0">
+                                    <div class="p-3 text-center text-xs text-slate-400">
+                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- Grid Form Pengisian Rincian Aset Tetap Lainnya -->
@@ -3760,16 +3895,60 @@
                 <template x-if="isAtb">
                     <div class="space-y-6">
                         
-                        <!-- Ruang / Pemegang (ATB Sesuai Kolom Terakhir Excel) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-2 shadow-lg">
+                        <!-- Ruang / Pemegang (ATB Satu Sinkronisasi dengan Master Unit & Paviliun) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangAtbOpen = false">
                             <div class="flex items-center justify-between border-b border-violet-500/30 pb-2">
                                 <label class="block text-violet-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
                                     <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
                                 </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold">Kolom Kanan Tabel (ATB)</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                        <span>🏥</span>
+                                        <span>Tersinkron Unit & Paviliun</span>
+                                    </span>
+                                    <button type="button" 
+                                            x-show="formData.ruang_pemegang_atb" 
+                                            @click="formData.ruang_pemegang_atb = ''; searchRuangPemegangAtb = ''; isRuangPemegangAtbOpen = true" 
+                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                        ✕ Reset
+                                    </button>
+                                </div>
                             </div>
-                            <input type="text" x-model="formData.ruang_pemegang_atb" placeholder="Contoh: Instalasi SIMRS & Rekam Medis RSUD Dr. H. Koesnandi"
-                                   class="w-full bg-slate-900 border border-slate-700 hover:border-violet-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-violet-500 transition-all">
+                            
+                            <div class="relative">
+                                <input type="text" 
+                                       :value="!isRuangPemegangAtbOpen ? formData.ruang_pemegang_atb : searchRuangPemegangAtb"
+                                       @input="formData.ruang_pemegang_atb = $event.target.value; searchRuangPemegangAtb = $event.target.value; isRuangPemegangAtbOpen = true"
+                                       @focus="isRuangPemegangAtbOpen = true"
+                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                       class="w-full bg-slate-900 border border-slate-700 hover:border-violet-500 focus:border-violet-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
+                                <svg class="w-4 h-4 text-violet-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
+
+                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                            <div x-show="isRuangPemegangAtbOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-violet-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsAtb.length + ' Unit/Ruangan'"></span>
+                                </div>
+                                <template x-for="u in filteredUnitsAtb" :key="u.id">
+                                    <div @click="selectUnitAtb(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-violet-500/15 border border-slate-800/60 hover:border-violet-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                        <div class="min-w-0 pr-2">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-bold text-white group-hover:text-violet-300 truncate" x-text="u.nama"></span>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-violet-300 border border-violet-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                    </div>
+                                </template>
+                                <template x-if="filteredUnitsAtb.length === 0">
+                                    <div class="p-3 text-center text-xs text-slate-400">
+                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- Grid Form Pengisian Rincian Aset Tidak Berwujud -->
