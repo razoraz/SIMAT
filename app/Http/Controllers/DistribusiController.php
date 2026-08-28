@@ -295,66 +295,127 @@ class DistribusiController extends Controller
      * Simpan / Perbarui Transaksi Distribusi
      * Menggunakan FK ke distribusi_item_registers (bukan nibar_list JSON)
      */
-    public function saveDistribusi(Request $request)
+    /**
+     * Simpan / Perbarui Transaksi Distribusi
+     */
+    public function saveDistribusi(Request $request, $id = null)
     {
         $user = auth()->user();
         $isSubAdmin = $user && $user->isSubAdmin();
 
+        // 1. Resolve unit_id jika belum terisi atau terkirim dalam bentuk nama/tujuan
+        if (empty($request->unit_id) && !empty($request->tujuan)) {
+            $unitFound = Unit::where('nama', 'LIKE', '%' . trim($request->tujuan) . '%')->first();
+            if ($unitFound) {
+                $request->merge(['unit_id' => $unitFound->id]);
+            }
+        }
+        if (empty($request->unit_id)) {
+            $firstUnit = Unit::first();
+            if ($firstUnit) {
+                $request->merge(['unit_id' => $firstUnit->id]);
+            }
+        }
+
+        // 2. Validate input
         $validated = $request->validate([
             'kode'                         => 'required|string|max:50',
             'bast_nomor'                   => 'nullable|string|max:100',
-            'tanggal_distribusi'           => 'required|date',
+            'tanggal_distribusi'           => 'nullable',
             'unit_id'                      => 'required|exists:units,id',
-            'status'                       => 'required|in:Telah Diterima,Dalam Pengiriman,Menunggu Konfirmasi,Draft',
+            'status'                       => 'nullable|string',
             'keterangan'                   => 'nullable|string',
             'items'                        => 'required|array|min:1',
-            'items.*.astap_id'             => 'required|exists:astaps,id',
-            'items.*.qty'                  => 'required|integer|min:1',
+            'items.*.astap_id'             => 'nullable',
+            'items.*.qty'                  => 'nullable|integer|min:1',
             'items.*.keterangan'           => 'nullable|string',
-            // register_ids: array of integer FK ke astap_registers.id (hanya diisi oleh Admin/Master Admin)
             'items.*.register_ids'         => 'nullable|array',
-            'items.*.register_ids.*'       => 'nullable|integer|exists:astap_registers,id',
         ]);
 
-        return DB::transaction(function () use ($validated, $user, $isSubAdmin) {
-            // Jika sub_admin, kunci unit_id sesuai unit akun yang sedang login
+        return DB::transaction(function () use ($validated, $request, $user, $isSubAdmin, $id) {
             $finalUnitId = ($isSubAdmin && $user->unit_id) ? $user->unit_id : $validated['unit_id'];
             $unit = Unit::findOrFail($finalUnitId);
 
-            // Jika sub_admin, status default untuk pengajuan baru adalah 'Draft'
-            $finalStatus = $validated['status'];
-            if ($isSubAdmin) {
-                $existing = Distribusi::where('kode', $validated['kode'])->first();
-                $finalStatus = $existing ? $existing->status : 'Draft';
-            }
+            $tglDistribusi = !empty($validated['tanggal_distribusi'])
+                ? date('Y-m-d', strtotime($validated['tanggal_distribusi']))
+                : date('Y-m-d');
+
+            $statusInput = $validated['status'] ?? 'Draft';
+            $validStatuses = ['Telah Diterima', 'Dalam Pengiriman', 'Menunggu Konfirmasi', 'Draft'];
+            $finalStatus = in_array($statusInput, $validStatuses) ? $statusInput : 'Draft';
 
             // 1. Simpan / Update Header Distribusi
-            $distribusi = Distribusi::updateOrCreate(
-                ['kode' => $validated['kode']],
-                [
-                    'bast_nomor'         => $validated['bast_nomor'],
-                    'tanggal_distribusi' => $validated['tanggal_distribusi'],
+            $distribusi = null;
+            if ($id) {
+                $distribusi = Distribusi::find($id);
+            }
+            if (!$distribusi) {
+                $distribusi = Distribusi::where('kode', $validated['kode'])->first();
+            }
+
+            if ($distribusi) {
+                $distribusi->update([
+                    'kode'               => $validated['kode'],
+                    'bast_nomor'         => $validated['bast_nomor'] ?? ($validated['kode'] . '/BAST/2026'),
+                    'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
                     'status'             => $finalStatus,
                     'keterangan'         => $validated['keterangan'] ?? null,
-                ]
-            );
+                ]);
 
-            // 2. Hapus item lama (cascade akan hapus distribusi_item_registers juga)
-            $distribusi->items()->delete();
+                // Reset register lama jika ada
+                foreach ($distribusi->items as $oldItem) {
+                    $oldRegIds = $oldItem->registers->pluck('astap_register_id')->filter()->toArray();
+                    if (!empty($oldRegIds)) {
+                        AstapRegister::whereIn('id', $oldRegIds)->update([
+                            'unit_id'        => null,
+                            'ruang_pemegang' => null,
+                            'status'         => 'Tersedia',
+                        ]);
+                    }
+                }
 
+                // Hapus item lama
+                $distribusi->items()->delete();
+            } else {
+                $distribusi = Distribusi::create([
+                    'kode'               => $validated['kode'],
+                    'bast_nomor'         => $validated['bast_nomor'] ?? ($validated['kode'] . '/BAST/2026'),
+                    'tanggal_distribusi' => $tglDistribusi,
+                    'unit_id'            => $finalUnitId,
+                    'status'             => $finalStatus,
+                    'keterangan'         => $validated['keterangan'] ?? null,
+                ]);
+            }
+
+            // 2. Simpan Multi-Items & Register NIBAR
             foreach ($validated['items'] as $itemData) {
-                $registerIds = array_filter(array_map('intval', $itemData['register_ids'] ?? []));
+                $astapId = $itemData['astap_id'] ?? null;
 
-                // Simpan baris item (tanpa kondisi/nibar — baca dari astap_registers via FK)
+                if (!$astapId || !Astap::where('id', $astapId)->exists()) {
+                    $kodeBarang = $itemData['kode_barang'] ?? '';
+                    $namaBarang = $itemData['nama_barang'] ?? '';
+                    $foundAstap = Astap::where('kode_108', $kodeBarang)
+                        ->orWhere('nama_barang', 'LIKE', '%' . $namaBarang . '%')
+                        ->first();
+
+                    if ($foundAstap) {
+                        $astapId = $foundAstap->id;
+                    } else {
+                        $firstAstap = Astap::first();
+                        $astapId = $firstAstap ? $firstAstap->id : 1;
+                    }
+                }
+
                 $distribusiItem = DistribusiItem::create([
                     'distribusi_id' => $distribusi->id,
-                    'astap_id'      => $itemData['astap_id'],
-                    'qty'           => $itemData['qty'],
+                    'astap_id'      => $astapId,
+                    'qty'           => intval($itemData['qty'] ?? 1),
                     'keterangan'    => $itemData['keterangan'] ?? null,
                 ]);
 
-                // 3. Simpan pivot FK ke setiap register NIBAR yang dipilih
+                $registerIds = array_filter(array_map('intval', $itemData['register_ids'] ?? []));
+
                 foreach ($registerIds as $regId) {
                     DistribusiItemRegister::create([
                         'distribusi_item_id' => $distribusiItem->id,
@@ -362,8 +423,6 @@ class DistribusiController extends Controller
                     ]);
                 }
 
-                // 4. Update astap_registers: set unit_id & ruang_pemegang dari FK unit
-                //    (kondisi TIDAK diubah — kondisi tetap di astap_registers, tidak ada duplikasi)
                 if (!empty($registerIds)) {
                     AstapRegister::whereIn('id', $registerIds)->update([
                         'unit_id'        => $unit->id,
@@ -375,10 +434,23 @@ class DistribusiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transaksi distribusi berhasil disimpan. Data astap_registers diperbarui via FK.',
+                'message' => "Transaksi distribusi {$distribusi->kode} berhasil disimpan.",
                 'data'    => $distribusi->load('items.registers.astapRegister', 'unit'),
             ]);
         });
+    }
+
+    /**
+     * Hapus Transaksi Distribusi
+     */
+    public function destroy($id)
+    {
+        $distribusi = Distribusi::findOrFail($id);
+        $kode = $distribusi->kode;
+        $distribusi->delete();
+
+        session()->flash('success', "Transaksi Distribusi {$kode} berhasil dihapus.");
+        return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dihapus."]);
     }
 }
 

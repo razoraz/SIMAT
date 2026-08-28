@@ -197,13 +197,7 @@
             </div>
         </div>
 
-        {{-- Flash Success --}}
-        @if(session('success'))
-        <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-5 py-3 text-emerald-300 text-xs font-semibold flex items-center gap-2">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            {{ session('success') }}
-        </div>
-        @endif
+
 
         @if(isset($errors) && $errors->any())
         <div class="bg-rose-500/10 border border-rose-500/30 rounded-2xl px-5 py-3 text-rose-300 text-xs font-semibold space-y-1">

@@ -95,7 +95,8 @@
                         onConfirm: () => {
                             this.pemeliharaans = this.pemeliharaans.filter(p => p.id !== targetId);
                             this.saveToStorage();
-                            this.showSimatToast('✅ Data log pemeliharaan berhasil dihapus.', 'success');
+                            sessionStorage.setItem('flash_success', 'Data log pemeliharaan aset berhasil dihapus.');
+                            window.location.reload();
                         }
                     });
                 },
@@ -124,6 +125,8 @@
                     this.saveToStorage();
                 }
                 this.showEditModal = false;
+                sessionStorage.setItem('flash_success', 'Data log pemeliharaan aset berhasil diperbarui.');
+                window.location.reload();
             }
         },
 

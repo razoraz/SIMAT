@@ -161,19 +161,7 @@
 
     <div x-data="masterJenisAstap()" x-cloak>
 
-        @if (session('success'))
-            <div class="mb-4 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-between shadow-lg">
-                <span>✅ {{ session('success') }}</span>
-                <button type="button" @click="$el.parentElement.remove()" class="text-emerald-400 hover:text-white font-bold text-base">&times;</button>
-            </div>
-        @endif
 
-        @if (session('error'))
-            <div class="mb-4 p-4 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center justify-between shadow-lg">
-                <span>⚠️ {{ session('error') }}</span>
-                <button type="button" @click="$el.parentElement.remove()" class="text-rose-400 hover:text-white font-bold text-base">&times;</button>
-            </div>
-        @endif
 
         @if ($errors->any())
             <div class="mb-4 p-4 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-semibold shadow-lg space-y-1">
@@ -192,8 +180,8 @@
         <div class="bg-gradient-to-r from-emerald-600/15 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
                 <div>
-                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold mb-3">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-extrabold uppercase tracking-wider mb-3 shadow-sm backdrop-blur-md">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400"></span>
                         <span>KODE 108 PERMENDAGRI (BARANG MILIK DAERAH)</span>
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Master Jenis ASTAP (Kode 108 BMD)</h1>

@@ -122,6 +122,159 @@
 
             <!-- Slot Konten Utama -->
             <main class="flex-1 p-3 sm:p-6 lg:p-8 {{ ($fullWidth ?? false) ? 'w-full max-w-none' : 'max-w-7xl mx-auto w-full' }}">
+                
+                <!-- BANNER NOTIFIKASI PEMBERITAHUAN SISTEM (Murni Blade Server-Side, Zero JS Bug) -->
+                @if (session('success') || session('error') || session('warning') || session('info') || session('status'))
+                    @php
+                        $msg = session('success') ?? session('error') ?? session('warning') ?? session('info') ?? session('status');
+                        $msgLower = strtolower($msg);
+
+                        if (session('error')) {
+                            $type = 'error';
+                            $title = 'TERJADI KESALAHAN';
+                            $icon = '⚠️';
+                        } elseif (session('warning')) {
+                            $type = 'warning';
+                            $title = 'PERHATIAN';
+                            $icon = '⚠️';
+                        } elseif (session('info') || session('status')) {
+                            $type = 'info';
+                            $title = 'PEMBERITAHUAN SISTEM';
+                            $icon = 'ℹ️';
+                        } elseif (str_contains($msgLower, 'dihapus') || str_contains($msgLower, 'hapus')) {
+                            $type = 'delete';
+                            $title = 'BERHASIL DIHAPUS';
+                            $icon = '🗑️';
+                        } elseif (str_contains($msgLower, 'diperbarui') || str_contains($msgLower, 'diubah') || str_contains($msgLower, 'update') || str_contains($msgLower, 'ubah')) {
+                            $type = 'update';
+                            $title = 'BERHASIL DIPERBARUI';
+                            $icon = '✏️';
+                        } else {
+                            $type = 'create';
+                            $title = 'BERHASIL DITAMBAHKAN';
+                            $icon = '➕';
+                        }
+                    @endphp
+
+                    <div id="simat-flash-banner" x-data="{ showBanner: true }" x-show="showBanner"
+                         class="mb-6 w-full bg-slate-900/95 border backdrop-blur-2xl rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3 relative overflow-hidden transition-all duration-300
+                         @if($type === 'create') border-emerald-500/40 shadow-emerald-950/30 bg-gradient-to-r from-emerald-500/15 via-slate-900/95 to-slate-900/95
+                         @elseif($type === 'update') border-amber-500/40 shadow-amber-950/30 bg-gradient-to-r from-amber-500/15 via-slate-900/95 to-slate-900/95
+                         @elseif($type === 'delete' || $type === 'error') border-rose-500/40 shadow-rose-950/30 bg-gradient-to-r from-rose-500/15 via-slate-900/95 to-slate-900/95
+                         @elseif($type === 'warning') border-amber-500/40 shadow-amber-950/30 bg-gradient-to-r from-amber-500/15 via-slate-900/95 to-slate-900/95
+                         @else border-cyan-500/40 shadow-cyan-950/30 bg-gradient-to-r from-cyan-500/15 via-slate-900/95 to-slate-900/95 @endif">
+                        
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex items-start space-x-3.5 min-w-0 flex-1">
+                                <!-- Icon Badge 3D Glow -->
+                                <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 border shadow-lg
+                                     @if($type === 'create') bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-emerald-500/10
+                                     @elseif($type === 'update') bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-amber-500/10
+                                     @elseif($type === 'delete' || $type === 'error') bg-rose-500/20 text-rose-400 border-rose-500/30 shadow-rose-500/10
+                                     @elseif($type === 'warning') bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-amber-500/10
+                                     @else bg-cyan-500/20 text-cyan-300 border-cyan-500/30 shadow-cyan-500/10 @endif">
+                                    {{ $icon }}
+                                </div>
+
+                                <!-- Header & Subtitle Content -->
+                                <div class="min-w-0 flex-1 space-y-0.5 pt-0.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border
+                                             @if($type === 'create') bg-emerald-500/20 text-emerald-300 border-emerald-500/30
+                                             @elseif($type === 'update') bg-amber-500/20 text-amber-300 border-amber-500/30
+                                             @elseif($type === 'delete' || $type === 'error') bg-rose-500/20 text-rose-300 border-rose-500/30
+                                             @elseif($type === 'warning') bg-amber-500/20 text-amber-300 border-amber-500/30
+                                             @else bg-cyan-500/20 text-cyan-300 border-cyan-500/30 @endif">
+                                            {{ $title }}
+                                        </span>
+                                        <span class="text-[10px] text-slate-400 font-semibold">• Berhasil Diproses</span>
+                                    </div>
+                                    <p class="text-xs sm:text-sm font-bold text-white leading-relaxed">{{ $msg }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Tombol Close (x) -->
+                            <button type="button" @click="showBanner = false" onclick="this.closest('.mb-6').remove()" class="text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl w-8 h-8 flex items-center justify-center transition-all shrink-0 font-bold text-lg cursor-pointer">
+                                &times;
+                            </button>
+                        </div>
+
+                        <!-- Bottom Glowing Accent Line Bar -->
+                        <div class="w-full bg-slate-800/80 rounded-full h-1 overflow-hidden">
+                            <div class="h-full rounded-full w-full animate-pulse
+                                 @if($type === 'create') bg-emerald-500
+                                 @elseif($type === 'update') bg-amber-500
+                                 @elseif($type === 'delete' || $type === 'error') bg-rose-500
+                                 @elseif($type === 'warning') bg-amber-500
+                                 @else bg-cyan-500 @endif"></div>
+                        </div>
+                    </div>
+
+                    <script>
+                        if ('scrollRestoration' in history) {
+                            history.scrollRestoration = 'manual';
+                        }
+                        window.scrollTo({ top: 0, behavior: 'instant' });
+                    </script>
+                @endif
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const clientMsg = sessionStorage.getItem('flash_success') || sessionStorage.getItem('flash_error') || sessionStorage.getItem('flash_info');
+                        if (clientMsg) {
+                            const isError = !!sessionStorage.getItem('flash_error');
+                            const isDelete = clientMsg.toLowerCase().includes('hapus') || clientMsg.toLowerCase().includes('dihapus');
+                            const isUpdate = clientMsg.toLowerCase().includes('perbarui') || clientMsg.toLowerCase().includes('ubah') || clientMsg.toLowerCase().includes('update');
+                            
+                            sessionStorage.removeItem('flash_success');
+                            sessionStorage.removeItem('flash_error');
+                            sessionStorage.removeItem('flash_info');
+
+                            if (!document.getElementById('simat-flash-banner')) {
+                                const bannerDiv = document.createElement('div');
+                                bannerDiv.id = 'simat-flash-banner';
+                                bannerDiv.className = 'mb-6 w-full bg-slate-900/95 border backdrop-blur-2xl rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3 relative overflow-hidden transition-all duration-300 ' + 
+                                    (isError ? 'border-rose-500/40 shadow-rose-950/20' : (isDelete ? 'border-rose-500/40 shadow-rose-950/20' : (isUpdate ? 'border-amber-500/40 shadow-amber-950/20' : 'border-emerald-500/40 shadow-emerald-950/20')));
+                                
+                                const titleText = isError ? 'TERJADI KESALAHAN' : (isDelete ? 'BERHASIL DIHAPUS' : (isUpdate ? 'BERHASIL DIPERBARUI' : 'BERHASIL DITAMBAHKAN'));
+                                const iconText = isError ? '⚠️' : (isDelete ? '🗑️' : (isUpdate ? '✏️' : '➕'));
+                                const badgeClass = isError ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : (isDelete ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : (isUpdate ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'));
+                                const lineClass = isError ? 'bg-rose-500' : (isDelete ? 'bg-rose-500' : (isUpdate ? 'bg-amber-500' : 'bg-emerald-500'));
+
+                                bannerDiv.innerHTML = `
+                                    <div class="flex items-start justify-between space-x-3">
+                                        <div class="flex items-start space-x-3.5 min-w-0">
+                                            <div class="p-2.5 sm:p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 text-xl sm:text-2xl shrink-0">
+                                                ${iconText}
+                                            </div>
+                                            <div class="min-w-0 flex-1 space-y-0.5 pt-0.5">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeClass}">
+                                                        ${titleText}
+                                                    </span>
+                                                    <span class="text-[10px] text-slate-400 font-semibold">• Berhasil Diproses</span>
+                                                </div>
+                                                <p class="text-xs sm:text-sm font-bold text-white leading-relaxed">${clientMsg}</p>
+                                            </div>
+                                        </div>
+                                        <button type="button" onclick="this.closest('#simat-flash-banner').remove()" class="text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl w-8 h-8 flex items-center justify-center transition-all shrink-0 font-bold text-lg cursor-pointer">&times;</button>
+                                    </div>
+                                    <div class="w-full bg-slate-800/80 rounded-full h-1 overflow-hidden">
+                                        <div class="h-full rounded-full w-full animate-pulse ${lineClass}"></div>
+                                    </div>
+                                `;
+
+                                const mainContainer = document.querySelector('main');
+                                if (mainContainer) {
+                                    mainContainer.insertBefore(bannerDiv, mainContainer.firstChild);
+                                    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+                                    window.scrollTo({ top: 0, behavior: 'instant' });
+                                }
+                            }
+                        }
+                    });
+                </script>
+
                 {{ $slot }}
             </main>
 

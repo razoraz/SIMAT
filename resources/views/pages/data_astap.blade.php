@@ -1291,24 +1291,13 @@
                         onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             try {
-                                const res = await fetch('/astap-register/' + reg.id, {
+                                await fetch('/astap-register/' + reg.id, {
                                     method: 'DELETE',
                                     headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
                                 });
-                                const data = await res.json();
-                                if (data.success) {
-                                    if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
-                                        this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
-                                    }
-                                    this.showToast('✅ Register unit NIBAR berhasil dihapus!', 'success');
-                                } else {
-                                    this.showToast('⚠️ Gagal menghapus register NIBAR.', 'error');
-                                }
+                                window.location.reload();
                             } catch(err) {
-                                if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
-                                    this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
-                                }
-                                this.showToast('✅ Register unit NIBAR berhasil dihapus.', 'success');
+                                window.location.reload();
                             }
                         }
                     });
@@ -1329,11 +1318,9 @@
                                     method: 'DELETE',
                                     headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
                                 });
-                                this.astaps = this.astaps.filter(a => a.id !== item.id);
-                                this.showToast('✅ Data ASTAP "' + item.nama_barang + '" berhasil dihapus!', 'success');
+                                window.location.reload();
                             } catch(err) {
-                                this.astaps = this.astaps.filter(a => a.id !== item.id);
-                                this.showToast('✅ Data ASTAP berhasil dihapus.', 'success');
+                                window.location.reload();
                             }
                         }
                     });

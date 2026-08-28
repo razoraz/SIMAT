@@ -111,16 +111,17 @@
                         itemName: targetObj ? ((targetObj.kode || 'DIST') + ' - ' + (targetObj.nama || 'Aset') + ' (' + (targetObj.tujuan || 'Unit') + ')') : ('ID: ' + targetId),
                         type: 'danger',
                         btnText: '🗑️ Ya, Hapus Transaksi Distribusi',
-                        onConfirm: () => {
+                        onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                            fetch('/distribusi/' + targetId, {
-                                method: 'DELETE',
-                                headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
-                            }).catch(e => console.log(e));
-
-                            this.distribusis = this.distribusis.filter(d => d.id !== targetId);
-                            this.saveToStorage();
-                            this.showSimatToast('✅ Data transaksi distribusi berhasil dihapus.', 'success');
+                            try {
+                                await fetch('/distribusi/' + targetId, {
+                                    method: 'DELETE',
+                                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                                });
+                                window.location.reload();
+                            } catch(err) {
+                                window.location.reload();
+                            }
                         }
                     });
                 },

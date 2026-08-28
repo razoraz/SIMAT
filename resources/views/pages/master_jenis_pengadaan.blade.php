@@ -134,16 +134,7 @@
 
     <div x-data="masterJenisPengadaan()" x-cloak>
 
-        <!-- Flash Messages Notification -->
-        @if (session('success'))
-            <div class="mb-5 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-between shadow-lg">
-                <div class="flex items-center space-x-2.5">
-                    <span class="text-base">✅</span>
-                    <span>{{ session('success') }}</span>
-                </div>
-                <button type="button" @click="$el.parentElement.remove()" class="text-emerald-400 hover:text-white text-sm font-bold">&times;</button>
-            </div>
-        @endif
+
 
         @if ($errors->any())
             <div class="mb-5 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold shadow-lg">

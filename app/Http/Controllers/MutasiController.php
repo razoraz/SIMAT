@@ -178,10 +178,18 @@ class MutasiController extends Controller
     /**
      * Hapus pengajuan mutasi.
      */
-    public function destroy($id)
+    /**
+     * Hapus pengajuan mutasi.
+     */
+    public function destroy(Request $request, $id)
     {
         $mutasi = AstapMutasi::findOrFail($id);
         $mutasi->delete();
+
+        session()->flash('success', 'Pengajuan mutasi berhasil dihapus.');
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('mutasi.index')
             ->with('success', 'Pengajuan mutasi berhasil dihapus.');
@@ -200,6 +208,7 @@ class MutasiController extends Controller
             'status'                   => 'Disetujui 2 Pihak (Menunggu Admin)',
         ]);
 
+        session()->flash('success', 'Mutasi berhasil disetujui oleh penerima.');
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
         }
@@ -234,6 +243,7 @@ class MutasiController extends Controller
             $mutasi->register->update($updateData);
         }
 
+        session()->flash('success', 'Mutasi telah disahkan oleh Admin. Lokasi aset berhasil diperbarui ke ' . $mutasi->ruangan_tujuan . '.');
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
         }
@@ -259,6 +269,7 @@ class MutasiController extends Controller
             'alasan_penolakan' => $alasan,
         ]);
 
+        session()->flash('success', 'Pengajuan mutasi ditolak.');
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
         }

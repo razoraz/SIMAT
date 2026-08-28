@@ -263,6 +263,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/distribusi/create', [DistribusiController::class, 'create'])->name('distribusi.create');
     Route::get('/distribusi/{id}/edit', [DistribusiController::class, 'edit'])->name('distribusi.edit');
     Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
+    Route::post('/distribusi', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.store');
+    Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
+    Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
 
     // API: Update kondisi per Register NIBAR (dari halaman distribusi — semua role terautentikasi)
     Route::patch('/distribusi/register-kondisi/{id}', function (\Illuminate\Http\Request $request, $id) {
@@ -568,6 +571,7 @@ Route::middleware('auth')->group(function () {
                 ]);
             }
 
+            session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil ditambahkan.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil disimpan ke database SIMAT-RK!']);
         })->name('astap.store');
 
@@ -797,6 +801,7 @@ Route::middleware('auth')->group(function () {
             $astap->spesifikasi_json = $ext['spec'];
             $astap->save();
 
+            session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil diperbarui.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil diperbarui!']);
         })->name('astap.update');
 
@@ -806,6 +811,7 @@ Route::middleware('auth')->group(function () {
                 $astap->registers()->delete();
                 $astap->delete();
             }
+            session()->flash('success', 'Data ASTAP berhasil dihapus.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dihapus.']);
         })->name('astap.destroy');
 
@@ -831,6 +837,7 @@ Route::middleware('auth')->group(function () {
             if ($reg) {
                 $reg->delete();
             }
+            session()->flash('success', 'Unit register NIBAR berhasil dihapus.');
             return response()->json(['success' => true, 'message' => 'Unit register berhasil dihapus.']);
         })->name('astap_register.destroy');
 

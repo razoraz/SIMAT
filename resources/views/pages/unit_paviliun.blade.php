@@ -140,15 +140,17 @@
                         itemName: (item.nama || 'Unit') + ' (' + (item.kode || 'UNIT') + ')',
                         type: 'danger',
                         btnText: '🗑️ Ya, Hapus Unit',
-                        onConfirm: () => {
+                        onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                            fetch('/unit-paviliun/' + item.id, {
-                                method: 'DELETE',
-                                headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
-                            }).catch(e => console.log(e));
-
-                            this.units = this.units.filter(u => u.id !== item.id);
-                            this.showSimatToast('✅ Data unit/paviliun berhasil dihapus.', 'success');
+                            try {
+                                await fetch('/unit-paviliun/' + item.id, {
+                                    method: 'DELETE',
+                                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                                });
+                                window.location.reload();
+                            } catch(err) {
+                                window.location.reload();
+                            }
                         }
                     });
                 }
@@ -162,9 +164,9 @@
         <div class="bg-gradient-to-r from-blue-600/15 via-slate-900 to-slate-900 border border-blue-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
                 <div>
-                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-bold mb-3">
-                        <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-                        <span>LOKASI RUANGAN, PAVILIUN & INSTALASI RSUD</span>
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-extrabold uppercase tracking-wider mb-3 shadow-sm backdrop-blur-md">
+                        <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse shadow-sm shadow-blue-400"></span>
+                        <span>HIERARKI UNIT KERJA, PAVILIUN & INSTALASI RSUD</span>
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Unit Kerja</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">

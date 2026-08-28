@@ -222,21 +222,17 @@
                         itemName: (item.kode || 'BAMB') + ' - ' + (item.nama || 'Aset') + ' (Tujuan: ' + (item.tujuan || '-') + ')',
                         type: 'danger',
                         btnText: '🗑️ Ya, Hapus Data Mutasi',
-                        onConfirm: () => {
+                        onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                            fetch('/mutasi-aset/' + item.id, {
-                                method: 'DELETE',
-                                headers: {
-                                    'X-CSRF-TOKEN': token,
-                                    'Accept': 'application/json'
-                                }
-                            }).then(() => {
-                                this.mutasis = this.mutasis.filter(m => m.id !== item.id);
-                                this.showSimatToast('✅ Data transaksi mutasi berhasil dihapus.', 'success');
-                            }).catch(() => {
-                                this.mutasis = this.mutasis.filter(m => m.id !== item.id);
-                                this.showSimatToast('✅ Data transaksi mutasi berhasil dihapus.', 'success');
-                            });
+                            try {
+                                await fetch('/mutasi-aset/' + item.id, {
+                                    method: 'DELETE',
+                                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                                });
+                                window.location.reload();
+                            } catch(err) {
+                                window.location.reload();
+                            }
                         }
                     });
                 },

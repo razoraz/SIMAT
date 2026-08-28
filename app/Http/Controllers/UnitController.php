@@ -69,6 +69,7 @@ class UnitController extends Controller
         // Simpan Unit -> Model Hook otomatis membuat Akun Sub Admin di tabel users
         $unit = Unit::create($validated);
 
+        session()->flash('success', "Unit {$unit->nama} berhasil ditambahkan.");
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -106,6 +107,7 @@ class UnitController extends Controller
 
         $unit->update($validated);
 
+        session()->flash('success', "Unit {$unit->nama} berhasil diperbarui.");
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -126,6 +128,7 @@ class UnitController extends Controller
         $nama = $unit->nama;
         $unit->delete();
 
+        session()->flash('success', "Unit {$nama} berhasil dihapus.");
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,

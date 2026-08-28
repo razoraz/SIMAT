@@ -152,7 +152,14 @@
                 // Data Model Multi-Step — default kosong, diisi oleh init() bila mode edit
                 formData: (() => {
                     const ea = window.editingAstap || null;
-                    const spec = ea && ea.spesifikasi_json ? ea.spesifikasi_json : {};
+                    let spec = {};
+                    if (ea && ea.spesifikasi_json) {
+                        try {
+                            spec = typeof ea.spesifikasi_json === 'string' ? JSON.parse(ea.spesifikasi_json) : ea.spesifikasi_json;
+                        } catch(e) {
+                            spec = {};
+                        }
+                    }
                     const reg0 = ea && ea.registers && ea.registers[0] ? ea.registers[0] : null;
                     const jp = ea && ea.jenis_pengadaan ? ea.jenis_pengadaan : null;
                     const rb = ea && ea.rekening_belanja ? ea.rekening_belanja : null;
@@ -367,11 +374,43 @@
                         }));
                     }
 
-                    // Pre-fill Mode Edit untuk Langkah 2 Sub Rincian Objek PMDN 108 (6 segmen / 14 karakter)
+                    // Pre-fill Mode Edit (Langkah 1, Langkah 2, dan Langkah 3/4)
                     if (window.editingAstap) {
                         const ea = window.editingAstap;
+                        
+                        // 1. Pre-fill Langkah 1 (SIPD)
+                        const jp = ea.jenis_pengadaan 
+                            || (window.dbJenisPengadaans || []).find(j => j.id === ea.jenis_pengadaan_id) 
+                            || ((window.dbJenisPengadaans && window.dbJenisPengadaans.length > 0) ? window.dbJenisPengadaans[0] : null);
+                        
+                        if (jp) {
+                            this.formData.jenis_pengadaan_id = jp.id || ea.jenis_pengadaan_id;
+                            this.formData.program_kode = jp.program_kode || '';
+                            this.formData.program_nama = jp.program_nama || '';
+                            this.formData.kegiatan_kode = jp.kegiatan_kode || '';
+                            this.formData.kegiatan_nama = jp.kegiatan_nama || '';
+                            this.formData.sub_kegiatan_kode = jp.sub_kegiatan_kode || '';
+                            this.formData.sub_kegiatan_nama = jp.sub_kegiatan_nama || '';
+                        }
+
+                        // 2. Pre-fill Langkah 2 (Rekening Belanja)
+                        const rb = ea.rekening_belanja 
+                            || (window.dbRekeningBelanjas || []).find(r => r.id === ea.rekening_belanja_id)
+                            || ((window.dbRekeningBelanjas && window.dbRekeningBelanjas.length > 0) ? window.dbRekeningBelanjas[0] : null);
+
+                        if (rb) {
+                            this.formData.kode_rek = rb.kode_rek || '';
+                            this.formData.nama_belanja = rb.nama_belanja || '';
+                        }
+
+                        // 3. Pre-fill Langkah 2 (PMDN 108 Sub Rincian Objek)
                         const ja = ea.jenis_astap || null;
                         const kode108Val = ea.kode_108 || (ja ? (ja.sub_sub_rincian_objek || ja.jenis) : '');
+
+                        if (ja) {
+                            this.formData.jenis_aset_kode = ja.jenis || (kode108Val ? kode108Val.substring(0, 5) : '1.3.2');
+                            this.formData.jenis_aset_nama = ja.nama_jenis || 'PERALATAN DAN MESIN';
+                        }
 
                         let srKode = ja ? (ja.sub_rincian_objek || '') : '';
                         if (!srKode && kode108Val && kode108Val.length >= 14) {
