@@ -2,9 +2,23 @@
     @section('page-title', isset($mutasi) ? 'Ubah Pengajuan Mutasi' : 'Pengajuan Mutasi Baru')
     @section('breadcrumb', isset($mutasi) ? 'Master Utama / Mutasi Aset / Ubah' : 'Master Utama / Mutasi Aset / Pengajuan Baru')
 
+    @php
+        $user = Auth::user();
+        $isSubAdmin = in_array($user->role ?? '', ['sub_admin']);
+        $userUnitObj = $user->unitModel ?? null;
+        if (!$userUnitObj && $user->unit_id) {
+            $userUnitObj = \App\Models\Unit::find($user->unit_id);
+        }
+        $userUnitNama = $userUnitObj?->nama ?? (is_string($user->unit) ? $user->unit : '');
+        $userUnitKepala = $userUnitObj?->kepala ?? ($user->name ?? '');
+    @endphp
+
     <div x-data="{
         step: 1,
         isEdit: {{ isset($mutasi) ? 'true' : 'false' }},
+        isSubAdmin: {{ $isSubAdmin ? 'true' : 'false' }},
+        userUnitNama: '{{ $userUnitNama }}',
+        userUnitKepala: '{{ $userUnitKepala }}',
 
         /* ---- Jenis Mutasi ---- */
         jenis_mutasi: '{{ old('jenis_mutasi', $mutasi->jenis_mutasi ?? 'Ajukan Mutasi') }}',
@@ -20,29 +34,39 @@
         ruangan_tujuan: '{{ old('ruangan_tujuan', $mutasi->ruangan_tujuan ?? '') }}',
         penanggung_jawab_asal: '{{ old('penanggung_jawab_asal', $mutasi->penanggung_jawab_asal ?? '') }}',
         penanggung_jawab_tujuan: '{{ old('penanggung_jawab_tujuan', $mutasi->penanggung_jawab_tujuan ?? '') }}',
+        alasan_mutasi: '{{ old('alasan_mutasi', $mutasi->alasan_mutasi ?? '') }}',
 
-        /* ---- Autocomplete Barang ---- */
-        selectedRegisterId: '{{ old('astap_register_id', $mutasi->astap_register_id ?? '') }}',
+        /* ---- State Search Filterable Unit Selector ---- */
+        searchUnitAsal: '',
+        isUnitAsalOpen: false,
+        searchUnitTujuan: '',
+        isUnitTujuanOpen: false,
+
+        /* ---- Multi-Select Barang Aset ---- */
+        selectedRegisterIds: {{ old('astap_register_id', $mutasi->astap_register_id ?? false) ? '['.old('astap_register_id', $mutasi->astap_register_id).']' : '[]' }},
         searchBarang: '',
         showDropdown: false,
-        namaBarangPreview: '',
-        kondisiPreview: '',
-        unitAsalPreview: '',
-        kepalaAsalPreview: '',
 
         registers: {{ Js::from($registers) }},
         units: {{ Js::from($units) }},
 
         init() {
-            if (this.selectedRegisterId) {
-                const reg = this.registers.find(r => String(r.id) === String(this.selectedRegisterId));
-                if (reg) {
-                    this.searchBarang      = reg.nibar + ' — ' + reg.nama_barang;
-                    this.namaBarangPreview = reg.nama_barang;
-                    this.kondisiPreview    = reg.kondisi;
-                    this.unitAsalPreview   = reg.unit_nama;
-                    this.kepalaAsalPreview = reg.unit_kepala;
-                }
+            // Jika role sub_admin dan belum ada ruangan_asal, kunci ke unit sub admin tersebut
+            if (this.isSubAdmin && this.userUnitNama && !this.ruangan_asal) {
+                this.ruangan_asal = this.userUnitNama;
+                this.penanggung_jawab_asal = this.userUnitKepala;
+            }
+
+            if (this.ruangan_asal) {
+                this.searchUnitAsal = this.ruangan_asal;
+                const u = this.units.find(item => item.nama === this.ruangan_asal);
+                if (u && !this.penanggung_jawab_asal) this.penanggung_jawab_asal = u.kepala || ('Kepala Ruangan ' + u.nama);
+            }
+
+            if (this.ruangan_tujuan) {
+                this.searchUnitTujuan = this.ruangan_tujuan;
+                const u = this.units.find(item => item.nama === this.ruangan_tujuan);
+                if (u && !this.penanggung_jawab_tujuan) this.penanggung_jawab_tujuan = u.kepala || ('Kepala Ruangan ' + u.nama);
             }
         },
 
@@ -51,72 +75,112 @@
             if (val === 'Perbaikan') {
                 const ipsrs = this.units.find(u => (u.nama || '').toLowerCase().includes('ips') || (u.nama || '').toLowerCase().includes('sarana'));
                 if (ipsrs) {
-                    this.ruangan_tujuan = ipsrs.nama;
-                    this.penanggung_jawab_tujuan = ipsrs.kepala || 'TEKNISI IPSRS';
+                    this.selectUnitTujuan(ipsrs);
                 }
             } else if (val === 'Pengembalian') {
                 const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
                 if (perbekalan) {
-                    this.ruangan_tujuan = perbekalan.nama;
-                    this.penanggung_jawab_tujuan = perbekalan.kepala || 'PENGURUS BARANG / ADMIN';
+                    this.selectUnitTujuan(perbekalan);
                 }
             }
         },
 
+        /* Filter unit pengirim (Kecuali Unit Tujuan jika sudah dipilih) */
+        get filteredUnitsAsal() {
+            let list = this.units || [];
+            if (this.ruangan_tujuan) {
+                const tujuanNorm = this.ruangan_tujuan.toLowerCase().trim();
+                list = list.filter(u => (u.nama || '').toLowerCase().trim() !== tujuanNorm);
+            }
+            if (!this.searchUnitAsal || this.searchUnitAsal === this.ruangan_asal) {
+                return list;
+            }
+            const q = this.searchUnitAsal.toLowerCase();
+            return list.filter(u =>
+                (u.nama && u.nama.toLowerCase().includes(q)) ||
+                (u.kepala && u.kepala.toLowerCase().includes(q))
+            );
+        },
+
+        selectUnitAsal(u) {
+            this.ruangan_asal = u.nama;
+            this.penanggung_jawab_asal = u.kepala || ('Kepala Ruangan ' + u.nama);
+            this.searchUnitAsal = u.nama;
+            this.isUnitAsalOpen = false;
+            this.selectedRegisterIds = [];
+        },
+
+        /* Filter unit penerima (Kecuali Unit Pengirim yang sedang dipilih) */
+        get filteredUnitsTujuan() {
+            let list = this.units || [];
+            if (this.ruangan_asal) {
+                const asalNorm = this.ruangan_asal.toLowerCase().trim();
+                list = list.filter(u => (u.nama || '').toLowerCase().trim() !== asalNorm);
+            }
+            if (!this.searchUnitTujuan || this.searchUnitTujuan === this.ruangan_tujuan) {
+                return list;
+            }
+            const q = this.searchUnitTujuan.toLowerCase();
+            return list.filter(u =>
+                (u.nama && u.nama.toLowerCase().includes(q)) ||
+                (u.kepala && u.kepala.toLowerCase().includes(q))
+            );
+        },
+
+        selectUnitTujuan(u) {
+            this.ruangan_tujuan = u.nama;
+            this.penanggung_jawab_tujuan = u.kepala || ('Kepala Ruangan ' + u.nama);
+            this.searchUnitTujuan = u.nama;
+            this.isUnitTujuanOpen = false;
+        },
+
+        /* Semua register barang yang tersedia di unit pengirim */
+        get availableRegistersForAsal() {
+            if (!this.ruangan_asal) return [];
+            const selectedAsalNorm = this.ruangan_asal.toLowerCase().trim();
+            return (this.registers || []).filter(r => {
+                const unitNorm = (r.unit_nama || '').toLowerCase().trim();
+                return unitNorm === selectedAsalNorm || unitNorm.includes(selectedAsalNorm) || selectedAsalNorm.includes(unitNorm);
+            });
+        },
+
+        /* Filter register barang di unit pengirim sesuai kata kunci pencarian */
         get filteredRegisters() {
-            if (!this.searchBarang) return this.registers.slice(0, 20);
+            let list = this.availableRegistersForAsal;
+            if (!this.searchBarang) return list;
             const q = this.searchBarang.toLowerCase();
-            return this.registers.filter(r =>
+            return list.filter(r =>
                 (r.nibar && r.nibar.toLowerCase().includes(q)) ||
-                (r.nama_barang && r.nama_barang.toLowerCase().includes(q)) ||
-                (r.unit_nama && r.unit_nama.toLowerCase().includes(q))
-            ).slice(0, 20);
+                (r.nama_barang && r.nama_barang.toLowerCase().includes(q))
+            );
         },
 
-        selectRegister(r) {
-            this.selectedRegisterId = r.id;
-            this.searchBarang       = r.nibar + ' — ' + r.nama_barang;
-            this.namaBarangPreview  = r.nama_barang;
-            this.kondisiPreview     = r.kondisi;
-            this.unitAsalPreview    = r.unit_nama;
-            this.kepalaAsalPreview  = r.unit_kepala;
-            this.showDropdown       = false;
-
-            // Auto-fill ruangan asal & penanggung jawab jika unit terdaftar
-            if (r.unit_nama && r.unit_nama !== '-') {
-                this.ruangan_asal = r.unit_nama;
-                if (r.unit_kepala && r.unit_kepala !== '-') {
-                    this.penanggung_jawab_asal = r.unit_kepala;
-                } else {
-                    const u = this.units.find(item => item.nama === r.unit_nama);
-                    if (u) this.penanggung_jawab_asal = u.kepala;
-                }
+        /* Toggle pilihan barang (Multi Select) */
+        toggleSelectRegister(reg) {
+            const idStr = Number(reg.id);
+            const idx = this.selectedRegisterIds.indexOf(idStr);
+            if (idx > -1) {
+                this.selectedRegisterIds.splice(idx, 1);
+            } else {
+                this.selectedRegisterIds.push(idStr);
             }
         },
 
-        clearSelectedBarang() {
-            this.selectedRegisterId = '';
-            this.searchBarang       = '';
-            this.namaBarangPreview  = '';
-            this.kondisiPreview     = '';
-            this.unitAsalPreview    = '';
-            this.kepalaAsalPreview  = '';
+        isRegisterSelected(id) {
+            return this.selectedRegisterIds.includes(Number(id));
         },
 
-        onUnitAsalChange(unitNama) {
-            this.ruangan_asal = unitNama;
-            const unit = this.units.find(u => u.nama === unitNama);
-            if (unit && unit.kepala) {
-                this.penanggung_jawab_asal = unit.kepala;
-            }
+        selectAllRegisters() {
+            this.selectedRegisterIds = this.availableRegistersForAsal.map(r => Number(r.id));
         },
 
-        onUnitTujuanChange(unitNama) {
-            this.ruangan_tujuan = unitNama;
-            const unit = this.units.find(u => u.nama === unitNama);
-            if (unit && unit.kepala) {
-                this.penanggung_jawab_tujuan = unit.kepala;
-            }
+        clearAllSelectedRegisters() {
+            this.selectedRegisterIds = [];
+        },
+
+        /* Daftar barang terpilih lengkap untuk preview */
+        get selectedRegistersList() {
+            return this.registers.filter(r => this.selectedRegisterIds.includes(Number(r.id)));
         },
 
         /* ---- Computed ---- */
@@ -155,11 +219,11 @@
         },
 
         get isStep2Valid() {
-            return !!this.selectedRegisterId;
+            return !!this.ruangan_asal && !!this.ruangan_tujuan && (this.ruangan_asal !== this.ruangan_tujuan);
         },
 
         get isStep3Valid() {
-            return !!this.ruangan_asal && !!this.ruangan_tujuan && (this.ruangan_asal !== this.ruangan_tujuan);
+            return this.selectedRegisterIds.length > 0;
         },
 
         nextStep() {
@@ -167,19 +231,19 @@
                 this.showToast('Silakan pilih salah satu Jenis Pengajuan Mutasi terlebih dahulu.', 'warning');
                 return;
             }
-            if (this.step === 2 && !this.isStep2Valid) {
-                this.showToast('Silakan cari dan pilih aset dari register terlebih dahulu.', 'warning');
-                return;
-            }
-            if (this.step === 3) {
+            if (this.step === 2) {
                 if (!this.ruangan_asal || !this.ruangan_tujuan) {
-                    this.showToast('Ruangan Asal dan Ruangan Tujuan wajib diisi.', 'warning');
+                    this.showToast('Ruangan Asal (Pengirim) dan Ruangan Tujuan (Penerima) wajib dipilih.', 'warning');
                     return;
                 }
                 if (this.ruangan_asal === this.ruangan_tujuan) {
-                    this.showToast('Ruangan Asal dan Ruangan Tujuan tidak boleh sama!', 'warning');
+                    this.showToast('Ruangan Asal dan Ruangan Tujuan tidak boleh sama! Silakan pilih unit tujuan yang berbeda.', 'warning');
                     return;
                 }
+            }
+            if (this.step === 3 && !this.isStep3Valid) {
+                this.showToast('Silakan pilih minimal 1 barang aset yang akan dimutasi terlebih dahulu.', 'warning');
+                return;
             }
             if (this.step < 4) {
                 this.step++;
@@ -196,11 +260,9 @@
 
         goToStep(s) {
             if (s < this.step) {
-                // Boleh kembali ke tahap yang sudah pernah diisi
                 this.step = s;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (s > this.step) {
-                // Tidak boleh melompat ke tahap berikutnya sebelum menekan tombol Lanjut!
                 this.showToast('⚠️ Mohon selesaikan pengisian dan tekan tombol Lanjut ke Langkah ' + (this.step + 1) + ' terlebih dahulu.', 'warning');
             }
         },
@@ -247,15 +309,20 @@
                 e.preventDefault();
                 return false;
             }
+            if (this.selectedRegisterIds.length === 0) {
+                this.showToast('⚠️ Silakan pilih minimal 1 barang aset yang akan dimutasi.', 'warning');
+                e.preventDefault();
+                return false;
+            }
             e.preventDefault();
             const formElement = e.target;
-            const targetItem = (this.namaBarangPreview || 'Aset Mutasi') + ' (' + (this.ruangan_asal || 'Asal') + ' ➔ ' + (this.ruangan_tujuan || 'Tujuan') + ')';
+            const targetItem = this.selectedRegisterIds.length + ' Barang Aset (' + (this.ruangan_asal || 'Asal') + ' ➔ ' + (this.ruangan_tujuan || 'Tujuan') + ')';
             this.askConfirmation({
                 title: this.isEdit ? '✏️ Konfirmasi Simpan Perubahan Mutasi' : '🔄 Konfirmasi Pengajuan Mutasi Baru',
-                message: this.isEdit ? 'Apakah Anda yakin ingin menyimpan perubahan data pengajuan mutasi ini?' : 'Apakah Anda yakin ingin mengajukan mutasi aset barang ini? Pindah tangan ruangan akan diproses setelah persetujuan.',
+                message: this.isEdit ? 'Apakah Anda yakin ingin menyimpan perubahan data pengajuan mutasi ini?' : 'Apakah Anda yakin ingin mengajukan mutasi untuk ' + this.selectedRegisterIds.length + ' barang aset ini? Pindah tangan ruangan akan diproses setelah persetujuan.',
                 itemName: targetItem,
                 type: this.isEdit ? 'warning' : 'success',
-                btnText: this.isEdit ? '✏️ Ya, Simpan Perubahan' : '🔄 Ya, Ajukan Mutasi',
+                btnText: this.isEdit ? '✏️ Ya, Simpan Perubahan' : '🔄 Ya, Ajukan Mutasi (' + this.selectedRegisterIds.length + ' Barang)',
                 onConfirm: () => {
                     formElement.submit();
                 }
@@ -305,7 +372,7 @@
                     <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 1 ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-slate-950'"></div>
                 </button>
 
-                <!-- Step 2 Tab -->
+                <!-- Step 2 Tab (Unit Pengirim & Penerima) -->
                 <button type="button" @click="goToStep(2)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
                         <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
@@ -315,13 +382,13 @@
                         </div>
                         <div class="min-w-0">
                             <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 2 ? 'text-rose-400 font-black' : (step > 2 ? 'text-rose-400' : 'text-slate-500')">LANGKAH 2</span>
-                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Pilih Aset & Tanggal</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Unit Pengirim & Penerima</span>
                         </div>
                     </div>
                     <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 2 ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-slate-950'"></div>
                 </button>
 
-                <!-- Step 3 Tab -->
+                <!-- Step 3 Tab (Pilih Barang Aset Multi & Alasan) -->
                 <button type="button" @click="goToStep(3)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
                         <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
@@ -331,7 +398,7 @@
                         </div>
                         <div class="min-w-0">
                             <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 3 ? 'text-rose-400 font-black' : (step > 3 ? 'text-rose-400' : 'text-slate-500')">LANGKAH 3</span>
-                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Lokasi & Alasan</span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Pilih Aset & Alasan</span>
                         </div>
                     </div>
                     <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 3 ? 'bg-rose-500 shadow-sm shadow-rose-500/50' : 'bg-slate-950'"></div>
@@ -369,8 +436,12 @@
 
             {{-- Field hidden jenis_mutasi --}}
             <input type="hidden" name="jenis_mutasi" :value="jenis_mutasi">
-            {{-- Field hidden astap_register_id --}}
-            <input type="hidden" name="astap_register_id" :value="selectedRegisterId">
+            
+            {{-- Array hidden input untuk Multi-Select Register IDs --}}
+            <template x-for="id in selectedRegisterIds" :key="id">
+                <input type="hidden" name="astap_register_ids[]" :value="id">
+            </template>
+            <input type="hidden" name="astap_register_id" :value="selectedRegisterIds[0] || ''">
 
             {{-- ========================================================================= --}}
             {{-- ===== STEP 1: PILIH JENIS PENGAJUAN MUTASI ===== --}}
@@ -381,7 +452,7 @@
                         <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">1</div>
                         <div>
                             <h2 class="text-base font-extrabold text-white">Langkah 1: Pilih Jenis Pengajuan Mutasi</h2>
-                            <p class="text-xs text-slate-400">Pilih salah satu dari 4 opsi pengajuan mutasi di bawah ini terlebih dahulu.</p>
+                            <p class="text-xs text-slate-400">Pilih salah satu dari 4 jenis pengajuan mutasi di bawah ini.</p>
                         </div>
                     </div>
                     <span class="text-[11px] px-3 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/30 font-bold">Wajib Pilih 1</span>
@@ -400,7 +471,7 @@
                             class="relative flex items-start space-x-4 p-5 rounded-2xl border-2 text-left transition-all w-full active:scale-[0.99] cursor-pointer group">
                             
                             <!-- Selected Indicator Checkmark -->
-                            <div x-show="jenis_mutasi === opt.value" class="absolute top-4 right-4 w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-xs font-black shadow">✓</div>
+                            <div x-show="jenis_mutasi === opt.value" class="absolute top-4 right-4 w-6 h-6 rounded-full bg-rose-500 text-slate-950 flex items-center justify-center text-xs font-black shadow">✓</div>
 
                             <span class="text-2xl shrink-0 p-3 rounded-2xl bg-slate-900 border border-slate-800 group-hover:scale-110 transition-transform" x-text="opt.emoji"></span>
                             <div class="pr-6">
@@ -414,191 +485,198 @@
                 {{-- Action Navigation Buttons --}}
                 <div class="flex items-center justify-end pt-4 border-t border-slate-800">
                     <button type="button" @click="nextStep()"
-                        class="px-6 py-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
-                        <span>Lanjut ke Langkah 2: Pilih Aset →</span>
+                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-xs shadow-lg shadow-rose-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        <span>Lanjut ke Langkah 2: Unit Pengirim & Penerima →</span>
                     </button>
                 </div>
             </div>
 
             {{-- ========================================================================= --}}
-            {{-- ===== STEP 2: PILIH BARANG ASET & TANGGAL ===== --}}
+            {{-- ===== STEP 2: PILIH UNIT PENGIRIM & PENERIMA ===== --}}
             {{-- ========================================================================= --}}
             <div x-show="step === 2" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800">
                     <div class="flex items-center space-x-3">
                         <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">2</div>
                         <div>
-                            <h2 class="text-base font-extrabold text-white">Langkah 2: Tanggal & Data Barang Aset yang Dimutasi</h2>
-                            <p class="text-xs text-slate-400">Pilih tanggal pengajuan dan cari barang aset dari inventaris register RSUD.</p>
+                            <h2 class="text-base font-extrabold text-white">Langkah 2: Tentukan Unit Pengirim (Asal) & Unit Penerima (Tujuan)</h2>
+                            <p class="text-xs text-slate-400">Tentukan lokasi unit pengirim barang dan unit penerima tujuan mutasi aset.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                    {{-- Tanggal Pengajuan --}}
-                    <div class="md:col-span-4">
-                        <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Tanggal Pengajuan <span class="text-rose-400">*</span></label>
-                        <input type="date" name="tanggal_mutasi" required
-                            value="{{ old('tanggal_mutasi', isset($mutasi) ? $mutasi->tanggal_mutasi->format('Y-m-d') : date('Y-m-d')) }}"
-                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
-                    </div>
-
-                    {{-- Pencarian / Pilih Barang (Autocomplete) --}}
-                    <div class="md:col-span-8 relative">
-                        <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">
-                            Cari Aset dari Register (Ketik NIBAR / Nama Barang / Unit Ruangan) <span class="text-rose-400">*</span>
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none text-rose-400" style="padding-left: 1.1rem;">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </div>
-                            <input type="text" x-model="searchBarang"
-                                @focus="showDropdown = true"
-                                @input="showDropdown = true"
-                                @click.outside="showDropdown = false"
-                                placeholder="Ketik NIBAR, nama barang, atau nama unit..."
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pr-4 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-all"
-                                style="padding-left: 2.85rem;">
-                        </div>
-
-                        {{-- Dropdown Hasil Pencarian --}}
-                        <div x-show="showDropdown && filteredRegisters.length > 0"
-                            class="absolute z-50 w-full mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar">
-                            <template x-for="r in filteredRegisters" :key="r.id">
-                                <button type="button" @click="selectRegister(r)"
-                                    class="w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-800 text-left transition-colors border-b border-slate-800/60 last:border-b-0 cursor-pointer">
-                                    <div class="shrink-0 w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
-                                        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <p class="text-[11px] font-bold text-white truncate" x-text="r.nama_barang"></p>
-                                        <p class="text-[10px] text-rose-400 font-mono" x-text="r.nibar"></p>
-                                        <div class="flex items-center gap-2 mt-0.5">
-                                            <span class="text-[9px] text-slate-400" x-text="r.unit_nama"></span>
-                                            <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                            <span class="text-[9px] font-bold"
-                                                :class="{
-                                                    'text-emerald-400': r.kondisi === 'Baik',
-                                                    'text-amber-400':   r.kondisi === 'Kurang Baik',
-                                                    'text-rose-400':    r.kondisi === 'Rusak Berat'
-                                                }"
-                                                x-text="'Kondisi: ' + r.kondisi"></span>
-                                        </div>
-                                    </div>
-                                </button>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Preview Barang Dipilih --}}
-                <div x-show="selectedRegisterId && namaBarangPreview"
-                    class="bg-slate-950/80 border border-rose-500/30 rounded-2xl p-5 flex items-start gap-4 shadow-lg">
-                    <div class="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0 text-xl font-bold text-rose-400">
-                        📦
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-rose-300 font-mono font-bold">Aset Terpilih</span>
-                            <span class="text-xs font-mono font-bold text-slate-400" x-text="searchBarang.split(' — ')[0]"></span>
-                        </div>
-                        <p class="text-base font-extrabold text-white mt-0.5" x-text="namaBarangPreview"></p>
-                        <div class="flex items-center gap-3 mt-2 flex-wrap text-xs">
-                            <span class="text-slate-400">Unit Asal/Terdaftar: <span class="text-white font-bold" x-text="unitAsalPreview || '-'"></span></span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                            <span class="text-slate-400">Kondisi: 
-                                <span class="font-bold px-2 py-0.5 rounded-lg border text-[11px]"
-                                    :class="{
-                                        'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': kondisiPreview === 'Baik',
-                                        'bg-amber-500/15 text-amber-300 border-amber-500/30':       kondisiPreview === 'Kurang Baik',
-                                        'bg-rose-500/15 text-rose-300 border-rose-500/30':         kondisiPreview === 'Rusak Berat'
-                                    }"
-                                    x-text="kondisiPreview">
-                                </span>
-                            </span>
-                        </div>
-                    </div>
-                    <button type="button" @click="clearSelectedBarang()"
-                        class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-slate-700 text-xs font-bold transition-all shrink-0 cursor-pointer">
-                        ✕ Ganti Barang
-                    </button>
-                </div>
-
-                {{-- Action Navigation Buttons --}}
-                <div class="flex items-center justify-between pt-4 border-t border-slate-800">
-                    <button type="button" @click="prevStep()"
-                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
-                        ← Kembali ke Langkah 1
-                    </button>
-                    <button type="button" @click="nextStep()"
-                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
-                        <span>Lanjut ke Langkah 3: Lokasi & Alasan →</span>
-                    </button>
-                </div>
-            </div>
-
-            {{-- ========================================================================= --}}
-            {{-- ===== STEP 3: LOKASI, PENANGGUNG JAWAB & ALASAN ===== --}}
-            {{-- ========================================================================= --}}
-            <div x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">3</div>
-                        <div>
-                            <h2 class="text-base font-extrabold text-white">Langkah 3: Lokasi, Penanggung Jawab & Alasan Mutasi</h2>
-                            <p class="text-xs text-slate-400">Atur unit ruangan pengirim, penerima, penanggung jawab, dan uraian alasan mutasi.</p>
-                        </div>
-                    </div>
-                </div>
+                {{-- Hidden input tanggal_mutasi (otomatis hari ini) --}}
+                <input type="hidden" name="tanggal_mutasi" value="{{ old('tanggal_mutasi', isset($mutasi) ? $mutasi->tanggal_mutasi->format('Y-m-d') : date('Y-m-d')) }}">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {{-- Pengirim (Asal) --}}
-                    <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-slate-800">
-                        <div class="border-b border-slate-800 pb-2">
-                            <label class="block text-slate-300 text-xs font-bold uppercase tracking-wider">📤 Ruangan Asal (Pengirim)</label>
+                    {{-- Ruangan Asal (Pengirim) --}}
+                    <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-slate-800 relative">
+                        <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
+                            <label class="block text-slate-300 text-xs font-bold uppercase tracking-wider">📤 Unit Pengirim (Ruangan Asal)</label>
+                            <template x-if="isSubAdmin && userUnitNama">
+                                <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terunci Role Sub Admin</span>
+                            </template>
                         </div>
-                        <div>
-                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Pilih Ruangan Asal <span class="text-rose-400">*</span></label>
-                            <select name="ruangan_asal" id="ruangan_asal" x-model="ruangan_asal" required
-                                @change="onUnitAsalChange($event.target.value)"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
-                                <option value="">— Pilih Unit / Ruangan Asal —</option>
-                                @foreach($units as $unit)
-                                <option value="{{ $unit->nama }}">{{ $unit->nama }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Penanggung Jawab Ruangan Asal <span class="text-rose-400">*</span></label>
-                            <input type="text" name="penanggung_jawab_asal" id="penanggung_jawab_asal" x-model="penanggung_jawab_asal" required
-                                placeholder="Nama penanggung jawab ruangan asal..."
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
-                        </div>
+
+                        {{-- Untuk Role Sub Admin (Terkunci Sesuai Unitnya) --}}
+                        <template x-if="isSubAdmin && userUnitNama">
+                            <div class="space-y-3">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block mb-1">Nama Unit/Ruangan:</span>
+                                    <div class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-extrabold text-xs flex items-center justify-between">
+                                        <span x-text="ruangan_asal || userUnitNama"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="ruangan_asal" :value="ruangan_asal || userUnitNama" required>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Pengirim (Kepala Ruangan)</label>
+                                    <div class="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-300 font-extrabold text-xs flex items-center justify-between">
+                                        <span x-text="penanggung_jawab_asal || userUnitKepala || 'Kepala Ruangan'"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="penanggung_jawab_asal" :value="penanggung_jawab_asal || userUnitKepala" required>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Untuk Role Master Admin & Admin (Pencarian Filter Unit Pengirim) --}}
+                        <template x-if="!isSubAdmin || !userUnitNama">
+                            <div class="space-y-3">
+                                <div class="space-y-1.5 relative" @click.outside="isUnitAsalOpen = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider">
+                                            Pilih Unit Pengirim (Asal) <span class="text-rose-400">*</span>
+                                        </label>
+                                        <button type="button" x-show="ruangan_asal && !isUnitAsalOpen"
+                                            @click="isUnitAsalOpen = true; searchUnitAsal = ''"
+                                            class="text-[11px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Unit
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="relative">
+                                        <input type="text"
+                                            :value="(!isUnitAsalOpen && ruangan_asal) ? ruangan_asal : searchUnitAsal"
+                                            @input="searchUnitAsal = $event.target.value; isUnitAsalOpen = true"
+                                            @focus="isUnitAsalOpen = true"
+                                            placeholder="Ketik nama unit pengirim..."
+                                            class="w-full bg-slate-900 border rounded-xl py-3 pr-4 text-xs font-bold transition-all shadow-inner focus:outline-none"
+                                            :class="ruangan_asal && !isUnitAsalOpen ? 'border-rose-500/60 text-rose-200' : 'border-slate-700 text-white focus:border-rose-400'"
+                                            style="padding-left: 3.1rem !important;">
+                                        <svg class="w-4 h-4 text-rose-400 absolute pointer-events-none" style="left: 1.25rem; top: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    </div>
+                                    <input type="hidden" name="ruangan_asal" :value="ruangan_asal" required>
+
+                                    {{-- Dropdown Scrollable List (Excludes Unit Tujuan) --}}
+                                    <div x-show="isUnitAsalOpen" x-transition x-cloak style="max-height: 210px !important; overflow-y: auto !important;"
+                                        class="absolute z-50 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/40 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="u in filteredUnitsAsal" :key="u.id">
+                                            <div @click="selectUnitAsal(u)"
+                                                class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between cursor-pointer group hover:bg-slate-800"
+                                                :class="u.nama === ruangan_asal ? 'border-rose-500 bg-rose-950/40 shadow-lg' : 'border-slate-800/80 hover:border-rose-500/40'">
+                                                <div class="min-w-0 pr-3">
+                                                    <p class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors truncate" x-text="u.nama"></p>
+                                                    <p class="text-[10px] text-slate-400 truncate" x-text="'PJ / Kepala: ' + (u.kepala || 'Belum Diatur')"></p>
+                                                </div>
+                                                <span class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                                                    :class="u.nama === ruangan_asal ? 'bg-rose-500 text-slate-950' : 'bg-slate-800 text-slate-400 group-hover:text-white'">
+                                                    <span x-text="u.nama === ruangan_asal ? '✓ Terpilih' : 'Pilih'"></span>
+                                                </span>
+                                            </div>
+                                        </template>
+                                        <template x-if="filteredUnitsAsal.length === 0">
+                                            <div class="p-3 text-center text-xs text-rose-400 font-semibold">Tidak menemukan unit dengan kata kunci tersebut.</div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Pengirim (Kepala Ruangan)</label>
+                                    <div class="px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-emerald-300 font-extrabold text-xs flex items-center justify-between shadow-inner">
+                                        <span x-text="penanggung_jawab_asal || 'Pilih Unit Pengirim Terlebih Dahulu'"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="penanggung_jawab_asal" :value="penanggung_jawab_asal" required>
+                                    <template x-if="penanggung_jawab_asal">
+                                        <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
+                                            <span>✓ Terkunci otomatis dari data Kepala Ruangan RSUD</span>
+                                        </p>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
-                    {{-- Penerima (Tujuan) --}}
+                    {{-- Ruangan Tujuan (Penerima) --}}
                     <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-rose-500/30">
                         <div class="border-b border-rose-500/30 pb-2">
                             <label class="block text-rose-300 text-xs font-bold uppercase tracking-wider">
                                 📥 <span x-text="labelTujuan"></span>
                             </label>
                         </div>
-                        <div>
-                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Pilih Ruangan Tujuan <span class="text-rose-400">*</span></label>
-                            <select name="ruangan_tujuan" id="ruangan_tujuan" x-model="ruangan_tujuan" required
-                                @change="onUnitTujuanChange($event.target.value)"
-                                class="w-full bg-slate-900 border border-rose-500/40 rounded-xl px-4 py-3 text-xs text-rose-200 font-bold focus:outline-none focus:border-rose-400 transition-all">
-                                <option value="">— Pilih Unit / Ruangan Tujuan —</option>
-                                @foreach($units as $unit)
-                                <option value="{{ $unit->nama }}">{{ $unit->nama }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Penanggung Jawab Ruangan Tujuan <span class="text-rose-400">*</span></label>
-                            <input type="text" name="penanggung_jawab_tujuan" id="penanggung_jawab_tujuan" x-model="penanggung_jawab_tujuan" required
-                                placeholder="Nama penanggung jawab ruangan tujuan..."
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 transition-all">
+                        <div class="space-y-3">
+                            <div class="space-y-1.5 relative" @click.outside="isUnitTujuanOpen = false">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider">
+                                        Pilih Unit Penerima (Tujuan) <span class="text-rose-400">*</span>
+                                    </label>
+                                    <button type="button" x-show="ruangan_tujuan && !isUnitTujuanOpen"
+                                        @click="isUnitTujuanOpen = true; searchUnitTujuan = ''"
+                                        class="text-[11px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                        ✕ Ganti Unit
+                                    </button>
+                                </div>
+                                
+                                <div class="relative">
+                                    <input type="text"
+                                        :value="(!isUnitTujuanOpen && ruangan_tujuan) ? ruangan_tujuan : searchUnitTujuan"
+                                        @input="searchUnitTujuan = $event.target.value; isUnitTujuanOpen = true"
+                                        @focus="isUnitTujuanOpen = true"
+                                        placeholder="Ketik nama unit penerima..."
+                                        class="w-full bg-slate-900 border rounded-xl py-3 pr-4 text-xs font-bold transition-all shadow-inner focus:outline-none"
+                                        :class="ruangan_tujuan && !isUnitTujuanOpen ? 'border-rose-500/60 text-rose-200' : 'border-rose-500/40 text-white focus:border-rose-400'"
+                                        style="padding-left: 3.1rem !important;">
+                                    <svg class="w-4 h-4 text-rose-400 absolute pointer-events-none" style="left: 1.25rem; top: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                </div>
+                                <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan" required>
+
+                                {{-- Dropdown Scrollable List (Excludes Unit Pengirim) --}}
+                                <div x-show="isUnitTujuanOpen" x-transition x-cloak style="max-height: 210px !important; overflow-y: auto !important;"
+                                    class="absolute z-50 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/40 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                    <template x-for="u in filteredUnitsTujuan" :key="u.id">
+                                        <div @click="selectUnitTujuan(u)"
+                                            class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between cursor-pointer group hover:bg-slate-800"
+                                            :class="u.nama === ruangan_tujuan ? 'border-rose-500 bg-rose-950/40 shadow-lg' : 'border-slate-800/80 hover:border-rose-500/40'">
+                                            <div class="min-w-0 pr-3">
+                                                <p class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors truncate" x-text="u.nama"></p>
+                                                <p class="text-[10px] text-slate-400 truncate" x-text="'PJ / Kepala: ' + (u.kepala || 'Belum Diatur')"></p>
+                                            </div>
+                                            <span class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                                                :class="u.nama === ruangan_tujuan ? 'bg-rose-500 text-slate-950' : 'bg-slate-800 text-slate-400 group-hover:text-white'">
+                                                <span x-text="u.nama === ruangan_tujuan ? '✓ Terpilih' : 'Pilih'"></span>
+                                            </span>
+                                        </div>
+                                    </template>
+                                    <template x-if="filteredUnitsTujuan.length === 0">
+                                        <div class="p-3 text-center text-xs text-rose-400 font-semibold">Tidak menemukan unit tujuan dengan kata kunci tersebut.</div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Penerima (Kepala Ruangan)</label>
+                                <div class="px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-emerald-300 font-extrabold text-xs flex items-center justify-between shadow-inner">
+                                    <span x-text="penanggung_jawab_tujuan || 'Pilih Unit Penerima Terlebih Dahulu'"></span>
+                                    <span>🔒</span>
+                                </div>
+                                <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan" required>
+                                <template x-if="penanggung_jawab_tujuan">
+                                    <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
+                                        <span>✓ Terkunci otomatis dari data Kepala Ruangan RSUD</span>
+                                    </p>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -607,43 +685,155 @@
                 <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 flex-wrap">
                     <span class="text-xs text-slate-400 font-semibold">Skema Alur Pemindahan:</span>
                     <div class="flex items-center gap-2">
-                        <span class="px-3 py-1 rounded-xl bg-slate-900 text-white text-xs font-bold border border-slate-700" x-text="ruangan_asal || 'Asal'"></span>
+                        <span class="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold border border-slate-700" x-text="ruangan_asal || 'Ruangan Asal'"></span>
                         <span class="text-rose-400 font-bold">➔</span>
-                        <span class="px-3 py-1 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30" x-text="ruangan_tujuan || 'Tujuan'"></span>
+                        <span class="px-3.5 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30" x-text="ruangan_tujuan || 'Ruangan Tujuan'"></span>
                     </div>
-                </div>
-
-                {{-- Alasan Mutasi --}}
-                <div class="space-y-3">
-                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">
-                        Alasan / Urgensi Pengajuan Mutasi (<span class="text-white font-bold" x-text="jenis_mutasi"></span>) <span class="text-rose-400">*</span>
-                    </label>
-                    <textarea name="alasan_mutasi" rows="3" :placeholder="alasanPlaceholder" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white resize-none focus:outline-none focus:border-rose-500 transition-all">{{ old('alasan_mutasi', $mutasi->alasan_mutasi ?? '') }}</textarea>
-                </div>
-
-                <div>
-                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">Catatan Tambahan (Opsional)</label>
-                    <textarea name="catatan_penerima" rows="2"
-                        placeholder="Catatan khusus untuk verifikasi ruangan penerima atau admin..."
-                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white resize-none focus:outline-none focus:border-rose-500 transition-all">{{ old('catatan_penerima', $mutasi->catatan_penerima ?? '') }}</textarea>
                 </div>
 
                 {{-- Action Navigation Buttons --}}
                 <div class="flex items-center justify-between pt-4 border-t border-slate-800">
                     <button type="button" @click="prevStep()"
-                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
+                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
+                        ← Kembali ke Langkah 1
+                    </button>
+                    <button type="button" @click="nextStep()"
+                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-xs shadow-lg shadow-rose-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        <span>Lanjut ke Langkah 3: Pilih Barang Aset →</span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- ========================================================================= --}}
+            {{-- ===== STEP 3: PILIH BARANG ASET MULTI-SELECT & ALASAN ===== --}}
+            {{-- ========================================================================= --}}
+            <div x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center justify-center text-xs font-extrabold">3</div>
+                        <div>
+                            <h2 class="text-base font-extrabold text-white">Langkah 3: Pilih Barang Aset (Bisa Pilih Banyak Sekaligus) & Alasan</h2>
+                            <p class="text-xs text-slate-400">Centang satu atau beberapa barang aset register dari unit pengirim yang akan dimutasi.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Banner Filter Unit Pengirim Aktif --}}
+                <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="text-lg">📍</span>
+                        <div>
+                            <p class="text-xs font-extrabold text-rose-300 uppercase tracking-wider">Menampilkan Aset dari Unit Pengirim:</p>
+                            <p class="text-sm font-black text-white font-mono" x-text="ruangan_asal || 'Belum Dipilih'"></p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-slate-900 text-rose-300 border border-rose-500/30"
+                        x-text="availableRegistersForAsal.length + ' Barang Tersedia'"></span>
+                </div>
+
+                {{-- Filter & Batch Action Buttons --}}
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 flex items-center pointer-events-none text-rose-400" style="left: 1.25rem;">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <input type="text" x-model="searchBarang"
+                            placeholder="Ketik NIBAR / nama barang..."
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pr-4 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-all"
+                            style="padding-left: 3.1rem !important;">
+                    </div>
+
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <button type="button" @click="selectAllRegisters()"
+                            class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-bold border border-slate-700 transition-all cursor-pointer flex items-center space-x-1.5">
+                            <span>✓ Pilih Semua (<span x-text="availableRegistersForAsal.length"></span>)</span>
+                        </button>
+                        <button type="button" x-show="selectedRegisterIds.length > 0" @click="clearAllSelectedRegisters()"
+                            class="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/20 transition-all cursor-pointer">
+                            ✕ Hapus Pilihan
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Counter Badge Multi-Select --}}
+                <div class="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                    <span class="text-xs text-slate-400 font-semibold">Total Aset Terpilih untuk Dimutasi:</span>
+                    <span class="text-xs font-mono font-black px-3 py-1 rounded-lg"
+                        :class="selectedRegisterIds.length > 0 ? 'bg-rose-500 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-500'"
+                        x-text="selectedRegisterIds.length + ' Barang Terpilih'"></span>
+                </div>
+
+                {{-- Daftar Aset (Cards Grid dengan Checkbox Multi Select) --}}
+                <div class="space-y-2.5 custom-scrollbar pr-2 p-1 rounded-2xl bg-slate-950/40 border border-slate-800/80" style="max-height: 280px !important; overflow-y: auto !important;">
+                    <template x-for="r in filteredRegisters" :key="r.id">
+                        <div @click="toggleSelectRegister(r)"
+                            class="p-4 rounded-2xl border transition-all flex items-center justify-between gap-4 cursor-pointer group active:scale-[0.99]"
+                            :class="isRegisterSelected(r.id) ? 'border-rose-500 bg-rose-950/25 ring-2 ring-rose-500/30 shadow-lg' : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 hover:bg-slate-900'">
+                            
+                            <div class="flex items-center space-x-3.5 min-w-0">
+                                {{-- Checkbox Icon --}}
+                                <div class="w-6 h-6 rounded-lg flex items-center justify-center transition-all shrink-0 font-black text-xs"
+                                     :class="isRegisterSelected(r.id) ? 'bg-rose-500 text-slate-950 shadow-md' : 'bg-slate-900 border border-slate-700 text-transparent group-hover:border-rose-400'">
+                                    ✓
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-extrabold text-white group-hover:text-rose-300 transition-colors truncate" x-text="r.nama_barang"></p>
+                                    <div class="flex items-center gap-3 mt-1 flex-wrap text-[10.5px]">
+                                        <span class="text-rose-400 font-mono font-bold" x-text="r.nibar"></span>
+                                        <span class="text-slate-500">•</span>
+                                        <span class="text-slate-400" x-text="'Unit: ' + r.unit_nama"></span>
+                                        <span class="text-slate-500">•</span>
+                                        <span class="font-bold"
+                                            :class="{
+                                                'text-emerald-400': r.kondisi === 'Baik',
+                                                'text-amber-400':   r.kondisi === 'Kurang Baik',
+                                                'text-rose-400':    r.kondisi === 'Rusak Berat'
+                                            }"
+                                            x-text="'Kondisi: ' + r.kondisi"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <span class="text-xs font-bold px-3 py-1.5 rounded-xl shrink-0 transition-all"
+                                :class="isRegisterSelected(r.id) ? 'bg-rose-500 text-slate-950 font-black' : 'bg-slate-900 text-slate-400 border border-slate-800 group-hover:text-white'">
+                                <span x-text="isRegisterSelected(r.id) ? '✓ Terpilih' : '+ Pilih'"></span>
+                            </span>
+                        </div>
+                    </template>
+
+                    <template x-if="filteredRegisters.length === 0">
+                        <div class="p-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800 space-y-2">
+                            <span class="text-2xl">📦</span>
+                            <p class="text-xs text-rose-400 font-bold">Tidak ada barang aset register yang tersedia pada unit pengirim ini.</p>
+                            <p class="text-[11px] text-slate-400">Pastikan Anda memilih unit pengirim yang memiliki register aset di Langkah 2.</p>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Alasan Mutasi --}}
+                <div class="space-y-3 pt-2">
+                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">
+                        Alasan / Urgensi Pengajuan Mutasi (<span class="text-white font-bold" x-text="jenis_mutasi"></span>) <span class="text-rose-400">*</span>
+                    </label>
+                    <textarea name="alasan_mutasi" x-model="alasan_mutasi" rows="3" :placeholder="alasanPlaceholder" required
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white resize-none focus:outline-none focus:border-rose-500 transition-all"></textarea>
+                </div>
+
+                {{-- Action Navigation Buttons --}}
+                <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+                    <button type="button" @click="prevStep()"
+                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
                         ← Kembali ke Langkah 2
                     </button>
                     <button type="button" @click="nextStep()"
-                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-xs shadow-lg shadow-rose-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
                         <span>Lanjut ke Langkah 4: Preview & Konfirmasi →</span>
                     </button>
                 </div>
             </div>
 
             {{-- ========================================================================= --}}
-            {{-- ===== STEP 4: PREVIEW & KONFIRMASI (RINGKASAN BAMB) ===== --}}
+            {{-- ===== STEP 4: PREVIEW & KONFIRMASI (RINGKASAN BAMB MULTI-ITEM) ===== --}}
             {{-- ========================================================================= --}}
             <div x-show="step === 4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -669,17 +859,40 @@
                         </div>
                     </div>
 
-                    {{-- Data Barang --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Barang Aset yang Dimutasi</span>
-                            <p class="text-sm font-extrabold text-white" x-text="namaBarangPreview || '-'"></p>
-                            <p class="text-xs text-rose-400 font-mono" x-text="searchBarang.split(' — ')[0] || '-'"></p>
+                    {{-- Data Daftar Barang Terpilih --}}
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">📦 Daftar Barang Aset Terpilih (<span x-text="selectedRegistersList.length"></span> Barang):</span>
+                            <span class="text-[10.5px] text-rose-400 font-mono font-bold" x-text="selectedRegistersList.length + ' Item Terdaftar'"></span>
                         </div>
-                        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kondisi Aset Terdaftar</span>
-                            <p class="text-sm font-extrabold text-emerald-300" x-text="kondisiPreview || 'Baik'"></p>
-                            <p class="text-xs text-slate-400">Status Register Aset Tersedia</p>
+
+                        <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900">
+                            <table class="w-full text-left text-xs text-slate-300">
+                                <thead>
+                                    <tr class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800 text-[10.5px] uppercase">
+                                        <th class="py-2.5 px-3 w-10 text-center">#</th>
+                                        <th class="py-2.5 px-3">NIBAR</th>
+                                        <th class="py-2.5 px-3">Nama Barang</th>
+                                        <th class="py-2.5 px-3">Kondisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(item, idx) in selectedRegistersList" :key="item.id">
+                                        <tr class="border-b border-slate-800/60 last:border-b-0 hover:bg-slate-800/50 transition-colors">
+                                            <td class="py-2 px-3 text-center text-slate-500 font-mono font-bold" x-text="idx + 1"></td>
+                                            <td class="py-2 px-3 font-mono font-bold text-rose-400" x-text="item.nibar"></td>
+                                            <td class="py-2 px-3 font-extrabold text-white" x-text="item.nama_barang"></td>
+                                            <td class="py-2 px-3 font-bold"
+                                                :class="{
+                                                    'text-emerald-400': item.kondisi === 'Baik',
+                                                    'text-amber-400':   item.kondisi === 'Kurang Baik',
+                                                    'text-rose-400':    item.kondisi === 'Rusak Berat'
+                                                }"
+                                                x-text="item.kondisi"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -700,7 +913,7 @@
                     {{-- Alasan Mutasi --}}
                     <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alasan & Urgensi Mutasi</span>
-                        <p class="text-xs text-slate-200 leading-relaxed italic" x-text="formData?.alasan_mutasi || document.querySelector('[name=alasan_mutasi]')?.value || '-'"></p>
+                        <p class="text-xs text-slate-200 leading-relaxed italic" x-text="alasan_mutasi || 'Belum diisi'"></p>
                     </div>
 
                 </div>
@@ -708,12 +921,12 @@
                 {{-- Action Navigation Buttons --}}
                 <div class="flex items-center justify-between pt-4 border-t border-slate-800">
                     <button type="button" @click="prevStep()"
-                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">
+                        class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
                         ← Kembali ke Langkah 3
                     </button>
                     <button type="submit"
-                        class="px-8 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-slate-950 font-black text-xs shadow-xl shadow-rose-500/20 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
-                        <span>🚀 {{ isset($mutasi) ? 'Simpan Perubahan Mutasi' : 'Kirim Pengajuan Mutasi Sekarang' }}</span>
+                        class="px-7 py-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-xs shadow-lg shadow-rose-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
+                        <span>🚀 Kirim Pengajuan Mutasi</span>
                     </button>
                 </div>
             </div>

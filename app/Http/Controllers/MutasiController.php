@@ -76,6 +76,8 @@ class MutasiController extends Controller
     {
         $request->validate([
             'astap_register_id'       => 'nullable|exists:astap_registers,id',
+            'astap_register_ids'      => 'nullable|array',
+            'astap_register_ids.*'    => 'exists:astap_registers,id',
             'jenis_mutasi'            => 'required|in:Ajukan Mutasi,Pemindahan,Perbaikan,Minta Mutasi,Pengembalian,Penghapusan',
             'tanggal_mutasi'          => 'required|date',
             'ruangan_asal'            => 'required|string|max:255',
@@ -88,29 +90,44 @@ class MutasiController extends Controller
             'ruangan_tujuan.different' => 'Ruangan tujuan harus berbeda dengan ruangan asal.',
         ]);
 
-        // Generate nomor BAMB otomatis: MTS-YYYY-NNN
-        $year  = date('Y', strtotime($request->tanggal_mutasi));
-        $count = AstapMutasi::whereYear('tanggal_mutasi', $year)->count();
-        $nomor = 'MTS-' . $year . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        $registerIds = $request->input('astap_register_ids', []);
+        if (empty($registerIds) && $request->astap_register_id) {
+            $registerIds = [$request->astap_register_id];
+        }
 
-        AstapMutasi::create([
-            'astap_register_id'        => $request->astap_register_id,
-            'nomor_bamb'               => $nomor,
-            'tanggal_mutasi'           => $request->tanggal_mutasi,
-            'jenis_mutasi'             => $request->jenis_mutasi,
-            'ruangan_asal'             => $request->ruangan_asal,
-            'ruangan_tujuan'           => $request->ruangan_tujuan,
-            'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
-            'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
-            'alasan_mutasi'            => $request->alasan_mutasi,
-            'catatan_penerima'         => $request->catatan_penerima,
-            'persetujuan_pengirim'     => true,
-            'tgl_persetujuan_pengirim' => now(),
-            'status'                   => 'Menunggu Persetujuan Penerima',
-        ]);
+        if (empty($registerIds)) {
+            return back()->withErrors(['astap_register_id' => 'Silakan pilih minimal 1 barang aset yang akan dimutasi.']);
+        }
 
-        return redirect()->route('mutasi.index')
-            ->with('success', 'Pengajuan mutasi ' . $request->jenis_mutasi . ' berhasil dikirim! Menunggu persetujuan penerima.');
+        $createdCount = 0;
+        foreach ($registerIds as $regId) {
+            $year  = date('Y', strtotime($request->tanggal_mutasi));
+            $count = AstapMutasi::whereYear('tanggal_mutasi', $year)->count();
+            $nomor = 'MTS-' . $year . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+
+            AstapMutasi::create([
+                'astap_register_id'        => $regId,
+                'nomor_bamb'               => $nomor,
+                'tanggal_mutasi'           => $request->tanggal_mutasi,
+                'jenis_mutasi'             => $request->jenis_mutasi,
+                'ruangan_asal'             => $request->ruangan_asal,
+                'ruangan_tujuan'           => $request->ruangan_tujuan,
+                'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
+                'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
+                'alasan_mutasi'            => $request->alasan_mutasi,
+                'catatan_penerima'         => $request->catatan_penerima,
+                'persetujuan_pengirim'     => true,
+                'tgl_persetujuan_pengirim' => now(),
+                'status'                   => 'Menunggu Persetujuan Penerima',
+            ]);
+            $createdCount++;
+        }
+
+        $msg = $createdCount > 1
+            ? "Pengajuan mutasi {$request->jenis_mutasi} sebanyak {$createdCount} barang aset berhasil dikirim! Menunggu persetujuan penerima."
+            : "Pengajuan mutasi {$request->jenis_mutasi} berhasil dikirim! Menunggu persetujuan penerima.";
+
+        return redirect()->route('mutasi.index')->with('success', $msg);
     }
 
     /**
