@@ -209,7 +209,7 @@ Route::middleware('auth')->group(function () {
     
     // 1. Data ASTAP Pages
     Route::get('/astap', function () {
-        $astaps = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'unit'])
+        $astaps = \App\Models\Astap::with(['registers.mutasis', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'unit'])
             ->orderBy('id', 'desc')
             ->get()
             ->map(function($a) {
@@ -250,7 +250,24 @@ Route::middleware('auth')->group(function () {
                             'ruang_pemegang' => $r->ruang_pemegang,
                             'kondisi' => $r->kondisi,
                             'status_mutasi' => $r->status_mutasi,
-                            'qr_code_path' => $r->qr_code_path
+                            'qr_code_path' => $r->qr_code_path,
+                            'mutasis' => $r->mutasis ? $r->mutasis->sortByDesc('tanggal_mutasi')->map(function($m) {
+                                return [
+                                    'id' => $m->id,
+                                    'nomor_bamb' => $m->nomor_bamb,
+                                    'tanggal_mutasi' => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('d M Y') : '-',
+                                    'tanggal_mutasi_raw' => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('Y-m-d') : '',
+                                    'ruangan_asal' => $m->ruangan_asal,
+                                    'ruangan_tujuan' => $m->ruangan_tujuan,
+                                    'jenis_mutasi' => $m->jenis_mutasi ?? 'Mutasi',
+                                    'kondisi' => $m->kondisi ?: ($m->register?->kondisi ?: 'Baik'),
+                                    'alasan_mutasi' => $m->alasan_mutasi ?: '-',
+                                    'status' => $m->status,
+                                    'penanggung_jawab_asal' => $m->penanggung_jawab_asal ?: '-',
+                                    'penanggung_jawab_tujuan' => $m->penanggung_jawab_tujuan ?: '-',
+                                    'catatan_penerima' => $m->catatan_penerima,
+                                ];
+                            })->values() : []
                         ];
                     })->values() : []
                 ];
@@ -289,6 +306,40 @@ Route::middleware('auth')->group(function () {
         if (!$reg) return response()->json(['success' => false], 404);
         return response()->json(['success' => true, 'kondisi' => $reg->kondisi, 'ruang' => $reg->ruang_pemegang, 'updated_at' => $reg->updated_at]);
     })->name('distribusi.register_kondisi.show');
+
+    // API: Ambil riwayat mutasi satu register NIBAR lengkap (tanggal, kondisi saat itu, alasan)
+    Route::get('/astap/register-mutasi/{id}', function ($id) {
+        $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
+            $q->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
+        }])->find($id);
+        if (!$reg) {
+            return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
+        }
+        $mutasis = $reg->mutasis->map(function($m) {
+            return [
+                'id'                      => $m->id,
+                'nomor_bamb'              => $m->nomor_bamb,
+                'tanggal_mutasi'          => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('d M Y') : '-',
+                'tanggal_mutasi_raw'      => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('Y-m-d') : '',
+                'ruangan_asal'            => $m->ruangan_asal,
+                'ruangan_tujuan'          => $m->ruangan_tujuan,
+                'jenis_mutasi'            => $m->jenis_mutasi ?? 'Mutasi',
+                'kondisi'                 => $m->kondisi ?: ($m->register?->kondisi ?: 'Baik'),
+                'alasan_mutasi'           => $m->alasan_mutasi ?: '-',
+                'status'                  => $m->status,
+                'penanggung_jawab_asal'   => $m->penanggung_jawab_asal ?: '-',
+                'penanggung_jawab_tujuan' => $m->penanggung_jawab_tujuan ?: '-',
+                'catatan_penerima'        => $m->catatan_penerima,
+            ];
+        })->values();
+        return response()->json([
+            'success' => true,
+            'nibar'   => $reg->nibar ?: $reg->no_register,
+            'kondisi' => $reg->kondisi,
+            'ruang'   => $reg->ruang_pemegang,
+            'mutasis' => $mutasis,
+        ]);
+    })->name('astap.register_mutasi');
 
     // 4. Mutasi Aset Pages & Forms
     Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');

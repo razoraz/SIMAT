@@ -62,7 +62,10 @@
                 },
 
                 formatRupiah(number) {
-                    return new Intl.NumberFormat('id-ID').format(number);
+                    if (number === null || number === undefined) return '0';
+                    const num = Number(number);
+                    if (isNaN(num)) return '0';
+                    return new Intl.NumberFormat('id-ID').format(num);
                 },
 
                 resetFilters() {
@@ -375,7 +378,7 @@
         <!-- MODAL DETAIL UNIT & INVENTARIS ASET RUANGAN (LENGKAP DENGAN DAFTAR ASET)   -->
         <!-- ========================================================================= -->
         <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto" x-cloak>
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-6 sm:p-7 shadow-2xl space-y-5 my-auto max-h-[90vh] flex flex-col">
+            <div @click.away="if (!showPrintKIRModal && !showEditModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-6 sm:p-7 shadow-2xl space-y-5 my-auto max-h-[90vh] flex flex-col">
                 
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
@@ -489,7 +492,7 @@
                                             }"
                                             x-text="ast.kondisi"></span>
                                     </td>
-                                    <td class="px-3 py-3 text-right font-mono font-bold text-emerald-400" x-text="'Rp ' + formatRupiah(ast.nilai)"></td>
+                                    <td class="px-3 py-3 text-right font-mono font-bold text-emerald-400" x-text="'Rp ' + formatRupiah(ast.nilai ?? ast.harga ?? 0)"></td>
                                     <td class="px-3 py-3 text-center">
                                         <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold"
                                             :class="{
@@ -751,7 +754,7 @@
                                             <td class="border border-black px-1 py-1 text-center font-mono" x-text="ast.tahun"></td>
                                             <td class="border border-black px-2 py-1 font-mono text-center text-[9px]" x-text="ast.kode"></td>
                                             <td class="border border-black px-1 py-1 text-center font-mono font-bold">1</td>
-                                            <td class="border border-black px-2 py-1 text-right font-mono font-semibold" x-text="formatRupiah(ast.nilai)"></td>
+                                            <td class="border border-black px-2 py-1 text-right font-mono font-semibold" x-text="formatRupiah(ast.nilai ?? ast.harga ?? 0)"></td>
                                             
                                             <!-- Keadaan Barang: Baik (B), Rusak Ringan (RR), Rusak Berat (RB) -->
                                             <td class="border border-black px-1 py-1 text-center font-bold font-sans">

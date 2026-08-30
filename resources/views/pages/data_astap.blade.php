@@ -1222,62 +1222,36 @@
                     });
                 },
 
-                // Modal Cek Riwayat State
+                // Modal Cek Riwayat Mutasi State
                 showRiwayatModal: false,
                 selectedRiwayatRegister: null,
-                selectedRiwayatLogs: [],
+                selectedRiwayatMutasis: [],
+                isLoadingRiwayat: false,
 
-                openRiwayatModal(reg) {
+                async openRiwayatModal(reg) {
                     if (!reg) return;
                     this.selectedRiwayatRegister = reg;
-                    
-                    const astap = this.selectedAstapDetail;
-                    const riwayatServis = this.getRiwayatServis(astap);
-                    
-                    const logs = [];
-                    logs.push({
-                        tgl: astap ? (astap.spk_tanggal || (astap.tahun_perolehan + '-01-01')) : 'Awal Perolehan',
-                        kategori: 'Pencatatan NIBAR Awal',
-                        badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
-                        detail: 'Pendaftaran awal NIBAR: ' + (reg.nibar || reg.no_register) + ' ke dalam sistem SIMAT-RK RSUD Koesnandi.'
-                    });
-
-                    if (reg.ruang_pemegang) {
-                        logs.push({
-                            tgl: 'Penempatan Aktif',
-                            kategori: 'Penempatan Ruangan',
-                            badgeClass: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
-                            detail: 'Aset dialokasikan & bertempat di ruangan: ' + reg.ruang_pemegang
-                        });
-                    } else {
-                        logs.push({
-                            tgl: 'Status Gudang',
-                            kategori: 'Gudang Aset Utama',
-                            badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-                            detail: 'Aset saat ini belum didistribusikan & tersimpan di Gudang Aset Utama.'
-                        });
-                    }
-
-                    logs.push({
-                        tgl: 'Kondisi Terkini',
-                        kategori: 'Status Kondisi (' + reg.kondisi + ')',
-                        badgeClass: reg.kondisi === 'Baik' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : (reg.kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30'),
-                        detail: 'Kondisi unit terkini tercatat sebagai: ' + reg.kondisi
-                    });
-
-                    if (riwayatServis && riwayatServis.length > 0) {
-                        riwayatServis.forEach(s => {
-                            logs.push({
-                                tgl: s.tgl || 'Pemeliharaan',
-                                kategori: 'Servis / ' + s.jenis,
-                                badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-                                detail: (s.pelaksana ? ('Pelaksana: ' + s.pelaksana + ' • ') : '') + (s.keterangan || 'Pemeliharaan barang') + (s.biaya ? (' • Biaya: ' + s.biaya) : '')
-                            });
-                        });
-                    }
-
-                    this.selectedRiwayatLogs = logs;
+                    this.selectedRiwayatMutasis = Array.isArray(reg.mutasis) ? reg.mutasis : [];
                     this.showRiwayatModal = true;
+
+                    // Fetch data terbaru dari backend
+                    try {
+                        this.isLoadingRiwayat = true;
+                        const res = await fetch(`/astap/register-mutasi/${reg.id}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.success && Array.isArray(data.mutasis)) {
+                                this.selectedRiwayatMutasis = data.mutasis;
+                                reg.mutasis = data.mutasis;
+                                if (data.kondisi) reg.kondisi = data.kondisi;
+                                if (data.ruang) reg.ruang_pemegang = data.ruang;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Gagal memuat riwayat mutasi:', err);
+                    } finally {
+                        this.isLoadingRiwayat = false;
+                    }
                 },
 
                 deleteRegister(reg) {
@@ -1853,8 +1827,8 @@
                             </tr>
                         </template>
            <!-- FRONTEND MODAL: DETAIL ASTAP & RINCIAN REGISTER NIBAR -->
-        <div x-show="showDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 md:p-6 overflow-y-auto">
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto">
+        <div x-show="showDetailModal" x-cloak @click.self="showDetailModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 50;">
+            <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto" style="background-color: #0f172a;">
                 
                 <!-- Modal Header -->
                 <div class="flex items-start justify-between pb-4 border-b border-slate-800 gap-4">
@@ -2248,7 +2222,7 @@
                                                           }" x-text="reg.kondisi"></span>
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
-                                                    <button type="button" @click="downloadQrCodeNibar(reg, selectedAstapDetail)"
+                                                    <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedAstapDetail)"
                                                         title="Pratinjau & Download QR NIBAR Unit Ini"
                                                         class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-[10.5px] transition-all shadow-sm active:scale-95 group cursor-pointer leading-none">
                                                         <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2260,19 +2234,19 @@
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <div class="flex items-center justify-center space-x-1.5">
                                                         <!-- 1. Tombol Cek Riwayat Unit -->
-                                                        <button type="button" @click="openRiwayatModal(reg)" title="Cek Riwayat Pemeliharaan & Status Unit Ini"
+                                                        <button type="button" @click.stop="openRiwayatModal(reg)" title="Cek Riwayat Mutasi Unit Ini"
                                                                 class="p-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:text-purple-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                         </button>
 
                                                         <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) -->
-                                                        <button type="button" @click="openEditKondisiModal(reg)" title="Ubah Kondisi Barang Unit Ini"
+                                                        <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Barang Unit Ini"
                                                                 class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
                                                         </button>
 
                                                         <!-- 3. Tombol Hapus Register -->
-                                                        <button type="button" @click="deleteRegister(reg)" title="Hapus Unit Register Ini"
+                                                        <button type="button" @click.stop="deleteRegister(reg)" title="Hapus Unit Register Ini"
                                                                 class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                         </button>
@@ -2310,14 +2284,14 @@
         </div>
 
         <!-- FRONTEND MODAL: PRATINJAU & DOWNLOAD QR CODE -->
-        <div x-show="showQrModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-            <div @click.away="showQrModal = false" class="bg-slate-900 border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl text-center space-y-5">
+        <div x-show="showQrModal" x-cloak @click.self="showQrModal = false" class="fixed inset-0 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 9999;">
+            <div class="border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl text-center space-y-5" style="background-color: #0f172a;">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div class="flex items-center space-x-2">
                         <span class="text-lg">📱</span>
                         <h3 class="text-base font-extrabold text-white">Label QR Code Aset ASTAP</h3>
                     </div>
-                    <button type="button" @click="showQrModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                    <button type="button" @click.stop="showQrModal = false" class="text-slate-500 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
                 </div>
 
                 <template x-if="selectedQrItem">
@@ -2386,14 +2360,14 @@
         </div>
 
         <!-- FRONTEND MODAL: UBAH KONDISI UNIT BARANG (KHUSUS KONDISI) -->
-        <div x-show="showEditKondisiModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-            <div @click.away="showEditKondisiModal = false" class="bg-slate-900 border border-amber-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div x-show="showEditKondisiModal" x-cloak @click.self="showEditKondisiModal = false" class="fixed inset-0 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 9999;">
+            <div class="border border-amber-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4" style="background-color: #0f172a;">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div class="flex items-center space-x-2">
                         <span class="text-lg">⚙️</span>
                         <h3 class="text-base font-extrabold text-white">Ubah Kondisi Unit Barang</h3>
                     </div>
-                    <button type="button" @click="showEditKondisiModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                    <button type="button" @click.stop="showEditKondisiModal = false" class="text-slate-500 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
                 </div>
 
                 <template x-if="editingRegisterItem">
@@ -2404,16 +2378,16 @@
                             <p class="text-slate-300 font-semibold text-[11px]" x-text="selectedAstapDetail ? selectedAstapDetail.nama_barang : ''"></p>
                         </div>
 
+                        <!-- Pilihan Kondisi -->
                         <div class="space-y-2">
-                            <label class="block text-slate-300 font-bold">Pilih Status Kondisi Terbaru <span class="text-rose-400">*</span></label>
-                            
-                            <div class="grid grid-cols-1 gap-2">
+                            <label class="font-bold text-slate-300 text-xs">Pilih Kondisi Terkini Unit:</label>
+                            <div class="space-y-2">
                                 <label class="flex items-center space-x-3 p-3 rounded-2xl border cursor-pointer transition-all"
                                     :class="newKondisiValue === 'Baik' ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/40'">
                                     <input type="radio" value="Baik" x-model="newKondisiValue" class="text-emerald-500 focus:ring-0">
                                     <div>
                                         <span class="font-extrabold text-xs block text-emerald-300">🟢 Baik (B)</span>
-                                        <span class="text-[10px] text-slate-400 block">Unit dalam kondisi fisik prima &amp; siap difungsikan sepenuhnya.</span>
+                                        <span class="text-[10px] text-slate-400 block">Unit berfungsi sempurna dan siap digunakan.</span>
                                     </div>
                                 </label>
 
@@ -2422,7 +2396,7 @@
                                     <input type="radio" value="Rusak Ringan" x-model="newKondisiValue" class="text-amber-500 focus:ring-0">
                                     <div>
                                         <span class="font-extrabold text-xs block text-amber-300">🟡 Rusak Ringan (RR)</span>
-                                        <span class="text-[10px] text-slate-400 block">Unit mengalami gangguan minor / butuh perbaikan berkala.</span>
+                                        <span class="text-[10px] text-slate-400 block">Ada kendala kecil namun masih dapat difungsikan sementara.</span>
                                     </div>
                                 </label>
 
@@ -2438,8 +2412,8 @@
                         </div>
 
                         <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
-                            <button type="button" @click="showEditKondisiModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">Batal</button>
-                            <button type="button" @click="saveKondisiChange()" :disabled="isSavingKondisi" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50">
+                            <button type="button" @click.stop="showEditKondisiModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 cursor-pointer">Batal</button>
+                            <button type="button" @click.stop="saveKondisiChange()" :disabled="isSavingKondisi" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shadow-amber-500/20 active:scale-95 disabled:opacity-50 cursor-pointer">
                                 <span x-text="isSavingKondisi ? 'Menyimpan...' : 'Simpan Kondisi'"></span>
                             </button>
                         </div>
@@ -2448,50 +2422,136 @@
             </div>
         </div>
 
-        <!-- FRONTEND MODAL: CEK RIWAYAT PEMELIHARAAN & MUTASI REGISTER -->
-        <div x-show="showRiwayatModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-            <div @click.away="showRiwayatModal = false" class="bg-slate-900 border border-purple-500/30 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto">
+        <!-- FRONTEND MODAL: CEK RIWAYAT MUTASI REGISTER NIBAR -->
+        <div x-show="showRiwayatModal" x-cloak @click.self="showRiwayatModal = false" class="fixed inset-0 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 9999;">
+            <div class="border border-purple-500/40 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[88vh] overflow-y-auto" style="background-color: #0f172a;">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-lg">📜</span>
-                        <h3 class="text-base font-extrabold text-white">Riwayat Status &amp; Servis Unit</h3>
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-white">Riwayat Mutasi Unit Barang</h3>
+                            <p class="text-[11px] text-slate-400">Histori pergerakan, tanggal, kondisi saat mutasi, dan alasan mutasi</p>
+                        </div>
                     </div>
-                    <button type="button" @click="showRiwayatModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                    <button type="button" @click.stop="showRiwayatModal = false" class="text-slate-500 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
                 </div>
 
                 <template x-if="selectedRiwayatRegister">
                     <div class="space-y-4 text-xs">
-                        <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
-                            <div>
-                                <span class="text-slate-400 text-[10px] uppercase font-bold block">NIBAR / Register:</span>
-                                <span class="text-purple-300 font-mono font-bold text-sm" x-text="selectedRiwayatRegister.nibar || selectedRiwayatRegister.no_register"></span>
+                        <!-- Info Register Card -->
+                        <div class="p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-3" style="background-color: #020617;">
+                            <div class="space-y-0.5 min-w-0 flex-1">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block truncate" x-text="selectedAstapDetail ? selectedAstapDetail.nama_barang : 'Unit Barang'"></span>
+                                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                                    <span class="text-purple-300 font-mono font-bold text-xs" x-text="selectedRiwayatRegister.nibar || selectedRiwayatRegister.no_register"></span>
+                                    <span class="text-slate-500 text-[11px]">•</span>
+                                    <span class="text-cyan-400 text-[11px] font-semibold truncate" x-text="selectedRiwayatRegister.ruang_pemegang || 'Gudang Aset'"></span>
+                                </div>
                             </div>
-                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border"
-                                  :class="{
-                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedRiwayatRegister.kondisi === 'Baik',
-                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedRiwayatRegister.kondisi === 'Rusak Ringan',
-                                      'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedRiwayatRegister.kondisi === 'Rusak Berat'
-                                  }" x-text="selectedRiwayatRegister.kondisi"></span>
+                            <div class="shrink-0 text-right">
+                                <span class="text-[9px] uppercase font-bold text-slate-500 block mb-0.5">Kondisi Sekarang</span>
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border inline-block"
+                                      :class="{
+                                          'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedRiwayatRegister.kondisi === 'Baik',
+                                          'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedRiwayatRegister.kondisi === 'Rusak Ringan' || selectedRiwayatRegister.kondisi === 'Kurang Baik',
+                                          'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedRiwayatRegister.kondisi === 'Rusak Berat'
+                                      }" x-text="selectedRiwayatRegister.kondisi"></span>
+                            </div>
                         </div>
 
-                        <!-- Timeline Log Timeline -->
-                        <div class="space-y-3 relative pl-4 border-l-2 border-slate-800 my-2">
-                            <template x-for="(log, idx) in selectedRiwayatLogs" :key="idx">
-                                <div class="relative group">
-                                    <div class="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-purple-500 ring-4 ring-slate-900"></div>
-                                    <div class="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-1">
-                                        <div class="flex items-center justify-between">
-                                            <span class="px-2 py-0.5 rounded text-[9.5px] font-bold border" :class="log.badgeClass" x-text="log.kategori"></span>
-                                            <span class="text-[10px] font-mono text-slate-400" x-text="log.tgl"></span>
+                        <!-- Loading State -->
+                        <template x-if="isLoadingRiwayat">
+                            <div class="py-8 text-center space-y-2">
+                                <div class="inline-block w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                                <p class="text-xs text-slate-400">Memuat riwayat mutasi barang...</p>
+                            </div>
+                        </template>
+
+                        <!-- Empty State: Belum Pernah Mutasi -->
+                        <template x-if="!isLoadingRiwayat && (!selectedRiwayatMutasis || selectedRiwayatMutasis.length === 0)">
+                            <div class="p-6 text-center rounded-2xl border border-dashed border-slate-800 space-y-2" style="background-color: #020617;">
+                                <span class="text-3xl block">📦</span>
+                                <h4 class="text-sm font-bold text-slate-200">Belum Ada Riwayat Mutasi</h4>
+                                <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                                    Unit register ini belum pernah dimutasi ke ruangan atau unit lain. Unit saat ini berada di lokasi penempatan: <strong class="text-slate-300" x-text="selectedRiwayatRegister.ruang_pemegang || 'Gudang Aset'"></strong> dengan kondisi <strong class="text-emerald-400" x-text="selectedRiwayatRegister.kondisi"></strong>.
+                                </p>
+                            </div>
+                        </template>
+
+                        <!-- List Riwayat Mutasi Timeline -->
+                        <template x-if="!isLoadingRiwayat && selectedRiwayatMutasis && selectedRiwayatMutasis.length > 0">
+                            <div class="space-y-3 relative pl-4 border-l-2 border-purple-500/30 my-2">
+                                <template x-for="(m, idx) in selectedRiwayatMutasis" :key="m.id || idx">
+                                    <div class="relative group">
+                                        <!-- Timeline dot -->
+                                        <div class="absolute -left-[21px] top-2 w-2.5 h-2.5 rounded-full bg-purple-500 ring-4 ring-slate-900"></div>
+                                        
+                                        <div class="p-4 rounded-2xl border border-slate-800 space-y-2.5 hover:border-slate-700 transition-colors" style="background-color: #020617;">
+                                            <!-- Row 1: Tanggal Mutasi, Jenis Mutasi, & Kondisi Saat Itu -->
+                                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-xs font-mono font-extrabold text-white flex items-center space-x-1">
+                                                        <span>📅</span>
+                                                        <span x-text="m.tanggal_mutasi"></span>
+                                                    </span>
+                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30" x-text="m.jenis_mutasi || 'Mutasi'"></span>
+                                                    <span class="text-[10px] font-mono text-slate-400" x-text="'(' + (m.nomor_bamb || 'BAMB') + ')'"></span>
+                                                </div>
+
+                                                <!-- KONDISI SAAT ITU (HIGHLIGHTED) -->
+                                                <div class="flex items-center space-x-1.5">
+                                                    <span class="text-[10px] text-slate-400 font-bold uppercase">Kondisi saat mutasi:</span>
+                                                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black border"
+                                                          :class="{
+                                                              'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': m.kondisi === 'Baik',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': m.kondisi === 'Rusak Ringan' || m.kondisi === 'Kurang Baik',
+                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': m.kondisi === 'Rusak Berat'
+                                                          }" x-text="m.kondisi || 'Baik'"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Row 2: Alur Perpindahan Ruangan -->
+                                            <div class="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
+                                                <div class="flex items-center space-x-2 min-w-0">
+                                                    <div class="text-slate-300">
+                                                        <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Dari Ruangan:</span>
+                                                        <span class="font-semibold text-slate-200" x-text="m.ruangan_asal"></span>
+                                                    </div>
+                                                    <span class="text-purple-400 font-extrabold text-sm px-1">➔</span>
+                                                    <div class="text-cyan-300">
+                                                        <span class="text-[9.5px] uppercase font-bold text-slate-500 block">Ke Ruangan:</span>
+                                                        <span class="font-bold text-cyan-300" x-text="m.ruangan_tujuan"></span>
+                                                    </div>
+                                                </div>
+                                                <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold border"
+                                                      :class="m.status && m.status.includes('Disetujui') ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : (m.status && m.status.includes('Ditolak') ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30')"
+                                                      x-text="m.status || 'Tercatat'"></span>
+                                            </div>
+
+                                            <!-- Row 3: ALASAN MUTASI (CLEAR & PROMINENT) -->
+                                            <div class="p-3 bg-slate-900/95 rounded-xl border border-amber-500/20 space-y-1">
+                                                <div class="flex items-center space-x-1.5 text-amber-400">
+                                                    <span class="text-xs">📝</span>
+                                                    <span class="text-[10px] font-extrabold uppercase tracking-wider">Alasan Mutasi:</span>
+                                                </div>
+                                                <p class="text-xs text-slate-200 leading-relaxed italic pl-1" x-text="m.alasan_mutasi || 'Tidak ada alasan khusus dicatat'"></p>
+                                            </div>
+
+                                            <!-- Row 4: Info Penanggung Jawab -->
+                                            <div class="flex flex-wrap items-center justify-between text-[10px] text-slate-400 pt-0.5 px-1 border-t border-slate-800/60">
+                                                <span>Pengirim: <strong class="text-slate-300 font-semibold" x-text="m.penanggung_jawab_asal || '-'"></strong></span>
+                                                <span>Penerima: <strong class="text-slate-300 font-semibold" x-text="m.penanggung_jawab_tujuan || '-'"></strong></span>
+                                            </div>
                                         </div>
-                                        <p class="text-slate-300 text-[11px] leading-relaxed pt-0.5" x-text="log.detail"></p>
                                     </div>
-                                </div>
-                            </template>
-                        </div>
+                                </template>
+                            </div>
+                        </template>
 
                         <div class="pt-3 border-t border-slate-800 flex justify-end">
-                            <button type="button" @click="showRiwayatModal = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+                            <button type="button" @click.stop="showRiwayatModal = false" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer">
                                 Tutup Riwayat
                             </button>
                         </div>
@@ -2501,16 +2561,16 @@
         </div>
 
         <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
-        <div x-show="showConfirmModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-            <div @click.away="showConfirmModal = false"
-                 x-show="showConfirmModal"
+        <div x-show="showConfirmModal" x-cloak @click.self="showConfirmModal = false" class="fixed inset-0 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000;">
+            <div x-show="showConfirmModal"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100"
                  x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="bg-slate-900 border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative"
+                 class="border rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative"
+                 style="background-color: #0f172a;"
                  :class="{
                      'border-rose-500/40': confirmData.type === 'danger',
                      'border-amber-500/40': confirmData.type === 'warning',

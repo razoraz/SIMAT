@@ -67,6 +67,7 @@ class UnitController extends Controller
                     'kondisi'       => $reg->kondisi ?: 'Baik',
                     'tahun'         => $astap->tahun_perolehan ?: '-',
                     'harga'         => $hargaSatuan,
+                    'nilai'         => $hargaSatuan,
                     'harga_fmt'     => 'Rp ' . number_format($hargaSatuan, 0, ',', '.'),
                     'category'      => $astap->jenisAstap ? $astap->jenisAstap->kategori : 'ASTAP',
                     'ruang'         => $reg->ruang_pemegang ?: $u->nama,

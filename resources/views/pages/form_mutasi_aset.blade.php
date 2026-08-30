@@ -11,30 +11,41 @@
         }
         $userUnitNama = $userUnitObj?->nama ?? (is_string($user->unit) ? $user->unit : '');
         $userUnitKepala = $userUnitObj?->kepala ?? ($user->name ?? '');
+
+        $initialRegisterIds = [];
+        if (old('astap_register_ids')) {
+            $initialRegisterIds = array_map('intval', old('astap_register_ids'));
+        } elseif (old('astap_register_id')) {
+            $initialRegisterIds = [(int) old('astap_register_id')];
+        } elseif (isset($relatedRegisterIds) && count($relatedRegisterIds) > 0) {
+            $initialRegisterIds = array_map('intval', $relatedRegisterIds);
+        } elseif (isset($mutasi) && $mutasi->astap_register_id) {
+            $initialRegisterIds = [(int) $mutasi->astap_register_id];
+        }
     @endphp
 
     <div x-data="{
         step: 1,
         isEdit: {{ isset($mutasi) ? 'true' : 'false' }},
         isSubAdmin: {{ $isSubAdmin ? 'true' : 'false' }},
-        userUnitNama: '{{ $userUnitNama }}',
-        userUnitKepala: '{{ $userUnitKepala }}',
+        userUnitNama: {{ Js::from($userUnitNama) }},
+        userUnitKepala: {{ Js::from($userUnitKepala) }},
 
         /* ---- Jenis Mutasi ---- */
-        jenis_mutasi: '{{ old('jenis_mutasi', $mutasi->jenis_mutasi ?? 'Ajukan Mutasi') }}',
+        jenis_mutasi: {{ Js::from(old('jenis_mutasi', $mutasi->jenis_mutasi ?? 'Ajukan Mutasi')) }},
         jenisMutasiOptions: [
             { value: 'Ajukan Mutasi',  emoji: '🔄', label: 'Ajukan Mutasi',     desc: 'Unit asal mengajukan pemindahan/penyerahan barang miliknya ke unit tujuan', color: 'blue' },
             { value: 'Perbaikan',      emoji: '🔧', label: 'Perbaikan / Servis',   desc: 'Barang rusak dikirim ke unit/IPSRS yang bisa memperbaiki', color: 'amber' },
             { value: 'Minta Mutasi',   emoji: '📥', label: 'Minta Mutasi',      desc: 'Unit B meminta aset milik Unit A untuk dipindahkan ke Unit B', color: 'teal' },
-            { value: 'Pengembalian',   emoji: '↩️', label: 'Pengembalian Barang', desc: 'Barang yang tidak dibutuhkan / selesai dipakai dikembalikan ke Pengurus Barang / Admin Aset', color: 'rose' }
+            { value: 'Pengembalian',   emoji: '↩️', label: 'Pengembalian Barang', desc: 'Barang yang selesai diperbaiki / selesai dipakai / tidak dibutuhkan dikembalikan ke unit terkait atau Pengurus Barang', color: 'rose' }
         ],
 
         /* ---- State Ruangan & PJ ---- */
-        ruangan_asal: '{{ old('ruangan_asal', $mutasi->ruangan_asal ?? '') }}',
-        ruangan_tujuan: '{{ old('ruangan_tujuan', $mutasi->ruangan_tujuan ?? '') }}',
-        penanggung_jawab_asal: '{{ old('penanggung_jawab_asal', $mutasi->penanggung_jawab_asal ?? '') }}',
-        penanggung_jawab_tujuan: '{{ old('penanggung_jawab_tujuan', $mutasi->penanggung_jawab_tujuan ?? '') }}',
-        alasan_mutasi: '{{ old('alasan_mutasi', $mutasi->alasan_mutasi ?? '') }}',
+        ruangan_asal: {{ Js::from(old('ruangan_asal', $mutasi->ruangan_asal ?? '')) }},
+        ruangan_tujuan: {{ Js::from(old('ruangan_tujuan', $mutasi->ruangan_tujuan ?? '')) }},
+        penanggung_jawab_asal: {{ Js::from(old('penanggung_jawab_asal', $mutasi->penanggung_jawab_asal ?? '')) }},
+        penanggung_jawab_tujuan: {{ Js::from(old('penanggung_jawab_tujuan', $mutasi->penanggung_jawab_tujuan ?? '')) }},
+        alasan_mutasi: {{ Js::from(old('alasan_mutasi', $mutasi->alasan_mutasi ?? '')) }},
 
         /* ---- State Search Filterable Unit Selector ---- */
         searchUnitAsal: '',
@@ -43,7 +54,9 @@
         isUnitTujuanOpen: false,
 
         /* ---- Multi-Select Barang Aset ---- */
-        selectedRegisterIds: {{ old('astap_register_id', $mutasi->astap_register_id ?? false) ? '['.old('astap_register_id', $mutasi->astap_register_id).']' : '[]' }},
+        selectedRegisterIds: {{ Js::from($initialRegisterIds) }},
+        editedKondisi: {},
+        filterKondisi: '',
         searchBarang: '',
         showDropdown: false,
 
@@ -51,10 +64,15 @@
         units: {{ Js::from($units) }},
 
         init() {
-            // Jika role sub_admin dan belum ada ruangan_asal, kunci ke unit sub admin tersebut
-            if (this.isSubAdmin && this.userUnitNama && !this.ruangan_asal) {
-                this.ruangan_asal = this.userUnitNama;
-                this.penanggung_jawab_asal = this.userUnitKepala;
+            // Jika role sub_admin dan bukan edit, kunci unit sesuai jenis mutasi
+            if (this.isSubAdmin && this.userUnitNama && !this.isEdit) {
+                if (this.jenis_mutasi === 'Minta Mutasi') {
+                    this.ruangan_tujuan = this.userUnitNama;
+                    this.penanggung_jawab_tujuan = this.userUnitKepala;
+                } else {
+                    this.ruangan_asal = this.userUnitNama;
+                    this.penanggung_jawab_asal = this.userUnitKepala;
+                }
             }
 
             if (this.ruangan_asal) {
@@ -68,19 +86,52 @@
                 const u = this.units.find(item => item.nama === this.ruangan_tujuan);
                 if (u && !this.penanggung_jawab_tujuan) this.penanggung_jawab_tujuan = u.kepala || ('Kepala Ruangan ' + u.nama);
             }
+
+            // Inisialisasi editedKondisi default dari data registers
+            (this.registers || []).forEach(r => {
+                this.editedKondisi[r.id] = r.kondisi || 'Baik';
+            });
         },
 
         selectJenisMutasi(val) {
             this.jenis_mutasi = val;
-            if (val === 'Perbaikan') {
-                const ipsrs = this.units.find(u => (u.nama || '').toLowerCase().includes('ips') || (u.nama || '').toLowerCase().includes('sarana'));
-                if (ipsrs) {
-                    this.selectUnitTujuan(ipsrs);
+            this.selectedRegisterIds = [];
+
+            if (this.isSubAdmin && this.userUnitNama) {
+                if (val === 'Minta Mutasi') {
+                    // Minta Mutasi: Unit Saya = Unit Penerima (Tujuan), Unit Pengirim (Asal) = Unit Lain yang Diminta
+                    this.ruangan_tujuan = this.userUnitNama;
+                    this.penanggung_jawab_tujuan = this.userUnitKepala;
+                    this.searchUnitTujuan = this.userUnitNama;
+
+                    this.ruangan_asal = '';
+                    this.penanggung_jawab_asal = '';
+                    this.searchUnitAsal = '';
+                } else {
+                    // Ajukan Mutasi / Perbaikan / Pengembalian: Unit Saya = Unit Pengirim (Asal)
+                    this.ruangan_asal = this.userUnitNama;
+                    this.penanggung_jawab_asal = this.userUnitKepala;
+                    this.searchUnitAsal = this.userUnitNama;
+
+                    this.ruangan_tujuan = '';
+                    this.penanggung_jawab_tujuan = '';
+                    this.searchUnitTujuan = '';
+
+                    if (val === 'Perbaikan') {
+                        const ipsrs = this.units.find(u => (u.nama || '').toLowerCase().includes('ips') || (u.nama || '').toLowerCase().includes('sarana'));
+                        if (ipsrs) this.selectUnitTujuan(ipsrs);
+                    } else if (val === 'Pengembalian') {
+                        const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
+                        if (perbekalan) this.selectUnitTujuan(perbekalan);
+                    }
                 }
-            } else if (val === 'Pengembalian') {
-                const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
-                if (perbekalan) {
-                    this.selectUnitTujuan(perbekalan);
+            } else {
+                if (val === 'Perbaikan') {
+                    const ipsrs = this.units.find(u => (u.nama || '').toLowerCase().includes('ips') || (u.nama || '').toLowerCase().includes('sarana'));
+                    if (ipsrs) this.selectUnitTujuan(ipsrs);
+                } else if (val === 'Pengembalian') {
+                    const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
+                    if (perbekalan) this.selectUnitTujuan(perbekalan);
                 }
             }
         },
@@ -144,9 +195,12 @@
             });
         },
 
-        /* Filter register barang di unit pengirim sesuai kata kunci pencarian */
+        /* Filter register barang di unit pengirim sesuai kata kunci pencarian & filter kondisi */
         get filteredRegisters() {
             let list = this.availableRegistersForAsal;
+            if (this.filterKondisi) {
+                list = list.filter(r => (this.editedKondisi[r.id] || r.kondisi) === this.filterKondisi);
+            }
             if (!this.searchBarang) return list;
             const q = this.searchBarang.toLowerCase();
             return list.filter(r =>
@@ -163,6 +217,9 @@
                 this.selectedRegisterIds.splice(idx, 1);
             } else {
                 this.selectedRegisterIds.push(idStr);
+                if (!this.editedKondisi[idStr]) {
+                    this.editedKondisi[idStr] = reg.kondisi || 'Baik';
+                }
             }
         },
 
@@ -171,7 +228,14 @@
         },
 
         selectAllRegisters() {
-            this.selectedRegisterIds = this.availableRegistersForAsal.map(r => Number(r.id));
+            this.selectedRegisterIds = [];
+            (this.availableRegistersForAsal || []).forEach(r => {
+                const idStr = Number(r.id);
+                this.selectedRegisterIds.push(idStr);
+                if (!this.editedKondisi[idStr]) {
+                    this.editedKondisi[idStr] = r.kondisi || 'Baik';
+                }
+            });
         },
 
         clearAllSelectedRegisters() {
@@ -184,21 +248,37 @@
         },
 
         /* ---- Computed ---- */
+        get canChangeKondisi() {
+            return ['Ajukan Mutasi', 'Perbaikan', 'Pengembalian'].includes(this.jenis_mutasi);
+        },
+
+        /* ---- Computed ---- */
         get selectedJenis() {
             return this.jenisMutasiOptions.find(j => j.value === this.jenis_mutasi) || this.jenisMutasiOptions[0];
         },
 
+        get labelAsal() {
+            return this.jenis_mutasi === 'Minta Mutasi' ? 'Unit Pemilik Aset (Ruangan Asal yang Diminta)' : 'Unit Pengirim (Ruangan Asal)';
+        },
+
         get labelTujuan() {
+            if (this.jenis_mutasi === 'Minta Mutasi') {
+                return 'Unit Pemohon (Ruangan Tujuan Penerima Aset)';
+            }
             const map = {
                 'Ajukan Mutasi':   'Ruangan Tujuan (Unit Penerima Aset)',
                 'Pemindahan':      'Ruangan Tujuan (Unit Penerima Aset)',
                 'Perbaikan':       'Ruangan Tujuan (Unit / IPSRS yang Memperbaiki)',
-                'Minta Mutasi':    'Ruangan Asal (Unit Pemilik Aset yang Diminta)',
-                'Minta_Mutasi':    'Ruangan Asal (Unit Pemilik Aset yang Diminta)',
-                'Pengembalian':    'Ruangan Tujuan (Pengurus Barang / Admin Aset RSUD)',
-                'Penghapusan':     'Ruangan Tujuan (Pengurus Barang / Admin Aset RSUD)'
+                'Pengembalian':    'Ruangan Tujuan (Unit Terkait / Pengurus Barang / Admin Aset RSUD)',
+                'Penghapusan':     'Ruangan Tujuan (Unit Terkait / Pengurus Barang / Admin Aset RSUD)'
             };
             return map[this.jenis_mutasi] || 'Ruangan Tujuan';
+        },
+
+        get assetBannerLabel() {
+            return this.jenis_mutasi === 'Minta Mutasi'
+                ? 'Menampilkan Aset dari Unit Pemilik yang Diminta:'
+                : 'Menampilkan Aset dari Unit Pengirim:';
         },
 
         get alasanPlaceholder() {
@@ -208,7 +288,7 @@
                 'Perbaikan':       'Contoh: Alat mengalami gangguan fungsi / error, perlu perbaikan oleh teknisi IPSRS...',
                 'Minta Mutasi':    'Contoh: Unit B membutuhkan aset milik Unit A dan mengajukan permohonan pemindahan barang...',
                 'Minta_Mutasi':    'Contoh: Unit B membutuhkan aset milik Unit A dan mengajukan permohonan pemindahan barang...',
-                'Pengembalian':    'Contoh: Barang tidak dibutuhkan lagi / selesai masa pakai dan dikembalikan ke Pengurus Barang / Admin Aset...',
+                'Pengembalian':    'Contoh: Barang telah selesai diperbaiki oleh IPSRS / selesai dipakai / tidak dibutuhkan dan dikembalikan ke unit terkait atau Pengurus Barang...',
                 'Penghapusan':     'Contoh: Barang tidak dibutuhkan lagi / selesai masa pakai dan dikembalikan ke Pengurus Barang / Admin Aset...'
             };
             return map[this.jenis_mutasi] || 'Alasan pemindahan / mutasi aset...';
@@ -509,17 +589,17 @@
                 <input type="hidden" name="tanggal_mutasi" value="{{ old('tanggal_mutasi', isset($mutasi) ? $mutasi->tanggal_mutasi->format('Y-m-d') : date('Y-m-d')) }}">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {{-- Ruangan Asal (Pengirim) --}}
+                    {{-- Ruangan Asal (Pengirim / Pemilik Aset) --}}
                     <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-slate-800 relative">
                         <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
-                            <label class="block text-slate-300 text-xs font-bold uppercase tracking-wider">📤 Unit Pengirim (Ruangan Asal)</label>
-                            <template x-if="isSubAdmin && userUnitNama">
+                            <label class="block text-slate-300 text-xs font-bold uppercase tracking-wider" x-text="labelAsal"></label>
+                            <template x-if="isSubAdmin && userUnitNama && jenis_mutasi !== 'Minta Mutasi'">
                                 <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terunci Role Sub Admin</span>
                             </template>
                         </div>
 
-                        {{-- Untuk Role Sub Admin (Terkunci Sesuai Unitnya) --}}
-                        <template x-if="isSubAdmin && userUnitNama">
+                        {{-- Untuk Role Sub Admin pada mode Ajukan/Perbaikan/Pengembalian (Unit Asal Terkunci) --}}
+                        <template x-if="isSubAdmin && userUnitNama && jenis_mutasi !== 'Minta Mutasi'">
                             <div class="space-y-3">
                                 <div>
                                     <span class="text-[10px] text-slate-400 block mb-1">Nama Unit/Ruangan:</span>
@@ -540,13 +620,13 @@
                             </div>
                         </template>
 
-                        {{-- Untuk Role Master Admin & Admin (Pencarian Filter Unit Pengirim) --}}
-                        <template x-if="!isSubAdmin || !userUnitNama">
+                        {{-- Pencarian Filter Unit Pengirim (Master Admin / Admin OR Sub Admin di Minta Mutasi) --}}
+                        <template x-if="!isSubAdmin || !userUnitNama || jenis_mutasi === 'Minta Mutasi'">
                             <div class="space-y-3">
                                 <div class="space-y-1.5 relative" @click.outside="isUnitAsalOpen = false">
                                     <div class="flex items-center justify-between">
                                         <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider">
-                                            Pilih Unit Pengirim (Asal) <span class="text-rose-400">*</span>
+                                            <span x-text="jenis_mutasi === 'Minta Mutasi' ? 'Pilih Unit Pemilik Aset (Asal)' : 'Pilih Unit Pengirim (Asal)'"></span> <span class="text-rose-400">*</span>
                                         </label>
                                         <button type="button" x-show="ruangan_asal && !isUnitAsalOpen"
                                             @click="isUnitAsalOpen = true; searchUnitAsal = ''"
@@ -560,7 +640,7 @@
                                             :value="(!isUnitAsalOpen && ruangan_asal) ? ruangan_asal : searchUnitAsal"
                                             @input="searchUnitAsal = $event.target.value; isUnitAsalOpen = true"
                                             @focus="isUnitAsalOpen = true"
-                                            placeholder="Ketik nama unit pengirim..."
+                                            :placeholder="jenis_mutasi === 'Minta Mutasi' ? 'Ketik unit pemilik aset yang diminta...' : 'Ketik nama unit pengirim...'"
                                             class="w-full bg-slate-900 border rounded-xl py-3 pr-4 text-xs font-bold transition-all shadow-inner focus:outline-none"
                                             :class="ruangan_asal && !isUnitAsalOpen ? 'border-rose-500/60 text-rose-200' : 'border-slate-700 text-white focus:border-rose-400'"
                                             style="padding-left: 3.1rem !important;">
@@ -608,76 +688,103 @@
                         </template>
                     </div>
 
-                    {{-- Ruangan Tujuan (Penerima) --}}
+                    {{-- Ruangan Tujuan (Penerima / Pemohon) --}}
                     <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-rose-500/30">
-                        <div class="border-b border-rose-500/30 pb-2">
-                            <label class="block text-rose-300 text-xs font-bold uppercase tracking-wider">
-                                📥 <span x-text="labelTujuan"></span>
-                            </label>
+                        <div class="border-b border-rose-500/30 pb-2 flex items-center justify-between">
+                            <label class="block text-rose-300 text-xs font-bold uppercase tracking-wider" x-text="labelTujuan"></label>
+                            <template x-if="isSubAdmin && userUnitNama && jenis_mutasi === 'Minta Mutasi'">
+                                <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terunci Role Sub Admin</span>
+                            </template>
                         </div>
-                        <div class="space-y-3">
-                            <div class="space-y-1.5 relative" @click.outside="isUnitTujuanOpen = false">
-                                <div class="flex items-center justify-between">
-                                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider">
-                                        Pilih Unit Penerima (Tujuan) <span class="text-rose-400">*</span>
-                                    </label>
-                                    <button type="button" x-show="ruangan_tujuan && !isUnitTujuanOpen"
-                                        @click="isUnitTujuanOpen = true; searchUnitTujuan = ''"
-                                        class="text-[11px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
-                                        ✕ Ganti Unit
-                                    </button>
-                                </div>
-                                
-                                <div class="relative">
-                                    <input type="text"
-                                        :value="(!isUnitTujuanOpen && ruangan_tujuan) ? ruangan_tujuan : searchUnitTujuan"
-                                        @input="searchUnitTujuan = $event.target.value; isUnitTujuanOpen = true"
-                                        @focus="isUnitTujuanOpen = true"
-                                        placeholder="Ketik nama unit penerima..."
-                                        class="w-full bg-slate-900 border rounded-xl py-3 pr-4 text-xs font-bold transition-all shadow-inner focus:outline-none"
-                                        :class="ruangan_tujuan && !isUnitTujuanOpen ? 'border-rose-500/60 text-rose-200' : 'border-rose-500/40 text-white focus:border-rose-400'"
-                                        style="padding-left: 3.1rem !important;">
-                                    <svg class="w-4 h-4 text-rose-400 absolute pointer-events-none" style="left: 1.25rem; top: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                </div>
-                                <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan" required>
 
-                                {{-- Dropdown Scrollable List (Excludes Unit Pengirim) --}}
-                                <div x-show="isUnitTujuanOpen" x-transition x-cloak style="max-height: 210px !important; overflow-y: auto !important;"
-                                    class="absolute z-50 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/40 rounded-2xl shadow-2xl backdrop-blur-xl">
-                                    <template x-for="u in filteredUnitsTujuan" :key="u.id">
-                                        <div @click="selectUnitTujuan(u)"
-                                            class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between cursor-pointer group hover:bg-slate-800"
-                                            :class="u.nama === ruangan_tujuan ? 'border-rose-500 bg-rose-950/40 shadow-lg' : 'border-slate-800/80 hover:border-rose-500/40'">
-                                            <div class="min-w-0 pr-3">
-                                                <p class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors truncate" x-text="u.nama"></p>
-                                                <p class="text-[10px] text-slate-400 truncate" x-text="'PJ / Kepala: ' + (u.kepala || 'Belum Diatur')"></p>
+                        {{-- Untuk Role Sub Admin pada mode Minta Mutasi (Unit Tujuan Terkunci Sesuai Unit Saya) --}}
+                        <template x-if="isSubAdmin && userUnitNama && jenis_mutasi === 'Minta Mutasi'">
+                            <div class="space-y-3">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block mb-1">Nama Unit Pemohon (Penerima Aset):</span>
+                                    <div class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-extrabold text-xs flex items-center justify-between">
+                                        <span x-text="ruangan_tujuan || userUnitNama"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan || userUnitNama" required>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Penerima (Kepala Ruangan)</label>
+                                    <div class="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-300 font-extrabold text-xs flex items-center justify-between">
+                                        <span x-text="penanggung_jawab_tujuan || userUnitKepala || 'Kepala Ruangan'"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan || userUnitKepala" required>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Pencarian Filter Unit Penerima (Master Admin / Admin OR Sub Admin di selain Minta Mutasi) --}}
+                        <template x-if="!isSubAdmin || !userUnitNama || jenis_mutasi !== 'Minta Mutasi'">
+                            <div class="space-y-3">
+                                <div class="space-y-1.5 relative" @click.outside="isUnitTujuanOpen = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider">
+                                            Pilih Unit Penerima (Tujuan) <span class="text-rose-400">*</span>
+                                        </label>
+                                        <button type="button" x-show="ruangan_tujuan && !isUnitTujuanOpen"
+                                            @click="isUnitTujuanOpen = true; searchUnitTujuan = ''"
+                                            class="text-[11px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Unit
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="relative">
+                                        <input type="text"
+                                            :value="(!isUnitTujuanOpen && ruangan_tujuan) ? ruangan_tujuan : searchUnitTujuan"
+                                            @input="searchUnitTujuan = $event.target.value; isUnitTujuanOpen = true"
+                                            @focus="isUnitTujuanOpen = true"
+                                            placeholder="Ketik nama unit penerima..."
+                                            class="w-full bg-slate-900 border rounded-xl py-3 pr-4 text-xs font-bold transition-all shadow-inner focus:outline-none"
+                                            :class="ruangan_tujuan && !isUnitTujuanOpen ? 'border-rose-500/60 text-rose-200' : 'border-rose-500/40 text-white focus:border-rose-400'"
+                                            style="padding-left: 3.1rem !important;">
+                                        <svg class="w-4 h-4 text-rose-400 absolute pointer-events-none" style="left: 1.25rem; top: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    </div>
+                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan" required>
+
+                                    {{-- Dropdown Scrollable List (Excludes Unit Pengirim) --}}
+                                    <div x-show="isUnitTujuanOpen" x-transition x-cloak style="max-height: 210px !important; overflow-y: auto !important;"
+                                        class="absolute z-50 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/40 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="u in filteredUnitsTujuan" :key="u.id">
+                                            <div @click="selectUnitTujuan(u)"
+                                                class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between cursor-pointer group hover:bg-slate-800"
+                                                :class="u.nama === ruangan_tujuan ? 'border-rose-500 bg-rose-950/40 shadow-lg' : 'border-slate-800/80 hover:border-rose-500/40'">
+                                                <div class="min-w-0 pr-3">
+                                                    <p class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors truncate" x-text="u.nama"></p>
+                                                    <p class="text-[10px] text-slate-400 truncate" x-text="'PJ / Kepala: ' + (u.kepala || 'Belum Diatur')"></p>
+                                                </div>
+                                                <span class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-lg"
+                                                    :class="u.nama === ruangan_tujuan ? 'bg-rose-500 text-slate-950' : 'bg-slate-800 text-slate-400 group-hover:text-white'">
+                                                    <span x-text="u.nama === ruangan_tujuan ? '✓ Terpilih' : 'Pilih'"></span>
+                                                </span>
                                             </div>
-                                            <span class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-lg"
-                                                :class="u.nama === ruangan_tujuan ? 'bg-rose-500 text-slate-950' : 'bg-slate-800 text-slate-400 group-hover:text-white'">
-                                                <span x-text="u.nama === ruangan_tujuan ? '✓ Terpilih' : 'Pilih'"></span>
-                                            </span>
-                                        </div>
-                                    </template>
-                                    <template x-if="filteredUnitsTujuan.length === 0">
-                                        <div class="p-3 text-center text-xs text-rose-400 font-semibold">Tidak menemukan unit tujuan dengan kata kunci tersebut.</div>
-                                    </template>
+                                        </template>
+                                        <template x-if="filteredUnitsTujuan.length === 0">
+                                            <div class="p-3 text-center text-xs text-rose-400 font-semibold">Tidak menemukan unit tujuan dengan kata kunci tersebut.</div>
+                                        </template>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div>
-                                <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Penerima (Kepala Ruangan)</label>
-                                <div class="px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-emerald-300 font-extrabold text-xs flex items-center justify-between shadow-inner">
-                                    <span x-text="penanggung_jawab_tujuan || 'Pilih Unit Penerima Terlebih Dahulu'"></span>
-                                    <span>🔒</span>
+                                <div>
+                                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Penerima (Kepala Ruangan)</label>
+                                    <div class="px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-emerald-300 font-extrabold text-xs flex items-center justify-between shadow-inner">
+                                        <span x-text="penanggung_jawab_tujuan || 'Pilih Unit Penerima Terlebih Dahulu'"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan" required>
+                                    <template x-if="penanggung_jawab_tujuan">
+                                        <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
+                                            <span>✓ Terkunci otomatis dari data Kepala Ruangan RSUD</span>
+                                        </p>
+                                    </template>
                                 </div>
-                                <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan" required>
-                                <template x-if="penanggung_jawab_tujuan">
-                                    <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
-                                        <span>✓ Terkunci otomatis dari data Kepala Ruangan RSUD</span>
-                                    </p>
-                                </template>
                             </div>
-                        </div>
+                        </template>
                     </div>
                 </div>
 
@@ -723,7 +830,7 @@
                     <div class="flex items-center space-x-2.5">
                         <span class="text-lg">📍</span>
                         <div>
-                            <p class="text-xs font-extrabold text-rose-300 uppercase tracking-wider">Menampilkan Aset dari Unit Pengirim:</p>
+                            <p class="text-xs font-extrabold text-rose-300 uppercase tracking-wider" x-text="assetBannerLabel"></p>
                             <p class="text-sm font-black text-white font-mono" x-text="ruangan_asal || 'Belum Dipilih'"></p>
                         </div>
                     </div>
@@ -733,14 +840,25 @@
 
                 {{-- Filter & Batch Action Buttons --}}
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                    <div class="relative flex-1">
-                        <div class="absolute inset-y-0 flex items-center pointer-events-none text-rose-400" style="left: 1.25rem;">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <div class="relative flex-1 flex items-center space-x-2">
+                        <div class="relative flex-1">
+                            <div class="absolute inset-y-0 flex items-center pointer-events-none text-rose-400" style="left: 1.25rem;">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <input type="text" x-model="searchBarang"
+                                placeholder="Ketik NIBAR / nama barang..."
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pr-4 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-all"
+                                style="padding-left: 3.1rem !important;">
                         </div>
-                        <input type="text" x-model="searchBarang"
-                            placeholder="Ketik NIBAR / nama barang..."
-                            class="w-full bg-slate-950 border border-slate-800 rounded-xl py-2.5 pr-4 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-all"
-                            style="padding-left: 3.1rem !important;">
+
+                        {{-- Dropdown Filter Kondisi --}}
+                        <select x-model="filterKondisi"
+                            class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-300 focus:outline-none focus:border-rose-500 transition-all cursor-pointer shrink-0">
+                            <option value="">Semua Kondisi</option>
+                            <option value="Baik" class="bg-slate-900 text-emerald-400">🟢 Baik</option>
+                            <option value="Kurang Baik" class="bg-slate-900 text-amber-400">🟡 Kurang Baik</option>
+                            <option value="Rusak Berat" class="bg-slate-900 text-rose-400">🔴 Rusak Berat</option>
+                        </select>
                     </div>
 
                     <div class="flex items-center space-x-2 shrink-0">
@@ -763,6 +881,11 @@
                         x-text="selectedRegisterIds.length + ' Barang Terpilih'"></span>
                 </div>
 
+                {{-- Hidden Inputs kondisi_baru untuk setiap barang terpilih --}}
+                <template x-for="id in selectedRegisterIds" :key="id">
+                    <input type="hidden" :name="'kondisi_baru[' + id + ']'" :value="editedKondisi[id] || (registers.find(r => Number(r.id) === Number(id))?.kondisi || 'Baik')">
+                </template>
+
                 {{-- Daftar Aset (Cards Grid dengan Checkbox Multi Select) --}}
                 <div class="space-y-2.5 custom-scrollbar pr-2 p-1 rounded-2xl bg-slate-950/40 border border-slate-800/80" style="max-height: 280px !important; overflow-y: auto !important;">
                     <template x-for="r in filteredRegisters" :key="r.id">
@@ -778,18 +901,40 @@
                                 </div>
                                 <div class="min-w-0">
                                     <p class="text-xs font-extrabold text-white group-hover:text-rose-300 transition-colors truncate" x-text="r.nama_barang"></p>
-                                    <div class="flex items-center gap-3 mt-1 flex-wrap text-[10.5px]">
+                                    <div class="flex items-center gap-2.5 mt-1.5 flex-wrap text-[10.5px]">
                                         <span class="text-rose-400 font-mono font-bold" x-text="r.nibar"></span>
-                                        <span class="text-slate-500">•</span>
+                                        <span class="text-slate-600">•</span>
                                         <span class="text-slate-400" x-text="'Unit: ' + r.unit_nama"></span>
-                                        <span class="text-slate-500">•</span>
-                                        <span class="font-bold"
-                                            :class="{
-                                                'text-emerald-400': r.kondisi === 'Baik',
-                                                'text-amber-400':   r.kondisi === 'Kurang Baik',
-                                                'text-rose-400':    r.kondisi === 'Rusak Berat'
-                                            }"
-                                            x-text="'Kondisi: ' + r.kondisi"></span>
+                                        <span class="text-slate-600">•</span>
+                                        
+                                        {{-- Selector Kondisi Langsung (Jika canChangeKondisi aktif) --}}
+                                        <template x-if="canChangeKondisi">
+                                            <div class="flex items-center space-x-1.5" @click.stop>
+                                                <span class="text-slate-400 font-semibold">Kondisi:</span>
+                                                <select x-model="editedKondisi[r.id]" @click.stop
+                                                    class="bg-slate-900 border rounded-lg px-2 py-0.5 text-[10.5px] font-extrabold focus:outline-none cursor-pointer text-center [text-align-last:center]"
+                                                    :class="{
+                                                        'border-emerald-500/60 text-emerald-400 bg-emerald-950/40': (editedKondisi[r.id] || r.kondisi) === 'Baik',
+                                                        'border-amber-500/60 text-amber-400 bg-amber-950/40': (editedKondisi[r.id] || r.kondisi) === 'Kurang Baik',
+                                                        'border-rose-500/60 text-rose-400 bg-rose-950/40': (editedKondisi[r.id] || r.kondisi) === 'Rusak Berat'
+                                                    }">
+                                                    <option value="Baik" class="bg-slate-900 text-emerald-400 font-bold text-center">Baik</option>
+                                                    <option value="Kurang Baik" class="bg-slate-900 text-amber-400 font-bold text-center">Kurang Baik</option>
+                                                    <option value="Rusak Berat" class="bg-slate-900 text-rose-400 font-bold text-center">Rusak Berat</option>
+                                                </select>
+                                            </div>
+                                        </template>
+
+                                        {{-- Statis jika canChangeKondisi false --}}
+                                        <template x-if="!canChangeKondisi">
+                                            <span class="font-bold"
+                                                :class="{
+                                                    'text-emerald-400': r.kondisi === 'Baik',
+                                                    'text-amber-400':   r.kondisi === 'Kurang Baik',
+                                                    'text-rose-400':    r.kondisi === 'Rusak Berat'
+                                                }"
+                                                x-text="'Kondisi: ' + r.kondisi"></span>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -882,13 +1027,18 @@
                                             <td class="py-2 px-3 text-center text-slate-500 font-mono font-bold" x-text="idx + 1"></td>
                                             <td class="py-2 px-3 font-mono font-bold text-rose-400" x-text="item.nibar"></td>
                                             <td class="py-2 px-3 font-extrabold text-white" x-text="item.nama_barang"></td>
-                                            <td class="py-2 px-3 font-bold"
-                                                :class="{
-                                                    'text-emerald-400': item.kondisi === 'Baik',
-                                                    'text-amber-400':   item.kondisi === 'Kurang Baik',
-                                                    'text-rose-400':    item.kondisi === 'Rusak Berat'
-                                                }"
-                                                x-text="item.kondisi"></td>
+                                            <td class="py-2.5 px-3 font-bold">
+                                                <span :class="{
+                                                    'text-emerald-400': (editedKondisi[item.id] || item.kondisi) === 'Baik',
+                                                    'text-amber-400':   (editedKondisi[item.id] || item.kondisi) === 'Kurang Baik',
+                                                    'text-rose-400':    (editedKondisi[item.id] || item.kondisi) === 'Rusak Berat'
+                                                }" x-text="editedKondisi[item.id] || item.kondisi"></span>
+                                                <template x-if="canChangeKondisi && editedKondisi[item.id] && editedKondisi[item.id] !== item.kondisi">
+                                                    <span class="text-[9.5px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold ml-1 border border-amber-500/30">
+                                                        Diubah dari <span x-text="item.kondisi"></span>
+                                                    </span>
+                                                </template>
+                                            </td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -913,7 +1063,7 @@
                     {{-- Alasan Mutasi --}}
                     <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alasan & Urgensi Mutasi</span>
-                        <p class="text-xs text-slate-200 leading-relaxed italic" x-text="alasan_mutasi || 'Belum diisi'"></p>
+                        <p class="text-xs text-slate-200 leading-relaxed font-semibold" x-text="alasan_mutasi || 'Belum diisi'"></p>
                     </div>
 
                 </div>

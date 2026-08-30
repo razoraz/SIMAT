@@ -62,12 +62,24 @@
                     });
                 },
 
-                get countSelesai() {
-                    return this.mutasis.filter(m => m.persetujuan_admin || m.status === 'Disetujui Admin (Selesai)').length;
+                get countAll() {
+                    return (this.mutasis || []).length;
                 },
 
-                get countMenunggu() {
-                    return this.mutasis.filter(m => !m.persetujuan_admin && m.status !== 'Ditolak').length;
+                get countSelesai() {
+                    return (this.mutasis || []).filter(m => m.persetujuan_admin || m.status === 'Disetujui Admin (Selesai)').length;
+                },
+
+                get countMenungguAdmin() {
+                    return (this.mutasis || []).filter(m => m.status === 'Disetujui 2 Pihak (Menunggu Admin)' || (m.persetujuan_penerima && !m.persetujuan_admin && m.status !== 'Ditolak')).length;
+                },
+
+                get countMenungguPenerima() {
+                    return (this.mutasis || []).filter(m => m.status === 'Menunggu Persetujuan Penerima' || (!m.persetujuan_penerima && m.status !== 'Ditolak')).length;
+                },
+
+                get countDitolak() {
+                    return (this.mutasis || []).filter(m => m.status === 'Ditolak').length;
                 },
 
                 get countUnits() {
@@ -182,36 +194,44 @@
                     });
                 },
 
-                rejectMutasi(item) {
+                showRejectModal: false,
+                rejectTargetItem: null,
+                rejectAlasan: '',
+
+                openRejectModal(item) {
                     if (!item) return;
-                    const alasan = prompt('Masukkan alasan penolakan mutasi aset "' + item.nama + '":', 'Lokasi penempatan belum siap / Kurang sesuai');
-                    if (!alasan || !alasan.trim()) return;
-                    this.askConfirmation({
-                        title: '🚫 Konfirmasi Penolakan Mutasi',
-                        message: 'Apakah Anda yakin ingin menolak pengajuan mutasi aset ini?',
-                        itemName: item.nama,
-                        type: 'danger',
-                        btnText: '🚫 Ya, Tolak Mutasi',
-                        onConfirm: () => {
-                            fetch('/mutasi-aset/' + item.id + '/reject', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({ alasan_penolakan: alasan.trim() })
-                            }).then(r => {
-                                if (r.ok) {
-                                    item.status = 'Ditolak';
-                                    item.alasan_penolakan = alasan.trim();
-                                    this.showSimatToast('🚫 Pengajuan mutasi berhasil ditolak.', 'info');
-                                } else {
-                                    this.showSimatToast('⚠️ Gagal menolak pengajuan.', 'error');
-                                }
-                            }).catch(() => window.location.reload());
+                    this.rejectTargetItem = item;
+                    this.rejectAlasan = 'Lokasi penempatan belum siap / Kurang sesuai';
+                    this.showRejectModal = true;
+                },
+
+                confirmRejectMutasi() {
+                    if (!this.rejectTargetItem) return;
+                    if (!this.rejectAlasan || !this.rejectAlasan.trim()) {
+                        this.showSimatToast('⚠️ Silakan isi alasan penolakan terlebih dahulu.', 'warning');
+                        return;
+                    }
+                    const item = this.rejectTargetItem;
+                    const alasan = this.rejectAlasan.trim();
+                    this.showRejectModal = false;
+
+                    fetch('/mutasi-aset/' + item.id + '/reject', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ alasan_penolakan: alasan })
+                    }).then(r => {
+                        if (r.ok) {
+                            item.status = 'Ditolak';
+                            item.alasan_penolakan = alasan;
+                            this.showSimatToast('🚫 Pengajuan mutasi berhasil ditolak.', 'info');
+                        } else {
+                            this.showSimatToast('⚠️ Gagal menolak pengajuan mutasi.', 'error');
                         }
-                    });
+                    }).catch(() => window.location.reload());
                 },
 
                 deleteMutasi(item) {
@@ -340,32 +360,70 @@
             <div class="flex flex-col gap-4">
                 
                 <!-- Quick Filter Status Mutasi Tabs -->
-                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">Status:</span>
+                <div class="flex items-center gap-2 flex-wrap text-xs bg-slate-950/60 p-2 rounded-2xl border border-slate-800/80">
+                    <span class="text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider px-2.5 shrink-0 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        STATUS:
+                    </span>
+
+                    {{-- Button Semua Status --}}
                     <button type="button" @click="statusFilter = 'all'"
-                        :class="statusFilter === 'all' ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30 border border-indigo-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
-                        Semua Status
+                        :class="statusFilter === 'all' 
+                            ? 'bg-rose-500 text-white font-extrabold shadow-lg shadow-rose-500/25 border-rose-400 ring-2 ring-rose-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>Semua Status</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'"
+                            x-text="countAll"></span>
                     </button>
+
+                    {{-- Button Selesai --}}
                     <button type="button" @click="statusFilter = 'selesai'"
-                        :class="statusFilter === 'selesai' ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30 border border-emerald-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
-                        ✅ Selesai
+                        :class="statusFilter === 'selesai' 
+                            ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-lg shadow-emerald-500/25 border-emerald-400 ring-2 ring-emerald-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-emerald-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>✓ Selesai</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'selesai' ? 'bg-slate-950/40 text-slate-950' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'"
+                            x-text="countSelesai"></span>
                     </button>
+
+                    {{-- Button Menunggu Admin --}}
                     <button type="button" @click="statusFilter = 'menunggu_admin'"
-                        :class="statusFilter === 'menunggu_admin' ? 'bg-cyan-600 text-white font-bold shadow-md shadow-cyan-600/30 border border-cyan-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
-                        ⏳ Menunggu Admin
+                        :class="statusFilter === 'menunggu_admin' 
+                            ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-lg shadow-cyan-500/25 border-cyan-400 ring-2 ring-cyan-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>⏳ Menunggu Admin</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'menunggu_admin' ? 'bg-slate-950/40 text-slate-950' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'"
+                            x-text="countMenungguAdmin"></span>
                     </button>
+
+                    {{-- Button Menunggu Penerima --}}
                     <button type="button" @click="statusFilter = 'menunggu_penerima'"
-                        :class="statusFilter === 'menunggu_penerima' ? 'bg-amber-600 text-white font-bold shadow-md shadow-amber-600/30 border border-amber-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
-                        ⏳ Menunggu Penerima
+                        :class="statusFilter === 'menunggu_penerima' 
+                            ? 'bg-amber-500 text-slate-950 font-extrabold shadow-lg shadow-amber-500/25 border-amber-400 ring-2 ring-amber-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-amber-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>⏳ Menunggu Penerima</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'menunggu_penerima' ? 'bg-slate-950/40 text-slate-950' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
+                            x-text="countMenungguPenerima"></span>
                     </button>
+
+                    {{-- Button Ditolak --}}
                     <button type="button" @click="statusFilter = 'ditolak'"
-                        :class="statusFilter === 'ditolak' ? 'bg-rose-600 text-white font-bold shadow-md shadow-rose-600/30 border border-rose-500' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3.5 py-1.5 rounded-xl transition-all shrink-0">
-                        ❌ Ditolak
+                        :class="statusFilter === 'ditolak' 
+                            ? 'bg-rose-500 text-white font-extrabold shadow-lg shadow-rose-500/25 border-rose-400 ring-2 ring-rose-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-rose-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>✕ Ditolak</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'ditolak' ? 'bg-white/20 text-white' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'"
+                            x-text="countDitolak"></span>
                     </button>
                 </div>
 
@@ -547,7 +605,7 @@
 
         <!-- MODAL DETAIL MUTASI -->
         <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
+            <div @click.away="if (!showRejectModal && !showPrintBastModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
                     <div class="flex items-center space-x-2">
                         <span class="text-indigo-400 font-bold">🔄</span>
@@ -628,22 +686,69 @@
                 <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <template x-if="selectedMutasi && (selectedMutasi.status === 'Disetujui Admin (Selesai)' || selectedMutasi.status === 'Disetujui 2 Pihak (Menunggu Admin)')">
-                            <button type="button" @click="showDetailModal = false; openPrintBast(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                            <button type="button" @click="openPrintBast(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
                                 <span>📄 Cetak BAMB</span>
                             </button>
                         </template>
                         <template x-if="selectedMutasi && !selectedMutasi.persetujuan_penerima && selectedMutasi.status !== 'Ditolak' && (userRole !== 'sub_admin' || (selectedMutasi.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase()))">
-                            <button type="button" @click="showDetailModal = false; approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                            <button type="button" @click="approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
                                 <span>✓ Setujui (Penerima)</span>
                             </button>
                         </template>
                         <template x-if="selectedMutasi && selectedMutasi.persetujuan_penerima && !selectedMutasi.persetujuan_admin && selectedMutasi.status !== 'Ditolak' && (userRole === 'admin' || userRole === 'master_admin')">
-                            <button type="button" @click="showDetailModal = false; approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                            <button type="button" @click="approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
                                 <span>✓ Sahkan (Admin)</span>
+                            </button>
+                        </template>
+                        <template x-if="selectedMutasi && selectedMutasi.status !== 'Ditolak' && selectedMutasi.status !== 'Disetujui Admin (Selesai)'">
+                            <button type="button" @click="openRejectModal(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                                <span>✕ Tolak Mutasi</span>
                             </button>
                         </template>
                     </div>
                     <button type="button" @click="showDetailModal = false" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">Tutup</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL INPUT ALASAN PENOLAKAN -->
+        <div x-show="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
+            <div @click.away="showRejectModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold text-sm">
+                            ✕
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-white">Penolakan Mutasi Aset</h3>
+                            <p class="text-[11px] text-slate-400 font-mono" x-text="rejectTargetItem ? rejectTargetItem.kode : ''"></p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showRejectModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <p class="text-slate-300 font-semibold leading-relaxed">
+                        Silakan masukkan alasan penolakan pengajuan mutasi untuk aset:
+                        <span class="text-rose-300 font-bold block mt-1" x-text="rejectTargetItem ? rejectTargetItem.nama : ''"></span>
+                    </p>
+
+                    <div class="space-y-1.5 pt-1">
+                        <label class="block text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Alasan Penolakan <span class="text-rose-400">*</span></label>
+                        <textarea x-model="rejectAlasan" rows="3" placeholder="Contoh: Unit penerima belum siap / spesifikasi barang tidak sesuai..."
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-all resize-none"></textarea>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
+                    <button type="button" @click="showRejectModal = false"
+                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" @click="confirmRejectMutasi()"
+                        class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-extrabold shadow-lg shadow-rose-500/25 transition-all cursor-pointer">
+                        🚫 Konfirmasi Tolak Mutasi
+                    </button>
                 </div>
             </div>
         </div>

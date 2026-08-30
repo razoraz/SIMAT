@@ -99,8 +99,18 @@ class MutasiController extends Controller
             return back()->withErrors(['astap_register_id' => 'Silakan pilih minimal 1 barang aset yang akan dimutasi.']);
         }
 
+        $kondisiBaru = $request->input('kondisi_baru', []);
         $createdCount = 0;
         foreach ($registerIds as $regId) {
+            $regObj = AstapRegister::find($regId);
+            // Update kondisi register jika diubah saat pengajuan (Ajukan Mutasi, Perbaikan, Pengembalian)
+            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'])) {
+                if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
+                    $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
+                }
+            }
+            $kondisiSaatMutasi = $regObj ? $regObj->kondisi : 'Baik';
+
             $year  = date('Y', strtotime($request->tanggal_mutasi));
             $count = AstapMutasi::whereYear('tanggal_mutasi', $year)->count();
             $nomor = 'MTS-' . $year . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
@@ -110,6 +120,7 @@ class MutasiController extends Controller
                 'nomor_bamb'               => $nomor,
                 'tanggal_mutasi'           => $request->tanggal_mutasi,
                 'jenis_mutasi'             => $request->jenis_mutasi,
+                'kondisi'                  => $kondisiSaatMutasi,
                 'ruangan_asal'             => $request->ruangan_asal,
                 'ruangan_tujuan'           => $request->ruangan_tujuan,
                 'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
@@ -137,6 +148,18 @@ class MutasiController extends Controller
     {
         $mutasi    = AstapMutasi::with('register.astap', 'register.unit')->findOrFail($id);
         $units     = Unit::orderBy('nama')->get(['id', 'nama', 'kepala']);
+
+        $relatedRegisterIds = AstapMutasi::where('nomor_bamb', $mutasi->nomor_bamb)
+            ->pluck('astap_register_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($relatedRegisterIds)) {
+            $relatedRegisterIds = [$mutasi->astap_register_id];
+        }
+
         $rawRegisters = AstapRegister::with('astap', 'unit')
             ->whereNotNull('nibar')
             ->orderBy('id')
@@ -152,7 +175,7 @@ class MutasiController extends Controller
             ];
         });
 
-        return view('pages.form_mutasi_aset', compact('mutasi', 'units', 'registers'));
+        return view('pages.form_mutasi_aset', compact('mutasi', 'units', 'registers', 'relatedRegisterIds'));
     }
 
     /**
@@ -163,9 +186,11 @@ class MutasiController extends Controller
         $mutasi = AstapMutasi::findOrFail($id);
 
         $request->validate([
+            'astap_register_ids'      => 'nullable|array',
+            'astap_register_ids.*'    => 'exists:astap_registers,id',
             'astap_register_id'       => 'nullable|exists:astap_registers,id',
             'jenis_mutasi'            => 'required|in:Ajukan Mutasi,Pemindahan,Perbaikan,Minta Mutasi,Pengembalian,Penghapusan',
-            'tanggal_mutasi'          => 'required|date',
+            'tanggal_mutasi'          => 'nullable|date',
             'ruangan_asal'            => 'required|string|max:255',
             'ruangan_tujuan'          => 'required|string|max:255|different:ruangan_asal',
             'penanggung_jawab_asal'   => 'required|string|max:255',
@@ -176,17 +201,46 @@ class MutasiController extends Controller
             'ruangan_tujuan.different' => 'Ruangan tujuan harus berbeda dengan ruangan asal.',
         ]);
 
-        $mutasi->update([
-            'astap_register_id'       => $request->astap_register_id ?: $mutasi->astap_register_id,
-            'jenis_mutasi'            => $request->jenis_mutasi,
-            'tanggal_mutasi'          => $request->tanggal_mutasi,
-            'ruangan_asal'            => $request->ruangan_asal,
-            'ruangan_tujuan'          => $request->ruangan_tujuan,
-            'penanggung_jawab_asal'   => $request->penanggung_jawab_asal,
-            'penanggung_jawab_tujuan' => $request->penanggung_jawab_tujuan,
-            'alasan_mutasi'           => $request->alasan_mutasi,
-            'catatan_penerima'        => $request->catatan_penerima,
-        ]);
+        $registerIds = $request->input('astap_register_ids', []);
+        if (empty($registerIds) && $request->astap_register_id) {
+            $registerIds = [$request->astap_register_id];
+        }
+        if (empty($registerIds)) {
+            $registerIds = [$mutasi->astap_register_id];
+        }
+
+        $kondisiBaru = $request->input('kondisi_baru', []);
+
+        // Hapus mutasi lama pada batch yang sama jika itemnya di-uncheck
+        AstapMutasi::where('nomor_bamb', $mutasi->nomor_bamb)
+            ->whereNotIn('astap_register_id', $registerIds)
+            ->delete();
+
+        foreach ($registerIds as $regId) {
+            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
+                $regObj = AstapRegister::find($regId);
+                if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
+                    $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
+                }
+            }
+
+            AstapMutasi::updateOrCreate(
+                [
+                    'nomor_bamb'        => $mutasi->nomor_bamb,
+                    'astap_register_id' => $regId,
+                ],
+                [
+                    'tanggal_mutasi'           => $request->tanggal_mutasi ?: ($mutasi->tanggal_mutasi ?: now()),
+                    'jenis_mutasi'             => $request->jenis_mutasi,
+                    'ruangan_asal'             => $request->ruangan_asal,
+                    'ruangan_tujuan'           => $request->ruangan_tujuan,
+                    'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
+                    'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
+                    'alasan_mutasi'            => $request->alasan_mutasi,
+                    'catatan_penerima'         => $request->catatan_penerima,
+                ]
+            );
+        }
 
         return redirect()->route('mutasi.index')
             ->with('success', 'Pengajuan mutasi berhasil diperbarui.');

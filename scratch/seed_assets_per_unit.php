@@ -18,56 +18,64 @@ $sampleBarangs = [
         'spesifikasi' => 'Intel Core i7, 16GB RAM, SSD 512GB',
         'harga' => 12500000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.04.001'
+        'nibar_prefix' => '1.3.2.04.001',
+        'jenis_astap_id' => 11540,
     ],
     [
         'nama' => 'Printer Multifungsi Laserjet',
         'spesifikasi' => 'Print / Scan / Copy Duplex',
         'harga' => 4800000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.04.002'
+        'nibar_prefix' => '1.3.2.04.002',
+        'jenis_astap_id' => 11602,
     ],
     [
         'nama' => 'AC Split Inverter 1.5 PK',
         'spesifikasi' => 'Daikin Inverter R32 Eco Friendly',
         'harga' => 6200000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.05.001'
+        'nibar_prefix' => '1.3.2.05.001',
+        'jenis_astap_id' => 2613,
     ],
     [
         'nama' => 'Meja Kerja Kayu Jati Premium',
         'spesifikasi' => 'Laci 3 Tingkat Kunci Sentral',
         'harga' => 2750000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.02.001'
+        'nibar_prefix' => '1.3.2.02.001',
+        'jenis_astap_id' => 2499,
     ],
     [
         'nama' => 'Kursi Kerja Ergonomis Mesh',
         'spesifikasi' => 'Headrest, Armrest Adjustable 3D',
         'harga' => 1850000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.02.002'
+        'nibar_prefix' => '1.3.2.02.002',
+        'jenis_astap_id' => 2529,
     ],
     [
         'nama' => 'Lemari Arsip Besi 4 Pintu',
         'spesifikasi' => 'Besi Plat 0.8mm Anti Karat',
         'harga' => 3400000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.02.003'
+        'nibar_prefix' => '1.3.2.02.003',
+        'jenis_astap_id' => 2344,
     ],
     [
         'nama' => 'Alat Suction Pump Medik',
         'spesifikasi' => 'Suction Portable High Vacuum',
         'harga' => 8900000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.08.001'
+        'nibar_prefix' => '1.3.2.08.001',
+        'jenis_astap_id' => 3926,
     ],
     [
         'nama' => 'Bed Pasien Crank 3 Manual',
         'spesifikasi' => 'Struktur Baja, Matras Waterproof',
         'harga' => 11200000,
         'kondisi' => 'Baik',
-        'nibar_prefix' => '1.3.2.08.002'
+        'nibar_prefix' => '1.3.2.08.002',
+        'jenis_astap_id' => 2506,
     ]
 ];
 
@@ -95,7 +103,7 @@ foreach ($units as $unit) {
             ['nama_barang' => $sample['nama']],
             [
                 'tahun_perolehan'    => 2026,
-                'jenis_astap_id'     => 1,
+                'jenis_astap_id'     => $sample['jenis_astap_id'] ?? 2344,
                 'spesifikasi'        => $sample['spesifikasi'],
                 'tahun_pengadaan'    => 2026,
             ]
