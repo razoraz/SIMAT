@@ -240,21 +240,20 @@
                 </div>
             </div>
 
-            <!-- 6. Pemeliharaan Aset -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-rose-500/40 transition-all group">
+            <!-- 6. Data ASTAP (Aset Tetap) -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-emerald-500/40 transition-all group">
                 <div class="flex items-center justify-between mb-3">
-                    <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 font-bold text-lg">🛠️</div>
+                    <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold text-lg">📦</div>
                     <span
                         class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">CRUD
                         Aktif</span>
                 </div>
-                <h4 class="text-sm font-bold text-white group-hover:text-rose-400 transition-colors">Pemeliharaan Aset</h4>
-                <p class="text-xs text-slate-400 mt-1">Jadwal servis berkala, perbaikan aset rusak, riwayat pemeliharaan, & status kelayakan alat.</p>
+                <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">Data ASTAP (Aset Tetap)</h4>
+                <p class="text-xs text-slate-400 mt-1">Buku induk inventaris ASTAP, nomor registrasi NIBAR, cetak barcode QR, & rincian perolehan.</p>
                 <div
                     class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('pemeliharaan.create') }}" class="text-rose-400 hover:text-rose-300">+ Input
-                        Servis</a>
-                    <a href="{{ route('pemeliharaan.index') }}" class="text-slate-400 hover:text-white">Kelola Data
+                    <a href="{{ route('astap.create') }}" class="text-emerald-400 hover:text-emerald-300">+ Tambah ASTAP</a>
+                    <a href="{{ route('astap.index') }}" class="text-slate-400 hover:text-white">Kelola Data
                         &rarr;</a>
                 </div>
             </div>
