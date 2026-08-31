@@ -303,7 +303,7 @@
         },
 
         get isStep3Valid() {
-            return this.selectedRegisterIds.length > 0;
+            return this.selectedRegisterIds.length > 0 && !!(this.alasan_mutasi && this.alasan_mutasi.trim());
         },
 
         nextStep() {
@@ -321,9 +321,15 @@
                     return;
                 }
             }
-            if (this.step === 3 && !this.isStep3Valid) {
-                this.showToast('Silakan pilih minimal 1 barang aset yang akan dimutasi terlebih dahulu.', 'warning');
-                return;
+            if (this.step === 3) {
+                if (this.selectedRegisterIds.length === 0) {
+                    this.showToast('Silakan pilih minimal 1 barang aset yang akan dimutasi terlebih dahulu.', 'warning');
+                    return;
+                }
+                if (!this.alasan_mutasi || !this.alasan_mutasi.trim()) {
+                    this.showToast('⚠️ Alasan / Urgensi pengajuan mutasi wajib diisi sebelum lanjut ke Langkah 4.', 'warning');
+                    return;
+                }
             }
             if (this.step < 4) {
                 this.step++;
@@ -956,12 +962,14 @@
                 </div>
 
                 {{-- Alasan Mutasi --}}
-                <div class="space-y-3 pt-2">
-                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5">
-                        Alasan / Urgensi Pengajuan Mutasi (<span class="text-white font-bold" x-text="jenis_mutasi"></span>) <span class="text-rose-400">*</span>
+                <div class="space-y-2 pt-2">
+                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                        <span>Alasan / Urgensi Pengajuan Mutasi (<span class="text-white font-bold" x-text="jenis_mutasi"></span>) <span class="text-rose-400 font-bold">*</span></span>
+                        <span x-show="!alasan_mutasi || !alasan_mutasi.trim()" class="text-[10px] text-amber-400 font-bold">⚠️ Wajib diisi</span>
                     </label>
                     <textarea name="alasan_mutasi" x-model="alasan_mutasi" rows="3" :placeholder="alasanPlaceholder" required
-                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white resize-none focus:outline-none focus:border-rose-500 transition-all"></textarea>
+                        :class="(!alasan_mutasi || !alasan_mutasi.trim()) ? 'border-amber-500/50 focus:border-rose-500' : 'border-slate-800 focus:border-rose-500'"
+                        class="w-full bg-slate-950 border rounded-xl px-4 py-3 text-xs text-white resize-none focus:outline-none transition-all placeholder:text-slate-600"></textarea>
                 </div>
 
                 {{-- Action Navigation Buttons --}}
