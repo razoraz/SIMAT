@@ -376,6 +376,7 @@ class BeritaAcaraController extends Controller
         $doc->update([
             'nomor_surat'    => $request->input('nomor_surat', $doc->nomor_surat),
             'tanggal_bast'   => $request->input('tanggal_bast', $doc->tanggal_bast),
+            'lokasi'         => $request->input('lokasi', $doc->lokasi),
             'pihak1_nama'    => $request->input('pihak1_nama', $doc->pihak1_nama),
             'pihak1_nip'     => $request->input('pihak1_nip', $doc->pihak1_nip),
             'pihak1_jabatan' => $request->input('pihak1_jabatan', $doc->pihak1_jabatan),

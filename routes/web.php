@@ -41,6 +41,66 @@ Route::get('/scan/{nibar}', function ($nibar) {
     ]);
 })->name('scan.nibar');
 
+// Halaman Publik Validasi Sertifikat TTE BSrE (Tanpa Perlu Login)
+Route::get('/validasi-tte/{hash}', function ($hash) {
+    $judul = 'Berita Acara Serah Terima Barang';
+    $nomor = '000.2.3.2/224/430.10.7/2026';
+    $nama = 'BUDI HARTONO, S.Sos';
+    $nip = '19760229 200801 1 010';
+    $jabatan = 'Pengurus Barang Aset Pada RSUD dr. H. Koesnandi Kabupaten Bondowoso';
+    $tgl = date('d/m/Y H:i') . ' WIB';
+
+    // 1. Cek tabel BAST Triwulan
+    $tw = \App\Models\AstapBastTriwulan::where('qr_hash', $hash)->orWhere('nomor_surat', $hash)->first();
+    if ($tw) {
+        $judul = 'Berita Acara Serah Terima Barang (' . $tw->triwulan . ')';
+        $nomor = $tw->nomor_surat;
+        $nama = $tw->pihak2_nama ?: 'BUDI HARTONO, S.Sos';
+        $nip = $tw->pihak2_nip ?: '19760229 200801 1 010';
+        $jabatan = $tw->pihak2_jabatan ?: 'Pengurus Barang Aset Pada RSUD dr. H. Koesnandi';
+        $tgl = $tw->tgl_signed ?: ($tw->tanggal_bast ? date('d/m/Y', strtotime($tw->tanggal_bast)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
+    }
+
+    // 2. Cek tabel Distribusi
+    $dst = \App\Models\Distribusi::where('kode', $hash)->orWhere('bast_nomor', $hash)->first();
+    if ($dst) {
+        $judul = 'Berita Acara Serah Terima Distribusi Aset';
+        $nomor = $dst->bast_nomor ?: ($dst->kode . ' / BAST / 430.10.7 / 2026');
+        $nama = 'BUDI HARTONO, S.Sos';
+        $nip = '19760229 200801 1 010';
+        $jabatan = 'Pengurus Barang Aset (Instalasi Perbekalan) RSUD dr. H. Koesnandi';
+        $tgl = $dst->tgl_signed ?: ($dst->tanggal_distribusi ? date('d/m/Y', strtotime($dst->tanggal_distribusi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
+    }
+
+    // 3. Cek tabel Mutasi
+    $mts = \App\Models\AstapMutasi::where('nomor_bamb', $hash)->first();
+    if ($mts) {
+        $judul = 'Berita Acara Mutasi Barang (BAMB)';
+        $nomor = $mts->nomor_bamb;
+        $nama = $mts->penanggung_jawab_asal ?: 'Kepala Ruangan Pengirim';
+        $nip = '-';
+        $jabatan = 'Penanggung Jawab Ruangan ' . ($mts->ruangan_asal ?? '');
+        $tgl = $mts->tgl_persetujuan_admin ?: ($mts->tanggal_mutasi ? date('d/m/Y', strtotime($mts->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
+    }
+
+    // Fallback parser jika hash mengandung kata kunci PPK
+    if (str_contains($hash, 'PPK')) {
+        $nama = 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR';
+        $nip = '19771002 200604 1 006';
+        $jabatan = 'Pejabat Pembuat Komitmen (PPK) RSUD dr. H. Koesnandi';
+    }
+
+    return view('pages.public_tte_verify', [
+        'qrHash'       => $hash,
+        'judulDokumen' => $judul,
+        'nomorSurat'   => $nomor,
+        'signerNama'   => $nama,
+        'signerNip'    => $nip,
+        'signerJabatan'=> $jabatan,
+        'tglSigned'    => $tgl,
+    ]);
+})->where('hash', '.*')->name('tte.validate');
+
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Redirect / or /dashboard to specific role dashboard

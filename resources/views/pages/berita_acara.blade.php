@@ -188,10 +188,13 @@
                         body: JSON.stringify({
                             tahun: this.selectedTahun,
                             nomor_surat: doc.nomor_surat,
+                            lokasi: doc.lokasi,
                             pihak1_nama: doc.pihak1_nama,
                             pihak1_nip: doc.pihak1_nip,
+                            pihak1_jabatan: doc.pihak1_jabatan,
                             pihak2_nama: doc.pihak2_nama,
                             pihak2_nip: doc.pihak2_nip,
+                            pihak2_jabatan: doc.pihak2_jabatan,
                             direktur_nama: doc.direktur_nama,
                             direktur_nip: doc.direktur_nip,
                             catatan: doc.catatan
@@ -439,7 +442,7 @@
                         <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold mb-1">
                             <span x-text="'DOKUMEN BAST RESMI: ' + currentTriwulanDoc.nomor_surat"></span>
                         </div>
-                        <h2 class="text-lg font-extrabold text-white" x-text="'Berita Acara Penambahan Aset Tetap - ' + currentTriwulanDoc.triwulan_nama"></h2>
+                        <h2 class="text-lg font-extrabold text-white" x-text="'Berita Acara Serah Terima Barang - ' + currentTriwulanDoc.triwulan_nama"></h2>
                         <p class="text-xs text-slate-400 mt-0.5" x-text="'Hari & Tanggal Pelaksanaan: ' + currentTriwulanDoc.hari_tanggal"></p>
                     </div>
 
@@ -972,7 +975,7 @@
                     <div class="flex items-center space-x-2">
                         <span class="p-2 rounded-xl bg-purple-500/20 text-purple-300 text-sm">🖨️</span>
                         <div>
-                            <h3 class="text-base font-extrabold text-white">Cetak Berita Acara Penambahan ASTAP (Triwulan)</h3>
+                            <h3 class="text-base font-extrabold text-white">Cetak Berita Acara Serah Terima Barang (Triwulan)</h3>
                             <p class="text-[11px] text-slate-400">Dokumen Resmi Pengesahan Hasil Belanja Modal RSUD Dr. H. Koesnandi</p>
                         </div>
                     </div>
@@ -998,38 +1001,81 @@
                 </div>
 
                 <!-- Formulir Edit Live BAST Triwulan -->
-                <div x-show="showEditTriwulanForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-purple-500/40 text-xs space-y-3 shadow-inner">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                        <div class="font-bold text-purple-300 text-[11px] uppercase tracking-wider">
-                            ✏️ Live Edit Surat BAST Triwulan (Otomatis Berubah Pada Lembar Cetak):
+                <div x-show="showEditTriwulanForm" class="no-print bg-slate-950 p-5 rounded-2xl border border-purple-500/40 text-xs space-y-4 shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <div class="flex items-center space-x-2">
+                            <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-300">✏️</span>
+                            <div class="font-bold text-purple-300 text-xs uppercase tracking-wider">
+                                Live Edit Surat BAST Serah Terima Barang (Otomatis Berubah Pada Lembar Cetak):
+                            </div>
                         </div>
                         <button type="button" @click="saveTriwulanEdit(selectedTriwulanKey)"
-                            class="px-3.5 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-1">
+                            class="px-4 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-1.5">
                             <span>💾 Simpan ke Database</span>
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Nomor Surat BAST</label>
-                            <input type="text" x-model="currentTriwulanDoc.nomor_surat" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-300 font-mono font-bold text-xs">
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Hari & Tanggal Surat</label>
-                            <input type="text" x-model="currentTriwulanDoc.hari_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Lokasi Pelaksanaan</label>
-                            <input type="text" x-model="currentTriwulanDoc.lokasi" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
+
+                    <!-- Section 1: Informasi Dokumen & Lokasi -->
+                    <div class="space-y-1.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">📄 Informasi Dokumen & Lokasi Pelaksanaan</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Nomor Surat BAST</label>
+                                <input type="text" x-model="currentTriwulanDoc.nomor_surat" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-purple-300 font-mono font-bold text-xs focus:border-purple-400 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Hari & Tanggal Surat</label>
+                                <input type="text" x-model="currentTriwulanDoc.hari_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:border-purple-400 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Lokasi Pelaksanaan</label>
+                                <input type="text" x-model="currentTriwulanDoc.lokasi" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs focus:border-purple-400 focus:outline-none">
+                            </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-                        <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Nama Pihak I (Menyerahkan / PPK)</label>
-                            <input type="text" x-model="currentTriwulanDoc.pihak1_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
+
+                    <!-- Section 2: Pihak I & Pihak II -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
+                        <!-- Pihak I: Pejabat Pembuat Komitmen (PPK) -->
+                        <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-purple-500/20 space-y-2.5">
+                            <span class="text-[10px] font-bold text-purple-300 uppercase tracking-wider block flex items-center space-x-1.5">
+                                <span>👤 PIHAK I (YANG MENYERAHKAN / PPK)</span>
+                            </span>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-0.5">Nama Lengkap & Gelar</label>
+                                <input type="text" x-model="currentTriwulanDoc.pihak1_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold text-xs focus:border-purple-400 focus:outline-none">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-0.5">NIP</label>
+                                    <input type="text" x-model="currentTriwulanDoc.pihak1_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono text-xs focus:border-purple-400 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-0.5">Jabatan</label>
+                                    <input type="text" x-model="currentTriwulanDoc.pihak1_jabatan" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:border-purple-400 focus:outline-none">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-slate-400 text-[10px] mb-1">Nama Pihak II (Menerima / Pengurus Barang)</label>
-                            <input type="text" x-model="currentTriwulanDoc.pihak2_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-emerald-300 font-bold text-xs">
+
+                        <!-- Pihak II: Pengurus Barang Aset -->
+                        <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-emerald-500/20 space-y-2.5">
+                            <span class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider block flex items-center space-x-1.5">
+                                <span>👤 PIHAK II (YANG MENERIMA / PENGURUS BARANG)</span>
+                            </span>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-0.5">Nama Lengkap & Gelar</label>
+                                <input type="text" x-model="currentTriwulanDoc.pihak2_nama" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-emerald-300 font-bold text-xs focus:border-emerald-400 focus:outline-none">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-0.5">NIP</label>
+                                    <input type="text" x-model="currentTriwulanDoc.pihak2_nip" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono text-xs focus:border-emerald-400 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-0.5">Jabatan</label>
+                                    <input type="text" x-model="currentTriwulanDoc.pihak2_jabatan" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:border-emerald-400 focus:outline-none">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1056,7 +1102,7 @@
                     <div class="border-b border-black mb-4"></div>
 
                     <div class="text-center font-sans mb-3">
-                        <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA PENAMBAHAN ASET TETAP (ASTAP)</h3>
+                        <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA SERAH TERIMA BARANG</h3>
                         <p class="text-[11px] font-semibold">Nomor : <span x-text="currentTriwulanDoc.nomor_surat"></span></p>
                     </div>
 
@@ -1109,7 +1155,7 @@
                             <p class="font-bold">Pejabat Pembuat Komitmen (PPK)</p>
                             <div class="h-16 flex items-center justify-center py-1">
                                 <div class="p-1 border border-purple-600 bg-purple-50 rounded flex items-center space-x-1.5">
-                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-PPK-KOESNANDI" class="w-10 h-10">
+                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.nomor_surat ? encodeURIComponent(currentTriwulanDoc.nomor_surat) : 'PPK-KOESNANDI'))" class="w-10 h-10">
                                     <div class="text-[7.5px] text-left leading-tight">
                                         <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
                                         <div>PPK RSUD dr. H. Koesnandi</div>
@@ -1126,7 +1172,7 @@
                             <div class="h-16 flex items-center justify-center py-1">
                                 <template x-if="currentTriwulanDoc.pihak2_signed">
                                     <div class="p-1 border border-emerald-600 bg-emerald-50 rounded flex items-center space-x-1.5">
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-PENGURUS-KOESNANDI" class="w-10 h-10">
+                                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.pihak2_qr_hash || encodeURIComponent(currentTriwulanDoc.nomor_surat) || 'PENGURUS-KOESNANDI'))" class="w-10 h-10">
                                         <div class="text-[7.5px] text-left leading-tight">
                                             <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
                                             <div>Pengurus Barang Aset</div>
@@ -1294,7 +1340,7 @@
                                 <div class="h-20 flex items-center justify-center py-1">
                                     <template x-if="selectedDistribusi.signed">
                                         <div class="p-1.5 border border-teal-600 bg-teal-50 rounded-lg flex items-center space-x-2 text-left shadow-sm">
-                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + encodeURIComponent(selectedDistribusi.qr_hash || 'BSRE-KOESNANDI-DST')" class="w-12 h-12 shrink-0">
+                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.bast_nomor || selectedDistribusi.kode || 'DST-KOESNANDI'))" class="w-12 h-12 shrink-0">
                                             <div class="text-[7.5px] leading-tight text-slate-800">
                                                 <div class="font-bold text-teal-800">DITANDATANGANI SECARA ELEKTRONIK</div>
                                                 <div class="font-semibold text-slate-700">Sertifikat BSrE - BSSN</div>
@@ -1369,46 +1415,33 @@
                 </div>
 
                 <!-- Formulir Edit Live BAST Mutasi -->
-                <template x-if="selectedMutasi">
-                    <div x-show="showEditMutasiForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-rose-500/40 text-xs space-y-3 shadow-inner">
-                        <div class="font-bold text-rose-300 text-[11px] uppercase tracking-wider border-b border-slate-800 pb-2">
+                <div x-show="showEditMutasiForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-purple-500/40 text-xs space-y-3 shadow-inner">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div class="font-bold text-purple-300 text-[11px] uppercase tracking-wider">
                             ✏️ Live Edit Surat BAST Mutasi (Otomatis Berubah Pada Lembar Cetak):
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                        <button type="button" @click="saveMutasiEdit()"
+                            class="px-3.5 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-1">
+                            <span>💾 Simpan ke Database</span>
+                        </button>
+                    </div>
+                    <template x-if="selectedMutasi">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Nomor Surat BAST</label>
-                                <input type="text" x-model="selectedMutasi.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-rose-300 font-mono font-bold text-xs">
+                                <label class="block text-slate-400 text-[10px] mb-1">Nomor BAST Mutasi</label>
+                                <input type="text" x-model="selectedMutasi.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-300 font-mono font-bold text-xs">
                             </div>
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Hari</label>
+                                <label class="block text-slate-400 text-[10px] mb-1">Hari Surat</label>
                                 <input type="text" x-model="selectedMutasi.hari" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
                             </div>
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Tanggal Angka</label>
-                                <input type="text" x-model="selectedMutasi.tanggal_angka" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Bulan & Tahun</label>
-                                <div class="flex space-x-1">
-                                    <input type="text" x-model="selectedMutasi.bulan" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
-                                    <input type="text" x-model="selectedMutasi.tahun" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
-                                </div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Tanggal Surat</label>
+                                <input type="text" x-model="selectedMutasi.tgl_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Ruangan Asal & PJ Menyerahkan</label>
-                                <input type="text" x-model="selectedMutasi.asal" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs mb-1">
-                                <input type="text" x-model="selectedMutasi.pj_asal_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-300 font-bold text-xs">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Ruangan Tujuan & PJ Menerima</label>
-                                <input type="text" x-model="selectedMutasi.tujuan" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-rose-300 font-bold text-xs mb-1">
-                                <input type="text" x-model="selectedMutasi.pj_tujuan_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-emerald-300 font-bold text-xs">
-                            </div>
-                        </div>
-                    </div>
-                </template>
+                    </template>
+                </div>
 
                 <!-- LEMBAR CETAK BAST MUTASI -->
                 <template x-if="selectedMutasi">
@@ -1432,44 +1465,43 @@
                         <div class="border-b border-black mb-4"></div>
 
                         <div class="text-center font-sans mb-3">
-                            <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA SERAH TERIMA MUTASI ASET</h3>
+                            <h3 class="font-black text-xs sm:text-sm uppercase underline tracking-wider">BERITA ACARA MUTASI BARANG (BAMB)</h3>
                             <p class="text-[11px] font-semibold">Nomor : <span x-text="selectedMutasi.nomor_bast"></span></p>
                         </div>
 
                         <p class="text-justify mb-2 leading-relaxed font-sans">
-                            Pada hari ini <strong x-text="selectedMutasi.hari"></strong> tanggal <strong x-text="selectedMutasi.tanggal_angka"></strong> bulan <strong x-text="selectedMutasi.bulan"></strong> tahun <strong x-text="selectedMutasi.tahun"></strong>, telah dilaksanakan pemindahan/mutasi barang dari ruangan asal ke ruangan tujuan:
+                            Pada hari ini <strong x-text="selectedMutasi.hari"></strong> tanggal <strong x-text="selectedMutasi.tgl_bast"></strong>, telah dilaksanakan pemindahan/mutasi aset inventaris dari ruangan asal ke ruangan tujuan sebagai berikut :
                         </p>
 
                         <div class="space-y-0.5 ml-4 font-sans text-[10.5px]">
-                            <div class="flex"><div class="w-32 font-medium">Ruangan Asal</div><div class="w-4">:</div><div class="flex-1 font-bold" x-text="selectedMutasi.asal"></div></div>
-                            <div class="flex"><div class="w-32 font-medium">Ruangan Tujuan</div><div class="w-4">:</div><div class="flex-1 font-bold text-rose-900" x-text="selectedMutasi.tujuan"></div></div>
+                            <div class="flex"><div class="w-32 font-medium">Ruangan Asal</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.asal"></div></div>
+                            <div class="flex"><div class="w-32 font-medium">Ruangan Tujuan</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase text-purple-900" x-text="selectedMutasi.tujuan"></div></div>
+                            <div class="flex"><div class="w-32 font-medium">Jenis / Alasan Mutasi</div><div class="w-4">:</div><div class="flex-1 italic" x-text="selectedMutasi.keterangan || 'Pemindahan Aset'"></div></div>
                         </div>
 
-                        <!-- TABEL RESMI MUTASI -->
+                        <!-- TABEL RESMI BARANG MUTASI -->
                         <div class="my-3">
                             <table class="w-full text-center border-collapse border border-black text-[10px] font-sans">
                                 <thead>
                                     <tr class="bg-gray-200 font-bold border-b border-black">
                                         <th class="border border-black px-2 py-1.5 w-8">No</th>
-                                        <th class="border border-black px-3 py-1.5 text-left">Nama Barang Dimutasi</th>
-                                        <th class="border border-black px-3 py-1.5 font-mono">NIBAR &amp; Kode 108</th>
+                                        <th class="border border-black px-3 py-1.5 text-left">Nama Barang / Aset</th>
+                                        <th class="border border-black px-3 py-1.5 text-left">Kode Barang / NIBAR</th>
                                         <th class="border border-black px-2 py-1.5 w-12">Vol</th>
                                         <th class="border border-black px-2 py-1.5 w-14">Satuan</th>
-                                        <th class="border border-black px-3 py-1.5 text-left">Alasan &amp; Kondisi</th>
+                                        <th class="border border-black px-3 py-1.5 text-left">Keterangan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-if="selectedMutasi.items && selectedMutasi.items.length > 0">
-                                        <template x-for="(sub, idx) in selectedMutasi.items" :key="idx">
-                                            <tr class="border-b border-black">
-                                                <td class="border border-black px-2 py-1.5" x-text="idx + 1"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="sub.nama_barang"></td>
-                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px]" x-text="(sub.nibar || '-') + ' (' + sub.kode_barang + ')'"></td>
-                                                <td class="border border-black px-2 py-1.5 font-bold">1</td>
-                                                <td class="border border-black px-2 py-1.5" x-text="sub.satuan"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" x-text="selectedMutasi.keterangan + ' (Kondisi: ' + sub.kondisi + ')'"></td>
-                                            </tr>
-                                        </template>
+                                    <template x-for="(sub, idx) in (selectedMutasi.items || [])" :key="idx">
+                                        <tr class="border-b border-black">
+                                            <td class="border border-black px-2 py-1.5" x-text="idx + 1"></td>
+                                            <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="sub.nama_barang"></td>
+                                            <td class="border border-black px-3 py-1.5 font-mono text-[9px]" x-text="sub.nibar"></td>
+                                            <td class="border border-black px-2 py-1.5 font-bold" x-text="sub.qty"></td>
+                                            <td class="border border-black px-2 py-1.5" x-text="sub.satuan"></td>
+                                            <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" x-text="sub.keterangan"></td>
+                                        </tr>
                                     </template>
                                     <template x-if="!selectedMutasi.items || selectedMutasi.items.length === 0">
                                         <tr class="border-b border-black">
@@ -1491,7 +1523,7 @@
                                 <p>Yang Menyerahkan (Ruangan Asal)</p>
                                 <div class="h-16 flex items-center justify-center py-1">
                                     <div class="p-1 border border-purple-600 bg-purple-50 rounded flex items-center space-x-1.5">
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-MUTASI-ASAL" class="w-10 h-10">
+                                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-ASAL'))" class="w-10 h-10">
                                         <div class="text-[7.5px] text-left leading-tight">
                                             <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
                                             <div>Penanggung Jawab Ruangan Asal</div>
@@ -1506,7 +1538,7 @@
                                 <div class="h-16 flex items-center justify-center py-1">
                                     <template x-if="selectedMutasi.signed">
                                         <div class="p-1 border border-rose-600 bg-rose-50 rounded flex items-center space-x-1.5">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-MUTASI-TUJUAN" class="w-10 h-10">
+                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-TUJUAN'))" class="w-10 h-10">
                                             <div class="text-[7.5px] text-left leading-tight">
                                                 <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
                                                 <div>Penanggung Jawab Ruangan Tujuan</div>
