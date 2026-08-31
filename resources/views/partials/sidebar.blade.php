@@ -116,7 +116,7 @@
                 </a>
 
                 <!-- Pemeliharaan Aset -->
-                <a href="{{ route('pemeliharaan.index') }}" @click="if (isMobile) sidebarOpen = false"
+                <!-- <a href="{{ route('pemeliharaan.index') }}" @click="if (isMobile) sidebarOpen = false"
                     class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('pemeliharaan.index') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -125,7 +125,7 @@
                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>Pemeliharaan Aset</span>
-                </a>
+                </a> -->
             </div>
         </div>
 

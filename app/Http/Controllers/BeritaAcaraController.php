@@ -199,6 +199,10 @@ class BeritaAcaraController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
+        $unitPerbekalan = Unit::where('nama', 'LIKE', '%perbekalan%')
+            ->orWhere('nama', 'LIKE', '%rumah tangga%')
+            ->first();
+
         $distribusiList = [];
         foreach ($distribusis as $dst) {
             $tgl = $dst->tanggal_distribusi ? Carbon::parse($dst->tanggal_distribusi) : Carbon::now();
@@ -242,7 +246,7 @@ class BeritaAcaraController extends Controller
                 'bulan'             => $bulanIndo[(int)$tgl->format('m')] ?? '',
                 'tahun'             => $tgl->format('Y'),
                 'tahun_anggaran'    => $tgl->format('Y'),
-                'sk_bupati_nomor'   => '188.45/969/430.4.2/2024',
+                'sk_bupati_nomor'   => '188.45/430.10.7/2026',
                 'sk_bupati_tanggal' => '02 Januari ' . $tgl->format('Y'),
                 'unit_nama'         => $unitNama,
                 'unit_tipe'         => $dst->unit?->tipe ?: 'Unit Pelayanan / Instalasi',
@@ -251,10 +255,10 @@ class BeritaAcaraController extends Controller
                 'pj_jabatan'        => 'Kepala ' . $unitNama,
                 'pj_ruangan'        => $unitNama,
                 'pj_jabatan_ttd'    => 'Kepala Ruangan ' . $unitNama,
-                'pengurus_nama'     => 'BUDI HARTONO,S.Sos',
-                'pengurus_nip'      => '19760229 200801 1 010',
+                'pengurus_nama'     => $unitPerbekalan?->kepala ?: 'BUDI HARTONO, S. Sos',
+                'pengurus_nip'      => $unitPerbekalan?->nip ?: '197602292008011010',
                 'pengurus_jabatan'  => 'Pengurus Barang Aset',
-                'pengurus_ruangan'  => 'Gudang Perbekalan Aset',
+                'pengurus_ruangan'  => $unitPerbekalan?->nama ?: 'Gudang Perbekalan',
                 'status'            => $dst->signed ? 'Telah Ditandatangani BSrE' : ($dst->status ?: 'Draft'),
                 'keterangan_lokasi' => $dst->keterangan ?: 'Penempatan Unit ' . $unitNama,
                 'signed'            => (bool) $dst->signed,

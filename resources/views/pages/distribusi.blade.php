@@ -215,7 +215,14 @@
                 },
 
                 openPrintBast(item) {
-                    this.selectedDistribusi = { ...item };
+                    const unitPerbekalan = (this.unitList || []).find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
+                    this.selectedDistribusi = { 
+                        ...item,
+                        pengurus_nama: item.pengurus_nama || unitPerbekalan?.kepala || 'BUDI HARTONO, S. Sos',
+                        pengurus_nip: item.pengurus_nip || unitPerbekalan?.nip || '197602292008011010',
+                        pengurus_jabatan: item.pengurus_jabatan || 'Pengurus Barang Aset',
+                        pengurus_ruangan: item.pengurus_ruangan || unitPerbekalan?.nama || 'Gudang Perbekalan',
+                    };
                     this.showPrintBastModal = true;
                 },
 

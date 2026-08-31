@@ -47,9 +47,13 @@ class DistribusiController extends Controller
             $distribusiQuery->where('unit_id', $user->unit_id);
         }
 
+        $unitPerbekalan = Unit::where('nama', 'LIKE', '%perbekalan%')
+            ->orWhere('nama', 'LIKE', '%rumah tangga%')
+            ->first();
+
         $distribusis = $distribusiQuery->orderBy('id', 'desc')
             ->get()
-            ->map(function($d) {
+            ->map(function($d) use ($unitPerbekalan) {
                 $itemsMapped = $d->items->map(function($it) {
                     $spec = is_array($it->astap?->spesifikasi_json)
                         ? $it->astap->spesifikasi_json
@@ -114,6 +118,7 @@ class DistribusiController extends Controller
                     'tahun'              => $tahunStr,
                     'tahun_anggaran'     => $tahunStr,
                     'sk_bupati_nomor'    => '188.45/430.10.7/2026',
+                    'sk_bupati_tanggal'  => '02 Januari ' . $tahunStr,
                     'nama'               => $firstItemName . $moreCount,
                     'unit_id'            => $d->unit_id,
                     'tujuan'             => $d->unit?->nama ?? '-',
@@ -122,6 +127,10 @@ class DistribusiController extends Controller
                     'pj_nip'             => $d->unit?->nip ?? '-',
                     'pj_ruangan'         => $d->unit?->nama ?? '-',
                     'pj_jabatan'         => 'Kepala / Penanggung Jawab ' . ($d->unit?->nama ?? ''),
+                    'pengurus_nama'      => $unitPerbekalan?->kepala ?: 'BUDI HARTONO, S. Sos',
+                    'pengurus_nip'       => $unitPerbekalan?->nip ?: '197602292008011010',
+                    'pengurus_jabatan'   => 'Pengurus Barang Aset',
+                    'pengurus_ruangan'   => $unitPerbekalan?->nama ?: 'Bagian Rumah Tangga & Inst Perbekalan',
                     'status'             => $d->status,
                     'signed'             => (bool)$d->signed,
                     'tgl_signed'         => $d->tgl_signed ?: ($d->signed ? ($d->updated_at ? $d->updated_at->format('d/m/Y H:i') . ' WIB' : '16/06/2026 10:15 WIB') : '-'),
