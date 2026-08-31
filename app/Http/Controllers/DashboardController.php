@@ -135,6 +135,26 @@ class DashboardController extends Controller
                 ];
             });
 
+        // 7. Data Grafik Distribusi per Unit/Ruangan Terbanyak
+        $topUnitsDist = AstapRegister::whereNotNull('unit_id')
+            ->join('units', 'astap_registers.unit_id', '=', 'units.id')
+            ->selectRaw('units.nama as unit_nama, count(*) as total')
+            ->groupBy('units.id', 'units.nama')
+            ->orderBy('total', 'desc')
+            ->limit(6)
+            ->get();
+
+        $chartTopUnitLabels = [];
+        $chartTopUnitData = [];
+        foreach ($topUnitsDist as $u) {
+            $chartTopUnitLabels[] = $u->unit_nama;
+            $chartTopUnitData[]   = (int) $u->total;
+        }
+
+        $belumTerdistribusi = max(0, $totalAsetRegisterCount - $totalTerdistribusiUnit);
+        $persenTerdistribusi = $totalAsetRegisterCount > 0 ? round(($totalTerdistribusiUnit / $totalAsetRegisterCount) * 100, 1) : 0;
+        $persenBaik = $totalAsetRegisterCount > 0 ? round(($kondisiBaik / $totalAsetRegisterCount) * 100, 1) : 0;
+
         return [
             'totalAsetVolumeCount'     => $totalAsetVolumeCount,
             'totalAsetRegisterCount'   => $totalAsetRegisterCount,
@@ -146,6 +166,9 @@ class DashboardController extends Controller
             'totalUnitRsudCount'       => $totalUnitRsudCount,
             'totalTerdistribusiUnit'   => $totalTerdistribusiUnit,
             'totalTransaksiDistribusi' => $totalTransaksiDistribusi,
+            'belumTerdistribusi'       => $belumTerdistribusi,
+            'persenTerdistribusi'      => $persenTerdistribusi,
+            'persenBaik'               => $persenBaik,
             'kondisiBaik'              => $kondisiBaik,
             'kondisiKurangBaik'        => $kondisiKurangBaik,
             'kondisiRusakRingan'       => $kondisiRusakRingan,
@@ -157,6 +180,12 @@ class DashboardController extends Controller
             'chartHargaDataJuta'       => $chartHargaDataJuta,
             'chartKumulatifVolume'     => $chartKumulatifVolume,
             'chartKumulatifHargaJuta'  => $chartKumulatifHargaJuta,
+            'chartKondisiLabels'       => ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'],
+            'chartKondisiData'         => [$kondisiBaik, $kondisiKurangBaik, $kondisiRusakRingan, $kondisiRusakBerat],
+            'chartDistribusiStatusLabels' => ['Terdistribusi ke Ruangan', 'Belum Didistribusi (Gudang)'],
+            'chartDistribusiStatusData'   => [$totalTerdistribusiUnit, $belumTerdistribusi],
+            'chartTopUnitLabels'       => $chartTopUnitLabels,
+            'chartTopUnitData'         => $chartTopUnitData,
         ];
     }
 }

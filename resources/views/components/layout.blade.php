@@ -10,9 +10,10 @@
     <link rel="icon" type="image/png" href="{{ asset('img/Logo-rsud/logo-rsud.png') }}">
     <link rel="shortcut icon" href="{{ asset('img/Logo-rsud/logo-rsud.png') }}">
 
-    <!-- Tailwind CSS (Vite) & Alpine.js -->
+    <!-- Tailwind CSS (Vite) & Alpine.js & Chart.js -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
