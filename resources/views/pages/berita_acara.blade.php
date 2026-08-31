@@ -1285,39 +1285,45 @@
                             </table>
                         </div>
 
-                        <!-- TTD DUAL BSR-E -->
+                        <!-- TTD DUAL: PIHAK I (TTD DIGITAL BSR-E PENGURUS BARANG) & PIHAK II (TTD BASAH RUANGAN PENERIMA) -->
                         <div class="grid grid-cols-2 gap-8 text-center font-sans text-[10px] mt-6">
+                            <!-- Pihak I: Pengurus Barang (TTD Digital BSrE) -->
                             <div>
-                                <p>Yang Menyerahkan (Pengurus Barang)</p>
-                                <div class="h-16 flex items-center justify-center py-1">
-                                    <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5">
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-PENGURUS-KOESNANDI" class="w-10 h-10">
-                                        <div class="text-[7.5px] text-left leading-tight">
-                                            <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
-                                            <div>Pengurus Barang Aset RSUD</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p class="font-bold underline uppercase" x-text="selectedDistribusi.pengurus_nama"></p>
-                            </div>
-
-                            <div>
-                                <p>Yang Menerima (Sub-Admin Ruangan)</p>
-                                <div class="h-16 flex items-center justify-center py-1">
+                                <p>Yang Menyerahkan (Pihak I)</p>
+                                <p class="font-bold">Pengurus Barang Aset RSUD</p>
+                                <div class="h-20 flex items-center justify-center py-1">
                                     <template x-if="selectedDistribusi.signed">
-                                        <div class="p-1 border border-emerald-600 bg-emerald-50 rounded flex items-center space-x-1.5">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-PENERIMA-KOESNANDI" class="w-10 h-10">
-                                            <div class="text-[7.5px] text-left leading-tight">
-                                                <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
-                                                <div>Kepala Ruangan Penerima</div>
+                                        <div class="p-1.5 border border-teal-600 bg-teal-50 rounded-lg flex items-center space-x-2 text-left shadow-sm">
+                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + encodeURIComponent(selectedDistribusi.qr_hash || 'BSRE-KOESNANDI-DST')" class="w-12 h-12 shrink-0">
+                                            <div class="text-[7.5px] leading-tight text-slate-800">
+                                                <div class="font-bold text-teal-800">DITANDATANGANI SECARA ELEKTRONIK</div>
+                                                <div class="font-semibold text-slate-700">Sertifikat BSrE - BSSN</div>
+                                                <div class="text-[6.5px] text-slate-500 font-mono" x-text="selectedDistribusi.tgl_signed || 'WIB'"></div>
                                             </div>
                                         </div>
                                     </template>
                                     <template x-if="!selectedDistribusi.signed">
-                                        <span class="text-amber-600 font-bold italic text-[10px]">( Belum Ditandatangani BSrE )</span>
+                                        <div class="p-1.5 border border-dashed border-amber-500 bg-amber-50 rounded-lg text-center text-amber-800">
+                                            <div class="font-bold text-[8px]">DRAF SERAH TERIMA</div>
+                                            <div class="text-[7px] italic">(Menunggu Pengesahan TTD Digital BSrE)</div>
+                                        </div>
                                     </template>
                                 </div>
-                                <p class="font-bold underline uppercase" x-text="selectedDistribusi.pj_nama"></p>
+                                <p class="font-bold underline uppercase" x-text="selectedDistribusi.pengurus_nama"></p>
+                                <p class="font-mono text-[9px]" x-text="'NIP. ' + (selectedDistribusi.pengurus_nip || '19760229 200801 1 010')"></p>
+                            </div>
+
+                            <!-- Pihak II: Kepala Ruangan Peminta Distribusi (TTD Basah Manual) -->
+                            <div>
+                                <p>Yang Menerima (Pihak II)</p>
+                                <p class="font-bold" x-text="selectedDistribusi.pj_jabatan_ttd || ('Kepala Ruangan ' + selectedDistribusi.unit_nama)"></p>
+                                <!-- Ruang Tanda Tangan Basah & Cap Stempel Ruangan -->
+                                <div class="h-20 flex flex-col items-center justify-end pb-1">
+                                    <div class="text-[8px] text-gray-400 italic mb-2">( Tanda Tangan Basah & Stempel Ruangan )</div>
+                                    <div class="w-44 border-b border-black"></div>
+                                </div>
+                                <p class="font-bold uppercase" x-text="selectedDistribusi.pj_nama"></p>
+                                <p class="font-mono text-[9px]" x-text="'NIP. ' + selectedDistribusi.pj_nip"></p>
                             </div>
                         </div>
 
