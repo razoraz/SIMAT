@@ -441,9 +441,9 @@
 
                         <select x-model="detailKondisiFilter" class="bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-blue-500">
                             <option value="all">Semua Kondisi</option>
-                            <option value="Baik">Kondisi Baik</option>
-                            <option value="Rusak Ringan">Rusak Ringan</option>
-                            <option value="Rusak Berat">Rusak Berat</option>
+                            <option value="Baik">Kondisi Baik (B)</option>
+                            <option value="Kurang Baik">Kurang Baik (KB)</option>
+                            <option value="Rusak Berat">Rusak Berat (RB)</option>
                         </select>
                     </div>
 
@@ -487,7 +487,7 @@
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                                             :class="{
                                                 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30': ast.kondisi === 'Baik',
-                                                'bg-amber-500/20 text-amber-300 border border-amber-500/30': ast.kondisi === 'Rusak Ringan',
+                                                'bg-amber-500/20 text-amber-300 border border-amber-500/30': ast.kondisi === 'Kurang Baik' || ast.kondisi === 'Rusak Ringan',
                                                 'bg-rose-500/20 text-rose-300 border border-rose-500/30': ast.kondisi === 'Rusak Berat'
                                             }"
                                             x-text="ast.kondisi"></span>

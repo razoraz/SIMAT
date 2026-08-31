@@ -1358,23 +1358,24 @@
 
                 astaps: window.__simatAstaps || [],
 
-                // Hitung statistik kondisi dari registers suatu aset (Baik, Rusak Ringan, Rusak Berat)
+                // Hitung statistik kondisi dari registers suatu aset (Baik, Kurang Baik, Rusak Berat)
                 getKondisiStats(item) {
                     const regs = item.registers || [];
                     const total = regs.length;
                     if (total === 0) {
                         const k = item.kondisi || 'Baik';
-                        return { total: 1, baik: k==='Baik'?1:0, rusak_ringan: k==='Rusak Ringan'?1:0, rusak_berat: k==='Rusak Berat'?1:0, pct_baik: k==='Baik'?100:0, pct_rr: k==='Rusak Ringan'?100:0, pct_rb: k==='Rusak Berat'?100:0, kondisi_dominan: k };
+                        const isKb = k === 'Kurang Baik' || k === 'Rusak Ringan';
+                        return { total: 1, baik: k==='Baik'?1:0, kurang_baik: isKb?1:0, rusak_berat: k==='Rusak Berat'?1:0, pct_baik: k==='Baik'?100:0, pct_kb: isKb?100:0, pct_rb: k==='Rusak Berat'?100:0, kondisi_dominan: isKb ? 'Kurang Baik' : k };
                     }
                     const baik = regs.filter(r => (r.kondisi||'Baik') === 'Baik').length;
-                    const rr   = regs.filter(r => r.kondisi === 'Rusak Ringan').length;
+                    const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'Rusak Ringan').length;
                     const rb   = regs.filter(r => r.kondisi === 'Rusak Berat').length;
-                    const dominan = baik >= rr && baik >= rb ? 'Baik' : (rr >= rb ? 'Rusak Ringan' : 'Rusak Berat');
+                    const dominan = baik >= kb && baik >= rb ? 'Baik' : (kb >= rb ? 'Kurang Baik' : 'Rusak Berat');
                     return {
                         total,
-                        baik, rusak_ringan: rr, rusak_berat: rb,
+                        baik, kurang_baik: kb, rusak_berat: rb,
                         pct_baik: Math.round(baik / total * 100),
-                        pct_rr:   Math.round(rr   / total * 100),
+                        pct_kb:   Math.round(kb   / total * 100),
                         pct_rb:   Math.round(rb   / total * 100),
                         kondisi_dominan: dominan
                     };
@@ -1734,29 +1735,29 @@
                                     <template x-data="{}" x-if="true">
                                         <div x-data="{ st: getKondisiStats(item) }">
                                             <!-- Jika hanya 1 unit / semua kondisi sama: tampilkan badge tunggal -->
-                                            <template x-if="st.total <= 1 || (st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                            <template x-if="st.total <= 1 || (st.pct_baik === 100 || st.pct_kb === 100 || st.pct_rb === 100)">
                                                 <span class="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-bold border shadow-sm select-none"
                                                       :class="{
                                                           'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': st.kondisi_dominan === 'Baik',
-                                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Rusak Ringan',
+                                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Kurang Baik' || st.kondisi_dominan === 'Rusak Ringan',
                                                           'bg-rose-500/15 text-rose-300 border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
                                                       }">
                                                     <span class="w-1.5 h-1.5 rounded-full mr-1.5"
                                                           :class="{
                                                               'bg-emerald-400': st.kondisi_dominan === 'Baik',
-                                                              'bg-amber-400': st.kondisi_dominan === 'Rusak Ringan',
+                                                              'bg-amber-400': st.kondisi_dominan === 'Kurang Baik' || st.kondisi_dominan === 'Rusak Ringan',
                                                               'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
                                                           }"></span>
                                                     <span x-text="st.kondisi_dominan + (st.total > 1 ? ' 100%' : '')"></span>
                                                 </span>
                                             </template>
                                             <!-- Jika multi kondisi: tampilkan progress bar breakdown -->
-                                            <template x-if="st.total > 1 && !(st.pct_baik === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                            <template x-if="st.total > 1 && !(st.pct_baik === 100 || st.pct_kb === 100 || st.pct_rb === 100)">
                                                 <div class="min-w-[130px]">
                                                     <!-- Mini progress bar gabungan -->
                                                     <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1.5">
                                                         <div x-show="st.pct_baik > 0" class="bg-emerald-400 transition-all" :style="'width:' + st.pct_baik + '%'"></div>
-                                                        <div x-show="st.pct_rr > 0"   class="bg-amber-400 transition-all"   :style="'width:' + st.pct_rr + '%'"></div>
+                                                        <div x-show="st.pct_kb > 0"   class="bg-amber-400 transition-all"   :style="'width:' + st.pct_kb + '%'"></div>
                                                         <div x-show="st.pct_rb > 0"   class="bg-rose-400 transition-all"    :style="'width:' + st.pct_rb + '%'"></div>
                                                     </div>
                                                     <!-- Label persentase per kondisi -->
@@ -1764,8 +1765,8 @@
                                                         <template x-if="st.baik > 0">
                                                             <span class="text-[9.5px] font-bold text-emerald-400" x-text="st.pct_baik + '% Baik'"></span>
                                                         </template>
-                                                        <template x-if="st.rusak_ringan > 0">
-                                                            <span class="text-[9.5px] font-bold text-amber-400" x-text="st.pct_rr + '% R.Ringan'"></span>
+                                                        <template x-if="st.kurang_baik > 0">
+                                                            <span class="text-[9.5px] font-bold text-amber-400" x-text="st.pct_kb + '% K.Baik'"></span>
                                                         </template>
                                                         <template x-if="st.rusak_berat > 0">
                                                             <span class="text-[9.5px] font-bold text-rose-400" x-text="st.pct_rb + '% R.Berat'"></span>
@@ -2171,7 +2172,7 @@
                                     <select x-model="detailKondisiFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
                                         <option value="all">Semua Kondisi</option>
                                         <option value="Baik">Baik (B)</option>
-                                        <option value="Rusak Ringan">Rusak Ringan (RR)</option>
+                                        <option value="Kurang Baik">Kurang Baik (KB)</option>
                                         <option value="Rusak Berat">Rusak Berat (RB)</option>
                                     </select>
                                 </div>
@@ -2217,7 +2218,7 @@
                                                     <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm"
                                                           :class="{
                                                               'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik',
-                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Rusak Ringan',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'Rusak Ringan',
                                                               'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat'
                                                           }" x-text="reg.kondisi"></span>
                                                 </td>
@@ -2392,11 +2393,11 @@
                                 </label>
 
                                 <label class="flex items-center space-x-3 p-3 rounded-2xl border cursor-pointer transition-all"
-                                    :class="newKondisiValue === 'Rusak Ringan' ? 'bg-amber-500/15 border-amber-500/50 text-amber-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/40'">
-                                    <input type="radio" value="Rusak Ringan" x-model="newKondisiValue" class="text-amber-500 focus:ring-0">
+                                    :class="newKondisiValue === 'Kurang Baik' ? 'bg-amber-500/15 border-amber-500/50 text-amber-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:bg-slate-800/40'">
+                                    <input type="radio" value="Kurang Baik" x-model="newKondisiValue" class="text-amber-500 focus:ring-0">
                                     <div>
-                                        <span class="font-extrabold text-xs block text-amber-300">🟡 Rusak Ringan (RR)</span>
-                                        <span class="text-[10px] text-slate-400 block">Ada kendala kecil namun masih dapat difungsikan sementara.</span>
+                                        <span class="font-extrabold text-xs block text-amber-300">🟡 Kurang Baik (KB)</span>
+                                        <span class="text-[10px] text-slate-400 block">Ada kendala kecil / penurunan performa namun masih dapat difungsikan.</span>
                                     </div>
                                 </label>
 

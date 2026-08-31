@@ -913,7 +913,7 @@ Route::middleware('auth')->group(function () {
             }
             $data = $request->all();
             if (isset($data['ruang_pemegang'])) $reg->ruang_pemegang = $data['ruang_pemegang'];
-            if (isset($data['kondisi']) && in_array($data['kondisi'], ['Baik', 'Rusak Ringan', 'Rusak Berat'])) {
+            if (isset($data['kondisi']) && in_array($data['kondisi'], ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'])) {
                 $reg->kondisi = $data['kondisi'];
             }
             if (isset($data['unit_id'])) $reg->unit_id = $data['unit_id'];
