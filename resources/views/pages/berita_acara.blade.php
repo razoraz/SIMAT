@@ -6,297 +6,297 @@
         window.__simatTriwulanData = {!! $triwulanDataJson ?? '{}' !!};
         window.__simatDistribusiList = {!! $distribusiListJson ?? '[]' !!};
         window.__simatMutasiList = {!! $mutasiListJson ?? '[]' !!};
-    </script>
 
-    <div x-data="{
-        // Tab Navigasi Aktif: 'triwulan', 'distribusi', atau 'mutasi'
-        activeTab: 'triwulan',
-        
-        // Modal Live Edit Toggle
-        showEditTriwulanForm: false,
-        showEditDistribusiForm: false,
-        showEditMutasiForm: false,
-
-        // =========================================================================
-        // DATA TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN
-        // =========================================================================
-        selectedTahun: '{{ $tahun ?? "2026" }}',
-        selectedTriwulanKey: 'TW2',
-        showPrintTriwulanModal: false,
-        searchBarangTriwulan: '',
-
-        triwulanData: window.__simatTriwulanData || {},
-
-        get currentTriwulanDoc() {
-            return this.triwulanData[this.selectedTriwulanKey] || this.triwulanData['TW2'] || { rekapItems: [], detailBarang: [] };
-        },
-
-        get currentTriwulanTotalNilai() {
-            return (this.currentTriwulanDoc.rekapItems || []).reduce((acc, item) => acc + (item.nilai || 0), 0);
-        },
-
-        get currentTriwulanTotalQty() {
-            return (this.currentTriwulanDoc.rekapItems || []).reduce((acc, item) => acc + (item.qty || 0), 0);
-        },
-
-        get filteredDetailBarangTriwulan() {
-            const query = (this.searchBarangTriwulan || '').toLowerCase();
-            return (this.currentTriwulanDoc.detailBarang || []).filter(b => {
-                return (b.nama_barang || '').toLowerCase().includes(query) ||
-                       (b.kode_108 || '').toLowerCase().includes(query) ||
-                       (b.nomor_spk || '').toLowerCase().includes(query) ||
-                       (b.penyedia || '').toLowerCase().includes(query);
-            });
-        },
-
-        // =========================================================================
-        // DATA TAB 2: BAST DISTRIBUSI BARANG KE UNIT / PAVILIUN (SUB ADMIN)
-        // =========================================================================
-        distribusiSearch: '',
-        distribusiUnitFilter: 'all',
-        distribusiStatusFilter: 'all',
-        showPrintDistribusiModal: false,
-        showDetailDistribusiModal: false,
-        selectedDistribusi: null,
-        selectedDetailDistribusi: null,
-
-        distribusiList: window.__simatDistribusiList || [],
-
-        get filteredDistribusiList() {
-            const query = (this.distribusiSearch || '').toLowerCase();
-            return this.distribusiList.filter(d => {
-                const matchQuery = (d.nomor_bast || '').toLowerCase().includes(query) ||
-                                   (d.unit_nama || '').toLowerCase().includes(query) ||
-                                   (d.pj_nama || '').toLowerCase().includes(query) ||
-                                   (d.keterangan_lokasi || '').toLowerCase().includes(query);
-                const matchUnit = this.distribusiUnitFilter === 'all' || d.unit_nama === this.distribusiUnitFilter;
+        function beritaAcaraApp() {
+            return {
+                // Tab Navigasi Aktif: 'triwulan', 'distribusi', atau 'mutasi'
+                activeTab: 'triwulan',
                 
-                let matchStatus = true;
-                if (this.distribusiStatusFilter === 'signed') {
-                    matchStatus = d.signed === true;
-                } else if (this.distribusiStatusFilter === 'unsigned') {
-                    matchStatus = d.signed === false;
-                }
-                return matchQuery && matchUnit && matchStatus;
-            });
-        },
+                // Modal Live Edit Toggle
+                showEditTriwulanForm: false,
+                showEditDistribusiForm: false,
+                showEditMutasiForm: false,
 
-        openDetailDistribusi(item) {
-            this.selectedDetailDistribusi = item;
-            this.showDetailDistribusiModal = true;
-        },
+                // =========================================================================
+                // DATA TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN
+                // =========================================================================
+                selectedTahun: '{{ $tahun ?? "2026" }}',
+                selectedTriwulanKey: 'TW2',
+                showPrintTriwulanModal: false,
+                searchBarangTriwulan: '',
 
-        // =========================================================================
-        // DATA TAB 3: BAST MUTASI ASET (PEMINDAHAN ANTAR RUANGAN)
-        // =========================================================================
-        mutasiSearch: '',
-        mutasiStatusFilter: 'all',
-        showPrintMutasiModal: false,
-        showDetailMutasiModal: false,
-        selectedMutasi: null,
-        selectedDetailMutasi: null,
+                triwulanData: window.__simatTriwulanData || {},
 
-        mutasiList: window.__simatMutasiList || [],
+                get currentTriwulanDoc() {
+                    return this.triwulanData[this.selectedTriwulanKey] || this.triwulanData['TW2'] || { rekapItems: [], detailBarang: [] };
+                },
 
-        get filteredMutasiList() {
-            const query = (this.mutasiSearch || '').toLowerCase();
-            return this.mutasiList.filter(m => {
-                const matchQuery = (m.nomor_bast || '').toLowerCase().includes(query) ||
-                                   (m.nama || '').toLowerCase().includes(query) ||
-                                   (m.asal || '').toLowerCase().includes(query) ||
-                                   (m.tujuan || '').toLowerCase().includes(query) ||
-                                   (m.pemohon || '').toLowerCase().includes(query);
-                
-                let matchStatus = true;
-                if (this.mutasiStatusFilter === 'signed') {
-                    matchStatus = m.signed === true;
-                } else if (this.mutasiStatusFilter === 'unsigned') {
-                    matchStatus = m.signed === false;
-                }
-                return matchQuery && matchStatus;
-            });
-        },
+                get currentTriwulanTotalNilai() {
+                    return (this.currentTriwulanDoc.rekapItems || []).reduce((acc, item) => acc + (item.nilai || 0), 0);
+                },
 
-        openDetailMutasi(item) {
-            this.selectedDetailMutasi = item;
-            this.showDetailMutasiModal = true;
-        },
+                get currentTriwulanTotalQty() {
+                    return (this.currentTriwulanDoc.rekapItems || []).reduce((acc, item) => acc + (item.qty || 0), 0);
+                },
 
-        // Helper Format Rupiah & Angka
-        formatRupiah(val) {
-            return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
-        },
-
-        formatNumber(val) {
-            return new Intl.NumberFormat('id-ID').format(val || 0);
-        },
-
-        // =========================================================================
-        // LOGIK TOGGLE TANDA TANGAN DIGITAL BSR-E (TTD & BATALKAN TTD) 3 JENIS BAST
-        // =========================================================================
-
-        // 1. Toggle TTD BAST Triwulan
-        openPrintTriwulan(twKey) {
-            if (twKey) this.selectedTriwulanKey = twKey;
-            this.showPrintTriwulanModal = true;
-        },
-
-        async toggleSignTriwulan(key) {
-            const doc = this.triwulanData[key || this.selectedTriwulanKey];
-            if (doc) {
-                const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
-                try {
-                    const res = await fetch('/berita-acara/triwulan/' + doc.key + '/sign', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': token,
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ tahun: this.selectedTahun })
+                get filteredDetailBarangTriwulan() {
+                    const query = (this.searchBarangTriwulan || '').toLowerCase();
+                    return (this.currentTriwulanDoc.detailBarang || []).filter(b => {
+                        return (b.nama_barang || '').toLowerCase().includes(query) ||
+                               (b.kode_108 || '').toLowerCase().includes(query) ||
+                               (b.nomor_spk || '').toLowerCase().includes(query) ||
+                               (b.penyedia || '').toLowerCase().includes(query);
                     });
-                    const data = await res.json();
-                    if (data.success) {
-                        doc.pihak2_signed = true;
-                        doc.pihak2_tgl_ttd = data.tgl_signed;
-                        doc.pihak2_qr_hash = data.qr_hash;
-                        doc.status = data.status;
-                        alert('✍️ ' + data.message);
-                    }
-                } catch(e) {
-                    doc.pihak2_signed = true;
-                    const now = new Date();
-                    doc.pihak2_tgl_ttd = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                    doc.pihak2_qr_hash = 'BSRE-KOESNANDI-TW-' + Date.now();
-                    doc.status = 'Telah Ditandatangani BSrE';
-                }
-            }
-        },
+                },
 
-        async saveTriwulanEdit(key) {
-            const doc = this.triwulanData[key || this.selectedTriwulanKey];
-            if (doc) {
-                const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
-                try {
-                    const res = await fetch('/berita-acara/triwulan/' + doc.key, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': token,
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            tahun: this.selectedTahun,
-                            nomor_surat: doc.nomor_surat,
-                            lokasi: doc.lokasi,
-                            pihak1_nama: doc.pihak1_nama,
-                            pihak1_nip: doc.pihak1_nip,
-                            pihak1_jabatan: doc.pihak1_jabatan,
-                            pihak2_nama: doc.pihak2_nama,
-                            pihak2_nip: doc.pihak2_nip,
-                            pihak2_jabatan: doc.pihak2_jabatan,
-                            direktur_nama: doc.direktur_nama,
-                            direktur_nip: doc.direktur_nip,
-                            catatan: doc.catatan
-                        })
+                // =========================================================================
+                // DATA TAB 2: BAST DISTRIBUSI BARANG KE UNIT / PAVILIUN (SUB ADMIN)
+                // =========================================================================
+                distribusiSearch: '',
+                distribusiUnitFilter: 'all',
+                distribusiStatusFilter: 'all',
+                showPrintDistribusiModal: false,
+                showDetailDistribusiModal: false,
+                selectedDistribusi: null,
+                selectedDetailDistribusi: null,
+
+                distribusiList: window.__simatDistribusiList || [],
+
+                get filteredDistribusiList() {
+                    const query = (this.distribusiSearch || '').toLowerCase();
+                    return this.distribusiList.filter(d => {
+                        const matchQuery = (d.nomor_bast || '').toLowerCase().includes(query) ||
+                                           (d.unit_nama || '').toLowerCase().includes(query) ||
+                                           (d.pj_nama || '').toLowerCase().includes(query) ||
+                                           (d.keterangan_lokasi || '').toLowerCase().includes(query);
+                        const matchUnit = this.distribusiUnitFilter === 'all' || d.unit_nama === this.distribusiUnitFilter;
+                        
+                        let matchStatus = true;
+                        if (this.distribusiStatusFilter === 'signed') {
+                            matchStatus = d.signed === true;
+                        } else if (this.distribusiStatusFilter === 'unsigned') {
+                            matchStatus = d.signed === false;
+                        }
+                        return matchQuery && matchUnit && matchStatus;
                     });
-                    const data = await res.json();
-                    if (data.success) {
-                        this.showEditTriwulanForm = false;
-                        alert('✅ ' + data.message);
+                },
+
+                openDetailDistribusi(item) {
+                    this.selectedDetailDistribusi = item;
+                    this.showDetailDistribusiModal = true;
+                },
+
+                // =========================================================================
+                // DATA TAB 3: BAST MUTASI ASET (PEMINDAHAN ANTAR RUANGAN)
+                // =========================================================================
+                mutasiSearch: '',
+                mutasiStatusFilter: 'all',
+                showPrintMutasiModal: false,
+                showDetailMutasiModal: false,
+                selectedMutasi: null,
+                selectedDetailMutasi: null,
+
+                mutasiList: window.__simatMutasiList || [],
+
+                get filteredMutasiList() {
+                    const query = (this.mutasiSearch || '').toLowerCase();
+                    return this.mutasiList.filter(m => {
+                        const matchQuery = (m.nomor_bast || '').toLowerCase().includes(query) ||
+                                           (m.nama || '').toLowerCase().includes(query) ||
+                                           (m.asal || '').toLowerCase().includes(query) ||
+                                           (m.tujuan || '').toLowerCase().includes(query) ||
+                                           (m.pemohon || '').toLowerCase().includes(query);
+                        
+                        let matchStatus = true;
+                        if (this.mutasiStatusFilter === 'signed') {
+                            matchStatus = m.signed === true;
+                        } else if (this.mutasiStatusFilter === 'unsigned') {
+                            matchStatus = m.signed === false;
+                        }
+                        return matchQuery && matchStatus;
+                    });
+                },
+
+                openDetailMutasi(item) {
+                    this.selectedDetailMutasi = item;
+                    this.showDetailMutasiModal = true;
+                },
+
+                // Helper Format Rupiah & Angka
+                formatRupiah(val) {
+                    return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
+                },
+
+                formatNumber(val) {
+                    return new Intl.NumberFormat('id-ID').format(val || 0);
+                },
+
+                // =========================================================================
+                // LOGIK TOGGLE TANDA TANGAN DIGITAL BSR-E (TTD & BATALKAN TTD) 3 JENIS BAST
+                // =========================================================================
+
+                // 1. Toggle TTD BAST Triwulan
+                openPrintTriwulan(twKey) {
+                    if (twKey) this.selectedTriwulanKey = twKey;
+                    this.showPrintTriwulanModal = true;
+                },
+
+                async toggleSignTriwulan(key) {
+                    const doc = this.triwulanData[key || this.selectedTriwulanKey];
+                    if (doc) {
+                        const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                        try {
+                            const res = await fetch('/berita-acara/triwulan/' + doc.key + '/sign', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ tahun: this.selectedTahun })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                doc.pihak2_signed = true;
+                                doc.pihak2_tgl_ttd = data.tgl_signed;
+                                doc.pihak2_qr_hash = data.qr_hash;
+                                doc.status = data.status;
+                                alert('✍️ ' + data.message);
+                            }
+                        } catch(e) {
+                            doc.pihak2_signed = true;
+                            const now = new Date();
+                            doc.pihak2_tgl_ttd = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                            doc.pihak2_qr_hash = 'BSRE-KOESNANDI-TW-' + Date.now();
+                            doc.status = 'Telah Ditandatangani BSrE';
+                        }
                     }
-                } catch(e) {
-                    this.showEditTriwulanForm = false;
-                    alert('✅ Data BAST Triwulan berhasil diperbarui!');
-                }
-            }
-        },
+                },
 
-        // 2. Toggle TTD BAST Distribusi
-        openPrintDistribusi(item) {
-            this.selectedDistribusi = item ? { ...item } : this.distribusiList[0];
-            this.showPrintDistribusiModal = true;
-        },
+                async saveTriwulanEdit(key) {
+                    const doc = this.triwulanData[key || this.selectedTriwulanKey];
+                    if (doc) {
+                        const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                        try {
+                            const res = await fetch('/berita-acara/triwulan/' + doc.key, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    tahun: this.selectedTahun,
+                                    nomor_surat: doc.nomor_surat,
+                                    lokasi: doc.lokasi,
+                                    pihak1_nama: doc.pihak1_nama,
+                                    pihak1_nip: doc.pihak1_nip,
+                                    pihak1_jabatan: doc.pihak1_jabatan,
+                                    pihak2_nama: doc.pihak2_nama,
+                                    pihak2_nip: doc.pihak2_nip,
+                                    pihak2_jabatan: doc.pihak2_jabatan,
+                                    direktur_nama: doc.direktur_nama,
+                                    direktur_nip: doc.direktur_nip,
+                                    catatan: doc.catatan
+                                })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                this.showEditTriwulanForm = false;
+                                alert('✅ ' + data.message);
+                            }
+                        } catch(e) {
+                            this.showEditTriwulanForm = false;
+                            alert('✅ Data BAST Triwulan berhasil diperbarui!');
+                        }
+                    }
+                },
 
-        toggleSignDistribusi(item) {
-            const target = item || this.selectedDistribusi;
-            if (target) {
-                if (target.signed) {
-                    target.signed = false;
-                    target.tgl_signed = '-';
-                    target.qr_hash = '';
-                    target.status = 'Belum TTD';
-                    alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + target.nomor_bast + ') berhasil dibatalkan.');
-                } else {
-                    target.signed = true;
-                    const now = new Date();
-                    target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                    target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
-                    target.status = 'Telah Ditandatangani BSrE';
-                    alert('✍️ BAST Distribusi (' + target.nomor_bast + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
-                }
-            }
-        },
+                // 2. Toggle TTD BAST Distribusi
+                openPrintDistribusi(item) {
+                    this.selectedDistribusi = item ? { ...item } : this.distribusiList[0];
+                    this.showPrintDistribusiModal = true;
+                },
 
-        // 3. Toggle TTD BAST Mutasi
-        openPrintMutasi(item) {
-            this.selectedMutasi = item ? { ...item } : this.mutasiList[0];
-            this.showPrintMutasiModal = true;
-        },
+                toggleSignDistribusi(item) {
+                    const target = item || this.selectedDistribusi;
+                    if (target) {
+                        if (target.signed) {
+                            target.signed = false;
+                            target.tgl_signed = '-';
+                            target.qr_hash = '';
+                            target.status = 'Belum TTD';
+                            alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + target.nomor_bast + ') berhasil dibatalkan.');
+                        } else {
+                            target.signed = true;
+                            const now = new Date();
+                            target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                            target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
+                            target.status = 'Telah Ditandatangani BSrE';
+                            alert('✍️ BAST Distribusi (' + target.nomor_bast + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+                        }
+                    }
+                },
 
-        toggleSignMutasi(item) {
-            const target = item || this.selectedMutasi;
-            if (target) {
-                if (target.signed) {
-                    target.signed = false;
-                    target.tgl_signed = '-';
-                    target.qr_hash = '';
-                    target.status = 'Belum TTD';
-                    alert('↩️ Tanda tangan digital BSrE BAST Mutasi (' + target.nomor_bast + ') berhasil dibatalkan.');
-                } else {
-                    target.signed = true;
-                    const now = new Date();
-                    target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                    target.qr_hash = 'BSRE-KOESNANDI-MTS-' + Date.now();
-                    target.status = 'Telah Ditandatangani BSrE';
-                    alert('✍️ BAST Mutasi (' + target.nomor_bast + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
-                }
-            }
-        },
+                // 3. Toggle TTD BAST Mutasi
+                openPrintMutasi(item) {
+                    this.selectedMutasi = item ? { ...item } : this.mutasiList[0];
+                    this.showPrintMutasiModal = true;
+                },
 
-        printCurrent() {
-            let el = null;
-            if (this.showPrintTriwulanModal) {
-                el = document.getElementById('print-area-triwulan');
-            } else if (this.showPrintDistribusiModal) {
-                el = document.getElementById('print-area-distribusi');
-            } else if (this.showPrintMutasiModal) {
-                el = document.getElementById('print-area-mutasi');
-            }
+                toggleSignMutasi(item) {
+                    const target = item || this.selectedMutasi;
+                    if (target) {
+                        if (target.signed) {
+                            target.signed = false;
+                            target.tgl_signed = '-';
+                            target.qr_hash = '';
+                            target.status = 'Belum TTD';
+                            alert('↩️ Tanda tangan digital BSrE BAST Mutasi (' + target.nomor_bast + ') berhasil dibatalkan.');
+                        } else {
+                            target.signed = true;
+                            const now = new Date();
+                            target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                            target.qr_hash = 'BSRE-KOESNANDI-MTS-' + Date.now();
+                            target.status = 'Telah Ditandatangani BSrE';
+                            alert('✍️ BAST Mutasi (' + target.nomor_bast + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+                        }
+                    }
+                },
 
-            if (!el) {
-                window.print();
-                return;
-            }
+                printCurrent() {
+                    let el = null;
+                    if (this.showPrintTriwulanModal) {
+                        el = document.getElementById('print-area-triwulan');
+                    } else if (this.showPrintDistribusiModal) {
+                        el = document.getElementById('print-area-distribusi');
+                    } else if (this.showPrintMutasiModal) {
+                        el = document.getElementById('print-area-mutasi');
+                    }
 
-            let iframe = document.getElementById('simat-print-frame');
-            if (iframe) {
-                iframe.remove();
-            }
+                    if (!el) {
+                        window.print();
+                        return;
+                    }
 
-            iframe = document.createElement('iframe');
-            iframe.id = 'simat-print-frame';
-            iframe.style.position = 'fixed';
-            iframe.style.right = '0';
-            iframe.style.bottom = '0';
-            iframe.style.width = '0';
-            iframe.style.height = '0';
-            iframe.style.border = '0';
-            document.body.appendChild(iframe);
+                    let iframe = document.getElementById('simat-print-frame');
+                    if (iframe) {
+                        iframe.remove();
+                    }
 
-            const doc = iframe.contentWindow.document;
-            doc.open();
-            doc.write(`<!DOCTYPE html>
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'simat-print-frame';
+                    iframe.style.position = 'fixed';
+                    iframe.style.right = '0';
+                    iframe.style.bottom = '0';
+                    iframe.style.width = '0';
+                    iframe.style.height = '0';
+                    iframe.style.border = '0';
+                    document.body.appendChild(iframe);
+
+                    const doc = iframe.contentWindow.document;
+                    doc.open();
+                    doc.write(`<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -344,14 +344,18 @@
     </div>
 </body>
 </html>`);
-            doc.close();
+                    doc.close();
 
-            setTimeout(() => {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            }, 400);
+                    setTimeout(() => {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    }, 400);
+                }
+            };
         }
-    }" x-cloak>
+    </script>
+
+    <div x-data="beritaAcaraApp()" x-cloak>
 
         <!-- Header Banner & Mini KPI Strip -->
         <div class="no-print bg-gradient-to-r from-purple-600/15 via-slate-900 to-slate-900 border border-purple-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">
