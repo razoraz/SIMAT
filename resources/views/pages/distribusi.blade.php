@@ -796,9 +796,8 @@
                         <!-- KOP SURAT RESMI RSUD -->
                         <div class="border-b-[3px] border-black pb-1 mb-0.5">
                             <div class="flex items-center justify-between gap-4">
-                                <!-- Logo Daerah Bondowoso -->
                                 <div class="w-20 shrink-0 flex justify-center">
-                                    <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo Daerah" class="w-16 h-16 object-contain">
+                                    <img src="{{ asset('img/logo-bondowoso.png') }}" alt="Logo Dinas Bondowoso" class="h-16 w-16 object-contain">
                                 </div>
 
                                 <!-- Teks Header Kop -->

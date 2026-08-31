@@ -829,7 +829,7 @@
                         <div class="border-b-[3px] border-black pb-1 mb-0.5">
                             <div class="flex items-center justify-between gap-4">
                                 <div class="w-20 shrink-0 flex justify-center">
-                                    <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD" class="w-16 h-16 object-contain">
+                                    <img src="{{ asset('img/logo-bondowoso.png') }}" alt="Logo Dinas Bondowoso" class="h-16 w-16 object-contain">
                                 </div>
                                 <div class="flex-1 text-center font-sans text-black">
                                     <h4 class="font-bold text-xs sm:text-sm uppercase tracking-wide leading-tight">PEMERINTAH KABUPATEN BONDOWOSO</h4>
