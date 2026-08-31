@@ -23,7 +23,8 @@ class DatabaseSeeder extends Seeder
             JenisPengadaanSeeder::class,
             AstapSeeder::class,
             DistribusiSeeder::class,
-            AstapMutasiSeeder::class
+            AstapMutasiSeeder::class,
+            AstapBastTriwulanSeeder::class
         ]);
     }
 }
