@@ -400,9 +400,9 @@ Route::middleware('auth')->group(function () {
     // Rute Khusus Master Admin & Admin Operasional (Sub Admin Dibatasi)
     Route::middleware([RoleMiddleware::class . ':master_admin,admin'])->group(function () {
         // Berita Acara (BAST)
-        Route::get('/berita-acara', function () {
-            return view('pages.berita_acara');
-        })->name('bast.index');
+        Route::get('/berita-acara', [\App\Http\Controllers\BeritaAcaraController::class, 'index'])->name('bast.index');
+        Route::post('/berita-acara/triwulan/{key}', [\App\Http\Controllers\BeritaAcaraController::class, 'saveTriwulan'])->name('bast.save_triwulan');
+        Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan');
 
         Route::get('/berita-acara/create', function () {
             return view('pages.form_berita_acara');

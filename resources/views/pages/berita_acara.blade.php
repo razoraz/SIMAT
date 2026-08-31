@@ -2,6 +2,12 @@
     @section('page-title', 'Berita Acara (BAST)')
     @section('breadcrumb', 'Master Utama / Berita Acara (BAST)')
 
+    <script>
+        window.__simatTriwulanData = {!! $triwulanDataJson ?? '{}' !!};
+        window.__simatDistribusiList = {!! $distribusiListJson ?? '[]' !!};
+        window.__simatMutasiList = {!! $mutasiListJson ?? '[]' !!};
+    </script>
+
     <div x-data="{
         // Tab Navigasi Aktif: 'triwulan', 'distribusi', atau 'mutasi'
         activeTab: 'triwulan',
@@ -14,171 +20,23 @@
         // =========================================================================
         // DATA TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN
         // =========================================================================
-        selectedTahun: '2026',
+        selectedTahun: '{{ $tahun ?? "2026" }}',
         selectedTriwulanKey: 'TW2',
         showPrintTriwulanModal: false,
         searchBarangTriwulan: '',
 
-        triwulanData: {
-            'TW1': {
-                key: 'TW1',
-                nomor_surat: '000.2.3.2/112/430.10.7/2026',
-                hari_tanggal: 'Selasa tanggal 31 Maret 2026',
-                triwulan_nama: 'Triwulan I (Januari - Maret) Tahun 2026',
-                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
-                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-                pihak1_nip: '19771002 200604 1 006',
-                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
-                pihak2_nama: 'BUDI HARTONO,S.Sos',
-                pihak2_nip: '19760229 200801 1 010',
-                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
-                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
-                direktur_nip: '19730514 200212 2 003',
-                pihak2_signed: true,
-                pihak2_tgl_ttd: '31/03/2026 15:40 WIB',
-                pihak2_qr_hash: 'BSRE-KOESNANDI-BAST-TW1-2026-0914',
-                status: 'Telah Ditandatangani BSrE',
-                
-                rekapItems: [
-                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
-                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 120, nilai: 985500000 },
-                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 0, nilai: 0 },
-                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 0, nilai: 0 },
-                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
-                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
-                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 1, nilai: 135000000 },
-                    { no: '8.', nama: 'Exstra Comtable', qty: 3, nilai: 4500000 }
-                ],
-
-                detailBarang: [
-                    { no: 1, tanggal_sp2d: '15/02/2026', nomor_spk: '027/015/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.01.012', nama_barang: 'Infusion Pump Terumo TE-171', spesifikasi: 'Flow rate 0.1-1200 mL/h, Battery Backup 4h', penyedia: 'PT Medika Farma Pratama', volume: 10, satuan: 'Unit', nilai_realisasi: 185000000 },
-                    { no: 2, tanggal_sp2d: '20/02/2026', nomor_spk: '027/018/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.01.014', nama_barang: 'Syringe Pump Terumo TE-331', spesifikasi: 'Auto Syringe Size Detection 10/20/50mL', penyedia: 'PT Medika Farma Pratama', volume: 10, satuan: 'Unit', nilai_realisasi: 175000000 },
-                    { no: 3, tanggal_sp2d: '10/03/2026', nomor_spk: '027/022/SPK-RAD/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.02.008', nama_barang: 'USG 4D Mindray DC-30 Color Doppler', spesifikasi: 'Convex & Transvaginal Probe, LCD 17 Inch', penyedia: 'CV Tri Bintang Medika', volume: 1, satuan: 'Unit', nilai_realisasi: 450000000 },
-                    { no: 4, tanggal_sp2d: '18/03/2026', nomor_spk: '027/029/SPK-IT/2026', rekening: '5.2.02.05.01.0001', kode_108: '1.3.2.05.02.01.003', nama_barang: 'Server SIMRS Rackmount Dell PowerEdge', spesifikasi: 'Intel Xeon Silver 16 Core, 64GB ECC RAM, 4TB SSD', penyedia: 'CV Multi Media Solusindo', volume: 1, satuan: 'Unit', nilai_realisasi: 175500000 },
-                    { no: 5, tanggal_sp2d: '25/03/2026', nomor_spk: '027/031/SPK-ATB/2026', rekening: '5.2.05.01.01.0001', kode_108: '1.5.3.01.01.01.001', nama_barang: 'Software SIMRS Modul PACs Radiologi', spesifikasi: 'Lisensi Institusi Unlimited Client & DICOM Viewer', penyedia: 'PT Integra Medika Pratama', volume: 1, satuan: 'Lisensi', nilai_realisasi: 135000000 }
-                ]
-            },
-
-            'TW2': {
-                key: 'TW2',
-                nomor_surat: '000.2.3.2/224/430.10.7/2026',
-                hari_tanggal: 'Selasa tanggal 30 Juni 2026',
-                triwulan_nama: 'Triwulan II (April - Juni) Tahun 2026',
-                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
-                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-                pihak1_nip: '19771002 200604 1 006',
-                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
-                pihak2_nama: 'BUDI HARTONO,S.Sos',
-                pihak2_nip: '19760229 200801 1 010',
-                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
-                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
-                direktur_nip: '19730514 200212 2 003',
-                pihak2_signed: true,
-                pihak2_tgl_ttd: '30/06/2026 14:32 WIB',
-                pihak2_qr_hash: 'BSRE-KOESNANDI-BAST-TW2-2026-0887',
-                status: 'Telah Ditandatangani BSrE',
-
-                rekapItems: [
-                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
-                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 477, nilai: 3854986225 },
-                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 0, nilai: 0 },
-                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 0, nilai: 0 },
-                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
-                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
-                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 1, nilai: 777000000 },
-                    { no: '8.', nama: 'Exstra Comtable', qty: 202, nilai: 33302220 }
-                ],
-
-                detailBarang: [
-                    { no: 1, tanggal_sp2d: '15/04/2026', nomor_spk: '027/044/SPK-RAWAT/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.01.005', nama_barang: 'Bed Patient Electric 3 Crank Acare', spesifikasi: 'Model CPR Electric, Central Lock Caster, Matras Anti Decubitus', penyedia: 'PT Surya Alkesindo Mandiri', volume: 30, satuan: 'Unit', nilai_realisasi: 540000000 },
-                    { no: 2, tanggal_sp2d: '28/04/2026', nomor_spk: '027/048/SPK-MED/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.02.010', nama_barang: 'Patient Monitor 6 Parameter Mindray ePM 12', spesifikasi: 'ECG, NIBP, SpO2, Resp, 2-Temp, IBP Ready, Screen 12.1 Inch', penyedia: 'CV Tri Bintang Medika', volume: 15, satuan: 'Unit', nilai_realisasi: 480000000 },
-                    { no: 3, tanggal_sp2d: '14/05/2026', nomor_spk: '027/050/SPK-RAD/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.02.001', nama_barang: 'CT-Scan 128 Slice Siemens SOMATOM go.Top', spesifikasi: 'Stellar Detector 128 Slice, Low Dose AI Reconstruction', penyedia: 'PT Siemens Healthineers Indonesia', volume: 1, satuan: 'Unit', nilai_realisasi: 2450000000 },
-                    { no: 4, tanggal_sp2d: '02/06/2026', nomor_spk: '027/055/SPK-IPSRS/2026', rekening: '5.2.02.03.01.0002', kode_108: '1.3.2.03.01.02.004', nama_barang: 'Submersible Pump Franklin 7.5 HP Sentral', spesifikasi: 'Head Max 120m, 3 Phase 380V, Stainless Steel Impeller', penyedia: 'CV Mitra Teknik Mandiri', volume: 2, satuan: 'Unit', nilai_realisasi: 74986225 },
-                    { no: 5, tanggal_sp2d: '16/06/2026', nomor_spk: '027/058/SPK-IT/2026', rekening: '5.2.02.05.01.0001', kode_108: '1.3.2.05.02.06.001', nama_barang: 'Laptop Operasional Asus ExpertBook B1', spesifikasi: 'Core i7-1355U, 16GB RAM, 512GB SSD, Win 11 Pro', penyedia: 'CV Multi Media Solusindo', volume: 15, satuan: 'Unit', nilai_realisasi: 310000000 },
-                    { no: 6, tanggal_sp2d: '26/06/2026', nomor_spk: '027/062/SPK-ATB/2026', rekening: '5.2.05.01.01.0001', kode_108: '1.5.3.01.01.01.001', nama_barang: 'Software Bridging Antrean Online BPJS & Rekam Medis (EMR)', spesifikasi: 'Lisensi Enterprise SATUSEHAT & BPJS VClaim V.2', penyedia: 'PT Global Health Solusindo', volume: 1, satuan: 'Lisensi', nilai_realisasi: 777000000 }
-                ]
-            },
-
-            'TW3': {
-                key: 'TW3',
-                nomor_surat: '000.2.3.2/318/430.10.7/2026',
-                hari_tanggal: 'Rabu tanggal 30 September 2026',
-                triwulan_nama: 'Triwulan III (Juli - September) Tahun 2026',
-                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
-                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-                pihak1_nip: '19771002 200604 1 006',
-                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
-                pihak2_nama: 'BUDI HARTONO,S.Sos',
-                pihak2_nip: '19760229 200801 1 010',
-                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
-                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
-                direktur_nip: '19730514 200212 2 003',
-                pihak2_signed: false,
-                pihak2_tgl_ttd: '-',
-                pihak2_qr_hash: '',
-                status: 'Belum TTD',
-
-                rekapItems: [
-                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
-                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 85, nilai: 720000000 },
-                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 1, nilai: 1450000000 },
-                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 1, nilai: 380000000 },
-                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
-                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
-                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 0, nilai: 0 },
-                    { no: '8.', nama: 'Exstra Comtable', qty: 15, nilai: 22500000 }
-                ],
-
-                detailBarang: [
-                    { no: 1, tanggal_sp2d: '12/07/2026', nomor_spk: '027/070/SPK-BANG/2026', rekening: '5.2.03.01.01.0001', kode_108: '1.3.3.01.01.01.002', nama_barang: 'Rehabilitasi & Renovasi Gedung Paviliun Melati Lt 2', spesifikasi: 'Pekerjaan Struktur, Arsitektur, Plafon Akustik & Cat Anti Bakteri', penyedia: 'PT Karya Bangun Persada', volume: 1, satuan: 'Paket', nilai_realisasi: 1450000000 },
-                    { no: 2, tanggal_sp2d: '04/08/2026', nomor_spk: '027/074/SPK-IPAL/2026', rekening: '5.2.04.03.01.0001', kode_108: '1.3.4.03.01.01.004', nama_barang: 'Jaringan Pipa Sentral Gas Medis & IPAL RSUD', spesifikasi: 'Pipa Tembaga Standar Medis ASTM B819 & Pompa Aerasi IPAL', penyedia: 'CV Sumber Sehat Teknik', volume: 1, satuan: 'Paket', nilai_realisasi: 380000000 },
-                    { no: 3, tanggal_sp2d: '21/08/2026', nomor_spk: '027/079/SPK-EMR/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.03.004', nama_barang: 'Defibrillator Schiller Defigard Touch 7', spesifikasi: 'Biphasic Defibrillator, AED, Pacer & SpO2 Masimo', penyedia: 'PT Alkes Indo Medika', volume: 3, satuan: 'Unit', nilai_realisasi: 360000000 },
-                    { no: 4, tanggal_sp2d: '15/09/2026', nomor_spk: '027/082/SPK-CSSD/2026', rekening: '5.2.02.01.01.0004', kode_108: '1.3.2.02.01.04.005', nama_barang: 'Autoclave Steam Sterilizer 300L CSSD', spesifikasi: 'Double Door Pass-Through, Touchscreen PLC Controller', penyedia: 'PT Medika Prima Utama', volume: 2, satuan: 'Unit', nilai_realisasi: 360000000 }
-                ]
-            },
-
-            'TW4': {
-                key: 'TW4',
-                nomor_surat: '000.2.3.2/415/430.10.7/2026',
-                hari_tanggal: 'Kamis tanggal 31 Desember 2026',
-                triwulan_nama: 'Triwulan IV (Oktober - Desember) Tahun 2026',
-                lokasi: 'Rumah Sakit Umum Daerah dr.H.Koesnandi Kabupaten Bondowoso',
-                pihak1_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
-                pihak1_nip: '19771002 200604 1 006',
-                pihak1_jabatan: 'Pejabat Pembuat Komitmen (PPK) / Penerima Hasil Pengadaan RSUD dr.H.Koesnandi',
-                pihak2_nama: 'BUDI HARTONO,S.Sos',
-                pihak2_nip: '19760229 200801 1 010',
-                pihak2_jabatan: 'Pengurus Barang Aset Pada RSUD dr.H.Koesnandi Kabupaten Bondowoso',
-                direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
-                direktur_nip: '19730514 200212 2 003',
-                pihak2_signed: false,
-                pihak2_tgl_ttd: '-',
-                pihak2_qr_hash: '',
-                status: 'Belum TTD',
-                rekapItems: [
-                    { no: '1.', nama: 'Tanah', qty: 0, nilai: 0 },
-                    { no: '2.', nama: 'Peralatan Dan Mesin', qty: 0, nilai: 0 },
-                    { no: '3.', nama: 'Gedung Dan Bangunan', qty: 0, nilai: 0 },
-                    { no: '4.', nama: 'Jalan, Irigasi Dan Jaringan', qty: 0, nilai: 0 },
-                    { no: '5.', nama: 'Aset Tetap Lainnya', qty: 0, nilai: 0 },
-                    { no: '6.', nama: 'Kontruksi Dalam Pengerjaan (KDP)', qty: 0, nilai: 0 },
-                    { no: '7.', nama: 'Aset Tidak Berwujud (ATB)', qty: 0, nilai: 0 },
-                    { no: '8.', nama: 'Exstra Comtable', qty: 0, nilai: 0 }
-                ],
-                detailBarang: []
-            }
-        },
+        triwulanData: window.__simatTriwulanData || {},
 
         get currentTriwulanDoc() {
-            return this.triwulanData[this.selectedTriwulanKey] || this.triwulanData['TW2'];
+            return this.triwulanData[this.selectedTriwulanKey] || this.triwulanData['TW2'] || { rekapItems: [], detailBarang: [] };
         },
 
         get currentTriwulanTotalNilai() {
-            return this.currentTriwulanDoc.rekapItems.reduce((acc, item) => acc + item.nilai, 0);
+            return (this.currentTriwulanDoc.rekapItems || []).reduce((acc, item) => acc + (item.nilai || 0), 0);
         },
 
         get currentTriwulanTotalQty() {
-            return this.currentTriwulanDoc.rekapItems.reduce((acc, item) => acc + item.qty, 0);
+            return (this.currentTriwulanDoc.rekapItems || []).reduce((acc, item) => acc + (item.qty || 0), 0);
         },
 
         get filteredDetailBarangTriwulan() {
@@ -202,103 +60,7 @@
         selectedDistribusi: null,
         selectedDetailDistribusi: null,
 
-        distribusiList: [
-            {
-                id: 1,
-                nomor_bast: '032 / 034 / 430.10.7 / 2026',
-                tgl_bast: 'Kamis, 13 Agustus 2026',
-                hari: 'Kamis',
-                tanggal_angka: '13',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                unit_nama: 'Front Office (FO) & Rawat Inap',
-                unit_tipe: 'Pelayanan Pasien & Rawat Inap',
-                pj_nama: 'ESTU PRATIKA SARI, SST',
-                pj_nip: '199409242023212002',
-                pj_jabatan: 'Supervisor Front Office',
-                pj_ruangan: 'FO',
-                pj_jabatan_ttd: 'Kepala Ruangan FO R.Inap',
-                pengurus_nama: 'BUDI HARTONO,S.Sos',
-                pengurus_nip: '19760229 200801 1 010',
-                pengurus_jabatan: 'Pengurus Barang',
-                pengurus_ruangan: 'Gudang Perbekalan',
-                status: 'Telah Ditandatangani BSrE',
-                keterangan_lokasi: 'BLUD-2024 u/Petugas Jaga FO R.Inap',
-                signed: true,
-                tgl_signed: '13/08/2026 11:30 WIB',
-                qr_hash: 'BSRE-KOESNANDI-DST-FO-2026-032',
-                items: [
-                    { no: 1, nama_barang: 'Kasur Matras spoon', merk_type: 'Mattres Cover (Matras Spon) / Mattress Foam Adult 200x90x10', qty: 2, satuan: 'Unit', kondisi: 'Baik', keterangan: 'BLUD-2024 u/Petugas Jaga FO R.Inap' },
-                    { no: 2, nama_barang: 'Bed Patient Manual 2 Crank', merk_type: 'Paramount Bed Model Standard with Side Rail', qty: 2, satuan: 'Unit', kondisi: 'Baik', keterangan: 'Ruang Rawat Observasi FO' }
-                ]
-            },
-            {
-                id: 2,
-                nomor_bast: '034 / 034 / 430.10.7 / 2026',
-                tgl_bast: 'Jumat, 14 Agustus 2026',
-                hari: 'Jumat',
-                tanggal_angka: '14',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                unit_nama: 'Instalasi Gawat Darurat (IGD)',
-                unit_tipe: 'Pelayanan Kedaruratan Medis',
-                pj_nama: 'Ns. Hendra, S.Kep',
-                pj_nip: '19880719 201202 1 002',
-                pj_jabatan: 'Kepala Ruangan IGD',
-                pj_ruangan: 'IGD',
-                pj_jabatan_ttd: 'Kepala Ruangan IGD',
-                pengurus_nama: 'BUDI HARTONO,S.Sos',
-                pengurus_nip: '19760229 200801 1 010',
-                pengurus_jabatan: 'Pengurus Barang',
-                pengurus_ruangan: 'Gudang Perbekalan',
-                status: 'Telah Ditandatangani BSrE',
-                keterangan_lokasi: 'Pengadaan DAK Kesehatan 2024 u/IGD Kritis',
-                signed: true,
-                tgl_signed: '14/08/2026 14:15 WIB',
-                qr_hash: 'BSRE-KOESNANDI-DST-IGD-2026-034',
-                items: [
-                    { no: 1, nama_barang: 'Patient Monitor 6 Parameter', merk_type: 'Mindray ePM 12 / Display 12.1 Inch Multi-Lead ECG', qty: 4, satuan: 'Unit', kondisi: 'Baik', keterangan: 'Zona Kritis Resusitasi IGD' },
-                    { no: 2, nama_barang: 'Emergency Crash Cart Trolley', merk_type: 'Stainless Steel 5 Laci + Tiang Infus & CPR Board', qty: 2, satuan: 'Unit', kondisi: 'Baik', keterangan: 'Peralatan Siaga Resusitasi IGD' }
-                ]
-            },
-            {
-                id: 3,
-                nomor_bast: '037 / 034 / 430.10.7 / 2026',
-                tgl_bast: 'Sabtu, 15 Agustus 2026',
-                hari: 'Sabtu',
-                tanggal_angka: '15',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                unit_nama: 'Instalasi Pemeliharaan Sarana RS (IPSRS)',
-                unit_tipe: 'Utilitas & Instalasi Sentral',
-                pj_nama: 'Budi Santoso, ST',
-                pj_nip: '19820510 200902 1 004',
-                pj_jabatan: 'Kepala Instalasi IPSRS',
-                pj_ruangan: 'IPSRS / Utility',
-                pj_jabatan_ttd: 'Kepala Instalasi IPSRS',
-                pengurus_nama: 'BUDI HARTONO,S.Sos',
-                pengurus_nip: '19760229 200801 1 010',
-                pengurus_jabatan: 'Pengurus Barang',
-                pengurus_ruangan: 'Gudang Perbekalan',
-                status: 'Belum TTD',
-                keterangan_lokasi: 'Pemasangan & Testing oleh Tim Teknisi IPSRS',
-                signed: false,
-                tgl_signed: '-',
-                qr_hash: '',
-                items: [
-                    { no: 1, nama_barang: 'Submersible Pump Franklin 7.5 HP', merk_type: 'Franklin Electric 4 Inch Super Stainless 3-Phase', qty: 1, satuan: 'Unit', kondisi: 'Baik', keterangan: 'Sumur Dalam Sentral Gedung Utama' }
-                ]
-            }
-        ],
+        distribusiList: window.__simatDistribusiList || [],
 
         get filteredDistribusiList() {
             const query = (this.distribusiSearch || '').toLowerCase();
@@ -334,98 +96,7 @@
         selectedMutasi: null,
         selectedDetailMutasi: null,
 
-        mutasiList: [
-            {
-                id: 1,
-                nomor_bast: '034 / MTS / 430.10.7 / 2026',
-                tgl_bast: 'Senin, 10 Agustus 2026',
-                hari: 'Senin',
-                tanggal_angka: '10',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                nama: 'Bed Pasien Crank Manual (3 Unit)',
-                kode_barang: '1.3.2.02.01.08.002',
-                qty: 3,
-                satuan: 'Unit',
-                asal: 'Ruang Rawat Inap Melati',
-                tujuan: 'Paviliun Graha Amukti',
-                pemohon: 'dr. H. Rahmat, Sp.PD',
-                pj_asal_nama: 'dr. H. Rahmat, Sp.PD',
-                pj_asal_nip: '198004152006041008',
-                pj_asal_jabatan: 'Kepala Ruangan Melati',
-                pj_tujuan_nama: 'dr. ADHI SUDARMADJI',
-                pj_tujuan_nip: '198410272009021003',
-                pj_tujuan_jabatan: 'Kepala Ruangan Graha Amukti',
-                status: 'Telah Ditandatangani BSrE',
-                keterangan: 'Penambahan kapasitas ranjang cadangan ruang isolasi VIP',
-                signed: true,
-                tgl_signed: '10/08/2026 10:20 WIB',
-                qr_hash: 'BSRE-KOESNANDI-MTS-2026-002'
-            },
-            {
-                id: 2,
-                nomor_bast: '038 / MTS / 430.10.7 / 2026',
-                tgl_bast: 'Rabu, 12 Agustus 2026',
-                hari: 'Rabu',
-                tanggal_angka: '12',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                nama: 'Infusion Pump Terumo TE-112',
-                kode_barang: '1.3.2.02.01.01.012',
-                qty: 2,
-                satuan: 'Unit',
-                asal: 'Instalasi Gawat Darurat (IGD)',
-                tujuan: 'Ruang ICU Medis',
-                pemohon: 'dr. Anita Wijaya, Sp.Em',
-                pj_asal_nama: 'dr. Anita Wijaya, Sp.Em',
-                pj_asal_nip: '198603122010012009',
-                pj_asal_jabatan: 'Kepala Ruangan IGD',
-                pj_tujuan_nama: 'dr. H. Syaiful, Sp.An',
-                pj_tujuan_nip: '197911182005011004',
-                pj_tujuan_jabatan: 'Kepala Ruangan ICU Medis',
-                status: 'Telah Ditandatangani BSrE',
-                keterangan: 'Kebutuhan mendesak monitoring cairan pasien kritis ICU',
-                signed: true,
-                tgl_signed: '12/08/2026 14:05 WIB',
-                qr_hash: 'BSRE-KOESNANDI-MTS-2026-005'
-            },
-            {
-                id: 3,
-                nomor_bast: '041 / MTS / 430.10.7 / 2026',
-                tgl_bast: 'Jumat, 14 Agustus 2026',
-                hari: 'Jumat',
-                tanggal_angka: '14',
-                bulan: 'Agustus',
-                tahun: '2026',
-                tahun_anggaran: '2025',
-                sk_bupati_nomor: '188.45/969/430.4.2/2024',
-                sk_bupati_tanggal: '02 Januari 2025',
-                nama: 'Komputer Desktop All-in-One Core i5',
-                kode_barang: '1.3.2.10.01.02.003',
-                qty: 1,
-                satuan: 'Unit',
-                asal: 'Gudang Inventaris Pusat',
-                tujuan: 'Poliklinik Jantung Terpadu',
-                pemohon: 'Ns. Bagus, S.Kep',
-                pj_asal_nama: 'BUDI HARTONO, S.Sos',
-                pj_asal_nip: '197602292008011010',
-                pj_asal_jabatan: 'Pengurus Barang',
-                pj_tujuan_nama: 'Ns. Bagus, S.Kep',
-                pj_tujuan_nip: '199104052018021001',
-                pj_tujuan_jabatan: 'Kepala Ruangan Poli Jantung',
-                status: 'Belum TTD',
-                keterangan: 'Penggantian PC lama unit entri resep elektronik',
-                signed: false,
-                tgl_signed: '-',
-                qr_hash: ''
-            }
-        ],
+        mutasiList: window.__simatMutasiList || [],
 
         get filteredMutasiList() {
             const query = (this.mutasiSearch || '').toLowerCase();
@@ -470,22 +141,70 @@
             this.showPrintTriwulanModal = true;
         },
 
-        toggleSignTriwulan(key) {
+        async toggleSignTriwulan(key) {
             const doc = this.triwulanData[key || this.selectedTriwulanKey];
             if (doc) {
-                if (doc.pihak2_signed) {
-                    doc.pihak2_signed = false;
-                    doc.pihak2_tgl_ttd = '-';
-                    doc.pihak2_qr_hash = '';
-                    doc.status = 'Belum TTD';
-                    alert('↩️ Tanda tangan digital BSrE BAST Triwulan ' + doc.key + ' berhasil dibatalkan.');
-                } else {
+                const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                try {
+                    const res = await fetch('/berita-acara/triwulan/' + doc.key + '/sign', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ tahun: this.selectedTahun })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        doc.pihak2_signed = true;
+                        doc.pihak2_tgl_ttd = data.tgl_signed;
+                        doc.pihak2_qr_hash = data.qr_hash;
+                        doc.status = data.status;
+                        alert('✍️ ' + data.message);
+                    }
+                } catch(e) {
                     doc.pihak2_signed = true;
                     const now = new Date();
                     doc.pihak2_tgl_ttd = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
                     doc.pihak2_qr_hash = 'BSRE-KOESNANDI-TW-' + Date.now();
                     doc.status = 'Telah Ditandatangani BSrE';
-                    alert('✍️ BAST Triwulan ' + doc.key + ' berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+                }
+            }
+        },
+
+        async saveTriwulanEdit(key) {
+            const doc = this.triwulanData[key || this.selectedTriwulanKey];
+            if (doc) {
+                const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                try {
+                    const res = await fetch('/berita-acara/triwulan/' + doc.key, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tahun: this.selectedTahun,
+                            nomor_surat: doc.nomor_surat,
+                            pihak1_nama: doc.pihak1_nama,
+                            pihak1_nip: doc.pihak1_nip,
+                            pihak2_nama: doc.pihak2_nama,
+                            pihak2_nip: doc.pihak2_nip,
+                            direktur_nama: doc.direktur_nama,
+                            direktur_nip: doc.direktur_nip,
+                            catatan: doc.catatan
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.showEditTriwulanForm = false;
+                        alert('✅ ' + data.message);
+                    }
+                } catch(e) {
+                    this.showEditTriwulanForm = false;
+                    alert('✅ Data BAST Triwulan berhasil diperbarui!');
                 }
             }
         },
@@ -1201,11 +920,30 @@
                         <!-- Info Barang Dimutasi -->
                         <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
                             <span class="text-[10px] text-cyan-400 font-bold uppercase block">Barang Aset Yang Dimutasi</span>
-                            <div class="font-extrabold text-white text-base" x-text="selectedDetailMutasi.nama"></div>
-                            <div class="flex flex-wrap gap-3 font-mono text-[11px] text-slate-400">
-                                <span>Kode 108: <strong class="text-cyan-300" x-text="selectedDetailMutasi.kode_barang"></strong></span>
-                                <span>Volume: <strong class="text-white" x-text="selectedDetailMutasi.qty + ' ' + selectedDetailMutasi.satuan"></strong></span>
-                            </div>
+                            <template x-if="selectedDetailMutasi.items && selectedDetailMutasi.items.length > 0">
+                                <div class="space-y-2">
+                                    <template x-for="(sub, idx) in selectedDetailMutasi.items" :key="idx">
+                                        <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                                            <div>
+                                                <div class="font-bold text-white" x-text="(idx + 1) + '. ' + sub.nama_barang"></div>
+                                                <div class="text-[10px] text-slate-400 font-mono" x-text="'NIBAR: ' + (sub.nibar || '-') + ' • Kode 108: ' + sub.kode_barang"></div>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-semibold text-[10px]" x-text="'Kondisi: ' + sub.kondisi"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="!selectedDetailMutasi.items || selectedDetailMutasi.items.length === 0">
+                                <div>
+                                    <div class="font-extrabold text-white text-base" x-text="selectedDetailMutasi.nama"></div>
+                                    <div class="flex flex-wrap gap-3 font-mono text-[11px] text-slate-400">
+                                        <span>Kode 108: <strong class="text-cyan-300" x-text="selectedDetailMutasi.kode_barang"></strong></span>
+                                        <span>Volume: <strong class="text-white" x-text="selectedDetailMutasi.qty + ' ' + selectedDetailMutasi.satuan"></strong></span>
+                                    </div>
+                                </div>
+                            </template>
                             <div class="text-slate-300 text-[11px] pt-1" x-text="'Alasan Pemindahan: ' + selectedDetailMutasi.keterangan"></div>
                         </div>
 
@@ -1261,8 +999,14 @@
 
                 <!-- Formulir Edit Live BAST Triwulan -->
                 <div x-show="showEditTriwulanForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-purple-500/40 text-xs space-y-3 shadow-inner">
-                    <div class="font-bold text-purple-300 text-[11px] uppercase tracking-wider border-b border-slate-800 pb-2">
-                        ✏️ Live Edit Surat BAST Triwulan (Otomatis Berubah Pada Lembar Cetak):
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div class="font-bold text-purple-300 text-[11px] uppercase tracking-wider">
+                            ✏️ Live Edit Surat BAST Triwulan (Otomatis Berubah Pada Lembar Cetak):
+                        </div>
+                        <button type="button" @click="saveTriwulanEdit(selectedTriwulanKey)"
+                            class="px-3.5 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-1">
+                            <span>💾 Simpan ke Database</span>
+                        </button>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
@@ -1702,21 +1446,35 @@
                                     <tr class="bg-gray-200 font-bold border-b border-black">
                                         <th class="border border-black px-2 py-1.5 w-8">No</th>
                                         <th class="border border-black px-3 py-1.5 text-left">Nama Barang Dimutasi</th>
-                                        <th class="border border-black px-3 py-1.5 font-mono">Kode Rekening 108</th>
+                                        <th class="border border-black px-3 py-1.5 font-mono">NIBAR &amp; Kode 108</th>
                                         <th class="border border-black px-2 py-1.5 w-12">Vol</th>
                                         <th class="border border-black px-2 py-1.5 w-14">Satuan</th>
-                                        <th class="border border-black px-3 py-1.5 text-left">Alasan Pemindahan</th>
+                                        <th class="border border-black px-3 py-1.5 text-left">Alasan &amp; Kondisi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr class="border-b border-black">
-                                        <td class="border border-black px-2 py-1.5">1</td>
-                                        <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="selectedMutasi.nama"></td>
-                                        <td class="border border-black px-3 py-1.5 font-mono" x-text="selectedMutasi.kode_barang"></td>
-                                        <td class="border border-black px-2 py-1.5 font-bold" x-text="selectedMutasi.qty"></td>
-                                        <td class="border border-black px-2 py-1.5" x-text="selectedMutasi.satuan"></td>
-                                        <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" x-text="selectedMutasi.keterangan"></td>
-                                    </tr>
+                                    <template x-if="selectedMutasi.items && selectedMutasi.items.length > 0">
+                                        <template x-for="(sub, idx) in selectedMutasi.items" :key="idx">
+                                            <tr class="border-b border-black">
+                                                <td class="border border-black px-2 py-1.5" x-text="idx + 1"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="sub.nama_barang"></td>
+                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px]" x-text="(sub.nibar || '-') + ' (' + sub.kode_barang + ')'"></td>
+                                                <td class="border border-black px-2 py-1.5 font-bold">1</td>
+                                                <td class="border border-black px-2 py-1.5" x-text="sub.satuan"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" x-text="selectedMutasi.keterangan + ' (Kondisi: ' + sub.kondisi + ')'"></td>
+                                            </tr>
+                                        </template>
+                                    </template>
+                                    <template x-if="!selectedMutasi.items || selectedMutasi.items.length === 0">
+                                        <tr class="border-b border-black">
+                                            <td class="border border-black px-2 py-1.5">1</td>
+                                            <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="selectedMutasi.nama"></td>
+                                            <td class="border border-black px-3 py-1.5 font-mono" x-text="selectedMutasi.kode_barang"></td>
+                                            <td class="border border-black px-2 py-1.5 font-bold" x-text="selectedMutasi.qty"></td>
+                                            <td class="border border-black px-2 py-1.5" x-text="selectedMutasi.satuan"></td>
+                                            <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" x-text="selectedMutasi.keterangan"></td>
+                                        </tr>
+                                    </template>
                                 </tbody>
                             </table>
                         </div>
