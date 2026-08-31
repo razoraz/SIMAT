@@ -36,7 +36,7 @@ class AstapMutasiSeeder extends Seeder
         $data = [
             [
                 'astap_register_id'        => $reg1?->id,
-                'nomor_bamb'               => 'MTS-2026-002',
+                'nomor_bamb'               => 'MTS-2026-0000001',
                 'tanggal_mutasi'           => '2026-08-10',
                 'jenis_mutasi'             => 'Ajukan Mutasi',
                 'ruangan_asal'             => $unitMelati?->nama ?? 'Pav. Melati',
@@ -55,7 +55,7 @@ class AstapMutasiSeeder extends Seeder
             ],
             [
                 'astap_register_id'        => $reg2?->id,
-                'nomor_bamb'               => 'MTS-2026-005',
+                'nomor_bamb'               => 'MTS-2026-0000002',
                 'tanggal_mutasi'           => '2026-08-12',
                 'jenis_mutasi'             => 'Perbaikan',
                 'ruangan_asal'             => $unitIgd?->nama ?? 'IGD',
@@ -74,7 +74,7 @@ class AstapMutasiSeeder extends Seeder
             ],
             [
                 'astap_register_id'        => $reg3?->id,
-                'nomor_bamb'               => 'MTS-2026-009',
+                'nomor_bamb'               => 'MTS-2026-0000003',
                 'tanggal_mutasi'           => '2026-08-14',
                 'jenis_mutasi'             => 'Minta Mutasi',
                 'ruangan_asal'             => $unitAnggrek?->nama ?? 'Pav. Anggrek',
@@ -93,7 +93,7 @@ class AstapMutasiSeeder extends Seeder
             ],
             [
                 'astap_register_id'        => $reg4?->id,
-                'nomor_bamb'               => 'MTS-2026-011',
+                'nomor_bamb'               => 'MTS-2026-0000004',
                 'tanggal_mutasi'           => '2026-08-15',
                 'jenis_mutasi'             => 'Pengembalian',
                 'ruangan_asal'             => $unitMelati?->nama ?? 'Pav. Melati',

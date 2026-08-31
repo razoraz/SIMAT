@@ -269,7 +269,7 @@
 
                     this.selectedMutasi = {
                         ...item,
-                        bast_nomor: item.kode ? item.kode.replace('MTS-', '') + ' / BAMB / 430.10.7 / ' + (isNaN(tglObj.getTime()) ? '2026' : tglObj.getFullYear()) : '001 / BAMB / 430.10.7 / 2026',
+                        bast_nomor: item.kode ? ((item.kode.split('-')[2] || item.kode) + ' / BAMB / 430.10.7 / ' + (isNaN(tglObj.getTime()) ? '2026' : tglObj.getFullYear())) : '0000001 / BAMB / 430.10.7 / 2026',
                         hari: isNaN(tglObj.getTime()) ? 'Senin' : days[tglObj.getDay()],
                         tanggal_angka: isNaN(tglObj.getTime()) ? String(new Date().getDate()) : String(tglObj.getDate()),
                         bulan: isNaN(tglObj.getTime()) ? months[new Date().getMonth()] : months[tglObj.getMonth()],

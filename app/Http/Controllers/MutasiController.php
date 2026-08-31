@@ -162,10 +162,17 @@ class MutasiController extends Controller
 
         $kondisiBaru = $request->input('kondisi_baru', []);
 
-        // 1. Generate 1 nomor Berita Acara BAMB unik
+        // 1. Generate 1 nomor Berita Acara BAMB unik (format 7 digit: MTS-2026-0000001)
         $year  = date('Y', strtotime($request->tanggal_mutasi));
         $count = AstapMutasi::whereYear('tanggal_mutasi', $year)->count();
-        $nomor = 'MTS-' . $year . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        $seq   = $count + 1;
+        do {
+            $nomor = 'MTS-' . $year . '-' . str_pad($seq, 7, '0', STR_PAD_LEFT);
+            $exists = AstapMutasi::where('nomor_bamb', $nomor)->exists();
+            if ($exists) {
+                $seq++;
+            }
+        } while ($exists);
 
         $firstRegId = $registerIds[0] ?? null;
 
