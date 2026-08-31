@@ -489,11 +489,19 @@
                                     </span>
                                 </td>
 
-                                {{-- Nama Barang & NIBAR (Max Width & Line Clamp) --}}
+                                {{-- Nama Barang & NIBAR (Multi-item badge support) --}}
                                 <td class="px-4 py-4 min-w-[240px] max-w-[280px]">
-                                    <p class="font-bold text-white text-xs leading-snug break-words" x-text="item.nama"></p>
-                                    <div class="mt-1">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <p class="font-bold text-white text-xs leading-snug break-words flex-1" x-text="item.nama"></p>
+                                        <template x-if="item.item_count > 1">
+                                            <span class="px-2 py-0.5 rounded-lg text-[9.5px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30 whitespace-nowrap shrink-0" x-text="item.item_count + ' Barang'"></span>
+                                        </template>
+                                    </div>
+                                    <div class="mt-1 flex items-center space-x-1.5 flex-wrap gap-y-1">
                                         <span class="text-[10px] text-slate-400 font-mono bg-slate-950 px-2 py-0.5 rounded border border-slate-800/80 inline-block max-w-full truncate" x-text="item.kode_barang" :title="item.kode_barang"></span>
+                                        <template x-if="item.item_count > 1">
+                                            <span class="text-[10px] text-indigo-400 font-semibold" x-text="'(+' + (item.item_count - 1) + ' NIBAR)'"></span>
+                                        </template>
                                     </div>
                                 </td>
 
@@ -604,36 +612,64 @@
 
 
         <!-- MODAL DETAIL MUTASI -->
-        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="if (!showRejectModal && !showPrintBastModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 50;" @click.self="showDetailModal = false" x-cloak>
+            <div class="border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto" style="background-color: #0f172a;">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center space-x-2">
-                        <span class="text-indigo-400 font-bold">🔄</span>
-                        <h3 class="text-base font-bold text-white">Detail Pengajuan Mutasi</h3>
+                        <span class="text-indigo-400 font-bold text-lg">🔄</span>
+                        <h3 class="text-base font-extrabold text-white">Detail Berita Acara Mutasi</h3>
                     </div>
-                    <button type="button" @click="showDetailModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                    <button type="button" @click.stop="showDetailModal = false" class="text-slate-500 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
                 </div>
                 
                 <template x-if="selectedMutasi">
                     <div class="space-y-3.5 text-xs">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-slate-400 text-[10.5px]">Nomor BAMB:</span>
+                                <span class="text-slate-400 text-[10.5px] uppercase font-bold">Nomor BAMB:</span>
                                 <p class="font-mono font-bold text-cyan-300 text-sm" x-text="selectedMutasi.kode"></p>
                             </div>
                             <div class="text-right">
-                                <span class="text-slate-400 text-[10.5px]">Jenis Mutasi:</span>
+                                <span class="text-slate-400 text-[10.5px] uppercase font-bold">Jenis Mutasi:</span>
                                 <p class="font-bold text-white" x-text="selectedMutasi.jenis"></p>
                             </div>
                         </div>
 
-                        <div class="p-3 bg-slate-950/80 rounded-2xl border border-slate-800/80">
-                            <span class="text-slate-400 text-[10.5px] block mb-0.5">Nama Barang / Aset:</span>
-                            <p class="font-bold text-white text-sm" x-text="selectedMutasi.nama"></p>
-                            <div class="flex items-center gap-3 mt-1 text-[10px]">
-                                <span class="font-mono text-cyan-400" x-text="'NIBAR: ' + (selectedMutasi.kode_barang || '-')"></span>
-                                <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                <span class="text-slate-400" x-text="'Kondisi: ' + (selectedMutasi.kondisi || 'Baik')"></span>
+                        <!-- Daftar Rincian Barang yang Dimutasi (Multi-Item Table) -->
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400 text-[10.5px] font-bold uppercase tracking-wider">
+                                    Daftar Barang yang Dimutasi (<span x-text="(selectedMutasi.items ? selectedMutasi.items.length : 1) + ' Unit'"></span>):
+                                </span>
+                            </div>
+                            <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-inner">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-900/90 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800">
+                                        <tr>
+                                            <th class="px-3 py-2 text-center w-8">No</th>
+                                            <th class="px-3 py-2">Nama Barang / Aset</th>
+                                            <th class="px-3 py-2 font-mono">NIBAR</th>
+                                            <th class="px-3 py-2 text-center">Kondisi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/60">
+                                        <template x-for="(it, idx) in (selectedMutasi.items && selectedMutasi.items.length > 0 ? selectedMutasi.items : [{no: 1, nama_barang: selectedMutasi.nama, nibar: selectedMutasi.kode_barang, kondisi: selectedMutasi.kondisi}])" :key="idx">
+                                            <tr class="hover:bg-slate-900/40">
+                                                <td class="px-3 py-2 text-center font-bold text-slate-500" x-text="idx + 1"></td>
+                                                <td class="px-3 py-2 font-bold text-white" x-text="it.nama_barang"></td>
+                                                <td class="px-3 py-2 font-mono text-cyan-400 text-[11px]" x-text="it.nibar"></td>
+                                                <td class="px-3 py-2 text-center">
+                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-black border"
+                                                          :class="{
+                                                              'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': it.kondisi === 'Baik',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': it.kondisi === 'Rusak Ringan' || it.kondisi === 'Kurang Baik',
+                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': it.kondisi === 'Rusak Berat'
+                                                          }" x-text="it.kondisi || 'Baik'"></span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -712,8 +748,8 @@
         </div>
 
         <!-- MODAL INPUT ALASAN PENOLAKAN -->
-        <div x-show="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showRejectModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div x-show="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000;" @click.self="showRejectModal = false" x-cloak>
+            <div class="border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4" style="background-color: #0f172a;">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center space-x-2.5">
                         <div class="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold text-sm">
@@ -724,12 +760,12 @@
                             <p class="text-[11px] text-slate-400 font-mono" x-text="rejectTargetItem ? rejectTargetItem.kode : ''"></p>
                         </div>
                     </div>
-                    <button type="button" @click="showRejectModal = false" class="text-slate-500 hover:text-white text-xl font-bold">&times;</button>
+                    <button type="button" @click.stop="showRejectModal = false" class="text-slate-500 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
                 </div>
 
                 <div class="space-y-3 text-xs">
                     <p class="text-slate-300 font-semibold leading-relaxed">
-                        Silakan masukkan alasan penolakan pengajuan mutasi untuk aset:
+                        Silakan masukkan alasan penolakan pengajuan Berita Acara Mutasi:
                         <span class="text-rose-300 font-bold block mt-1" x-text="rejectTargetItem ? rejectTargetItem.nama : ''"></span>
                     </p>
 
@@ -741,11 +777,11 @@
                 </div>
 
                 <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
-                    <button type="button" @click="showRejectModal = false"
+                    <button type="button" @click.stop="showRejectModal = false"
                         class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer">
                         Batal
                     </button>
-                    <button type="button" @click="confirmRejectMutasi()"
+                    <button type="button" @click.stop="confirmRejectMutasi()"
                         class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-extrabold shadow-lg shadow-rose-500/25 transition-all cursor-pointer">
                         🚫 Konfirmasi Tolak Mutasi
                     </button>
@@ -754,8 +790,8 @@
         </div>
 
         <!-- MODAL PRINTER BERITA ACARA MUTASI BARANG (BAMB) RESMI RSUD KOESNANDI -->
-        <div x-show="showPrintBastModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 overflow-y-auto" x-cloak>
-            <div @click.away="showPrintBastModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto my-6">
+        <div x-show="showPrintBastModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 9999;" @click.self="showPrintBastModal = false" x-cloak>
+            <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto my-6" style="background-color: #0f172a;">
                 
                 <!-- Action Header Modal Print -->
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800 print:hidden">
@@ -771,17 +807,17 @@
 
                     <div class="flex items-center space-x-2">
                         <button type="button" @click="toggleSignMutasi(selectedMutasi)"
-                            class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg transition-all active:scale-95 flex items-center space-x-1"
+                            class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg transition-all active:scale-95 flex items-center space-x-1 cursor-pointer"
                             title="Tanda Tangan Digital BSrE">
                             <span x-text="selectedMutasi?.signed ? '✅ Tertanda Digital' : '✍️ TTD BSrE'"></span>
                         </button>
 
                         <button type="button" @click="window.print()" 
-                                class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
+                                class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>Cetak Sekarang</span>
                         </button>
-                        <button type="button" @click="showPrintBastModal = false" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-base font-bold">&times;</button>
+                        <button type="button" @click.stop="showPrintBastModal = false" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-base font-bold cursor-pointer">&times;</button>
                     </div>
                 </div>
 
@@ -839,7 +875,7 @@
                             <div class="flex"><div class="w-36 font-medium">Jabatan / Ruangan</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.pj_tujuan_jabatan"></div></div>
                         </div>
 
-                        <!-- TABEL RINCIAN MUTASI ASET -->
+                        <!-- TABEL RINCIAN MUTASI ASET (MULTI-ITEM LOOP) -->
                         <div class="my-3">
                             <table class="w-full text-center border-collapse border border-black text-[10px] font-sans">
                                 <thead>
@@ -854,20 +890,22 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr class="border-b border-black">
-                                        <td class="border border-black px-2 py-1.5">1</td>
-                                        <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="selectedMutasi.nama"></td>
-                                        <td class="border border-black px-3 py-1.5 font-mono text-[9px]" x-text="selectedMutasi.kode_barang"></td>
-                                        <td class="border border-black px-3 py-1.5 font-mono text-[9px]" x-text="selectedMutasi.kode_108"></td>
-                                        <td class="border border-black px-2 py-1.5 font-bold">1 Unit</td>
-                                        <td class="border border-black px-2 py-1.5 font-bold"
-                                            :class="{'text-emerald-800': selectedMutasi.kondisi === 'Baik', 'text-amber-800': selectedMutasi.kondisi === 'Kurang Baik', 'text-rose-800': selectedMutasi.kondisi === 'Rusak Berat'}"
-                                            x-text="selectedMutasi.kondisi"></td>
-                                        <td class="border border-black px-3 py-1.5 text-left text-[9.5px]">
-                                            <span class="font-bold uppercase" x-text="'[' + selectedMutasi.jenis + '] '"></span>
-                                            <span x-text="selectedMutasi.keterangan"></span>
-                                        </td>
-                                    </tr>
+                                    <template x-for="(it, idx) in (selectedMutasi.items && selectedMutasi.items.length > 0 ? selectedMutasi.items : [{no: 1, nama_barang: selectedMutasi.nama, nibar: selectedMutasi.kode_barang, kode_108: selectedMutasi.kode_108, volume: 1, satuan: 'Unit', kondisi: selectedMutasi.kondisi}])" :key="idx">
+                                        <tr class="border-b border-black">
+                                            <td class="border border-black px-2 py-1.5 font-bold" x-text="idx + 1"></td>
+                                            <td class="border border-black px-3 py-1.5 text-left font-bold" x-text="it.nama_barang"></td>
+                                            <td class="border border-black px-3 py-1.5 font-mono text-[9px]" x-text="it.nibar"></td>
+                                            <td class="border border-black px-3 py-1.5 font-mono text-[9px]" x-text="it.kode_108"></td>
+                                            <td class="border border-black px-2 py-1.5 font-bold" x-text="(it.volume || 1) + ' ' + (it.satuan || 'Unit')"></td>
+                                            <td class="border border-black px-2 py-1.5 font-bold"
+                                                :class="{'text-emerald-800': it.kondisi === 'Baik', 'text-amber-800': it.kondisi === 'Kurang Baik' || it.kondisi === 'Rusak Ringan', 'text-rose-800': it.kondisi === 'Rusak Berat'}"
+                                                x-text="it.kondisi || 'Baik'"></td>
+                                            <td class="border border-black px-3 py-1.5 text-left text-[9.5px]">
+                                                <span class="font-bold uppercase" x-text="'[' + selectedMutasi.jenis + '] '"></span>
+                                                <span x-text="selectedMutasi.keterangan"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
                                 </tbody>
                             </table>
                         </div>

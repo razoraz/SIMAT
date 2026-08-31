@@ -21,9 +21,22 @@ class AstapRegister extends Model
         return $this->belongsTo(Unit::class);
     }
 
+    /**
+     * Relasi ke rincian transaksi mutasi register.
+     */
+    public function mutasiRegisters()
+    {
+        return $this->hasMany(AstapMutasiRegister::class, 'astap_register_id');
+    }
+
+    /**
+     * Relasi ke dokumen Berita Acara Mutasi (BAMB).
+     */
     public function mutasis()
     {
-        return $this->hasMany(AstapMutasi::class);
+        return $this->belongsToMany(AstapMutasi::class, 'astap_mutasi_registers', 'astap_register_id', 'astap_mutasi_id')
+            ->withPivot('kondisi')
+            ->withTimestamps();
     }
 
     public function distribusiItemRegisters()

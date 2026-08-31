@@ -251,7 +251,7 @@ Route::middleware('auth')->group(function () {
                             'kondisi' => $r->kondisi,
                             'status_mutasi' => $r->status_mutasi,
                             'qr_code_path' => $r->qr_code_path,
-                            'mutasis' => $r->mutasis ? $r->mutasis->sortByDesc('tanggal_mutasi')->map(function($m) {
+                            'mutasis' => $r->mutasis ? $r->mutasis->sortByDesc('tanggal_mutasi')->map(function($m) use ($r) {
                                 return [
                                     'id' => $m->id,
                                     'nomor_bamb' => $m->nomor_bamb,
@@ -260,7 +260,7 @@ Route::middleware('auth')->group(function () {
                                     'ruangan_asal' => $m->ruangan_asal,
                                     'ruangan_tujuan' => $m->ruangan_tujuan,
                                     'jenis_mutasi' => $m->jenis_mutasi ?? 'Mutasi',
-                                    'kondisi' => $m->kondisi ?: ($m->register?->kondisi ?: 'Baik'),
+                                    'kondisi' => $m->pivot?->kondisi ?: ($m->kondisi ?: ($r->kondisi ?: 'Baik')),
                                     'alasan_mutasi' => $m->alasan_mutasi ?: '-',
                                     'status' => $m->status,
                                     'penanggung_jawab_asal' => $m->penanggung_jawab_asal ?: '-',
@@ -274,6 +274,42 @@ Route::middleware('auth')->group(function () {
             });
         return view('pages.data_astap', compact('astaps'));
     })->name('astap.index');
+
+    // API: Ambil riwayat mutasi spesifik unit register NIBAR
+    Route::get('/astap/register-mutasi/{id}', function ($id) {
+        $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
+            $q->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
+        }])->find($id);
+
+        if (!$reg) {
+            return response()->json(['success' => false, 'mutasis' => []]);
+        }
+
+        $mutasis = $reg->mutasis->map(function($m) use ($reg) {
+            return [
+                'id'                      => $m->id,
+                'nomor_bamb'              => $m->nomor_bamb,
+                'tanggal_mutasi'          => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('d M Y') : '-',
+                'tanggal_mutasi_raw'      => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('Y-m-d') : '',
+                'ruangan_asal'            => $m->ruangan_asal,
+                'ruangan_tujuan'          => $m->ruangan_tujuan,
+                'jenis_mutasi'            => $m->jenis_mutasi ?? 'Mutasi',
+                'kondisi'                 => $m->pivot?->kondisi ?: ($m->kondisi ?: ($reg->kondisi ?: 'Baik')),
+                'alasan_mutasi'           => $m->alasan_mutasi ?: '-',
+                'status'                  => $m->status,
+                'penanggung_jawab_asal'   => $m->penanggung_jawab_asal ?: '-',
+                'penanggung_jawab_tujuan' => $m->penanggung_jawab_tujuan ?: '-',
+                'catatan_penerima'        => $m->catatan_penerima,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'kondisi' => $reg->kondisi,
+            'ruang'   => $reg->ruang_pemegang,
+            'mutasis' => $mutasis
+        ]);
+    });
 
     // 2. Distribusi Pages & Forms
     Route::get('/distribusi', [DistribusiController::class, 'index'])->name('distribusi.index');
