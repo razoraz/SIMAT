@@ -92,7 +92,7 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            #print-area-bast, #print-area-distribusi, #print-area-triwulan, #print-area-kir {
+            #print-area-bast, #print-area-distribusi, #print-area-triwulan, #print-area-kir, #print-area-mutasi {
                 display: block !important;
                 width: 100% !important;
                 max-height: none !important;

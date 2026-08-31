@@ -265,7 +265,91 @@
         },
 
         printCurrent() {
-            window.print();
+            let el = null;
+            if (this.showPrintTriwulanModal) {
+                el = document.getElementById('print-area-triwulan');
+            } else if (this.showPrintDistribusiModal) {
+                el = document.getElementById('print-area-distribusi');
+            } else if (this.showPrintMutasiModal) {
+                el = document.getElementById('print-area-mutasi');
+            }
+
+            if (!el) {
+                window.print();
+                return;
+            }
+
+            let iframe = document.getElementById('simat-print-frame');
+            if (iframe) {
+                iframe.remove();
+            }
+
+            iframe = document.createElement('iframe');
+            iframe.id = 'simat-print-frame';
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Berita Acara - RSUD Dr. H. Koesnandi</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.2cm 1.2cm 1.2cm 1.2cm;
+        }
+        body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-size: 12pt !important;
+            line-height: 1.5 !important;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        body, p, div, span, table, th, td, li {
+            font-size: 12pt !important;
+        }
+        .text-xs, .text-sm, .text-\[10px\], .text-\[10\.5px\], .text-\[11px\], .text-\[9px\], .text-\[9\.5px\], .text-\[8px\], .text-\[7\.5px\] {
+            font-size: 12pt !important;
+        }
+        h3, h4 {
+            font-size: 13pt !important;
+        }
+        table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+        th, td {
+            border: 1px solid #000000 !important;
+            padding: 6px 8px !important;
+            font-size: 12pt !important;
+        }
+    </style>
+</head>
+<body class="bg-white text-black font-sans text-[12pt]">
+    <div style="font-size: 12pt;">
+        ${el.innerHTML}
+    </div>
+</body>
+</html>`);
+            doc.close();
+
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }, 400);
         }
     }" x-cloak>
 
@@ -1081,7 +1165,7 @@
                 </div>
 
                 <!-- LEMBAR CETAK DOKUMEN TRIWULAN (F4/A4 PRINTABLE) -->
-                <div class="bg-white text-black p-8 rounded-2xl font-serif shadow-2xl text-xs space-y-4 print:p-0 print:shadow-none">
+                <div id="print-area-triwulan" style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12pt;" class="bg-white text-black p-8 rounded-2xl font-sans shadow-2xl text-[12pt] space-y-4 print:p-0 print:shadow-none">
                     
                     <div class="border-b-[3px] border-black pb-1 mb-0.5">
                         <div class="flex items-center justify-between gap-4">
@@ -1270,7 +1354,7 @@
 
                 <!-- LEMBAR CETAK BAST DISTRIBUSI -->
                 <template x-if="selectedDistribusi">
-                    <div class="bg-white text-black p-8 rounded-2xl font-serif shadow-2xl text-xs space-y-4 print:p-0 print:shadow-none">
+                    <div id="print-area-distribusi" style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12pt;" class="bg-white text-black p-8 rounded-2xl font-sans shadow-2xl text-[12pt] space-y-4 print:p-0 print:shadow-none">
                         
                         <div class="border-b-[3px] border-black pb-1 mb-0.5">
                             <div class="flex items-center justify-between gap-4">
@@ -1445,7 +1529,7 @@
 
                 <!-- LEMBAR CETAK BAST MUTASI -->
                 <template x-if="selectedMutasi">
-                    <div class="bg-white text-black p-8 rounded-2xl font-serif shadow-2xl text-xs space-y-4 print:p-0 print:shadow-none">
+                    <div id="print-area-mutasi" style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12pt;" class="bg-white text-black p-8 rounded-2xl font-sans shadow-2xl text-[12pt] space-y-4 print:p-0 print:shadow-none">
                         
                         <div class="border-b-[3px] border-black pb-1 mb-0.5">
                             <div class="flex items-center justify-between gap-4">

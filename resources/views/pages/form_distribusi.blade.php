@@ -150,7 +150,7 @@
                         }
 
                         this.formData.kode = loadedData.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100));
-                        this.formData.bast_nomor = loadedData.bast_nomor || (loadedData.nomor_bast || '032 / 034 / 430.10.7 / 2026');
+                        this.formData.bast_nomor = loadedData.bast_nomor || (loadedData.nomor_bast || ('032 / ' + String(loadedData.id || '').padStart(3, '0') + ' / 430.10.7 / ' + new Date().getFullYear()));
                         this.formData.status = loadedData.status || 'Draft';
                         this.formData.tujuan = loadedData.unit ? loadedData.unit.nama : (uObj ? uObj.nama : (loadedData.tujuan || ''));
                         this.formData.unit_id = loadedData.unit_id || (uObj ? uObj.id : null);
@@ -165,7 +165,7 @@
                     } else {
                         const autoUnit = (this.isSubAdmin && this.userUnit) ? this.userUnit : null;
                         this.formData.kode = 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100);
-                        this.formData.bast_nomor = this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : ('032 / 0' + String(Math.floor(Math.random() * 80) + 10) + ' / 430.10.7 / 2026');
+                        this.formData.bast_nomor = this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : ('032 / [Auto] / 430.10.7 / ' + new Date().getFullYear());
                         this.formData.status = 'Draft';
                         this.formData.tujuan = autoUnit ? autoUnit.nama : '';
                         this.formData.unit_id = autoUnit ? autoUnit.id : null;
@@ -348,11 +348,19 @@
                                 const result = await response.json();
 
                                 if (response.ok && result.success) {
-                                    sessionStorage.setItem('flash_success', this.isEdit ? ('Data transaksi distribusi ' + this.formData.kode + ' berhasil diperbarui!') : ('Data transaksi distribusi ' + this.formData.kode + ' berhasil ditambahkan!'));
-                                    this.showSimatToast(this.isEdit ? '✏️ Distribusi berhasil diperbarui!' : '✅ Distribusi berhasil disimpan!', 'success');
+                                    // Update nomor BAST dari server (ID sudah terbentuk)
+                                    if (result.bast_nomor) {
+                                        this.formData.bast_nomor = result.bast_nomor;
+                                    }
+                                    sessionStorage.setItem('flash_success', this.isEdit ? ('Data transaksi distribusi ' + this.formData.kode + ' berhasil diperbarui!') : ('Data transaksi distribusi ' + this.formData.kode + ' berhasil ditambahkan! No. BAST: ' + (result.bast_nomor || '')));
+                                    this.showSimatToast(
+                                        (this.isEdit ? '✏️ Distribusi berhasil diperbarui!' : '✅ Distribusi berhasil disimpan!') +
+                                        (result.bast_nomor ? ' | No. BAST: ' + result.bast_nomor : ''),
+                                        'success'
+                                    );
                                     setTimeout(() => {
                                         window.location.href = '{{ route("distribusi.index") }}';
-                                    }, 500);
+                                    }, 1200);
                                 } else {
                                     this.showSimatToast('❌ Gagal menyimpan distribusi: ' + (result.message || 'Terjadi kesalahan pada server'), 'error');
                                 }
@@ -758,8 +766,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Baris 1b: NIBAR Multi-Select (Hanya Ditampilkan Saat Form Ubah Distribusi) -->
-                                <template x-if="isEdit && !isSubAdmin">
+                                <!-- Baris 1b: NIBAR Multi-Select (Admin & Master Admin bisa isi saat input baru maupun ubah) -->
+                                <template x-if="!isSubAdmin">
                                     <div class="relative" @click.away="if(activeNibarDropdownIndex === idx) activeNibarDropdownIndex = null">
                                         <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
                                             <span class="flex items-center space-x-1.5">

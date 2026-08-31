@@ -108,8 +108,8 @@ class DistribusiController extends Controller
                 return [
                     'id'                 => $d->id,
                     'kode'               => $d->kode,
-                    'bast_nomor'         => $d->bast_nomor ?: ($d->kode . '/BAST/2026'),
-                    'nomor_bast'         => $d->bast_nomor ?: ($d->kode . '/BAST/2026'),
+                    'bast_nomor'         => $d->bast_nomor ?: ('032 / ' . str_pad($d->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunStr),
+                    'nomor_bast'         => $d->bast_nomor ?: ('032 / ' . str_pad($d->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunStr),
                     'tgl'                => $tglCarbon ? $tglCarbon->format('d/m/Y') : '-',
                     'tanggal_distribusi' => $tglCarbon ? $tglCarbon->format('Y-m-d') : null,
                     'hari'               => $hariStr,
@@ -348,10 +348,41 @@ class DistribusiController extends Controller
             $tglDistribusi = !empty($validated['tanggal_distribusi'])
                 ? date('Y-m-d', strtotime($validated['tanggal_distribusi']))
                 : date('Y-m-d');
+            $tahunDistribusi = date('Y', strtotime($tglDistribusi));
 
             $statusInput = $validated['status'] ?? 'Draft';
             $validStatuses = ['Telah Diterima', 'Dalam Pengiriman', 'Menunggu Konfirmasi', 'Draft'];
             $finalStatus = in_array($statusInput, $validStatuses) ? $statusInput : 'Draft';
+
+            // Helper: hitung nomor urut sekuensial distribusi per tahun
+            // (count record yang ada di tahun yang sama + 1 untuk record baru)
+            $nextSeq = Distribusi::whereYear('tanggal_distribusi', $tahunDistribusi)->count() + 1;
+
+            // Jika update record existing, nomor urutnya diambil dari urutan record itu sendiri
+            $getSeqForExisting = function (Distribusi $d) use ($tahunDistribusi): int {
+                // Hitung posisi urut record ini berdasarkan created_at dalam tahun yang sama
+                return Distribusi::whereYear('tanggal_distribusi', $tahunDistribusi)
+                    ->where('id', '<=', $d->id)
+                    ->count();
+            };
+
+            // Helper: generate kode sekuensial
+            $generateKode = function (int $seq) use ($tahunDistribusi): string {
+                return 'DST-' . $tahunDistribusi . '-' . str_pad($seq, 3, '0', STR_PAD_LEFT);
+            };
+
+            // Helper: generate nomor BAST dari nomor urut
+            $generateBastNomor = function (int $seq) use ($tahunDistribusi): string {
+                return '032 / ' . str_pad($seq, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunDistribusi;
+            };
+
+            // Cek apakah nomor dari user adalah placeholder [Auto] atau kosong
+            $inputBastNomor = $validated['bast_nomor'] ?? null;
+            $isAutoNomor = empty($inputBastNomor) || str_contains((string)$inputBastNomor, '[Auto]');
+
+            // Cek apakah kode dari user adalah placeholder random (misal DST-2026-448)
+            $inputKode = $validated['kode'];
+            $isAutoKode = !preg_match('/^DST-\d{4}-\d{3}$/', $inputKode);
 
             // 1. Simpan / Update Header Distribusi
             $distribusi = null;
@@ -363,9 +394,10 @@ class DistribusiController extends Controller
             }
 
             if ($distribusi) {
+                $seq = $getSeqForExisting($distribusi);
                 $distribusi->update([
-                    'kode'               => $validated['kode'],
-                    'bast_nomor'         => $validated['bast_nomor'] ?? ($validated['kode'] . '/BAST/2026'),
+                    'kode'               => $isAutoKode ? $generateKode($seq) : $inputKode,
+                    'bast_nomor'         => $isAutoNomor ? $generateBastNomor($seq) : $inputBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
                     'status'             => $finalStatus,
@@ -387,9 +419,10 @@ class DistribusiController extends Controller
                 // Hapus item lama
                 $distribusi->items()->delete();
             } else {
+                // Buat record dulu (ID belum ada)
                 $distribusi = Distribusi::create([
-                    'kode'               => $validated['kode'],
-                    'bast_nomor'         => $validated['bast_nomor'] ?? ($validated['kode'] . '/BAST/2026'),
+                    'kode'               => $isAutoKode ? $generateKode($nextSeq) : $inputKode,
+                    'bast_nomor'         => $isAutoNomor ? $generateBastNomor($nextSeq) : $inputBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
                     'status'             => $finalStatus,
@@ -442,9 +475,10 @@ class DistribusiController extends Controller
             }
 
             return response()->json([
-                'success' => true,
-                'message' => "Transaksi distribusi {$distribusi->kode} berhasil disimpan.",
-                'data'    => $distribusi->load('items.registers.astapRegister', 'unit'),
+                'success'    => true,
+                'message'    => "Transaksi distribusi {$distribusi->kode} berhasil disimpan.",
+                'bast_nomor' => $distribusi->bast_nomor,
+                'data'       => $distribusi->load('items.registers.astapRegister', 'unit'),
             ]);
         });
     }

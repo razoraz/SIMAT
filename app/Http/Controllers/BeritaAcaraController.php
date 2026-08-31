@@ -240,7 +240,7 @@ class BeritaAcaraController extends Controller
             $distribusiList[] = [
                 'id'                => $dst->id,
                 'kode'              => $dst->kode,
-                'nomor_bast'        => $dst->bast_nomor ?: ($dst->kode . ' / BAST / 430.10.7 / ' . $tgl->format('Y')),
+                'nomor_bast'        => $dst->bast_nomor ?: ('032 / ' . str_pad($dst->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tgl->format('Y')),
                 'tgl_bast'          => ($hariIndo[$tgl->format('l')] ?? 'Senin') . ', ' . $tgl->format('d') . ' ' . ($bulanIndo[(int)$tgl->format('m')] ?? '') . ' ' . $tgl->format('Y'),
                 'hari'              => $hariIndo[$tgl->format('l')] ?? 'Senin',
                 'tanggal_angka'     => $tgl->format('d'),
