@@ -213,6 +213,27 @@ class MutasiController extends Controller
             $createdCount++;
         }
 
+        // Kirim Notifikasi Sistem (Format Singkat & Rapi)
+        try {
+            \App\Services\NotificationService::sendToAdminAndMaster(
+                "Mutasi: {$mutasi->ruangan_asal} → {$mutasi->ruangan_tujuan}",
+                "{$mutasi->nomor_bamb} • Menunggu Penerima",
+                'mutasi',
+                route('mutasi.index')
+            );
+            $targetUnit = Unit::where('nama', $mutasi->ruangan_tujuan)->first();
+            \App\Services\NotificationService::sendToUnitSubAdmin(
+                $targetUnit?->id,
+                $mutasi->ruangan_tujuan,
+                "Mutasi Masuk: dari {$mutasi->ruangan_asal}",
+                "{$mutasi->nomor_bamb} • Perlu Konfirmasi",
+                'mutasi',
+                route('mutasi.index')
+            );
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal kirim notif mutasi store: " . $e->getMessage());
+        }
+
         $msg = $createdCount > 1
             ? "Pengajuan mutasi {$request->jenis_mutasi} sebanyak {$createdCount} barang aset berhasil dibuat dalam 1 Berita Acara ({$nomor})! Menunggu persetujuan penerima."
             : "Pengajuan mutasi {$request->jenis_mutasi} ({$nomor}) berhasil dikirim! Menunggu persetujuan penerima.";
@@ -358,6 +379,27 @@ class MutasiController extends Controller
             'status'                   => 'Disetujui 2 Pihak (Menunggu Admin)',
         ]);
 
+        // Kirim Notifikasi Sistem (Format Singkat & Rapi)
+        try {
+            \App\Services\NotificationService::sendToAdminAndMaster(
+                "Mutasi Disetujui Penerima",
+                "{$mutasi->nomor_bamb} • Menunggu Admin",
+                'mutasi',
+                route('mutasi.index')
+            );
+            $asalUnit = Unit::where('nama', $mutasi->ruangan_asal)->first();
+            \App\Services\NotificationService::sendToUnitSubAdmin(
+                $asalUnit?->id,
+                $mutasi->ruangan_asal,
+                "Mutasi Disetujui: {$mutasi->ruangan_tujuan}",
+                "{$mutasi->nomor_bamb} • Menunggu Admin",
+                'mutasi',
+                route('mutasi.index')
+            );
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal kirim notif approvePenerima: " . $e->getMessage());
+        }
+
         session()->flash('success', 'Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') berhasil disetujui oleh penerima.');
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);
@@ -417,6 +459,29 @@ class MutasiController extends Controller
             $updatedRegistersCount++;
         }
 
+        // Kirim Notifikasi Sistem ke Sub Admin Ruangan Asal dan Ruangan Tujuan (Format Singkat & Rapi)
+        try {
+            $asalUnit = Unit::where('nama', $mutasi->ruangan_asal)->first();
+            \App\Services\NotificationService::sendToUnitSubAdmin(
+                $asalUnit?->id,
+                $mutasi->ruangan_asal,
+                "Mutasi Disahkan: {$mutasi->ruangan_tujuan}",
+                "{$mutasi->nomor_bamb} • Status: Selesai",
+                'mutasi',
+                route('mutasi.index')
+            );
+            \App\Services\NotificationService::sendToUnitSubAdmin(
+                $targetUnit?->id,
+                $mutasi->ruangan_tujuan,
+                "Mutasi Diterima: dari {$mutasi->ruangan_asal}",
+                "{$mutasi->nomor_bamb} • Status: Selesai",
+                'mutasi',
+                route('mutasi.index')
+            );
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal kirim notif approveAdmin: " . $e->getMessage());
+        }
+
         $msg = "Berita Acara Mutasi ({$mutasi->nomor_bamb}) telah disahkan oleh Admin! Lokasi {$updatedRegistersCount} aset berhasil dipindahkan ke {$mutasi->ruangan_tujuan}.";
         session()->flash('success', $msg);
         if ($request->wantsJson()) {
@@ -442,6 +507,21 @@ class MutasiController extends Controller
             'status'           => 'Ditolak',
             'alasan_penolakan' => $alasan,
         ]);
+
+        // Kirim Notifikasi Sistem ke Sub Admin Ruangan Asal (Format Singkat & Rapi)
+        try {
+            $asalUnit = Unit::where('nama', $mutasi->ruangan_asal)->first();
+            \App\Services\NotificationService::sendToUnitSubAdmin(
+                $asalUnit?->id,
+                $mutasi->ruangan_asal,
+                "Mutasi Ditolak: {$mutasi->ruangan_tujuan}",
+                "{$mutasi->nomor_bamb} • {$alasan}",
+                'mutasi',
+                route('mutasi.index')
+            );
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal kirim notif reject: " . $e->getMessage());
+        }
 
         session()->flash('success', 'Pengajuan Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') ditolak.');
         if ($request->wantsJson()) {

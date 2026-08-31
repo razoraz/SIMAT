@@ -78,6 +78,10 @@
                     return (this.mutasis || []).filter(m => m.status === 'Menunggu Persetujuan Penerima' || (!m.persetujuan_penerima && m.status !== 'Ditolak')).length;
                 },
 
+                get countMenunggu() {
+                    return this.countMenungguAdmin + this.countMenungguPenerima;
+                },
+
                 get countDitolak() {
                     return (this.mutasis || []).filter(m => m.status === 'Ditolak').length;
                 },

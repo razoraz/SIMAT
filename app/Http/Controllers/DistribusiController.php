@@ -393,6 +393,8 @@ class DistribusiController extends Controller
                 $distribusi = Distribusi::where('kode', $validated['kode'])->first();
             }
 
+            $isNewRecord = !$distribusi;
+
             if ($distribusi) {
                 $seq = $getSeqForExisting($distribusi);
                 $distribusi->update([
@@ -472,6 +474,37 @@ class DistribusiController extends Controller
                         'status'         => 'Tidak Tersedia',
                     ]);
                 }
+            }
+
+            // Kirim Notifikasi Sistem Sesuai Role (Format Singkat & Rapi)
+            try {
+                if ($isNewRecord) {
+                    \App\Services\NotificationService::sendToAdminAndMaster(
+                        "Distribusi: {$unit->nama}",
+                        "{$distribusi->kode} • Status: {$finalStatus}",
+                        'distribusi',
+                        route('distribusi.index')
+                    );
+                    \App\Services\NotificationService::sendToUnitSubAdmin(
+                        $unit->id,
+                        $unit->nama,
+                        "Distribusi Masuk: {$unit->nama}",
+                        "{$distribusi->kode} • Status: {$finalStatus}",
+                        'distribusi',
+                        route('distribusi.index')
+                    );
+                } else {
+                    \App\Services\NotificationService::sendToUnitSubAdmin(
+                        $unit->id,
+                        $unit->nama,
+                        "Distribusi ({$distribusi->kode}) Diperbarui",
+                        "Status: {$finalStatus} • {$unit->nama}",
+                        'distribusi',
+                        route('distribusi.index')
+                    );
+                }
+            } catch (\Throwable $e) {
+                \Log::warning("Gagal mengirim notifikasi distribusi: " . $e->getMessage());
             }
 
             return response()->json([

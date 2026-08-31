@@ -93,15 +93,64 @@
             </div>
         </div>
 
-        <!-- Tombol Notifikasi -->
-        <div x-data="{ notifOpen: false }" class="relative">
-            <button type="button" @click="notifOpen = !notifOpen"
-                class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 focus:outline-none transition-all relative"
+        <!-- Tombol Notifikasi Systems -->
+        <div x-data="{
+                notifOpen: false,
+                unreadCount: {{ (int)($unreadNotifCount ?? 0) }},
+                timer: null,
+                init() {
+                    // Auto poll notifikasi setiap 60 detik (1 menit)
+                    this.timer = setInterval(() => {
+                        this.refreshNotif();
+                    }, 60000);
+                },
+                async refreshNotif() {
+                    try {
+                        const res = await fetch('{{ route('notifications.list') }}', {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            this.unreadCount = data.unread_count;
+                        }
+                    } catch (e) {}
+                },
+                async markAllAsRead() {
+                    if (this.unreadCount === 0) return;
+                    try {
+                        const res = await fetch('{{ route('notifications.mark_all_read') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const json = await res.json();
+                        if (json.success) {
+                            this.unreadCount = 0;
+                            document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
+                            document.querySelectorAll('.notif-item-unread').forEach(el => el.classList.remove('bg-emerald-500/5', 'border-emerald-500/20'));
+                        }
+                    } catch (e) {
+                        console.error('Gagal menandai notifikasi dibaca', e);
+                    }
+                }
+            }" class="relative">
+
+            <!-- Bell Button -->
+            <button type="button" @click="notifOpen = !notifOpen; if(notifOpen && unreadCount > 0) markAllAsRead()"
+                class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 focus:outline-none transition-all relative group"
                 title="Notifikasi">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-slate-900 animate-pulse"></span>
+
+                <!-- Badge Titik Hijau Berkedip -->
+                <span x-show="unreadCount > 0" class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-slate-900"></span>
+                </span>
             </button>
 
             <!-- Dropdown Notifikasi -->
@@ -112,25 +161,94 @@
                  x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50">
-                <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
-                    <h4 class="text-xs font-bold text-white">Notifikasi Sistem</h4>
-                    <span class="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">3 Baru</span>
+                 class="absolute right-0 mt-2 w-84 sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50">
+                
+                <!-- Header Notifikasi -->
+                <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-bold text-white uppercase tracking-wider">Notifikasi Sistem</span>
+                        <span x-show="unreadCount > 0" 
+                              class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30" 
+                              x-text="unreadCount + ' Baru'"></span>
+                    </div>
+                    <button type="button" @click="markAllAsRead()" class="text-[11px] text-slate-400 hover:text-emerald-400 transition-colors font-medium">
+                        Tandai Dibaca
+                    </button>
                 </div>
-                <div class="divide-y divide-slate-800/60 max-h-64 overflow-y-auto">
-                    <a href="#" class="block px-4 py-3 hover:bg-slate-800/40 transition-colors">
-                        <p class="text-xs font-semibold text-slate-200">Pengadaan Aset Baru Terdaftar</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Pengadaan Alat Kesehatan Unit ICU</p>
-                        <span class="text-[9px] text-slate-500 mt-1 block">5 menit yang lalu</span>
-                    </a>
-                    <a href="#" class="block px-4 py-3 hover:bg-slate-800/40 transition-colors">
-                        <p class="text-xs font-semibold text-slate-200">Distribusi ASTAP Selesai</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">BAST #2026-004 telah ditandatangani</p>
-                        <span class="text-[9px] text-slate-500 mt-1 block">1 jam yang lalu</span>
-                    </a>
+
+                <!-- Daftar Notifikasi dengan Scrolling Rapi -->
+                <div class="divide-y divide-slate-800/60 max-h-80 overflow-y-auto notif-scroll">
+                    @forelse($systemNotifications ?? [] as $notif)
+                        <a href="{{ $notif['link'] }}" 
+                           class="block px-3.5 py-2.5 hover:bg-slate-800/60 transition-colors relative {{ $notif['is_unread'] ? 'bg-emerald-500/5 notif-item-unread' : '' }}">
+                            <div class="flex items-center space-x-3">
+                                <!-- Ikon Notifikasi Berdasarkan Kategori -->
+                                <div class="shrink-0">
+                                    @if($notif['type'] === 'astap')
+                                        <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs shadow-sm">
+                                            📦
+                                        </div>
+                                    @elseif($notif['type'] === 'distribusi')
+                                        <div class="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/30 flex items-center justify-center text-xs shadow-sm">
+                                            🚚
+                                        </div>
+                                    @elseif($notif['type'] === 'mutasi')
+                                        <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs shadow-sm">
+                                            🔄
+                                        </div>
+                                    @else
+                                        <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xs shadow-sm">
+                                            🔔
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- Konten Notifikasi Ringkas -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <p class="text-xs font-bold text-white truncate">{{ $notif['title'] }}</p>
+                                        <span class="text-[10px] text-slate-400 font-mono shrink-0">{{ $notif['time_ago'] }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-2 mt-0.5">
+                                        <p class="text-[11px] text-slate-400 truncate">{{ $notif['message'] }}</p>
+                                        @if($notif['is_unread'])
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 notif-unread-dot shrink-0"></span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="p-6 text-center text-slate-500">
+                            <div class="text-2xl mb-1">📭</div>
+                            <p class="text-xs font-medium">Belum ada notifikasi baru untuk Anda</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                <!-- Footer Dropdown -->
+                <div class="px-4 py-2 border-t border-slate-800/80 bg-slate-950/40 text-center text-[10px] text-slate-500">
+                    A-SIMAT RSUD Dr. H. Koesnandi • Pembaruan Tiap 60d
                 </div>
             </div>
         </div>
+
+        <!-- Custom Scrollbar Styling -->
+        <style>
+            .notif-scroll::-webkit-scrollbar {
+                width: 4px;
+            }
+            .notif-scroll::-webkit-scrollbar-track {
+                background: rgba(15, 23, 42, 0.6);
+            }
+            .notif-scroll::-webkit-scrollbar-thumb {
+                background: #334155;
+                border-radius: 99px;
+            }
+            .notif-scroll::-webkit-scrollbar-thumb:hover {
+                background: #10b981;
+            }
+        </style>
 
         <!-- Divider -->
         <div class="h-5 w-px bg-slate-800 my-auto"></div>

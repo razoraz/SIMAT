@@ -457,6 +457,21 @@ Route::middleware('auth')->group(function () {
         return view('pages.pemeliharaan');
     })->name('pemeliharaan.index');
 
+    // 7. API Notifikasi Sistem
+    Route::post('/api/notifications/mark-all-read', function () {
+        \App\Services\NotificationService::markAllAsReadForUser(auth()->user());
+        return response()->json(['success' => true, 'message' => 'Semua notifikasi telah ditandai sebagai dibaca.']);
+    })->name('notifications.mark_all_read');
+
+    Route::get('/api/notifications/list', function () {
+        $res = \App\Services\NotificationService::getForUser(auth()->user());
+        return response()->json([
+            'success'       => true,
+            'unread_count'  => $res['unread_count'],
+            'notifications' => $res['notifications'],
+        ]);
+    })->name('notifications.list');
+
     // Rute Khusus Master Admin & Admin Operasional (Sub Admin Dibatasi)
     Route::middleware([RoleMiddleware::class . ':master_admin,admin'])->group(function () {
         // Berita Acara (BAST)
@@ -719,6 +734,18 @@ Route::middleware('auth')->group(function () {
                     'kondisi' => in_array($data['kondisi'] ?? '', ['Baik', 'Rusak Ringan', 'Rusak Berat']) ? $data['kondisi'] : 'Baik',
                     'status' => 'Tersedia'
                 ]);
+            }
+
+            // Kirim Notifikasi Sistem ke Admin & Super Admin (Format Singkat & Rapi)
+            try {
+                \App\Services\NotificationService::sendToAdminAndMaster(
+                    "Aset Baru: {$astap->nama_barang}",
+                    "{$vol} {$extracted['satuan']} • " . ($astap->tahun_perolehan ?: date('Y')),
+                    'astap',
+                    route('astap.index')
+                );
+            } catch (\Throwable $e) {
+                \Log::warning("Gagal kirim notif astap store: " . $e->getMessage());
             }
 
             session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil ditambahkan.');
