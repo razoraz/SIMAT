@@ -160,8 +160,8 @@ class BeritaAcaraController extends Controller
                 ['no' => '3.', 'nama' => 'Gedung Dan Bangunan', 'qty' => $rekap['gedung']['qty'], 'nilai' => $rekap['gedung']['nilai']],
                 ['no' => '4.', 'nama' => 'Jalan, Irigasi Dan Jaringan', 'qty' => $rekap['jalan']['qty'], 'nilai' => $rekap['jalan']['nilai']],
                 ['no' => '5.', 'nama' => 'Aset Tetap Lainnya', 'qty' => $rekap['aset_lain']['qty'], 'nilai' => $rekap['aset_lain']['nilai']],
-                ['no' => '6.', 'nama' => 'Kontruksi Dalam Pengerjaan (KDP)', 'qty' => $rekap['kdp']['qty'], 'nilai' => $rekap['kdp']['nilai']],
-                ['no' => '7.', 'nama' => 'Aset Tidak Berwujud (ATB)', 'qty' => $rekap['atb']['qty'], 'nilai' => $rekap['atb']['nilai']],
+                ['no' => '6.', 'nama' => 'Kontruksi Dalam Pengerjaan', 'qty' => $rekap['kdp']['qty'], 'nilai' => $rekap['kdp']['nilai']],
+                ['no' => '7.', 'nama' => 'Aset Tidak Berwujud', 'qty' => $rekap['atb']['qty'], 'nilai' => $rekap['atb']['nilai']],
                 ['no' => '8.', 'nama' => 'Exstra Comtable', 'qty' => $rekap['ekstra']['qty'], 'nilai' => $rekap['ekstra']['nilai']],
             ];
 
@@ -175,6 +175,7 @@ class BeritaAcaraController extends Controller
                 'nomor_surat'    => $doc->nomor_surat,
                 'hari_tanggal'   => ($hariIndo[$tglBastObj->format('l')] ?? 'Selasa') . ' tanggal ' . $tglBastObj->format('d') . ' ' . ($bulanIndo[(int)$tglBastObj->format('m')] ?? '') . ' ' . $tglBastObj->format('Y'),
                 'triwulan_nama'  => $triwulanNames[$key],
+                'triwulan_label' => ($key === 'TW1' ? 'Triwulan I' : ($key === 'TW2' ? 'Triwulan II' : ($key === 'TW3' ? 'Triwulan III' : 'Triwulan IV'))) . ' Tahun ' . $tahun,
                 'lokasi'         => $doc->lokasi,
                 'pihak1_nama'    => $doc->pihak1_nama,
                 'pihak1_nip'     => $doc->pihak1_nip,

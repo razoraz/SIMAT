@@ -96,16 +96,18 @@
             #print-area-bast, #print-area-distribusi, #print-area-triwulan, #print-area-kir, #print-area-mutasi {
                 display: block !important;
                 width: 100% !important;
+                max-width: 100% !important;
                 max-height: none !important;
                 overflow: visible !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
+                box-sizing: border-box !important;
             }
             @page {
-                size: A4 portrait;
-                margin: 1.2cm 1.2cm 1.2cm 1.2cm;
+                size: auto;
+                margin: 12mm 15mm 12mm 15mm;
             }
         }
     </style>
