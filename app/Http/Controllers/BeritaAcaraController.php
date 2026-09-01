@@ -274,6 +274,14 @@ class BeritaAcaraController extends Controller
         // 3. DATA TAB 3: BAMB MUTASI BARANG ANTAR RUANGAN
         // =========================================================================
         $mutasis = AstapMutasi::with(['items.register.astap'])
+            ->where(function ($q) {
+                $q->where('status', 'Disetujui Admin (Selesai)')
+                  ->orWhere(function ($sub) {
+                      $sub->where('persetujuan_pengirim', true)
+                          ->where('persetujuan_penerima', true)
+                          ->where('persetujuan_admin', true);
+                  });
+            })
             ->orderBy('id', 'desc')
             ->get();
 
