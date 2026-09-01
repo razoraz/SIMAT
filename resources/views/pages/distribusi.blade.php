@@ -620,8 +620,8 @@
 
         <!-- Tabel Distribusi ASTAP (Multi-Barang / Transaksi) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-            <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40 min-h-[380px]">
-                <table class="w-full text-left text-xs text-slate-300 min-h-[350px]">
+            <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40">
+                <table class="w-full text-left text-xs text-slate-300">
                     <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm shrink-0">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap">No</th>
