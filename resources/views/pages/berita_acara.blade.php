@@ -1402,11 +1402,12 @@
                 <template x-if="selectedDistribusi">
                     <div x-show="showEditDistribusiForm" class="no-print bg-slate-950 p-4 rounded-2xl border border-teal-500/40 text-xs space-y-3 shadow-inner">
                         <div class="font-bold text-teal-300 text-[11px] uppercase tracking-wider border-b border-slate-800 pb-2">
-                            ✏️ Live Edit Surat BAST Distribusi (Otomatis Berubah Pada Lembar Cetak):
+                            ✏️ Live Edit Berita Acara Penyerahan Barang (Otomatis Berubah Pada Lembar Cetak):
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Nomor Surat BAST</label>
+                        <!-- Info Surat, Tanggal & SK Bupati (1 grid gabungan) -->
+                        <div class="grid grid-cols-2 sm:grid-cols-7 gap-2.5">
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-slate-400 text-[10px] mb-1">Nomor Surat</label>
                                 <input type="text" x-model="selectedDistribusi.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-teal-300 font-mono font-bold text-xs">
                             </div>
                             <div>
@@ -1414,45 +1415,88 @@
                                 <input type="text" x-model="selectedDistribusi.hari" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
                             </div>
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Tanggal Angka</label>
+                                <label class="block text-slate-400 text-[10px] mb-1">Tgl</label>
                                 <input type="text" x-model="selectedDistribusi.tanggal_angka" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
                             </div>
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Bulan & Tahun</label>
-                                <div class="flex space-x-1">
-                                    <input type="text" x-model="selectedDistribusi.bulan" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
-                                    <input type="text" x-model="selectedDistribusi.tahun" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white text-xs">
-                                </div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Bulan</label>
+                                <input type="text" x-model="selectedDistribusi.bulan" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Tahun</label>
+                                <input type="text" x-model="selectedDistribusi.tahun" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Tahun Anggaran</label>
+                                <input type="text" x-model="selectedDistribusi.tahun_anggaran" placeholder="2026" class="w-full bg-slate-900 border border-amber-700/50 rounded-lg px-2.5 py-1 text-amber-300 font-bold text-xs">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-slate-400 text-[10px] mb-1">Nomor SK Bupati</label>
+                                <input type="text" x-model="selectedDistribusi.sk_bupati_nomor" placeholder="188.45/430.10.7/2026" class="w-full bg-slate-900 border border-amber-700/50 rounded-lg px-2.5 py-1 text-amber-200 font-mono text-xs">
+                            </div>
+                        </div>
+                        <!-- Tanggal SK terpisah agar label tidak terpotong -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <div class="sm:col-span-1">
+                                <label class="block text-slate-400 text-[10px] mb-1">Tanggal SK Bupati</label>
+                                <input type="text" x-model="selectedDistribusi.sk_bupati_tanggal" placeholder="02 Januari 2026" class="w-full bg-slate-900 border border-amber-700/50 rounded-lg px-2.5 py-1 text-amber-200 text-xs">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Pihak I (Pengurus Barang Menyerahkan)</label>
-                                <input type="text" x-model="selectedDistribusi.pengurus_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
+                            <div class="space-y-1.5">
+                                <span class="text-[10px] font-bold text-teal-400 uppercase">👤 Pihak Kesatu (Pengurus Barang)</span>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">Nama Lengkap</label>
+                                    <input type="text" x-model="selectedDistribusi.pengurus_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-bold text-xs">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px]">NIP</label>
+                                        <input type="text" x-model="selectedDistribusi.pengurus_nip" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px]">Ruangan</label>
+                                        <input type="text" x-model="selectedDistribusi.pengurus_ruangan" placeholder="Gudang Perbekalan" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 text-xs">
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1">Pihak II (Sub Admin Penerima / Kepala Ruangan)</label>
-                                <input type="text" x-model="selectedDistribusi.pj_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-emerald-300 font-bold text-xs">
+                            <div class="space-y-1.5">
+                                <span class="text-[10px] font-bold text-emerald-400 uppercase">👤 Pihak Kedua (Penerima Barang)</span>
+                                <div>
+                                    <label class="block text-slate-400 text-[9px]">Nama Lengkap & Gelar</label>
+                                    <input type="text" x-model="selectedDistribusi.pj_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-emerald-300 font-bold text-xs">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px]">NIP</label>
+                                        <input type="text" x-model="selectedDistribusi.pj_nip" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px]">Jabatan / Ruangan</label>
+                                        <input type="text" x-model="selectedDistribusi.pj_jabatan" placeholder="Supervisor Front Office" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 text-xs">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </template>
 
-                <!-- LEMBAR CETAK BAST DISTRIBUSI -->
+                <!-- LEMBAR CETAK BAST DISTRIBUSI (BERITA ACARA PENYERAHAN BARANG SESUAI DOKUMEN RESMI) -->
                 <template x-if="selectedDistribusi">
                     <div class="bg-slate-950/80 p-2 sm:p-6 rounded-2xl border border-slate-800 flex justify-center overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
                         <div id="print-area-distribusi" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000;" class="w-full max-w-[760px] bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
                             
-                            <div class="border-b-[2.5px] border-black pb-2 mb-3" style="border-bottom: 2.5px solid #000000;">
+                            <!-- KOP SURAT RESMI -->
+                            <div class="border-b-[2.5px] border-black pb-2 mb-1" style="border-bottom: 2.5px solid #000000;">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="w-16 sm:w-20 shrink-0 flex justify-center">
                                         <img src="{{ asset('img/logo-bondowoso.png') }}" alt="Logo Dinas Bondowoso" class="h-16 w-16 object-contain">
                                     </div>
                                     <div class="flex-1 text-center text-black" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;">
                                         <h4 class="font-bold text-[11pt] sm:text-[12pt] uppercase tracking-normal leading-tight text-black m-0 p-0">PEMERINTAH KABUPATEN BONDOWOSO</h4>
-                                        <h3 class="font-bold text-[12.5pt] sm:text-[13.5pt] uppercase tracking-normal leading-tight text-black mt-0.5 mb-0 p-0">RUMAH SAKIT UMUM DAERAH DR. H. KOESNADI</h3>
-                                        <p class="text-[8.5pt] sm:text-[9pt] italic leading-tight text-black mt-0.5 mb-0 p-0">Jl. Kapten Piere Tendean No. 3 Telp. (0332) 421974 Fax. (0332) 422311</p>
-                                        <p class="text-[8.5pt] sm:text-[9pt] leading-tight text-black m-0 p-0">e-mail: rsu.koesnadi@gmail.com, Website: rsudrkoesnadi.go.id</p>
+                                        <h3 class="font-bold text-[12.5pt] sm:text-[13.5pt] uppercase tracking-normal leading-tight text-black mt-0.5 mb-0 p-0">RUMAH SAKIT UMUM DAERAH dr. H. KOESNADI</h3>
+                                        <p class="text-[8.5pt] sm:text-[9pt] italic leading-tight text-black mt-0.5 mb-0 p-0">Jl. Kapten Pierre Tendean No. 3 Telepon (0332) 421974. Fax.0332 422311</p>
+                                        <p class="text-[8.5pt] sm:text-[9pt] leading-tight text-black m-0 p-0">Website: rsudrkoesnadi.go.id, Email: rsu.koesnadi@gmail.com</p>
                                         <p class="font-bold text-[10pt] sm:text-[10.5pt] uppercase text-black mt-1 mb-0 p-0" style="letter-spacing: 0.35em;">B O N D O W O S O</p>
                                     </div>
                                     <div class="w-16 sm:w-20 shrink-0 flex justify-center">
@@ -1460,42 +1504,98 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="text-center text-black mb-3">
-                                <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0">BERITA ACARA SERAH TERIMA DISTRIBUSI ASET</h3>
-                                <p class="text-[9.5pt] sm:text-[10pt] font-semibold text-black mt-1 m-0">Nomor : <span x-text="selectedDistribusi.nomor_bast"></span></p>
+                            <div class="text-right text-[8pt] text-black pr-1 mb-2 font-normal">
+                                Kode Pos: 68214
                             </div>
 
+                            <!-- JUDUL SURAT & NOMOR -->
+                            <div class="text-center text-black mb-3">
+                                <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0">BERITA ACARA PENYERAHAN BARANG</h3>
+                                <p class="text-[9.5pt] sm:text-[10pt] font-semibold text-black mt-1 m-0">Nomor : <span x-text="selectedDistribusi.nomor_bast || '032 / 034 / 430.10.7 / 2026'"></span></p>
+                            </div>
+
+                            <!-- PEMBUKA -->
                             <p class="text-justify mb-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
-                                Pada hari ini <strong x-text="selectedDistribusi.hari"></strong> tanggal <strong x-text="selectedDistribusi.tanggal_angka"></strong> bulan <strong x-text="selectedDistribusi.bulan"></strong> tahun <strong x-text="selectedDistribusi.tahun"></strong>, telah dilaksanakan serah terima barang kepada unit penerima :
+                                Pada hari ini <strong x-text="selectedDistribusi.hari || 'Kamis'"></strong> tanggal <strong x-text="selectedDistribusi.tanggal_angka || '13'"></strong> bulan <strong x-text="selectedDistribusi.bulan || 'Agustus'"></strong> tahun <strong x-text="selectedDistribusi.tahun || '2026'"></strong>, yang bertanda tangan di bawah ini :
                             </p>
 
-                            <div class="space-y-1 mb-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.4] text-black">
+                            <!-- PIHAK KESATU (PENGURUS BARANG) -->
+                            <div class="space-y-1 mb-2 text-[9.5pt] sm:text-[10pt] leading-[1.4] text-black">
                                 <table class="w-full border-none text-[9.5pt] sm:text-[10pt]" style="border: none !important; margin: 0 !important; width: 100%;">
                                     <tr style="border: none !important;">
-                                        <td style="border: none !important; width: 130px; vertical-align: top; padding: 1.5px 0;">Unit Penerima</td>
+                                        <td style="border: none !important; width: 85px; vertical-align: top; padding: 1.5px 0;">Nama</td>
                                         <td style="border: none !important; width: 15px; vertical-align: top; padding: 1.5px 0;">:</td>
-                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase" x-text="selectedDistribusi.unit_nama"></td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold" x-text="selectedDistribusi.pengurus_nama || 'BUDI HARTONO,S.Sos'">BUDI HARTONO,S.Sos</td>
                                     </tr>
                                     <tr style="border: none !important;">
-                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Kepala Ruangan / PJ</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">NIP</td>
                                         <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold" x-text="selectedDistribusi.pj_nama"></td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" x-text="selectedDistribusi.pengurus_nip || '19760229 200801 1 010'">19760229 200801 1 010</td>
+                                    </tr>
+                                    <tr style="border: none !important;">
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Jabatan</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" x-text="selectedDistribusi.pengurus_jabatan || 'Pengurus Barang'">Pengurus Barang</td>
+                                    </tr>
+                                    <tr style="border: none !important;">
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Ruangan</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" x-text="selectedDistribusi.pengurus_ruangan || 'Gudang Perbekalan'">Gudang Perbekalan</td>
                                     </tr>
                                 </table>
                             </div>
 
-                            <!-- TABEL RESMI BARANG DISTRIBUSI -->
+                            <!-- PARAGRAF PENGESAHAN SK BUPATI -->
+                            <p class="text-justify my-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                                Dalam hal ini selaku Pengurus Barang Aset Tahun Anggaran <span x-text="selectedDistribusi.tahun_anggaran || selectedDistribusi.tahun || '2025'"></span> Rumah Sakit Umum Dr. H. Koesnadi Bondowoso, berdasarkan Surat Keputusan Bupati Kabupaten Bondowoso sesuai Nomor : <span x-text="selectedDistribusi.sk_bupati_nomor || '188.45/969/430.4.2/2024'"></span> tanggal <span x-text="selectedDistribusi.sk_bupati_tanggal || '02 Januari 2025'"></span>
+                            </p>
+
+                            <!-- PIHAK KEDUA (PENERIMA BARANG) -->
+                            <p class="text-[9.5pt] sm:text-[10pt] mb-1 font-normal text-black">
+                                Dengan ini menyerahkan barang kepada :
+                            </p>
+                            <div class="space-y-1 mb-2.5 text-[9.5pt] sm:text-[10pt] leading-[1.4] text-black">
+                                <table class="w-full border-none text-[9.5pt] sm:text-[10pt]" style="border: none !important; margin: 0 !important; width: 100%;">
+                                    <tr style="border: none !important;">
+                                        <td style="border: none !important; width: 85px; vertical-align: top; padding: 1.5px 0;">Nama</td>
+                                        <td style="border: none !important; width: 15px; vertical-align: top; padding: 1.5px 0;">:</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold" x-text="selectedDistribusi.pj_nama"></td>
+                                    </tr>
+                                    <tr style="border: none !important;">
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">NIP</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" x-text="selectedDistribusi.pj_nip"></td>
+                                    </tr>
+                                    <tr style="border: none !important;">
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Jabatan</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" x-text="selectedDistribusi.pj_jabatan || ('Supervisor ' + selectedDistribusi.unit_nama)"></td>
+                                    </tr>
+                                    <tr style="border: none !important;">
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Ruangan</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" x-text="selectedDistribusi.unit_nama"></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- TABEL RESMI BARANG DISTRIBUSI (DENGAN 3 SUB-KOLOM KONDISI: BAIK, KB, RUSAK) -->
                             <div class="my-2.5 overflow-x-auto">
-                                <table class="w-full text-center border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black;">
+                                <table class="w-full text-black border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black;">
                                     <thead>
                                         <tr class="bg-gray-100 font-bold border border-black" style="border: 1px solid black;">
-                                            <th class="border border-black px-2 py-1.5 w-10 text-center" style="border: 1px solid black;">No</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black;">Nama Barang / Aset</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black;">Merk & Spesifikasi</th>
-                                            <th class="border border-black px-2 py-1.5 w-14 text-center" style="border: 1px solid black;">Vol</th>
-                                            <th class="border border-black px-2 py-1.5 w-16 text-center" style="border: 1px solid black;">Satuan</th>
-                                            <th class="border border-black px-2 py-1.5 w-20 text-center" style="border: 1px solid black;">Kondisi</th>
+                                            <th rowspan="2" class="border border-black px-2 py-1.5 text-center font-bold" style="width: 5%; border: 1px solid black;">No</th>
+                                            <th rowspan="2" class="border border-black px-3 py-1.5 text-left font-bold" style="width: 25%; border: 1px solid black;">Uraian Barang</th>
+                                            <th rowspan="2" class="border border-black px-3 py-1.5 text-left font-bold" style="width: 27%; border: 1px solid black;">Merk /Type</th>
+                                            <th rowspan="2" class="border border-black px-2 py-1.5 text-center font-bold" style="width: 6%; border: 1px solid black;">Vol</th>
+                                            <th rowspan="2" class="border border-black px-2 py-1.5 text-center font-bold" style="width: 8%; border: 1px solid black;">Satuan</th>
+                                            <th colspan="3" class="border border-black px-1 py-1 text-center font-bold" style="width: 14%; border: 1px solid black;">Kondisi</th>
+                                            <th rowspan="2" class="border border-black px-3 py-1.5 text-left font-bold" style="width: 15%; border: 1px solid black;">Keterangan</th>
+                                        </tr>
+                                        <tr class="bg-gray-100 font-bold border border-black" style="border: 1px solid black;">
+                                            <th class="border border-black px-1 py-0.5 text-center font-bold text-[8.5pt]" style="border: 1px solid black;">Baik</th>
+                                            <th class="border border-black px-1 py-0.5 text-center font-bold text-[8.5pt]" style="border: 1px solid black;">KB</th>
+                                            <th class="border border-black px-1 py-0.5 text-center font-bold text-[8.5pt]" style="border: 1px solid black;">Rusak</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1503,64 +1603,66 @@
                                             <tr class="border border-black" style="border: 1px solid black;">
                                                 <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="idx + 1"></td>
                                                 <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-mono text-[9px]" style="border: 1px solid black;" x-text="sub.spesifikasi || '-'"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left font-mono text-[9px]" style="border: 1px solid black;" x-text="sub.spesifikasi || sub.merk_type || '-'"></td>
                                                 <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;" x-text="sub.qty"></td>
                                                 <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="sub.satuan"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-semibold" style="border: 1px solid black;" x-text="sub.kondisi || 'Baik'"></td>
+                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Baik' || !sub.kondisi) ? 'Baik' : ''"></td>
+                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB') ? 'KB' : ''"></td>
+                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Rusak') ? 'Rusak' : ''"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left text-[8.5pt]" style="border: 1px solid black;" x-text="sub.keterangan || selectedDistribusi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                         <template x-if="!selectedDistribusi.items || selectedDistribusi.items.length === 0">
                                             <tr class="border border-black" style="border: 1px solid black;">
                                                 <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;">1</td>
                                                 <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="selectedDistribusi.barang_nama"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-mono text-[9px]" style="border: 1px solid black;" x-text="selectedDistribusi.merk + ' ' + (selectedDistribusi.type || '')"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left font-mono text-[9px]" style="border: 1px solid black;" x-text="(selectedDistribusi.merk ? (selectedDistribusi.merk + ' ' + (selectedDistribusi.type || '')) : '-')"></td>
                                                 <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;" x-text="selectedDistribusi.volume"></td>
                                                 <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="selectedDistribusi.satuan"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-semibold" style="border: 1px solid black;" x-text="selectedDistribusi.kondisi || 'Baik'"></td>
+                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;">Baik</td>
+                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;"></td>
+                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left text-[8.5pt]" style="border: 1px solid black;" x-text="selectedDistribusi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                     </tbody>
                                 </table>
                             </div>
 
+                            <!-- PENUTUP -->
                             <p class="text-justify my-3 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
-                                Demikian Berita Acara Serah Terima ini dibuat dalam rangkap secukupnya untuk dapat dipergunakan sebagaimana mestinya.
+                                Demikian Berita Acara Penyerahan Barang ini dibuat rangkap secukupnya untuk dipergunakan sebagaimana mestinya.
                             </p>
 
-                            <!-- TANDA TANGAN BAST DISTRIBUSI -->
+                            <!-- TANDA TANGAN (KIRI: TTD ELEKTRONIK PENGURUS BARANG, KANAN: TTD BASAH KEPALA RUANGAN/PJ) -->
                             <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt] mt-6 pt-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                                 <div>
-                                    <p class="m-0">Yang Menyerahkan,</p>
-                                    <p class="font-bold m-0">Pengurus Barang Pembantu</p>
-                                    <div class="my-1 flex items-center justify-center" style="height: 48px; min-height: 48px;">
+                                    <p class="m-0">Yang Menyerahkan</p>
+                                    <p class="font-bold m-0">Pengurus Barang Aset</p>
+                                    
+                                    <!-- TTD Elektronik BSrE Pengurus Barang -->
+                                    <div class="my-1 flex items-center justify-center" style="height: 52px; min-height: 52px;">
                                         <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
                                             <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" class="w-9 h-9 shrink-0">
                                             <div class="text-[7.5px] leading-tight text-slate-800">
                                                 <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
-                                                <div>Pengurus Barang Pembantu</div>
+                                                <div>Pengurus Barang Aset</div>
                                                 <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
                                             </div>
                                         </div>
                                     </div>
+
                                     <p class="font-bold underline uppercase m-0" x-text="selectedDistribusi.pengurus_nama || 'BUDI HARTONO,S.Sos'"></p>
                                     <p class="m-0" x-text="'NIP. ' + (selectedDistribusi.pengurus_nip || '19760229 200801 1 010')"></p>
                                 </div>
 
                                 <div>
-                                    <p class="m-0">Yang Menerima,</p>
-                                    <p class="font-bold m-0">Kepala Ruangan / PJ Unit</p>
-                                    <div class="my-1 flex items-center justify-center" style="height: 48px; min-height: 48px;">
-                                        <template x-if="selectedDistribusi.signed">
-                                            <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
-                                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-PENERIMA'))" class="w-9 h-9 shrink-0">
-                                                <div class="text-[7.5px] leading-tight text-slate-800">
-                                                    <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
-                                                    <div>Kepala Ruangan / PJ Unit</div>
-                                                    <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
+                                    <p class="m-0">Yang Menerima</p>
+                                    <p class="font-bold m-0" x-text="'Kepala Ruangan ' + (selectedDistribusi.unit_nama || 'Unit')"></p>
+                                    
+                                    <!-- Ruang Tanda Tangan Basah Manual (Tinggi presisi 52px agar nama sejajar horizontal sempurna) -->
+                                    <div class="my-1 flex items-center justify-center" style="height: 52px; min-height: 52px;"></div>
+
                                     <p class="font-bold underline uppercase m-0" x-text="selectedDistribusi.pj_nama"></p>
                                     <p class="m-0" x-text="'NIP. ' + selectedDistribusi.pj_nip"></p>
                                 </div>
