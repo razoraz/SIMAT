@@ -27,6 +27,7 @@ return new class extends Migration
             $table->integer('jumlah_volume')->default(1);
             $table->string('satuan', 50)->default('Unit');
             $table->decimal('harga_satuan', 18, 2)->default(0);
+            $table->decimal('jumlah_anggaran', 18, 2)->default(0);
             $table->decimal('total_realisasi', 18, 2)->default(0);
             $table->decimal('biaya_administrasi_proyek', 18, 2)->default(0);
             $table->boolean('is_extracomtable')->default(false); // TRUE jika KIB B < Rp 300.000
