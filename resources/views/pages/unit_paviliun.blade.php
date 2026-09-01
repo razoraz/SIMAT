@@ -460,11 +460,9 @@
                                 <th class="px-3 py-3 text-center w-10">No</th>
                                 <th class="px-3 py-3 text-center">Kode 108 / Register</th>
                                 <th class="px-4 py-3">Nama Barang & Spesifikasi</th>
-                                <th class="px-3 py-3 text-center">Kategori</th>
                                 <th class="px-3 py-3 text-center">Tahun</th>
                                 <th class="px-3 py-3 text-center">Kondisi</th>
                                 <th class="px-3 py-3 text-right">Nilai Aset</th>
-                                <th class="px-3 py-3 text-center">Status Operasional</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800/80">
@@ -479,9 +477,6 @@
                                         <div class="font-bold text-white text-xs" x-text="ast.nama"></div>
                                         <div class="text-[10px] text-blue-300 font-medium" x-text="ast.merk"></div>
                                     </td>
-                                    <td class="px-3 py-3 text-center">
-                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="ast.category"></span>
-                                    </td>
                                     <td class="px-3 py-3 text-center font-mono font-semibold text-slate-300" x-text="ast.tahun"></td>
                                     <td class="px-3 py-3 text-center">
                                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
@@ -493,15 +488,6 @@
                                             x-text="ast.kondisi"></span>
                                     </td>
                                     <td class="px-3 py-3 text-right font-mono font-bold text-emerald-400" x-text="'Rp ' + formatRupiah(ast.nilai ?? ast.harga ?? 0)"></td>
-                                    <td class="px-3 py-3 text-center">
-                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold"
-                                            :class="{
-                                                'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30': ast.status === 'Aktif Digunakan',
-                                                'bg-purple-500/15 text-purple-300 border border-purple-500/30': ast.status === 'Standby Cadangan',
-                                                'bg-amber-500/15 text-amber-300 border border-amber-500/30': ast.status.includes('Servis') || ast.status.includes('Kalibrasi')
-                                            }"
-                                            x-text="ast.status"></span>
-                                    </td>
                                 </tr>
                             </template>
                             <template x-if="filteredDetailAssets.length === 0">

@@ -176,6 +176,55 @@ class MutasiController extends Controller
 
         $firstRegId = $registerIds[0] ?? null;
 
+        $user = Auth::user();
+        $userRole = $user->role ?? 'admin';
+        $isAdminRole = in_array($userRole, ['admin', 'master_admin']);
+
+        $isReturnToGudang = ($request->jenis_mutasi === 'Pengembalian') && (
+            str_contains(strtolower($request->ruangan_tujuan), 'perbekalan') ||
+            str_contains(strtolower($request->ruangan_tujuan), 'rumah tangga') ||
+            str_contains(strtolower($request->ruangan_tujuan), 'gudang')
+        );
+
+        if ($isAdminRole) {
+            // Master Admin & Admin: Otomatis persetujuan Admin disetujui.
+            // - Pengembalian ke Gudang: Hanya butuh persetujuan Pengirim
+            // - Mutasi Biasa: Butuh persetujuan Pengirim dan Penerima
+            $pAdmin    = true;
+            $tglAdmin  = now();
+            $pPenerima = $isReturnToGudang ? true : false;
+            $tglPen    = $isReturnToGudang ? now() : null;
+            $pPengirim = false;
+            $tglPeng   = null;
+
+            $initialStatus = $isReturnToGudang
+                ? 'Disetujui Admin (Menunggu Persetujuan Pengirim)'
+                : 'Disetujui Admin (Menunggu Persetujuan Pengirim & Penerima)';
+        } else {
+            // Sub Admin: Otomatis persetujuan Pengirim disetujui (kecuali Minta Mutasi di mana Sub Admin = Penerima)
+            // - Pengembalian ke Gudang: Hanya butuh persetujuan Admin
+            // - Mutasi Biasa: Butuh persetujuan Penerima dan Admin
+            $pAdmin   = false;
+            $tglAdmin = null;
+
+            if ($request->jenis_mutasi === 'Minta Mutasi') {
+                $pPengirim = false;
+                $tglPeng   = null;
+                $pPenerima = true;
+                $tglPen    = now();
+                $initialStatus = 'Menunggu Persetujuan Pengirim';
+            } else {
+                $pPengirim = true;
+                $tglPeng   = now();
+                $pPenerima = $isReturnToGudang ? true : false;
+                $tglPen    = $isReturnToGudang ? now() : null;
+
+                $initialStatus = $isReturnToGudang
+                    ? 'Menunggu Persetujuan Admin'
+                    : 'Menunggu Persetujuan Penerima';
+            }
+        }
+
         // 2. Buat 1 baris Dokumen Berita Acara (Header)
         $mutasi = AstapMutasi::create([
             'astap_register_id'        => $firstRegId,
@@ -189,9 +238,13 @@ class MutasiController extends Controller
             'penanggung_jawab_tujuan'  => $request->penanggung_jawab_tujuan,
             'alasan_mutasi'            => $request->alasan_mutasi,
             'catatan_penerima'         => $request->catatan_penerima,
-            'persetujuan_pengirim'     => true,
-            'tgl_persetujuan_pengirim' => now(),
-            'status'                   => 'Menunggu Persetujuan Penerima',
+            'persetujuan_pengirim'     => $pPengirim,
+            'tgl_persetujuan_pengirim' => $tglPeng,
+            'persetujuan_penerima'     => $pPenerima,
+            'tgl_persetujuan_penerima' => $tglPen,
+            'persetujuan_admin'        => $pAdmin,
+            'tgl_persetujuan_admin'    => $tglAdmin,
+            'status'                   => $initialStatus,
         ]);
 
         // 3. Masukkan seluruh item register yang dimutasi ke tabel rincian astap_mutasi_registers
@@ -375,22 +428,81 @@ class MutasiController extends Controller
     private function transferRegisterLocations(AstapMutasi $mutasi): void
     {
         $targetUnit = Unit::where('nama', $mutasi->ruangan_tujuan)->first();
+        $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
+            !$targetUnit ||
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'gudang')
+        );
+
         if ($mutasi->items->count() > 0) {
             foreach ($mutasi->items as $item) {
                 if ($item->register) {
-                    $updateData = ['ruang_pemegang' => $mutasi->ruangan_tujuan];
-                    if ($targetUnit) { $updateData['unit_id'] = $targetUnit->id; }
+                    if ($isReturnToGudang) {
+                        $updateData = [
+                            'unit_id'        => null,
+                            'ruang_pemegang' => null,
+                            'status'         => 'Tersedia',
+                        ];
+                    } else {
+                        $updateData = ['ruang_pemegang' => $mutasi->ruangan_tujuan];
+                        if ($targetUnit) { $updateData['unit_id'] = $targetUnit->id; }
+                    }
                     if ($item->kondisi) { $updateData['kondisi'] = $item->kondisi; }
                     if ($mutasi->jenis_mutasi === 'Penghapusan') { $updateData['status'] = 'Dihapuskan'; }
                     $item->register->update($updateData);
                 }
             }
         } elseif ($mutasi->register) {
-            $updateData = ['ruang_pemegang' => $mutasi->ruangan_tujuan];
-            if ($targetUnit) { $updateData['unit_id'] = $targetUnit->id; }
+            if ($isReturnToGudang) {
+                $updateData = [
+                    'unit_id'        => null,
+                    'ruang_pemegang' => null,
+                    'status'         => 'Tersedia',
+                ];
+            } else {
+                $updateData = ['ruang_pemegang' => $mutasi->ruangan_tujuan];
+                if ($targetUnit) { $updateData['unit_id'] = $targetUnit->id; }
+            }
             if ($mutasi->jenis_mutasi === 'Penghapusan') { $updateData['status'] = 'Dihapuskan'; }
             $mutasi->register->update($updateData);
         }
+    }
+
+    /**
+     * Persetujuan oleh pihak pengirim (Sub Admin ruangan asal).
+     */
+    public function approvePengirim(Request $request, $id)
+    {
+        $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
+
+        $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'gudang')
+        );
+
+        $isCompleted = ($isReturnToGudang && $mutasi->persetujuan_admin) ||
+            ($mutasi->persetujuan_admin && $mutasi->persetujuan_penerima);
+
+        $newStatus = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui Pengirim (Menunggu Pihak Lain)';
+
+        $mutasi->update([
+            'persetujuan_pengirim'     => true,
+            'tgl_persetujuan_pengirim' => now(),
+            'status'                   => $newStatus,
+        ]);
+
+        if ($isCompleted) {
+            $this->transferRegisterLocations($mutasi);
+        }
+
+        $msg = 'Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') berhasil disetujui oleh pengirim.';
+        session()->flash('success', $msg);
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'is_completed' => $isCompleted]);
+        }
+        return back()->with('success', $msg);
     }
 
     /**
@@ -400,8 +512,8 @@ class MutasiController extends Controller
     {
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
 
-        $isCompleted = (bool) $mutasi->persetujuan_admin;
-        $newStatus   = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui 2 Pihak (Menunggu Admin)';
+        $isCompleted = (bool) $mutasi->persetujuan_admin && (bool) $mutasi->persetujuan_pengirim;
+        $newStatus   = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui Penerima (Menunggu Pihak Lain)';
 
         $mutasi->update([
             'persetujuan_penerima'     => true,
@@ -417,7 +529,7 @@ class MutasiController extends Controller
         try {
             \App\Services\NotificationService::sendToAdminAndMaster(
                 "Mutasi Disetujui Penerima",
-                "{$mutasi->nomor_bamb} • " . ($isCompleted ? 'Selesai' : 'Menunggu Admin'),
+                "{$mutasi->nomor_bamb} • " . ($isCompleted ? 'Selesai' : 'Menunggu Pihak Lain'),
                 'mutasi',
                 route('mutasi.index')
             );
@@ -426,7 +538,7 @@ class MutasiController extends Controller
                 $asalUnit?->id,
                 $mutasi->ruangan_asal,
                 "Mutasi Disetujui Penerima: {$mutasi->ruangan_tujuan}",
-                "{$mutasi->nomor_bamb} • Status: " . ($isCompleted ? 'Selesai' : 'Menunggu Admin'),
+                "{$mutasi->nomor_bamb} • Status: " . ($isCompleted ? 'Selesai' : 'Menunggu Pihak Lain'),
                 'mutasi',
                 route('mutasi.index')
             );
@@ -443,20 +555,34 @@ class MutasiController extends Controller
     }
 
     /**
-     * Persetujuan oleh Admin / Master Admin (Bisa langsung tanpa menunggu penerima).
+     * Persetujuan oleh Admin / Master Admin.
      */
     public function approveAdmin(Request $request, $id)
     {
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
 
-        $isCompleted = (bool) $mutasi->persetujuan_penerima;
-        $newStatus   = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui Admin (Menunggu Penerima)';
+        $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
+            str_contains(strtolower($mutasi->ruangan_tujuan), 'gudang')
+        );
 
-        $mutasi->update([
+        $isCompleted = ($isReturnToGudang && $mutasi->persetujuan_pengirim) ||
+            ($mutasi->persetujuan_pengirim && $mutasi->persetujuan_penerima);
+
+        $newStatus = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui Admin (Menunggu Persetujuan Ruangan)';
+
+        $updateData = [
             'persetujuan_admin'     => true,
             'tgl_persetujuan_admin' => now(),
             'status'                => $newStatus,
-        ]);
+        ];
+        if ($isReturnToGudang) {
+            $updateData['persetujuan_penerima'] = true;
+            $updateData['tgl_persetujuan_penerima'] = now();
+        }
+
+        $mutasi->update($updateData);
 
         if ($isCompleted) {
             $this->transferRegisterLocations($mutasi);

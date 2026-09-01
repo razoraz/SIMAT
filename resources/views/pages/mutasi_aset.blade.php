@@ -12,7 +12,7 @@
                 searchQuery: '',
                 statusFilter: 'all',
                 showDetailModal: false,
-                showPrintBastModal: false,
+
                 selectedMutasi: null,
 
                 mutasis: {{ Js::from($mutasis) }},
@@ -115,18 +115,63 @@
                     this.$dispatch('show-toast', { message, type });
                 },
 
-                canApprovePenerima(item) {
-                    if (!item || item.persetujuan_penerima || item.status === 'Ditolak') return false;
+                canApprovePengirim(item) {
+                    if (!item || item.persetujuan_pengirim || item.status === 'Ditolak') return false;
                     if (this.userRole !== 'sub_admin') return false;
                     if (!this.userUnit) return true;
                     const myUnit = (this.userUnit || '').toLowerCase().trim();
+                    const asalUnit = (item.asal || '').toLowerCase().trim();
+                    return asalUnit.includes(myUnit) || myUnit.includes(asalUnit) || myUnit === asalUnit;
+                },
+
+                canApprovePenerima(item) {
+                    if (!item || item.persetujuan_penerima || item.status === 'Ditolak') return false;
                     const destUnit = (item.tujuan || '').toLowerCase().trim();
+                    const isReturnToGudang = item.jenis === 'Pengembalian' && (
+                        destUnit.includes('perbekalan') || destUnit.includes('rumah tangga') || destUnit.includes('gudang')
+                    );
+                    if (isReturnToGudang) return false;
+                    if (this.userRole !== 'sub_admin') return false;
+                    if (!this.userUnit) return true;
+                    const myUnit = (this.userUnit || '').toLowerCase().trim();
                     return destUnit.includes(myUnit) || myUnit.includes(destUnit) || myUnit === destUnit;
                 },
 
                 canApproveAdmin(item) {
                     if (!item || item.persetujuan_admin || item.status === 'Ditolak') return false;
                     return this.userRole === 'admin' || this.userRole === 'master_admin';
+                },
+
+                approvePengirim(item) {
+                    if (!item) return;
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch('/mutasi-aset/' + item.id + '/approve-pengirim', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(d => {
+                        if (d.success) {
+                            item.persetujuan_pengirim = true;
+                            if (d.is_completed) {
+                                item.status = 'Disetujui Admin (Selesai)';
+                            } else {
+                                item.status = 'Disetujui Pengirim (Menunggu Pihak Lain)';
+                            }
+                            this.showSimatToast('✅ Mutasi berhasil disetujui sebagai Pihak Pengirim!', 'success');
+                            setTimeout(() => window.location.reload(), 800);
+                        } else {
+                            this.showSimatToast('⚠️ Gagal menyetujui mutasi.', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('approvePengirim error:', err);
+                        window.location.reload();
+                    });
                 },
 
                 approvePenerima(item) {
@@ -274,121 +319,7 @@
                     this.showDetailModal = true;
                 },
 
-                openPrintBast(item) {
-                    if (!item) return;
-                    if (!item.persetujuan_pengirim || !item.persetujuan_penerima || !item.persetujuan_admin) {
-                        this.showSimatToast('⚠️ Dokumen BAMB belum dapat dicetak karena belum disetujui oleh seluruh pihak (Pengirim, Penerima, dan Admin harus menyetujui terlebih dahulu).', 'warning');
-                        return;
-                    }
-                    const tglObj = item.tgl_raw ? new Date(item.tgl_raw) : new Date();
-                    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-                    this.selectedMutasi = {
-                        ...item,
-                        bast_nomor: item.kode ? ((item.kode.split('-')[2] || item.kode) + ' / BAMB / 430.10.7 / ' + (isNaN(tglObj.getTime()) ? '2026' : tglObj.getFullYear())) : '0000001 / BAMB / 430.10.7 / 2026',
-                        hari: isNaN(tglObj.getTime()) ? 'Senin' : days[tglObj.getDay()],
-                        tanggal_angka: isNaN(tglObj.getTime()) ? String(new Date().getDate()) : String(tglObj.getDate()),
-                        bulan: isNaN(tglObj.getTime()) ? months[new Date().getMonth()] : months[tglObj.getMonth()],
-                        tahun: isNaN(tglObj.getTime()) ? String(new Date().getFullYear()) : String(tglObj.getFullYear()),
-                        pengurus_nama: 'ESTU PRATIKA SARI, SST',
-                        pengurus_nip: '198805122011012005',
-                        pengurus_jabatan: 'Pengurus Barang Aset RSUD',
-                        pj_asal_nama: item.pemohon || 'Ka. Ruangan ' + item.asal,
-                        pj_asal_nip: '198004152006041008',
-                        pj_asal_jabatan: 'Kepala Ruangan ' + item.asal,
-                        pj_tujuan_nama: item.penerima_pj || 'Ka. Ruangan ' + item.tujuan,
-                        pj_tujuan_nip: '198410272009021003',
-                        pj_tujuan_jabatan: 'Kepala Ruangan ' + item.tujuan,
-                        signed: true
-                    };
-                    this.showPrintBastModal = true;
-                },
-
-                toggleSignMutasi(item) {
-                    if (!item) return;
-                    item.signed = !item.signed;
-                },
-
-                printCurrentMutasi() {
-                    const el = document.getElementById('print-area-mutasi');
-                    if (!el) {
-                        window.print();
-                        return;
-                    }
-
-                    let iframe = document.getElementById('simat-print-frame');
-                    if (iframe) {
-                        iframe.remove();
-                    }
-
-                    iframe = document.createElement('iframe');
-                    iframe.id = 'simat-print-frame';
-                    iframe.style.position = 'fixed';
-                    iframe.style.right = '0';
-                    iframe.style.bottom = '0';
-                    iframe.style.width = '0';
-                    iframe.style.height = '0';
-                    iframe.style.border = '0';
-                    document.body.appendChild(iframe);
-
-                    const doc = iframe.contentWindow.document;
-                    doc.open();
-                    doc.write(`<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Berita Acara Mutasi Barang (BAMB) - RSUD Dr. H. Koesnandi</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
-    <style>
-        @page {
-            size: A4 portrait;
-            margin: 1.2cm 1.2cm 1.2cm 1.2cm;
-        }
-        body {
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-            font-size: 12pt !important;
-            line-height: 1.5 !important;
-            margin: 0;
-            padding: 0;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        body, p, div, span, table, th, td, li {
-            font-size: 12pt !important;
-        }
-        .text-xs, .text-sm, .text-\[10px\], .text-\[10\.5px\], .text-\[11px\], .text-\[9px\], .text-\[9\.5px\], .text-\[8px\], .text-\[7\.5px\] {
-            font-size: 12pt !important;
-        }
-        h3, h4 {
-            font-size: 13pt !important;
-        }
-        table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-        }
-        th, td {
-            border: 1px solid #000000 !important;
-            padding: 6px 8px !important;
-            font-size: 12pt !important;
-        }
-    </style>
-</head>
-<body class="bg-white text-black font-sans text-[12pt]">
-    <div style="font-size: 12pt;">
-        ${el.innerHTML}
-    </div>
-</body>
-</html>`);
-                    doc.close();
-
-                    setTimeout(() => {
-                        iframe.contentWindow.focus();
-                        iframe.contentWindow.print();
-                    }, 400);
-                }
             };
         }
     </script>
@@ -822,19 +753,22 @@
 
                 <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
                     <div class="flex items-center gap-2 flex-wrap">
-                        {{-- 1. Tombol Cetak BAMB (Tampil untuk semua, dengan indikator kelengkapan persetujuan) --}}
+                        {{-- 1. Tombol Cetak BAMB → Link ke Halaman Berita Acara (BAST) --}}
                         <template x-if="selectedMutasi">
-                            <button type="button" @click="openPrintBast(selectedMutasi)"
-                                class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95"
-                                :class="(selectedMutasi.persetujuan_pengirim && selectedMutasi.persetujuan_penerima && selectedMutasi.persetujuan_admin) ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25' : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:text-slate-200'">
+                            <a href="{{ route('bast.index') }}"
+                                class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95 bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 no-underline">
                                 <span>📄 Cetak BAMB</span>
-                                <template x-if="!(selectedMutasi.persetujuan_pengirim && selectedMutasi.persetujuan_penerima && selectedMutasi.persetujuan_admin)">
-                                    <span class="text-[9px] bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-md">Belum Lengkap</span>
-                                </template>
+                            </a>
+                        </template>
+
+                        {{-- 2. Tombol Setujui Pengirim (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN ASAL) --}}
+                        <template x-if="canApprovePengirim(selectedMutasi)">
+                            <button type="button" @click="approvePengirim(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                <span>✓ Setujui (Pengirim)</span>
                             </button>
                         </template>
 
-                        {{-- 2. Tombol Setujui Penerima (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN TUJUAN) --}}
+                        {{-- 3. Tombol Setujui Penerima (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN TUJUAN) --}}
                         <template x-if="canApprovePenerima(selectedMutasi)">
                             <button type="button" @click="approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
                                 <span>✓ Setujui (Penerima)</span>
@@ -902,174 +836,7 @@
             </div>
         </div>
 
-        <!-- MODAL PRINTER BERITA ACARA MUTASI BARANG (BAMB) RESMI RSUD KOESNANDI -->
-        <div x-show="showPrintBastModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 9999;" @click.self="showPrintBastModal = false" x-cloak>
-            <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto my-6" style="background-color: #0f172a;">
-                
-                <!-- Action Header Modal Print -->
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 print:hidden">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center font-bold text-lg">
-                            📄
-                        </div>
-                        <div>
-                            <h3 class="text-base font-extrabold text-white">Pratinjau Berita Acara Mutasi Barang (BAMB)</h3>
-                            <p class="text-xs text-slate-400">Dokumen resmi Berita Acara Pemindahan & Mutasi Aset Antar Ruangan</p>
-                        </div>
-                    </div>
 
-                    <div class="flex items-center space-x-2">
-                        <button type="button" @click="toggleSignMutasi(selectedMutasi)"
-                            class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg transition-all active:scale-95 flex items-center space-x-1 cursor-pointer"
-                            title="Tanda Tangan Digital BSrE">
-                            <span x-text="selectedMutasi?.signed ? '✅ Tertanda Digital' : '✍️ TTD BSrE'"></span>
-                        </button>
-
-                        <button type="button" @click="printCurrentMutasi()" 
-                                class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                            <span>Cetak Sekarang</span>
-                        </button>
-                        <button type="button" @click.stop="showPrintBastModal = false" class="p-2 rounded-xl bg-slate-800 text-slate-400 h                <!-- SURAT BAST MUTASI FISIK (PRINTABLE LEMBAR RESMI KERTAS F4/A4) -->
-                <template x-if="selectedMutasi">
-                    <div id="print-area-mutasi" style="font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 12pt;" class="bg-white text-black p-8 sm:p-10 rounded-2xl font-sans shadow-2xl text-[12pt] space-y-4 print:p-0 print:shadow-none print:bg-transparent">
-                        
-                        <!-- KOP SURAT RESMI RSUD DR. H. KOESNANDI BONDOWOSO -->
-                        <div class="border-b-[3px] border-black pb-2 mb-1">
-                            <div class="flex items-center justify-between gap-4">
-                                <div class="w-20 shrink-0 flex justify-center">
-                                    <img src="{{ asset('img/logo-bondowoso.png') }}" alt="Logo Dinas Bondowoso" class="h-16 w-16 object-contain">
-                                </div>
-                                <div class="flex-1 text-center font-sans text-black">
-                                    <h4 class="font-bold text-[13pt] uppercase tracking-wide leading-tight">PEMERINTAH KABUPATEN BONDOWOSO</h4>
-                                    <h3 class="font-black text-[14pt] uppercase tracking-tight leading-tight">RUMAH SAKIT UMUM DAERAH dr. H. KOESNADI</h3>
-                                    <p class="text-[10pt] leading-tight mt-0.5">Jl. Kapten Pierre Tendean No. 3 Telepon (0332) 421974. Fax.0332 422311</p>
-                                    <p class="text-[10pt] leading-tight">Website: rsudrkoesnadi.go.id, Email: rsu.koesnandi@gmail.com</p>
-                                    <div class="flex items-center justify-between mt-1 px-4">
-                                        <span></span>
-                                        <h4 class="font-bold text-[12pt] tracking-[0.3em] uppercase">B O N D O W O S O</h4>
-                                        <span class="text-[10pt] font-semibold">Kode Pos: 68214</span>
-                                    </div>
-                                </div>
-                                <div class="w-20 shrink-0 flex justify-center">
-                                    <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD" class="w-16 h-16 object-contain">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="border-b border-black mb-4"></div>
-
-                        <!-- JUDUL & NOMOR SURAT -->
-                        <div class="text-center font-sans mb-4">
-                            <h3 class="font-bold text-[13pt] uppercase underline tracking-wider">BERITA ACARA MUTASI BARANG (BAMB)</h3>
-                            <p class="text-[12pt] font-semibold mt-1">Nomor : <span x-text="selectedMutasi.bast_nomor"></span></p>
-                        </div>
-
-                        <!-- PARAGRAF PEMBUKA -->
-                        <p class="text-justify mb-3 leading-relaxed font-sans text-[12pt]">
-                            Pada hari ini <strong x-text="selectedMutasi.hari"></strong> tanggal <strong x-text="selectedMutasi.tanggal_angka"></strong> bulan <strong x-text="selectedMutasi.bulan"></strong> tahun <strong x-text="selectedMutasi.tahun"></strong>, yang bertanda tangan di bawah ini :
-                        </p>
-
-                        <!-- PIHAK PERTAMA (RUANGAN ASAL / PENGIRIM) -->
-                        <div class="space-y-1 mb-3 ml-4 font-sans text-[12pt]">
-                            <div class="flex"><div class="w-44 font-medium">Nama (Pihak I - Asal)</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.pj_asal_nama"></div></div>
-                            <div class="flex"><div class="w-44 font-medium">NIP</div><div class="w-4">:</div><div class="flex-1" x-text="selectedMutasi.pj_asal_nip"></div></div>
-                            <div class="flex"><div class="w-44 font-medium">Jabatan / Ruangan</div><div class="w-4">:</div><div class="flex-1 font-bold" x-text="selectedMutasi.pj_asal_jabatan"></div></div>
-                        </div>
-
-                        <!-- PIHAK KEDUA (RUANGAN TUJUAN) -->
-                        <p class="mb-1 leading-relaxed font-sans text-[12pt]">Menyerahkan mutasi barang aset kepada :</p>
-                        <div class="space-y-1 mb-3 ml-4 font-sans text-[12pt]">
-                            <div class="flex"><div class="w-44 font-medium">Nama (Pihak II - Tujuan)</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.pj_tujuan_nama"></div></div>
-                            <div class="flex"><div class="w-44 font-medium">NIP</div><div class="w-4">:</div><div class="flex-1" x-text="selectedMutasi.pj_tujuan_nip"></div></div>
-                            <div class="flex"><div class="w-44 font-medium">Jabatan / Ruangan</div><div class="w-4">:</div><div class="flex-1 font-bold uppercase" x-text="selectedMutasi.pj_tujuan_jabatan"></div></div>
-                        </div>
-
-                        <!-- TABEL RINCIAN MUTASI ASET (MULTI-ITEM LOOP) -->
-                        <div class="my-4 font-sans text-[12pt]">
-                            <table class="w-full text-center border-collapse border border-black text-[12pt] font-sans">
-                                <thead>
-                                    <tr class="bg-gray-200 font-bold border-b border-black">
-                                        <th class="border border-black p-2 w-10">No</th>
-                                        <th class="border border-black p-2 text-left">Nama Barang / Aset</th>
-                                        <th class="border border-black p-2">NIBAR</th>
-                                        <th class="border border-black p-2">Kode Rekening 108</th>
-                                        <th class="border border-black p-2 w-16">Vol</th>
-                                        <th class="border border-black p-2 w-20">Kondisi</th>
-                                        <th class="border border-black p-2 text-left">Alasan / Jenis Mutasi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="(it, idx) in (selectedMutasi.items && selectedMutasi.items.length > 0 ? selectedMutasi.items : [{no: 1, nama_barang: selectedMutasi.nama, nibar: selectedMutasi.kode_barang, kode_108: selectedMutasi.kode_108, volume: 1, satuan: 'Unit', kondisi: selectedMutasi.kondisi}])" :key="idx">
-                                        <tr class="border-b border-black">
-                                            <td class="border border-black p-2 font-bold" x-text="idx + 1"></td>
-                                            <td class="border border-black p-2 text-left font-bold" x-text="it.nama_barang"></td>
-                                            <td class="border border-black p-2" x-text="it.nibar"></td>
-                                            <td class="border border-black p-2" x-text="it.kode_108"></td>
-                                            <td class="border border-black p-2 font-bold" x-text="(it.volume || 1) + ' ' + (it.satuan || 'Unit')"></td>
-                                            <td class="border border-black p-2 font-bold"
-                                                :class="{'text-emerald-800': it.kondisi === 'Baik', 'text-amber-800': it.kondisi === 'Kurang Baik' || it.kondisi === 'Rusak Ringan', 'text-rose-800': it.kondisi === 'Rusak Berat'}"
-                                                x-text="it.kondisi || 'Baik'"></td>
-                                            <td class="border border-black p-2 text-left">
-                                                <span class="font-bold uppercase" x-text="'[' + selectedMutasi.jenis + '] '"></span>
-                                                <span x-text="selectedMutasi.keterangan"></span>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- KALIMAT PENUTUP -->
-                        <p class="text-justify mb-4 leading-relaxed font-sans text-[12pt]">
-                            Demikian Berita Acara Mutasi Barang (BAMB) ini dibuat dengan sebenar-benarnya untuk dipergunakan sebagai kelengkapan administrasi SIMAT-RK RSUD Dr. H. Koesnandi Bondowoso.
-                        </p>
-
-                        <!-- TANDA TANGAN DUAL BSR-E -->
-                        <div class="grid grid-cols-2 gap-8 text-center font-sans text-[12pt] mt-6">
-                            <div class="space-y-1 text-[12pt]">
-                                <p class="font-normal">Yang Menyerahkan (Ruangan Asal)</p>
-                                <p class="font-bold" x-text="selectedMutasi.pj_asal_jabatan"></p>
-                                <div class="h-20 flex items-center justify-center py-1">
-                                    <div class="flex items-center space-x-2 p-1.5 border border-purple-600 bg-purple-50 rounded">
-                                        <div class="w-11 h-11 bg-white border border-black p-0.5 flex items-center justify-center">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-MUTASI-ASAL" class="w-full h-full object-contain">
-                                        </div>
-                                        <div class="text-left text-[8pt] leading-tight text-purple-950 font-sans">
-                                            <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
-                                            <div>Penanggung Jawab Ruangan Asal</div>
-                                            <div>Terverifikasi BSrE SIMAT</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p class="font-bold underline text-[12pt] uppercase" x-text="selectedMutasi.pj_asal_nama"></p>
-                                <p class="text-[12pt]" x-text="'NIP. ' + selectedMutasi.pj_asal_nip"></p>
-                            </div>
-
-                            <div class="space-y-1 text-[12pt]">
-                                <p class="font-normal">Yang Menerima (Ruangan Tujuan)</p>
-                                <p class="font-bold" x-text="selectedMutasi.pj_tujuan_jabatan"></p>
-                                <div class="h-20 flex items-center justify-center py-1">
-                                    <div class="flex items-center space-x-2 p-1.5 border border-emerald-600 bg-emerald-50 rounded">
-                                        <div class="w-11 h-11 bg-white border border-black p-0.5 flex items-center justify-center">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-RSUD-MUTASI-TUJUAN" class="w-full h-full object-contain">
-                                        </div>
-                                        <div class="text-left text-[8pt] leading-tight text-emerald-950 font-sans">
-                                            <div class="font-bold">DITANDATANGANI ELEKTRONIK</div>
-                                            <div>Penanggung Jawab Ruangan Tujuan</div>
-                                            <div>Terverifikasi BSrE SIMAT</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <p class="font-bold underline text-[12pt] uppercase" x-text="selectedMutasi.pj_tujuan_nama"></p>
-                                <p class="text-[12pt]" x-text="'NIP. ' + selectedMutasi.pj_tujuan_nip"></p>
-                            </div>
-                        </div>
-
-                    </div>
-                </template>
-
-            </div>
-        </div>
 
     </div>
 </x-layout>

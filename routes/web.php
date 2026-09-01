@@ -269,7 +269,15 @@ Route::middleware('auth')->group(function () {
     
     // 1. Data ASTAP Pages
     Route::get('/astap', function () {
-        $astaps = \App\Models\Astap::with(['registers.mutasis', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan', 'unit'])
+        $astaps = \App\Models\Astap::with([
+                'registers.mutasis' => function($q) {
+                    $q->where('status', 'Disetujui Admin (Selesai)');
+                }, 
+                'jenisAstap', 
+                'rekeningBelanja', 
+                'jenisPengadaan', 
+                'unit'
+            ])
             ->orderBy('id', 'desc')
             ->get()
             ->map(function($a) {
@@ -311,7 +319,7 @@ Route::middleware('auth')->group(function () {
                             'kondisi' => $r->kondisi,
                             'status_mutasi' => $r->status_mutasi,
                             'qr_code_path' => $r->qr_code_path,
-                            'mutasis' => $r->mutasis ? $r->mutasis->sortByDesc('tanggal_mutasi')->map(function($m) use ($r) {
+                            'mutasis' => $r->mutasis ? $r->mutasis->where('status', 'Disetujui Admin (Selesai)')->sortByDesc('tanggal_mutasi')->map(function($m) use ($r) {
                                 return [
                                     'id' => $m->id,
                                     'nomor_bamb' => $m->nomor_bamb,
@@ -338,7 +346,7 @@ Route::middleware('auth')->group(function () {
     // API: Ambil riwayat mutasi spesifik unit register NIBAR
     Route::get('/astap/register-mutasi/{id}', function ($id) {
         $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
-            $q->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
+            $q->where('status', 'Disetujui Admin (Selesai)')->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
         }])->find($id);
 
         if (!$reg) {
@@ -431,7 +439,7 @@ Route::middleware('auth')->group(function () {
     // API: Ambil riwayat mutasi satu register NIBAR lengkap (tanggal, kondisi saat itu, alasan)
     Route::get('/astap/register-mutasi/{id}', function ($id) {
         $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
-            $q->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
+            $q->where('status', 'Disetujui Admin (Selesai)')->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
         }])->find($id);
         if (!$reg) {
             return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
@@ -469,6 +477,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
     Route::put('/mutasi-aset/{id}',            [MutasiController::class, 'update'])->name('mutasi.update');
     Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy');
+    Route::post('/mutasi-aset/{id}/approve-pengirim', [MutasiController::class, 'approvePengirim'])->name('mutasi.approve.pengirim');
     Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
     Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');
     Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');

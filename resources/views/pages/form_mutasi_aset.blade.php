@@ -33,6 +33,7 @@
 
         /* ---- Jenis Mutasi ---- */
         jenis_mutasi: {{ Js::from(old('jenis_mutasi', $mutasi->jenis_mutasi ?? 'Ajukan Mutasi')) }},
+        subJenisPengembalian: 'gudang',
         jenisMutasiOptions: [
             { value: 'Ajukan Mutasi',  emoji: '🔄', label: 'Ajukan Mutasi',     desc: 'Unit asal mengajukan pemindahan/penyerahan barang miliknya ke unit tujuan', color: 'blue' },
             { value: 'Perbaikan',      emoji: '🔧', label: 'Perbaikan / Servis',   desc: 'Barang rusak dikirim ke unit/IPSRS yang bisa memperbaiki', color: 'amber' },
@@ -121,8 +122,7 @@
                         const ipsrs = this.units.find(u => (u.nama || '').toLowerCase().includes('ips') || (u.nama || '').toLowerCase().includes('sarana'));
                         if (ipsrs) this.selectUnitTujuan(ipsrs);
                     } else if (val === 'Pengembalian') {
-                        const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
-                        if (perbekalan) this.selectUnitTujuan(perbekalan);
+                        this.setPengembalianTarget('gudang');
                     }
                 }
             } else {
@@ -130,9 +130,21 @@
                     const ipsrs = this.units.find(u => (u.nama || '').toLowerCase().includes('ips') || (u.nama || '').toLowerCase().includes('sarana'));
                     if (ipsrs) this.selectUnitTujuan(ipsrs);
                 } else if (val === 'Pengembalian') {
-                    const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
-                    if (perbekalan) this.selectUnitTujuan(perbekalan);
+                    this.setPengembalianTarget('gudang');
                 }
+            }
+        },
+
+        setPengembalianTarget(target) {
+            this.subJenisPengembalian = target;
+            if (target === 'gudang') {
+                const perbekalan = this.units.find(u => (u.nama || '').toLowerCase().includes('perbekalan') || (u.nama || '').toLowerCase().includes('rumah tangga'));
+                if (perbekalan) this.selectUnitTujuan(perbekalan);
+            } else {
+                this.ruangan_tujuan = '';
+                this.penanggung_jawab_tujuan = '';
+                this.searchUnitTujuan = '';
+                this.isUnitTujuanOpen = false;
             }
         },
 
@@ -258,19 +270,19 @@
         },
 
         get labelAsal() {
-            return this.jenis_mutasi === 'Minta Mutasi' ? 'Unit Pemilik Aset (Ruangan Asal yang Diminta)' : 'Unit Pengirim (Ruangan Asal)';
+            return this.jenis_mutasi === 'Minta Mutasi' ? 'Unit Asal (Pemilik Aset)' : 'Unit Asal (Pengirim)';
         },
 
         get labelTujuan() {
             if (this.jenis_mutasi === 'Minta Mutasi') {
-                return 'Unit Pemohon (Ruangan Tujuan Penerima Aset)';
+                return 'Ruangan Tujuan (Pemohon)';
             }
             const map = {
-                'Ajukan Mutasi':   'Ruangan Tujuan (Unit Penerima Aset)',
-                'Pemindahan':      'Ruangan Tujuan (Unit Penerima Aset)',
-                'Perbaikan':       'Ruangan Tujuan (Unit / IPSRS yang Memperbaiki)',
-                'Pengembalian':    'Ruangan Tujuan (Unit Terkait / Pengurus Barang / Admin Aset RSUD)',
-                'Penghapusan':     'Ruangan Tujuan (Unit Terkait / Pengurus Barang / Admin Aset RSUD)'
+                'Ajukan Mutasi':   'Ruangan Tujuan (Penerima)',
+                'Pemindahan':      'Ruangan Tujuan (Penerima)',
+                'Perbaikan':       'Ruangan Tujuan (IPSRS / Teknisi)',
+                'Pengembalian':    'Ruangan Tujuan (Unit Terkait)',
+                'Penghapusan':     'Ruangan Tujuan (Pengurus Barang)'
             };
             return map[this.jenis_mutasi] || 'Ruangan Tujuan';
         },
@@ -568,6 +580,38 @@
                     </template>
                 </div>
 
+                <!-- PILIHAN OPSI KHUSUS UNTUK PENGEMBALIAN BARANG -->
+                <template x-if="jenis_mutasi === 'Pengembalian'">
+                    <div class="p-5 bg-slate-950/80 border border-rose-500/30 rounded-2xl space-y-3 shadow-inner">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-rose-400 font-extrabold text-xs uppercase tracking-wider">↩️ Tentukan Tujuan Pengembalian Barang:</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Opsi A: Ke Gudang -->
+                            <button type="button" @click="setPengembalianTarget('gudang')"
+                                :class="subJenisPengembalian === 'gudang' ? 'border-rose-500 bg-rose-500/20 text-white font-extrabold ring-2 ring-rose-500/40 shadow-lg shadow-rose-500/10' : 'border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800/80'"
+                                class="p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-3 group">
+                                <span class="text-2xl shrink-0 p-2 rounded-lg bg-slate-950 border border-slate-800">📦</span>
+                                <div>
+                                    <p class="text-xs font-extrabold text-white">Ke Gudang Utama / Pengurus Barang</p>
+                                    <p class="text-[11px] text-slate-400 font-normal mt-1 leading-snug">Barang dikembalikan ke Pengurus Barang / Inst. Perbekalan & Rumah Tangga RSUD.</p>
+                                </div>
+                            </button>
+
+                            <!-- Opsi B: Ke Unit Terkait (Selesai Perbaikan) -->
+                            <button type="button" @click="setPengembalianTarget('unit_terkait')"
+                                :class="subJenisPengembalian === 'unit_terkait' ? 'border-rose-500 bg-rose-500/20 text-white font-extrabold ring-2 ring-rose-500/40 shadow-lg shadow-rose-500/10' : 'border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800/80'"
+                                class="p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start space-x-3 group">
+                                <span class="text-2xl shrink-0 p-2 rounded-lg bg-slate-950 border border-slate-800">🔧</span>
+                                <div>
+                                    <p class="text-xs font-extrabold text-white">Ke Unit Pemilik / Ruangan Terkait (Setelah Perbaikan)</p>
+                                    <p class="text-[11px] text-slate-400 font-normal mt-1 leading-snug">Barang yang sudah selesai diperbaiki dikembalikan ke ruangan / unit pemilik asal (pilih unit tujuan di Langkah 2).</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
                 {{-- Action Navigation Buttons --}}
                 <div class="flex items-center justify-end pt-4 border-t border-slate-800">
                     <button type="button" @click="nextStep()"
@@ -698,12 +742,12 @@
                     <div class="space-y-4 p-5 rounded-2xl bg-slate-950/60 border border-rose-500/30">
                         <div class="border-b border-rose-500/30 pb-2 flex items-center justify-between">
                             <label class="block text-rose-300 text-xs font-bold uppercase tracking-wider" x-text="labelTujuan"></label>
-                            <template x-if="isSubAdmin && userUnitNama && jenis_mutasi === 'Minta Mutasi'">
-                                <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terunci Role Sub Admin</span>
+                            <template x-if="(isSubAdmin && userUnitNama && jenis_mutasi === 'Minta Mutasi') || (jenis_mutasi === 'Pengembalian' && subJenisPengembalian === 'gudang')">
+                                <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terunci Otomatis</span>
                             </template>
                         </div>
 
-                        {{-- Untuk Role Sub Admin pada mode Minta Mutasi (Unit Tujuan Terkunci Sesuai Unit Saya) --}}
+                        {{-- Mode Terkunci 1: Role Sub Admin pada Minta Mutasi --}}
                         <template x-if="isSubAdmin && userUnitNama && jenis_mutasi === 'Minta Mutasi'">
                             <div class="space-y-3">
                                 <div>
@@ -725,8 +769,33 @@
                             </div>
                         </template>
 
-                        {{-- Pencarian Filter Unit Penerima (Master Admin / Admin OR Sub Admin di selain Minta Mutasi) --}}
-                        <template x-if="!isSubAdmin || !userUnitNama || jenis_mutasi !== 'Minta Mutasi'">
+                        {{-- Mode Terkunci 2: Pengembalian ke Gudang / Pengurus Barang --}}
+                        <template x-if="jenis_mutasi === 'Pengembalian' && subJenisPengembalian === 'gudang'">
+                            <div class="space-y-3">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block mb-1">Nama Unit Penerima (Gudang Utama):</span>
+                                    <div class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-extrabold text-xs flex items-center justify-between">
+                                        <span x-text="ruangan_tujuan || 'Instalasi Perbekalan & Rumah Tangga'"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan" required>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Penerima (Pengurus Barang)</label>
+                                    <div class="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-300 font-extrabold text-xs flex items-center justify-between">
+                                        <span x-text="penanggung_jawab_tujuan || 'Pengurus Barang Aset'"></span>
+                                        <span>🔒</span>
+                                    </div>
+                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan" required>
+                                </div>
+                                <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
+                                    <span>✓ Terkunci otomatis untuk Pengembalian ke Gudang Utama / Pengurus Barang</span>
+                                </p>
+                            </div>
+                        </template>
+
+                        {{-- Pencarian Filter Unit Penerima (Untuk selain mode terkunci) --}}
+                        <template x-if="!(isSubAdmin && userUnitNama && jenis_mutasi === 'Minta Mutasi') && !(jenis_mutasi === 'Pengembalian' && subJenisPengembalian === 'gudang')">
                             <div class="space-y-3">
                                 <div class="space-y-1.5 relative" @click.outside="isUnitTujuanOpen = false">
                                     <div class="flex items-center justify-between">
