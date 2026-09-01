@@ -140,61 +140,81 @@
                     setTimeout(() => { this.toast.show = false; }, 4000);
                 },
 
+                canApprovePenerima(item) {
+                    if (!item || item.persetujuan_penerima || item.status === 'Ditolak') return false;
+                    if (this.userRole !== 'sub_admin') return false;
+                    if (!this.userUnit) return true;
+                    const myUnit = (this.userUnit || '').toLowerCase().trim();
+                    const destUnit = (item.tujuan || '').toLowerCase().trim();
+                    return destUnit.includes(myUnit) || myUnit.includes(destUnit) || myUnit === destUnit;
+                },
+
+                canApproveAdmin(item) {
+                    if (!item || item.persetujuan_admin || item.status === 'Ditolak') return false;
+                    return this.userRole === 'admin' || this.userRole === 'master_admin';
+                },
+
                 approvePenerima(item) {
                     if (!item) return;
-                    this.askConfirmation({
-                        title: '✓ Konfirmasi Persetujuan Penerima Mutasi',
-                        message: 'Apakah Anda yakin ingin menyetujui mutasi barang ini sebagai Pihak Penerima?',
-                        itemName: item.nama + ' (' + (item.tujuan || 'Unit Tujuan') + ')',
-                        type: 'success',
-                        btnText: '✓ Ya, Setujui Mutasi',
-                        onConfirm: () => {
-                            fetch('/mutasi-aset/' + item.id + '/approve-penerima', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                }
-                            }).then(r => r.json().then(d => {
-                                if (d.success || r.ok) {
-                                    item.persetujuan_penerima = true;
-                                    item.status = 'Disetujui 2 Pihak (Menunggu Admin)';
-                                    this.showSimatToast('✅ Mutasi berhasil disetujui sebagai Pihak Penerima!', 'success');
-                                } else {
-                                    this.showSimatToast('⚠️ Gagal menyetujui mutasi.', 'error');
-                                }
-                            })).catch(() => window.location.reload());
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch('/mutasi-aset/' + item.id + '/approve-penerima', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         }
+                    })
+                    .then(res => res.json())
+                    .then(d => {
+                        if (d.success) {
+                            item.persetujuan_penerima = true;
+                            const newStatus = item.persetujuan_admin ? 'Disetujui Admin (Selesai)' : 'Disetujui 2 Pihak (Menunggu Admin)';
+                            item.status = newStatus;
+                            if (this.selectedMutasi && this.selectedMutasi.id === item.id) {
+                                this.selectedMutasi.persetujuan_penerima = true;
+                                this.selectedMutasi.status = newStatus;
+                            }
+                            this.showSimatToast('✅ Mutasi berhasil disetujui sebagai Pihak Penerima!', 'success');
+                        } else {
+                            this.showSimatToast('⚠️ Gagal menyetujui mutasi.', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('approvePenerima error:', err);
+                        window.location.reload();
                     });
                 },
 
                 approveAdmin(item) {
                     if (!item) return;
-                    this.askConfirmation({
-                        title: '✅ Konfirmasi Pengesahan Final Admin (BAMB)',
-                        message: 'Apakah Anda yakin ingin mengesahkan mutasi aset ini secara final? Lokasi penempatan unit NIBAR akan otomatis diperbarui ke ruangan tujuan.',
-                        itemName: item.nama + ' ➔ ' + item.tujuan,
-                        type: 'success',
-                        btnText: '✅ Sahkan Mutasi Aset',
-                        onConfirm: () => {
-                            fetch('/mutasi-aset/' + item.id + '/approve-admin', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                }
-                            }).then(r => r.json().then(d => {
-                                if (d.success || r.ok) {
-                                    item.persetujuan_admin = true;
-                                    item.status = 'Disetujui Admin (Selesai)';
-                                    this.showSimatToast('✅ Mutasi aset telah disahkan secara final!', 'success');
-                                } else {
-                                    this.showSimatToast('⚠️ Gagal mengesahkan mutasi.', 'error');
-                                }
-                            })).catch(() => window.location.reload());
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    fetch('/mutasi-aset/' + item.id + '/approve-admin', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         }
+                    })
+                    .then(res => res.json())
+                    .then(d => {
+                        if (d.success) {
+                            item.persetujuan_admin = true;
+                            const newStatus = item.persetujuan_penerima ? 'Disetujui Admin (Selesai)' : 'Disetujui Admin (Menunggu Penerima)';
+                            item.status = newStatus;
+                            if (this.selectedMutasi && this.selectedMutasi.id === item.id) {
+                                this.selectedMutasi.persetujuan_admin = true;
+                                this.selectedMutasi.status = newStatus;
+                            }
+                            this.showSimatToast('✅ Mutasi aset telah disetujui oleh Admin!', 'success');
+                        } else {
+                            this.showSimatToast('⚠️ Gagal menyetujui mutasi.', 'error');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('approveAdmin error:', err);
+                        window.location.reload();
                     });
                 },
 
@@ -267,6 +287,11 @@
                 },
 
                 openPrintBast(item) {
+                    if (!item) return;
+                    if (!item.persetujuan_pengirim || !item.persetujuan_penerima || !item.persetujuan_admin) {
+                        this.showSimatToast('⚠️ Dokumen BAMB belum dapat dicetak karena belum disetujui oleh seluruh pihak (Pengirim, Penerima, dan Admin harus menyetujui terlebih dahulu).', 'warning');
+                        return;
+                    }
                     const tglObj = item.tgl_raw ? new Date(item.tgl_raw) : new Date();
                     const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
                     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -537,8 +562,8 @@
 
         <!-- Tabel Mutasi Aset -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-            <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40 min-h-[380px]">
-                <table class="w-full text-left text-xs text-slate-300 min-h-[350px]">
+            <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40">
+                <table class="w-full text-left text-xs text-slate-300">
                     <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shadow-sm shrink-0">
                         <tr>
                             <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
@@ -737,7 +762,7 @@
                                             <th class="px-3 py-2 text-center w-8">No</th>
                                             <th class="px-3 py-2">Nama Barang / Aset</th>
                                             <th class="px-3 py-2 font-mono">NIBAR</th>
-                                            <th class="px-3 py-2 text-center">Kondisi</th>
+                                            <th class="px-3 py-2 text-center whitespace-nowrap">Kondisi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/60">
@@ -746,8 +771,8 @@
                                                 <td class="px-3 py-2 text-center font-bold text-slate-500" x-text="idx + 1"></td>
                                                 <td class="px-3 py-2 font-bold text-white" x-text="it.nama_barang"></td>
                                                 <td class="px-3 py-2 font-mono text-cyan-400 text-[11px]" x-text="it.nibar"></td>
-                                                <td class="px-3 py-2 text-center">
-                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-black border"
+                                                <td class="px-3 py-2 text-center whitespace-nowrap">
+                                                    <span class="px-2 py-0.5 rounded text-[9.5px] font-black border whitespace-nowrap inline-block"
                                                           :class="{
                                                               'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': it.kondisi === 'Baik',
                                                               'bg-amber-500/20 text-amber-300 border-amber-500/30': it.kondisi === 'Rusak Ringan' || it.kondisi === 'Kurang Baik',
@@ -807,25 +832,37 @@
                     </div>
                 </template>
 
-                <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <template x-if="selectedMutasi && (selectedMutasi.status === 'Disetujui Admin (Selesai)' || selectedMutasi.status === 'Disetujui 2 Pihak (Menunggu Admin)')">
-                            <button type="button" @click="openPrintBast(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        {{-- 1. Tombol Cetak BAMB (Tampil untuk semua, dengan indikator kelengkapan persetujuan) --}}
+                        <template x-if="selectedMutasi">
+                            <button type="button" @click="openPrintBast(selectedMutasi)"
+                                class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95"
+                                :class="(selectedMutasi.persetujuan_pengirim && selectedMutasi.persetujuan_penerima && selectedMutasi.persetujuan_admin) ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25' : 'bg-slate-800/80 text-slate-400 border border-slate-700 hover:text-slate-200'">
                                 <span>📄 Cetak BAMB</span>
+                                <template x-if="!(selectedMutasi.persetujuan_pengirim && selectedMutasi.persetujuan_penerima && selectedMutasi.persetujuan_admin)">
+                                    <span class="text-[9px] bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-md">Belum Lengkap</span>
+                                </template>
                             </button>
                         </template>
-                        <template x-if="selectedMutasi && !selectedMutasi.persetujuan_penerima && selectedMutasi.status !== 'Ditolak' && (userRole !== 'sub_admin' || (selectedMutasi.tujuan || '').toLowerCase().includes((userUnit || '').toLowerCase()))">
-                            <button type="button" @click="approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+
+                        {{-- 2. Tombol Setujui Penerima (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN TUJUAN) --}}
+                        <template x-if="canApprovePenerima(selectedMutasi)">
+                            <button type="button" @click="approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
                                 <span>✓ Setujui (Penerima)</span>
                             </button>
                         </template>
-                        <template x-if="selectedMutasi && selectedMutasi.persetujuan_penerima && !selectedMutasi.persetujuan_admin && selectedMutasi.status !== 'Ditolak' && (userRole === 'admin' || userRole === 'master_admin')">
-                            <button type="button" @click="approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
-                                <span>✓ Sahkan (Admin)</span>
+
+                        {{-- 3. Tombol Setujui Admin (HANYA DITAMPILKAN PADA AKUN ADMIN & MASTER ADMIN - BISA LANGSUNG) --}}
+                        <template x-if="canApproveAdmin(selectedMutasi)">
+                            <button type="button" @click="approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                <span>✓ Setujui (Admin)</span>
                             </button>
                         </template>
+
+                        {{-- 4. Tombol Tolak Mutasi (Selalu tampil jika status belum ditolak & belum selesai) --}}
                         <template x-if="selectedMutasi && selectedMutasi.status !== 'Ditolak' && selectedMutasi.status !== 'Disetujui Admin (Selesai)'">
-                            <button type="button" @click="openRejectModal(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
+                            <button type="button" @click="openRejectModal(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
                                 <span>✕ Tolak Mutasi</span>
                             </button>
                         </template>
@@ -1047,9 +1084,8 @@
         </div>
 
         <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
-        <div x-show="showConfirmModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-            <div @click.away="showConfirmModal = false"
-                 x-show="showConfirmModal"
+        <div x-show="showConfirmModal" x-cloak class="fixed inset-0 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" style="z-index: 999999;" @click.self="showConfirmModal = false">
+            <div x-show="showConfirmModal"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100"

@@ -367,23 +367,54 @@ class MutasiController extends Controller
     }
 
     /**
-     * Persetujuan oleh pihak penerima.
+     * Helper privat untuk memindahkan lokasi register aset setelah mutasi disetujui penuh
+     */
+    private function transferRegisterLocations(AstapMutasi $mutasi): void
+    {
+        $targetUnit = Unit::where('nama', $mutasi->ruangan_tujuan)->first();
+        if ($mutasi->items->count() > 0) {
+            foreach ($mutasi->items as $item) {
+                if ($item->register) {
+                    $updateData = ['ruang_pemegang' => $mutasi->ruangan_tujuan];
+                    if ($targetUnit) { $updateData['unit_id'] = $targetUnit->id; }
+                    if ($item->kondisi) { $updateData['kondisi'] = $item->kondisi; }
+                    if ($mutasi->jenis_mutasi === 'Penghapusan') { $updateData['status'] = 'Dihapuskan'; }
+                    $item->register->update($updateData);
+                }
+            }
+        } elseif ($mutasi->register) {
+            $updateData = ['ruang_pemegang' => $mutasi->ruangan_tujuan];
+            if ($targetUnit) { $updateData['unit_id'] = $targetUnit->id; }
+            if ($mutasi->jenis_mutasi === 'Penghapusan') { $updateData['status'] = 'Dihapuskan'; }
+            $mutasi->register->update($updateData);
+        }
+    }
+
+    /**
+     * Persetujuan oleh pihak penerima (Sub Admin ruangan tujuan).
      */
     public function approvePenerima(Request $request, $id)
     {
-        $mutasi = AstapMutasi::findOrFail($id);
+        $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
+
+        $isCompleted = (bool) $mutasi->persetujuan_admin;
+        $newStatus   = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui 2 Pihak (Menunggu Admin)';
 
         $mutasi->update([
             'persetujuan_penerima'     => true,
             'tgl_persetujuan_penerima' => now(),
-            'status'                   => 'Disetujui 2 Pihak (Menunggu Admin)',
+            'status'                   => $newStatus,
         ]);
+
+        if ($isCompleted) {
+            $this->transferRegisterLocations($mutasi);
+        }
 
         // Kirim Notifikasi Sistem (Format Singkat & Rapi)
         try {
             \App\Services\NotificationService::sendToAdminAndMaster(
                 "Mutasi Disetujui Penerima",
-                "{$mutasi->nomor_bamb} • Menunggu Admin",
+                "{$mutasi->nomor_bamb} • " . ($isCompleted ? 'Selesai' : 'Menunggu Admin'),
                 'mutasi',
                 route('mutasi.index')
             );
@@ -391,8 +422,8 @@ class MutasiController extends Controller
             \App\Services\NotificationService::sendToUnitSubAdmin(
                 $asalUnit?->id,
                 $mutasi->ruangan_asal,
-                "Mutasi Disetujui: {$mutasi->ruangan_tujuan}",
-                "{$mutasi->nomor_bamb} • Menunggu Admin",
+                "Mutasi Disetujui Penerima: {$mutasi->ruangan_tujuan}",
+                "{$mutasi->nomor_bamb} • Status: " . ($isCompleted ? 'Selesai' : 'Menunggu Admin'),
                 'mutasi',
                 route('mutasi.index')
             );
@@ -400,81 +431,51 @@ class MutasiController extends Controller
             \Log::warning("Gagal kirim notif approvePenerima: " . $e->getMessage());
         }
 
-        session()->flash('success', 'Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') berhasil disetujui oleh penerima.');
+        $msg = 'Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') berhasil disetujui oleh penerima.';
+        session()->flash('success', $msg);
         if ($request->wantsJson()) {
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true, 'is_completed' => $isCompleted]);
         }
-        return back()->with('success', 'Berita Acara Mutasi (' . $mutasi->nomor_bamb . ') berhasil disetujui oleh penerima.');
+        return back()->with('success', $msg);
     }
 
     /**
-     * Persetujuan final oleh Admin / Instalasi Pembekalan.
-     * Mengupdate lokasi seluruh unit register yang terdaftar dalam Berita Acara ini.
+     * Persetujuan oleh Admin / Master Admin (Bisa langsung tanpa menunggu penerima).
      */
     public function approveAdmin(Request $request, $id)
     {
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
 
+        $isCompleted = (bool) $mutasi->persetujuan_penerima;
+        $newStatus   = $isCompleted ? 'Disetujui Admin (Selesai)' : 'Disetujui Admin (Menunggu Penerima)';
+
         $mutasi->update([
             'persetujuan_admin'     => true,
             'tgl_persetujuan_admin' => now(),
-            'status'                => 'Disetujui Admin (Selesai)',
+            'status'                => $newStatus,
         ]);
 
-        $targetUnit = Unit::where('nama', $mutasi->ruangan_tujuan)->first();
-        $updatedRegistersCount = 0;
-
-        // Loop seluruh register di dalam Berita Acara ini
-        if ($mutasi->items->count() > 0) {
-            foreach ($mutasi->items as $item) {
-                if ($item->register) {
-                    $updateData = [
-                        'ruang_pemegang' => $mutasi->ruangan_tujuan,
-                    ];
-                    if ($targetUnit) {
-                        $updateData['unit_id'] = $targetUnit->id;
-                    }
-                    if ($item->kondisi) {
-                        $updateData['kondisi'] = $item->kondisi;
-                    }
-                    if ($mutasi->jenis_mutasi === 'Penghapusan') {
-                        $updateData['status'] = 'Dihapuskan';
-                    }
-                    $item->register->update($updateData);
-                    $updatedRegistersCount++;
-                }
-            }
-        } elseif ($mutasi->register) {
-            // Fallback legacy single register
-            $updateData = [
-                'ruang_pemegang' => $mutasi->ruangan_tujuan,
-            ];
-            if ($targetUnit) {
-                $updateData['unit_id'] = $targetUnit->id;
-            }
-            if ($mutasi->jenis_mutasi === 'Penghapusan') {
-                $updateData['status'] = 'Dihapuskan';
-            }
-            $mutasi->register->update($updateData);
-            $updatedRegistersCount++;
+        if ($isCompleted) {
+            $this->transferRegisterLocations($mutasi);
         }
 
-        // Kirim Notifikasi Sistem ke Sub Admin Ruangan Asal dan Ruangan Tujuan (Format Singkat & Rapi)
+        // Kirim Notifikasi Sistem ke Sub Admin Ruangan Asal dan Ruangan Tujuan
         try {
-            $asalUnit = Unit::where('nama', $mutasi->ruangan_asal)->first();
+            $asalUnit   = Unit::where('nama', $mutasi->ruangan_asal)->first();
+            $targetUnit = Unit::where('nama', $mutasi->ruangan_tujuan)->first();
             \App\Services\NotificationService::sendToUnitSubAdmin(
                 $asalUnit?->id,
                 $mutasi->ruangan_asal,
-                "Mutasi Disahkan: {$mutasi->ruangan_tujuan}",
-                "{$mutasi->nomor_bamb} • Status: Selesai",
+                "Mutasi Disetujui Admin: {$mutasi->ruangan_tujuan}",
+                "{$mutasi->nomor_bamb} • Status: " . ($isCompleted ? 'Selesai' : 'Menunggu Penerima'),
                 'mutasi',
                 route('mutasi.index')
             );
             \App\Services\NotificationService::sendToUnitSubAdmin(
                 $targetUnit?->id,
                 $mutasi->ruangan_tujuan,
-                "Mutasi Diterima: dari {$mutasi->ruangan_asal}",
-                "{$mutasi->nomor_bamb} • Status: Selesai",
+                "Mutasi Disetujui Admin: dari {$mutasi->ruangan_asal}",
+                "{$mutasi->nomor_bamb} • Status: " . ($isCompleted ? 'Selesai' : 'Menunggu Penerima'),
                 'mutasi',
                 route('mutasi.index')
             );
@@ -482,10 +483,13 @@ class MutasiController extends Controller
             \Log::warning("Gagal kirim notif approveAdmin: " . $e->getMessage());
         }
 
-        $msg = "Berita Acara Mutasi ({$mutasi->nomor_bamb}) telah disahkan oleh Admin! Lokasi {$updatedRegistersCount} aset berhasil dipindahkan ke {$mutasi->ruangan_tujuan}.";
+        $msg = $isCompleted
+            ? "Berita Acara Mutasi ({$mutasi->nomor_bamb}) telah disahkan secara final oleh Admin! Lokasi aset dipindahkan."
+            : "Berita Acara Mutasi ({$mutasi->nomor_bamb}) berhasil disetujui oleh Admin. Menunggu persetujuan penerima untuk penyelesaian final.";
+
         session()->flash('success', $msg);
         if ($request->wantsJson()) {
-            return response()->json(['success' => true]);
+            return response()->json(['success' => true, 'is_completed' => $isCompleted]);
         }
         return back()->with('success', $msg);
     }
