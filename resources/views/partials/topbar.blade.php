@@ -62,7 +62,7 @@
             </button>
 
             <!-- Popover Card Informasi Role -->
-            <div x-show="infoOpen"
+            <div x-show="infoOpen" x-cloak
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100"
@@ -148,14 +148,14 @@
                 </svg>
 
                 <!-- Badge Titik Hijau Berkedip -->
-                <span x-show="unreadCount > 0" class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                <span x-show="unreadCount > 0" x-cloak class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 ring-2 ring-slate-900"></span>
                 </span>
             </button>
 
             <!-- Dropdown Notifikasi -->
-            <div x-show="notifOpen" @click.away="notifOpen = false"
+            <div x-show="notifOpen" x-cloak @click.away="notifOpen = false"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100"
@@ -169,7 +169,7 @@
                 <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
                     <div class="flex items-center space-x-2">
                         <span class="text-xs font-bold text-white uppercase tracking-wider">Notifikasi Sistem</span>
-                        <span x-show="unreadCount > 0" 
+                        <span x-show="unreadCount > 0" x-cloak
                               class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30" 
                               x-text="unreadCount + ' Baru'"></span>
                     </div>
@@ -301,7 +301,7 @@
             </button>
 
             <!-- Dropdown Profile -->
-            <div x-show="profileOpen" @click.away="profileOpen = false"
+            <div x-show="profileOpen" x-cloak @click.away="profileOpen = false"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
                  x-transition:enter-start="opacity-0 scale-95"
                  x-transition:enter-end="opacity-100 scale-100"

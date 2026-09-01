@@ -24,6 +24,14 @@
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+        @keyframes pageFadeIn {
+            from { opacity: 0.3; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page-fade-in {
+            animation: pageFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         /* Global Cursor Pointer untuk Semua Tombol & Elemen Interaktif */
         button,
         [type="button"],
@@ -144,7 +152,7 @@
             @include('partials.topbar')
 
             <!-- Slot Konten Utama -->
-            <main class="flex-1 p-3 sm:p-6 lg:p-8 {{ ($fullWidth ?? false) ? 'w-full max-w-none' : 'max-w-7xl mx-auto w-full' }}">
+            <main class="flex-1 p-3 sm:p-6 lg:p-8 page-fade-in {{ ($fullWidth ?? false) ? 'w-full max-w-none' : 'max-w-7xl mx-auto w-full' }}">
                 
                 <!-- BANNER NOTIFIKASI PEMBERITAHUAN SISTEM (Murni Blade Server-Side, Zero JS Bug) -->
                 @if (session('success') || session('error') || session('warning') || session('info') || session('status'))
