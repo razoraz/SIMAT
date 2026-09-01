@@ -2285,8 +2285,8 @@
         </div>
 
         <!-- FRONTEND MODAL: PRATINJAU & DOWNLOAD QR CODE -->
-        <div x-show="showQrModal" x-cloak @click.self="showQrModal = false" class="fixed inset-0 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 9999;">
-            <div class="border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl text-center space-y-5" style="background-color: #0f172a;">
+        <div x-show="showQrModal" x-cloak @click.self="showQrModal = false" class="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 9999;">
+            <div class="border border-emerald-500/30 rounded-3xl max-w-md w-full p-6 shadow-2xl text-center space-y-5 max-h-[90vh] overflow-y-auto my-auto" style="background-color: #0f172a;">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div class="flex items-center space-x-2">
                         <span class="text-lg">📱</span>
@@ -2308,7 +2308,7 @@
                         <div class="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 text-left space-y-2 text-xs">
                             <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
                                 <span class="text-slate-400 font-semibold text-[10.5px]">📦 Nama Barang:</span>
-                                <span class="text-white font-extrabold text-right max-w-[200px] truncate" x-text="selectedQrItem.nama_barang"></span>
+                                <span class="text-white font-bold text-right max-w-[200px] truncate" x-text="selectedQrItem.nama_barang"></span>
                             </div>
                             <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
                                 <span class="text-slate-400 font-semibold text-[10.5px]">🏷️ NIBAR / Kode:</span>
@@ -2344,7 +2344,7 @@
                             <button type="button" @click="downloadQrImage()"
                                 class="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2 active:scale-95 cursor-pointer">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                <span>Unduh Gambar QR (PNG)</span>
+                                <span>Unduh QR</span>
                             </button>
                             <a :href="getQrPayloadUrl(selectedQrItem)" target="_blank"
                                class="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-xs transition-all flex items-center justify-center space-x-1.5">
