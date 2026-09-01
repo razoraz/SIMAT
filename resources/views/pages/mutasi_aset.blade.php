@@ -99,6 +99,11 @@
                     this.searchQuery = '';
                     this.statusFilter = 'all';
                 },
+                canPrint(item) {
+                    if (!item) return false;
+                    return (item.persetujuan_pengirim && item.persetujuan_penerima && item.persetujuan_admin) || 
+                           item.status === 'Disetujui Admin (Selesai)';
+                },
 
                 askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
                     this.$dispatch('ask-confirm', {
@@ -754,7 +759,7 @@
                 <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
                     <div class="flex items-center gap-2 flex-wrap">
                         {{-- 1. Tombol Cetak BAMB → Link ke Halaman Berita Acara (BAST) --}}
-                        <template x-if="selectedMutasi">
+                        <template x-if="selectedMutasi && canPrint(selectedMutasi)">
                             <a href="{{ route('bast.index') }}"
                                 class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95 bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 no-underline">
                                 <span>📄 Cetak BAMB</span>
