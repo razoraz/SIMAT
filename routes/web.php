@@ -678,6 +678,7 @@ Route::middleware('auth')->group(function () {
                 'jumlah_volume' => $extracted['volume'],
                 'satuan' => $extracted['satuan'],
                 'harga_satuan' => $extracted['harga_satuan'],
+                'jumlah_anggaran' => !empty($data['jumlah_anggaran']) ? (float) $data['jumlah_anggaran'] : $extracted['total_realisasi'],
                 'total_realisasi' => $extracted['total_realisasi'],
                 'biaya_administrasi_proyek' => $extracted['biaya_administrasi_proyek'],
                 'is_extracomtable' => $extracted['is_extracomtable'],
@@ -947,6 +948,7 @@ Route::middleware('auth')->group(function () {
             $astap->jumlah_volume = $ext['vol'];
             $astap->satuan = $ext['sat'];
             $astap->harga_satuan = $ext['hrgSat'];
+            $astap->jumlah_anggaran = !empty($data['jumlah_anggaran']) ? (float) $data['jumlah_anggaran'] : $ext['totReal'];
             $astap->total_realisasi = $ext['totReal'];
             $astap->biaya_administrasi_proyek = $ext['biaya'];
             $astap->is_extracomtable = $ext['extracom'];
