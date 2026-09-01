@@ -25,11 +25,11 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
         @keyframes pageFadeIn {
-            from { opacity: 0.3; transform: translateY(3px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0.4; }
+            to { opacity: 1; }
         }
         .page-fade-in {
-            animation: pageFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: pageFadeIn 0.2s ease-out;
         }
 
         /* Global Cursor Pointer untuk Semua Tombol & Elemen Interaktif */
