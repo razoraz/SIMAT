@@ -354,7 +354,10 @@ class MutasiController extends Controller
     public function destroy(Request $request, $id)
     {
         $mutasi = AstapMutasi::findOrFail($id);
-        $bamb = $mutasi->nomor_bamb;
+        $bamb   = $mutasi->nomor_bamb;
+
+        // Hapus rincian register barang yang terasosiasi
+        AstapMutasiRegister::where('astap_mutasi_id', $mutasi->id)->delete();
         $mutasi->delete();
 
         session()->flash('success', "Pengajuan Berita Acara Mutasi {$bamb} berhasil dihapus.");
