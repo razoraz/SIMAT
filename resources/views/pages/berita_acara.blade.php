@@ -1716,7 +1716,7 @@
                         ✏️ Live Edit Surat BAST Mutasi (Otomatis Berubah Pada Lembar Cetak):
                     </div>
                     <template x-if="selectedMutasi">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1">Nomor BAST Mutasi</label>
                                 <input type="text" x-model="selectedMutasi.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-300 font-mono font-bold text-xs">
@@ -1728,6 +1728,24 @@
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1">Tanggal Surat</label>
                                 <input type="text" x-model="selectedMutasi.tgl_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-800/60">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Nama PJ Asal</label>
+                                <input type="text" x-model="selectedMutasi.pj_asal_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">NIP PJ Asal</label>
+                                <input type="text" x-model="selectedMutasi.pj_asal_nip" placeholder="NIP..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-mono text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Nama PJ Tujuan</label>
+                                <input type="text" x-model="selectedMutasi.pj_tujuan_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">NIP PJ Tujuan</label>
+                                <input type="text" x-model="selectedMutasi.pj_tujuan_nip" placeholder="NIP..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-mono text-xs">
                             </div>
                         </div>
                     </template>
@@ -1843,6 +1861,7 @@
                                         </div>
                                     </div>
                                     <p class="font-bold underline uppercase m-0" x-text="selectedMutasi.pj_asal_nama"></p>
+                                    <p class="m-0" x-text="selectedMutasi.pj_asal_nip ? 'NIP. ' + selectedMutasi.pj_asal_nip : ''"></p>
                                 </div>
 
                                 <div>
@@ -1866,6 +1885,7 @@
                                         </template>
                                     </div>
                                     <p class="font-bold underline uppercase m-0" x-text="selectedMutasi.pj_tujuan_nama"></p>
+                                    <p class="m-0" x-text="selectedMutasi.pj_tujuan_nip ? 'NIP. ' + selectedMutasi.pj_tujuan_nip : ''"></p>
                                 </div>
                             </div>
 
