@@ -221,19 +221,38 @@
                 toggleSignDistribusi(item) {
                     const target = item || this.selectedDistribusi;
                     if (target) {
-                        if (target.signed) {
-                            target.signed = false;
+                        const matched = this.distribusiList.find(d => (d.nomor_bast && d.nomor_bast === target.nomor_bast) || (d.id && d.id === target.id));
+                        const newSigned = !target.signed;
+                        target.signed = newSigned;
+                        if (matched && matched !== target) {
+                            matched.signed = newSigned;
+                        }
+                        if (this.selectedDistribusi && this.selectedDistribusi !== target && ((this.selectedDistribusi.nomor_bast && this.selectedDistribusi.nomor_bast === target.nomor_bast) || (this.selectedDistribusi.id && this.selectedDistribusi.id === target.id))) {
+                            this.selectedDistribusi.signed = newSigned;
+                        }
+
+                        if (newSigned) {
+                            const now = new Date();
+                            const timeStr = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                            target.tgl_signed = timeStr;
+                            target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
+                            target.status = 'Telah Ditandatangani BSrE';
+                            if (matched) {
+                                matched.tgl_signed = timeStr;
+                                matched.qr_hash = target.qr_hash;
+                                matched.status = 'Telah Ditandatangani BSrE';
+                            }
+                            alert('✍️ BAST Distribusi (' + (target.nomor_bast || 'BAST') + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+                        } else {
                             target.tgl_signed = '-';
                             target.qr_hash = '';
                             target.status = 'Belum TTD';
-                            alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + target.nomor_bast + ') berhasil dibatalkan.');
-                        } else {
-                            target.signed = true;
-                            const now = new Date();
-                            target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                            target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
-                            target.status = 'Telah Ditandatangani BSrE';
-                            alert('✍️ BAST Distribusi (' + target.nomor_bast + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+                            if (matched) {
+                                matched.tgl_signed = '-';
+                                matched.qr_hash = '';
+                                matched.status = 'Belum TTD';
+                            }
+                            alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + (target.nomor_bast || 'BAST') + ') berhasil dibatalkan.');
                         }
                     }
                 },
@@ -1640,16 +1659,18 @@
                                     <p class="m-0">Yang Menyerahkan</p>
                                     <p class="font-bold m-0">Pengurus Barang Aset</p>
                                     
-                                    <!-- TTD Elektronik BSrE Pengurus Barang -->
+                                    <!-- TTD Elektronik BSrE Pengurus Barang (Hanya Tampil Jika Status Sudah Ditandatangani) -->
                                     <div class="my-1 flex items-center justify-center" style="height: 52px; min-height: 52px;">
-                                        <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
-                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" class="w-9 h-9 shrink-0">
-                                            <div class="text-[7.5px] leading-tight text-slate-800">
-                                                <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
-                                                <div>Pengurus Barang Aset</div>
-                                                <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                        <template x-if="selectedDistribusi.signed">
+                                            <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
+                                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" class="w-9 h-9 shrink-0">
+                                                <div class="text-[7.5px] leading-tight text-slate-800">
+                                                    <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
+                                                    <div>Pengurus Barang Aset</div>
+                                                    <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </template>
                                     </div>
 
                                     <p class="font-bold underline uppercase m-0" x-text="selectedDistribusi.pengurus_nama || 'BUDI HARTONO,S.Sos'"></p>
