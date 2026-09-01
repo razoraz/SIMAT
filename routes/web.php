@@ -380,6 +380,31 @@ Route::middleware('auth')->group(function () {
     Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
     Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
 
+    // API: Toggle Status TTD BSrE Distribusi (simpan ke database agar persist setelah reload)
+    Route::patch('/distribusi/{id}/sign', function (\Illuminate\Http\Request $request, $id) {
+        $dst = \App\Models\Distribusi::find($id);
+        if (!$dst) {
+            return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
+        }
+        $newSigned = !$dst->signed;
+        $dst->signed = $newSigned;
+        if ($newSigned) {
+            $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+        } else {
+            $dst->tgl_signed = null;
+        }
+        $dst->save();
+        return response()->json([
+            'success'    => true,
+            'signed'     => $dst->signed,
+            'tgl_signed' => $dst->tgl_signed ?? '-',
+            'qr_hash'    => $dst->signed ? ('BSRE-KOESNANDI-' . $dst->kode) : '',
+            'message'    => $dst->signed
+                ? 'BAST berhasil ditandatangani secara digital (BSrE).'
+                : 'Tanda tangan digital BSrE berhasil dibatalkan.',
+        ]);
+    })->name('distribusi.sign');
+
     // API: Update kondisi per Register NIBAR (dari halaman distribusi — semua role terautentikasi)
     Route::patch('/distribusi/register-kondisi/{id}', function (\Illuminate\Http\Request $request, $id) {
         $reg = \App\Models\AstapRegister::find($id);

@@ -218,42 +218,42 @@
                     this.showPrintDistribusiModal = true;
                 },
 
-                toggleSignDistribusi(item) {
+                async toggleSignDistribusi(item) {
                     const target = item || this.selectedDistribusi;
-                    if (target) {
-                        const matched = this.distribusiList.find(d => (d.nomor_bast && d.nomor_bast === target.nomor_bast) || (d.id && d.id === target.id));
-                        const newSigned = !target.signed;
-                        target.signed = newSigned;
-                        if (matched && matched !== target) {
-                            matched.signed = newSigned;
-                        }
-                        if (this.selectedDistribusi && this.selectedDistribusi !== target && ((this.selectedDistribusi.nomor_bast && this.selectedDistribusi.nomor_bast === target.nomor_bast) || (this.selectedDistribusi.id && this.selectedDistribusi.id === target.id))) {
-                            this.selectedDistribusi.signed = newSigned;
+                    if (!target || !target.id) return;
+
+                    const matched = this.distribusiList.find(d => d.id === target.id);
+
+                    try {
+                        const resp = await fetch(`/distribusi/${target.id}/sign`, {
+                            method: 'PATCH',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            }
+                        });
+                        const data = await resp.json();
+                        if (!data.success) throw new Error(data.message || 'Gagal menyimpan status TTD.');
+
+                        // Update semua referensi objek di state Alpine
+                        const applyUpdate = (obj) => {
+                            obj.signed     = data.signed;
+                            obj.tgl_signed = data.tgl_signed;
+                            obj.qr_hash    = data.qr_hash;
+                            obj.status     = data.signed ? 'Telah Ditandatangani BSrE' : 'Belum TTD';
+                        };
+                        applyUpdate(target);
+                        if (matched && matched !== target) applyUpdate(matched);
+                        if (this.selectedDistribusi && this.selectedDistribusi.id === target.id && this.selectedDistribusi !== target) {
+                            applyUpdate(this.selectedDistribusi);
                         }
 
-                        if (newSigned) {
-                            const now = new Date();
-                            const timeStr = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                            target.tgl_signed = timeStr;
-                            target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
-                            target.status = 'Telah Ditandatangani BSrE';
-                            if (matched) {
-                                matched.tgl_signed = timeStr;
-                                matched.qr_hash = target.qr_hash;
-                                matched.status = 'Telah Ditandatangani BSrE';
-                            }
-                            alert('✍️ BAST Distribusi (' + (target.nomor_bast || 'BAST') + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
-                        } else {
-                            target.tgl_signed = '-';
-                            target.qr_hash = '';
-                            target.status = 'Belum TTD';
-                            if (matched) {
-                                matched.tgl_signed = '-';
-                                matched.qr_hash = '';
-                                matched.status = 'Belum TTD';
-                            }
-                            alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + (target.nomor_bast || 'BAST') + ') berhasil dibatalkan.');
-                        }
+                        alert(data.signed
+                            ? '✍️ BAST (' + (target.nomor_bast || 'BAST') + ') berhasil ditandatangani secara digital BSrE! Status tersimpan.'
+                            : '↩️ Tanda tangan BSrE BAST (' + (target.nomor_bast || 'BAST') + ') berhasil dibatalkan.');
+                    } catch (err) {
+                        alert('❌ Gagal menyimpan status TTD: ' + err.message);
                     }
                 },
 

@@ -243,32 +243,42 @@
                     this.toggleSignDistribusi(item);
                 },
 
-                toggleSignDistribusi(item) {
-                    if (!item) return;
+                async toggleSignDistribusi(item) {
+                    if (!item || !item.id) return;
                     const target = this.distribusis.find(d => d.id === item.id) || item;
-                    if (target.signed) {
-                        target.signed = false;
-                        target.tgl_signed = '-';
-                        target.qr_hash = '';
-                        target.status = 'Menunggu Konfirmasi';
-                        item.signed = false;
-                        item.tgl_signed = '-';
-                        item.qr_hash = '';
-                        item.status = 'Menunggu Konfirmasi';
-                        alert('↩️ Tanda tangan digital BSrE BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil dibatalkan.');
-                    } else {
-                        target.signed = true;
-                        const now = new Date();
-                        target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                        target.qr_hash = 'BSRE-KOESNANDI-DST-' + Date.now();
-                        target.status = 'Telah Diterima';
-                        item.signed = true;
-                        item.tgl_signed = target.tgl_signed;
-                        item.qr_hash = target.qr_hash;
-                        item.status = 'Telah Diterima';
-                        alert('✍️ BAST Distribusi (' + (target.nomor_bast || target.kode) + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
+
+                    try {
+                        const resp = await fetch(`/distribusi/${item.id}/sign`, {
+                            method: 'PATCH',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            }
+                        });
+                        const data = await resp.json();
+                        if (!data.success) throw new Error(data.message || 'Gagal menyimpan status TTD.');
+
+                        // Update semua referensi objek di state Alpine
+                        const applyUpdate = (obj) => {
+                            obj.signed     = data.signed;
+                            obj.tgl_signed = data.tgl_signed;
+                            obj.qr_hash    = data.qr_hash;
+                            obj.status     = data.signed ? 'Telah Diterima' : 'Menunggu Konfirmasi';
+                        };
+                        applyUpdate(target);
+                        if (item !== target) applyUpdate(item);
+                        if (this.selectedDistribusi && this.selectedDistribusi.id === item.id) {
+                            applyUpdate(this.selectedDistribusi);
+                        }
+                        this.saveToStorage();
+
+                        alert(data.signed
+                            ? '✍️ BAST (' + (target.nomor_bast || target.kode) + ') berhasil ditandatangani secara digital BSrE! Status tersimpan.'
+                            : '↩️ Tanda tangan BSrE BAST (' + (target.nomor_bast || target.kode) + ') berhasil dibatalkan.');
+                    } catch (err) {
+                        alert('❌ Gagal menyimpan status TTD: ' + err.message);
                     }
-                    this.saveToStorage();
                 },
 
                 tolakDistribusi(item) {
