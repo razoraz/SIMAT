@@ -83,7 +83,14 @@ class NotificationService
         $userUnitId = $user->unit_id;
         $userUnitNama = $user->unit;
 
-        $query = SystemNotification::query();
+        // Hapus otomatis notifikasi yang usianya sudah lebih dari 24 jam
+        try {
+            SystemNotification::where('created_at', '<', now()->subHours(24))->delete();
+        } catch (\Throwable $e) {
+            // Ignore cleanup error if table transient
+        }
+
+        $query = SystemNotification::query()->where('created_at', '>=', now()->subHours(24));
 
         if (in_array($role, ['admin', 'master_admin'])) {
             $query->where(function ($q) use ($userId) {

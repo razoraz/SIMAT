@@ -96,6 +96,7 @@
         <!-- Tombol Notifikasi Systems -->
         <div x-data="{
                 notifOpen: false,
+                filterType: 'all',
                 unreadCount: {{ (int)($unreadNotifCount ?? 0) }},
                 timer: null,
                 init() {
@@ -161,7 +162,8 @@
                  x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
                  x-transition:leave-start="opacity-100 scale-100"
                  x-transition:leave-end="opacity-0 scale-95"
-                 class="absolute right-0 mt-2 w-84 sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50">
+                 style="width: 440px; max-width: 95vw;"
+                 class="absolute right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50">
                 
                 <!-- Header Notifikasi -->
                 <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
@@ -176,10 +178,35 @@
                     </button>
                 </div>
 
+                <!-- Filter Cards / Chips 1 Baris Horisontal -->
+                <div class="px-3 py-2 bg-slate-950/40 border-b border-slate-800/60 flex items-center gap-1.5">
+                    <button type="button" @click="filterType = 'all'"
+                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        :class="filterType === 'all' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
+                        <span>Semua</span>
+                    </button>
+                    <button type="button" @click="filterType = 'astap'"
+                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        :class="filterType === 'astap' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
+                        <span>📦</span> <span>ASTAP</span>
+                    </button>
+                    <button type="button" @click="filterType = 'distribusi'"
+                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        :class="filterType === 'distribusi' ? 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
+                        <span>🚚</span> <span>Distribusi</span>
+                    </button>
+                    <button type="button" @click="filterType = 'mutasi'"
+                        class="flex-1 py-1.5 rounded-lg text-[10.5px] font-semibold transition-all border text-center flex items-center justify-center space-x-1 whitespace-nowrap"
+                        :class="filterType === 'mutasi' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm' : 'bg-slate-800/40 text-slate-400 border-slate-800 hover:text-slate-200'">
+                        <span>🔄</span> <span>Mutasi</span>
+                    </button>
+                </div>
+
                 <!-- Daftar Notifikasi dengan Scrolling Rapi -->
-                <div class="divide-y divide-slate-800/60 max-h-80 overflow-y-auto notif-scroll">
+                <div class="divide-y divide-slate-800/60 max-h-64 overflow-y-auto notif-scroll" style="max-height: 260px; overflow-y: auto;">
                     @forelse($systemNotifications ?? [] as $notif)
                         <a href="{{ $notif['link'] }}" 
+                           x-show="filterType === 'all' || filterType === '{{ $notif['type'] }}'"
                            class="block px-3.5 py-2.5 hover:bg-slate-800/60 transition-colors relative {{ $notif['is_unread'] ? 'bg-emerald-500/5 notif-item-unread' : '' }}">
                             <div class="flex items-center space-x-3">
                                 <!-- Ikon Notifikasi Berdasarkan Kategori -->
@@ -227,22 +254,26 @@
                 </div>
 
                 <!-- Footer Dropdown -->
-                <div class="px-4 py-2 border-t border-slate-800/80 bg-slate-950/40 text-center text-[10px] text-slate-500">
-                    A-SIMAT RSUD Dr. H. Koesnandi • Pembaruan Tiap 60d
+                <div class="px-4 py-2 border-t border-slate-800/80 bg-slate-950/40 text-center text-[10px] text-slate-500 font-medium">
+                    A-SIMAT • Notifikasi otomatis dihapus setelah 24 jam
                 </div>
             </div>
         </div>
 
         <!-- Custom Scrollbar Styling -->
         <style>
+            .notif-scroll {
+                scrollbar-width: thin;
+                scrollbar-color: #475569 transparent;
+            }
             .notif-scroll::-webkit-scrollbar {
-                width: 4px;
+                width: 6px;
             }
             .notif-scroll::-webkit-scrollbar-track {
                 background: rgba(15, 23, 42, 0.6);
             }
             .notif-scroll::-webkit-scrollbar-thumb {
-                background: #334155;
+                background: #475569;
                 border-radius: 99px;
             }
             .notif-scroll::-webkit-scrollbar-thumb:hover {
