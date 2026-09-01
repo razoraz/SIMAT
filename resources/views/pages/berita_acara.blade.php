@@ -690,13 +690,6 @@
                             <option value="Instalasi Pemeliharaan Sarana RS (IPSRS)">Instalasi IPSRS</option>
                         </select>
                     </div>
-
-                    <a href="{{ route('distribusi.create') }}"
-                        class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-2 shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>+ Input Distribusi Baru</span>
-                    </a>
-
                 </div>
             </div>
 
@@ -793,13 +786,6 @@
                             <option value="unsigned">⏳ Belum Ditandatangani</option>
                         </select>
                     </div>
-
-                    <a href="{{ route('mutasi.create') }}"
-                        class="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>+ Input Mutasi Baru</span>
-                    </a>
-
                 </div>
             </div>
 
@@ -1546,9 +1532,9 @@
                                 <div>
                                     <p class="m-0">Yang Menyerahkan,</p>
                                     <p class="font-bold m-0">Pengurus Barang Pembantu</p>
-                                    <div class="h-20 flex items-center justify-center my-1">
+                                    <div class="my-1 flex items-center justify-center" style="height: 48px; min-height: 48px;">
                                         <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
-                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" class="w-10 h-10 shrink-0">
+                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" class="w-9 h-9 shrink-0">
                                             <div class="text-[7.5px] leading-tight text-slate-800">
                                                 <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
                                                 <div>Pengurus Barang Pembantu</div>
@@ -1563,9 +1549,17 @@
                                 <div>
                                     <p class="m-0">Yang Menerima,</p>
                                     <p class="font-bold m-0">Kepala Ruangan / PJ Unit</p>
-                                    <div class="h-20 flex flex-col items-center justify-end pb-1">
-                                        <div class="text-[8px] text-gray-400 italic mb-2">( Tanda Tangan Basah & Stempel Ruangan )</div>
-                                        <div class="w-44 border-b border-black"></div>
+                                    <div class="my-1 flex items-center justify-center" style="height: 48px; min-height: 48px;">
+                                        <template x-if="selectedDistribusi.signed">
+                                            <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
+                                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-PENERIMA'))" class="w-9 h-9 shrink-0">
+                                                <div class="text-[7.5px] leading-tight text-slate-800">
+                                                    <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
+                                                    <div>Kepala Ruangan / PJ Unit</div>
+                                                    <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                     <p class="font-bold underline uppercase m-0" x-text="selectedDistribusi.pj_nama"></p>
                                     <p class="m-0" x-text="'NIP. ' + selectedDistribusi.pj_nip"></p>
