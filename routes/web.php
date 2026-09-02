@@ -388,6 +388,29 @@ Route::middleware('auth')->group(function () {
     Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
     Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
 
+    // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima)
+    Route::patch('/distribusi/{id}/status', function (\Illuminate\Http\Request $request, $id) {
+        $dst = \App\Models\Distribusi::find($id);
+        if (!$dst) {
+            return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
+        }
+        $newStatus = $request->input('status', 'Telah Diterima');
+        $dst->status = $newStatus;
+        if ($newStatus === 'Telah Diterima') {
+            $dst->signed = true;
+            if (!$dst->tgl_signed) {
+                $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+            }
+        }
+        $dst->save();
+
+        return response()->json([
+            'success' => true,
+            'status'  => $dst->status,
+            'message' => "Status distribusi {$dst->kode} berhasil diperbarui menjadi '{$dst->status}'."
+        ]);
+    })->name('distribusi.status.update');
+
     // API: Toggle Status TTD BSrE Distribusi (simpan ke database agar persist setelah reload)
     Route::patch('/distribusi/{id}/sign', function (\Illuminate\Http\Request $request, $id) {
         $dst = \App\Models\Distribusi::find($id);

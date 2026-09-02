@@ -334,6 +334,54 @@
                         this.kondisiSaving[regId] = false;
                         alert('⚠️ Koneksi gagal. Pastikan server berjalan dan coba kembali.');
                     });
+                },
+
+                confirmKonfirmasiDiterima(item) {
+                    if (!item) return;
+                    const kode = item.kode || 'DIST';
+                    const tujuan = item.tujuan || item.unit_nama || 'Ruangan';
+                    this.askConfirmation({
+                        title: '📦 Konfirmasi Barang Diterima',
+                        message: 'Apakah barang distribusi ' + kode + ' sudah diterima dengan baik di unit / ruangan (' + tujuan + ')?',
+                        itemName: kode + ' ➔ ' + tujuan,
+                        type: 'success',
+                        btnText: '✅ Ya, Barang Sudah Diterima',
+                        onConfirm: async () => {
+                            await this.updateStatusDistribusi(item, 'Telah Diterima');
+                        }
+                    });
+                },
+
+                async updateStatusDistribusi(item, newStatus) {
+                    if (!item || !item.id) return;
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    try {
+                        const response = await fetch('/distribusi/' + item.id + '/status', {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            item.status = newStatus;
+                            const target = this.distribusis.find(d => d.id === item.id);
+                            if (target) target.status = newStatus;
+                            if (this.selectedDistribusi && this.selectedDistribusi.id === item.id) {
+                                this.selectedDistribusi.status = newStatus;
+                            }
+                            this.saveToStorage();
+                            this.showSimatToast('✅ Status distribusi ' + (item.kode || '') + ' berhasil diperbarui menjadi Telah Diterima!', 'success');
+                        } else {
+                            this.showSimatToast('❌ Gagal memperbarui status: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        this.showSimatToast('❌ Terjadi kesalahan koneksi saat memperbarui status.', 'error');
+                    }
                 }
             }
         }
@@ -757,8 +805,8 @@
                                             <th class="px-3.5 py-3 text-center min-w-[140px]">Merk / Spesifikasi</th>
                                             <th class="px-3.5 py-3 text-center min-w-[300px]">Nomor Register NIBAR (45 Digit)</th>
                                             <th class="px-3.5 py-3 text-center w-24">Kondisi</th>
-                                            <th class="px-3.5 py-3 text-center w-24">Vol / Satuan</th>
-                                            <th class="px-3.5 py-3 text-center w-20">Aksi</th>
+                                            <th class="px-3.5 py-3 text-center w-24">Vol. Pengajuan</th>
+                                            <th class="px-3.5 py-3 text-center w-24">Vol. ACC</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80">
@@ -826,7 +874,7 @@
                                                     </template>
                                                 </td>
 
-                                                <!-- Kolom Kondisi — tinggi h-[32px] & gap-3 sama persis dengan NIBAR -->
+                                                <!-- Kolom Kondisi -->
                                                 <td class="px-2 py-3 align-top">
                                                     <template x-if="item.nibar_registers && item.nibar_registers.length > 0">
                                                         <div class="flex flex-col gap-3">
@@ -858,58 +906,22 @@
                                                     </template>
                                                 </td>
 
-
-
-                                                <!-- Volume & Satuan (digabung) -->
-                                                <td class="px-3.5 py-3 text-center align-top">
-                                                    <span class="font-bold text-emerald-400 text-xs" x-text="item.qty"></span>
+                                                <!-- Vol. Pengajuan -->
+                                                <td class="px-3.5 py-3 text-center align-top whitespace-nowrap">
+                                                    <span class="font-bold text-teal-300 text-xs font-mono" x-text="item.qty"></span>
                                                     <span class="text-slate-400 text-[10px] ml-0.5" x-text="item.satuan"></span>
                                                 </td>
 
-                                                <!-- Kolom Aksi (dipindah ke kanan) -->
-                                                <td class="px-2 py-3 align-top">
-                                                    <template x-if="item.nibar_registers && item.nibar_registers.length > 0">
-                                                        <div class="flex flex-col gap-3">
-                                                            <template x-for="(reg, aIdx) in item.nibar_registers" :key="'aksi2-' + (reg.nibar || aIdx)">
-                                                                <div class="flex items-center justify-center gap-1.5 h-[32px]">
-                                                                    <button type="button" @click="copyNibar(reg.nibar)"
-                                                                            class="h-[32px] w-[32px] flex items-center justify-center rounded-lg bg-slate-800 hover:bg-teal-500 text-slate-400 hover:text-slate-950 border border-slate-700/60 transition-all text-xs"
-                                                                            :title="copiedNibar === reg.nibar ? 'Tersalin!' : 'Salin NIBAR'">
-                                                                        <span x-show="copiedNibar !== reg.nibar">📋</span>
-                                                                        <span x-show="copiedNibar === reg.nibar" class="text-emerald-400 font-bold">✓</span>
-                                                                    </button>
-                                                                    <a :href="'/scan/' + reg.nibar" target="_blank"
-                                                                       class="h-[32px] w-[32px] flex items-center justify-center rounded-lg bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-slate-950 border border-teal-500/30 transition-all text-xs"
-                                                                       title="Lihat Detail Barang Aset">
-                                                                        🔍
-                                                                    </a>
-                                                                </div>
-                                                            </template>
-                                                        </div>
+                                                <!-- Vol. ACC -->
+                                                <td class="px-3.5 py-3 text-center align-top whitespace-nowrap">
+                                                    <template x-if="item.qty_acc !== null && item.qty_acc !== undefined">
+                                                        <span class="inline-block whitespace-nowrap">
+                                                            <span class="font-bold text-emerald-400 text-xs font-mono" x-text="item.qty_acc"></span>
+                                                            <span class="text-slate-400 text-[10px] ml-0.5" x-text="item.satuan"></span>
+                                                        </span>
                                                     </template>
-                                                    <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && item.nibar_list && item.nibar_list.length > 0">
-                                                        <div class="flex flex-col gap-3">
-                                                            <template x-for="(nibar, aIdx) in item.nibar_list" :key="'aksi2-' + aIdx">
-                                                                <div class="flex items-center justify-center gap-1.5 h-[32px]">
-                                                                    <button type="button" @click="copyNibar(nibar)"
-                                                                            class="h-[32px] w-[32px] flex items-center justify-center rounded-lg bg-slate-800 hover:bg-teal-500 text-slate-400 hover:text-slate-950 border border-slate-700/60 transition-all text-xs"
-                                                                            :title="copiedNibar === nibar ? 'Tersalin!' : 'Salin NIBAR'">
-                                                                        <span x-show="copiedNibar !== nibar">📋</span>
-                                                                        <span x-show="copiedNibar === nibar" class="text-emerald-400 font-bold">✓</span>
-                                                                    </button>
-                                                                    <a :href="'/scan/' + nibar" target="_blank"
-                                                                       class="h-[32px] w-[32px] flex items-center justify-center rounded-lg bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-slate-950 border border-teal-500/30 transition-all text-xs"
-                                                                       title="Lihat Detail Barang Aset">
-                                                                        🔍
-                                                                    </a>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </template>
-                                                    <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && (!item.nibar_list || item.nibar_list.length === 0)">
-                                                        <div class="h-[32px] flex items-center justify-center">
-                                                            <span class="text-slate-600 text-[10px]">—</span>
-                                                        </div>
+                                                    <template x-if="item.qty_acc === null || item.qty_acc === undefined">
+                                                        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap">⏳ Belum ACC</span>
                                                     </template>
                                                 </td>
                                             </tr>
@@ -927,9 +939,21 @@
                         <span>Format NIBAR: 45 Digit Kode BMD RSUD dr. H. Koesnandi</span>
                     </div>
                     <div class="flex items-center space-x-2">
+                        <!-- Tombol Barang Diterima (Berada di sebelah KIRI Cetak / Edit BAST, Tampil jika belum Telah Diterima) -->
+                        <template x-if="selectedDistribusi && selectedDistribusi.status !== 'Telah Diterima' && selectedDistribusi.status !== 'Diterima'">
+                            <button type="button"
+                                    @click="confirmKonfirmasiDiterima(selectedDistribusi)"
+                                    class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5 cursor-pointer">
+                                <svg class="w-4 h-4 text-slate-950 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Barang Diterima</span>
+                            </button>
+                        </template>
+
                         <a :href="selectedDistribusi ? ('/berita-acara?tab=distribusi&id=' + selectedDistribusi.id) : '#'"
                            class="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>🖨️ Cetak / Edit BAST</span>
                         </a>
                         <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all shadow-md active:scale-95">
