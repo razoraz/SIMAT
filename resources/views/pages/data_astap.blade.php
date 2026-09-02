@@ -1364,11 +1364,11 @@
                     const total = regs.length;
                     if (total === 0) {
                         const k = item.kondisi || 'Baik';
-                        const isKb = k === 'Kurang Baik' || k === 'Rusak Ringan';
+                        const isKb = k === 'Kurang Baik';
                         return { total: 1, baik: k==='Baik'?1:0, kurang_baik: isKb?1:0, rusak_berat: k==='Rusak Berat'?1:0, pct_baik: k==='Baik'?100:0, pct_kb: isKb?100:0, pct_rb: k==='Rusak Berat'?100:0, kondisi_dominan: isKb ? 'Kurang Baik' : k };
                     }
                     const baik = regs.filter(r => (r.kondisi||'Baik') === 'Baik').length;
-                    const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'Rusak Ringan').length;
+                    const kb   = regs.filter(r => r.kondisi === 'Kurang Baik').length;
                     const rb   = regs.filter(r => r.kondisi === 'Rusak Berat').length;
                     const dominan = baik >= kb && baik >= rb ? 'Baik' : (kb >= rb ? 'Kurang Baik' : 'Rusak Berat');
                     return {
@@ -1739,13 +1739,13 @@
                                                 <span class="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-bold border shadow-sm select-none"
                                                       :class="{
                                                           'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': st.kondisi_dominan === 'Baik',
-                                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Kurang Baik' || st.kondisi_dominan === 'Rusak Ringan',
+                                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Kurang Baik',
                                                           'bg-rose-500/15 text-rose-300 border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
                                                       }">
                                                     <span class="w-1.5 h-1.5 rounded-full mr-1.5"
                                                           :class="{
                                                               'bg-emerald-400': st.kondisi_dominan === 'Baik',
-                                                              'bg-amber-400': st.kondisi_dominan === 'Kurang Baik' || st.kondisi_dominan === 'Rusak Ringan',
+                                                              'bg-amber-400': st.kondisi_dominan === 'Kurang Baik',
                                                               'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
                                                           }"></span>
                                                     <span x-text="st.kondisi_dominan + (st.total > 1 ? ' 100%' : '')"></span>
@@ -2218,7 +2218,7 @@
                                                     <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm"
                                                           :class="{
                                                               'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik',
-                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'Rusak Ringan',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik',
                                                               'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat'
                                                           }" x-text="reg.kondisi"></span>
                                                 </td>
@@ -2456,7 +2456,7 @@
                                 <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold border inline-block"
                                       :class="{
                                           'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedRiwayatRegister.kondisi === 'Baik',
-                                          'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedRiwayatRegister.kondisi === 'Rusak Ringan' || selectedRiwayatRegister.kondisi === 'Kurang Baik',
+                                          'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedRiwayatRegister.kondisi === 'Kurang Baik',
                                           'bg-rose-500/20 text-rose-300 border-rose-500/30': selectedRiwayatRegister.kondisi === 'Rusak Berat'
                                       }" x-text="selectedRiwayatRegister.kondisi"></span>
                             </div>
@@ -2507,7 +2507,7 @@
                                                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-black border"
                                                           :class="{
                                                               'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': m.kondisi === 'Baik',
-                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': m.kondisi === 'Rusak Ringan' || m.kondisi === 'Kurang Baik',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': m.kondisi === 'Kurang Baik',
                                                               'bg-rose-500/20 text-rose-300 border-rose-500/30': m.kondisi === 'Rusak Berat'
                                                           }" x-text="m.kondisi || 'Baik'"></span>
                                                 </div>

@@ -1552,24 +1552,39 @@
 
                     <!-- Input Nilai Anggaran & Realisasi (Kolom 14 & 15) -->
                     <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Kolom 14: JUMLAH ANGGARAN -->
                         <div>
                             <label class="block text-slate-300 font-semibold text-xs mb-1">JUMLAH ANGGARAN (Rp) (Kolom 14)</label>
                             <div class="relative">
                                 <span class="absolute left-3.5 top-3 text-slate-500 text-xs font-bold">Rp</span>
-                                <input type="number" x-model.number="formData.jumlah_anggaran" placeholder="544100000"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-white font-mono font-bold focus:outline-none focus:border-blue-500">
+                                <input type="text" 
+                                    :value="formData.jumlah_anggaran ? Number(formData.jumlah_anggaran).toLocaleString('id-ID') : ''"
+                                    @input="
+                                        let raw = $event.target.value.replace(/\D/g, '');
+                                        formData.jumlah_anggaran = raw ? parseInt(raw, 10) : '';
+                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';"
+                                    placeholder="544.100.000"
+                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-white font-mono font-bold focus:outline-none focus:border-blue-500">
                             </div>
                         </div>
+    
+                        <!-- Kolom 15: JUMLAH REALISASI -->
                         <div>
                             <label class="block text-emerald-400 font-semibold text-xs mb-1">JUMLAH REALISASI (Rp) (Kolom 15)</label>
                             <div class="relative">
                                 <span class="absolute left-3.5 top-3 text-emerald-500 text-xs font-bold">Rp</span>
-                                <input type="number" x-model.number="formData.jumlah_realisasi" placeholder="516156650"
-                                       class="w-full bg-slate-950 border border-emerald-500/50 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-emerald-400 font-mono font-extrabold focus:outline-none focus:border-emerald-400">
+                                <input type="text" 
+                                    :value="formData.jumlah_realisasi ? Number(formData.jumlah_realisasi).toLocaleString('id-ID') : ''"
+                                    @input="
+                                        let raw = $event.target.value.replace(/\D/g, '');
+                                        formData.jumlah_realisasi = raw ? parseInt(raw, 10) : '';
+                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                    "
+                                    placeholder="516.156.650"
+                                    class="w-full bg-slate-950 border border-emerald-500/50 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-emerald-400 font-mono font-extrabold focus:outline-none focus:border-emerald-400">
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- ========================================================================= -->
