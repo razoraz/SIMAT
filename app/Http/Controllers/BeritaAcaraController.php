@@ -198,6 +198,14 @@ class BeritaAcaraController extends Controller
         // 2. DATA TAB 2: BAST DISTRIBUSI BARANG DARI GUDANG KE RUANGAN
         // =========================================================================
         $distribusis = Distribusi::with(['unit', 'items.astap', 'items.registers.astapRegister'])
+            ->where(function($q) use ($tahun) {
+                $q->whereYear('tanggal_distribusi', $tahun)
+                  ->orWhereNull('tanggal_distribusi');
+            })
+            ->where(function($q) {
+                $q->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Telah Ditandatangani BSrE'])
+                  ->orWhereNull('status');
+            })
             ->orderBy('id', 'desc')
             ->get();
 

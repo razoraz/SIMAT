@@ -164,8 +164,8 @@
                         this.selectedUnitObj = uObj || null;
                     } else {
                         const autoUnit = (this.isSubAdmin && this.userUnit) ? this.userUnit : null;
-                        this.formData.kode = 'DST-2026-' + String(Math.floor(Math.random() * 900) + 100);
-                        this.formData.bast_nomor = this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : ('032 / [Auto] / 430.10.7 / ' + new Date().getFullYear());
+                        this.formData.kode = {{ Js::from($nextKode ?? ('DST-'.date('Y').'-001')) }};
+                        this.formData.bast_nomor = this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
                         this.formData.status = 'Draft';
                         this.formData.tujuan = autoUnit ? autoUnit.nama : '';
                         this.formData.unit_id = autoUnit ? autoUnit.id : null;
@@ -182,6 +182,18 @@
 
                     if (!this.formData.items || this.formData.items.length === 0) {
                         this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, satuan: 'Unit', kondisi: 'Baik', keterangan: '', nibar_selected: [] }];
+                    }
+                },
+                updateYearInKode() {
+                    if (!this.formData.tgl) return;
+                    const year = this.formData.tgl.split('-')[0];
+                    if (year && year.length === 4) {
+                        if (this.formData.kode) {
+                            this.formData.kode = this.formData.kode.replace(/DST-\d{4}-/, 'DST-' + year + '-');
+                        }
+                        if (this.formData.bast_nomor && this.formData.bast_nomor.includes('430.10.7')) {
+                            this.formData.bast_nomor = this.formData.bast_nomor.replace(/\/ \d{4}$/, '/ ' + year);
+                        }
                     }
                 },
                 addItem() {
@@ -438,6 +450,7 @@
                             </template>
                         </label>
                         <input type="date" x-model="formData.tgl"
+                               @change="updateYearInKode()"
                                :readonly="isSubAdmin"
                                :class="isSubAdmin ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed pointer-events-none' : 'bg-slate-950 text-white'"
                                class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-teal-500">
@@ -457,13 +470,11 @@
                                     :class="{
                                         'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
                                         'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
-                                        'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
-                                        'text-slate-400': formData.status === 'Draft'
+                                        'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending'
                                     }">
                                 <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
                                 <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
                                 <option value="Telah Diterima">🟢 Telah Diterima</option>
-                                <option value="Draft">📝 Draft</option>
                             </select>
                         </template>
 
@@ -548,31 +559,31 @@
                         </div>
                     </template>
 
-                    <!-- Auto-filled PIC Penerima Details (Readonly untuk Sub Admin) -->
+                    <!-- Auto-filled PIC Penerima Details (SELALU Readonly - otomatis dari unit) -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/80">
                         <div>
                             <span class="text-[10px] text-slate-400 block font-semibold mb-1">Pegawai Penerima (Kepala/PJ)</span>
                             <input type="text" x-model="formData.penerima" 
-                                   :readonly="isSubAdmin"
-                                   :class="isSubAdmin ? 'bg-slate-900/60 text-slate-300 cursor-not-allowed' : 'bg-slate-900 text-emerald-400'"
-                                   placeholder="Terisi otomatis..." 
-                                   class="w-full border border-slate-800 rounded-lg px-3 py-2 text-xs font-bold focus:outline-none">
+                                   readonly
+                                   placeholder="Terisi otomatis saat pilih unit..." 
+                                   class="w-full bg-slate-900/60 text-slate-300 border border-slate-800 rounded-lg px-3 py-2 text-xs font-bold cursor-not-allowed focus:outline-none"
+                                   title="Otomatis terisi dari data kepala unit">
                         </div>
                         <div>
                             <span class="text-[10px] text-slate-400 block font-semibold mb-1">NIP Pegawai</span>
                             <input type="text" x-model="formData.penerima_nip" 
-                                   :readonly="isSubAdmin"
-                                   :class="isSubAdmin ? 'bg-slate-900/60 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-slate-300'"
-                                   placeholder="Terisi otomatis..." 
-                                   class="w-full border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none">
+                                   readonly
+                                   placeholder="Terisi otomatis saat pilih unit..." 
+                                   class="w-full bg-slate-900/60 text-slate-400 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono cursor-not-allowed focus:outline-none"
+                                   title="Otomatis terisi dari data NIP kepala unit">
                         </div>
                         <div>
                             <span class="text-[10px] text-slate-400 block font-semibold mb-1">Jabatan Penerima</span>
                             <input type="text" x-model="formData.penerima_jabatan" 
-                                   :readonly="isSubAdmin"
-                                   :class="isSubAdmin ? 'bg-slate-900/60 text-slate-400 cursor-not-allowed' : 'bg-slate-900 text-slate-300'"
-                                   placeholder="Terisi otomatis..." 
-                                   class="w-full border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                                   readonly
+                                   placeholder="Terisi otomatis saat pilih unit..." 
+                                   class="w-full bg-slate-900/60 text-slate-400 border border-slate-800 rounded-lg px-3 py-2 text-xs cursor-not-allowed focus:outline-none"
+                                   title="Otomatis terisi dari jabatan kepala unit">
                         </div>
                     </div>
 

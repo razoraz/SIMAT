@@ -210,7 +210,13 @@ class DistribusiController extends Controller
                 ];
             });
 
-        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList'));
+        // Hitung kode urut berikutnya agar tampil di form (bukan random)
+        $tahunIni = date('Y');
+        $nextSeq = Distribusi::whereYear('tanggal_distribusi', $tahunIni)->count() + 1;
+        $nextKode = 'DST-' . $tahunIni . '-' . str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
+        $nextBastNomor = '032 / ' . str_pad($nextSeq, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunIni;
+
+        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'nextKode', 'nextBastNomor'));
     }
 
     /**
@@ -297,6 +303,15 @@ class DistribusiController extends Controller
                 ];
             });
 
+        // Proteksi: sub admin tidak bisa mengubah distribusi yang statusnya sudah dikunci
+        if ($distribusiData) {
+            $lockedStatuses = ['Dalam Pengiriman', 'Telah Diterima'];
+            $user = auth()->user();
+            if ($user && $user->isSubAdmin() && in_array($distribusiData->status, $lockedStatuses)) {
+                abort(403, 'Distribusi ini sudah diproses dan tidak dapat diubah oleh Sub Admin.');
+            }
+        }
+
         return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'id', 'distribusiData'));
     }
 
@@ -350,9 +365,11 @@ class DistribusiController extends Controller
                 : date('Y-m-d');
             $tahunDistribusi = date('Y', strtotime($tglDistribusi));
 
-            $statusInput = $validated['status'] ?? 'Draft';
-            $validStatuses = ['Telah Diterima', 'Dalam Pengiriman', 'Menunggu Konfirmasi', 'Draft'];
-            $finalStatus = in_array($statusInput, $validStatuses) ? $statusInput : 'Draft';
+            // Status otomatis sesuai workflow:
+            // - Baru dibuat (create) → 'Menunggu Konfirmasi'
+            // - Diperbarui (edit + isi NIBAR) → 'Dalam Pengiriman'
+            $finalStatus = $id ? 'Dalam Pengiriman' : 'Menunggu Konfirmasi';
+
 
             // Helper: hitung nomor urut sekuensial distribusi per tahun
             // (count record yang ada di tahun yang sama + 1 untuk record baru)
@@ -398,7 +415,7 @@ class DistribusiController extends Controller
             if ($distribusi) {
                 $seq = $getSeqForExisting($distribusi);
                 $distribusi->update([
-                    'kode'               => $isAutoKode ? $generateKode($seq) : $inputKode,
+                    'kode'               => $generateKode($seq),
                     'bast_nomor'         => $isAutoNomor ? $generateBastNomor($seq) : $inputBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
@@ -421,9 +438,9 @@ class DistribusiController extends Controller
                 // Hapus item lama
                 $distribusi->items()->delete();
             } else {
-                // Buat record dulu (ID belum ada)
+                // Buat record baru
                 $distribusi = Distribusi::create([
-                    'kode'               => $isAutoKode ? $generateKode($nextSeq) : $inputKode,
+                    'kode'               => $generateKode($nextSeq),
                     'bast_nomor'         => $isAutoNomor ? $generateBastNomor($nextSeq) : $inputBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
@@ -522,6 +539,14 @@ class DistribusiController extends Controller
     public function destroy($id)
     {
         $distribusi = Distribusi::findOrFail($id);
+
+        // Proteksi: sub admin tidak bisa menghapus distribusi yang statusnya sudah dikunci
+        $user = auth()->user();
+        $lockedStatuses = ['Dalam Pengiriman', 'Telah Diterima'];
+        if ($user && $user->isSubAdmin() && in_array($distribusi->status, $lockedStatuses)) {
+            return response()->json(['success' => false, 'message' => 'Distribusi ini sudah diproses dan tidak dapat dihapus.'], 403);
+        }
+
         $kode = $distribusi->kode;
         $distribusi->delete();
 
