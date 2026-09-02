@@ -17,6 +17,25 @@ class Distribusi extends Model
     ];
 
     /**
+     * Listener saat Distribusi dihapus: otomatis reset unit_id, ruang_pemegang, dan status register NIBAR
+     */
+    protected static function booted()
+    {
+        static::deleting(function ($distribusi) {
+            foreach ($distribusi->items as $item) {
+                $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
+                if (!empty($regIds)) {
+                    AstapRegister::whereIn('id', $regIds)->update([
+                        'unit_id'        => null,
+                        'ruang_pemegang' => null,
+                        'status'         => 'Tersedia',
+                    ]);
+                }
+            }
+        });
+    }
+
+    /**
      * Relasi ke Master Unit (Cukup simpan unit_id)
      */
     public function unit()

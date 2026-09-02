@@ -141,6 +141,7 @@
                                     kode_barang: astapObj ? astapObj.kode_108 : (it.kode_barang || ''),
                                     merk_type: it.merk_type || '',
                                     qty: it.qty || 1,
+                                    qty_acc: (it.qty_acc !== undefined && it.qty_acc !== null) ? it.qty_acc : null,
                                     satuan: astapObj ? (astapObj.satuan || 'Unit') : (it.satuan || 'Unit'),
                                     kondisi: it.kondisi || 'Baik',
                                     keterangan: it.keterangan || '',
@@ -181,7 +182,7 @@
                     }
 
                     if (!this.formData.items || this.formData.items.length === 0) {
-                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, satuan: 'Unit', kondisi: 'Baik', keterangan: '', nibar_selected: [] }];
+                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: 'Baik', keterangan: '', nibar_selected: [] }];
                     }
                 },
                 updateYearInKode() {
@@ -197,7 +198,7 @@
                     }
                 },
                 addItem() {
-                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, satuan: 'Unit', kondisi: 'Baik', keterangan: '', nibar_selected: [] });
+                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: 'Baik', keterangan: '', nibar_selected: [] });
                 },
                 removeItem(index) {
                     if (this.formData.items.length <= 1) { alert('⚠️ Minimal harus ada 1 barang!'); return; }
@@ -338,6 +339,7 @@
                                             nama_barang: it.nama_barang,
                                             kode_barang: resolvedKode,
                                             qty: parseInt(it.qty) || 1,
+                                            qty_acc: (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : null,
                                             keterangan: it.keterangan || '-',
                                             register_ids: registerIds
                                         };
@@ -961,12 +963,17 @@
                                     </div>
                                 </template>
 
-                                <!-- Baris 2: Volume & Satuan -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                                    <!-- Volume (Qty) -->
+                                <!-- Baris 2: Volume Pengajuan, Volume ACC (Admin), & Satuan -->
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                                    <!-- Vol 1: Volume Pengajuan (Qty) — Sub Admin & Admin bisa isi -->
                                     <div>
-                                        <label class="block text-slate-300 font-semibold text-xs mb-1.5">Volume (Qty)</label>
-                                        <input type="text" 
+                                        <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                            <span class="flex items-center space-x-1.5">
+                                                <span class="text-slate-300">Volume Pengajuan</span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 font-bold" x-text="isSubAdmin ? '📋 Diisi Anda' : '📋 Qty Diajukan'"></span>
+                                            </span>
+                                        </label>
+                                        <input type="text"
                                             :value="item.qty ? Number(item.qty).toLocaleString('id-ID') : ''"
                                             @input="
                                                 let raw = $event.target.value.replace(/\D/g, '');
@@ -977,12 +984,56 @@
                                             class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-teal-500 transition-all">
                                     </div>
 
+                                    <!-- Vol 2: Volume ACC — Hanya tampil & bisa diisi Admin/Master Admin -->
+                                    <template x-if="!isSubAdmin">
+                                        <div>
+                                            <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                                <span class="flex items-center space-x-1.5">
+                                                    <span class="text-emerald-300">Volume Di-ACC</span>
+                                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">✅ Admin</span>
+                                                </span>
+                                                <template x-if="item.qty_acc === null || item.qty_acc === ''">
+                                                    <span class="text-[10px] text-amber-400 font-semibold">⏳ Belum Di-ACC</span>
+                                                </template>
+                                                <template x-if="item.qty_acc !== null && item.qty_acc !== ''">
+                                                    <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
+                                                </template>
+                                            </label>
+                                            <div class="relative">
+                                                <input type="text"
+                                                    :value="(item.qty_acc !== null && item.qty_acc !== '') ? Number(item.qty_acc).toLocaleString('id-ID') : ''"
+                                                    @input="
+                                                        let raw = $event.target.value.replace(/\D/g, '');
+                                                        item.qty_acc = raw !== '' ? parseInt(raw, 10) : null;
+                                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                    "
+                                                    placeholder="Kosong = Belum Di-ACC"
+                                                    class="w-full h-11 bg-slate-900 border border-emerald-500/40 rounded-xl px-4 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40 transition-all placeholder-slate-500">
+                                                <svg class="w-3.5 h-3.5 text-emerald-400 pointer-events-none" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Info Box Volume ACC untuk Sub Admin (readonly, tidak bisa isi) -->
+                                    <template x-if="isSubAdmin">
+                                        <div>
+                                            <label class="block text-slate-400 font-semibold text-xs mb-1.5 flex items-center space-x-1.5">
+                                                <span>Volume Di-ACC</span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 border border-slate-700 text-slate-400 font-bold">🔒 Admin Only</span>
+                                            </label>
+                                            <div class="w-full h-11 bg-slate-950/80 border border-slate-800 rounded-xl px-4 flex items-center text-xs cursor-not-allowed"
+                                                 :class="(item.qty_acc !== null && item.qty_acc !== '') ? 'text-emerald-400 font-bold border-emerald-500/30' : 'text-slate-500'">
+                                                <span x-text="(item.qty_acc !== null && item.qty_acc !== '') ? ('✅ ' + Number(item.qty_acc).toLocaleString('id-ID') + ' ' + (item.satuan || 'Unit')) : '⏳ Menunggu Keputusan Admin'"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+
                                     <!-- Satuan (⚡ Auto) -->
                                     <div>
                                         <label class="block text-teal-300 font-semibold text-xs mb-1.5">Nama Satuan Barang</label>
-                                        <input type="text" 
-                                               x-model="item.satuan" 
-                                               placeholder="satuan" 
+                                        <input type="text"
+                                               x-model="item.satuan"
+                                               placeholder="satuan"
                                                readonly
                                                class="w-full h-11 bg-slate-900 border border-teal-500/50 rounded-xl px-4 py-2.5 text-xs text-teal-300 font-bold focus:outline-none focus:border-teal-500 transition-all">
                                     </div>

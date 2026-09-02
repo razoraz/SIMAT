@@ -83,6 +83,8 @@ class DistribusiController extends Controller
                         'kode_barang'     => $it->astap?->kode_108 ?? '-',
                         'jenis_nama'      => $it->astap?->jenisAstap?->nama_jenis ?? '-',
                         'qty'             => $it->qty,
+                        'qty_acc'         => $it->qty_acc !== null ? (int)$it->qty_acc : null,
+                        'vol_bast'        => $it->qty_acc !== null ? (int)$it->qty_acc : '-',
                         'satuan'          => $it->astap?->satuan ?: 'Unit',
                         'merk'            => $merk,
                         'merk_type'       => $merk,
@@ -352,6 +354,7 @@ class DistribusiController extends Controller
             'items'                        => 'required|array|min:1',
             'items.*.astap_id'             => 'nullable',
             'items.*.qty'                  => 'nullable|integer|min:1',
+            'items.*.qty_acc'              => 'nullable|integer|min:0',
             'items.*.keterangan'           => 'nullable|string',
             'items.*.register_ids'         => 'nullable|array',
         ]);
@@ -366,9 +369,9 @@ class DistribusiController extends Controller
             $tahunDistribusi = date('Y', strtotime($tglDistribusi));
 
             // Status otomatis sesuai workflow:
-            // - Baru dibuat (create) → 'Menunggu Konfirmasi'
-            // - Diperbarui (edit + isi NIBAR) → 'Dalam Pengiriman'
-            $finalStatus = $id ? 'Dalam Pengiriman' : 'Menunggu Konfirmasi';
+            // - Sub admin buat baru / perbarui → 'Menunggu Konfirmasi'
+            // - Admin/master admin perbarui → 'Dalam Pengiriman'
+            $finalStatus = ($isSubAdmin || !$id) ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
 
 
             // Helper: hitung nomor urut sekuensial distribusi per tahun
@@ -468,10 +471,18 @@ class DistribusiController extends Controller
                     }
                 }
 
+                // qty_acc hanya boleh diisi oleh admin/master admin
+                $qtyAcc = null;
+                if (!$isSubAdmin) {
+                    $rawQtyAcc = $itemData['qty_acc'] ?? null;
+                    $qtyAcc = ($rawQtyAcc !== null && $rawQtyAcc !== '') ? intval($rawQtyAcc) : null;
+                }
+
                 $distribusiItem = DistribusiItem::create([
                     'distribusi_id' => $distribusi->id,
                     'astap_id'      => $astapId,
                     'qty'           => intval($itemData['qty'] ?? 1),
+                    'qty_acc'       => $qtyAcc,
                     'keterangan'    => $itemData['keterangan'] ?? null,
                 ]);
 
@@ -548,7 +559,9 @@ class DistribusiController extends Controller
         }
 
         $kode = $distribusi->kode;
-        $distribusi->delete();
+        DB::transaction(function () use ($distribusi) {
+            $distribusi->delete();
+        });
 
         session()->flash('success', "Transaksi Distribusi {$kode} berhasil dihapus.");
         return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dihapus."]);

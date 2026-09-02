@@ -564,7 +564,7 @@
                                 
                                 <!-- Kolom Barang: Ringkasan Rapi (Detail Lengkap Dapat Dilihat di Modal Detail / BAST) -->
                                 <td class="px-4 py-4">
-                                    <div class="space-y-1">
+                                    <div class="space-y-1.5">
                                         <div class="flex items-center space-x-2">
                                             <p class="font-extrabold text-white text-xs" x-text="item.nama"></p>
                                             <template x-if="item.items && item.items.length > 0">
@@ -573,6 +573,29 @@
                                                 </span>
                                             </template>
                                         </div>
+                                        <!-- Badge Volume per Item -->
+                                        <template x-if="item.items && item.items.length > 0">
+                                            <div class="flex flex-wrap gap-1.5 pt-0.5">
+                                                <template x-for="(it, iIdx) in item.items.slice(0, 3)" :key="iIdx">
+                                                    <div class="inline-flex items-center space-x-1 text-[10px] font-mono bg-slate-950 border border-slate-800 rounded-lg px-2 py-0.5">
+                                                        <span class="text-slate-400 truncate max-w-[100px]" x-text="it.nama_barang || '-'"></span>
+                                                        <span class="text-slate-600">|</span>
+                                                        <!-- Volume Pengajuan -->
+                                                        <span class="text-teal-400 font-bold" :title="'Volume Pengajuan: ' + (it.qty || 0)" x-text="'📋 ' + (it.qty || 0)"></span>
+                                                        <!-- Volume ACC -->
+                                                        <template x-if="it.qty_acc !== null && it.qty_acc !== undefined">
+                                                            <span class="font-bold" :class="it.qty_acc > 0 ? 'text-emerald-400' : 'text-rose-400'" :title="'Volume Di-ACC: ' + it.qty_acc" x-text="'✅ ' + it.qty_acc"></span>
+                                                        </template>
+                                                        <template x-if="it.qty_acc === null || it.qty_acc === undefined">
+                                                            <span class="text-amber-500/70" title="Belum Di-ACC">⏳</span>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <template x-if="item.items.length > 3">
+                                                    <span class="text-[10px] text-slate-500 italic" x-text="'+ ' + (item.items.length - 3) + ' lainnya'"></span>
+                                                </template>
+                                            </div>
+                                        </template>
                                         <template x-if="item.keterangan">
                                             <p class="text-[11px] text-slate-400 truncate max-w-xs sm:max-w-md" x-text="'Catatan: ' + item.keterangan"></p>
                                         </template>

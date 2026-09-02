@@ -1654,7 +1654,9 @@
                                                 <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="idx + 1"></td>
                                                 <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang"></td>
                                                 <td class="border border-black px-3 py-1.5 text-left font-mono text-[9px]" style="border: 1px solid black;" x-text="sub.spesifikasi || sub.merk_type || '-'"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;" x-text="sub.qty"></td>
+                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;"
+                                                    :title="sub.qty_acc !== null ? ('Volume Di-ACC: ' + sub.qty_acc + ' | Volume Diajukan: ' + sub.qty) : ('Volume Diajukan: ' + sub.qty + ' | Belum Di-ACC Admin')"
+                                                    x-text="(sub.qty_acc !== null && sub.qty_acc !== undefined) ? sub.qty_acc : (sub.vol_bast !== undefined ? sub.vol_bast : '-')"></td>
                                                 <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="sub.satuan"></td>
                                                 <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Baik' || !sub.kondisi) ? 'Baik' : ''"></td>
                                                 <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB') ? 'KB' : ''"></td>

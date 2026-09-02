@@ -263,6 +263,9 @@ class BeritaAcaraController extends Controller
                     'merk_type'       => $merk . $nibarStr,
                     'spesifikasi'     => $merk,
                     'qty'             => (int) $it->qty,
+                    'qty_acc'         => $it->qty_acc !== null ? (int) $it->qty_acc : null,
+                    // Vol. yang tampil di BAST adalah qty_acc. Jika belum di-ACC (qty_acc === null), tampilkan '-'
+                    'vol_bast'        => $it->qty_acc !== null ? (int) $it->qty_acc : '-',
                     'satuan'          => $it->astap?->satuan ?: 'Unit',
                     'kondisi'         => $firstKondisi,
                     'keterangan'      => $it->keterangan ?: 'Distribusi ke ' . ($dst->unit?->nama ?: 'Ruangan'),
