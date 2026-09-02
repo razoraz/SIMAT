@@ -457,12 +457,38 @@
                     if (type !== 'faktur') { this.formData.faktur_nomor = ''; this.formData.faktur_tanggal = ''; }
                 },
 
-                onDocDateChange(dateStr) {
-                    if (dateStr && dateStr.length >= 4) {
-                        const year = parseInt(dateStr.substring(0, 4));
-                        if (year > 1900 && year < 2100) {
-                            this.formData.tahun_perolehan = year;
+                maxDateToday: new Date().toISOString().split('T')[0],
+
+                onDocDateChange(dateStr, fieldName = null) {
+                    if (dateStr) {
+                        const today = new Date().toISOString().split('T')[0];
+                        if (dateStr > today) {
+                            alert('Tanggal dokumen tidak boleh melebihi tanggal hari ini (' + today + ')!');
+                            if (fieldName && this.formData[fieldName] !== undefined) {
+                                this.formData[fieldName] = today;
+                            } else {
+                                const activeDoc = this.formData.doc_type;
+                                if (activeDoc === 'spk') this.formData.spk_tanggal = today;
+                                else if (activeDoc === 'surat_pesanan') this.formData.surat_pesanan_tanggal = today;
+                                else if (activeDoc === 'kwitansi') this.formData.kwitansi_tanggal = today;
+                                else if (activeDoc === 'faktur') this.formData.faktur_tanggal = today;
+                            }
+                            return;
                         }
+                        if (dateStr.length >= 4) {
+                            const year = parseInt(dateStr.substring(0, 4));
+                            if (year > 1900 && year < 2100) {
+                                this.formData.tahun_perolehan = year;
+                            }
+                        }
+                    }
+                },
+
+                validateMaxDate(fieldName) {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (this.formData[fieldName] && this.formData[fieldName] > today) {
+                        alert('Tanggal tidak boleh melebihi tanggal hari ini (' + today + ')!');
+                        this.formData[fieldName] = today;
                     }
                 },
 
@@ -1883,7 +1909,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'spk'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -1908,7 +1934,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'surat_pesanan'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -1933,7 +1959,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'kwitansi'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -1958,7 +1984,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'faktur'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -1978,7 +2004,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.sp2d_tanggal" :max="maxDateToday" @change="validateMaxDate('sp2d_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -1989,7 +2015,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :max="maxDateToday" @change="validateMaxDate('bast_dokumen_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -2088,6 +2114,7 @@
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1">Sertifikat Tanggal</label>
                                         <input type="date" x-model="formData.tanah_sertifikat_tgl"
+                                               :max="maxDateToday" @change="validateMaxDate('tanah_sertifikat_tgl')"
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white">
                                     </div>
                                 </div>
@@ -2280,63 +2307,146 @@
                 <template x-if="isMesin">
                     <div class="space-y-6">
                         
-                        <!-- 1. Ruang / Pemegang Aset (Satu Sinkronisasi dengan Master Unit & Paviliun) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangOpen = false">
-                            <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
-                                <label class="block text-amber-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
-                                </label>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
-                                        <span>🏥</span>
-                                        <span>Tersinkron Unit & Paviliun</span>
-                                    </span>
-                                    <button type="button" 
-                                            x-show="formData.ruang_pemegang" 
-                                            @click="formData.ruang_pemegang = ''; searchRuangPemegang = ''; isRuangPemegangOpen = true" 
-                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
-                                        ✕ Reset
-                                    </button>
-                                </div>
+                        <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1 & 2) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">1. RIWAYAT DOKUMEN PEMBELIAN (PILIH 1 DOKUMEN UTAMA):</span>
+                                <span class="text-[10px] text-slate-400 font-medium">Klik pada kartu atau radio button untuk memilih jenis dokumen</span>
                             </div>
                             
-                            <div class="relative">
-                                <input type="text" 
-                                       :value="!isRuangPemegangOpen ? formData.ruang_pemegang : searchRuangPemegang"
-                                       @input="formData.ruang_pemegang = $event.target.value; searchRuangPemegang = $event.target.value; isRuangPemegangOpen = true"
-                                       @focus="isRuangPemegangOpen = true"
-                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
-                                       class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
-                                <svg class="w-4 h-4 text-amber-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            </div>
-
-                            <!-- Dropdown List Pilihan Unit & Paviliun -->
-                            <div x-show="isRuangPemegangOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
-                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
-                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsMesin.length + ' Unit/Ruangan'"></span>
-                                </div>
-                                <template x-for="u in filteredUnitsMesin" :key="u.id">
-                                    <div @click="selectUnitMesin(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-amber-500/15 border border-slate-800/60 hover:border-amber-500/40 cursor-pointer transition-all flex items-center justify-between group">
-                                        <div class="min-w-0 pr-2">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate" x-text="u.nama"></span>
-                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
-                                            </div>
-                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                <!-- 1. SPK -->
+                                <div @click="selectDocType('spk')" 
+                                     :class="formData.doc_type === 'spk' ? 'border-cyan-500 bg-cyan-950/30 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="spk" :checked="formData.doc_type === 'spk'" @change="selectDocType('spk')" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-[11px] font-extrabold text-cyan-400">📄 SPK (Kontrak)</span>
                                         </div>
-                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-amber-300 border border-amber-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                        <span x-show="formData.doc_type === 'spk'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
                                     </div>
-                                </template>
-                                <template x-if="filteredUnitsMesin.length === 0">
-                                    <div class="p-3 text-center text-xs text-slate-400">
-                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor SPK</label>
+                                        <input type="text" x-model="formData.spk_nomor" placeholder="028/SPK-KTR/V/2026" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-cyan-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
-                                </template>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
+                                        <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'spk'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 2. Surat Pesanan -->
+                                <div @click="selectDocType('surat_pesanan')" 
+                                     :class="formData.doc_type === 'surat_pesanan' ? 'border-purple-500 bg-purple-950/30 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="surat_pesanan" :checked="formData.doc_type === 'surat_pesanan'" @change="selectDocType('surat_pesanan')" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-[11px] font-extrabold text-purple-400">📦 Surat Pesanan</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'surat_pesanan'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Surat Pesanan</label>
+                                        <input type="text" x-model="formData.surat_pesanan_nomor" placeholder="028/SP-RSUD/V/2026" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-purple-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 3. Kwitansi -->
+                                <div @click="selectDocType('kwitansi')" 
+                                     :class="formData.doc_type === 'kwitansi' ? 'border-amber-500 bg-amber-950/30 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="kwitansi" :checked="formData.doc_type === 'kwitansi'" @change="selectDocType('kwitansi')" class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-[11px] font-extrabold text-amber-400">🧾 Kwitansi</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'kwitansi'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Kwitansi</label>
+                                        <input type="text" x-model="formData.kwitansi_nomor" placeholder="KW-028/KTR/2026" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
+                                        <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Invoice -->
+                                <div @click="selectDocType('faktur')" 
+                                     :class="formData.doc_type === 'faktur' ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 relative">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-1.5">
+                                            <input type="radio" name="doc_type_radio_b" value="faktur" :checked="formData.doc_type === 'faktur'" @change="selectDocType('faktur')" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-[11px] font-extrabold text-emerald-400">📑 Invoice / Faktur</span>
+                                        </div>
+                                        <span x-show="formData.doc_type === 'faktur'" class="text-[9px] px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Nomor Invoice</label>
+                                        <input type="text" x-model="formData.faktur_nomor" placeholder="INV-2026-028" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-emerald-300 font-mono disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
+                                               :disabled="formData.doc_type !== 'faktur'"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 1. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
+                        <!-- 2. DOKUMEN SP2D & BAST -->
+                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-amber-500/40 space-y-3 shadow-lg">
+                            <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">2. DOKUMEN SP2D & BAST:</span>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-2">
+                                    <span class="text-[10px] font-bold text-slate-300 block">SP2D</span>
+                                    <div>
+                                        <label class="block text-slate-500 text-[9px]">Nomor SP2D</label>
+                                        <input type="text" x-model="formData.sp2d_nomor" placeholder="Contoh: 0129/SP2D/BLUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
+                                        <input type="date" x-model="formData.sp2d_tanggal" :max="maxDateToday" @change="validateMaxDate('sp2d_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <span class="text-[10px] font-bold text-slate-300 block">BAST</span>
+                                    <div>
+                                        <label class="block text-slate-500 text-[9px]">Nomor BAST</label>
+                                        <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="Contoh: 000.2.3.2/224/RSUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
+                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :max="maxDateToday" @change="validateMaxDate('bast_dokumen_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
                         <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-3 shadow-lg">
                             <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
                                 <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5 uppercase tracking-wider">
@@ -2407,10 +2517,10 @@
                         <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin (Sisa Kolom) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                            <!-- 2. Spesifikasi Fisik (Merk, Type, Ukuran) -->
+                            <!-- 4. Spesifikasi Fisik (Merk, Type, Ukuran) -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">⚙️ 2. Merk, Type & Ukuran:</span>
+                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">⚙️ 4. Merk, Type & Ukuran:</span>
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1">Merk Barang</label>
@@ -2431,10 +2541,10 @@
                                 </div>
                             </div>
 
-                            <!-- 3. No Pabrik, Kendaraan, Bahan & Kondisi -->
+                            <!-- Spesifikasi No Pabrik, Kendaraan, Bahan & Kondisi -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">🏷️ 3. No Pabrik, Kendaraan, Bahan & Kondisi:</span>
+                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">🏷️ No Pabrik, Kendaraan, Bahan & Kondisi:</span>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-2.5">
@@ -2543,6 +2653,62 @@
                             <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-between shadow-inner">
                                 <span class="text-xs font-bold text-emerald-300">Total Nilai Barang (Rp):</span>
                                 <span class="text-base font-extrabold text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
+                            </div>
+                        </div>
+
+                        <!-- 6. Ruang / Pemegang Aset (Ditampilkan tepat diatas Live Preview Excel) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangOpen = false">
+                            <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
+                                <label class="block text-amber-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
+                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
+                                </label>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                        <span>🏥</span>
+                                        <span>Tersinkron Unit & Paviliun</span>
+                                    </span>
+                                    <button type="button" 
+                                            x-show="formData.ruang_pemegang" 
+                                            @click="formData.ruang_pemegang = ''; searchRuangPemegang = ''; isRuangPemegangOpen = true" 
+                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                        ✕ Reset
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="relative">
+                                <input type="text" 
+                                       :value="!isRuangPemegangOpen ? formData.ruang_pemegang : searchRuangPemegang"
+                                       @input="formData.ruang_pemegang = $event.target.value; searchRuangPemegang = $event.target.value; isRuangPemegangOpen = true"
+                                       @focus="isRuangPemegangOpen = true"
+                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                       class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
+                                <svg class="w-4 h-4 text-amber-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
+
+                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                            <div x-show="isRuangPemegangOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsMesin.length + ' Unit/Ruangan'"></span>
+                                </div>
+                                <template x-for="u in filteredUnitsMesin" :key="u.id">
+                                    <div @click="selectUnitMesin(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-amber-500/15 border border-slate-800/60 hover:border-amber-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                        <div class="min-w-0 pr-2">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate" x-text="u.nama"></span>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-amber-300 border border-amber-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                    </div>
+                                </template>
+                                <template x-if="filteredUnitsMesin.length === 0">
+                                    <div class="p-3 text-center text-xs text-slate-400">
+                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
 
@@ -2685,7 +2851,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'spk'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -2710,7 +2876,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'surat_pesanan'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -2735,7 +2901,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'kwitansi'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -2760,7 +2926,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'faktur'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -2780,7 +2946,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.sp2d_tanggal" :max="maxDateToday" @change="validateMaxDate('sp2d_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -2791,7 +2957,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :max="maxDateToday" @change="validateMaxDate('bast_dokumen_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -2993,6 +3159,18 @@
                             </div>
                         </div>
 
+                        <!-- 6. Letak / Alamat Lokasi Gedung dan Bangunan (Ditampilkan tepat diatas Live Preview Excel) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-2 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                                <label class="block text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
+                                    <span>📍 LETAK / ALAMAT LOKASI GEDUNG & BANGUNAN:</span>
+                                </label>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik Bangunan</span>
+                            </div>
+                            <input type="text" x-model="formData.alamat_barang" placeholder="Contoh: Jl. Piere Tendean No. 3 Bondowoso (Kompleks RSUD Dr. H. Koesnandi)"
+                                   class="w-full bg-slate-900 border border-slate-700 hover:border-emerald-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500 transition-all">
+                        </div>
+
                         <!-- ============================================================= -->
                         <!-- LIVE PREVIEW TABEL EXCEL SESUAI GAMBAR USER (KHUSUS GEDUNG)   -->
                         <!-- ============================================================= -->
@@ -3115,7 +3293,7 @@
                 <template x-if="isJaringan">
                     <div class="space-y-6">
 
-                        <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1) -->
+                        <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1 & 2) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
                                 <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">1. RIWAYAT DOKUMEN PEMBELIAN (PILIH 1 DOKUMEN UTAMA):</span>
@@ -3142,7 +3320,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'spk'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3167,7 +3345,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'surat_pesanan'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3192,7 +3370,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'kwitansi'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3217,7 +3395,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'faktur'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3233,22 +3411,22 @@
                                     <span class="text-[10px] font-bold text-slate-300 block">SP2D</span>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Nomor SP2D</label>
-                                        <input type="text" x-model="formData.sp2d_nomor"  placeholder="0129/SP2D/BLUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                        <input type="text" x-model="formData.sp2d_nomor" placeholder="Contoh: 0129/SP2D/BLUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.sp2d_tanggal" :max="maxDateToday" @change="validateMaxDate('sp2d_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
                                     <span class="text-[10px] font-bold text-slate-300 block">BAST</span>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Nomor BAST</label>
-                                        <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="000.2.3.2/224/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                        <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="Contoh: 000.2.3.2/224/RSUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :max="maxDateToday" @change="validateMaxDate('bast_dokumen_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -3259,10 +3437,6 @@
                             <div class="flex items-center justify-between border-b border-teal-500/30 pb-2">
                                 <span class="text-xs font-bold text-teal-400 flex items-center space-x-1.5 uppercase tracking-wider">
                                     <span>🏛️ 3. IDENTITAS BARANG (KODE 108):</span>
-                                </span>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Terfilter dari Langkah 2</span>
-                            </div>e tracking-wider">
-                                    <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
                                 </span>
                                 <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Terfilter dari Langkah 2</span>
                             </div>
@@ -3329,10 +3503,10 @@
                         <!-- Grid Form Pengisian Spesifikasi Jalan & Jaringan (Sisa Kolom) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                            <!-- 2. Konstruksi & Dimensi Jaringan (Panjang, Lebar, Luas, Kondisi) -->
+                            <!-- 4. Konstruksi & Dimensi Jaringan (Panjang, Lebar, Luas, Kondisi) -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">📐 2. Konstruksi & Dimensi:</span>
+                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">📐 4. Konstruksi & Dimensi:</span>
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1">Bahan Konstruksi</label>
@@ -3366,10 +3540,10 @@
                                 </div>
                             </div>
 
-                            <!-- 3. Status Tanah KIB A & Kapitalisasi Jaringan -->
+                            <!-- Status Tanah KIB A & Kapitalisasi Jaringan -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">📜 3. Status Tanah & Kapitalisasi:</span>
+                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">📜 Status Tanah & Kapitalisasi:</span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
@@ -3452,6 +3626,18 @@
                                 <span class="text-[11px] font-bold text-teal-300">Total Nilai Barang (Rp):</span>
                                 <span class="text-sm font-extrabold text-teal-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiJaringan)"></span>
                             </div>
+                        </div>
+
+                        <!-- 6. Letak / Lokasi Jaringan (Ditampilkan tepat diatas Live Preview Excel) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-teal-500/40 space-y-2 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-teal-500/30 pb-2">
+                                <label class="block text-teal-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
+                                    <span>📍 LETAK / LOKASI JARINGAN & BANGUNAN:</span>
+                                </label>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Lokasi Fisik Jaringan</span>
+                            </div>
+                            <input type="text" x-model="formData.alamat_barang" placeholder="Contoh: Jalur Utilitas Gedung Bedah Sentral & Paviliun Teratai RSUD Dr. H. Koesnandi"
+                                   class="w-full bg-slate-900 border border-slate-700 hover:border-teal-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-teal-500 transition-all">
                         </div>
 
                         <!-- ============================================================= -->
@@ -3579,7 +3765,7 @@
                 <template x-if="isAsetLainnya">
                     <div class="space-y-6">
 
-                        <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1) -->
+                        <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1 & 2) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
                                 <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">1. RIWAYAT DOKUMEN PEMBELIAN (PILIH 1 DOKUMEN UTAMA):</span>
@@ -3606,7 +3792,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'spk'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3631,7 +3817,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'surat_pesanan'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3656,7 +3842,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'kwitansi'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3681,7 +3867,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'faktur'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -3697,91 +3883,34 @@
                                     <span class="text-[10px] font-bold text-slate-300 block">SP2D</span>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Nomor SP2D</label>
-                                        <input type="text" x-model="formData.sp2d_nomor" placeholder="0129/SP2D/BLUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                        <input type="text" x-model="formData.sp2d_nomor" placeholder="Contoh: 0129/SP2D/BLUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.sp2d_tanggal" :max="maxDateToday" @change="validateMaxDate('sp2d_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
                                     <span class="text-[10px] font-bold text-slate-300 block">BAST</span>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Nomor BAST</label>
-                                        <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="000.2.3.2/224/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                        <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="Contoh: 000.2.3.2/224/RSUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :max="maxDateToday" @change="validateMaxDate('bast_dokumen_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Ruang / Pemegang (KIB E Satu Sinkronisasi dengan Master Unit & Paviliun) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangLainnyaOpen = false">
-                            <div class="flex items-center justify-between border-b border-rose-500/30 pb-2">
-                                <label class="block text-rose-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
-                                </label>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
-                                        <span>🏥</span>
-                                        <span>Tersinkron Unit & Paviliun</span>
-                                    </span>
-                                    <button type="button" 
-                                            x-show="formData.ruang_pemegang_lainnya" 
-                                            @click="formData.ruang_pemegang_lainnya = ''; searchRuangPemegangLainnya = ''; isRuangPemegangLainnyaOpen = true" 
-                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
-                                        ✕ Reset
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="relative">
-                                <input type="text" 
-                                       :value="!isRuangPemegangLainnyaOpen ? formData.ruang_pemegang_lainnya : searchRuangPemegangLainnya"
-                                       @input="formData.ruang_pemegang_lainnya = $event.target.value; searchRuangPemegangLainnya = $event.target.value; isRuangPemegangLainnyaOpen = true"
-                                       @focus="isRuangPemegangLainnyaOpen = true"
-                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
-                                       class="w-full bg-slate-900 border border-slate-700 hover:border-rose-500 focus:border-rose-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
-                                <svg class="w-4 h-4 text-rose-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            </div>
-
-                            <!-- Dropdown List Pilihan Unit & Paviliun -->
-                            <div x-show="isRuangPemegangLainnyaOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
-                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-rose-400 uppercase tracking-wider flex items-center justify-between">
-                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
-                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsLainnya.length + ' Unit/Ruangan'"></span>
-                                </div>
-                                <template x-for="u in filteredUnitsLainnya" :key="u.id">
-                                    <div @click="selectUnitLainnya(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-rose-500/15 border border-slate-800/60 hover:border-rose-500/40 cursor-pointer transition-all flex items-center justify-between group">
-                                        <div class="min-w-0 pr-2">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs font-bold text-white group-hover:text-rose-300 truncate" x-text="u.nama"></span>
-                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
-                                            </div>
-                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
-                                        </div>
-                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-rose-300 border border-rose-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
-                                    </div>
-                                </template>
-                                <template x-if="filteredUnitsLainnya.length === 0">
-                                    <div class="p-3 text-center text-xs text-slate-400">
-                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
-                                    </div>
-                                </template>
                             </div>
                         </div>
 
                         <!-- 3. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
                         <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-3 shadow-lg">
                             <div class="flex items-center justify-between border-b border-rose-500/30 pb-2">
-                                <div class="flex items-center space-x-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
-                                    <span class="text-xs font-bold text-white uppercase tracking-wider">3. Identitas Barang (Kode 108)</span>
-                                </div>
-                                <span class="text-[9px] font-mono text-rose-400 font-bold">PMDN 108</span>
+                                <span class="text-xs font-bold text-rose-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                                    <span>🏛️ 3. IDENTITAS BARANG (KODE 108):</span>
+                                </span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">Terfilter dari Langkah 2</span>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
@@ -3846,12 +3975,12 @@
                         <!-- Grid Form Pengisian Rincian Aset Tetap Lainnya (Sisa Kolom) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                            <!-- 2. BUKU PERPUSTAKAAN (JUDUL, PENCIPTA, SPESIFIKASI) -->
+                            <!-- 4. BUKU PERPUSTAKAAN (JUDUL, PENCIPTA, SPESIFIKASI) -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                                     <div class="flex items-center space-x-2">
                                         <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">2. Buku Perpustakaan</span>
+                                        <span class="text-xs font-bold text-white uppercase tracking-wider">📚 Buku Perpustakaan</span>
                                     </div>
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Kolom Excel</span>
                                 </div>
@@ -3872,25 +4001,25 @@
                                 </div>
                             </div>
 
-                            <!-- 3. BARANG BERCORAK KESENIAN / KEBUDAYAAN -->
+                            <!-- BARANG BERCORAK KESENIAN / KEBUDAYAAN & HEWAN/TUMBUHAN -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                                     <div class="flex items-center space-x-2">
                                         <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">3. Barang Kesenian / Budaya</span>
+                                        <span class="text-xs font-bold text-white uppercase tracking-wider">🎨 Kesenian & 🌿 Tanaman</span>
                                     </div>
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Kolom Excel</span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Asal Daerah</label>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Asal Kesenian</label>
                                         <input type="text" x-model="formData.lainnya_kesenian_asal" placeholder="Jatim / Bondowoso"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Pencipta</label>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Pencipta Kesenian</label>
                                         <input type="text" x-model="formData.lainnya_kesenian_pencipta" placeholder="Sanggar Budaya"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-1">
@@ -3900,95 +4029,130 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Bahan</label>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Bahan Kesenian</label>
                                         <input type="text" x-model="formData.lainnya_kesenian_bahan" placeholder="Kanvas & Kayu"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Ukuran (m/cm)</label>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Ukuran Kesenian (m/cm)</label>
                                         <input type="text" x-model="formData.lainnya_kesenian_ukuran" placeholder="200 x 120 cm"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- 4. HEWAN TERNAK / TUMBUHAN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">4. Hewan Ternak / Tumbuhan</span>
-                                    </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Kolom Excel</span>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Jenis Hewan / Tanaman</label>
-                                    <input type="text" x-model="formData.lainnya_hewan_jenis" placeholder="Tanaman Peneduh & Taman Medis"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Spesifikasi Hewan / Tanaman</label>
-                                    <input type="text" x-model="formData.lainnya_hewan_spesifikasi" placeholder="Pohon Tabebuya & Palem Raja Tinggi 3M"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 focus:outline-none focus:border-emerald-500">
-                                </div>
-                            </div>
-
-                            <!-- 6. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">6. Volume & Nilai Barang</span>
-                                    </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">Kalkulasi Otomatis</span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Jumlah Barang</label>
-                                        <input type="number" x-model.number="formData.lainnya_jumlah_barang" placeholder="15"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold">
+                                        <label class="block text-slate-400 text-[10px] mb-1">Jenis Hewan/Tanaman</label>
+                                        <input type="text" x-model="formData.lainnya_hewan_jenis" placeholder="Peneduh/Taman"
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
                                     </div>
                                     <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Nama Satuan</label>
-                                        <select x-model="formData.lainnya_satuan"
-                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                            <option value="Eksemplar">Eksemplar</option>
-                                            <option value="Buah">Buah</option>
-                                            <option value="Batang">Batang</option>
-                                            <option value="Ekor">Ekor</option>
-                                            <option value="Paket">Paket</option>
-                                            <option value="Unit">Unit</option>
-                                            <option value="Set">Set</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Nilai Satuan Barang (Rp)</label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold">Rp</span>
-                                        <input type="number" x-model.number="formData.lainnya_nilai_satuan" placeholder="450000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-rose-300 font-mono font-bold">
-                                    </div>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Administrasi Proyek (Rp)</label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold">Rp</span>
-                                        <input type="number" x-model.number="formData.lainnya_administrasi_proyek" placeholder="250000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-amber-300 font-mono font-bold">
-                                    </div>
-                                </div>
-                                <div class="p-3 rounded-xl bg-rose-950/30 border border-rose-500/30 text-xs">
-                                    <div class="text-[10px] text-slate-400">Total Nilai Barang (Rp):</div>
-                                    <div class="text-sm font-extrabold text-rose-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAsetLainnya)"></div>
-                                </div>
-                            </div>                      <label class="block text-slate-400 text-[10px] mb-1">BAST - Tanggal</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-[11px] text-white">
+                                        <label class="block text-slate-400 text-[10px] mb-1">Spesifikasi Tanaman</label>
+                                        <input type="text" x-model="formData.lainnya_hewan_spesifikasi" placeholder="Tabebuya Tinggi 3M"
+                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-300">
                                     </div>
                                 </div>
                             </div>
 
+                        </div>
+
+                        <!-- 5. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <span class="text-xs font-bold text-rose-400 block uppercase tracking-wider">5. Volume & Nilai Barang:</span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">Kalkulasi Otomatis</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-400 text-[11px] mb-1">Jumlah Barang</label>
+                                    <input type="number" x-model.number="formData.lainnya_jumlah_barang" placeholder="15"
+                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[11px] mb-1">Nama Satuan</label>
+                                    <select x-model="formData.lainnya_satuan"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                                        <option value="Eksemplar">Eksemplar</option>
+                                        <option value="Buah">Buah</option>
+                                        <option value="Batang">Batang</option>
+                                        <option value="Ekor">Ekor</option>
+                                        <option value="Paket">Paket</option>
+                                        <option value="Unit">Unit</option>
+                                        <option value="Set">Set</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-400 text-[11px] mb-1">Nilai Satuan Barang (Rp)</label>
+                                    <input type="number" x-model.number="formData.lainnya_nilai_satuan" placeholder="450000"
+                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-rose-300 font-mono font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[11px] mb-1">Administrasi Proyek (Rp)</label>
+                                    <input type="number" x-model.number="formData.lainnya_administrasi_proyek" placeholder="250000"
+                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold">
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-xl bg-rose-950/30 border border-rose-500/30 flex items-center justify-between text-xs">
+                                <span class="text-xs font-bold text-rose-300">Total Nilai Barang (Rp):</span>
+                                <span class="text-sm font-extrabold text-rose-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAsetLainnya)"></span>
+                            </div>
+                        </div>
+
+                        <!-- 6. Ruang / Pemegang (Ditampilkan tepat diatas Live Preview Excel KIB E) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangLainnyaOpen = false">
+                            <div class="flex items-center justify-between border-b border-rose-500/30 pb-2">
+                                <label class="block text-rose-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
+                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
+                                </label>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                        <span>🏥</span>
+                                        <span>Tersinkron Unit & Paviliun</span>
+                                    </span>
+                                    <button type="button" 
+                                            x-show="formData.ruang_pemegang_lainnya" 
+                                            @click="formData.ruang_pemegang_lainnya = ''; searchRuangPemegangLainnya = ''; isRuangPemegangLainnyaOpen = true" 
+                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                        ✕ Reset
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="relative">
+                                <input type="text" 
+                                       :value="!isRuangPemegangLainnyaOpen ? formData.ruang_pemegang_lainnya : searchRuangPemegangLainnya"
+                                       @input="formData.ruang_pemegang_lainnya = $event.target.value; searchRuangPemegangLainnya = $event.target.value; isRuangPemegangLainnyaOpen = true"
+                                       @focus="isRuangPemegangLainnyaOpen = true"
+                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                       class="w-full bg-slate-900 border border-slate-700 hover:border-rose-500 focus:border-rose-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
+                                <svg class="w-4 h-4 text-rose-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
+
+                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                            <div x-show="isRuangPemegangLainnyaOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-rose-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsLainnya.length + ' Unit/Ruangan'"></span>
+                                </div>
+                                <template x-for="u in filteredUnitsLainnya" :key="u.id">
+                                    <div @click="selectUnitLainnya(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-rose-500/15 border border-slate-800/60 hover:border-rose-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                        <div class="min-w-0 pr-2">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-bold text-white group-hover:text-rose-300 truncate" x-text="u.nama"></span>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-rose-300 border border-rose-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                    </div>
+                                </template>
+                                <template x-if="filteredUnitsLainnya.length === 0">
+                                    <div class="p-3 text-center text-xs text-slate-400">
+                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- ========================================================================= -->
@@ -4136,7 +4300,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'spk'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4161,7 +4325,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'surat_pesanan'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4186,7 +4350,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'kwitansi'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4211,7 +4375,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'faktur'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4227,91 +4391,34 @@
                                     <span class="text-[10px] font-bold text-slate-300 block">SP2D</span>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Nomor SP2D</label>
-                                        <input type="text" x-model="formData.sp2d_nomor" placeholder="0129/SP2D/BLUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                        <input type="text" x-model="formData.sp2d_nomor" placeholder="Contoh: 0129/SP2D/BLUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.sp2d_tanggal" :max="maxDateToday" @change="validateMaxDate('sp2d_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
                                     <span class="text-[10px] font-bold text-slate-300 block">BAST</span>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Nomor BAST</label>
-                                        <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="000.2.3.2/224/..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
+                                        <input type="text" x-model="formData.bast_dokumen_nomor" placeholder="Contoh: 000.2.3.2/224/RSUD/2026" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono">
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :max="maxDateToday" @change="validateMaxDate('bast_dokumen_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Ruang / Pemegang (ATB Satu Sinkronisasi dengan Master Unit & Paviliun) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangAtbOpen = false">
-                            <div class="flex items-center justify-between border-b border-violet-500/30 pb-2">
-                                <label class="block text-violet-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
-                                </label>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
-                                        <span>🏥</span>
-                                        <span>Tersinkron Unit & Paviliun</span>
-                                    </span>
-                                    <button type="button" 
-                                            x-show="formData.ruang_pemegang_atb" 
-                                            @click="formData.ruang_pemegang_atb = ''; searchRuangPemegangAtb = ''; isRuangPemegangAtbOpen = true" 
-                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
-                                        ✕ Reset
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="relative">
-                                <input type="text" 
-                                       :value="!isRuangPemegangAtbOpen ? formData.ruang_pemegang_atb : searchRuangPemegangAtb"
-                                       @input="formData.ruang_pemegang_atb = $event.target.value; searchRuangPemegangAtb = $event.target.value; isRuangPemegangAtbOpen = true"
-                                       @focus="isRuangPemegangAtbOpen = true"
-                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
-                                       class="w-full bg-slate-900 border border-slate-700 hover:border-violet-500 focus:border-violet-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
-                                <svg class="w-4 h-4 text-violet-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            </div>
-
-                            <!-- Dropdown List Pilihan Unit & Paviliun -->
-                            <div x-show="isRuangPemegangAtbOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-violet-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
-                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center justify-between">
-                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
-                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsAtb.length + ' Unit/Ruangan'"></span>
-                                </div>
-                                <template x-for="u in filteredUnitsAtb" :key="u.id">
-                                    <div @click="selectUnitAtb(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-violet-500/15 border border-slate-800/60 hover:border-violet-500/40 cursor-pointer transition-all flex items-center justify-between group">
-                                        <div class="min-w-0 pr-2">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs font-bold text-white group-hover:text-violet-300 truncate" x-text="u.nama"></span>
-                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
-                                            </div>
-                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
-                                        </div>
-                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-violet-300 border border-violet-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
-                                    </div>
-                                </template>
-                                <template x-if="filteredUnitsAtb.length === 0">
-                                    <div class="p-3 text-center text-xs text-slate-400">
-                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
-                                    </div>
-                                </template>
                             </div>
                         </div>
 
                         <!-- 3. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
                         <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-3 shadow-lg">
                             <div class="flex items-center justify-between border-b border-violet-500/30 pb-2">
-                                <div class="flex items-center space-x-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span>
-                                    <span class="text-xs font-bold text-white uppercase tracking-wider">3. Identitas Barang (Kode 108)</span>
-                                </div>
-                                <span class="text-[9px] font-mono text-violet-400 font-bold">PMDN 108</span>
+                                <span class="text-xs font-bold text-violet-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                                    <span>💻 3. IDENTITAS BARANG (KODE 108):</span>
+                                </span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold">Terfilter dari Langkah 2</span>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
@@ -4376,12 +4483,12 @@
                         <!-- Grid Form Pengisian Rincian Aset Tidak Berwujud (Sisa Kolom) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                            <!-- 2. JUDUL / NAMA, PENCIPTA & SPESIFIKASI ATB -->
+                            <!-- 4. JUDUL / NAMA, PENCIPTA & SPESIFIKASI ATB -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                                     <div class="flex items-center space-x-2">
                                         <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">2. Judul, Pencipta & Spesifikasi</span>
+                                        <span class="text-xs font-bold text-white uppercase tracking-wider">4. Judul, Pencipta & Spesifikasi</span>
                                     </div>
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">Kolom Excel</span>
                                 </div>
@@ -4402,12 +4509,12 @@
                                 </div>
                             </div>
 
-                            <!-- 4. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
+                            <!-- 5. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                                     <div class="flex items-center space-x-2">
                                         <span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">4. Volume & Nilai ATB</span>
+                                        <span class="text-xs font-bold text-white uppercase tracking-wider">5. Volume & Nilai ATB</span>
                                     </div>
                                     <span class="text-[9px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold">Kalkulasi Otomatis</span>
                                 </div>
@@ -4450,14 +4557,64 @@
                                     <div class="text-[10px] text-slate-400">Total Nilai Barang (Rp):</div>
                                     <div class="text-sm font-extrabold text-violet-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAtb)"></div>
                                 </div>
-                            </div>                <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">BAST - Tanggal</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-[11px] text-white">
-                                    </div>
-                                </div>
                             </div>
 
+                        </div>
+
+                        <!-- 6. Ruang / Pemegang (Ditampilkan tepat diatas Live Preview Excel ATB) -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangAtbOpen = false">
+                            <div class="flex items-center justify-between border-b border-violet-500/30 pb-2">
+                                <label class="block text-violet-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
+                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
+                                </label>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                        <span>🏥</span>
+                                        <span>Tersinkron Unit & Paviliun</span>
+                                    </span>
+                                    <button type="button" 
+                                            x-show="formData.ruang_pemegang_atb" 
+                                            @click="formData.ruang_pemegang_atb = ''; searchRuangPemegangAtb = ''; isRuangPemegangAtbOpen = true" 
+                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                        ✕ Reset
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="relative">
+                                <input type="text" 
+                                       :value="!isRuangPemegangAtbOpen ? formData.ruang_pemegang_atb : searchRuangPemegangAtb"
+                                       @input="formData.ruang_pemegang_atb = $event.target.value; searchRuangPemegangAtb = $event.target.value; isRuangPemegangAtbOpen = true"
+                                       @focus="isRuangPemegangAtbOpen = true"
+                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                       class="w-full bg-slate-900 border border-slate-700 hover:border-violet-500 focus:border-violet-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
+                                <svg class="w-4 h-4 text-violet-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            </div>
+
+                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                            <div x-show="isRuangPemegangAtbOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-violet-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center justify-between">
+                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsAtb.length + ' Unit/Ruangan'"></span>
+                                </div>
+                                <template x-for="u in filteredUnitsAtb" :key="u.id">
+                                    <div @click="selectUnitAtb(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-violet-500/15 border border-slate-800/60 hover:border-violet-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                        <div class="min-w-0 pr-2">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs font-bold text-white group-hover:text-violet-300 truncate" x-text="u.nama"></span>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                            </div>
+                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                        </div>
+                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-violet-300 border border-violet-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                    </div>
+                                </template>
+                                <template x-if="filteredUnitsAtb.length === 0">
+                                    <div class="p-3 text-center text-xs text-slate-400">
+                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- ========================================================================= -->
@@ -4591,7 +4748,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'spk'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4616,7 +4773,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'surat_pesanan'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4641,7 +4798,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'kwitansi'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4666,7 +4823,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" @change="onDocDateChange($event.target.value)" 
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value)" 
                                                :disabled="formData.doc_type !== 'faktur'"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
@@ -4686,7 +4843,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.sp2d_tanggal" :max="maxDateToday" @change="validateMaxDate('sp2d_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -4697,7 +4854,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :max="maxDateToday" @change="validateMaxDate('bast_dokumen_tanggal')"  class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -5031,7 +5188,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[11px] mb-1">Tanggal SPK</label>
-                                    <input type="date" x-model="formData.spk_tanggal"
+                                    <input type="date" x-model="formData.spk_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
                                 </div>
                             </div>
@@ -5049,7 +5206,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[11px] mb-1">Tanggal Surat Pesanan</label>
-                                    <input type="date" x-model="formData.surat_pesanan_tanggal"
+                                    <input type="date" x-model="formData.surat_pesanan_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500">
                                 </div>
                             </div>
@@ -5067,7 +5224,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[11px] mb-1">Tanggal Kwitansi</label>
-                                    <input type="date" x-model="formData.kwitansi_tanggal"
+                                    <input type="date" x-model="formData.kwitansi_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
                                 </div>
                             </div>
@@ -5086,7 +5243,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[11px] mb-1">Tanggal Faktur</label>
-                                        <input type="date" x-model="formData.faktur_tanggal"
+                                        <input type="date" x-model="formData.faktur_tanggal" :max="maxDateToday" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>
