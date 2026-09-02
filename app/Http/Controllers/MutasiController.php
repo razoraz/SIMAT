@@ -162,12 +162,12 @@ class MutasiController extends Controller
 
         $kondisiBaru = $request->input('kondisi_baru', []);
 
-        // 1. Generate 1 nomor Berita Acara BAMB unik (format 7 digit: MTS-2026-0000001)
+        // 1. Generate 1 nomor Berita Acara BAMB unik (format 3 digit: MTS-2026-001)
         $year  = date('Y', strtotime($request->tanggal_mutasi));
         $count = AstapMutasi::whereYear('tanggal_mutasi', $year)->count();
         $seq   = $count + 1;
         do {
-            $nomor = 'MTS-' . $year . '-' . str_pad($seq, 7, '0', STR_PAD_LEFT);
+            $nomor = 'MTS-' . $year . '-' . str_pad($seq, 3, '0', STR_PAD_LEFT);
             $exists = AstapMutasi::where('nomor_bamb', $nomor)->exists();
             if ($exists) {
                 $seq++;
@@ -358,11 +358,27 @@ class MutasiController extends Controller
 
         $kondisiBaru = $request->input('kondisi_baru', []);
 
+        $newTgl  = $request->tanggal_mutasi ?: ($mutasi->tanggal_mutasi ?: now());
+        $newYear = date('Y', strtotime($newTgl));
+        
+        // Sinkronkan nomor_bamb agar mengikuti tahun mutasi dan format 3 digit (MTS-YYYY-XXX)
+        preg_match('/^MTS-(\d{4})-(\d+)$/', $mutasi->nomor_bamb, $matches);
+        $oldYear   = $matches[1] ?? null;
+        $seqLength = strlen($matches[2] ?? '');
+
+        if ($oldYear !== $newYear || $seqLength !== 3) {
+            $seq = AstapMutasi::whereYear('tanggal_mutasi', $newYear)->where('id', '<=', $mutasi->id)->count();
+            if ($seq < 1) $seq = 1;
+            $newNomorBamb = 'MTS-' . $newYear . '-' . str_pad($seq, 3, '0', STR_PAD_LEFT);
+            $mutasi->nomor_bamb = $newNomorBamb;
+        }
+
         // 1. Update Dokumen Header Mutasi
         $firstRegId = $registerIds[0] ?? $mutasi->astap_register_id;
         $mutasi->update([
             'astap_register_id'        => $firstRegId,
-            'tanggal_mutasi'           => $request->tanggal_mutasi ?: ($mutasi->tanggal_mutasi ?: now()),
+            'nomor_bamb'               => $mutasi->nomor_bamb,
+            'tanggal_mutasi'           => $newTgl,
             'jenis_mutasi'             => $request->jenis_mutasi,
             'ruangan_asal'             => $request->ruangan_asal,
             'ruangan_tujuan'           => $request->ruangan_tujuan,

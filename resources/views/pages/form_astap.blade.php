@@ -198,8 +198,8 @@
                         jumlah_anggaran: ea ? (ea.jumlah_anggaran ?? (spec.jumlah_anggaran ?? (ea.total_realisasi || 0))) : 0,
                         jumlah_realisasi: ea ? (ea.jumlah_realisasi ?? (ea.total_realisasi || 0)) : 0,
                         // LANGKAH 3 — KIB A Tanah
-                        tanah_nama_barang: nama || 'Tanah Bangunan Apotik / Rumah Sakit',
-                        tanah_kode_barang: kode108Val || '1.3.1.01.01.02.013',
+                        tanah_nama_barang: nama || '',
+                        tanah_kode_barang: kode108Val || '',
                         tanah_hak: spec.hak_tanah || 'Hak Pakai',
                         tanah_sertifikat_tgl: spec.sertifikat_tgl || '',
                         tanah_sertifikat_no: spec.sertifikat_no || '',
@@ -439,6 +439,12 @@
                     }
 
                     this.updateExtracomStatus();
+
+                    this.$watch('currentStep', () => {
+                        this.$nextTick(() => {
+                            this.scrollToTop();
+                        });
+                    });
                 },
 
                 selectDocType(type) {
@@ -668,6 +674,50 @@
                     return list;
                 },
 
+                searchNamaBarang108: '',
+                isNamaBarang108Open: false,
+
+                get filteredSubSubRincian108() {
+                    const list = this.availableSubSubRincian108 || [];
+                    if (!this.searchNamaBarang108 || this.searchNamaBarang108.trim() === '') {
+                        return list;
+                    }
+                    const q = this.searchNamaBarang108.toLowerCase().trim();
+                    return list.filter(item => 
+                        (item.nama && item.nama.toLowerCase().includes(q)) || 
+                        (item.kode && item.kode.toLowerCase().includes(q))
+                    );
+                },
+
+                getActiveKodeBarang() {
+                    if (this.isTanah) return this.formData.tanah_kode_barang;
+                    if (this.isMesin) return this.formData.mesin_kode_barang;
+                    if (this.isGedung) return this.formData.gedung_kode_barang;
+                    if (this.isJaringan) return this.formData.jaringan_kode_barang;
+                    if (this.isAsetLainnya) return this.formData.lainnya_kode_barang;
+                    if (this.isAtb) return this.formData.atb_kode_barang;
+                    if (this.isKdp) return this.formData.kdp_kode_barang;
+                    return '';
+                },
+
+                getActiveNamaBarang() {
+                    if (this.isTanah) return this.formData.tanah_nama_barang;
+                    if (this.isMesin) return this.formData.mesin_nama_barang;
+                    if (this.isGedung) return this.formData.gedung_nama_barang;
+                    if (this.isJaringan) return this.formData.jaringan_nama_barang;
+                    if (this.isAsetLainnya) return this.formData.lainnya_nama_barang;
+                    if (this.isAtb) return this.formData.atb_nama_barang;
+                    if (this.isKdp) return this.formData.kdp_nama_barang;
+                    return '';
+                },
+
+                selectSubSubRincianItem(item) {
+                    if (!item) return;
+                    this.onSubSubRincianChange(item.kode);
+                    this.isNamaBarang108Open = false;
+                    this.searchNamaBarang108 = '';
+                },
+
                 // Getters Filter Pencarian Langkah 1 (SIPD)
                 get filteredPrograms() {
                     if (!this.searchProgram || this.searchProgram.trim() === '') {
@@ -855,6 +905,22 @@
                     } else {
                         this.formData.sub_rincian_nama = '';
                     }
+
+                    // Reset pilihan Nama Barang di Langkah 3 agar pengguna memilih sendiri secara mandiri
+                    this.formData.tanah_kode_barang = '';
+                    this.formData.tanah_nama_barang = '';
+                    this.formData.mesin_kode_barang = '';
+                    this.formData.mesin_nama_barang = '';
+                    this.formData.gedung_kode_barang = '';
+                    this.formData.gedung_nama_barang = '';
+                    this.formData.jaringan_kode_barang = '';
+                    this.formData.jaringan_nama_barang = '';
+                    this.formData.lainnya_kode_barang = '';
+                    this.formData.lainnya_nama_barang = '';
+                    this.formData.atb_kode_barang = '';
+                    this.formData.atb_nama_barang = '';
+                    this.formData.kdp_kode_barang = '';
+                    this.formData.kdp_nama_barang = '';
                 },
 
                 onSubSubRincianChange(kodeSubSub) {
@@ -916,9 +982,23 @@
                             this.isSubRincian108Open = true;
                             return;
                         }
+                    } else if (this.currentStep === 3) {
+                        if (!this.getActiveKodeBarang()) {
+                            alert('⚠️ Mohon pilih Nama Barang (Sub-Sub Rincian PMDN 108) pada Langkah 3 terlebih dahulu!');
+                            this.isNamaBarang108Open = true;
+                            return;
+                        }
                     }
                     if (this.currentStep < this.totalSteps) {
                         this.currentStep++;
+                        this.scrollToTop();
+                    }
+                },
+
+                prevStep() {
+                    if (this.currentStep > 1) {
+                        this.currentStep--;
+                        this.scrollToTop();
                     }
                 },
 
@@ -929,6 +1009,7 @@
                                 if (!this.formData.program_kode || !this.formData.kegiatan_kode || !this.formData.sub_kegiatan_kode) {
                                     alert('⚠️ Mohon lengkapi seluruh pilihan pada Langkah 1 (Program, Kegiatan, dan Sub Kegiatan SIPD) terlebih dahulu!');
                                     this.currentStep = 1;
+                                    this.scrollToTop();
                                     return;
                                 }
                             }
@@ -936,12 +1017,20 @@
                                 if (!this.formData.kode_rek || !this.formData.jenis_aset_kode || !this.formData.sub_rincian_kode) {
                                     alert('⚠️ Mohon lengkapi seluruh pilihan pada Langkah 2 (Rekening Belanja & Jenis PMDN 108) terlebih dahulu!');
                                     this.currentStep = 2;
+                                    this.scrollToTop();
                                     return;
                                 }
                             }
                         }
                     }
                     this.currentStep = step;
+                    this.scrollToTop();
+                },
+
+                scrollToTop() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
                 },
 
                 autoFillDokumen() {
@@ -1023,6 +1112,13 @@
                         : (this.isAsetLainnya ? this.formData.lainnya_kode_barang 
                         : (this.isAtb ? this.formData.atb_kode_barang 
                         : (this.isKdp ? this.formData.kdp_kode_barang : ''))))));
+
+                    if (!activeKode108) {
+                        this.toast = { show: true, message: '⚠️ Mohon pilih Nama Barang (Sub-Sub Rincian PMDN 108) pada Langkah 3 terlebih dahulu!', type: 'warning' };
+                        setTimeout(() => { this.toast.show = false; }, 4000);
+                        this.currentStep = 3;
+                        return;
+                    }
 
                     const namaBarangActive = this.isTanah ? this.formData.tanah_nama_barang
                         : (this.isMesin ? this.formData.mesin_nama_barang
@@ -1252,14 +1348,15 @@
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
                         <div x-show="isProgramOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-purple-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="p in filteredPrograms" :key="p.kode">
-                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                <div @click="selectProgram(p)"
+                                     class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="p.kode === formData.program_kode ? 'border-purple-500 bg-purple-950/40 shadow-lg' : 'border-slate-800 hover:border-purple-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate" x-text="p.kode + ' - ' + p.nama"></h4>
                                         <p class="text-[10px] text-slate-400 truncate" x-text="'PROGRAM SIPD • ' + (p.kegiatans ? p.kegiatans.length : 0) + ' Kegiatan Terdaftar'"></p>
                                     </div>
                                     <button type="button" 
-                                            @click="selectProgram(p)" 
+                                            @click.stop="selectProgram(p)" 
                                             class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
                                             :class="p.kode === formData.program_kode ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500 hover:text-slate-950'">
                                         <span x-text="p.kode === formData.program_kode ? '✓ Terpilih' : 'Pilih →'"></span>
@@ -1301,14 +1398,15 @@
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
                         <div x-show="isKegiatanOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="k in filteredKegiatans" :key="k.kode">
-                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                <div @click="selectKegiatan(k)"
+                                     class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="k.kode === formData.kegiatan_kode ? 'border-cyan-500 bg-cyan-950/40 shadow-lg' : 'border-slate-800 hover:border-cyan-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate" x-text="k.kode + ' - ' + k.nama"></h4>
                                         <p class="text-[10px] text-slate-400 truncate" x-text="'KEGIATAN SIPD • Terfilter dari Program: ' + formData.program_nama"></p>
                                     </div>
                                     <button type="button" 
-                                            @click="selectKegiatan(k)" 
+                                            @click.stop="selectKegiatan(k)" 
                                             class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
                                             :class="k.kode === formData.kegiatan_kode ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500 hover:text-slate-950'">
                                         <span x-text="k.kode === formData.kegiatan_kode ? '✓ Terpilih' : 'Pilih →'"></span>
@@ -1350,14 +1448,15 @@
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
                         <div x-show="isSubKegiatanOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="s in filteredSubKegiatans" :key="s.kode">
-                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                <div @click="selectSubKegiatan(s)"
+                                     class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="s.kode === formData.sub_kegiatan_kode ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="s.kode + ' - ' + s.nama"></h4>
                                         <p class="text-[10px] text-slate-400 truncate" x-text="'SUB KEGIATAN • ' + s.keterangan"></p>
                                     </div>
                                     <button type="button" 
-                                            @click="selectSubKegiatan(s)" 
+                                            @click.stop="selectSubKegiatan(s)" 
                                             class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
                                             :class="s.kode === formData.sub_kegiatan_kode ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950'">
                                         <span x-text="s.kode === formData.sub_kegiatan_kode ? '✓ Terpilih' : 'Pilih →'"></span>
@@ -1435,14 +1534,15 @@
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
                         <div x-show="isRekeningOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-blue-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="r in filteredRekeningBelanja" :key="r.kode_rek">
-                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                <div @click="selectRekening(r)"
+                                     class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="r.kode_rek === formData.kode_rek ? 'border-blue-500 bg-blue-950/40 shadow-lg' : 'border-slate-800 hover:border-blue-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-blue-300 transition-colors truncate" x-text="r.kode_rek + ' - ' + r.nama_belanja"></h4>
                                         <p class="text-[10px] text-slate-400 truncate" x-text="'REKENING BELANJA • ' + (r.kelompok || 'Kode Account SIPD')"></p>
                                     </div>
                                     <button type="button" 
-                                            @click="selectRekening(r)" 
+                                            @click.stop="selectRekening(r)" 
                                             class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
                                             :class="r.kode_rek === formData.kode_rek ? 'bg-blue-500 text-slate-950 shadow-lg shadow-blue-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500 hover:text-slate-950'">
                                         <span x-text="r.kode_rek === formData.kode_rek ? '✓ Terpilih' : 'Pilih →'"></span>
@@ -1484,14 +1584,15 @@
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
                         <div x-show="isJenis108Open" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-cyan-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="j in filteredJenisAstap108" :key="j.kode">
-                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                <div @click="selectJenisAstap(j)"
+                                     class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="j.kode === formData.jenis_aset_kode ? 'border-cyan-500 bg-cyan-950/40 shadow-lg' : 'border-slate-800 hover:border-cyan-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate" x-text="j.kode + ' - ' + j.nama"></h4>
                                         <p class="text-[10px] text-slate-400 truncate" x-text="'PMDN 108 • Kode Kelompok Permendagri 108'"></p>
                                     </div>
                                     <button type="button" 
-                                            @click="selectJenisAstap(j)" 
+                                            @click.stop="selectJenisAstap(j)" 
                                             class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
                                             :class="j.kode === formData.jenis_aset_kode ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500 hover:text-slate-950'">
                                         <span x-text="j.kode === formData.jenis_aset_kode ? '✓ Terpilih' : 'Pilih →'"></span>
@@ -1533,14 +1634,15 @@
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
                         <div x-show="isSubRincian108Open" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
                             <template x-for="s in filteredSubRincian108" :key="s.kode">
-                                <div class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group"
+                                <div @click="selectSubRincian(s)"
+                                     class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="s.kode === formData.sub_rincian_kode ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="s.kode + ' - ' + s.nama"></h4>
                                         <p class="text-[10px] text-slate-400 truncate" x-text="'SUB RINCIAN OBJEK • ' + (s.keterangan || s.kelompok || 'Kode Sub Rincian PMDN 108')"></p>
                                     </div>
                                     <button type="button" 
-                                            @click="selectSubRincian(s)" 
+                                            @click.stop="selectSubRincian(s)" 
                                             class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
                                             :class="s.kode === formData.sub_rincian_kode ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950'">
                                         <span x-text="s.kode === formData.sub_rincian_kode ? '✓ Terpilih' : 'Pilih →'"></span>
@@ -1697,38 +1799,76 @@
                                    class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 transition-all">
                         </div>
 
-                        <!-- Grid Form Pengisian Rincian Tanah -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- 1. IDENTITAS BARANG (KODE 108) DENGAN PEMFILTERAN DROPDOWN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-                                    <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5 uppercase tracking-wider">
-                                        <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
-                                    </span>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
-                                </div>
+                        <!-- 1. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                                <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                                    <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
+                                </span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
+                            </div>
 
-                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
-                                <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
-                                    <select :value="formData.tanah_kode_barang"
-                                            @change="onSubSubRincianChange($event.target.value)"
-                                            class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-400 transition-all">
-                                        <option value="" disabled>-- Pilih Nama Barang --</option>
-                                        <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.tanah_kode_barang" x-text="item.nama"></option>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                                <!-- 1. Nama Barang (Filter Murni dari Nama & Kode 108) - 3 Kolom -->
+                                <div class="md:col-span-3 space-y-1 relative" @click.away="isNamaBarang108Open = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
+                                        <button type="button" 
+                                                x-show="formData.tanah_kode_barang && !isNamaBarang108Open" 
+                                                @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
+                                                class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Barang
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="(!isNamaBarang108Open && formData.tanah_nama_barang) ? (formData.tanah_kode_barang + ' - ' + formData.tanah_nama_barang) : searchNamaBarang108"
+                                               @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                               @focus="isNamaBarang108Open = true"
+                                               placeholder="Ketik untuk memfilter nama / kode barang 108..."
+                                               class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold transition-all shadow-inner">
+                                    </div>
+
+                                    <!-- Dropdown List Cards -->
+                                    <div x-show="isNamaBarang108Open" x-transition x-cloak 
+                                         style="max-height: 220px !important; overflow-y: auto !important;" 
+                                         class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="item in filteredSubSubRincian108" :key="item.kode">
+                                            <div @click="selectSubSubRincianItem(item)"
+                                                 class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                                 :class="item.kode === formData.tanah_kode_barang ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
+                                                <div class="min-w-0 pr-2">
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="item.nama"></h4>
+                                                    <p class="text-[10px] text-emerald-400 font-mono truncate" x-text="'KODE 108: ' + item.kode"></p>
+                                                </div>
+                                                <button type="button" 
+                                                        @click.stop="selectSubSubRincianItem(item)" 
+                                                        class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                                        :class="item.kode === formData.tanah_kode_barang ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950'">
+                                                    <span x-text="item.kode === formData.tanah_kode_barang ? '✓ Terpilih' : 'Pilih →'"></span>
+                                                </button>
+                                            </div>
                                         </template>
-                                    </select>
+                                        <template x-if="filteredSubSubRincian108.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 italic">
+                                                Tidak ada nama barang 108 yang cocok.
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <!-- 2. Kode Barang (Otomatis Terisi) - 1 Kolom -->
                                 <div class="space-y-1">
                                     <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
                                     <input type="text" x-model="formData.tanah_kode_barang" readonly placeholder="Kode 108 otomatis..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Grid Form Pengisian Rincian Tanah (Sisa Kolom) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- 2. Status Tanah & Sertifikat -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -2132,38 +2272,76 @@
                             </div>
                         </div>
 
-                        <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- 1. IDENTITAS BARANG (KODE 108) DENGAN PEMFILTERAN DROPDOWN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-                                    <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5 uppercase tracking-wider">
-                                        <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
-                                    </span>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
-                                </div>
+                        <!-- 1. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                                <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                                    <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
+                                </span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
+                            </div>
 
-                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
-                                <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
-                                    <select :value="formData.mesin_kode_barang"
-                                            @change="onSubSubRincianChange($event.target.value)"
-                                            class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-400 transition-all">
-                                        <option value="" disabled>-- Pilih Nama Barang --</option>
-                                        <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.mesin_kode_barang" x-text="item.nama"></option>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                                <!-- 1. Nama Barang (Filter Murni dari Nama & Kode 108) - 3 Kolom -->
+                                <div class="md:col-span-3 space-y-1 relative" @click.away="isNamaBarang108Open = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
+                                        <button type="button" 
+                                                x-show="formData.mesin_kode_barang && !isNamaBarang108Open" 
+                                                @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
+                                                class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Barang
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="(!isNamaBarang108Open && formData.mesin_nama_barang) ? (formData.mesin_kode_barang + ' - ' + formData.mesin_nama_barang) : searchNamaBarang108"
+                                               @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                               @focus="isNamaBarang108Open = true"
+                                               placeholder="Ketik untuk memfilter nama / kode barang 108..."
+                                               class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold transition-all shadow-inner">
+                                    </div>
+
+                                    <!-- Dropdown List Cards -->
+                                    <div x-show="isNamaBarang108Open" x-transition x-cloak 
+                                         style="max-height: 220px !important; overflow-y: auto !important;" 
+                                         class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="item in filteredSubSubRincian108" :key="item.kode">
+                                            <div @click="selectSubSubRincianItem(item)"
+                                                 class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                                 :class="item.kode === formData.mesin_kode_barang ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
+                                                <div class="min-w-0 pr-2">
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="item.nama"></h4>
+                                                    <p class="text-[10px] text-emerald-400 font-mono truncate" x-text="'KODE 108: ' + item.kode"></p>
+                                                </div>
+                                                <button type="button" 
+                                                        @click.stop="selectSubSubRincianItem(item)" 
+                                                        class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                                        :class="item.kode === formData.mesin_kode_barang ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950'">
+                                                    <span x-text="item.kode === formData.mesin_kode_barang ? '✓ Terpilih' : 'Pilih →'"></span>
+                                                </button>
+                                            </div>
                                         </template>
-                                    </select>
+                                        <template x-if="filteredSubSubRincian108.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 italic">
+                                                Tidak ada nama barang 108 yang cocok.
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <!-- 2. Kode Barang (Otomatis Terisi) - 1 Kolom -->
                                 <div class="space-y-1">
                                     <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
                                     <input type="text" x-model="formData.mesin_kode_barang" readonly placeholder="Kode 108 otomatis..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin (Sisa Kolom) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- 2. Spesifikasi Fisik (Merk, Type, Ukuran) -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -2572,38 +2750,76 @@
                                    class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 transition-all">
                         </div>
 
-                        <!-- Grid Form Pengisian Spesifikasi Gedung dan Bangunan -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- 1. IDENTITAS BARANG (KODE 108) DENGAN PEMFILTERAN DROPDOWN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-                                    <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5 uppercase tracking-wider">
-                                        <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
-                                    </span>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
-                                </div>
+                        <!-- 1. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
+                                <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                                    <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
+                                </span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Terfilter dari Langkah 2</span>
+                            </div>
 
-                                <!-- 1. Nama Bangunan (Filter Murni dari Nama) -->
-                                <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Bangunan (Uraian Sub-Sub Rincian 108):</label>
-                                    <select :value="formData.gedung_kode_barang"
-                                            @change="onSubSubRincianChange($event.target.value)"
-                                            class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-400 transition-all">
-                                        <option value="" disabled>-- Pilih Nama Bangunan --</option>
-                                        <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.gedung_kode_barang" x-text="item.nama"></option>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                                <!-- 1. Nama Bangunan (Filter Murni dari Nama & Kode 108) - 3 Kolom -->
+                                <div class="md:col-span-3 space-y-1 relative" @click.away="isNamaBarang108Open = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-300 text-[11px] font-bold">Nama Bangunan (Uraian Sub-Sub Rincian 108):</label>
+                                        <button type="button" 
+                                                x-show="formData.gedung_kode_barang && !isNamaBarang108Open" 
+                                                @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
+                                                class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Barang
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="(!isNamaBarang108Open && formData.gedung_nama_barang) ? (formData.gedung_kode_barang + ' - ' + formData.gedung_nama_barang) : searchNamaBarang108"
+                                               @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                               @focus="isNamaBarang108Open = true"
+                                               placeholder="Ketik untuk memfilter nama / kode barang 108..."
+                                               class="w-full bg-slate-900 border border-emerald-500/60 hover:border-emerald-400 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold transition-all shadow-inner">
+                                    </div>
+
+                                    <!-- Dropdown List Cards -->
+                                    <div x-show="isNamaBarang108Open" x-transition x-cloak 
+                                         style="max-height: 220px !important; overflow-y: auto !important;" 
+                                         class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="item in filteredSubSubRincian108" :key="item.kode">
+                                            <div @click="selectSubSubRincianItem(item)"
+                                                 class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                                 :class="item.kode === formData.gedung_kode_barang ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
+                                                <div class="min-w-0 pr-2">
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="item.nama"></h4>
+                                                    <p class="text-[10px] text-emerald-400 font-mono truncate" x-text="'KODE 108: ' + item.kode"></p>
+                                                </div>
+                                                <button type="button" 
+                                                        @click.stop="selectSubSubRincianItem(item)" 
+                                                        class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                                        :class="item.kode === formData.gedung_kode_barang ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-slate-950'">
+                                                    <span x-text="item.kode === formData.gedung_kode_barang ? '✓ Terpilih' : 'Pilih →'"></span>
+                                                </button>
+                                            </div>
                                         </template>
-                                    </select>
+                                        <template x-if="filteredSubSubRincian108.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 italic">
+                                                Tidak ada nama barang 108 yang cocok.
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <!-- 2. Kode Barang (Otomatis Terisi) - 1 Kolom -->
                                 <div class="space-y-1">
                                     <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
                                     <input type="text" x-model="formData.gedung_kode_barang" readonly placeholder="Kode 108 otomatis..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Grid Form Pengisian Spesifikasi Gedung dan Bangunan (Sisa Kolom) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- 2. Kondisi & Spesifikasi Bangunan (Luas, Kondisi, Bertingkat, Beton) -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -3010,38 +3226,76 @@
                                    class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 transition-all">
                         </div>
 
-                        <!-- Grid Form Pengisian Spesifikasi Jalan & Jaringan -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- 1. IDENTITAS BARANG (KODE 108) DENGAN PEMFILTERAN DROPDOWN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-teal-500/40 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-teal-500/30 pb-2">
-                                    <span class="text-xs font-bold text-teal-400 flex items-center space-x-1.5 uppercase tracking-wider">
-                                        <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
-                                    </span>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Terfilter dari Langkah 2</span>
-                                </div>
+                        <!-- 1. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-teal-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-teal-500/30 pb-2">
+                                <span class="text-xs font-bold text-teal-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                                    <span>🏛️ 1. IDENTITAS BARANG (KODE 108):</span>
+                                </span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Terfilter dari Langkah 2</span>
+                            </div>
 
-                                <!-- 1. Nama Jaringan (Filter Murni dari Nama) -->
-                                <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Jaringan / Jalan (Uraian Sub-Sub Rincian 108):</label>
-                                    <select :value="formData.jaringan_kode_barang"
-                                            @change="onSubSubRincianChange($event.target.value)"
-                                            class="w-full bg-slate-900 border border-teal-500/60 hover:border-teal-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-teal-400 transition-all">
-                                        <option value="" disabled>-- Pilih Nama Jaringan / Jalan --</option>
-                                        <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.jaringan_kode_barang" x-text="item.nama"></option>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                                <!-- 1. Nama Jaringan (Filter Murni dari Nama & Kode 108) - 3 Kolom -->
+                                <div class="md:col-span-3 space-y-1 relative" @click.away="isNamaBarang108Open = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-300 text-[11px] font-bold">Nama Jaringan / Jalan (Uraian Sub-Sub Rincian 108):</label>
+                                        <button type="button" 
+                                                x-show="formData.jaringan_kode_barang && !isNamaBarang108Open" 
+                                                @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
+                                                class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Barang
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="(!isNamaBarang108Open && formData.jaringan_nama_barang) ? (formData.jaringan_kode_barang + ' - ' + formData.jaringan_nama_barang) : searchNamaBarang108"
+                                               @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                               @focus="isNamaBarang108Open = true"
+                                               placeholder="Ketik untuk memfilter nama / kode barang 108..."
+                                               class="w-full bg-slate-900 border border-teal-500/60 hover:border-teal-400 focus:border-teal-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold transition-all shadow-inner">
+                                    </div>
+
+                                    <!-- Dropdown List Cards -->
+                                    <div x-show="isNamaBarang108Open" x-transition x-cloak 
+                                         style="max-height: 220px !important; overflow-y: auto !important;" 
+                                         class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-teal-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="item in filteredSubSubRincian108" :key="item.kode">
+                                            <div @click="selectSubSubRincianItem(item)"
+                                                 class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                                 :class="item.kode === formData.jaringan_kode_barang ? 'border-teal-500 bg-teal-950/40 shadow-lg' : 'border-slate-800 hover:border-teal-500/50'">
+                                                <div class="min-w-0 pr-2">
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-teal-300 transition-colors truncate" x-text="item.nama"></h4>
+                                                    <p class="text-[10px] text-teal-400 font-mono truncate" x-text="'KODE 108: ' + item.kode"></p>
+                                                </div>
+                                                <button type="button" 
+                                                        @click.stop="selectSubSubRincianItem(item)" 
+                                                        class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                                        :class="item.kode === formData.jaringan_kode_barang ? 'bg-teal-500 text-slate-950 shadow-md' : 'bg-teal-500/20 text-teal-300 border border-teal-500/40 hover:bg-teal-500 hover:text-slate-950'">
+                                                    <span x-text="item.kode === formData.jaringan_kode_barang ? '✓ Terpilih' : 'Pilih →'"></span>
+                                                </button>
+                                            </div>
                                         </template>
-                                    </select>
+                                        <template x-if="filteredSubSubRincian108.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 italic">
+                                                Tidak ada nama barang 108 yang cocok.
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <!-- 2. Kode Barang (Otomatis Terisi) - 1 Kolom -->
                                 <div class="space-y-1">
                                     <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
                                     <input type="text" x-model="formData.jaringan_kode_barang" readonly placeholder="Kode 108 otomatis..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-teal-400 font-mono font-bold focus:outline-none cursor-not-allowed">
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-teal-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Grid Form Pengisian Spesifikasi Jalan & Jaringan (Sisa Kolom) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- 2. Konstruksi & Dimensi Jaringan (Panjang, Lebar, Luas, Kondisi) -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -3493,38 +3747,77 @@
                             </div>
                         </div>
 
-                        <!-- Grid Form Pengisian Rincian Aset Tetap Lainnya -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- 1. IDENTITAS BARANG (KODE 108) DENGAN PEMFILTERAN DROPDOWN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-rose-500/30 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">1. Identitas Barang (Kode 108)</span>
-                                    </div>
-                                    <span class="text-[9px] font-mono text-rose-400 font-bold">PMDN 108</span>
+                        <!-- 1. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-rose-500/30 pb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                                    <span class="text-xs font-bold text-white uppercase tracking-wider">1. Identitas Barang (Kode 108)</span>
                                 </div>
-                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
-                                <div class="space-y-1">
-                                    <label class="block text-slate-300 font-bold text-[11px]">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
-                                    <select :value="formData.lainnya_kode_barang" 
-                                            @change="onSubSubRincianChange($event.target.value)"
-                                            class="w-full bg-slate-900 border border-rose-500/50 hover:border-rose-400 rounded-xl px-3 py-2.5 text-xs text-rose-300 font-bold focus:outline-none focus:border-rose-400 transition-all">
-                                        <option value="" disabled>-- Pilih Nama Barang --</option>
-                                        <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.lainnya_kode_barang" x-text="item.nama"></option>
+                                <span class="text-[9px] font-mono text-rose-400 font-bold">PMDN 108</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                                <!-- 1. Nama Barang (Filter Murni dari Nama & Kode 108) - 3 Kolom -->
+                                <div class="md:col-span-3 space-y-1 relative" @click.away="isNamaBarang108Open = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
+                                        <button type="button" 
+                                                x-show="formData.lainnya_kode_barang && !isNamaBarang108Open" 
+                                                @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
+                                                class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Barang
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="(!isNamaBarang108Open && formData.lainnya_nama_barang) ? (formData.lainnya_kode_barang + ' - ' + formData.lainnya_nama_barang) : searchNamaBarang108"
+                                               @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                               @focus="isNamaBarang108Open = true"
+                                               placeholder="Ketik untuk memfilter nama / kode barang 108..."
+                                               class="w-full bg-slate-900 border border-rose-500/50 hover:border-rose-400 focus:border-rose-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold transition-all shadow-inner">
+                                    </div>
+
+                                    <!-- Dropdown List Cards -->
+                                    <div x-show="isNamaBarang108Open" x-transition x-cloak 
+                                         style="max-height: 220px !important; overflow-y: auto !important;" 
+                                         class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="item in filteredSubSubRincian108" :key="item.kode">
+                                            <div @click="selectSubSubRincianItem(item)"
+                                                 class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                                 :class="item.kode === formData.lainnya_kode_barang ? 'border-rose-500 bg-rose-950/40 shadow-lg' : 'border-slate-800 hover:border-rose-500/50'">
+                                                <div class="min-w-0 pr-2">
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-rose-300 transition-colors truncate" x-text="item.nama"></h4>
+                                                    <p class="text-[10px] text-rose-400 font-mono truncate" x-text="'KODE 108: ' + item.kode"></p>
+                                                </div>
+                                                <button type="button" 
+                                                        @click.stop="selectSubSubRincianItem(item)" 
+                                                        class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                                        :class="item.kode === formData.lainnya_kode_barang ? 'bg-rose-500 text-slate-950 shadow-md' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500 hover:text-slate-950'">
+                                                    <span x-text="item.kode === formData.lainnya_kode_barang ? '✓ Terpilih' : 'Pilih →'"></span>
+                                                </button>
+                                            </div>
                                         </template>
-                                    </select>
+                                        <template x-if="filteredSubSubRincian108.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 italic">
+                                                Tidak ada nama barang 108 yang cocok.
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <!-- 2. Kode Barang (Otomatis Terisi) - 1 Kolom -->
                                 <div class="space-y-1">
                                     <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
                                     <input type="text" x-model="formData.lainnya_kode_barang" readonly placeholder="Kode 108 otomatis..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-rose-300 font-mono font-bold focus:outline-none cursor-not-allowed">
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-rose-300 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Grid Form Pengisian Rincian Aset Tetap Lainnya (Sisa Kolom) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- 2. BUKU PERPUSTAKAAN (JUDUL, PENCIPTA, SPESIFIKASI) -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -3990,38 +4283,77 @@
                             </div>
                         </div>
 
-                        <!-- Grid Form Pengisian Rincian Aset Tidak Berwujud -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- 1. IDENTITAS BARANG (KODE 108) DENGAN PEMFILTERAN DROPDOWN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-violet-500/30 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">1. Identitas Barang (Kode 108)</span>
-                                    </div>
-                                    <span class="text-[9px] font-mono text-violet-400 font-bold">PMDN 108</span>
+                        <!-- 1. IDENTITAS BARANG (KODE 108) - FULL WIDTH CARD -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-violet-500/30 pb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span>
+                                    <span class="text-xs font-bold text-white uppercase tracking-wider">1. Identitas Barang (Kode 108)</span>
                                 </div>
-                                <!-- 1. Nama Barang (Filter Murni dari Nama) -->
-                                <div class="space-y-1">
-                                    <label class="block text-slate-300 font-bold text-[11px]">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
-                                    <select :value="formData.atb_kode_barang" 
-                                            @change="onSubSubRincianChange($event.target.value)"
-                                            class="w-full bg-slate-900 border border-violet-500/50 hover:border-violet-400 rounded-xl px-3 py-2.5 text-xs text-violet-300 font-bold focus:outline-none focus:border-violet-400 transition-all">
-                                        <option value="" disabled>-- Pilih Nama Barang --</option>
-                                        <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.atb_kode_barang" x-text="item.nama"></option>
+                                <span class="text-[9px] font-mono text-violet-400 font-bold">PMDN 108</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                                <!-- 1. Nama Barang (Filter Murni dari Nama & Kode 108) - 3 Kolom -->
+                                <div class="md:col-span-3 space-y-1 relative" @click.away="isNamaBarang108Open = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-300 text-[11px] font-bold">Nama Barang (Uraian Sub-Sub Rincian 108):</label>
+                                        <button type="button" 
+                                                x-show="formData.atb_kode_barang && !isNamaBarang108Open" 
+                                                @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
+                                                class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Barang
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="(!isNamaBarang108Open && formData.atb_nama_barang) ? (formData.atb_kode_barang + ' - ' + formData.atb_nama_barang) : searchNamaBarang108"
+                                               @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                               @focus="isNamaBarang108Open = true"
+                                               placeholder="Ketik untuk memfilter nama / kode barang 108..."
+                                               class="w-full bg-slate-900 border border-violet-500/50 hover:border-violet-400 focus:border-violet-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold transition-all shadow-inner">
+                                    </div>
+
+                                    <!-- Dropdown List Cards -->
+                                    <div x-show="isNamaBarang108Open" x-transition x-cloak 
+                                         style="max-height: 220px !important; overflow-y: auto !important;" 
+                                         class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-violet-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="item in filteredSubSubRincian108" :key="item.kode">
+                                            <div @click="selectSubSubRincianItem(item)"
+                                                 class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                                 :class="item.kode === formData.atb_kode_barang ? 'border-violet-500 bg-violet-950/40 shadow-lg' : 'border-slate-800 hover:border-violet-500/50'">
+                                                <div class="min-w-0 pr-2">
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-violet-300 transition-colors truncate" x-text="item.nama"></h4>
+                                                    <p class="text-[10px] text-violet-400 font-mono truncate" x-text="'KODE 108: ' + item.kode"></p>
+                                                </div>
+                                                <button type="button" 
+                                                        @click.stop="selectSubSubRincianItem(item)" 
+                                                        class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                                        :class="item.kode === formData.atb_kode_barang ? 'bg-violet-500 text-slate-950 shadow-md' : 'bg-violet-500/20 text-violet-300 border border-violet-500/40 hover:bg-violet-500 hover:text-slate-950'">
+                                                    <span x-text="item.kode === formData.atb_kode_barang ? '✓ Terpilih' : 'Pilih →'"></span>
+                                                </button>
+                                            </div>
                                         </template>
-                                    </select>
+                                        <template x-if="filteredSubSubRincian108.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 italic">
+                                                Tidak ada nama barang 108 yang cocok.
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <!-- 2. Kode Barang (Otomatis Terisi) - 1 Kolom -->
                                 <div class="space-y-1">
                                     <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
                                     <input type="text" x-model="formData.atb_kode_barang" readonly placeholder="Kode 108 otomatis..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-violet-300 font-mono font-bold focus:outline-none cursor-not-allowed">
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-violet-300 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Grid Form Pengisian Rincian Aset Tidak Berwujud (Sisa Kolom) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- 2. JUDUL / NAMA, PENCIPTA & SPESIFIKASI ATB -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -4364,38 +4696,76 @@
                                    class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 transition-all">
                         </div>
 
-                        <!-- Grid Form Pengisian Rincian KDP -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- 1. IDENTITAS BARANG (KODE 108) DENGAN PEMFILTERAN DROPDOWN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
-                                    <span class="text-xs font-bold text-amber-400 flex items-center space-x-1.5 uppercase tracking-wider">
-                                        <span>🏗️ 1. IDENTITAS PROYEK KDP (KODE 108):</span>
-                                    </span>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Terfilter dari Langkah 2</span>
-                                </div>
+                        <!-- 1. IDENTITAS PROYEK KDP (KODE 108) - FULL WIDTH CARD -->
+                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
+                                <span class="text-xs font-bold text-amber-400 flex items-center space-x-1.5 uppercase tracking-wider">
+                                    <span>🏗️ 1. IDENTITAS PROYEK KDP (KODE 108):</span>
+                                </span>
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Terfilter dari Langkah 2</span>
+                            </div>
 
-                                <!-- 1. Nama Proyek (Filter Murni dari Nama) -->
-                                <div class="space-y-1">
-                                    <label class="block text-slate-300 text-[11px] font-bold">Nama Proyek KDP (Uraian Sub-Sub Rincian 108):</label>
-                                    <select :value="formData.kdp_kode_barang"
-                                            @change="onSubSubRincianChange($event.target.value)"
-                                            class="w-full bg-slate-900 border border-amber-500/60 hover:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 transition-all">
-                                        <option value="" disabled>-- Pilih Nama Proyek KDP --</option>
-                                        <template x-for="item in availableSubSubRincian108" :key="item.kode">
-                                            <option :value="item.kode" :selected="item.kode === formData.kdp_kode_barang" x-text="item.nama"></option>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                                <!-- 1. Nama Proyek (Filter Murni dari Nama & Kode 108) - 3 Kolom -->
+                                <div class="md:col-span-3 space-y-1 relative" @click.away="isNamaBarang108Open = false">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-slate-300 text-[11px] font-bold">Nama Proyek KDP (Uraian Sub-Sub Rincian 108):</label>
+                                        <button type="button" 
+                                                x-show="formData.kdp_kode_barang && !isNamaBarang108Open" 
+                                                @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
+                                                class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer">
+                                            ✕ Ganti Barang
+                                        </button>
+                                    </div>
+
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="(!isNamaBarang108Open && formData.kdp_nama_barang) ? (formData.kdp_kode_barang + ' - ' + formData.kdp_nama_barang) : searchNamaBarang108"
+                                               @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                               @focus="isNamaBarang108Open = true"
+                                               placeholder="Ketik untuk memfilter nama / kode barang 108..."
+                                               class="w-full bg-slate-900 border border-amber-500/60 hover:border-amber-400 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold transition-all shadow-inner">
+                                    </div>
+
+                                    <!-- Dropdown List Cards -->
+                                    <div x-show="isNamaBarang108Open" x-transition x-cloak 
+                                         style="max-height: 220px !important; overflow-y: auto !important;" 
+                                         class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
+                                        <template x-for="item in filteredSubSubRincian108" :key="item.kode">
+                                            <div @click="selectSubSubRincianItem(item)"
+                                                 class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                                 :class="item.kode === formData.kdp_kode_barang ? 'border-amber-500 bg-amber-950/40 shadow-lg' : 'border-slate-800 hover:border-amber-500/50'">
+                                                <div class="min-w-0 pr-2">
+                                                    <h4 class="text-xs font-bold text-white group-hover:text-amber-300 transition-colors truncate" x-text="item.nama"></h4>
+                                                    <p class="text-[10px] text-amber-400 font-mono truncate" x-text="'KODE 108: ' + item.kode"></p>
+                                                </div>
+                                                <button type="button" 
+                                                        @click.stop="selectSubSubRincianItem(item)" 
+                                                        class="shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
+                                                        :class="item.kode === formData.kdp_kode_barang ? 'bg-amber-500 text-slate-950 shadow-md' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-slate-950'">
+                                                    <span x-text="item.kode === formData.kdp_kode_barang ? '✓ Terpilih' : 'Pilih →'"></span>
+                                                </button>
+                                            </div>
                                         </template>
-                                    </select>
+                                        <template x-if="filteredSubSubRincian108.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 italic">
+                                                Tidak ada nama barang 108 yang cocok.
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                <!-- 2. Kode Barang (Otomatis Terisi) -->
+                                <!-- 2. Kode Barang (Otomatis Terisi) - 1 Kolom -->
                                 <div class="space-y-1">
                                     <label class="block text-slate-400 text-[11px] font-bold">Kode Barang (Kode Sub-Sub Rincian 108):</label>
                                     <input type="text" x-model="formData.kdp_kode_barang" readonly placeholder="Kode 108 otomatis..."
-                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-amber-400 font-mono font-bold focus:outline-none cursor-not-allowed">
+                                           class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-amber-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Grid Form Pengisian Rincian KDP (Sisa Kolom) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- 2. Spesifikasi Konstruksi & Progres Fisik -->
                             <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
@@ -5018,7 +5388,7 @@
             <!-- Bottom Navigation Between Steps -->
             <div class="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                 <div class="w-full sm:w-auto">
-                    <button type="button" x-show="currentStep > 1" @click="currentStep--"
+                    <button type="button" x-show="currentStep > 1" @click="prevStep()"
                             class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all flex items-center justify-center space-x-2">
                         <span>&larr; Langkah Sebelumnya</span>
                     </button>
