@@ -966,9 +966,15 @@
                                     <!-- Volume (Qty) -->
                                     <div>
                                         <label class="block text-slate-300 font-semibold text-xs mb-1.5">Volume (Qty)</label>
-                                        <input type="number" min="1" 
-                                               x-model="item.qty" 
-                                               class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-teal-500 transition-all">
+                                        <input type="text" 
+                                            :value="item.qty ? Number(item.qty).toLocaleString('id-ID') : ''"
+                                            @input="
+                                                let raw = $event.target.value.replace(/\D/g, '');
+                                                item.qty = raw ? parseInt(raw, 10) : '';
+                                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                            "
+                                            placeholder="1"
+                                            class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-teal-500 transition-all">
                                     </div>
 
                                     <!-- Satuan (⚡ Auto) -->
