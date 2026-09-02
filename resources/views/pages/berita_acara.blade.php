@@ -18,6 +18,26 @@
                 showEditDistribusiForm: false,
                 showEditMutasiForm: false,
 
+                init() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const tabParam = urlParams.get('tab');
+                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id');
+
+                    if (tabParam && ['triwulan', 'distribusi', 'mutasi'].includes(tabParam)) {
+                        this.activeTab = tabParam;
+                    }
+
+                    if (idParam) {
+                        this.activeTab = 'distribusi';
+                        const target = this.distribusiList.find(d => String(d.id) === String(idParam) || String(d.kode) === String(idParam));
+                        if (target) {
+                            this.$nextTick(() => {
+                                this.openPrintDistribusi(target);
+                            });
+                        }
+                    }
+                },
+
                 // =========================================================================
                 // DATA TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN
                 // =========================================================================
