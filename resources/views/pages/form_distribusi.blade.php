@@ -230,11 +230,19 @@
                     if (query && query.trim() !== '') { const q = query.toLowerCase(); list = list.filter(n => (n.nibar||'').toLowerCase().includes(q) || (n.ruang||'').toLowerCase().includes(q)); }
                     return list;
                 },
+                getItemMaxQty(item) {
+                    if (!item) return 1;
+                    if (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') {
+                        return parseInt(item.qty_acc) || 0;
+                    }
+                    return parseInt(item.qty) || 1;
+                },
                 selectNibar(item, n) {
                     if (!item || !n || (n.status && n.status !== 'Tersedia')) return;
                     if (!item.nibar_selected) item.nibar_selected = [];
-                    const maxQty = parseInt(item.qty) || 1;
-                    if (item.nibar_selected.length >= maxQty) { alert('⚠️ Jumlah NIBAR sudah mencapai volume barang.'); return; }
+                    const maxQty = this.getItemMaxQty(item);
+                    if (maxQty <= 0) { alert('⚠️ Volume ACC bernilai 0. Tidak dapat memilih NIBAR.'); return; }
+                    if (item.nibar_selected.length >= maxQty) { alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai batas Volume ACC (' + maxQty + ' unit).'); return; }
                     item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
                     this.activeNibarDropdownIndex = null;
                 },
@@ -790,7 +798,7 @@
                                                     <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih nama barang terlebih dahulu</span>
                                                 </template>
                                                 <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih maks. sesuai Volume (Qty)</span>
+                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline" x-text="(item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? '— pilih maks. sesuai Volume ACC (' + getItemMaxQty(item) + ')' : '— pilih maks. sesuai Volume Pengajuan (' + getItemMaxQty(item) + ')'"></span>
                                                 </template>
                                             </span>
                                             
@@ -805,7 +813,7 @@
                                                     </span>
                                                 </template>
                                                 <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                    <span class="text-amber-400 font-mono text-[10px]" x-text="(item.nibar_selected || []).length + ' / ' + (item.qty || 1) + ' dipilih'"></span>
+                                                    <span class="text-amber-400 font-mono text-[10px]" x-text="(item.nibar_selected || []).length + ' / ' + getItemMaxQty(item) + ' dipilih'"></span>
                                                 </template>
                                             </div>
                                         </label>
@@ -818,7 +826,7 @@
                                                         <span>📋</span>
                                                         <span>Kondisi Fisik Per Unit NIBAR:</span>
                                                     </span>
-                                                    <span class="text-amber-400 font-mono text-[10.5px]" x-text="(item.nibar_selected || []).length + ' / ' + (item.qty || 1) + ' Unit'"></span>
+                                                    <span class="text-amber-400 font-mono text-[10.5px]" x-text="(item.nibar_selected || []).length + ' / ' + getItemMaxQty(item) + ' Unit'"></span>
                                                 </div>
                                                 
                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
@@ -894,8 +902,8 @@
                                                            :value="nibarSearch[item.id] || ''"
                                                            @input="nibarSearch = {...nibarSearch, [item.id]: $event.target.value}; activeNibarDropdownIndex = idx"
                                                            @focus="activeNibarDropdownIndex = idx"
-                                                           :placeholder="(item.nibar_selected || []).length >= (item.qty || 1) ? '✅ Sudah memilih ' + (item.qty || 1) + ' NIBAR (sesuai volume)' : 'Ketik atau klik untuk pilih NIBAR...'" 
-                                                           :disabled="(item.nibar_selected || []).length >= (item.qty || 1)"
+                                                           :placeholder="(item.nibar_selected || []).length >= getItemMaxQty(item) ? '✅ Sudah memilih ' + getItemMaxQty(item) + ' NIBAR (sesuai volume ACC)' : 'Ketik atau klik untuk pilih NIBAR...'" 
+                                                           :disabled="(item.nibar_selected || []).length >= getItemMaxQty(item)"
                                                            class="w-full h-11 bg-slate-900 border border-amber-500/40 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                                     <svg class="w-4 h-4 text-amber-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
 
@@ -1006,6 +1014,9 @@
                                                         let raw = $event.target.value.replace(/\D/g, '');
                                                         item.qty_acc = raw !== '' ? parseInt(raw, 10) : null;
                                                         $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                        if (item.qty_acc !== null && item.nibar_selected && item.nibar_selected.length > item.qty_acc) {
+                                                            item.nibar_selected = item.nibar_selected.slice(0, item.qty_acc);
+                                                        }
                                                     "
                                                     placeholder="Kosong = Belum Di-ACC"
                                                     class="w-full h-11 bg-slate-900 border border-emerald-500/40 rounded-xl px-4 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40 transition-all placeholder-slate-500">
