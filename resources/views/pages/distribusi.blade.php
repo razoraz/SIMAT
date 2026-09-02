@@ -646,18 +646,7 @@
                                 <!-- Kolom Aksi — FREEZE STICKY RIGHT -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                     <div class="flex items-center justify-center gap-1.5">
-                                        <!-- 1. Tombol Cetak Berita Acara (BAST) di Kolom Aksi -> Direct ke Cetak/Edit BAST Terintegrasi (disembunyikan untuk sub_admin) -->
-                                        <a :href="'/berita-acara?tab=distribusi&id=' + item.id"
-                                            x-show="userRole !== 'sub_admin'"
-                                            title="Cetak Berita Acara (BAST)"
-                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                            </svg>
-                                            <span>Cetak Berita Acara</span>
-                                        </a>
-
-                                        <!-- 2. Tombol Detail Modal -->
+                                        <!-- 1. Tombol Detail Modal -->
                                         <button type="button" @click="openDetail(item)"
                                             title="Lihat Detail Distribusi"
                                             class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
@@ -665,7 +654,7 @@
                                             <span>Detail</span>
                                         </button>
 
-                                        <!-- 3. Tombol Ubah Form (tersembunyi untuk sub admin jika sudah Dalam Pengiriman / Telah Diterima) -->
+                                        <!-- 2. Tombol Ubah Form (tersembunyi untuk sub admin jika sudah Dalam Pengiriman / Telah Diterima) -->
                                         <a :href="'/distribusi/' + item.id + '/edit'"
                                             x-show="!(userRole === 'sub_admin' && ['Dalam Pengiriman','Telah Diterima'].includes(item.status))"
                                             title="Ubah Data Distribusi"
@@ -674,7 +663,7 @@
                                             <span>Ubah</span>
                                         </a>
                                         
-                                        <!-- 4. Tombol Hapus (tersembunyi untuk sub admin jika sudah Dalam Pengiriman / Telah Diterima) -->
+                                        <!-- 3. Tombol Hapus (tersembunyi untuk sub admin jika sudah Dalam Pengiriman / Telah Diterima) -->
                                         <button type="button" @click="deleteDistribusi(item.id)"
                                             x-show="!(userRole === 'sub_admin' && ['Dalam Pengiriman','Telah Diterima'].includes(item.status))"
                                             title="Hapus Data Distribusi"
