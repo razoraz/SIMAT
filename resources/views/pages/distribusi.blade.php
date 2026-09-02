@@ -621,29 +621,7 @@
                                                 </span>
                                             </template>
                                         </div>
-                                        <!-- Badge Volume per Item -->
-                                        <template x-if="item.items && item.items.length > 0">
-                                            <div class="flex flex-wrap gap-1.5 pt-0.5">
-                                                <template x-for="(it, iIdx) in item.items.slice(0, 3)" :key="iIdx">
-                                                    <div class="inline-flex items-center space-x-1 text-[10px] font-mono bg-slate-950 border border-slate-800 rounded-lg px-2 py-0.5">
-                                                        <span class="text-slate-400 truncate max-w-[100px]" x-text="it.nama_barang || '-'"></span>
-                                                        <span class="text-slate-600">|</span>
-                                                        <!-- Volume Pengajuan -->
-                                                        <span class="text-teal-400 font-bold" :title="'Volume Pengajuan: ' + (it.qty || 0)" x-text="'📋 ' + (it.qty || 0)"></span>
-                                                        <!-- Volume ACC -->
-                                                        <template x-if="it.qty_acc !== null && it.qty_acc !== undefined">
-                                                            <span class="font-bold" :class="it.qty_acc > 0 ? 'text-emerald-400' : 'text-rose-400'" :title="'Volume Di-ACC: ' + it.qty_acc" x-text="'✅ ' + it.qty_acc"></span>
-                                                        </template>
-                                                        <template x-if="it.qty_acc === null || it.qty_acc === undefined">
-                                                            <span class="text-amber-500/70" title="Belum Di-ACC">⏳</span>
-                                                        </template>
-                                                    </div>
-                                                </template>
-                                                <template x-if="item.items.length > 3">
-                                                    <span class="text-[10px] text-slate-500 italic" x-text="'+ ' + (item.items.length - 3) + ' lainnya'"></span>
-                                                </template>
-                                            </div>
-                                        </template>
+
                                         <template x-if="item.keterangan">
                                             <p class="text-[11px] text-slate-400 truncate max-w-xs sm:max-w-md" x-text="'Catatan: ' + item.keterangan"></p>
                                         </template>
@@ -668,8 +646,9 @@
                                 <!-- Kolom Aksi — FREEZE STICKY RIGHT -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                     <div class="flex items-center justify-center gap-1.5">
-                                        <!-- 1. Tombol Cetak Berita Acara (BAST) di Kolom Aksi -> Direct ke Cetak/Edit BAST Terintegrasi -->
+                                        <!-- 1. Tombol Cetak Berita Acara (BAST) di Kolom Aksi -> Direct ke Cetak/Edit BAST Terintegrasi (disembunyikan untuk sub_admin) -->
                                         <a :href="'/berita-acara?tab=distribusi&id=' + item.id"
+                                            x-show="userRole !== 'sub_admin'"
                                             title="Cetak Berita Acara (BAST)"
                                             class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
                                             <svg class="w-3.5 h-3.5 text-purple-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -952,6 +931,7 @@
                         </template>
 
                         <a :href="selectedDistribusi ? ('/berita-acara?tab=distribusi&id=' + selectedDistribusi.id) : '#'"
+                           x-show="userRole !== 'sub_admin'"
                            class="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>🖨️ Cetak / Edit BAST</span>
