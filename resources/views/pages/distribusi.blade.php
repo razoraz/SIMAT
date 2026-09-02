@@ -1135,13 +1135,12 @@
                                     <thead class="bg-slate-900 text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #0f172a;">
                                         <tr>
                                             <th class="px-3.5 py-3 text-center w-8">No</th>
-                                            <th class="px-3.5 py-3 text-left min-w-[180px]">Nama Barang & Kode 108</th>
-                                            <th class="px-3.5 py-3 text-left min-w-[140px]">Merk / Spesifikasi</th>
-                                            <th class="px-3.5 py-3 text-left min-w-[300px]">Nomor Register NIBAR (45 Digit)</th>
+                                            <th class="px-3.5 py-3 text-center min-w-[180px]">Nama Barang & Kode 108</th>
+                                            <th class="px-3.5 py-3 text-center min-w-[140px]">Merk / Spesifikasi</th>
+                                            <th class="px-3.5 py-3 text-center min-w-[300px]">Nomor Register NIBAR (45 Digit)</th>
                                             <th class="px-3.5 py-3 text-center w-24">Kondisi</th>
+                                            <th class="px-3.5 py-3 text-center w-24">Vol / Satuan</th>
                                             <th class="px-3.5 py-3 text-center w-20">Aksi</th>
-                                            <th class="px-3.5 py-3 text-center w-16">Vol</th>
-                                            <th class="px-3.5 py-3 text-center w-16">Satuan</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80">
@@ -1150,7 +1149,7 @@
                                                 <td class="px-3.5 py-3 text-center font-bold text-slate-500 align-top" x-text="idx + 1"></td>
                                                 
                                                 <!-- Nama Barang & Kode 108 -->
-                                                <td class="px-3.5 py-3 align-top">
+                                                <td class="px-3.5 py-3 align-top text-center">
                                                     <p class="font-extrabold text-white text-xs leading-snug" x-text="item.nama_barang"></p>
                                                     <p class="text-[10px] text-teal-400 font-mono mt-0.5" x-text="'Kode 108: ' + (item.kode_barang || '-')"></p>
                                                     <template x-if="item.jenis_nama">
@@ -1159,7 +1158,7 @@
                                                 </td>
 
                                                 <!-- Merk & Spesifikasi -->
-                                                <td class="px-3.5 py-3 text-slate-300 text-[11px] align-top">
+                                                <td class="px-3.5 py-3 text-slate-300 text-[11px] align-top text-center">
                                                     <span class="font-semibold text-slate-200" x-text="item.merk_type || item.merk || '-'"></span>
                                                     <template x-if="item.keterangan">
                                                         <p class="text-[10px] text-slate-500 italic mt-0.5" x-text="'Ket: ' + item.keterangan"></p>
@@ -1167,7 +1166,7 @@
                                                 </td>
 
                                                 <!-- Kolom NIBAR -->
-                                                <td class="px-3.5 py-3 align-top">
+                                                <td class="px-3.5 py-3 align-top text-center">
                                                     <!-- Ada nibar_registers -->
                                                     <template x-if="item.nibar_registers && item.nibar_registers.length > 0">
                                                         <div class="flex flex-col gap-3">
@@ -1241,11 +1240,19 @@
                                                     </template>
                                                 </td>
 
-                                                <!-- Kolom Aksi — tinggi h-[32px] & gap-3 sama persis dengan NIBAR dan Kondisi -->
+
+
+                                                <!-- Volume & Satuan (digabung) -->
+                                                <td class="px-3.5 py-3 text-center align-top">
+                                                    <span class="font-bold text-emerald-400 text-xs" x-text="item.qty"></span>
+                                                    <span class="text-slate-400 text-[10px] ml-0.5" x-text="item.satuan"></span>
+                                                </td>
+
+                                                <!-- Kolom Aksi (dipindah ke kanan) -->
                                                 <td class="px-2 py-3 align-top">
                                                     <template x-if="item.nibar_registers && item.nibar_registers.length > 0">
                                                         <div class="flex flex-col gap-3">
-                                                            <template x-for="(reg, aIdx) in item.nibar_registers" :key="'aksi-' + (reg.nibar || aIdx)">
+                                                            <template x-for="(reg, aIdx) in item.nibar_registers" :key="'aksi2-' + (reg.nibar || aIdx)">
                                                                 <div class="flex items-center justify-center gap-1.5 h-[32px]">
                                                                     <button type="button" @click="copyNibar(reg.nibar)"
                                                                             class="h-[32px] w-[32px] flex items-center justify-center rounded-lg bg-slate-800 hover:bg-teal-500 text-slate-400 hover:text-slate-950 border border-slate-700/60 transition-all text-xs"
@@ -1262,11 +1269,9 @@
                                                             </template>
                                                         </div>
                                                     </template>
-
-                                                    <!-- Fallback nibar_list -->
                                                     <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && item.nibar_list && item.nibar_list.length > 0">
                                                         <div class="flex flex-col gap-3">
-                                                            <template x-for="(nibar, aIdx) in item.nibar_list" :key="'aksi-' + aIdx">
+                                                            <template x-for="(nibar, aIdx) in item.nibar_list" :key="'aksi2-' + aIdx">
                                                                 <div class="flex items-center justify-center gap-1.5 h-[32px]">
                                                                     <button type="button" @click="copyNibar(nibar)"
                                                                             class="h-[32px] w-[32px] flex items-center justify-center rounded-lg bg-slate-800 hover:bg-teal-500 text-slate-400 hover:text-slate-950 border border-slate-700/60 transition-all text-xs"
@@ -1283,18 +1288,12 @@
                                                             </template>
                                                         </div>
                                                     </template>
-
-                                                    <!-- Tidak ada NIBAR -->
                                                     <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && (!item.nibar_list || item.nibar_list.length === 0)">
                                                         <div class="h-[32px] flex items-center justify-center">
                                                             <span class="text-slate-600 text-[10px]">—</span>
                                                         </div>
                                                     </template>
                                                 </td>
-
-                                                <!-- Volume & Satuan -->
-                                                <td class="px-3.5 py-3 text-center font-bold text-emerald-400 text-xs align-top" x-text="item.qty"></td>
-                                                <td class="px-3.5 py-3 text-center text-slate-300 text-xs align-top" x-text="item.satuan"></td>
                                             </tr>
                                         </template>
                                     </tbody>
