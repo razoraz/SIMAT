@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\AstapBastTriwulan;
 use App\Models\Astap;
 use App\Models\Distribusi;
@@ -195,50 +196,79 @@ class BeritaAcaraController extends Controller
         }
 
         // =========================================================================
-        // 2. DATA TAB 2: BAST DISTRIBUSI BARANG DARI GUDANG KE RUANGAN
+        // 2. DATA TAB 2: BAST DISTRIBUSI BARANG DARI GUDANG KE RUANGAN (FITUR DISTRIBUSI ASTAP)
         // =========================================================================
-        $distribusis = Distribusi::with(['unit', 'items.astap', 'items.registers.astapRegister'])
-            ->where(function($q) use ($tahun) {
-                $q->whereYear('tanggal_distribusi', $tahun)
-                  ->orWhereNull('tanggal_distribusi');
-            })
-            ->where(function($q) {
-                $q->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Telah Ditandatangani BSrE'])
-                  ->orWhereNull('status');
-            })
-            ->orderBy('id', 'desc')
-            ->get();
+        $user = Auth::user();
+        $isSubAdmin = $user && $user->isSubAdmin();
+
+        $distribusiQuery = Distribusi::with([
+            'unit',
+            'items.astap.jenisAstap',
+            'items.registers.astapRegister',
+        ]);
+
+        // Jika sub admin, batasi data hanya untuk unit miliknya
+        if ($isSubAdmin && $user->unit_id) {
+            $distribusiQuery->where('unit_id', $user->unit_id);
+        }
+
+        $distribusis = $distribusiQuery->orderBy('id', 'desc')->get();
 
         $unitPerbekalan = Unit::where('nama', 'LIKE', '%perbekalan%')
             ->orWhere('nama', 'LIKE', '%rumah tangga%')
             ->first();
 
+        $bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $hariIndo = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
+
         $distribusiList = [];
         foreach ($distribusis as $dst) {
             $tgl = $dst->tanggal_distribusi ? Carbon::parse($dst->tanggal_distribusi) : Carbon::now();
-            $bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            $hariIndo = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
+            $hariStr = $hariIndo[$tgl->format('l')] ?? 'Kamis';
+            $tglAngka = $tgl->format('d');
+            $bulanStr = $bulanIndo[(int)$tgl->format('m')] ?? 'Agustus';
+            $tahunStr = $tgl->format('Y');
 
             $itemsData = [];
             $noIt = 1;
             foreach ($dst->items as $it) {
-                $nibarList = [];
-                foreach ($it->registers as $ir) {
-                    if ($ir->astapRegister) {
-                        $nibarList[] = $ir->astapRegister->nibar ?: $ir->astapRegister->no_register;
-                    }
-                }
+                $spec = is_array($it->astap?->spesifikasi_json)
+                    ? $it->astap->spesifikasi_json
+                    : (json_decode($it->astap?->spesifikasi_json ?? '', true) ?? []);
+                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ($it->astap?->keterangan_tambahan ?? '-')));
+
+                $nibarRegisters = $it->registers->map(function($dir) {
+                    $reg = $dir->astapRegister;
+                    return [
+                        'nibar'   => $reg?->nibar   ?? ($reg?->no_register ?? '-'),
+                        'reg_id'  => $reg?->id      ?? null,
+                        'kondisi' => $reg?->kondisi ?? 'Baik',
+                        'ruang'   => $reg?->ruang_pemegang ?? 'Gudang Aset',
+                    ];
+                })->values()->all();
+
+                $nibarList = collect($nibarRegisters)->pluck('nibar')->filter(fn($v) => $v && $v !== '-')->values()->all();
                 $nibarStr = !empty($nibarList) ? ' (NIBAR: ' . implode(', ', $nibarList) . ')' : '';
 
+                $firstKondisi = $nibarRegisters[0]['kondisi'] ?? 'Baik';
+
                 $itemsData[] = [
-                    'no'          => $noIt++,
-                    'nama_barang' => $it->astap?->nama_barang ?: 'Barang Aset',
-                    'merk_type'   => ($it->astap?->keterangan_tambahan ?: 'Standar Spesifikasi') . $nibarStr,
-                    'qty'         => (int) $it->qty,
-                    'satuan'      => $it->astap?->satuan ?: 'Unit',
-                    'kondisi'     => 'Baik',
-                    'keterangan'  => $it->keterangan ?: 'Distribusi ke ' . ($dst->unit?->nama ?: 'Ruangan'),
-                    'nibars'      => $nibarList,
+                    'no'              => $noIt++,
+                    'id'              => $it->id,
+                    'astap_id'        => $it->astap_id,
+                    'nama_barang'     => $it->astap?->nama_barang ?: 'Barang Aset',
+                    'kode_barang'     => $it->astap?->kode_108 ?: '-',
+                    'jenis_nama'      => $it->astap?->jenisAstap?->nama_jenis ?: '-',
+                    'merk'            => $merk,
+                    'merk_type'       => $merk . $nibarStr,
+                    'spesifikasi'     => $merk,
+                    'qty'             => (int) $it->qty,
+                    'satuan'          => $it->astap?->satuan ?: 'Unit',
+                    'kondisi'         => $firstKondisi,
+                    'keterangan'      => $it->keterangan ?: 'Distribusi ke ' . ($dst->unit?->nama ?: 'Ruangan'),
+                    'nibar_list'      => $nibarList,
+                    'nibar_registers' => $nibarRegisters,
+                    'nibars'          => $nibarList,
                 ];
             }
 
@@ -246,20 +276,30 @@ class BeritaAcaraController extends Controller
             $unitKepala = $dst->unit?->kepala ?: 'Kepala Ruangan ' . $unitNama;
             $unitNip = $dst->unit?->nip ?: '-';
 
+            $firstItemName = count($itemsData) > 0 ? $itemsData[0]['nama_barang'] : 'Barang Aset';
+            $moreCount = count($itemsData) > 1 ? ' + ' . (count($itemsData) - 1) . ' item lainnya' : '';
+
             $distribusiList[] = [
                 'id'                => $dst->id,
                 'kode'              => $dst->kode,
-                'nomor_bast'        => $dst->bast_nomor ?: ('032 / ' . str_pad($dst->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tgl->format('Y')),
-                'tgl_bast'          => ($hariIndo[$tgl->format('l')] ?? 'Senin') . ', ' . $tgl->format('d') . ' ' . ($bulanIndo[(int)$tgl->format('m')] ?? '') . ' ' . $tgl->format('Y'),
-                'hari'              => $hariIndo[$tgl->format('l')] ?? 'Senin',
-                'tanggal_angka'     => $tgl->format('d'),
-                'bulan'             => $bulanIndo[(int)$tgl->format('m')] ?? '',
-                'tahun'             => $tgl->format('Y'),
-                'tahun_anggaran'    => $tgl->format('Y'),
+                'bast_nomor'        => $dst->bast_nomor ?: ('032 / ' . str_pad($dst->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunStr),
+                'nomor_bast'        => $dst->bast_nomor ?: ('032 / ' . str_pad($dst->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunStr),
+                'tgl'               => $tgl->format('d/m/Y'),
+                'tgl_bast'          => $hariStr . ', ' . $tglAngka . ' ' . $bulanStr . ' ' . $tahunStr,
+                'tanggal_distribusi'=> $tgl->format('Y-m-d'),
+                'hari'              => $hariStr,
+                'tanggal_angka'     => $tglAngka,
+                'bulan'             => $bulanStr,
+                'tahun'             => $tahunStr,
+                'tahun_anggaran'    => $tahunStr,
                 'sk_bupati_nomor'   => '188.45/430.10.7/2026',
-                'sk_bupati_tanggal' => '02 Januari ' . $tgl->format('Y'),
+                'sk_bupati_tanggal' => '02 Januari ' . $tahunStr,
+                'nama'              => $firstItemName . $moreCount,
+                'unit_id'           => $dst->unit_id,
                 'unit_nama'         => $unitNama,
                 'unit_tipe'         => $dst->unit?->tipe ?: 'Unit Pelayanan / Instalasi',
+                'tujuan'            => $unitNama,
+                'penerima'          => $unitKepala,
                 'pj_nama'           => $unitKepala,
                 'pj_nip'            => $unitNip,
                 'pj_jabatan'        => 'Kepala ' . $unitNama,
@@ -271,9 +311,10 @@ class BeritaAcaraController extends Controller
                 'pengurus_ruangan'  => $unitPerbekalan?->nama ?: 'Gudang Perbekalan',
                 'status'            => $dst->signed ? 'Telah Ditandatangani BSrE' : ($dst->status ?: 'Draft'),
                 'keterangan_lokasi' => $dst->keterangan ?: 'Penempatan Unit ' . $unitNama,
+                'keterangan'        => $dst->keterangan,
                 'signed'            => (bool) $dst->signed,
-                'tgl_signed'        => $dst->tgl_signed ?: ($dst->signed ? $tgl->format('d/m/Y H:i') . ' WIB' : '-'),
-                'qr_hash'           => 'BSRE-KOESNANDI-DST-' . str_replace(' ', '', substr($unitNama, 0, 8)) . '-' . $tgl->format('Y') . '-' . $dst->id,
+                'tgl_signed'        => $dst->tgl_signed ?: ($dst->signed ? ($dst->updated_at ? $dst->updated_at->format('d/m/Y H:i') . ' WIB' : $tgl->format('d/m/Y H:i') . ' WIB') : '-'),
+                'qr_hash'           => $dst->signed ? ('BSRE-KOESNANDI-' . $dst->kode) : ('BSRE-KOESNANDI-DST-' . str_replace(' ', '', substr($unitNama, 0, 8)) . '-' . $tahunStr . '-' . $dst->id),
                 'items'             => $itemsData,
             ];
         }
@@ -374,11 +415,22 @@ class BeritaAcaraController extends Controller
             ];
         }
 
+        $units = Unit::orderBy('nama', 'asc')->get()->map(function($u) {
+            return [
+                'id'     => $u->id,
+                'nama'   => $u->nama,
+                'tipe'   => $u->tipe,
+                'kepala' => $u->kepala,
+                'nip'    => $u->nip,
+            ];
+        });
+
         return view('pages.berita_acara', [
             'tahun'              => $tahun,
             'triwulanDataJson'   => json_encode($triwulanData),
             'distribusiListJson' => json_encode($distribusiList),
             'mutasiListJson'     => json_encode($mutasiList),
+            'unitsJson'          => json_encode($units),
         ]);
     }
 

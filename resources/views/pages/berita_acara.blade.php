@@ -6,6 +6,7 @@
         window.__simatTriwulanData = {!! $triwulanDataJson ?? '{}' !!};
         window.__simatDistribusiList = {!! $distribusiListJson ?? '[]' !!};
         window.__simatMutasiList = {!! $mutasiListJson ?? '[]' !!};
+        window.__simatUnits = {!! $unitsJson ?? '[]' !!};
 
         function beritaAcaraApp() {
             return {
@@ -16,6 +17,26 @@
                 showEditTriwulanForm: false,
                 showEditDistribusiForm: false,
                 showEditMutasiForm: false,
+
+                init() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const tabParam = urlParams.get('tab');
+                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id');
+
+                    if (tabParam && ['triwulan', 'distribusi', 'mutasi'].includes(tabParam)) {
+                        this.activeTab = tabParam;
+                    }
+
+                    if (idParam) {
+                        this.activeTab = 'distribusi';
+                        const target = this.distribusiList.find(d => String(d.id) === String(idParam) || String(d.kode) === String(idParam));
+                        if (target) {
+                            this.$nextTick(() => {
+                                this.openPrintDistribusi(target);
+                            });
+                        }
+                    }
+                },
 
                 // =========================================================================
                 // DATA TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN
@@ -60,16 +81,26 @@
                 selectedDistribusi: null,
                 selectedDetailDistribusi: null,
 
+                unitsList: window.__simatUnits || [],
                 distribusiList: window.__simatDistribusiList || [],
 
                 get filteredDistribusiList() {
-                    const query = (this.distribusiSearch || '').toLowerCase();
+                    const query = (this.distribusiSearch || '').toLowerCase().trim();
                     return this.distribusiList.filter(d => {
-                        const matchQuery = (d.nomor_bast || '').toLowerCase().includes(query) ||
+                        const matchQuery = !query ||
+                                           (d.nomor_bast || '').toLowerCase().includes(query) ||
+                                           (d.kode || '').toLowerCase().includes(query) ||
                                            (d.unit_nama || '').toLowerCase().includes(query) ||
+                                           (d.tujuan || '').toLowerCase().includes(query) ||
                                            (d.pj_nama || '').toLowerCase().includes(query) ||
-                                           (d.keterangan_lokasi || '').toLowerCase().includes(query);
-                        const matchUnit = this.distribusiUnitFilter === 'all' || d.unit_nama === this.distribusiUnitFilter;
+                                           (d.penerima || '').toLowerCase().includes(query) ||
+                                           (d.keterangan_lokasi || '').toLowerCase().includes(query) ||
+                                           (d.keterangan || '').toLowerCase().includes(query) ||
+                                           (d.items || []).some(it => (it.nama_barang || '').toLowerCase().includes(query));
+
+                        const matchUnit = this.distribusiUnitFilter === 'all' || 
+                                          (d.unit_nama || '').toLowerCase() === this.distribusiUnitFilter.toLowerCase() ||
+                                          (d.tujuan || '').toLowerCase() === this.distribusiUnitFilter.toLowerCase();
                         
                         let matchStatus = true;
                         if (this.distribusiStatusFilter === 'signed') {
@@ -704,9 +735,9 @@
                         <!-- Filter Unit Dropdown -->
                         <select x-model="distribusiUnitFilter" class="bg-slate-950 border border-slate-800 rounded-2xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-teal-500">
                             <option value="all">Semua Unit / Paviliun (Sub-Admin)</option>
-                            <option value="Front Office (FO) & Rawat Inap">Front Office (FO) & Rawat Inap</option>
-                            <option value="Instalasi Gawat Darurat (IGD)">Instalasi Gawat Darurat (IGD)</option>
-                            <option value="Instalasi Pemeliharaan Sarana RS (IPSRS)">Instalasi IPSRS</option>
+                            <template x-for="u in unitsList" :key="u.id">
+                                <option :value="u.nama" x-text="u.nama"></option>
+                            </template>
                         </select>
                     </div>
                 </div>
