@@ -2366,8 +2366,16 @@
                                 <div class="grid grid-cols-2 gap-2.5">
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Barang (Volume)</label>
-                                        <input type="number" min="1" x-model.number="formData.mesin_jumlah_barang" @input="updateExtracomStatus()" placeholder="1"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                        <input type="text" 
+                                        :value="formData.mesin_jumlah_barang ? Number(formData.mesin_jumlah_barang).toLocaleString('id-ID') : ''"
+                                        @input="
+                                            let raw = $event.target.value.replace(/\D/g, '');
+                                            formData.mesin_jumlah_barang = raw ? parseInt(raw, 10) : '';
+                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                            updateExtracomStatus();
+                                        "
+                                        placeholder="1"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500">
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
@@ -2378,13 +2386,29 @@
                                 <div class="grid grid-cols-2 gap-2.5">
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan Barang (Rp)</label>
-                                        <input type="number" x-model.number="formData.mesin_nilai_satuan" @input="updateExtracomStatus()" placeholder="185000000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                        <input type="text" 
+                                        :value="formData.mesin_nilai_satuan ? Number(formData.mesin_nilai_satuan).toLocaleString('id-ID') : ''"
+                                        @input="
+                                            let raw = $event.target.value.replace(/\D/g, '');
+                                            formData.mesin_nilai_satuan = raw ? parseInt(raw, 10) : '';
+                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                            updateExtracomStatus();
+                                        "
+                                        placeholder="185.000.000"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
                                     </div>
+
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Administrasi Proyek (Rp)</label>
-                                        <input type="number" x-model.number="formData.mesin_administrasi_proyek" placeholder="0"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                        <input type="text" 
+                                        :value="formData.mesin_administrasi_proyek ? Number(formData.mesin_administrasi_proyek).toLocaleString('id-ID') : ''"
+                                        @input="
+                                            let raw = $event.target.value.replace(/\D/g, '');
+                                            formData.mesin_administrasi_proyek = raw ? parseInt(raw, 10) : '';
+                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                        "
+                                        placeholder="0"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
                                     </div>
                                 </div>
                                 <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-between shadow-inner">
