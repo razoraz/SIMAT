@@ -193,8 +193,8 @@
                         sub_kegiatan_nama: jp ? (jp.sub_kegiatan_nama || '') : '',
                         keterangan_pengadaan: '',
                         // LANGKAH 2
-                        tahun_anggaran: ea ? (ea.tahun_perolehan || new Date().getFullYear()) : new Date().getFullYear(),
-                        triwulan: spec.triwulan || 'TW I',
+                        tahun_anggaran: ea ? (ea.tahun_perolehan || '') : '',
+                        triwulan: ea ? (ea.triwulan || (spec.triwulan || '')) : '',
                         kode_rek: rb ? (rb.kode_rek || '') : '',
                         nama_belanja: rb ? (rb.nama_belanja || '') : '',
                         jenis_aset_kode: ja ? (ja.jenis || (kode108Val ? kode108Val.substring(0, 5) : '')) : (kode108Val ? kode108Val.substring(0, 5) : ''),
@@ -336,7 +336,7 @@
                         bast_dokumen_nomor: ea ? (ea.bast_dokumen_nomor || '') : '',
                         bast_dokumen_tanggal: ea ? fmtDate(ea.bast_dokumen_tanggal) : '',
                         // Langkah 4
-                        tahun_perolehan: ea ? (ea.tahun_perolehan || new Date().getFullYear()) : new Date().getFullYear(),
+                        tahun_perolehan: ea ? (ea.tahun_perolehan || '') : '',
                         alamat_barang: ea ? (ea.alamat_barang || '') : '',
                         penyedia_nama: ea ? (ea.penyedia_nama || '') : '',
                         penyedia_pemilik: ea ? (ea.penyedia_pemilik || '') : '',
@@ -491,10 +491,14 @@
                 },
 
                 fetchExistingAnggaran() {
-                    if (!this.formData.sub_rincian_kode) return;
+                    if (!this.formData.sub_rincian_kode || !this.formData.tahun_anggaran || !this.formData.triwulan) {
+                        this.isAnggaranAutoLoaded = false;
+                        this.anggaranAutoLoadedMessage = '';
+                        return;
+                    }
                     const subKode = this.formData.sub_rincian_kode;
-                    const thn = this.formData.tahun_anggaran || new Date().getFullYear();
-                    const tw = this.formData.triwulan || 'TW I';
+                    const thn = this.formData.tahun_anggaran;
+                    const tw = this.formData.triwulan;
 
                     fetch('{{ route("astap.checkSubRincianAnggaran") }}', {
                         method: 'POST',
@@ -515,6 +519,7 @@
                             this.isAnggaranAutoLoaded = true;
                             this.anggaranAutoLoadedMessage = '✨ Pagu anggaran Rp ' + Number(data.jumlah_anggaran).toLocaleString('id-ID') + ' dimuat otomatis dari penetapan ' + tw + ' ' + thn;
                         } else {
+                            this.formData.jumlah_anggaran = 0;
                             this.isAnggaranAutoLoaded = false;
                             this.anggaranAutoLoadedMessage = '';
                         }
@@ -1822,8 +1827,8 @@
                                 <input type="number" 
                                        x-model.number="formData.tahun_anggaran" 
                                        @input="formData.tahun_perolehan = formData.tahun_anggaran"
-                                       placeholder="2026"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-cyan-500">
+                                       placeholder="Pilih / Masukkan Tahun (Contoh: 2026 atau 1994)"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-cyan-500 placeholder:text-slate-500 placeholder:font-normal">
                             </div>
                         </div>
 
@@ -1834,11 +1839,13 @@
                                 <span class="text-[10px] text-cyan-300/80 font-mono">TW I - IV</span>
                             </label>
                             <select x-model="formData.triwulan"
-                                    class="w-full bg-slate-950 border border-cyan-500/50 rounded-xl px-3.5 py-2.5 text-xs text-cyan-300 font-bold focus:outline-none focus:border-cyan-400">
-                                <option value="TW I">Triwulan I (TW I)</option>
-                                <option value="TW II">Triwulan II (TW II)</option>
-                                <option value="TW III">Triwulan III (TW III)</option>
-                                <option value="TW IV">Triwulan IV (TW IV)</option>
+                                    class="w-full bg-slate-950 border border-cyan-500/50 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-cyan-400"
+                                    :class="formData.triwulan ? 'text-cyan-300' : 'text-slate-500 font-normal'">
+                                <option value="" disabled selected class="text-slate-500">-- Pilih Triwulan Pengadaan --</option>
+                                <option value="TW I" class="text-cyan-300 bg-slate-900 font-bold">Triwulan I (TW I)</option>
+                                <option value="TW II" class="text-cyan-300 bg-slate-900 font-bold">Triwulan II (TW II)</option>
+                                <option value="TW III" class="text-cyan-300 bg-slate-900 font-bold">Triwulan III (TW III)</option>
+                                <option value="TW IV" class="text-cyan-300 bg-slate-900 font-bold">Triwulan IV (TW IV)</option>
                             </select>
                         </div>
                     </div>

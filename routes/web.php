@@ -899,9 +899,18 @@ Route::middleware('auth')->group(function () {
             $tahun = (int) $request->input('tahun', date('Y'));
             $triwulan = $request->input('triwulan', 'TW I');
 
-            if (empty($subRincianKode)) {
+            if (empty($subRincianKode) || empty($tahun)) {
                 return response()->json(['found' => false]);
             }
+
+            // Normalisasi variasi triwulan (TW I / TW1 / dsb)
+            $twVariants = match($triwulan) {
+                'TW I', 'TW1' => ['TW I', 'TW1', 'TW 1', 'Triwulan I'],
+                'TW II', 'TW2' => ['TW II', 'TW2', 'TW 2', 'Triwulan II'],
+                'TW III', 'TW3' => ['TW III', 'TW3', 'TW 3', 'Triwulan III'],
+                'TW IV', 'TW4' => ['TW IV', 'TW4', 'TW 4', 'Triwulan IV'],
+                default => [$triwulan]
+            };
 
             $existing = \App\Models\Astap::where(function($q) use ($subRincianKode) {
                     $q->whereHas('jenisAstap', function($jq) use ($subRincianKode) {
@@ -910,9 +919,11 @@ Route::middleware('auth')->group(function () {
                     })->orWhere('kode_108', 'LIKE', $subRincianKode . '%');
                 })
                 ->where('tahun_perolehan', $tahun)
-                ->where(function($tq) use ($triwulan) {
-                    $tq->where('triwulan', $triwulan)
-                       ->orWhereJsonContains('spesifikasi_json->triwulan', $triwulan);
+                ->where(function($tq) use ($twVariants) {
+                    $tq->whereIn('triwulan', $twVariants);
+                    foreach ($twVariants as $tv) {
+                        $tq->orWhereJsonContains('spesifikasi_json->triwulan', $tv);
+                    }
                 })
                 ->whereNotNull('jumlah_anggaran')
                 ->where('jumlah_anggaran', '>', 0)
@@ -921,9 +932,11 @@ Route::middleware('auth')->group(function () {
 
             if ($existing) {
                 $sumRealisasi = \App\Models\Astap::where('tahun_perolehan', $tahun)
-                    ->where(function($tq) use ($triwulan) {
-                        $tq->where('triwulan', $triwulan)
-                           ->orWhereJsonContains('spesifikasi_json->triwulan', $triwulan);
+                    ->where(function($tq) use ($twVariants) {
+                        $tq->whereIn('triwulan', $twVariants);
+                        foreach ($twVariants as $tv) {
+                            $tq->orWhereJsonContains('spesifikasi_json->triwulan', $tv);
+                        }
                     })
                     ->where(function($q) use ($subRincianKode) {
                         $q->whereHas('jenisAstap', fn($jq) => $jq->where('sub_rincian_objek', $subRincianKode))
