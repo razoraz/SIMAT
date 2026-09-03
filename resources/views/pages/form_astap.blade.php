@@ -1826,17 +1826,6 @@
                                     <th class="px-2 py-1.5 border border-slate-600">Kode</th>
                                     <th class="px-3 py-1.5 border border-slate-600">Nama Uraian Sub Rincian Objek</th>
                                 </tr>
-                                <!-- Nomor Kolom 8 s/d 15 -->
-                                <tr class="bg-blue-100 text-slate-800 font-bold text-[10px] border-b-2 border-slate-700">
-                                    <th class="py-1 border border-slate-600">8</th>
-                                    <th class="py-1 border border-slate-600">9</th>
-                                    <th class="py-1 border border-slate-600">10</th>
-                                    <th class="py-1 border border-slate-600">11</th>
-                                    <th class="py-1 border border-slate-600">12</th>
-                                    <th class="py-1 border border-slate-600">13</th>
-                                    <th class="py-1 border border-slate-600">14</th>
-                                    <th class="py-1 border border-slate-600">15</th>
-                                </tr>
                             </thead>
                             <!-- Baris Data Isi Live Sesuai Input User -->
                             <tbody class="bg-white text-slate-950 font-medium text-[11px]">

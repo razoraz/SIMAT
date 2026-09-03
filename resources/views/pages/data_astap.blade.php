@@ -107,7 +107,7 @@
     }
 
     // STYLING ENGINE MASTER 4 LANGKAH (LANGKAH 1 s/d 4)
-    function applyUnified4StepMasterSheetStyling(ws, rowCount, colCount, kibL3ColCount) {
+    function applyUnified4StepMasterSheetStyling(ws, rowCount, colCount, kibL3ColCount, headerEndRow = 6) {
         const thinBorder = {
             top: { style: "thin", color: { rgb: "64748B" } },
             bottom: { style: "thin", color: { rgb: "64748B" } },
@@ -143,26 +143,36 @@
                     fontSize = r === 0 ? 12 : (r === 1 ? 11 : 10);
                     border = null;
                 }
-                // 2. HEADER TABEL 4 LANGKAH (BARIS 4 s/d 7)
-                else if (r >= 3 && r <= 6) {
+                // 2. HEADER TABEL 4 LANGKAH (BARIS r=3 s/d headerEndRow)
+                else if (r >= 3 && r <= headerEndRow) {
                     bold = true;
-                    fontSize = r === 3 ? 10.5 : (r === 6 ? 9 : 9.5);
+                    fontSize = r === 3 ? 10.5 : (r === headerEndRow ? 9 : 9.5);
                     fontColor = "0F172A";
 
                     if (c === 0) {
                         fill = "D7E4BC"; // NO (Hijau Pastel)
                     }
-                    // LANGKAH 1: PENGANGGARAN SIPD (HIJAU PASTEL)
-                    else if (c >= 1 && c <= 6) {
-                        fill = (r === 3) ? "D7E4BC" : "EAF1DD";
+                    // LANGKAH 1: PENGANGGARAN SIPD
+                    else if (c >= 1 && c <= 2) {
+                        fill = (r === 3) ? "D7E4BC" : "EAF1DD"; // Program (Hijau Pastel)
+                    } else if (c >= 3 && c <= 4) {
+                        fill = (r === 3) ? "FDE9D9" : "FFF2E8"; // Kegiatan (Peach / Soft Orange)
+                    } else if (c >= 5 && c <= 6) {
+                        fill = (r === 3) ? "E4DFEC" : "F2EEF8"; // Sub Kegiatan (Soft Lavender)
                     }
                     // LANGKAH 2: BELANJA MODAL & PMDN 108 (BLUE SOFT - SESUAI GAMBAR 1)
                     else if (c >= 7 && c <= 14) {
-                        fill = (r === 6) ? "DBEAFE" : "BFDBFE"; // Kolom 8 s/d 15 Header Biru
+                        fill = (r === headerEndRow) ? "DBEAFE" : "BFDBFE"; // Kolom 8 s/d 15 Header Biru
                     }
-                    // LANGKAH 3: RINCIAN KIB PER KATEGORI (HIJAU BANNER & PEACH SUB - SESUAI GAMBAR 2)
+                    // LANGKAH 3: RINCIAN KIB PER KATEGORI (SESUAI GAMBAR 2)
                     else if (c >= l3Start && c <= l3End) {
-                        fill = (r === 3) ? "D7E4BC" : "FDE9D9";
+                        if (r === 3) {
+                            fill = "D7E4BC"; // Top Banner Hijau Pastel
+                        } else if (c === 15 || c === 16 || c === 28 || c === 29 || (c >= 30 && c <= 34)) {
+                            fill = "D7E4BC"; // Sub headers Hijau Pastel (Nama Barang, Kode, Kondisi, Penggunaan, Volume, Nilai)
+                        } else {
+                            fill = "FDE9D9"; // Sub headers Peach (Status Tanah, Riwayat Pembelian, Total Nilai, SP2D, BAST, Letak)
+                        }
                     }
                     // LANGKAH 4: REKANAN PENYEDIA & PPK (PEACH - SESUAI GAMBAR 3)
                     else if (c >= l4Start) {
@@ -171,8 +181,12 @@
                 }
                 // 3. BARIS DATA BIASA
                 else {
-                    if (c >= 1 && c <= 6) {
+                    if (c >= 1 && c <= 2) {
                         fill = (r % 2 === 0) ? "F4F9EC" : "FFFFFF"; // Soft Green tint
+                    } else if (c >= 3 && c <= 4) {
+                        fill = (r % 2 === 0) ? "FFF7F2" : "FFFFFF"; // Soft Peach tint
+                    } else if (c >= 5 && c <= 6) {
+                        fill = (r % 2 === 0) ? "F8F6FC" : "FFFFFF"; // Soft Lavender tint
                     } else if (c >= 7 && c <= 14) {
                         fill = (r % 2 === 0) ? "EFF6FF" : "FFFFFF"; // Soft Blue tint
                     } else if (c >= l3Start && c <= l3End) {
@@ -212,9 +226,14 @@
         }
     }
 
+    let isExportingAstap = false;
     function exportAstapToExcel() {
+        if (isExportingAstap) return;
+        isExportingAstap = true;
+
         if (typeof XLSX === 'undefined') {
             alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
+            isExportingAstap = false;
             return;
         }
 
@@ -323,31 +342,108 @@
         }
 
         // ------------------------------------------------------------------------
-        // 2. KIB A (TANAH) - COMPLETE 4-STEP MASTER SHEET
+        // 2. KIB A (TANAH) - COMPLETE 4-STEP MASTER SHEET (49 KOLOM SESUAI FORMAT BAKU)
         // ------------------------------------------------------------------------
         const kibARows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
             ["LAPORAN RINCIAN REALISASI BELANJA MODAL TANAH (KIB A / 1.3.1) TAHUN ANGGARAN 2026"],
             [""],
             [
-                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
-                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
+                "NO",
+                "Program Pengadaan SIPD", "",
+                "Kegiatan Pengadaan SIPD", "",
+                "Sub Kegiatan Pengadaan SIPD", "",
+                "BELANJA MODAL", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE / 2026", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "Letak / Alamat Barang",
+                "PIHAK PENYEDIA", "", "", "", "",
+                "Pejabat Pembuat Komitmen", "",
+                "KET."
             ],
             [
-                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
-                "NAMA BARANG", "KODE BARANG (108)", "Status Tanah", "", "", "Riwayat Pembelian", "", "", "", "", "", "", "", "Kondisi", "Penggunaan", "VOLUME", "", "Nilai Barang (Rp)", "TOTAL REALISASI (RP)", "SP2D", "", "BAST", "", "LETAK / ALAMAT BARANG",
-                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
+                "",
+                "", "",
+                "", "",
+                "", "",
+                "Rekening Belanja Untuk Pengadaan SIPD", "",
+                "Jenis Aset (PMDN 108)", "",
+                "Sub Rincian Objek (PMDN 108)", "",
+                "JUMLAH ANGGARAN (Rp)",
+                "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG\n(Uraian Sub Sub Rincian Objek PMDN 108)",
+                "Kode Barang\n(Kode Sub Sub Rincian Objek PMDN 108)",
+                "Status Tanah", "", "",
+                "Riwayat Pembelian", "", "", "", "", "", "", "",
+                "Kondisi\n(B/KB/RB)",
+                "Penggunaan",
+                "VOLUME", "",
+                "Nilai Barang (Rp)", "", "",
+                "Total Nilai Barang (Rp)",
+                "SP2D", "",
+                "BAST pada SPK/Surat Pesanan/Kwitansi/Invoice", "",
+                "",
+                "", "", "", "", "",
+                "", "",
+                ""
             ],
             [
-                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
-                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Hak Tanah", "Sertifikat Tgl", "Sertifikat No", "SPK No", "SPK Tgl", "SP No", "SP Tgl", "Kwitansi No", "Kwitansi Tgl", "Invoice No", "Invoice Tgl", "(B,KB,RB)", "Peruntukan", "Jml Bidang", "Luas (m²)", "Nilai Perencanaan", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Lokasi Lahan",
-                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+                "",
+                "Kode", "Nama Program",
+                "Kode", "Nama Kegiatan Pengadaan",
+                "Kode", "Nama Sub Kegiatan Pengadaan",
+                "Kode Rek", "Nama Belanja Pengadaan",
+                "Kode", "Nama Jenis Aset",
+                "Kode", "Nama Uraian Sub Rincian Objek",
+                "",
+                "",
+                "",
+                "",
+                "Hak Tanah\n(Hak Pakai / Hak Pengelolaan)", "Sertifikat", "",
+                "SPK", "", "Surat Pesanan", "", "Kwitansi", "", "Invoice (Tanggal dan Nomor)", "",
+                "",
+                "",
+                "Jumlah Bidang Tanah", "Luas Tanah (m²)",
+                "Nilai Perencanaan (Rp)", "Nilai Fisik (Rp)", "Nilai Pengawasan",
+                "36 = 33+34+35",
+                "", "",
+                "", "",
+                "",
+                "Nama Penyedia", "Pemilik Penyedia", "Rekening", "", "Alamat Penyedia",
+                "Nama", "NIP",
+                ""
             ],
             [
-                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-                "40", "41", "42", "43", "44", "45", "46", "47"
+                "",
+                "", "",
+                "", "",
+                "", "",
+                "", "",
+                "", "",
+                "", "",
+                "",
+                "",
+                "",
+                "",
+                "", "Tanggal", "Nomor",
+                "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal",
+                "",
+                "",
+                "", "",
+                "", "", "",
+                "",
+                "NOMOR", "TANGGAL",
+                "NOMOR", "TANGGAL",
+                "",
+                "", "", "Nama Rek", "Nomor Rek", "",
+                "", "",
+                ""
+            ],
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+                "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+                "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+                "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+                "41", "42", "43", "44", "45", "46", "47", "48", "49"
             ]
         ];
 
@@ -372,7 +468,9 @@
                 item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas',
                 1,
                 item.luas_m2 || 2000,
-                item.nilai_perencanaan || totalVal,
+                item.nilai_perencanaan || 0,
+                item.nilai_fisik || totalVal,
+                item.nilai_pengawasan || 0,
                 totalVal,
                 item.sp2d_nomor || '001/SP2D/2026',
                 item.sp2d_tanggal || '2026-03-01',
@@ -387,17 +485,141 @@
             kibARows.push([
                 1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
                 '5.2.02.01.01.0001', 'Belanja Modal Pengadaan Tanah Fasilitas Umum', '1.3.1.01', 'TANAH', '1.3.1.01.01.01', 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL', 3780000000, 3780000000,
-                'Tanah Bangunan Rumah Sakit RSUD', '1.3.1.01.01.01.008', 'Hak Pakai', '2015-02-22', 'HP-293', '930/SPK/2025', '2025-02-22', '-', '-', '-', '-', '-', '-', 'Baik', 'Bangunan Rumah Sakit & Fasilitas Kesehatan', 1, 2000, 3780000000, 3780000000, '001/SP2D/2026', '2026-03-01', '000.2.3.2/001/BAST/2026', '2026-03-05', 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                'Tanah Bangunan Rumah Sakit RSUD', '1.3.1.01.01.01.008', 'Hak Pakai', '2015-02-22', 'HP-293', '930/SPK/2025', '2025-02-22', '-', '-', '-', '-', '-', '-', 'Baik', 'Bangunan Rumah Sakit & Fasilitas Kesehatan', 1, 2000, 0, 3780000000, 0, 3780000000, '001/SP2D/2026', '2026-03-01', '000.2.3.2/001/BAST/2026', '2026-03-05', 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
                 'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Pengadaan Lahan Sertifikat Hak Pakai BPN'
             ]);
         }
 
         const wsKibA = XLSX.utils.aoa_to_sheet(kibARows);
-        wsKibA['!cols'] = Array(47).fill({wch: 18});
-        wsKibA['!cols'][2] = {wch: 30}; wsKibA['!cols'][4] = {wch: 25}; wsKibA['!cols'][6] = {wch: 28};
-        wsKibA['!cols'][8] = {wch: 28}; wsKibA['!cols'][10] = {wch: 22}; wsKibA['!cols'][12] = {wch: 30}; wsKibA['!cols'][15] = {wch: 32};
-        wsKibA['!cols'][38] = {wch: 35}; wsKibA['!cols'][39] = {wch: 28}; wsKibA['!cols'][43] = {wch: 35};
-        applyUnified4StepMasterSheetStyling(wsKibA, kibARows.length, 47, 24);
+        wsKibA['!cols'] = Array(49).fill({wch: 18});
+        wsKibA['!cols'][0] = {wch: 6};
+        wsKibA['!cols'][1] = {wch: 14}; wsKibA['!cols'][2] = {wch: 32};
+        wsKibA['!cols'][3] = {wch: 14}; wsKibA['!cols'][4] = {wch: 28};
+        wsKibA['!cols'][5] = {wch: 18}; wsKibA['!cols'][6] = {wch: 30};
+        wsKibA['!cols'][7] = {wch: 18}; wsKibA['!cols'][8] = {wch: 30};
+        wsKibA['!cols'][9] = {wch: 14}; wsKibA['!cols'][10] = {wch: 24};
+        wsKibA['!cols'][11] = {wch: 18}; wsKibA['!cols'][12] = {wch: 32};
+        wsKibA['!cols'][13] = {wch: 22}; wsKibA['!cols'][14] = {wch: 22};
+        wsKibA['!cols'][15] = {wch: 32}; wsKibA['!cols'][16] = {wch: 22};
+        wsKibA['!cols'][17] = {wch: 38}; // Kolom 18: Hak Tanah diperlebar agar rapi
+        wsKibA['!cols'][18] = {wch: 14}; wsKibA['!cols'][19] = {wch: 16};
+        wsKibA['!cols'][20] = {wch: 16}; wsKibA['!cols'][21] = {wch: 14};
+        wsKibA['!cols'][22] = {wch: 16}; wsKibA['!cols'][23] = {wch: 14};
+        wsKibA['!cols'][24] = {wch: 16}; wsKibA['!cols'][25] = {wch: 14};
+        wsKibA['!cols'][26] = {wch: 16}; wsKibA['!cols'][27] = {wch: 14};
+        wsKibA['!cols'][28] = {wch: 14}; wsKibA['!cols'][29] = {wch: 26};
+        wsKibA['!cols'][30] = {wch: 18}; wsKibA['!cols'][31] = {wch: 16};
+        wsKibA['!cols'][32] = {wch: 20}; wsKibA['!cols'][33] = {wch: 20};
+        wsKibA['!cols'][34] = {wch: 20}; wsKibA['!cols'][35] = {wch: 22};
+        wsKibA['!cols'][36] = {wch: 18}; wsKibA['!cols'][37] = {wch: 14};
+        wsKibA['!cols'][38] = {wch: 22}; wsKibA['!cols'][39] = {wch: 14};
+        wsKibA['!cols'][40] = {wch: 32}; wsKibA['!cols'][41] = {wch: 28};
+        wsKibA['!cols'][42] = {wch: 24}; wsKibA['!cols'][43] = {wch: 24};
+        wsKibA['!cols'][44] = {wch: 24}; wsKibA['!cols'][45] = {wch: 30};
+        wsKibA['!cols'][46] = {wch: 24}; wsKibA['!cols'][47] = {wch: 22};
+        wsKibA['!cols'][48] = {wch: 26};
+
+        // ── Merge Cells KIB A (Persis Format 49 Kolom Sesuai Gambar) ──────────────
+        wsKibA['!merges'] = [
+            // Title banners (r0-r2)
+            {s:{r:0,c:0}, e:{r:0,c:48}},
+            {s:{r:1,c:0}, e:{r:1,c:48}},
+            {s:{r:2,c:0}, e:{r:2,c:48}},
+
+            // Column 1: NO (r3 to r6, c0)
+            {s:{r:3,c:0}, e:{r:6,c:0}},
+
+            // Column 2-3: Program Pengadaan SIPD
+            {s:{r:3,c:1}, e:{r:4,c:2}},
+            {s:{r:5,c:1}, e:{r:6,c:1}}, // Kode
+            {s:{r:5,c:2}, e:{r:6,c:2}}, // Nama Program
+
+            // Column 4-5: Kegiatan Pengadaan SIPD
+            {s:{r:3,c:3}, e:{r:4,c:4}},
+            {s:{r:5,c:3}, e:{r:6,c:3}}, // Kode
+            {s:{r:5,c:4}, e:{r:6,c:4}}, // Nama Kegiatan Pengadaan
+
+            // Column 6-7: Sub Kegiatan Pengadaan SIPD
+            {s:{r:3,c:5}, e:{r:4,c:6}},
+            {s:{r:5,c:5}, e:{r:6,c:5}}, // Kode
+            {s:{r:5,c:6}, e:{r:6,c:6}}, // Nama Sub Kegiatan Pengadaan
+
+            // Column 8-15: BELANJA MODAL (Top Banner r3, c7 to c14)
+            {s:{r:3,c:7}, e:{r:3,c:14}},
+            // Col 8-9: Rekening Belanja Untuk Pengadaan SIPD
+            {s:{r:4,c:7}, e:{r:4,c:8}},
+            {s:{r:5,c:7}, e:{r:6,c:7}}, // Kode Rek
+            {s:{r:5,c:8}, e:{r:6,c:8}}, // Nama Belanja Pengadaan
+            // Col 10-11: Jenis Aset (PMDN 108)
+            {s:{r:4,c:9}, e:{r:4,c:10}},
+            {s:{r:5,c:9}, e:{r:6,c:9}}, // Kode
+            {s:{r:5,c:10}, e:{r:6,c:10}}, // Nama Jenis Aset
+            // Col 12-13: Sub Rincian Objek (PMDN 108)
+            {s:{r:4,c:11}, e:{r:4,c:12}},
+            {s:{r:5,c:11}, e:{r:6,c:11}}, // Kode
+            {s:{r:5,c:12}, e:{r:6,c:12}}, // Nama Uraian Sub Rincian Objek
+            // Col 14: JUMLAH ANGGARAN (Rp)
+            {s:{r:4,c:13}, e:{r:6,c:13}},
+            // Col 15: JUMLAH REALISASI (Rp)
+            {s:{r:4,c:14}, e:{r:6,c:14}},
+
+            // Column 16-40: RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE / 2026 (r3, c15 to c39)
+            {s:{r:3,c:15}, e:{r:3,c:39}},
+            // Col 16: NAMA BARANG
+            {s:{r:4,c:15}, e:{r:6,c:15}},
+            // Col 17: Kode Barang
+            {s:{r:4,c:16}, e:{r:6,c:16}},
+            // Col 18-20: Status Tanah
+            {s:{r:4,c:17}, e:{r:4,c:19}},
+            {s:{r:5,c:17}, e:{r:6,c:17}}, // Hak Tanah (Hak Pakai / Hak Pengelolaan)
+            {s:{r:5,c:18}, e:{r:5,c:19}}, // Sertifikat (r5) -> r6: Tanggal (c18), Nomor (c19)
+            // Col 21-28: Riwayat Pembelian
+            {s:{r:4,c:20}, e:{r:4,c:27}},
+            {s:{r:5,c:20}, e:{r:5,c:21}}, // SPK -> r6: Nomor (c20), Tanggal (c21)
+            {s:{r:5,c:22}, e:{r:5,c:23}}, // Surat Pesanan -> r6: Nomor (c22), Tanggal (c23)
+            {s:{r:5,c:24}, e:{r:5,c:25}}, // Kwitansi -> r6: Nomor (c24), Tanggal (c25)
+            {s:{r:5,c:26}, e:{r:5,c:27}}, // Invoice (Tanggal dan Nomor) -> r6: Nomor (c26), Tanggal (c27)
+            // Col 29: Kondisi (B/KB/RB)
+            {s:{r:4,c:28}, e:{r:6,c:28}},
+            // Col 30: Penggunaan
+            {s:{r:4,c:29}, e:{r:6,c:29}},
+            // Col 31-32: VOLUME
+            {s:{r:4,c:30}, e:{r:4,c:31}},
+            {s:{r:5,c:30}, e:{r:6,c:30}}, // Jumlah Bidang Tanah
+            {s:{r:5,c:31}, e:{r:6,c:31}}, // Luas Tanah (m²)
+            // Col 33-35: Nilai Barang (Rp)
+            {s:{r:4,c:32}, e:{r:4,c:34}},
+            {s:{r:5,c:32}, e:{r:6,c:32}}, // Nilai Perencanaan (Rp)
+            {s:{r:5,c:33}, e:{r:6,c:33}}, // Nilai Fisik (Rp)
+            {s:{r:5,c:34}, e:{r:6,c:34}}, // Nilai Pengawasan
+            // Col 36: Total Nilai Barang (Rp)
+            {s:{r:4,c:35}, e:{r:4,c:35}},
+            {s:{r:5,c:35}, e:{r:6,c:35}}, // 36 = 33+34+35
+            // Col 37-38: SP2D
+            {s:{r:4,c:36}, e:{r:5,c:37}}, // SP2D spans r4-r5 -> r6: NOMOR (c36), TANGGAL (c37)
+            // Col 39-40: BAST pada SPK/Surat Pesanan/Kwitansi/Invoice
+            {s:{r:4,c:38}, e:{r:5,c:39}}, // BAST spans r4-r5 -> r6: NOMOR (c38), TANGGAL (c39)
+
+            // Column 41: LETAK / ALAMAT BARANG (Berdiri sendiri r3 sampai r6, c40)
+            {s:{r:3,c:40}, e:{r:6,c:40}},
+
+            // Column 42-46: PIHAK PENYEDIA (Top Banner r3 s/d r4, c41 to c45)
+            {s:{r:3,c:41}, e:{r:4,c:45}},
+            {s:{r:5,c:41}, e:{r:6,c:41}}, // Nama Penyedia
+            {s:{r:5,c:42}, e:{r:6,c:42}}, // Pemilik Penyedia
+            {s:{r:5,c:43}, e:{r:5,c:44}}, // Rekening -> r6: Nama Rek (c43), Nomor Rek (c44)
+            {s:{r:5,c:45}, e:{r:6,c:45}}, // Alamat Penyedia
+
+            // Column 47-48: Pejabat Pembuat Komitmen (Top Banner r3 s/d r4, c46 to c47)
+            {s:{r:3,c:46}, e:{r:4,c:47}},
+            {s:{r:5,c:46}, e:{r:6,c:46}}, // Nama
+            {s:{r:5,c:47}, e:{r:6,c:47}}, // NIP
+
+            // Column 49: KET. (Berdiri sendiri r3 sampai r6, c48)
+            {s:{r:3,c:48}, e:{r:6,c:48}}
+        ];
+        // ─────────────────────────────────────────────────────────────────────────
+        applyUnified4StepMasterSheetStyling(wsKibA, kibARows.length, 49, 25, 7);
         XLSX.utils.book_append_sheet(wb, wsKibA, "2. A");
 
         // ------------------------------------------------------------------------
@@ -961,6 +1183,7 @@
         // DOWNLOAD FILE EXCEL 4 LANGKAH
         const fileName = "ASTAP_RSUD_KOESNANDI_4LANGKAH_MASTER_" + new Date().toISOString().slice(0, 10) + ".xlsx";
         XLSX.writeFile(wb, fileName);
+        setTimeout(() => { isExportingAstap = false; }, 1500);
     }
     </script>
 
@@ -1542,8 +1765,8 @@
                     </a>
                     @endif
 
-                    <button type="button" onclick="exportAstapToExcel()" @click="exportAstapToExcel()"
-                        class="px-3.5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5 cursor-pointer">
+                    <button type="button" @click="exportAstapToExcel()"
+                        class="px-3.5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5 cursor-pointer active:scale-95">
                         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         <span>Export Excel</span>
                     </button>
