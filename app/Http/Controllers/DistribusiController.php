@@ -305,13 +305,10 @@ class DistribusiController extends Controller
                 ];
             });
 
-        // Proteksi: sub admin tidak bisa mengubah distribusi yang statusnya sudah dikunci
-        if ($distribusiData) {
-            $lockedStatuses = ['Dalam Pengiriman', 'Telah Diterima'];
-            $user = auth()->user();
-            if ($user && $user->isSubAdmin() && in_array($distribusiData->status, $lockedStatuses)) {
-                abort(403, 'Distribusi ini sudah diproses dan tidak dapat diubah oleh Sub Admin.');
-            }
+        // Proteksi: sub admin tidak bisa mengubah pengajuan distribusi
+        $user = auth()->user();
+        if ($user && $user->isSubAdmin()) {
+            abort(403, 'Sub Admin tidak memiliki akses untuk mengubah data pengajuan distribusi.');
         }
 
         return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'id', 'distribusiData'));
@@ -582,11 +579,10 @@ class DistribusiController extends Controller
     {
         $distribusi = Distribusi::findOrFail($id);
 
-        // Proteksi: sub admin tidak bisa menghapus distribusi yang statusnya sudah dikunci
+        // Proteksi: sub admin tidak bisa menghapus pengajuan distribusi
         $user = auth()->user();
-        $lockedStatuses = ['Dalam Pengiriman', 'Telah Diterima'];
-        if ($user && $user->isSubAdmin() && in_array($distribusi->status, $lockedStatuses)) {
-            return response()->json(['success' => false, 'message' => 'Distribusi ini sudah diproses dan tidak dapat dihapus.'], 403);
+        if ($user && $user->isSubAdmin()) {
+            return response()->json(['success' => false, 'message' => 'Sub Admin tidak memiliki izin untuk menghapus data pengajuan distribusi.'], 403);
         }
 
         $kode = $distribusi->kode;

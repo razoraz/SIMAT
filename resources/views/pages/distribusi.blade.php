@@ -688,7 +688,7 @@
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tgl Distribusi</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Penerima</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Status</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[210px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0" :class="userRole === 'sub_admin' ? 'w-24' : 'min-w-[210px]'" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -732,7 +732,7 @@
                                         x-text="item.status || 'Draft'"></span>
                                 </td>
                                 <!-- Kolom Aksi — FREEZE STICKY RIGHT -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0" :class="userRole === 'sub_admin' ? 'w-24' : 'min-w-[210px]'" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                     <div class="flex items-center justify-center gap-1.5">
                                         <!-- 1. Tombol Detail Modal -->
                                         <button type="button" @click="openDetail(item)"
@@ -742,18 +742,18 @@
                                             <span>Detail</span>
                                         </button>
 
-                                        <!-- 2. Tombol Ubah Form (tersembunyi untuk sub admin jika sudah Dalam Pengiriman / Telah Diterima) -->
+                                        <!-- 2. Tombol Ubah Form (Hanya untuk Admin & Master Admin) -->
                                         <a :href="'/distribusi/' + item.id + '/edit'"
-                                            x-show="!(userRole === 'sub_admin' && ['Dalam Pengiriman','Telah Diterima'].includes(item.status))"
+                                            x-show="userRole !== 'sub_admin'"
                                             title="Ubah Data Distribusi"
                                             class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
                                             <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             <span>Ubah</span>
                                         </a>
                                         
-                                        <!-- 3. Tombol Hapus (tersembunyi untuk sub admin jika sudah Dalam Pengiriman / Telah Diterima) -->
+                                        <!-- 3. Tombol Hapus (Hanya untuk Admin & Master Admin) -->
                                         <button type="button" @click="deleteDistribusi(item.id)"
-                                            x-show="!(userRole === 'sub_admin' && ['Dalam Pengiriman','Telah Diterima'].includes(item.status))"
+                                            x-show="userRole !== 'sub_admin'"
                                             title="Hapus Data Distribusi"
                                             class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
                                             <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
