@@ -40,6 +40,10 @@
                 searchRuangPemegangAtb: '',
                 isRuangPemegangAtbOpen: false,
 
+                // State Auto-Loaded Pagu Anggaran dari Riwayat Database
+                isAnggaranAutoLoaded: false,
+                anggaranAutoLoadedMessage: '',
+
                 // Master Data Hierarki SIPD Langkah 1 (Diisi dinamis 100% dari SQLite Database)
                 sipdData: [],
 
@@ -442,11 +446,104 @@
 
                     this.updateExtracomStatus();
 
-                    this.$watch('currentStep', () => {
+                    // Watcher perpindahan Step
+                    this.$watch('currentStep', (step) => {
                         this.$nextTick(() => {
                             this.scrollToTop();
                         });
+                        if (step === 2) {
+                            this.fetchExistingAnggaran();
+                        } else if (step === 3) {
+                            this.syncRealisasiFromStep3();
+                        }
                     });
+
+                    // Watchers Langkah 2: Otomatis Muat Pagu Anggaran jika Sub Rincian / Tahun / TW berubah
+                    this.$watch('formData.sub_rincian_kode', () => this.fetchExistingAnggaran());
+                    this.$watch('formData.tahun_anggaran', () => this.fetchExistingAnggaran());
+                    this.$watch('formData.triwulan', () => this.fetchExistingAnggaran());
+
+                    // Watchers Langkah 3: Otomatis Sinkronisasi Realisasi Langkah 2 dari Total Nilai Barang
+                    this.$watch('formData.tanah_nilai_perencanaan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.tanah_nilai_fisik', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.tanah_nilai_pengawasan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.mesin_nilai_satuan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.mesin_jumlah_barang', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.mesin_administrasi_proyek', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.gedung_nilai_perencanaan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.gedung_nilai_fisik', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.gedung_nilai_pengawasan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.gedung_nilai_pip', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.jaringan_nilai_perencanaan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.jaringan_nilai_fisik', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.jaringan_nilai_pengawasan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.jaringan_nilai_pip', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.lainnya_nilai_satuan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.lainnya_jumlah_barang', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.lainnya_administrasi_proyek', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.atb_nilai_satuan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.atb_jumlah', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.atb_administrasi_proyek', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.kdp_nilai_perencanaan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.kdp_nilai_fisik', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.kdp_nilai_pengawasan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.kdp_nilai_pip', () => this.syncRealisasiFromStep3());
+                },
+
+                fetchExistingAnggaran() {
+                    if (!this.formData.sub_rincian_kode) return;
+                    const subKode = this.formData.sub_rincian_kode;
+                    const thn = this.formData.tahun_anggaran || new Date().getFullYear();
+                    const tw = this.formData.triwulan || 'TW I';
+
+                    fetch('{{ route("astap.checkSubRincianAnggaran") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            sub_rincian_kode: subKode,
+                            tahun: thn,
+                            triwulan: tw
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.found && data.jumlah_anggaran) {
+                            this.formData.jumlah_anggaran = data.jumlah_anggaran;
+                            this.isAnggaranAutoLoaded = true;
+                            this.anggaranAutoLoadedMessage = '✨ Pagu anggaran Rp ' + Number(data.jumlah_anggaran).toLocaleString('id-ID') + ' dimuat otomatis dari penetapan ' + tw + ' ' + thn;
+                        } else {
+                            this.isAnggaranAutoLoaded = false;
+                            this.anggaranAutoLoadedMessage = '';
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('Gagal cek riwayat anggaran sub rincian:', err);
+                    });
+                },
+
+                syncRealisasiFromStep3() {
+                    let totalVal = 0;
+                    if (this.isTanah) {
+                        totalVal = this.totalNilaiTanah;
+                    } else if (this.isMesin) {
+                        totalVal = this.totalNilaiMesin;
+                    } else if (this.isGedung) {
+                        totalVal = this.totalNilaiGedung;
+                    } else if (this.isJaringan) {
+                        totalVal = this.totalNilaiJaringan;
+                    } else if (this.isAsetLainnya) {
+                        totalVal = this.totalNilaiAsetLainnya;
+                    } else if (this.isAtb) {
+                        totalVal = this.totalNilaiAtb;
+                    } else if (this.isKdp) {
+                        totalVal = this.totalNilaiKdp;
+                    }
+                    if (totalVal > 0) {
+                        this.formData.jumlah_realisasi = totalVal;
+                    }
                 },
 
                 selectDocType(type) {
@@ -1751,8 +1848,9 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <!-- Kolom 14: JUMLAH ANGGARAN -->
                             <div>
-                                <label class="block text-slate-300 font-semibold text-xs mb-1">
-                                    JUMLAH ANGGARAN (Rp) (Kolom 14) <span class="text-rose-500 font-bold">*</span>
+                                <label class="block text-slate-300 font-semibold text-xs mb-1 flex items-center justify-between">
+                                    <span>JUMLAH ANGGARAN (Rp) (Kolom 14) <span class="text-rose-500 font-bold">*</span></span>
+                                    <span class="text-[10px] text-slate-400">Pagu Sub Rincian</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3.5 top-3 text-slate-500 text-xs font-bold">Rp</span>
@@ -1761,16 +1859,21 @@
                                         @input="
                                             let raw = $event.target.value.replace(/\D/g, '');
                                             formData.jumlah_anggaran = raw ? parseInt(raw, 10) : '';
-                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';"
-                                        placeholder="544.100.000"
+                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                            isAnggaranAutoLoaded = false;"
+                                        placeholder="1.000.000.000"
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-white font-mono font-bold focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div x-show="isAnggaranAutoLoaded" x-cloak class="mt-1.5 flex items-center space-x-1.5 text-[10px] text-amber-300 font-semibold bg-amber-950/60 border border-amber-500/30 rounded-lg px-2.5 py-1">
+                                    <span x-text="anggaranAutoLoadedMessage"></span>
                                 </div>
                             </div>
         
                             <!-- Kolom 15: JUMLAH REALISASI -->
                             <div>
-                                <label class="block text-emerald-400 font-semibold text-xs mb-1">
-                                    JUMLAH REALISASI (Rp) (Kolom 15) <span class="text-rose-500 font-bold">*</span>
+                                <label class="block text-emerald-400 font-semibold text-xs mb-1 flex items-center justify-between">
+                                    <span>JUMLAH REALISASI (Rp) (Kolom 15) <span class="text-rose-500 font-bold">*</span></span>
+                                    <span class="text-[10px] text-emerald-400/80 font-mono">⚡ Realtime</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3.5 top-3 text-emerald-500 text-xs font-bold">Rp</span>
@@ -1783,6 +1886,9 @@
                                         "
                                         placeholder="516.156.650"
                                         class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-emerald-400 font-mono font-extrabold focus:outline-none focus:border-emerald-400">
+                                </div>
+                                <div class="mt-1 flex items-center space-x-1 text-[10px] text-emerald-400/90 font-medium">
+                                    <span>⚡ Terkalkulasi otomatis dari Total Nilai Barang (Langkah 3)</span>
                                 </div>
                             </div>
                         </div>
