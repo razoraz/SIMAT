@@ -143,7 +143,7 @@
                                     qty: it.qty || 1,
                                     qty_acc: (it.qty_acc !== undefined && it.qty_acc !== null) ? it.qty_acc : null,
                                     satuan: astapObj ? (astapObj.satuan || 'Unit') : (it.satuan || 'Unit'),
-                                    kondisi: it.kondisi || 'Baik',
+                                    kondisi: it.kondisi || '-',
                                     keterangan: it.keterangan || '',
                                     nibar_selected: nibarSelectedObj
                                 };
@@ -182,7 +182,7 @@
                     }
 
                     if (!this.formData.items || this.formData.items.length === 0) {
-                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: 'Baik', keterangan: '', nibar_selected: [] }];
+                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] }];
                     }
                 },
                 updateYearInKode() {
@@ -198,7 +198,7 @@
                     }
                 },
                 addItem() {
-                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: 'Baik', keterangan: '', nibar_selected: [] });
+                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] });
                 },
                 removeItem(index) {
                     if (this.formData.items.length <= 1) { alert('⚠️ Minimal harus ada 1 barang!'); return; }

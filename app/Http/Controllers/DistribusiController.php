@@ -73,8 +73,8 @@ class DistribusiController extends Controller
 
                     $nibarList = collect($nibarRegisters)->pluck('nibar')->filter()->values()->all();
 
-                    // Kondisi dominan dari register pertama
-                    $firstKondisi = $nibarRegisters[0]['kondisi'] ?? 'Baik';
+                    // Kondisi dominan dari register pertama (default '-' jika belum ada NIBAR)
+                    $firstKondisi = $nibarRegisters[0]['kondisi'] ?? '-';
 
                     return [
                         'id'              => $it->id,
