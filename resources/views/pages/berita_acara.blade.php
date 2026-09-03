@@ -22,6 +22,11 @@
                     const urlParams = new URLSearchParams(window.location.search);
                     const tabParam = urlParams.get('tab');
                     const idParam = urlParams.get('id') || urlParams.get('distribusi_id');
+                    const returnTo = urlParams.get('returnTo');
+
+                    if (returnTo) {
+                        this.returnToUrl = returnTo;
+                    }
 
                     if (tabParam && ['triwulan', 'distribusi', 'mutasi'].includes(tabParam)) {
                         this.activeTab = tabParam;
@@ -80,6 +85,7 @@
                 showDetailDistribusiModal: false,
                 selectedDistribusi: null,
                 selectedDetailDistribusi: null,
+                returnToUrl: null,
 
                 unitsList: window.__simatUnits || [],
                 distribusiList: window.__simatDistribusiList || [],
@@ -247,6 +253,13 @@
                 openPrintDistribusi(item) {
                     this.selectedDistribusi = item ? { ...item } : this.distribusiList[0];
                     this.showPrintDistribusiModal = true;
+                },
+
+                closeDistribusiModal() {
+                    this.showPrintDistribusiModal = false;
+                    if (this.returnToUrl) {
+                        window.location.href = this.returnToUrl;
+                    }
                 },
 
                 async toggleSignDistribusi(item) {
@@ -1416,8 +1429,8 @@
         <!-- ========================================================================= -->
         <!-- MODAL CETAK 2: LEMBAR DOKUMEN BAST DISTRIBUSI BARANG ASET                 -->
         <!-- ========================================================================= -->
-        <div x-show="showPrintDistribusiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak>
-            <div @click.away="showPrintDistribusiModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
+        <div x-show="showPrintDistribusiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak @click.self="closeDistribusiModal()">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
                 
                 <div class="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
                     <div class="flex items-center space-x-2">
@@ -1444,7 +1457,7 @@
                         <button type="button" @click="printCurrent()" class="px-4 py-1.5 rounded-xl bg-purple-500 text-slate-950 font-bold text-xs shadow-lg">
                             🖨️ Cetak Surat
                         </button>
-                        <button type="button" @click="showPrintDistribusiModal = false" class="p-1 rounded-lg text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+                        <button type="button" @click="closeDistribusiModal()" class="p-1 rounded-lg text-slate-400 hover:text-white font-bold text-lg">&times;</button>
                     </div>
                 </div>
 

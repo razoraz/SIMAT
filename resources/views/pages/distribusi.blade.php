@@ -31,24 +31,38 @@
                     // karena localStorage bisa berisi data sesi admin/user lain
                     if (this.userRole === 'sub_admin') {
                         localStorage.removeItem('simat_distribusis');
-                        return; // distribusis sudah di-set dari {{ Js::from($distribusis) }}
+                    } else {
+                        // Admin/Master: prioritaskan data dari DB, fallback ke localStorage
+                        if (this.distribusis && this.distribusis.length > 0) {
+                            localStorage.setItem('simat_distribusis', JSON.stringify(this.distribusis));
+                        } else {
+                            const stored = localStorage.getItem('simat_distribusis');
+                            if (stored) {
+                                try {
+                                    const parsed = JSON.parse(stored);
+                                    if (Array.isArray(parsed) && parsed.length > 0) {
+                                        this.distribusis = parsed;
+                                    }
+                                } catch (e) {
+                                    this.distribusis = [];
+                                }
+                            }
+                        }
                     }
 
-                    // Admin/Master: prioritaskan data dari DB, fallback ke localStorage
-                    if (this.distribusis && this.distribusis.length > 0) {
-                        localStorage.setItem('simat_distribusis', JSON.stringify(this.distribusis));
-                        return;
-                    }
-                    const stored = localStorage.getItem('simat_distribusis');
-                    if (stored) {
-                        try {
-                            const parsed = JSON.parse(stored);
-                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                this.distribusis = parsed;
+                    // Auto-buka modal detail jika kembali dari BAST
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const openDetailId = urlParams.get('openDetail');
+                    if (openDetailId) {
+                        this.$nextTick(() => {
+                            const target = this.distribusis.find(d => String(d.id) === String(openDetailId));
+                            if (target) {
+                                this.openDetail(target);
                             }
-                        } catch (e) {
-                            this.distribusis = [];
-                        }
+                        });
+                        // Bersihkan parameter dari URL tanpa reload
+                        const cleanUrl = window.location.pathname;
+                        window.history.replaceState({}, '', cleanUrl);
                     }
                 },
 
@@ -215,7 +229,7 @@
                 openPrintBast(item) {
                     if (!item) return;
                     const targetId = typeof item === 'object' ? item.id : item;
-                    window.location.href = '/berita-acara?tab=distribusi&id=' + encodeURIComponent(targetId);
+                    window.location.href = '/berita-acara?tab=distribusi&id=' + encodeURIComponent(targetId) + '&returnTo=' + encodeURIComponent('/distribusi?openDetail=' + targetId);
                 },
 
                 terimaDistribusi(item) {
@@ -919,7 +933,7 @@
                             </button>
                         </template>
 
-                        <a :href="selectedDistribusi ? ('/berita-acara?tab=distribusi&id=' + selectedDistribusi.id) : '#'"
+                        <a :href="selectedDistribusi ? ('/berita-acara?tab=distribusi&id=' + selectedDistribusi.id + '&returnTo=' + encodeURIComponent('/distribusi?openDetail=' + selectedDistribusi.id)) : '#'"
                            x-show="userRole !== 'sub_admin'"
                            class="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
