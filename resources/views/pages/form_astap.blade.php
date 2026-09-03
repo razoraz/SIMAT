@@ -43,6 +43,8 @@
                 // State Auto-Loaded Pagu Anggaran dari Riwayat Database
                 isAnggaranAutoLoaded: false,
                 anggaranAutoLoadedMessage: '',
+                existingRealisasiDb: 0,
+                nilaiBarangSaatIni: 0,
 
                 // Master Data Hierarki SIPD Langkah 1 (Diisi dinamis 100% dari SQLite Database)
                 sipdData: [],
@@ -451,9 +453,7 @@
                         this.$nextTick(() => {
                             this.scrollToTop();
                         });
-                        if (step === 2) {
-                            this.fetchExistingAnggaran();
-                        } else if (step === 3) {
+                        if (step === 3) {
                             this.syncRealisasiFromStep3();
                         }
                     });
@@ -494,6 +494,8 @@
                     if (!this.formData.sub_rincian_kode || !this.formData.tahun_anggaran || !this.formData.triwulan) {
                         this.isAnggaranAutoLoaded = false;
                         this.anggaranAutoLoadedMessage = '';
+                        this.existingRealisasiDb = 0;
+                        this.syncRealisasiFromStep3();
                         return;
                     }
                     const subKode = this.formData.sub_rincian_kode;
@@ -509,20 +511,24 @@
                         body: JSON.stringify({
                             sub_rincian_kode: subKode,
                             tahun: thn,
-                            triwulan: tw
+                            triwulan: tw,
+                            exclude_id: this.isEdit && this.formData.id ? this.formData.id : null
                         })
                     })
                     .then(r => r.json())
                     .then(data => {
                         if (data && data.found && data.jumlah_anggaran) {
                             this.formData.jumlah_anggaran = data.jumlah_anggaran;
+                            this.existingRealisasiDb = data.total_realisasi_existing || 0;
                             this.isAnggaranAutoLoaded = true;
                             this.anggaranAutoLoadedMessage = '✨ Pagu anggaran Rp ' + Number(data.jumlah_anggaran).toLocaleString('id-ID') + ' dimuat otomatis dari penetapan ' + tw + ' ' + thn;
                         } else {
                             this.formData.jumlah_anggaran = 0;
+                            this.existingRealisasiDb = 0;
                             this.isAnggaranAutoLoaded = false;
                             this.anggaranAutoLoadedMessage = '';
                         }
+                        this.syncRealisasiFromStep3();
                     })
                     .catch(err => {
                         console.warn('Gagal cek riwayat anggaran sub rincian:', err);
@@ -530,25 +536,24 @@
                 },
 
                 syncRealisasiFromStep3() {
-                    let totalVal = 0;
+                    let currentVal = 0;
                     if (this.isTanah) {
-                        totalVal = this.totalNilaiTanah;
+                        currentVal = this.totalNilaiTanah;
                     } else if (this.isMesin) {
-                        totalVal = this.totalNilaiMesin;
+                        currentVal = this.totalNilaiMesin;
                     } else if (this.isGedung) {
-                        totalVal = this.totalNilaiGedung;
+                        currentVal = this.totalNilaiGedung;
                     } else if (this.isJaringan) {
-                        totalVal = this.totalNilaiJaringan;
+                        currentVal = this.totalNilaiJaringan;
                     } else if (this.isAsetLainnya) {
-                        totalVal = this.totalNilaiAsetLainnya;
+                        currentVal = this.totalNilaiAsetLainnya;
                     } else if (this.isAtb) {
-                        totalVal = this.totalNilaiAtb;
+                        currentVal = this.totalNilaiAtb;
                     } else if (this.isKdp) {
-                        totalVal = this.totalNilaiKdp;
+                        currentVal = this.totalNilaiKdp;
                     }
-                    if (totalVal > 0) {
-                        this.formData.jumlah_realisasi = totalVal;
-                    }
+                    this.nilaiBarangSaatIni = currentVal;
+                    this.formData.jumlah_realisasi = (Number(this.existingRealisasiDb) || 0) + currentVal;
                 },
 
                 selectDocType(type) {
@@ -560,6 +565,23 @@
                 },
 
                 maxDateToday: new Date().toISOString().split('T')[0],
+                maxYear: new Date().getFullYear(),
+
+                validateTahunAnggaran() {
+                    const currentYear = new Date().getFullYear();
+                    if (this.formData.tahun_anggaran) {
+                        const val = Number(this.formData.tahun_anggaran);
+                        if (val > currentYear) {
+                            alert('Tahun anggaran tidak boleh melebihi tahun saat ini (' + currentYear + ')!');
+                            this.formData.tahun_anggaran = currentYear;
+                            this.formData.tahun_perolehan = currentYear;
+                        } else if (val < 1900) {
+                            alert('Tahun anggaran harus berupa 4 digit tahun yang valid (minimal tahun 1900)!');
+                            this.formData.tahun_anggaran = currentYear;
+                            this.formData.tahun_perolehan = currentYear;
+                        }
+                    }
+                },
 
                 onDocDateChange(dateStr, fieldName = null) {
                     if (dateStr) {
@@ -1142,18 +1164,6 @@
                                     this.scrollToTop();
                                     return;
                                 }
-                                if (!this.formData.jumlah_realisasi || Number(this.formData.jumlah_realisasi) <= 0) {
-                                    alert('⚠️ Jumlah Realisasi (Rp) (Kolom 15) wajib diisi terlebih dahulu dan tidak boleh Rp 0!');
-                                    this.currentStep = 2;
-                                    this.scrollToTop();
-                                    return;
-                                }
-                                if (Number(this.formData.jumlah_realisasi || 0) > Number(this.formData.jumlah_anggaran || 0)) {
-                                    alert('⚠️ Jumlah Realisasi (Rp ' + this.formatRupiah(this.formData.jumlah_realisasi) + ') tidak boleh lebih besar dari Jumlah Anggaran (Rp ' + this.formatRupiah(this.formData.jumlah_anggaran) + ')!');
-                                    this.currentStep = 2;
-                                    this.scrollToTop();
-                                    return;
-                                }
                             }
                         }
                     }
@@ -1221,16 +1231,20 @@
                         this.currentStep = 2;
                         return;
                     }
+
+                    // Sinkronisasi otomatis nilai realisasi dari rincian Nilai Barang Langkah 3
+                    this.syncRealisasiFromStep3();
+
                     if (!this.formData.jumlah_realisasi || Number(this.formData.jumlah_realisasi) <= 0) {
-                        this.toast = { show: true, message: '⚠️ Jumlah Realisasi (Rp) (Kolom 15) wajib diisi dan tidak boleh kosong!', type: 'warning' };
+                        this.toast = { show: true, message: '⚠️ Total Nilai Barang (Realisasi) pada Langkah 3 wajib diisi dan tidak boleh Rp 0!', type: 'warning' };
                         setTimeout(() => { this.toast.show = false; }, 4000);
-                        this.currentStep = 2;
+                        this.currentStep = 3;
                         return;
                     }
                     if (Number(this.formData.jumlah_realisasi || 0) > Number(this.formData.jumlah_anggaran || 0)) {
-                        this.toast = { show: true, message: '⚠️ Jumlah Realisasi tidak boleh melebihi Jumlah Anggaran!', type: 'warning' };
+                        this.toast = { show: true, message: '⚠️ Total Nilai Realisasi (Rp ' + this.formatRupiah(this.formData.jumlah_realisasi) + ') melebihi Jumlah Anggaran (Rp ' + this.formatRupiah(this.formData.jumlah_anggaran) + ')!', type: 'warning' };
                         setTimeout(() => { this.toast.show = false; }, 4000);
-                        this.currentStep = 2;
+                        this.currentStep = 3;
                         return;
                     }
 
@@ -1876,13 +1890,25 @@
                         <div>
                             <label class="block text-slate-300 font-semibold text-xs mb-1 flex items-center justify-between">
                                 <span>📅 TAHUN ANGGARAN</span>
-                                <span class="text-[10px] text-slate-400 font-mono">SIPD / APBD</span>
+                                <span class="text-[10px] text-cyan-400 font-mono" x-text="'1900 - ' + maxYear"></span>
                             </label>
                             <div class="relative">
                                 <input type="number" 
+                                       min="1900" 
+                                       :max="maxYear" 
                                        x-model.number="formData.tahun_anggaran" 
-                                       @input="formData.tahun_perolehan = formData.tahun_anggaran"
-                                       placeholder="Pilih / Masukkan Tahun (Contoh: 2026 atau 1994)"
+                                       @input="
+                                           let val = String($event.target.value || '');
+                                           if (val.length > 4) {
+                                               val = val.slice(0, 4);
+                                               $event.target.value = val;
+                                           }
+                                           formData.tahun_anggaran = val ? parseInt(val, 10) : '';
+                                           formData.tahun_perolehan = formData.tahun_anggaran;
+                                       "
+                                       @change="validateTahunAnggaran()"
+                                       @blur="validateTahunAnggaran()"
+                                       placeholder="Contoh: 2026 atau 1994 (4 Digit)"
                                        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-cyan-500 placeholder:text-slate-500 placeholder:font-normal">
                             </div>
                         </div>
@@ -1926,31 +1952,26 @@
                                         placeholder="1.000.000.000"
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-white font-mono font-bold focus:outline-none focus:border-blue-500">
                                 </div>
-                                <div x-show="isAnggaranAutoLoaded" x-cloak class="mt-1.5 flex items-center space-x-1.5 text-[10px] text-amber-300 font-semibold bg-amber-950/60 border border-amber-500/30 rounded-lg px-2.5 py-1">
-                                    <span x-text="anggaranAutoLoadedMessage"></span>
-                                </div>
                             </div>
         
                             <!-- Kolom 15: JUMLAH REALISASI -->
                             <div>
                                 <label class="block text-emerald-400 font-semibold text-xs mb-1 flex items-center justify-between">
-                                    <span>JUMLAH REALISASI (Rp) (Kolom 15) <span class="text-rose-500 font-bold">*</span></span>
-                                    <span class="text-[10px] text-emerald-400/80 font-mono">⚡ Realtime</span>
+                                    <span>JUMLAH REALISASI (Rp) (Kolom 15)</span>
+                                    <span class="text-[10px] text-emerald-400 font-mono">⚡ Otomatis Akumulasi</span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3.5 top-3 text-emerald-500 text-xs font-bold">Rp</span>
                                     <input type="text" 
-                                        :value="formData.jumlah_realisasi ? Number(formData.jumlah_realisasi).toLocaleString('id-ID') : ''"
-                                        @input="
-                                            let raw = $event.target.value.replace(/\D/g, '');
-                                            formData.jumlah_realisasi = raw ? parseInt(raw, 10) : '';
-                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                        "
-                                        placeholder="516.156.650"
-                                        class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-emerald-400 font-mono font-extrabold focus:outline-none focus:border-emerald-400">
+                                        :value="formData.jumlah_realisasi ? Number(formData.jumlah_realisasi).toLocaleString('id-ID') : '0'"
+                                        readonly
+                                        placeholder="Otomatis dari Langkah 3..."
+                                        class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-emerald-400 font-mono font-extrabold focus:outline-none cursor-not-allowed">
                                 </div>
-                                <div class="mt-1 flex items-center space-x-1 text-[10px] text-emerald-400/90 font-medium">
-                                    <span>⚡ Terkalkulasi otomatis dari Total Nilai Barang (Langkah 3)</span>
+                                <div class="mt-1 flex flex-wrap items-center justify-between gap-1 text-[10px]">
+                                    <span class="text-emerald-400/90 font-medium">⚡ Akumulasi Realisasi TW Ini</span>
+                                    <span x-show="existingRealisasiDb > 0" class="text-amber-300 font-mono font-semibold"
+                                          x-text="'(Rp ' + formatRupiah(existingRealisasiDb) + ' lama + Rp ' + formatRupiah(nilaiBarangSaatIni) + ' baru)'"></span>
                                 </div>
                             </div>
                         </div>
@@ -1972,27 +1993,20 @@
                         <table class="w-full min-w-[760px] text-center text-xs border-collapse font-sans">
                             <!-- Header Atas: BELANJA MODAL -->
                             <thead>
-                                <tr class="bg-blue-300 text-slate-950 font-black border-b border-slate-600">
-                                    <th colspan="8" class="py-2.5 text-sm uppercase tracking-widest border border-slate-600 bg-blue-300">
+                                <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-600 text-[11px]">
+                                    <th colspan="8" class="py-2 border border-slate-600 tracking-wider">
                                         BELANJA MODAL
                                     </th>
                                 </tr>
-                                <!-- Header Tingkat 1 -->
-                                <tr class="bg-blue-200 text-slate-950 font-bold border-b border-slate-600 text-[11px]">
-                                    <th colspan="2" class="px-3 py-2 border border-slate-600">Rekening Belanja Untuk Pengadaan SIPD</th>
-                                    <th colspan="2" class="px-3 py-2 border border-slate-600">Jenis Aset (PMDN 108)</th>
-                                    <th colspan="2" class="px-3 py-2 border border-slate-600">Sub Rincian Objek (PMDN 108)</th>
-                                    <th rowspan="2" class="px-3 py-2 border border-slate-600 align-middle">JUMLAH ANGGARAN (Rp)</th>
-                                    <th rowspan="2" class="px-3 py-2 border border-slate-600 align-middle">JUMLAH REALISASI (Rp)</th>
-                                </tr>
-                                <!-- Header Tingkat 2 (Nama Kolom & Nomor Kolom 8 s/d 15) -->
-                                <tr class="bg-blue-200 text-slate-950 font-bold border-b border-slate-600 text-[10px]">
-                                    <th class="px-2 py-1.5 border border-slate-600">Kode Rek</th>
-                                    <th class="px-3 py-1.5 border border-slate-600">Nama Belanja Pengadaan</th>
-                                    <th class="px-2 py-1.5 border border-slate-600">Kode</th>
-                                    <th class="px-3 py-1.5 border border-slate-600">Nama Jenis Aset</th>
-                                    <th class="px-2 py-1.5 border border-slate-600">Kode</th>
-                                    <th class="px-3 py-1.5 border border-slate-600">Nama Uraian Sub Rincian Objek</th>
+                                <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b-2 border-slate-700 text-[10px]">
+                                    <th class="px-3 py-2 border border-slate-600">Kode Rekening</th>
+                                    <th class="px-3 py-2 border border-slate-600">Nama Rekening Belanja</th>
+                                    <th class="px-3 py-2 border border-slate-600">Kode 108</th>
+                                    <th class="px-3 py-2 border border-slate-600">Nama Barang (Jenis 108)</th>
+                                    <th class="px-3 py-2 border border-slate-600">Kode Sub Rincian</th>
+                                    <th class="px-3 py-2 border border-slate-600">Sub Rincian Objek</th>
+                                    <th class="px-3 py-2 border border-slate-600">Jumlah Anggaran (Rp)</th>
+                                    <th class="px-3 py-2 border border-slate-600">Jumlah Realisasi (Rp)</th>
                                 </tr>
                             </thead>
                             <!-- Baris Data Isi Live Sesuai Input User -->
@@ -2028,7 +2042,89 @@
                         </div>
                         <h2 class="text-base sm:text-lg font-bold text-white tracking-tight"
                             x-text="isTanah ? 'Langkah 3: Rincian Belanja Modal Tanah Sesuai SPK / Kwitansi / Invoice' : (isMesin ? 'Langkah 3: Rincian Peralatan dan Mesin Sesuai SPK / Kwitansi / Invoice' : (isGedung ? 'Langkah 3: Rincian Belanja Gedung dan Bangunan Sesuai SPK / Invoice' : (isJaringan ? 'Langkah 3: Rincian Belanja Jalan, Irigasi dan Jaringan Sesuai SPK / Invoice' : (isAsetLainnya ? 'Langkah 3: Rincian Aset Tetap Lainnya Sesuai SPK / Invoice' : (isAtb ? 'Langkah 3: Rincian Aset Tidak Berwujud Sesuai SPK / Invoice' : (isKdp ? 'Langkah 3: Rincian Konstruksi Dalam Pengerjaan Sesuai SPK / MC' : 'Langkah 3: Dokumen Pengadaan & Bukti Transaksi'))))))"></h2>
-                        <p class="text-xs text-slate-400 mt-1" x-text="isTanah ? 'Pilih Sub-Sub Rincian (Nama/Kode Barang 108), letak/alamat tanah, status tanah, sertifikat, riwayat pembelian, dan nilai barang:' : (isMesin ? 'Pilih Sub-Sub Rincian 108, spesifikasi (merk, type, ukuran, bahan), riwayat pembelian, volume, administrasi proyek dan ruangan:' : (isGedung ? 'Pilih Sub-Sub Rincian 108, luas m2, kondisi, status tanah KIB A, kapitalisasi, riwayat pembelian, volume dan rincian nilai bangunan:' : (isJaringan ? 'Pilih Sub-Sub Rincian 108, konstruksi, panjang/luas, status tanah KIB A, riwayat pembelian, volume dan rincian nilai jaringan:' : (isAsetLainnya ? 'Pilih Sub-Sub Rincian 108, buku perpustakaan, kesenian/kebudayaan, tanaman/hewan, riwayat pembelian, volume dan administrasi proyek:' : (isAtb ? 'Pilih Sub-Sub Rincian 108, judul/nama software, pencipta, spesifikasi, riwayat pembelian, volume, administrasi proyek dan ruangan:' : (isKdp ? 'Pilih Sub-Sub Rincian 108, spesifikasi konstruksi, luas rencana, progres %, status tanah KIB A, periode pengerjaan, dan akumulasi nilai realisasi:' : 'Lengkapi nomor dokumen pembelian atau klik tombol otomatis di kanan:'))))))))"></p>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- DASHBOARD INFO: JUMLAH ANGGARAN, REALISASI & PERINGATAN OVERBUDGET (L3)  -->
+                <!-- ========================================================================= -->
+                <div class="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border transition-all shadow-2xl space-y-4"
+                     :class="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? 'border-rose-500/80 bg-rose-950/20 shadow-rose-950/50' : 'border-slate-800'">
+                    
+                    <!-- 4 Kartu Metrik Anggaran & Realisasi Terperinci -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <!-- 1. Pagu Anggaran Triwulan -->
+                        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">1. PAGU ANGGARAN (TW)</span>
+                            <div class="text-sm sm:text-base font-black font-mono text-white truncate" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></div>
+                            <span class="text-[10px] text-slate-500 mt-1 block truncate" x-text="'Pagu ' + (formData.triwulan || 'TW') + ' ' + (formData.tahun_anggaran || '')"></span>
+                        </div>
+
+                        <!-- 2. Realisasi Sebelumnya (TW Ini) -->
+                        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
+                            <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider block mb-1">2. REALISASI SEBELUMNYA</span>
+                            <div class="text-sm sm:text-base font-black font-mono text-amber-300 truncate" x-text="'Rp ' + formatRupiah(existingRealisasiDb)"></div>
+                            <span class="text-[10px] text-slate-500 mt-1 block">Dari pengadaan lain di TW ini</span>
+                        </div>
+
+                        <!-- 3. Nilai Pengadaan Barang Ini (Langkah 3) -->
+                        <div class="p-3.5 rounded-2xl bg-slate-950 border border-cyan-500/40 bg-cyan-950/10 shadow-inner">
+                            <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block mb-1">3. NILAI PENGADAAN INI</span>
+                            <div class="text-sm sm:text-base font-black font-mono text-cyan-300 truncate" x-text="'Rp ' + formatRupiah(nilaiBarangSaatIni)"></div>
+                            <span class="text-[10px] text-cyan-400/80 mt-1 block">⚡ Terhitung otomatis dari rincian</span>
+                        </div>
+
+                        <!-- 4. Total Akumulasi Realisasi -->
+                        <div class="p-3.5 rounded-2xl bg-slate-950 border transition-colors shadow-inner"
+                             :class="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? 'border-rose-500/60 bg-rose-950/30' : 'border-emerald-500/40 bg-emerald-950/10'">
+                            <span class="text-[10px] font-bold uppercase tracking-wider block mb-1"
+                                  :class="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'">
+                                4. TOTAL AKUMULASI (TW)
+                            </span>
+                            <div class="text-sm sm:text-base font-black font-mono truncate"
+                                 :class="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? 'text-rose-400' : 'text-emerald-300'"
+                                 x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></div>
+                            <span class="text-[10px] mt-1 block truncate"
+                                  :class="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? 'text-rose-400 font-bold' : 'text-slate-400'"
+                                  x-text="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? '❌ Overbudget Rp ' + formatRupiah((formData.jumlah_realisasi || 0) - (formData.jumlah_anggaran || 0)) : 'Sisa Pagu: Rp ' + formatRupiah(Math.max(0, (formData.jumlah_anggaran || 0) - (formData.jumlah_realisasi || 0)))"></span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar Persentase Penyerapan -->
+                    <div class="space-y-1.5 pt-1">
+                        <div class="flex items-center justify-between text-[11px] font-mono">
+                            <span class="text-slate-400">Persentase Penyerapan Anggaran Triwulan:</span>
+                            <span class="font-black"
+                                  :class="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'"
+                                  x-text="(Number(formData.jumlah_anggaran || 0) > 0 ? ((Number(formData.jumlah_realisasi || 0) / Number(formData.jumlah_anggaran || 1)) * 100).toFixed(2) : 0) + '%'"></span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                            <div class="h-2.5 rounded-full transition-all duration-300"
+                                 :class="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0 ? 'bg-rose-500' : 'bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400'"
+                                 :style="'width: ' + Math.min(100, Math.round(((Number(formData.jumlah_realisasi || 0)) / (Number(formData.jumlah_anggaran || 1))) * 100)) + '%'"></div>
+                        </div>
+                    </div>
+
+                    <!-- ALERT BOX MERAH: MUNCUL JIKA NILAI REALISASI MELEBIHI PAGU ANGGARAN -->
+                    <div x-show="Number(formData.jumlah_realisasi || 0) > Number(formData.jumlah_anggaran || 0) && Number(formData.jumlah_anggaran || 0) > 0"
+                         x-cloak
+                         x-transition
+                         class="p-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500/80 text-rose-200 text-xs flex items-start space-x-3.5 shadow-2xl">
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center text-lg shrink-0 font-bold">
+                            ⚠️
+                        </div>
+                        <div class="space-y-1 min-w-0 flex-1">
+                            <h4 class="font-extrabold text-white text-sm tracking-wide">PERINGATAN: Total Realisasi Melebihi Pagu Anggaran!</h4>
+                            <p class="leading-relaxed text-slate-300 text-xs">
+                                Total nilai barang yang diinputkan saat ini (<strong class="text-rose-300 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></strong>) telah <strong class="text-rose-400">melebihi pagu anggaran</strong> yang ditetapkan (<strong class="text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></strong>) untuk <span class="font-bold text-amber-300" x-text="(formData.triwulan || 'Triwulan Ini') + ' ' + (formData.tahun_anggaran || '')"></span>.
+                            </p>
+                            <div class="pt-1 flex items-center space-x-2 text-[11px]">
+                                <span class="text-slate-400">Selisih Kelebihan:</span>
+                                <span class="px-2 py-0.5 rounded-lg bg-rose-500/30 text-rose-300 font-mono font-black border border-rose-500/50"
+                                      x-text="'Rp ' + formatRupiah((formData.jumlah_realisasi || 0) - (formData.jumlah_anggaran || 0))"></span>
+                                <span class="text-slate-400 italic">Mohon koreksi kembali nominal rincian nilai barang Anda.</span>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -2267,9 +2363,23 @@
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono">
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-emerald-300">Total Nilai Barang (Rp):</span>
-                                <span class="text-sm font-extrabold text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiTanah)"></span>
+                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                                <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiTanah)"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -2675,9 +2785,23 @@
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
                                 </div>
                             </div>
-                            <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-between shadow-inner">
-                                <span class="text-xs font-bold text-emerald-300">Total Nilai Barang (Rp):</span>
-                                <span class="text-base font-extrabold text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
+                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                                <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -3110,9 +3234,23 @@
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-emerald-300">Total Nilai Barang (Rp):</span>
-                                <span class="text-sm font-extrabold text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiGedung)"></span>
+                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                                <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiGedung)"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -3513,9 +3651,23 @@
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-teal-950/30 border border-teal-500/40 flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-teal-300">Total Nilai Barang (Rp):</span>
-                                <span class="text-sm font-extrabold text-teal-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiJaringan)"></span>
+                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                                <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiJaringan)"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -3918,9 +4070,23 @@
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold">
                                 </div>
                             </div>
-                            <div class="p-3 rounded-xl bg-rose-950/30 border border-rose-500/30 flex items-center justify-between text-xs">
-                                <span class="text-xs font-bold text-rose-300">Total Nilai Barang (Rp):</span>
-                                <span class="text-sm font-extrabold text-rose-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAsetLainnya)"></span>
+                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                                <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAsetLainnya)"></span>
+                                </div>
                             </div>
                         </div>
 
@@ -4312,9 +4478,23 @@
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-amber-300 font-mono font-bold">
                                     </div>
                                 </div>
-                                <div class="p-3 rounded-xl bg-violet-950/30 border border-violet-500/30 text-xs">
-                                    <div class="text-[10px] text-slate-400">Total Nilai Barang (Rp):</div>
-                                    <div class="text-sm font-extrabold text-violet-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAtb)"></div>
+                                <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
+                                <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                                    <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                            <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
+                                        </div>
+                                        <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                        <div>
+                                            <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                            <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                        </div>
+                                    </div>
+                                    <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                                        <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                        <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAtb)"></span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -4730,9 +4910,23 @@
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
                                 </div>
                             </div>
-                            <div class="p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/40 flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-amber-300">Total Akumulasi Biaya KDP (Rp):</span>
-                                <span class="text-sm font-extrabold text-amber-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiKdp)"></span>
+                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                                <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiKdp)"></span>
+                                </div>
                             </div>
                         </div>
 

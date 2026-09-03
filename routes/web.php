@@ -931,7 +931,8 @@ Route::middleware('auth')->group(function () {
                 ->first();
 
             if ($existing) {
-                $sumRealisasi = \App\Models\Astap::where('tahun_perolehan', $tahun)
+                $excludeId = $request->input('exclude_id');
+                $sumQuery = \App\Models\Astap::where('tahun_perolehan', $tahun)
                     ->where(function($tq) use ($twVariants) {
                         $tq->whereIn('triwulan', $twVariants);
                         foreach ($twVariants as $tv) {
@@ -941,7 +942,13 @@ Route::middleware('auth')->group(function () {
                     ->where(function($q) use ($subRincianKode) {
                         $q->whereHas('jenisAstap', fn($jq) => $jq->where('sub_rincian_objek', $subRincianKode))
                           ->orWhere('kode_108', 'LIKE', $subRincianKode . '%');
-                    })->sum('total_realisasi');
+                    });
+
+                if (!empty($excludeId)) {
+                    $sumQuery->where('id', '!=', $excludeId);
+                }
+
+                $sumRealisasi = $sumQuery->sum('total_realisasi');
 
                 return response()->json([
                     'found' => true,
