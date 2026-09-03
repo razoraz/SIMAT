@@ -227,7 +227,7 @@
     }
 
     let isExportingAstap = false;
-    function exportAstapToExcel() {
+    function exportAstapToExcel(params = {}) {
         if (isExportingAstap) return;
         isExportingAstap = true;
 
@@ -239,6 +239,29 @@
 
         const rawAstaps = window.__simatAstaps || [];
         const wb = XLSX.utils.book_new();
+
+        const filterYear = params.year || 'all';
+        const filterTw = params.triwulan || 'all';
+        const filterCat = params.category || 'all';
+
+        // Filter data berdasarkan Tahun dan Triwulan yang dipilih
+        let filteredAstaps = rawAstaps.filter(item => {
+            const matchYear = filterYear === 'all' || String(item.tahun_perolehan) === String(filterYear);
+            
+            let matchTw = true;
+            if (filterTw !== 'all') {
+                const targetKey = filterTw.replace(/[\s_]/g, '').toUpperCase(); // 'TWI', 'TW1', etc
+                const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                matchTw = (itemTw === targetKey) ||
+                          (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
+                          (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
+                          (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
+                          (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
+            }
+
+            const matchCategory = filterCat === 'all' || item.category === filterCat;
+            return matchYear && matchTw && matchCategory;
+        });
 
         // Kelompokkan data per Kategori Aset
         const categories = {
@@ -252,7 +275,7 @@
             'EXTRACOM': []
         };
 
-        rawAstaps.forEach(item => {
+        filteredAstaps.forEach(item => {
             const cat = item.category || 'KIB B';
             if (categories[cat]) {
                 categories[cat].push(item);
@@ -260,6 +283,16 @@
                 categories['KIB B'].push(item);
             }
         });
+
+        // Label Dinamis untuk Header Laporan BAST
+        let twLabel = "KESELURUHAN (TAHUNAN)";
+        if (filterTw === 'TW I' || filterTw === 'TW1') twLabel = "TRIWULAN I (JANUARI - MARET)";
+        else if (filterTw === 'TW II' || filterTw === 'TW2') twLabel = "TRIWULAN II (APRIL - JUNI)";
+        else if (filterTw === 'TW III' || filterTw === 'TW3') twLabel = "TRIWULAN III (JULI - SEPTEMBER)";
+        else if (filterTw === 'TW IV' || filterTw === 'TW4') twLabel = "TRIWULAN IV (OKTOBER - DESEMBER)";
+
+        const yearLabel = filterYear === 'all' ? (new Date().getFullYear()) : filterYear;
+        const bannerHeader = `REKAPITULASI REALISASI BELANJA MODAL ASET TETAP (${twLabel}) TAHUN ANGGARAN ${yearLabel}`;
 
         // ------------------------------------------------------------------------
         // 1. REKAPITULASI DYNAMIS (BERWARNA & BOLD)
@@ -274,12 +307,12 @@
         const extSum  = categories['EXTRACOM'].reduce((acc, i) => acc + (parseFloat(i.total_realisasi_num) || 0), 0);
 
         const grandTotalSum = kibASum + kibBSum + kibCSum + kibDSum + kibESum + kibFSum + atbSum + extSum;
-        const grandTotalItems = rawAstaps.length;
+        const grandTotalItems = filteredAstaps.length;
 
         const rekapData = [
             ["PEMERINTAH KABUPATEN BONDOWOSO"],
             ["RUMAH SAKIT UMUM DAERAH DR. H. KOESNANDI BONDOWOSO"],
-            ["REKAPITULASI REALISASI BELANJA MODAL ASET TETAP (BAST TRIWULAN) TAHUN ANGGARAN 2026"],
+            [bannerHeader],
             [""],
             ["NO", "KELOMPOK ASET (KIB / ATB / EXTRACOM)", "KODE REKENING BELANJA", "JUMLAH ITEM", "TOTAL REALISASI (RP)", "KETERANGAN"],
             ["1", "2. A - TANAH (KIB A)", "5.2.02.01.01.0001", categories['KIB A'].length + " Item", kibASum, "Lahan RSUD Hak Pakai BPN"],
@@ -290,7 +323,7 @@
             ["6", "7. F - KONSTRUKSI DALAM PENGERJAAN (KIB F)", "5.2.02.06.01.0001", categories['KIB F'].length + " Item", kibFSum, "Proyek Konstruksi KDP"],
             ["7", "8. ATB - ASET TIDAK BERWUJUD (1.5.3)", "5.2.02.08.01.0005", categories['ATB'].length + " Item", atbSum, "Software SIMRS & Lisensi"],
             ["8", "9. EXTRACOM - EKSTRAKOMTABEL (< RP 300.000)", "5.2.02.02.01.0099", categories['EXTRACOM'].length + " Item", extSum, "Peralatan Kecil < Rp 300.000"],
-            ["", "JUMLAH TOTAL REALISASI BELANJA MODAL RSUD", "", grandTotalItems + " Item Total", grandTotalSum, "Laporan Realisasi Keseluruhan 2026"],
+            ["", "JUMLAH TOTAL REALISASI BELANJA MODAL RSUD", "", grandTotalItems + " Item Total", grandTotalSum, "Laporan Realisasi " + twLabel + " " + yearLabel],
             [""],
             ["", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})],
             ["", "Mengetahui,", "", "Pengurus Barang Pengelola,"],
@@ -1257,7 +1290,8 @@
         XLSX.utils.book_append_sheet(wb, wsExtracom, "9. Extracom");
 
         // DOWNLOAD FILE EXCEL 4 LANGKAH
-        const fileName = "ASTAP_RSUD_KOESNANDI_4LANGKAH_MASTER_" + new Date().toISOString().slice(0, 10) + ".xlsx";
+        const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
+        const fileName = "LAPORAN_ASTAP_RSUD_KOESNANDI_" + yearLabel + "_" + twSlug + ".xlsx";
         XLSX.writeFile(wb, fileName);
         setTimeout(() => { isExportingAstap = false; }, 1500);
     }
@@ -1269,14 +1303,79 @@
         function astapCatalog() {
             return {
                 astaps: window.__simatAstaps || [],
+                
+                // State Modal Export Excel Berita Acara / Laporan
+                showExportModal: false,
+                exportYear: '2026',
+                exportTriwulan: 'all',
+                exportCategory: 'all',
+                isSubmittingExport: false,
+
+                openExportModal() {
+                    this.exportYear = this.tahunFilter !== 'all' ? this.tahunFilter : (this.availableYears.length > 0 ? this.availableYears[0] : '2026');
+                    this.exportTriwulan = this.triwulanFilter !== 'all' ? this.triwulanFilter : 'all';
+                    this.exportCategory = this.categoryFilter !== 'all' ? this.categoryFilter : 'all';
+                    this.showExportModal = true;
+                },
+
+                get availableYears() {
+                    const yearsSet = new Set();
+                    (this.astaps || []).forEach(item => {
+                        if (item.tahun_perolehan) {
+                            const yr = parseInt(item.tahun_perolehan);
+                            if (!isNaN(yr)) yearsSet.add(yr);
+                        }
+                    });
+                    // Pastikan tahun sekarang selalu ada jika data masih kosong
+                    yearsSet.add(new Date().getFullYear());
+                    return Array.from(yearsSet).sort((a, b) => b - a);
+                },
+
+                get exportFilteredCount() {
+                    const fYear = this.exportYear;
+                    const fTw = this.exportTriwulan;
+                    const fCat = this.exportCategory;
+
+                    return (this.astaps || []).filter(item => {
+                        const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
+                        let matchTw = true;
+                        if (fTw !== 'all') {
+                            const targetKey = fTw.replace(/[\s_]/g, '').toUpperCase();
+                            const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                            matchTw = (itemTw === targetKey) ||
+                                      (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
+                                      (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
+                                      (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
+                                      (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
+                        }
+                        const matchCat = fCat === 'all' || item.category === fCat;
+                        return matchYear && matchTw && matchCat;
+                    }).length;
+                },
+
+                submitExport() {
+                    this.isSubmittingExport = true;
+                    exportAstapToExcel({
+                        year: this.exportYear,
+                        triwulan: this.exportTriwulan,
+                        category: this.exportCategory
+                    });
+                    setTimeout(() => {
+                        this.isSubmittingExport = false;
+                        this.showExportModal = false;
+                        this.showToast('✅ Berhasil mengekspor Laporan ASTAP ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
+                    }, 800);
+                },
+
                 downloadExcel() {
-                    exportAstapToExcel();
+                    this.openExportModal();
                 },
                 searchQuery: '',
                 categoryFilter: 'all',
                 kondisiFilter: 'all',
                 asalUsulFilter: 'all',
                 tahunFilter: 'all',
+                triwulanFilter: 'all',
                 viewMode: 'catalog',
                 showAddModal: false,
                 showEditModal: false,
@@ -1653,6 +1752,7 @@
                     this.kondisiFilter = 'all';
                     this.asalUsulFilter = 'all';
                     this.tahunFilter = 'all';
+                    this.triwulanFilter = 'all';
                 },
 
                 astaps: window.__simatAstaps || [],
@@ -1694,9 +1794,20 @@
                         const stats = this.getKondisiStats(item);
                         const matchKondisi = this.kondisiFilter === 'all' || stats.kondisi_dominan === this.kondisiFilter;
                         const matchAsalUsul = this.asalUsulFilter === 'all' || item.asal_usul === this.asalUsulFilter;
-                        const matchTahun = this.tahunFilter === 'all' || item.tahun_perolehan === this.tahunFilter;
+                        const matchTahun = this.tahunFilter === 'all' || String(item.tahun_perolehan) === String(this.tahunFilter);
                         
-                        return matchSearch && matchCategory && matchKondisi && matchAsalUsul && matchTahun;
+                        let matchTriwulan = true;
+                        if (this.triwulanFilter !== 'all') {
+                            const targetKey = this.triwulanFilter.replace(/[\s_]/g, '').toUpperCase();
+                            const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                            matchTriwulan = (itemTw === targetKey) ||
+                                      (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
+                                      (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
+                                      (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
+                                      (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
+                        }
+
+                        return matchSearch && matchCategory && matchKondisi && matchAsalUsul && matchTahun && matchTriwulan;
                     });
                 },
 
@@ -1841,10 +1952,10 @@
                     </a>
                     @endif
 
-                    <button type="button" @click="exportAstapToExcel()"
+                    <button type="button" @click="openExportModal()"
                         class="px-3.5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs shadow-lg transition-all flex items-center space-x-1.5 cursor-pointer active:scale-95">
                         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span>Export Excel</span>
+                        <span>Export Excel (Pilih TW)</span>
                     </button>
 
                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
@@ -1919,8 +2030,8 @@
                     </div>
                 </div>
 
-                <!-- Advanced Filter Collapsible Bar -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-800/60">
+                <!-- Advanced Filter Collapsible Bar (3 Kolom: KIB, Tahun, Triwulan) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-800/60">
                     
                     <!-- Filter KIB -->
                     <div>
@@ -1953,16 +2064,31 @@
                                 style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
                                 <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Tahun</option>
-                                <option value="2026" class="bg-slate-900 text-cyan-300 py-2 font-medium">2026</option>
-                                <option value="2025" class="bg-slate-900 text-cyan-300 py-2 font-medium">2025</option>
-                                <option value="2024" class="bg-slate-900 text-cyan-300 py-2 font-medium">2024</option>
-                                <option value="2021" class="bg-slate-900 text-cyan-300 py-2 font-medium">2021</option>
-                                <option value="2020" class="bg-slate-900 text-cyan-300 py-2 font-medium">2020</option>
-                                <option value="2018" class="bg-slate-900 text-cyan-300 py-2 font-medium">2018</option>
-                                <option value="1984" class="bg-slate-900 text-cyan-300 py-2 font-medium">1984</option>
+                                <template x-for="yr in availableYears" :key="yr">
+                                    <option :value="yr" class="bg-slate-900 text-cyan-300 py-2 font-medium" x-text="yr"></option>
+                                </template>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Triwulan Pengadaan -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-1">Triwulan Pengadaan</label>
+                        <div class="relative">
+                            <select x-model="triwulanFilter"
+                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-cyan-300 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
+                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Triwulan</option>
+                                <option value="TW I" class="bg-slate-900 text-cyan-300 py-2 font-medium">Triwulan I (TW I)</option>
+                                <option value="TW II" class="bg-slate-900 text-cyan-300 py-2 font-medium">Triwulan II (TW II)</option>
+                                <option value="TW III" class="bg-slate-900 text-cyan-300 py-2 font-medium">Triwulan III (TW III)</option>
+                                <option value="TW IV" class="bg-slate-900 text-cyan-300 py-2 font-medium">Triwulan IV (TW IV)</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </div>
                         </div>
                     </div>
@@ -2918,6 +3044,141 @@
                             'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20': confirmData.type === 'info'
                         }">
                         <span x-text="confirmData.btnText"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- MODAL PILIH TAHUN & TRIWULAN UNTUK EKSPOR EXCEL                           -->
+        <!-- ========================================================================= -->
+        <div x-show="showExportModal" x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <div @click.away="showExportModal = false"
+                 class="bg-slate-900 border border-slate-700/80 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100">
+                
+                <!-- Modal Header -->
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xl">
+                            📊
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-white">Ekspor Laporan ASTAP</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Pilih Tahun &amp; Triwulan pengadaan untuk format Excel resmi.</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="showExportModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold">&times;</button>
+                </div>
+
+                <!-- Form Filter Periode Ekspor -->
+                <div class="space-y-4">
+                    <!-- 1. Pilihan Tahun Anggaran -->
+                    <div>
+                        <label class="block text-slate-300 font-bold text-xs mb-1.5 flex items-center justify-between">
+                            <span>📅 TAHUN ANGGARAN</span>
+                            <span class="text-[10px] text-slate-400">Periode Pelaporan</span>
+                        </label>
+                        <select x-model="exportYear"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-emerald-500">
+                            <option value="all">Semua Tahun (Seluruh Riwayat Aset 1980 - Sekarang)</option>
+                            <template x-for="yr in availableYears" :key="yr">
+                                <option :value="yr" x-text="'Tahun Anggaran ' + yr"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- 2. Pilihan Triwulan Pengadaan -->
+                    <div>
+                        <label class="block text-cyan-300 font-bold text-xs mb-1.5 flex items-center justify-between">
+                            <span>📊 TRIWULAN PENGADAAN (BAST)</span>
+                            <span class="text-[10px] text-cyan-400/80 font-mono">TW I - IV</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" @click="exportTriwulan = 'all'"
+                                class="p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between"
+                                :class="exportTriwulan === 'all' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60 shadow-lg' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950'">
+                                <span>📑 Semua (Tahunan)</span>
+                                <span x-show="exportTriwulan === 'all'" class="text-cyan-400 font-black">✓</span>
+                            </button>
+                            <button type="button" @click="exportTriwulan = 'TW I'"
+                                class="p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between"
+                                :class="exportTriwulan === 'TW I' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 shadow-lg' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950'">
+                                <span>🌱 Triwulan I (TW I)</span>
+                                <span x-show="exportTriwulan === 'TW I'" class="text-emerald-400 font-black">✓</span>
+                            </button>
+                            <button type="button" @click="exportTriwulan = 'TW II'"
+                                class="p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between"
+                                :class="exportTriwulan === 'TW II' ? 'bg-blue-500/20 text-blue-300 border-blue-500/60 shadow-lg' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950'">
+                                <span>☀️ Triwulan II (TW II)</span>
+                                <span x-show="exportTriwulan === 'TW II'" class="text-blue-400 font-black">✓</span>
+                            </button>
+                            <button type="button" @click="exportTriwulan = 'TW III'"
+                                class="p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between"
+                                :class="exportTriwulan === 'TW III' ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-lg' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950'">
+                                <span>🍂 Triwulan III (TW III)</span>
+                                <span x-show="exportTriwulan === 'TW III'" class="text-amber-400 font-black">✓</span>
+                            </button>
+                            <button type="button" @click="exportTriwulan = 'TW IV'"
+                                class="col-span-2 p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between"
+                                :class="exportTriwulan === 'TW IV' ? 'bg-purple-500/20 text-purple-300 border-purple-500/60 shadow-lg' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950'">
+                                <span>❄️ Triwulan IV (TW IV - Akhir Tahun)</span>
+                                <span x-show="exportTriwulan === 'TW IV'" class="text-purple-400 font-black">✓</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Pilihan Kategori KIB -->
+                    <div>
+                        <label class="block text-slate-300 font-bold text-xs mb-1.5 flex items-center justify-between">
+                            <span>📦 KLASIFIKASI KIB</span>
+                            <span class="text-[10px] text-slate-400">Sheet Excel</span>
+                        </label>
+                        <select x-model="exportCategory"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="all">Semua KIB (Buku Aset Lengkap 9 Sheet)</option>
+                            <option value="KIB A">KIB A - Tanah</option>
+                            <option value="KIB B">KIB B - Peralatan &amp; Mesin</option>
+                            <option value="KIB C">KIB C - Gedung &amp; Bangunan</option>
+                            <option value="KIB D">KIB D - Jalan &amp; Jaringan</option>
+                            <option value="KIB E">KIB E - Aset Tetap Lainnya</option>
+                            <option value="KIB F">KIB F - Konstruksi KDP</option>
+                            <option value="ATB">ATB - Aset Tidak Berwujud</option>
+                            <option value="EXTRACOM">Extracom</option>
+                        </select>
+                    </div>
+
+                    <!-- Info Ringkasan Data -->
+                    <div class="p-3 bg-slate-950/80 border border-emerald-500/30 rounded-2xl flex items-center justify-between">
+                        <div class="flex items-center space-x-2 text-xs">
+                            <span class="text-emerald-400 text-base">📋</span>
+                            <span class="text-slate-300">Aset siap diekspor:</span>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-bold text-xs border border-emerald-500/40"
+                              x-text="exportFilteredCount + ' Item Data'"></span>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                    <button type="button" @click="showExportModal = false"
+                        class="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
+                        Batal
+                    </button>
+                    <button type="button" @click="submitExport()"
+                        :disabled="isSubmittingExport"
+                        class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-2 cursor-pointer active:scale-95 disabled:opacity-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span x-text="isSubmittingExport ? 'Mengekspor...' : 'Unduh File Excel'"></span>
                     </button>
                 </div>
             </div>

@@ -294,6 +294,7 @@ Route::middleware('auth')->group(function () {
                     'kode_barang' => $kode108Val,
                     'nama_barang' => $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
+                    'triwulan' => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
                     'volume_satuan' => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
                     
                     // LANGKAH 1
@@ -812,7 +813,8 @@ Route::middleware('auth')->group(function () {
                 'rekening_belanja_id' => $rekeningBelanjaId,
                 'jenis_astap_id' => $jenisAstapId,
                 'nama_barang' => $namaBarang,
-                'tahun_perolehan' => $data['tahun_perolehan'] ?? date('Y'),
+                'tahun_perolehan' => $data['tahun_perolehan'] ?? ($data['tahun_anggaran'] ?? date('Y')),
+                'triwulan' => $data['triwulan'] ?? 'TW I',
                 'jumlah_volume' => $extracted['volume'],
                 'satuan' => $extracted['satuan'],
                 'harga_satuan' => $extracted['harga_satuan'],
@@ -890,6 +892,54 @@ Route::middleware('auth')->group(function () {
             session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil ditambahkan.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil disimpan ke database SIMAT-RK!']);
         })->name('astap.store');
+
+        // API: Cek atau ambil pagu anggaran yang sudah ada berdasarkan Sub Rincian Objek + Tahun + Triwulan
+        Route::post('/astap/check-subrincian-anggaran', function (\Illuminate\Http\Request $request) {
+            $subRincianKode = $request->input('sub_rincian_kode');
+            $tahun = (int) $request->input('tahun', date('Y'));
+            $triwulan = $request->input('triwulan', 'TW I');
+
+            if (empty($subRincianKode)) {
+                return response()->json(['found' => false]);
+            }
+
+            $existing = \App\Models\Astap::where(function($q) use ($subRincianKode) {
+                    $q->whereHas('jenisAstap', function($jq) use ($subRincianKode) {
+                        $jq->where('sub_rincian_objek', $subRincianKode)
+                           ->orWhere('sub_rincian_objek', 'LIKE', $subRincianKode . '%');
+                    })->orWhere('kode_108', 'LIKE', $subRincianKode . '%');
+                })
+                ->where('tahun_perolehan', $tahun)
+                ->where(function($tq) use ($triwulan) {
+                    $tq->where('triwulan', $triwulan)
+                       ->orWhereJsonContains('spesifikasi_json->triwulan', $triwulan);
+                })
+                ->whereNotNull('jumlah_anggaran')
+                ->where('jumlah_anggaran', '>', 0)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($existing) {
+                $sumRealisasi = \App\Models\Astap::where('tahun_perolehan', $tahun)
+                    ->where(function($tq) use ($triwulan) {
+                        $tq->where('triwulan', $triwulan)
+                           ->orWhereJsonContains('spesifikasi_json->triwulan', $triwulan);
+                    })
+                    ->where(function($q) use ($subRincianKode) {
+                        $q->whereHas('jenisAstap', fn($jq) => $jq->where('sub_rincian_objek', $subRincianKode))
+                          ->orWhere('kode_108', 'LIKE', $subRincianKode . '%');
+                    })->sum('total_realisasi');
+
+                return response()->json([
+                    'found' => true,
+                    'jumlah_anggaran' => (float) $existing->jumlah_anggaran,
+                    'total_realisasi_existing' => (float) $sumRealisasi,
+                    'message' => "Pagu anggaran ditemukan untuk {$triwulan} {$tahun}"
+                ]);
+            }
+
+            return response()->json(['found' => false]);
+        })->name('astap.checkSubRincianAnggaran');
 
         // API: Cek duplikat kode 108 + tahun untuk konfirmasi sebelum submit
         Route::post('/astap/check-duplicate', function (\Illuminate\Http\Request $request) {
@@ -1083,6 +1133,7 @@ Route::middleware('auth')->group(function () {
             }
 
             if (!empty($data['tahun_perolehan'])) $astap->tahun_perolehan = $data['tahun_perolehan'];
+            if (!empty($data['triwulan'])) $astap->triwulan = $data['triwulan'];
             $astap->jumlah_volume = $ext['vol'];
             $astap->satuan = $ext['sat'];
             $astap->harga_satuan = $ext['hrgSat'];
