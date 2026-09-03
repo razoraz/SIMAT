@@ -447,46 +447,122 @@
             ]
         ];
 
-        categories['KIB A'].forEach((item, idx) => {
-            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 3500000000;
-            kibARows.push([
-                ...getCommonColumns(item, idx),
-                item.nama_barang || 'Tanah Bangunan Rumah Sakit',
-                item.kode_barang || '1.3.1.01.01.01.008',
-                item.hak_tanah || 'Hak Pakai',
-                item.sertifikat_tanggal || '2015-02-22',
-                item.sertifikat_nomor || 'HP-293',
-                item.spk_nomor || '930/SPK/2025',
-                item.spk_tanggal || '2025-02-22',
-                item.surat_pesanan_nomor || '-',
-                item.surat_pesanan_tanggal || '-',
-                item.kwitansi_nomor || '-',
-                item.kwitansi_tanggal || '-',
-                item.faktur_nomor || '-',
-                item.faktur_tanggal || '-',
-                item.kondisi || 'Baik',
-                item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas',
-                1,
-                item.luas_m2 || 2000,
-                item.nilai_perencanaan || 0,
-                item.nilai_fisik || totalVal,
-                item.nilai_pengawasan || 0,
-                totalVal,
-                item.sp2d_nomor || '001/SP2D/2026',
-                item.sp2d_tanggal || '2026-03-01',
-                item.bast_dokumen_nomor || '000.2.3.2/001/BAST/2026',
-                item.bast_dokumen_tanggal || '2026-03-05',
-                item.alamat_barang || 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
-                ...getStep4Columns(item)
-            ]);
+        // ------------------------------------------------------------------------
+        // 2. KIB A (TANAH) - HIERARCHICAL GROUPING SESUAI SUB RINCIAN OBJEK (PMDN 108)
+        // Grouping berdasarkan Sub Rincian Objek (Kolom 12-15 terisi di baris pertama group,
+        // baris-baris Sub-Sub Rincian di bawahnya kolom 1-15 dikosongkan/blank)
+        // ------------------------------------------------------------------------
+        const kibAGroups = {};
+        categories['KIB A'].forEach(item => {
+            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 14) : '1.3.1.01.01.01');
+            if (!kibAGroups[subKey]) {
+                kibAGroups[subKey] = [];
+            }
+            kibAGroups[subKey].push(item);
         });
 
+        let globalKibANo = 1;
+        Object.keys(kibAGroups).forEach(subKey => {
+            const groupItems = kibAGroups[subKey];
+            const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || 0), 0);
+            const groupAnggaranTotal = parseFloat(groupItems[0].jumlah_anggaran) || groupRealisasiTotal || 3500000000;
+
+            groupItems.forEach((item, idxChild) => {
+                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : 3500000000;
+                const nilaiPerencanaan = parseFloat(item.nilai_perencanaan) || 0;
+                const nilaiFisik = parseFloat(item.nilai_fisik) || totalVal;
+                const nilaiPengawasan = parseFloat(item.nilai_pengawasan) || 0;
+                const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || totalVal;
+
+                let col1to15 = [];
+                if (idxChild === 0) {
+                    // Baris Pertama Group Sub Rincian: Isi Lengkap Kolom 1 s/d 15
+                    col1to15 = [
+                        globalKibANo++,
+                        item.program_kode || '0.00.01',
+                        item.program_nama || 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota',
+                        item.kegiatan_kode || '0.00.01.2.10',
+                        item.kegiatan_nama || 'Peningkatan Pelayanan BLUD',
+                        item.sub_kegiatan_kode || '0.00.01.2.10.0001',
+                        item.sub_kegiatan_nama || 'Pelayanan dan Penunjang Pelayanan BLUD',
+                        item.rekening_kode || '5.2.02.01.01.0001',
+                        item.rekening_nama || 'Belanja Modal Pengadaan Tanah',
+                        item.jenis_aset_kode || '1.3.1.01',
+                        item.jenis_aset_nama || 'TANAH',
+                        item.sub_rincian_kode || subKey,
+                        item.sub_rincian_nama || 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL',
+                        groupAnggaranTotal,
+                        groupRealisasiTotal
+                    ];
+                } else {
+                    // Baris Anak (Sub-Sub Rincian ke-2 dst): Kolom 1 s/d 15 Dikosongkan (Blank)
+                    col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                }
+
+                kibARows.push([
+                    ...col1to15,
+                    item.nama_barang || 'Tanah Bangunan Rumah Tempat Tinggal',
+                    item.kode_barang || (subKey + '.001'),
+                    item.hak_tanah || 'Hak Pakai',
+                    item.sertifikat_tanggal || '-',
+                    item.sertifikat_nomor || '-',
+                    item.spk_nomor || '-',
+                    item.spk_tanggal || '-',
+                    item.surat_pesanan_nomor || '-',
+                    item.surat_pesanan_tanggal || '-',
+                    item.kwitansi_nomor || '-',
+                    item.kwitansi_tanggal || '-',
+                    item.faktur_nomor || '-',
+                    item.faktur_tanggal || '-',
+                    item.kondisi || 'Baik',
+                    item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas',
+                    item.jumlah_bidang || 1,
+                    item.luas_m2 || 0,
+                    nilaiPerencanaan,
+                    nilaiFisik,
+                    nilaiPengawasan,
+                    totalNilaiBarang,
+                    item.sp2d_nomor || '-',
+                    item.sp2d_tanggal || '-',
+                    item.bast_dokumen_nomor || '-',
+                    item.bast_dokumen_tanggal || '-',
+                    item.alamat_barang || 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                    ...getStep4Columns(item)
+                ]);
+            });
+        });
+
+        // Contoh Data Default Jika Belum Ada Data KIB A Tersimpan di DB
         if (categories['KIB A'].length === 0) {
+            // Group 1: Tanah Bangunan Tempat Tinggal (Pagu 1 Milyar, 3 Sub-Sub Rincian)
             kibARows.push([
                 1, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
-                '5.2.02.01.01.0001', 'Belanja Modal Pengadaan Tanah Fasilitas Umum', '1.3.1.01', 'TANAH', '1.3.1.01.01.01', 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL', 3780000000, 3780000000,
-                'Tanah Bangunan Rumah Sakit RSUD', '1.3.1.01.01.01.008', 'Hak Pakai', '2015-02-22', 'HP-293', '930/SPK/2025', '2025-02-22', '-', '-', '-', '-', '-', '-', 'Baik', 'Bangunan Rumah Sakit & Fasilitas Kesehatan', 1, 2000, 0, 3780000000, 0, 3780000000, '001/SP2D/2026', '2026-03-01', '000.2.3.2/001/BAST/2026', '2026-03-05', 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
-                'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Slamet Widodo, M.Kes', '19760229 200801 1 010', 'Pengadaan Lahan Sertifikat Hak Pakai BPN'
+                '5.2.02.01.01.0001', 'Belanja Modal Pengadaan Tanah Fasilitas Umum', '1.3.1.01', 'TANAH', '1.3.1.01.01.01', 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL', 1000000000, 1000000000,
+                'Tanah Bangunan Rumah Tempat Tinggal Blok A', '1.3.1.01.01.01.001', 'Hak Pakai', '2015-02-22', 'HP-293/BPN', '930/SPK/2025', '2025-02-22', '-', '-', '-', '-', '-', '-', 'Baik', 'Rumah Dinas Tenaga Kesehatan', 1, 1200, 0, 350000000, 0, 350000000, '001/SP2D/2026', '2026-03-01', '000.2.3.2/001/BAST/2026', '2026-03-05', 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Yus Priyatna Adryanto, Sp.P, FISR', '19771002 200604 1 006', 'Pengadaan Lahan BPN'
+            ]);
+            kibARows.push([
+                "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                'Tanah Bangunan Rumah Tempat Tinggal Blok B', '1.3.1.01.01.01.002', 'Hak Pakai', '2016-05-18', 'HP-294/BPN', '931/SPK/2025', '2025-03-15', '-', '-', '-', '-', '-', '-', 'Baik', 'Rumah Dinas Dokter Spesialis', 1, 1100, 0, 325000000, 0, 325000000, '002/SP2D/2026', '2026-03-10', '000.2.3.2/002/BAST/2026', '2026-03-12', 'Jl. Kapten Piere Tendean No. 5 Bondowoso',
+                'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Yus Priyatna Adryanto, Sp.P, FISR', '19771002 200604 1 006', 'Pengadaan Lahan BPN'
+            ]);
+            kibARows.push([
+                "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                'Tanah Bangunan Rumah Tempat Tinggal Blok C', '1.3.1.01.01.01.003', 'Hak Pakai', '2017-08-20', 'HP-295/BPN', '932/SPK/2025', '2025-04-10', '-', '-', '-', '-', '-', '-', 'Baik', 'Mess Residen RSUD', 1, 1150, 0, 325000000, 0, 325000000, '003/SP2D/2026', '2026-04-01', '000.2.3.2/003/BAST/2026', '2026-04-05', 'Jl. Kapten Piere Tendean No. 7 Bondowoso',
+                'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Yus Priyatna Adryanto, Sp.P, FISR', '19771002 200604 1 006', 'Pengadaan Lahan BPN'
+            ]);
+
+            // Group 2: Tanah Bangunan Sarana Kesehatan (Pagu 2 Milyar, 2 Sub-Sub Rincian)
+            kibARows.push([
+                2, '0.00.01', 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota', '0.00.01.2.10', 'Peningkatan Pelayanan BLUD', '0.00.01.2.10.0001', 'Pelayanan dan Penunjang Pelayanan BLUD',
+                '5.2.02.01.01.0001', 'Belanja Modal Pengadaan Tanah Fasilitas Umum', '1.3.1.01', 'TANAH', '1.3.1.01.01.02', 'TANAH BANGUNAN GEDUNG RSUD & FASILITAS KESEHATAN', 2000000000, 2000000000,
+                'Tanah Bangunan Apotik / Rumah Sakit Paviliun VIP', '1.3.1.01.01.02.013', 'Hak Pakai', '2018-01-10', 'HP-401/BPN', '940/SPK/2025', '2025-05-11', '-', '-', '-', '-', '-', '-', 'Baik', 'Gedung Paviliun VIP Terpadu', 1, 3500, 0, 1100000000, 0, 1100000000, '004/SP2D/2026', '2026-05-02', '000.2.3.2/004/BAST/2026', '2026-05-08', 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Yus Priyatna Adryanto, Sp.P, FISR', '19771002 200604 1 006', 'Pengadaan Lahan Paviliun'
+            ]);
+            kibARows.push([
+                "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                'Tanah Fasilitas Parkir & Taman Terbuka Hijau RSUD', '1.3.1.01.01.02.014', 'Hak Pakai', '2019-03-25', 'HP-402/BPN', '941/SPK/2025', '2025-06-01', '-', '-', '-', '-', '-', '-', 'Baik', 'Area Parkir & Taman Pasien', 1, 2800, 0, 900000000, 0, 900000000, '005/SP2D/2026', '2026-06-15', '000.2.3.2/005/BAST/2026', '2026-06-20', 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                'PT. Land Property Nusantara', 'H. Ahmad Subandi, S.E.', 'PT. Land Property Nusantara', '143-00-1122334', 'Jl. Ahmad Yani No. 12 Surabaya', 'dr. Yus Priyatna Adryanto, Sp.P, FISR', '19771002 200604 1 006', 'Pengadaan Lahan Parkir'
             ]);
         }
 

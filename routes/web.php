@@ -283,33 +283,84 @@ Route::middleware('auth')->group(function () {
             ->map(function($a) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
                 $firstReg = $a->registers ? $a->registers->first() : null;
+                $ja = $a->jenisAstap;
+                $jp = $a->jenisPengadaan;
+                $rb = $a->rekeningBelanja;
+                $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
+
                 return [
                     'id' => $a->id,
                     'category' => $a->category,
-                    'kode_barang' => $a->kode_108,
+                    'kode_barang' => $kode108Val,
                     'nama_barang' => $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
                     'volume_satuan' => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
-                    'jenis_aset_nama' => $a->jenisAstap ? $a->jenisAstap->nama_jenis : ($a->category === 'ATB' ? 'ASET TIDAK BERWUJUD' : ($a->category === 'EXTRACOM' ? 'EKSTRAKOMTABEL (< RP 300.000)' : 'PERALATAN DAN MESIN')),
+                    
+                    // LANGKAH 1
+                    'program_kode' => $jp ? ($jp->program_kode ?: '0.00.01') : '0.00.01',
+                    'program_nama' => $jp ? ($jp->program_nama ?: 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota') : 'Program Penunjang Urusan Pemerintah Daerah Kabupaten/Kota',
+                    'kegiatan_kode' => $jp ? ($jp->kegiatan_kode ?: '0.00.01.2.10') : '0.00.01.2.10',
+                    'kegiatan_nama' => $jp ? ($jp->kegiatan_nama ?: 'Peningkatan Pelayanan BLUD') : 'Peningkatan Pelayanan BLUD',
+                    'sub_kegiatan_kode' => $jp ? ($jp->sub_kegiatan_kode ?: '0.00.01.2.10.0001') : '0.00.01.2.10.0001',
+                    'sub_kegiatan_nama' => $jp ? ($jp->sub_kegiatan_nama ?: 'Pelayanan dan Penunjang Pelayanan BLUD') : 'Pelayanan dan Penunjang Pelayanan BLUD',
+
+                    // LANGKAH 2
+                    'rekening_kode' => $rb ? ($rb->kode_rek ?: '5.2.02.01.01.0001') : '5.2.02.01.01.0001',
+                    'rekening_nama' => $rb ? ($rb->nama_belanja ?: 'Belanja Modal Pengadaan Tanah') : 'Belanja Modal Pengadaan Tanah',
+                    'jenis_aset_kode' => $ja ? ($ja->jenis ?: (substr($kode108Val, 0, 5) ?: '1.3.1')) : (substr($kode108Val, 0, 5) ?: '1.3.1'),
+                    'jenis_aset_nama' => $ja ? ($ja->nama_jenis ?: 'TANAH') : 'TANAH',
+                    'sub_rincian_kode' => $ja ? ($ja->sub_rincian_objek ?: (strlen($kode108Val) >= 14 ? substr($kode108Val, 0, 14) : '1.3.1.01.01.01')) : (strlen($kode108Val) >= 14 ? substr($kode108Val, 0, 14) : '1.3.1.01.01.01'),
+                    'sub_rincian_nama' => $ja ? ($ja->uraian_sub_rincian ?: 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL') : 'TANAH BANGUNAN PERUMAHAN/G.TEMPAT TINGGAL',
+                    'jumlah_anggaran' => (float) ($a->jumlah_anggaran ?: ($spec['jumlah_anggaran'] ?? $a->total_realisasi)),
+                    'jumlah_realisasi' => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
+                    'total_realisasi_num' => (float) $a->total_realisasi,
+
+                    // LANGKAH 3 SPESIFIKASI & DOKUMEN
+                    'spk_nomor' => $a->spk_nomor,
+                    'spk_tanggal' => $a->spk_tanggal ? $a->spk_tanggal->format('Y-m-d') : null,
+                    'surat_pesanan_nomor' => $a->surat_pesanan_nomor,
+                    'surat_pesanan_tanggal' => $a->surat_pesanan_tanggal ? $a->surat_pesanan_tanggal->format('Y-m-d') : null,
+                    'kwitansi_nomor' => $a->kwitansi_nomor,
+                    'kwitansi_tanggal' => $a->kwitansi_tanggal ? $a->kwitansi_tanggal->format('Y-m-d') : null,
+                    'faktur_nomor' => $a->faktur_nomor,
+                    'faktur_tanggal' => $a->faktur_tanggal ? $a->faktur_tanggal->format('Y-m-d') : null,
+                    'sp2d_nomor' => $a->sp2d_nomor,
+                    'sp2d_tanggal' => $a->sp2d_tanggal ? $a->sp2d_tanggal->format('Y-m-d') : null,
+                    'bast_dokumen_nomor' => $a->bast_dokumen_nomor,
+                    'bast_dokumen_tanggal' => $a->bast_dokumen_tanggal ? $a->bast_dokumen_tanggal->format('Y-m-d') : null,
+                    
+                    // Rincian Tanah Khusus
+                    'hak_tanah' => $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? 'Hak Pakai'),
+                    'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? '-'),
+                    'sertifikat_tanggal' => $spec['sertifikat_tgl'] ?? ($spec['tanah_sertifikat_tgl'] ?? '-'),
+                    'luas_m2' => (float) ($spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? 0)),
+                    'penggunaan' => $spec['penggunaan'] ?? ($spec['tanah_penggunaan'] ?? 'Bangunan Rumah Sakit & Fasilitas'),
+                    'jumlah_bidang' => (int) ($spec['tanah_jumlah_bidang'] ?? ($a->jumlah_volume ?: 1)),
+                    'nilai_perencanaan' => (float) ($spec['nilai_perencanaan'] ?? ($spec['tanah_nilai_perencanaan'] ?? 0)),
+                    'nilai_fisik' => (float) ($spec['nilai_fisik'] ?? ($spec['tanah_nilai_fisik'] ?? $a->total_realisasi)),
+                    'nilai_pengawasan' => (float) ($spec['nilai_pengawasan'] ?? ($spec['tanah_nilai_pengawasan'] ?? 0)),
+                    
+                    // Rincian Mesin & Lainnya
                     'merk' => $spec['merk'] ?? ($spec['buku_judul'] ?? ($spec['judul_lisensi'] ?? ($spec['konstruksi'] ?? '-'))),
                     'type' => $spec['type'] ?? ($spec['hak_tanah'] ?? ($spec['bertingkat'] ?? '-')),
                     'ukuran' => $spec['ukuran'] ?? (isset($spec['luas_m2']) ? $spec['luas_m2'] . ' m²' : ($spec['buku_spesifikasi'] ?? '-')),
                     'no_pabrik' => $spec['no_pabrik'] ?? ($spec['sertifikat_no'] ?? '-'),
                     'bahan' => $spec['bahan'] ?? '-',
-                    'program_nama' => $a->jenisPengadaan ? $a->jenisPengadaan->program_nama : 'Program Penunjang Urusan Pemerintah Daerah',
-                    'kegiatan_nama' => $a->jenisPengadaan ? $a->jenisPengadaan->kegiatan_nama : 'Peningkatan Pelayanan BLUD',
-                    'sub_kegiatan_nama' => $a->jenisPengadaan ? $a->jenisPengadaan->sub_kegiatan_nama : 'Pelayanan dan Penunjang Pelayanan BLUD',
-                    'rekening_nama' => $a->rekeningBelanja ? $a->rekeningBelanja->nama_belanja : 'Belanja Modal Aset Tetap',
-                    'spk_nomor' => $a->spk_nomor,
-                    'spk_tanggal' => $a->spk_tanggal ? $a->spk_tanggal->format('Y-m-d') : null,
-                    'surat_pesanan_nomor' => $a->surat_pesanan_nomor,
-                    'kwitansi_nomor' => $a->kwitansi_nomor,
-                    'faktur_nomor' => $a->faktur_nomor,
-                    'jumlah_realisasi' => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
-                    'total_realisasi_num' => (float) $a->total_realisasi,
-                    'kondisi' => $firstReg ? $firstReg->kondisi : 'Baik',
+                    'kondisi' => $firstReg ? $firstReg->kondisi : ($spec['kondisi'] ?? 'Baik'),
                     'asal_usul' => 'BLUD RSUD',
-                    'keterangan' => $a->keterangan_tambahan,
+
+                    // LANGKAH 4 (REKANAN, PPK, KETERANGAN)
+                    'alamat_barang' => $a->alamat_barang ?: 'Jl. Kapten Piere Tendean No. 3 Bondowoso',
+                    'penyedia_nama' => $a->penyedia_nama ?: '-',
+                    'penyedia_pemilik' => $a->penyedia_pemilik ?: '-',
+                    'penyedia_rekening_nama' => $a->penyedia_rekening_nama ?: ($a->penyedia_nama ?: '-'),
+                    'penyedia_rekening_nomor' => $a->penyedia_rekening_nomor ?: '-',
+                    'penyedia_alamat' => $a->penyedia_alamat ?: '-',
+                    'ppk_nama' => $a->ppk_nama ?: 'dr. Yus Priyatna Adryanto, Sp.P, FISR',
+                    'ppk_nip' => $a->ppk_nip ?: '19771002 200604 1 006',
+                    'keterangan' => $a->keterangan_tambahan ?: '-',
+                    'keterangan_tambahan' => $a->keterangan_tambahan ?: '-',
+
                     'registers' => $a->registers ? $a->registers->map(function($r) {
                         return [
                             'id' => $r->id,
