@@ -498,7 +498,7 @@
             </div>
 
             <!-- Mini Summary KPI Cards Strip -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+            <div class="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-800/80" style="grid-template-columns: repeat(5, minmax(0, 1fr))">
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 text-lg">🚚</div>
                     <div>
@@ -531,7 +531,7 @@
                     </div>
                 </div>
 
-                <div class="bg-slate-950/60 border border-rose-800/50 rounded-2xl p-3.5 flex items-center space-x-3">
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-lg">🚫</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Ditolak</span>
