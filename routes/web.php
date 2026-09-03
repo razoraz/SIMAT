@@ -439,20 +439,50 @@ Route::middleware('auth')->group(function () {
     Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
     Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
 
-    // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima)
+    // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima / Admin menolak)
     Route::patch('/distribusi/{id}/status', function (\Illuminate\Http\Request $request, $id) {
-        $dst = \App\Models\Distribusi::find($id);
+        $dst = \App\Models\Distribusi::with('items.registers')->find($id);
         if (!$dst) {
             return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
         }
-        $newStatus = $request->input('status', 'Telah Diterima');
+        $newStatus   = $request->input('status', 'Telah Diterima');
+        $alasanTolak = $request->input('alasan_tolak', null);
+
         $dst->status = $newStatus;
+
         if ($newStatus === 'Telah Diterima') {
             $dst->signed = true;
             if (!$dst->tgl_signed) {
                 $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
             }
         }
+
+        if ($newStatus === 'Ditolak') {
+            // Reset tanda tangan digital
+            $dst->signed     = false;
+            $dst->tgl_signed = null;
+
+            if ($alasanTolak && \Schema::hasColumn('distribusis', 'alasan_tolak')) {
+                $dst->alasan_tolak = $alasanTolak;
+            }
+
+            // Kembalikan semua register NIBAR ke status Tersedia & reset Vol ACC ke 0
+            foreach ($dst->items as $item) {
+                $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
+                if (!empty($regIds)) {
+                    \App\Models\AstapRegister::whereIn('id', $regIds)->update([
+                        'unit_id'        => null,
+                        'ruang_pemegang' => null,
+                        'status'         => 'Tersedia',
+                    ]);
+                }
+                // Lepaskan relasi register NIBAR dari transaksi yang ditolak
+                $item->registers()->delete();
+                // Reset Vol ACC menjadi 0
+                $item->update(['qty_acc' => 0]);
+            }
+        }
+
         $dst->save();
 
         return response()->json([

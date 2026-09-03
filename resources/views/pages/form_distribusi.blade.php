@@ -77,7 +77,7 @@
                     penerima: '',
                     penerima_nip: '',
                     penerima_jabatan: '',
-                    status: 'Draft',
+                    status: 'Menunggu Konfirmasi',
                     keterangan: '',
                     items: []
                 },
@@ -152,7 +152,7 @@
 
                         this.formData.kode = loadedData.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100));
                         this.formData.bast_nomor = loadedData.bast_nomor || (loadedData.nomor_bast || ('032 / ' + String(loadedData.id || '').padStart(3, '0') + ' / 430.10.7 / ' + new Date().getFullYear()));
-                        this.formData.status = loadedData.status || 'Draft';
+                        this.formData.status = loadedData.status || (this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman');
                         this.formData.tujuan = loadedData.unit ? loadedData.unit.nama : (uObj ? uObj.nama : (loadedData.tujuan || ''));
                         this.formData.unit_id = loadedData.unit_id || (uObj ? uObj.id : null);
                         this.formData.tgl = tglStr;
@@ -167,7 +167,7 @@
                         const autoUnit = (this.isSubAdmin && this.userUnit) ? this.userUnit : null;
                         this.formData.kode = {{ Js::from($nextKode ?? ('DST-'.date('Y').'-001')) }};
                         this.formData.bast_nomor = this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
-                        this.formData.status = 'Draft';
+                        this.formData.status = this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
                         this.formData.tujuan = autoUnit ? autoUnit.nama : '';
                         this.formData.unit_id = autoUnit ? autoUnit.id : null;
                         this.formData.tgl = new Date().toISOString().split('T')[0];
@@ -480,11 +480,13 @@
                                     :class="{
                                         'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
                                         'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
-                                        'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending'
+                                        'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
+                                        'text-rose-400': formData.status === 'Ditolak'
                                     }">
                                 <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
                                 <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
                                 <option value="Telah Diterima">🟢 Telah Diterima</option>
+                                <option value="Ditolak">❌ Ditolak</option>
                             </select>
                         </template>
 
@@ -495,9 +497,10 @@
                                      'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
                                      'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
                                      'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
+                                     'text-rose-400': formData.status === 'Ditolak',
                                      'text-slate-400': formData.status === 'Draft' || !formData.status
                                  }">
-                                <span x-text="formData.status === 'Draft' || !formData.status ? '📝' : '⏳'"></span>
+                                <span x-text="formData.status === 'Ditolak' ? '❌' : (formData.status === 'Telah Diterima' ? '🟢' : (formData.status === 'Dalam Pengiriman' ? '🚚' : (formData.status === 'Draft' || !formData.status ? '📝' : '⏳')))"></span>
                                 <span x-text="formData.status || 'Draft'"></span>
                             </div>
                         </template>

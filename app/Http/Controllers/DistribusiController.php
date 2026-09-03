@@ -368,10 +368,17 @@ class DistribusiController extends Controller
                 : date('Y-m-d');
             $tahunDistribusi = date('Y', strtotime($tglDistribusi));
 
-            // Status otomatis sesuai workflow:
+            // Status sesuai role & input:
             // - Sub admin buat baru / perbarui → 'Menunggu Konfirmasi'
-            // - Admin/master admin perbarui → 'Dalam Pengiriman'
-            $finalStatus = ($isSubAdmin || !$id) ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
+            // - Admin / master admin → gunakan status yang dipilih di form, atau default
+            $allowedStatuses = ['Menunggu Konfirmasi', 'Dalam Pengiriman', 'Telah Diterima', 'Ditolak'];
+            if ($isSubAdmin) {
+                $finalStatus = 'Menunggu Konfirmasi';
+            } elseif (!empty($validated['status']) && in_array($validated['status'], $allowedStatuses)) {
+                $finalStatus = $validated['status'];
+            } else {
+                $finalStatus = !$id ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
+            }
 
 
             // Helper: hitung nomor urut sekuensial distribusi per tahun
@@ -417,14 +424,24 @@ class DistribusiController extends Controller
 
             if ($distribusi) {
                 $seq = $getSeqForExisting($distribusi);
-                $distribusi->update([
+                $updateData = [
                     'kode'               => $generateKode($seq),
                     'bast_nomor'         => $isAutoNomor ? $generateBastNomor($seq) : $inputBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
                     'status'             => $finalStatus,
                     'keterangan'         => $validated['keterangan'] ?? null,
-                ]);
+                ];
+                if ($finalStatus === 'Ditolak') {
+                    $updateData['signed'] = false;
+                    $updateData['tgl_signed'] = null;
+                } elseif ($finalStatus === 'Telah Diterima') {
+                    $updateData['signed'] = true;
+                    if (!$distribusi->tgl_signed) {
+                        $updateData['tgl_signed'] = now()->format('d/m/Y H:i') . ' WIB';
+                    }
+                }
+                $distribusi->update($updateData);
 
                 // Reset register lama jika ada
                 foreach ($distribusi->items as $oldItem) {
@@ -442,14 +459,22 @@ class DistribusiController extends Controller
                 $distribusi->items()->delete();
             } else {
                 // Buat record baru
-                $distribusi = Distribusi::create([
+                $createData = [
                     'kode'               => $generateKode($nextSeq),
                     'bast_nomor'         => $isAutoNomor ? $generateBastNomor($nextSeq) : $inputBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
                     'status'             => $finalStatus,
                     'keterangan'         => $validated['keterangan'] ?? null,
-                ]);
+                ];
+                if ($finalStatus === 'Ditolak') {
+                    $createData['signed'] = false;
+                    $createData['tgl_signed'] = null;
+                } elseif ($finalStatus === 'Telah Diterima') {
+                    $createData['signed'] = true;
+                    $createData['tgl_signed'] = now()->format('d/m/Y H:i') . ' WIB';
+                }
+                $distribusi = Distribusi::create($createData);
             }
 
             // 2. Simpan Multi-Items & Register NIBAR
@@ -459,34 +484,32 @@ class DistribusiController extends Controller
                 if (!$astapId || !Astap::where('id', $astapId)->exists()) {
                     $kodeBarang = $itemData['kode_barang'] ?? '';
                     $namaBarang = $itemData['nama_barang'] ?? '';
-                    $foundAstap = Astap::where('kode_108', $kodeBarang)
-                        ->orWhere('nama_barang', 'LIKE', '%' . $namaBarang . '%')
+                    $astapMatch = Astap::where('kode_108', $kodeBarang)
+                        ->orWhere('nama_barang', $namaBarang)
                         ->first();
 
-                    if ($foundAstap) {
-                        $astapId = $foundAstap->id;
+                    if ($astapMatch) {
+                        $astapId = $astapMatch->id;
                     } else {
-                        $firstAstap = Astap::first();
-                        $astapId = $firstAstap ? $firstAstap->id : 1;
+                        $fallbackAstap = Astap::first();
+                        $astapId = $fallbackAstap ? $fallbackAstap->id : 1;
                     }
-                }
-
-                // qty_acc hanya boleh diisi oleh admin/master admin
-                $qtyAcc = null;
-                if (!$isSubAdmin) {
-                    $rawQtyAcc = $itemData['qty_acc'] ?? null;
-                    $qtyAcc = ($rawQtyAcc !== null && $rawQtyAcc !== '') ? intval($rawQtyAcc) : null;
                 }
 
                 $distribusiItem = DistribusiItem::create([
                     'distribusi_id' => $distribusi->id,
                     'astap_id'      => $astapId,
-                    'qty'           => intval($itemData['qty'] ?? 1),
-                    'qty_acc'       => $qtyAcc,
+                    'qty'           => $itemData['qty'] ?? 1,
+                    'qty_acc'       => ($finalStatus === 'Ditolak')
+                        ? 0
+                        : ((isset($itemData['qty_acc']) && $itemData['qty_acc'] !== null && $itemData['qty_acc'] !== '')
+                            ? (int)$itemData['qty_acc']
+                            : null),
                     'keterangan'    => $itemData['keterangan'] ?? null,
                 ]);
 
-                $registerIds = array_filter(array_map('intval', $itemData['register_ids'] ?? []));
+                // Simpan Relasi Register NIBAR terpilih & kunci statusnya (kosongkan jika Ditolak)
+                $registerIds = ($finalStatus === 'Ditolak') ? [] : ($itemData['register_ids'] ?? []);
 
                 foreach ($registerIds as $regId) {
                     DistribusiItemRegister::create([
@@ -496,11 +519,19 @@ class DistribusiController extends Controller
                 }
 
                 if (!empty($registerIds)) {
-                    AstapRegister::whereIn('id', $registerIds)->update([
-                        'unit_id'        => $unit->id,
-                        'ruang_pemegang' => $unit->nama,
-                        'status'         => 'Tidak Tersedia',
-                    ]);
+                    if ($finalStatus === 'Ditolak') {
+                        AstapRegister::whereIn('id', $registerIds)->update([
+                            'unit_id'        => null,
+                            'ruang_pemegang' => null,
+                            'status'         => 'Tersedia',
+                        ]);
+                    } else {
+                        AstapRegister::whereIn('id', $registerIds)->update([
+                            'unit_id'        => $unit->id,
+                            'ruang_pemegang' => $unit->nama,
+                            'status'         => 'Tidak Tersedia',
+                        ]);
+                    }
                 }
             }
 

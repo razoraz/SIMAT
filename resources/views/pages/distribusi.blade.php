@@ -88,13 +88,14 @@
                     type: 'success'
                 },
 
-                askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
+                askConfirmation({ title, message, itemName, type = 'danger', btnText, showReasonInput = false, onConfirm }) {
                     this.confirmData = {
                         title: title || 'Konfirmasi Tindakan',
                         message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                         itemName: itemName || '',
                         type: type,
                         btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        showReasonInput: showReasonInput,
                         onConfirm: onConfirm
                     };
                     this.showConfirmModal = true;
@@ -274,23 +275,87 @@
                     }
                 },
 
-                tolakDistribusi(item) {
-                    if (!item) return;
-                    item.signed = false;
-                    item.tgl_signed = '-';
-                    item.qr_hash = '';
-                    item.status = 'Ditolak';
+                alasanTolak: '',
 
-                    // Sync with main array item
-                    const found = this.distribusis.find(d => d.id === item.id);
-                    if (found) {
-                        found.signed = false;
-                        found.tgl_signed = '-';
-                        found.qr_hash = '';
-                        found.status = 'Ditolak';
+                confirmTolakDistribusi(item) {
+                    if (!item) return;
+                    this.alasanTolak = '';
+                    const kode = item.kode || 'DIST';
+                    const tujuan = item.tujuan || item.unit_nama || 'Ruangan';
+                    this.askConfirmation({
+                        title: '🚫 Konfirmasi Tolak Distribusi',
+                        message: 'Distribusi ' + kode + ' ke unit (' + tujuan + ') akan ditolak. Semua barang NIBAR terkait akan dikembalikan ke status Tersedia di Gudang.',
+                        itemName: kode + ' ➔ ' + tujuan,
+                        type: 'danger',
+                        btnText: '🚫 Ya, Tolak Distribusi Ini',
+                        showReasonInput: true,
+                        onConfirm: async () => {
+                            await this.tolakDistribusi(item);
+                        }
+                    });
+                },
+
+                async tolakDistribusi(item) {
+                    if (!item || !item.id) return;
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    try {
+                        const response = await fetch('/distribusi/' + item.id + '/status', {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ status: 'Ditolak', alasan_tolak: this.alasanTolak || null })
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.success) {
+                            const clearRejectedItems = (items) => {
+                                return (items || []).map(it => ({
+                                    ...it,
+                                    qty_acc: 0,
+                                    nibar_registers: [],
+                                    nibar_list: []
+                                }));
+                            };
+
+                            // Update referensi objek terpilih
+                            if (this.selectedDistribusi && String(this.selectedDistribusi.id) === String(item.id)) {
+                                this.selectedDistribusi = {
+                                    ...this.selectedDistribusi,
+                                    status: 'Ditolak',
+                                    signed: false,
+                                    tgl_signed: '-',
+                                    qr_hash: '',
+                                    items: clearRejectedItems(this.selectedDistribusi.items)
+                                };
+                            }
+                            // Update item di dalam array
+                            const found = this.distribusis.find(d => String(d.id) === String(item.id));
+                            if (found) {
+                                found.status     = 'Ditolak';
+                                found.signed     = false;
+                                found.tgl_signed = '-';
+                                found.qr_hash    = '';
+                                found.items      = clearRejectedItems(found.items);
+                            }
+                            item.status     = 'Ditolak';
+                            item.signed     = false;
+                            item.tgl_signed = '-';
+                            item.qr_hash    = '';
+                            item.items      = clearRejectedItems(item.items);
+
+                            // Reaktivitas array Alpine
+                            this.distribusis = [...this.distribusis];
+                            this.saveToStorage();
+                            this.showSimatToast('🚫 Distribusi ' + (item.kode || '') + ' berhasil ditolak. Barang NIBAR dikembalikan ke Tersedia.', 'error');
+                        } else {
+                            this.showSimatToast('❌ Gagal menolak distribusi: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        this.showSimatToast('❌ Terjadi kesalahan koneksi saat menolak distribusi.', 'error');
                     }
-                    this.saveToStorage();
-                    alert('❌ BAST Distribusi (' + (item.kode || item.bast_nomor) + ') ditolak! Tanda tangan digital telah dihapus.');
                 },
 
                 copiedNibar: null,
@@ -388,7 +453,7 @@
                                 this.selectedDistribusi.status = newStatus;
                             }
                             this.saveToStorage();
-                            this.showSimatToast('✅ Status distribusi ' + (item.kode || '') + ' berhasil diperbarui menjadi Telah Diterima!', 'success');
+                            this.showSimatToast('✅ Status distribusi ' + (item.kode || '') + ' berhasil diperbarui menjadi ' + newStatus + '!', 'success');
                         } else {
                             this.showSimatToast('❌ Gagal memperbarui status: ' + (data.message || 'Terjadi kesalahan.'), 'error');
                         }
@@ -463,6 +528,14 @@
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Konfirmasi</span>
                         <span class="text-sm sm:text-base font-extrabold text-amber-300" x-text="distribusis.filter(d => d.status === 'Menunggu Konfirmasi' || d.status === 'Pending').length + ' Transaksi'"></span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/60 border border-rose-800/50 rounded-2xl p-3.5 flex items-center space-x-3">
+                    <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-lg">🚫</div>
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Ditolak</span>
+                        <span class="text-sm sm:text-base font-extrabold text-rose-300" x-text="distribusis.filter(d => d.status === 'Ditolak').length + ' Transaksi'"></span>
                     </div>
                 </div>
             </div>
@@ -653,6 +726,7 @@
                                             'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Telah Diterima' || item.status === 'Diterima',
                                             'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': item.status === 'Dalam Pengiriman' || item.status === 'Dikirim',
                                             'bg-amber-500/15 text-amber-300 border-amber-500/30': item.status === 'Menunggu Konfirmasi' || item.status === 'Pending',
+                                            'bg-rose-500/15 text-rose-300 border-rose-500/30': item.status === 'Ditolak',
                                             'bg-slate-500/15 text-slate-300 border-slate-500/30': item.status === 'Draft' || !item.status
                                         }"
                                         x-text="item.status || 'Draft'"></span>
@@ -711,7 +785,7 @@
 
         <!-- MODAL DETAIL RINCIAN DISTRIBUSI BARANG (MENDUKUNG MULTI-BARANG & NIBAR REGISTER) -->
         <div x-show="showDetailModal" class="no-print fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div @click.away="if (!showConfirmModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800">
                     <div class="flex items-center space-x-3">
                         <span class="p-2.5 rounded-2xl bg-teal-500/20 text-teal-300 text-xl border border-teal-500/30">🚚</span>
@@ -748,6 +822,7 @@
                                           'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': selectedDistribusi.status === 'Telah Diterima' || selectedDistribusi.status === 'Diterima',
                                           'bg-cyan-500/15 text-cyan-300 border-cyan-500/30': selectedDistribusi.status === 'Dalam Pengiriman' || selectedDistribusi.status === 'Dikirim',
                                           'bg-amber-500/15 text-amber-300 border-amber-500/30': selectedDistribusi.status === 'Menunggu Konfirmasi' || selectedDistribusi.status === 'Pending',
+                                          'bg-rose-500/15 text-rose-300 border-rose-500/30': selectedDistribusi.status === 'Ditolak',
                                           'bg-slate-500/15 text-slate-300 border-slate-500/30': selectedDistribusi.status === 'Draft' || !selectedDistribusi.status
                                       }"
                                       x-text="selectedDistribusi.status"></span>
@@ -815,43 +890,55 @@
 
                                                 <!-- Kolom NIBAR -->
                                                 <td class="px-3.5 py-3 align-top text-center">
-                                                    <!-- Ada nibar_registers -->
-                                                    <template x-if="item.nibar_registers && item.nibar_registers.length > 0">
-                                                        <div class="flex flex-col gap-3">
-                                                            <template x-for="(reg, nIdx) in item.nibar_registers" :key="reg.nibar || nIdx">
-                                                                <div class="flex items-center h-[32px] bg-slate-800/90 hover:bg-slate-800 border border-slate-700/60 hover:border-teal-500/50 rounded-lg px-3 transition-all group">
-                                                                    <span class="text-slate-400 font-mono text-[10px] font-semibold shrink-0 mr-2" x-text="'#' + (nIdx + 1)"></span>
-                                                                    <a :href="'/scan/' + reg.nibar" target="_blank"
-                                                                       class="font-mono text-[11px] font-bold text-teal-300 group-hover:text-teal-200 group-hover:underline tracking-tight select-all truncate"
-                                                                       title="Buka Detail Barang Aset"
-                                                                       x-text="reg.nibar">
-                                                                    </a>
-                                                                </div>
-                                                            </template>
+                                                    <!-- Jika status transaksi Ditolak -->
+                                                    <template x-if="selectedDistribusi && selectedDistribusi.status === 'Ditolak'">
+                                                        <div class="inline-flex items-center h-[32px] space-x-1.5 px-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[10.5px] font-mono font-bold">
+                                                            <span>❌</span>
+                                                            <span>Ditolak</span>
                                                         </div>
                                                     </template>
 
-                                                    <!-- Fallback: nibar_list -->
-                                                    <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && item.nibar_list && item.nibar_list.length > 0">
-                                                        <div class="flex flex-col gap-3">
-                                                            <template x-for="(nibar, nIdx) in item.nibar_list" :key="nIdx">
-                                                                <div class="flex items-center h-[32px] bg-slate-800/90 hover:bg-slate-800 border border-slate-700/60 hover:border-teal-500/50 rounded-lg px-3 transition-all group">
-                                                                    <span class="text-slate-400 font-mono text-[10px] font-semibold shrink-0 mr-2" x-text="'#' + (nIdx + 1)"></span>
-                                                                    <a :href="'/scan/' + nibar" target="_blank"
-                                                                       class="font-mono text-[11px] font-bold text-teal-300 group-hover:text-teal-200 group-hover:underline tracking-tight select-all truncate"
-                                                                       title="Buka Detail Barang Aset"
-                                                                       x-text="nibar">
-                                                                    </a>
+                                                    <template x-if="!selectedDistribusi || selectedDistribusi.status !== 'Ditolak'">
+                                                        <div>
+                                                            <!-- Ada nibar_registers -->
+                                                            <template x-if="item.nibar_registers && item.nibar_registers.length > 0">
+                                                                <div class="flex flex-col gap-3">
+                                                                    <template x-for="(reg, nIdx) in item.nibar_registers" :key="reg.nibar || nIdx">
+                                                                        <div class="flex items-center h-[32px] bg-slate-800/90 hover:bg-slate-800 border border-slate-700/60 hover:border-teal-500/50 rounded-lg px-3 transition-all group">
+                                                                            <span class="text-slate-400 font-mono text-[10px] font-semibold shrink-0 mr-2" x-text="'#' + (nIdx + 1)"></span>
+                                                                            <a :href="'/scan/' + reg.nibar" target="_blank"
+                                                                               class="font-mono text-[11px] font-bold text-teal-300 group-hover:text-teal-200 group-hover:underline tracking-tight select-all truncate"
+                                                                               title="Buka Detail Barang Aset"
+                                                                               x-text="reg.nibar">
+                                                                            </a>
+                                                                        </div>
+                                                                    </template>
                                                                 </div>
                                                             </template>
-                                                        </div>
-                                                    </template>
 
-                                                    <!-- Belum ada NIBAR -->
-                                                    <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && (!item.nibar_list || item.nibar_list.length === 0)">
-                                                        <div class="inline-flex items-center h-[32px] space-x-1.5 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10.5px] font-mono">
-                                                            <span>⚠️</span>
-                                                            <span>Belum ditentukan</span>
+                                                            <!-- Fallback: nibar_list -->
+                                                            <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && item.nibar_list && item.nibar_list.length > 0">
+                                                                <div class="flex flex-col gap-3">
+                                                                    <template x-for="(nibar, nIdx) in item.nibar_list" :key="nIdx">
+                                                                        <div class="flex items-center h-[32px] bg-slate-800/90 hover:bg-slate-800 border border-slate-700/60 hover:border-teal-500/50 rounded-lg px-3 transition-all group">
+                                                                            <span class="text-slate-400 font-mono text-[10px] font-semibold shrink-0 mr-2" x-text="'#' + (nIdx + 1)"></span>
+                                                                            <a :href="'/scan/' + nibar" target="_blank"
+                                                                               class="font-mono text-[11px] font-bold text-teal-300 group-hover:text-teal-200 group-hover:underline tracking-tight select-all truncate"
+                                                                               title="Buka Detail Barang Aset"
+                                                                               x-text="nibar">
+                                                                            </a>
+                                                                        </div>
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Belum ada NIBAR -->
+                                                            <template x-if="(!item.nibar_registers || item.nibar_registers.length === 0) && (!item.nibar_list || item.nibar_list.length === 0)">
+                                                                <div class="inline-flex items-center h-[32px] space-x-1.5 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10.5px] font-mono">
+                                                                    <span>⚠️</span>
+                                                                    <span>Belum ditentukan</span>
+                                                                </div>
+                                                            </template>
                                                         </div>
                                                     </template>
                                                 </td>
@@ -896,14 +983,28 @@
 
                                                 <!-- Vol. ACC -->
                                                 <td class="px-3.5 py-3 text-center align-top whitespace-nowrap">
-                                                    <template x-if="item.qty_acc !== null && item.qty_acc !== undefined">
-                                                        <span class="inline-block whitespace-nowrap">
-                                                            <span class="font-bold text-emerald-400 text-xs font-mono" x-text="item.qty_acc"></span>
-                                                            <span class="text-slate-400 text-[10px] ml-0.5" x-text="item.satuan"></span>
-                                                        </span>
+                                                    <!-- Jika status transaksi Ditolak -->
+                                                    <template x-if="selectedDistribusi && selectedDistribusi.status === 'Ditolak'">
+                                                        <div class="flex items-center justify-center h-[32px]">
+                                                            <span class="text-[10px] font-bold text-rose-300 bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/30 whitespace-nowrap inline-flex items-center space-x-1">
+                                                                <span>❌</span>
+                                                                <span>Ditolak</span>
+                                                            </span>
+                                                        </div>
                                                     </template>
-                                                    <template x-if="item.qty_acc === null || item.qty_acc === undefined">
-                                                        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap">⏳ Belum ACC</span>
+
+                                                    <template x-if="!selectedDistribusi || selectedDistribusi.status !== 'Ditolak'">
+                                                        <div>
+                                                            <template x-if="item.qty_acc !== null && item.qty_acc !== undefined">
+                                                                <span class="inline-block whitespace-nowrap">
+                                                                    <span class="font-bold text-emerald-400 text-xs font-mono" x-text="item.qty_acc"></span>
+                                                                    <span class="text-slate-400 text-[10px] ml-0.5" x-text="item.satuan"></span>
+                                                                </span>
+                                                            </template>
+                                                            <template x-if="item.qty_acc === null || item.qty_acc === undefined">
+                                                                <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap">⏳ Belum ACC</span>
+                                                            </template>
+                                                        </div>
                                                     </template>
                                                 </td>
                                             </tr>
@@ -921,8 +1022,8 @@
                         <span>Format NIBAR: 45 Digit Kode BMD RSUD dr. H. Koesnandi</span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <!-- Tombol Barang Diterima (Berada di sebelah KIRI Cetak / Edit BAST, Tampil jika belum Telah Diterima) -->
-                        <template x-if="selectedDistribusi && selectedDistribusi.status !== 'Telah Diterima' && selectedDistribusi.status !== 'Diterima'">
+                        <!-- Tombol Barang Diterima (Tampil jika belum Telah Diterima / Ditolak) -->
+                        <template x-if="selectedDistribusi && !['Telah Diterima','Diterima','Ditolak'].includes(selectedDistribusi.status)">
                             <button type="button"
                                     @click="confirmKonfirmasiDiterima(selectedDistribusi)"
                                     class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5 cursor-pointer">
@@ -930,6 +1031,18 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
                                 </svg>
                                 <span>Barang Diterima</span>
+                            </button>
+                        </template>
+
+                        <!-- Tombol Tolak (hanya admin, hanya jika belum Ditolak / Telah Diterima) -->
+                        <template x-if="userRole !== 'sub_admin' && selectedDistribusi && !['Telah Diterima','Diterima','Ditolak'].includes(selectedDistribusi.status)">
+                            <button type="button"
+                                    @click="confirmTolakDistribusi(selectedDistribusi)"
+                                    class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5 cursor-pointer">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                                <span>Tolak</span>
                             </button>
                         </template>
 
@@ -969,6 +1082,7 @@
                             <option value="Telah Diterima">Telah Diterima</option>
                             <option value="Dalam Pengiriman">Dalam Pengiriman</option>
                             <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
+                            <option value="Ditolak">Ditolak</option>
                         </select>
                     </div>
                     <div class="pt-4 flex items-center justify-end space-x-2">
@@ -980,7 +1094,7 @@
         </div>
 
         <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
-        <div x-show="showConfirmModal" x-cloak class="no-print fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+        <div x-show="showConfirmModal" x-cloak class="no-print fixed inset-0 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" style="z-index: 99999 !important;">
             <div @click.away="showConfirmModal = false"
                  x-show="showConfirmModal"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
@@ -1022,6 +1136,15 @@
                     </div>
                 </template>
 
+                <!-- Input Alasan Penolakan (Opsional) -->
+                <template x-if="confirmData.showReasonInput">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] uppercase font-bold text-slate-400 block">Alasan Penolakan (Opsional):</label>
+                        <input type="text" x-model="alasanTolak" placeholder="Contoh: Stok barang di gudang kosong / salah unit..."
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-all">
+                    </div>
+                </template>
+
                 <!-- Footer Action Buttons -->
                 <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
                     <button type="button" @click="showConfirmModal = false"
@@ -1043,7 +1166,7 @@
         </div>
 
         <!-- GLOBAL FLOATING TOAST NOTIFICATION POPUP -->
-        <div x-show="toast.show" x-cloak class="no-print fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3"
+        <div x-show="toast.show" x-cloak class="no-print fixed bottom-6 right-6 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3" style="z-index: 100000 !important;"
              :class="{
                  'border-emerald-500/40 text-emerald-300': toast.type === 'success',
                  'border-rose-500/40 text-rose-300': toast.type === 'error',
