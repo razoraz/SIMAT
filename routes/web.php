@@ -862,10 +862,18 @@ Route::middleware('auth')->group(function () {
             };
 
             // =========================================================================
+            // CHECK JENIS ASET
+            // =========================================================================
+            $isTanah = ($jenisPrefix === '1.3.1' || str_starts_with($jenisPrefix, '1.3.1') || str_starts_with($kode108Submitted ?? '', '1.3.1') || ($jenisAstapRecord && str_starts_with($jenisAstapRecord->sub_sub_rincian_objek ?? '', '1.3.1')));
+            $isMesin = ($jenisPrefix === '1.3.2' || str_starts_with($jenisPrefix, '1.3.2') || str_starts_with($kode108Submitted ?? '', '1.3.2') || ($jenisAstapRecord && str_starts_with($jenisAstapRecord->sub_sub_rincian_objek ?? '', '1.3.2')));
+
+            $hasTanahItems = !empty($data['tanah_items']) && is_array($data['tanah_items']) && count($data['tanah_items']) > 0;
+            $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
+
+            // =========================================================================
             // KHUSUS TANAH (1.3.1): MULTI-ITEM REPEATER BIDANG TANAH
             // =========================================================================
-            $hasTanahItems = !empty($data['tanah_items']) && is_array($data['tanah_items']) && count($data['tanah_items']) > 0;
-            if (($jenisPrefix === '1.3.1' || str_starts_with($jenisPrefix, '1.3.1') || $hasTanahItems) && $hasTanahItems) {
+            if ($isTanah && $hasTanahItems) {
                 $totalBidang = 0;
                 $totalLuas = 0;
                 $totalPerencanaan = 0;
@@ -1020,13 +1028,10 @@ Route::middleware('auth')->group(function () {
                     'success' => true,
                     'message' => 'Sebanyak ' . $totalBidang . ' Bidang Tanah berhasil didaftarkan ke database SIMAT-RK!'
                 ]);
-            }
-
-            // =========================================================================
-            // KHUSUS PERALATAN DAN MESIN (1.3.2): MULTI-ITEM REPEATER MESIN
-            // =========================================================================
-            $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
-            if (($jenisPrefix === '1.3.2' || str_starts_with($jenisPrefix, '1.3.2') || $hasMesinItems) && $hasMesinItems) {
+            } elseif ($isMesin && $hasMesinItems) {
+                // =========================================================================
+                // KHUSUS PERALATAN DAN MESIN (1.3.2): MULTI-ITEM REPEATER MESIN
+                // =========================================================================
                 $totalVolume = 0;
                 $totalRealisasi = 0;
                 $totalBiayaAdm = 0;
@@ -1523,10 +1528,13 @@ Route::middleware('auth')->group(function () {
                 ];
             };
 
+            $isTanah = ($jenisPrefix === '1.3.1' || str_starts_with($jenisPrefix, '1.3.1') || str_starts_with($kode108Submitted ?? '', '1.3.1') || ($jenisAstapRecord && str_starts_with($jenisAstapRecord->sub_sub_rincian_objek ?? '', '1.3.1')));
+            $isMesin = ($jenisPrefix === '1.3.2' || str_starts_with($jenisPrefix, '1.3.2') || str_starts_with($kode108Submitted ?? '', '1.3.2') || ($jenisAstapRecord && str_starts_with($jenisAstapRecord->sub_sub_rincian_objek ?? '', '1.3.2')));
+
             $hasTanahItems = !empty($data['tanah_items']) && is_array($data['tanah_items']) && count($data['tanah_items']) > 0;
             $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
 
-            if (($jenisPrefix === '1.3.1' || str_starts_with($jenisPrefix, '1.3.1') || $hasTanahItems) && $hasTanahItems) {
+            if ($isTanah && $hasTanahItems) {
                 $totalBidang = 0;
                 $totalLuas = 0;
                 $totalPerencanaan = 0;
@@ -1575,7 +1583,7 @@ Route::middleware('auth')->group(function () {
                     'extracom' => false,
                     'spec' => $spec
                 ];
-            } elseif (($jenisPrefix === '1.3.2' || str_starts_with($jenisPrefix, '1.3.2') || $hasMesinItems) && $hasMesinItems) {
+            } elseif ($isMesin && $hasMesinItems) {
                 $totalVolume = 0;
                 $totalRealisasi = 0;
                 $totalBiayaAdm = 0;
