@@ -1567,6 +1567,8 @@
                     }
 
                     // Sinkronisasi otomatis nilai realisasi dari rincian Nilai Barang Langkah 3
+                    if (this.isTanah) this.syncTanahFieldsToMain();
+                    if (this.isMesin) this.syncMesinFieldsToMain();
                     this.syncRealisasiFromStep3();
 
                     if (!this.formData.jumlah_realisasi || Number(this.formData.jumlah_realisasi) <= 0) {
@@ -3356,6 +3358,13 @@
                                     </div>
                                 </template>
                             </div>
+
+                            <!-- Tombol Tambah Barang Peralatan & Mesin Baru (Besar & Jelas Sesuai Kebutuhan) -->
+                            <button type="button" @click="addMesinItem()" 
+                                    class="w-full py-3.5 border-2 border-dashed border-cyan-500/50 hover:border-cyan-400 bg-cyan-950/20 hover:bg-cyan-950/40 text-cyan-300 hover:text-cyan-200 font-bold rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-md group cursor-pointer">
+                                <span class="text-base group-hover:scale-125 transition-transform">➕</span>
+                                <span class="text-xs sm:text-sm">Klik Disini untuk Menambah Barang Peralatan & Mesin Lainnya</span>
+                            </button>
 
                             <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB B -->
                             <div class="p-4 rounded-2xl bg-slate-950/90 border border-purple-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
