@@ -1083,11 +1083,19 @@
                 <form @submit.prevent="showEditModal = false" class="space-y-4 text-xs">
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Judul / Ringkasan Barang</label>
-                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.nama : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.nama : ''" 
+                               :disabled="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
+                               :readonly="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
+                               :class="(selectedDistribusi && selectedDistribusi.status === 'Ditolak') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-950 text-white border-slate-800'"
+                               class="w-full border rounded-xl px-3.5 py-2.5">
                     </div>
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Penerima Barang</label>
-                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.penerima : ''" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
+                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.penerima : ''" 
+                               :disabled="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
+                               :readonly="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
+                               :class="(selectedDistribusi && selectedDistribusi.status === 'Ditolak') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-950 text-white border-slate-800'"
+                               class="w-full border rounded-xl px-3.5 py-2.5">
                     </div>
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Status Distribusi</label>
