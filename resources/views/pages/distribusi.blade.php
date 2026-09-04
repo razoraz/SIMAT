@@ -324,8 +324,8 @@
                                 this.selectedDistribusi = {
                                     ...this.selectedDistribusi,
                                     status: 'Ditolak',
-                                    bast_nomor: '-',
-                                    nomor_bast: '-',
+                                    bast_nomor: '(tidak diterbitkan)',
+                                    nomor_bast: '(tidak diterbitkan)',
                                     signed: false,
                                     tgl_signed: '-',
                                     qr_hash: '',
@@ -336,16 +336,16 @@
                             const found = this.distribusis.find(d => String(d.id) === String(item.id));
                             if (found) {
                                 found.status     = 'Ditolak';
-                                found.bast_nomor = '-';
-                                found.nomor_bast = '-';
+                                found.bast_nomor = '(tidak diterbitkan)';
+                                found.nomor_bast = '(tidak diterbitkan)';
                                 found.signed     = false;
                                 found.tgl_signed = '-';
                                 found.qr_hash    = '';
                                 found.items      = clearRejectedItems(found.items);
                             }
                             item.status     = 'Ditolak';
-                            item.bast_nomor = '-';
-                            item.nomor_bast = '-';
+                            item.bast_nomor = '(tidak diterbitkan)';
+                            item.nomor_bast = '(tidak diterbitkan)';
                             item.signed     = false;
                             item.tgl_signed = '-';
                             item.qr_hash    = '';
@@ -811,7 +811,7 @@
                         <span class="p-2.5 rounded-2xl bg-teal-500/20 text-teal-300 text-xl border border-teal-500/30">🚚</span>
                         <div>
                             <h3 class="text-base sm:text-lg font-extrabold text-white">Detail Alokasi Penyerahan & Register NIBAR</h3>
-                            <p class="text-xs text-slate-400 font-mono" x-text="selectedDistribusi ? ('Nomor Registrasi: ' + selectedDistribusi.kode + (selectedDistribusi.status === 'Ditolak' ? ' • BAST: -' : (' • BAST: ' + (selectedDistribusi.bast_nomor || selectedDistribusi.nomor_bast || 'Belum Diterbitkan')))) : ''"></p>
+                            <p class="text-xs text-slate-400 font-mono" x-text="selectedDistribusi ? ('Nomor Registrasi: ' + selectedDistribusi.kode + (selectedDistribusi.status === 'Ditolak' ? ' • BAST: (tidak diterbitkan)' : (selectedDistribusi.status === 'Menunggu Konfirmasi' ? ' • BAST: (Menunggu Konfirmasi)' : (' • BAST: ' + (selectedDistribusi.bast_nomor || selectedDistribusi.nomor_bast || '(Menunggu Konfirmasi)'))))) : ''"></p>
                         </div>
                     </div>
                     <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold">&times;</button>
