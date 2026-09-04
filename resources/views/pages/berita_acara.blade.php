@@ -251,7 +251,12 @@
 
                 // 2. Toggle TTD BAST Distribusi
                 openPrintDistribusi(item) {
-                    this.selectedDistribusi = item ? { ...item } : this.distribusiList[0];
+                    const target = item || (this.distribusiList && this.distribusiList.length > 0 ? this.distribusiList[0] : null);
+                    if (!target) {
+                        alert('Belum ada transaksi distribusi berstatus "Dalam Pengiriman" atau "Telah Diterima" untuk dicetak.');
+                        return;
+                    }
+                    this.selectedDistribusi = { ...target };
                     this.showPrintDistribusiModal = true;
                 },
 
@@ -455,7 +460,7 @@
                         class="px-3.5 py-2.5 rounded-2xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-purple-500/20 transition-all flex items-center space-x-1.5 shrink-0 active:scale-95">
                         <span>🏛️ BAST Triwulan</span>
                     </button>
-                    <button type="button" @click="activeTab = 'distribusi'; openPrintDistribusi(distribusiList[0])"
+                    <button type="button" @click="activeTab = 'distribusi'; if (distribusiList.length > 0) openPrintDistribusi(distribusiList[0])"
                         class="px-3.5 py-2.5 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center space-x-1.5 shrink-0 active:scale-95">
                         <span>🚚 BAST Distribusi</span>
                     </button>
@@ -816,6 +821,19 @@
                                         <span>🖨️ Cetak / Edit</span>
                                     </button>
 
+                                </td>
+                            </tr>
+                        </template>
+
+                        <!-- Empty State Jika Belum Ada Data Distribusi Siap Cetak BAST -->
+                        <template x-if="filteredDistribusiList.length === 0">
+                            <tr>
+                                <td colspan="7" class="text-center py-12 text-slate-500">
+                                    <div class="flex flex-col items-center justify-center space-y-1.5">
+                                        <span class="text-2xl">🚚</span>
+                                        <p class="font-semibold text-slate-300 text-xs">Tidak ada data BAST distribusi yang siap dicetak.</p>
+                                        <p class="text-[11px] text-slate-500">Data BAST penyerahan hanya muncul untuk transaksi dengan status <span class="text-teal-400 font-semibold">"Dalam Pengiriman"</span> atau <span class="text-emerald-400 font-semibold">"Telah Diterima"</span>.</p>
+                                    </div>
                                 </td>
                             </tr>
                         </template>
