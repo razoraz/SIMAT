@@ -886,48 +886,107 @@
         ];
 
         categories['KIB B'].forEach((item, idx) => {
-            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-            const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
-            const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
-            const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
-            const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
-            const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
-            
-            kibBRows.push([
-                ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
-                item.nama_barang || '-',                     // c15: col 16
-                item.kode_barang || '-',                     // c16: col 17
-                item.merk || '-',                            // c17: col 18
-                item.type || '-',                            // c18: col 19
-                item.ukuran || '-',                          // c19: col 20
-                item.no_pabrik || '-',                       // c20: col 21
-                item.no_rangka || '-',                       // c21: col 22
-                item.no_mesin || '-',                        // c22: col 23
-                item.no_btkb || '-',                         // c23: col 24
-                item.no_polisi || '-',                       // c24: col 25
-                item.bahan || '-',                           // c25: col 26
-                item.tahun_perolehan || '-',                 // c26: col 27
-                item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
-                item.spk_tanggal || '-',                     // c28: col 29
-                item.surat_pesanan_nomor || '-',             // c29: col 30
-                item.surat_pesanan_tanggal || '-',           // c30: col 31
-                item.kwitansi_nomor || '-',                  // c31: col 32
-                item.kwitansi_tanggal || '-',                // c32: col 33
-                item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
-                item.faktur_tanggal || '-',                  // c34: col 35
-                item.kondisi || 'Baik',                      // c35: col 36
-                jumlahBarang,                                // c36: col 37 (Jumlah Barang)
-                item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
-                nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
-                adminProyek,                                 // c39: col 40 (Admin Proyek)
-                totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
-                item.sp2d_nomor || '-',                      // c41: col 42
-                item.sp2d_tanggal || '-',                    // c42: col 43
-                item.bast_dokumen_nomor || '-',              // c43: col 44
-                item.bast_dokumen_tanggal || '-',            // c44: col 45
-                ruangUnit,                                   // c45: col 46
-                ...getStep4Columns(item)                     // c46-c53: cols 47-54
-            ]);
+            let spec = item.spesifikasi_json;
+            if (typeof spec === 'string') {
+                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+            }
+
+            const mesinItems = (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
+                ? spec.mesin_items
+                : null;
+
+            if (mesinItems) {
+                mesinItems.forEach((mItem) => {
+                    const qty = max1(parseInt(mItem.mesin_jumlah_barang) || 1);
+                    const nilaiSatuan = parseFloat(mItem.mesin_nilai_satuan) || 0;
+                    const adminProyek = parseFloat(mItem.mesin_administrasi_proyek) || 0;
+                    const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
+                    const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+                    const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
+                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                    const ruangUnit = mItem.ruang_pemegang_mesin || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                    kibBRows.push([
+                        ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
+                        item.nama_barang || '-',                     // c15: col 16
+                        item.kode_barang || '-',                     // c16: col 17
+                        mItem.mesin_merk || item.merk || '-',        // c17: col 18
+                        mItem.mesin_type || item.type || '-',        // c18: col 19
+                        mItem.mesin_ukuran || item.ukuran || '-',    // c19: col 20
+                        mItem.mesin_no_pabrik || item.no_pabrik || '-', // c20: col 21
+                        mItem.mesin_no_rangka || item.no_rangka || '-', // c21: col 22
+                        mItem.mesin_no_mesin || item.no_mesin || '-',   // c22: col 23
+                        mItem.mesin_no_bpkb || item.no_btkb || '-',     // c23: col 24
+                        mItem.mesin_no_polisi || item.no_polisi || '-', // c24: col 25
+                        mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
+                        item.tahun_perolehan || '-',                 // c26: col 27
+                        item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
+                        item.spk_tanggal || '-',                     // c28: col 29
+                        item.surat_pesanan_nomor || '-',             // c29: col 30
+                        item.surat_pesanan_tanggal || '-',           // c30: col 31
+                        item.kwitansi_nomor || '-',                  // c31: col 32
+                        item.kwitansi_tanggal || '-',                // c32: col 33
+                        item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
+                        item.faktur_tanggal || '-',                  // c34: col 35
+                        kondisiLabel,                                // c35: col 36
+                        qty,                                         // c36: col 37 (Jumlah Barang)
+                        mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
+                        nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
+                        adminProyek,                                 // c39: col 40 (Admin Proyek)
+                        totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
+                        item.sp2d_nomor || '-',                      // c41: col 42
+                        item.sp2d_tanggal || '-',                    // c42: col 43
+                        item.bast_dokumen_nomor || '-',              // c43: col 44
+                        item.bast_dokumen_tanggal || '-',            // c44: col 45
+                        ruangUnit,                                   // c45: col 46
+                        ...getStep4Columns(item)                     // c46-c53: cols 47-54
+                    ]);
+                });
+            } else {
+                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+                const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
+                const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
+                const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
+                const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
+                const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+                
+                kibBRows.push([
+                    ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
+                    item.nama_barang || '-',                     // c15: col 16
+                    item.kode_barang || '-',                     // c16: col 17
+                    item.merk || '-',                            // c17: col 18
+                    item.type || '-',                            // c18: col 19
+                    item.ukuran || '-',                          // c19: col 20
+                    item.no_pabrik || '-',                       // c20: col 21
+                    item.no_rangka || '-',                       // c21: col 22
+                    item.no_mesin || '-',                        // c22: col 23
+                    item.no_btkb || '-',                         // c23: col 24
+                    item.no_polisi || '-',                       // c24: col 25
+                    item.bahan || '-',                           // c25: col 26
+                    item.tahun_perolehan || '-',                 // c26: col 27
+                    item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
+                    item.spk_tanggal || '-',                     // c28: col 29
+                    item.surat_pesanan_nomor || '-',             // c29: col 30
+                    item.surat_pesanan_tanggal || '-',           // c30: col 31
+                    item.kwitansi_nomor || '-',                  // c31: col 32
+                    item.kwitansi_tanggal || '-',                // c32: col 33
+                    item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
+                    item.faktur_tanggal || '-',                  // c34: col 35
+                    item.kondisi || 'Baik',                      // c35: col 36
+                    jumlahBarang,                                // c36: col 37 (Jumlah Barang)
+                    item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
+                    nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
+                    adminProyek,                                 // c39: col 40 (Admin Proyek)
+                    totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
+                    item.sp2d_nomor || '-',                      // c41: col 42
+                    item.sp2d_tanggal || '-',                    // c42: col 43
+                    item.bast_dokumen_nomor || '-',              // c43: col 44
+                    item.bast_dokumen_tanggal || '-',            // c44: col 45
+                    ruangUnit,                                   // c45: col 46
+                    ...getStep4Columns(item)                     // c46-c53: cols 47-54
+                ]);
+            }
         });
 
         const wsKibB = XLSX.utils.aoa_to_sheet(kibBRows);
@@ -1445,77 +1504,340 @@
         XLSX.utils.book_append_sheet(wb, wsAtb, "8. ATB");
 
         // ------------------------------------------------------------------------
-        // 9. EXTRACOM (EKSTRAKOMTABEL) - COMPLETE 4-STEP MASTER SHEET
+        // 9. EXTRACOM (EKSTRAKOMTABEL) - COMPLETE 4-STEP MASTER SHEET (54 KOLOM)
+        // Format Identik dengan KIB B (Peralatan dan Mesin)
         // ------------------------------------------------------------------------
         const extracomRows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO - RSUD DR. H. KOESNANDI"],
-            ["LAPORAN RINCIAN REALISASI BELANJA BARANG EKSTRAKOMTABEL (< RP 300.000) TAHUN ANGGARAN " + yearLabel],
+            ["LAPORAN RINCIAN REALISASI BELANJA BARANG EKSTRAKOMTABEL TAHUN ANGGARAN " + yearLabel],
             [""],
+            // r3: Main Banner (54 kolom)
             [
-                "NO", "PENGANGGARAN (SIPD) - LANGKAH 1", "", "", "", "", "", "BELANJA MODAL ASET TETAP RSUD DR. H. KOESNANDI (LANGKAH 2)", "", "", "", "", "", "", "",
-                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE (LANGKAH 3)", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-                "PIHAK PENYEDIA, PEJABAT PEMBUAT KOMITMEN & CATATAN (LANGKAH 4)", "", "", "", "", "", "", ""
+                "NO",
+                "Program Pengadaan SIPD", "",
+                "Kegiatan Pengadaan SIPD", "",
+                "Sub Kegiatan Pengadaan SIPD", "",
+                "BELANJA MODAL", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE / " + yearLabel,
+                "", "", "", "", "", "", "", "", "", "", "",
+                "", "", "", "", "", "", "", "", "", "", "",
+                "", "", "", "", "", "", "",
+                "RUANG /\nPEMEGANG",
+                "PIHAK PENYEDIA", "", "", "", "",
+                "Pejabat Pembuat Komitmen", "",
+                "KET."
             ],
+            // r4: Sub-Banner Level 1 (54 kolom)
             [
-                "", "Program (SIPD)", "", "Kegiatan (SIPD)", "", "Sub Kegiatan (SIPD)", "", "Rekening Belanja Untuk Pengadaan SIPD", "", "Jenis Aset (PMDN 108)", "", "Sub Rincian Objek (PMDN 108)", "", "JUMLAH ANGGARAN (Rp)", "JUMLAH REALISASI (Rp)",
-                "NAMA BARANG", "KODE BARANG (108)", "MERK", "TYPE", "UKURAN / SPESIFIKASI", "BAHAN", "NO PABRIK / SERI", "TAHUN PEROLEHAN", "NO SURAT PESANAN", "TGL SURAT PESANAN", "NO KWITANSI", "TGL KWITANSI", "NO INVOICE", "TGL INVOICE", "KONDISI", "RUANG / UNIT PEMEGANG", "JUMLAH", "SATUAN", "HARGA SATUAN (RP)", "TOTAL REALISASI (RP)", "NO SP2D", "TGL SP2D", "NO BAST", "TGL BAST", "KETERANGAN",
-                "PIHAK PENYEDIA", "", "Rekening", "", "Alamat Penyedia", "PEJABAT PEMBUAT KOMITMEN", "", "KET."
+                "",
+                "", "",
+                "", "",
+                "", "",
+                "Rekening Belanja Untuk Pengadaan SIPD", "",
+                "Jenis Aset (PMDN 108)", "",
+                "Sub Rincian Objek (PMDN 108)", "",
+                "JUMLAH ANGGARAN (Rp)",
+                "JUMLAH REALISASI (Rp)",
+                "NAMA BARANG\n(Uraian Sub Sub Rincian Objek PMDN 108)",
+                "Kode Barang\n(Kode Sub Sub Rincian Objek PMDN 108)",
+                "Merk", "Type", "Ukuran / CC",
+                "No. Pabrik", "No. Rangka", "No. Mesin", "No. BTKB", "No. POLISI",
+                "BAHAN", "Tahun Perolehan",
+                "Riwayat Pembelian", "", "", "", "", "", "", "",
+                "Kondisi\n(B,KB,RB)",
+                "VOLUME", "",
+                "Nilai Satuan Barang (Rp)",
+                "ADMINISTRASI PROYEK (Rp)",
+                "Total Nilai Barang\n(Rp) = 39+40",
+                "SP2D", "",
+                "BAST pada SPK/Surat Pesanan/Kwitansi/Invoice", "",
+                "",
+                "", "", "", "", "",
+                "", "",
+                ""
             ],
+            // r5: Sub-Banner Level 2 (54 kolom)
             [
-                "", "Kode", "Nama Program", "Kode", "Nama Kegiatan", "Kode", "Nama Sub Kegiatan", "Kode Rek", "Nama Belanja Pengadaan", "Kode", "Nama Jenis Aset", "Kode", "Nama Uraian Sub Rincian Objek", "", "",
-                "(Uraian Sub Sub Rincian)", "(Kode Sub Sub Rincian)", "Merk Pabrik", "Model/Tipe", "Spesifikasi Teknis", "Material", "Nomor Seri", "Tahun Perolehan", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "(B,KB,RB)", "Lokasi Penempatan", "Volume", "Satuan", "(Rp)", "(Rp)", "Nomor", "Tanggal", "Nomor", "Tanggal", "Catatan Extracom",
-                "Nama Penyedia", "Pemilik Penyedia", "Nama Rek", "Nomor Rek", "Alamat Penyedia", "Nama", "NIP", "Catatan"
+                "",
+                "Kode", "Nama Program",
+                "Kode", "Nama Kegiatan",
+                "Kode", "Nama Sub Kegiatan",
+                "Kode Rek", "Nama Belanja Pengadaan",
+                "Kode", "Nama Jenis Aset",
+                "Kode", "Nama Uraian Sub Rincian Objek",
+                "", "",
+                "", "", "", "", "", "", "", "", "", "", "", "",
+                "SPK", "", "Surat Pesanan", "", "Kwitansi", "", "Invoice", "",
+                "",
+                "Jumlah Barang", "Nama Satuan Barang",
+                "", "", "",
+                "", "",
+                "", "",
+                "",
+                "Nama Penyedia", "Pemilik Penyedia", "Rekening", "", "Alamat Penyedia",
+                "Nama", "NIP",
+                ""
             ],
+            // r6: Sub-Banner Level 3 / Nomor-Tanggal (54 kolom)
+            [
+                "",
+                "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "", "", "", "", "", "", "", "", "", "", "", "",
+                "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal",
+                "", "", "", "", "", "",
+                "NOMOR", "TANGGAL",
+                "NOMOR", "TANGGAL",
+                "",
+                "", "", "Nama Rek", "No Rek", "",
+                "", "",
+                ""
+            ],
+            // r7: Nomor Kolom (54 kolom)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
-                "41", "42", "43", "44", "45", "46", "47", "48"
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27",
+                "28", "29", "30", "31", "32", "33", "34", "35",
+                "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46",
+                "47", "48", "49", "50", "51", "52", "53", "54"
             ]
         ];
 
         categories['EXTRACOM'].forEach((item, idx) => {
-            const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-            const jumlahUnit = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
-            const hargaSatuan = parseFloat(item.harga_satuan) || (jumlahUnit > 0 ? (totalVal / jumlahUnit) : totalVal);
-            const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+            let spec = item.spesifikasi_json;
+            if (typeof spec === 'string') {
+                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+            }
 
-            extracomRows.push([
-                ...getCommonColumns(item, idx),
-                item.nama_barang || '-',
-                item.kode_barang || '-',
-                item.merk || '-',
-                item.type || '-',
-                item.ukuran || '-',
-                item.bahan || '-',
-                item.no_pabrik || '-',
-                item.tahun_perolehan || '-',
-                item.surat_pesanan_nomor || '-',
-                item.surat_pesanan_tanggal || '-',
-                item.kwitansi_nomor || '-',
-                item.kwitansi_tanggal || '-',
-                item.faktur_nomor || '-',
-                item.faktur_tanggal || '-',
-                item.kondisi || 'Baik',
-                ruangUnit,
-                jumlahUnit,
-                item.satuan || 'Buah',
-                hargaSatuan,
-                totalVal,
-                item.sp2d_nomor || '-',
-                item.sp2d_tanggal || '-',
-                item.bast_dokumen_nomor || '-',
-                item.bast_dokumen_tanggal || '-',
-                item.keterangan || '-',
-                ...getStep4Columns(item)
-            ]);
+            const mesinItems = (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
+                ? spec.mesin_items
+                : null;
+
+            if (mesinItems) {
+                mesinItems.forEach((mItem) => {
+                    const qty = max1(parseInt(mItem.mesin_jumlah_barang) || 1);
+                    const nilaiSatuan = parseFloat(mItem.mesin_nilai_satuan) || 0;
+                    const adminProyek = parseFloat(mItem.mesin_administrasi_proyek) || 0;
+                    const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
+                    const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+                    const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
+                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                    const ruangUnit = mItem.ruang_pemegang_mesin || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                    extracomRows.push([
+                        ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
+                        item.nama_barang || '-',                     // c15: col 16
+                        item.kode_barang || '-',                     // c16: col 17
+                        mItem.mesin_merk || item.merk || '-',        // c17: col 18
+                        mItem.mesin_type || item.type || '-',        // c18: col 19
+                        mItem.mesin_ukuran || item.ukuran || '-',    // c19: col 20
+                        mItem.mesin_no_pabrik || item.no_pabrik || '-', // c20: col 21
+                        mItem.mesin_no_rangka || item.no_rangka || '-', // c21: col 22
+                        mItem.mesin_no_mesin || item.no_mesin || '-',   // c22: col 23
+                        mItem.mesin_no_bpkb || item.no_btkb || '-',     // c23: col 24
+                        mItem.mesin_no_polisi || item.no_polisi || '-', // c24: col 25
+                        mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
+                        item.tahun_perolehan || '-',                 // c26: col 27
+                        item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
+                        item.spk_tanggal || '-',                     // c28: col 29
+                        item.surat_pesanan_nomor || '-',             // c29: col 30
+                        item.surat_pesanan_tanggal || '-',           // c30: col 31
+                        item.kwitansi_nomor || '-',                  // c31: col 32
+                        item.kwitansi_tanggal || '-',                // c32: col 33
+                        item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
+                        item.faktur_tanggal || '-',                  // c34: col 35
+                        kondisiLabel,                                // c35: col 36
+                        qty,                                         // c36: col 37 (Jumlah Barang)
+                        mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
+                        nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
+                        adminProyek,                                 // c39: col 40 (Admin Proyek)
+                        totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
+                        item.sp2d_nomor || '-',                      // c41: col 42
+                        item.sp2d_tanggal || '-',                    // c42: col 43
+                        item.bast_dokumen_nomor || '-',              // c43: col 44
+                        item.bast_dokumen_tanggal || '-',            // c44: col 45
+                        ruangUnit,                                   // c45: col 46
+                        ...getStep4Columns(item)                     // c46-c53: cols 47-54
+                    ]);
+                });
+            } else {
+                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+                const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
+                const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
+                const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
+                const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
+                const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+                
+                extracomRows.push([
+                    ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
+                    item.nama_barang || '-',                     // c15: col 16
+                    item.kode_barang || '-',                     // c16: col 17
+                    item.merk || '-',                            // c17: col 18
+                    item.type || '-',                            // c18: col 19
+                    item.ukuran || '-',                          // c19: col 20
+                    item.no_pabrik || '-',                       // c20: col 21
+                    item.no_rangka || '-',                       // c21: col 22
+                    item.no_mesin || '-',                        // c22: col 23
+                    item.no_btkb || '-',                         // c23: col 24
+                    item.no_polisi || '-',                       // c24: col 25
+                    item.bahan || '-',                           // c25: col 26
+                    item.tahun_perolehan || '-',                 // c26: col 27
+                    item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
+                    item.spk_tanggal || '-',                     // c28: col 29
+                    item.surat_pesanan_nomor || '-',             // c29: col 30
+                    item.surat_pesanan_tanggal || '-',           // c30: col 31
+                    item.kwitansi_nomor || '-',                  // c31: col 32
+                    item.kwitansi_tanggal || '-',                // c32: col 33
+                    item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
+                    item.faktur_tanggal || '-',                  // c34: col 35
+                    item.kondisi || 'Baik',                      // c35: col 36
+                    jumlahBarang,                                // c36: col 37 (Jumlah Barang)
+                    item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
+                    nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
+                    adminProyek,                                 // c39: col 40 (Admin Proyek)
+                    totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
+                    item.sp2d_nomor || '-',                      // c41: col 42
+                    item.sp2d_tanggal || '-',                    // c42: col 43
+                    item.bast_dokumen_nomor || '-',              // c43: col 44
+                    item.bast_dokumen_tanggal || '-',            // c44: col 45
+                    ruangUnit,                                   // c45: col 46
+                    ...getStep4Columns(item)                     // c46-c53: cols 47-54
+                ]);
+            }
         });
 
         const wsExtracom = XLSX.utils.aoa_to_sheet(extracomRows);
-        wsExtracom['!cols'] = Array(48).fill({wch: 18});
-        wsExtracom['!cols'][2] = {wch: 30}; wsExtracom['!cols'][4] = {wch: 25}; wsExtracom['!cols'][6] = {wch: 28};
-        wsExtracom['!cols'][8] = {wch: 28}; wsExtracom['!cols'][10] = {wch: 22}; wsExtracom['!cols'][12] = {wch: 30}; wsExtracom['!cols'][15] = {wch: 30};
-        wsExtracom['!cols'][40] = {wch: 28}; wsExtracom['!cols'][44] = {wch: 35};
-        applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 48, 25);
+        wsExtracom['!cols'] = Array(54).fill({wch: 18});
+        wsExtracom['!cols'][0] = {wch: 6};
+        wsExtracom['!cols'][1] = {wch: 14}; wsExtracom['!cols'][2] = {wch: 32};
+        wsExtracom['!cols'][3] = {wch: 14}; wsExtracom['!cols'][4] = {wch: 28};
+        wsExtracom['!cols'][5] = {wch: 16}; wsExtracom['!cols'][6] = {wch: 30};
+        wsExtracom['!cols'][7] = {wch: 18}; wsExtracom['!cols'][8] = {wch: 30};
+        wsExtracom['!cols'][9] = {wch: 14}; wsExtracom['!cols'][10] = {wch: 24};
+        wsExtracom['!cols'][11] = {wch: 18}; wsExtracom['!cols'][12] = {wch: 32};
+        wsExtracom['!cols'][13] = {wch: 22}; wsExtracom['!cols'][14] = {wch: 22};
+        wsExtracom['!cols'][15] = {wch: 32}; wsExtracom['!cols'][16] = {wch: 22};
+        wsExtracom['!cols'][17] = {wch: 20}; wsExtracom['!cols'][18] = {wch: 20};
+        wsExtracom['!cols'][19] = {wch: 22}; wsExtracom['!cols'][20] = {wch: 20};
+        wsExtracom['!cols'][21] = {wch: 20}; wsExtracom['!cols'][22] = {wch: 20};
+        wsExtracom['!cols'][23] = {wch: 20}; wsExtracom['!cols'][24] = {wch: 16};
+        wsExtracom['!cols'][25] = {wch: 16}; wsExtracom['!cols'][26] = {wch: 14};
+        wsExtracom['!cols'][27] = {wch: 22}; wsExtracom['!cols'][28] = {wch: 14};
+        wsExtracom['!cols'][29] = {wch: 22}; wsExtracom['!cols'][30] = {wch: 14};
+        wsExtracom['!cols'][31] = {wch: 22}; wsExtracom['!cols'][32] = {wch: 14};
+        wsExtracom['!cols'][33] = {wch: 22}; wsExtracom['!cols'][34] = {wch: 14};
+        wsExtracom['!cols'][35] = {wch: 14}; wsExtracom['!cols'][36] = {wch: 14};
+        wsExtracom['!cols'][37] = {wch: 18}; wsExtracom['!cols'][38] = {wch: 22};
+        wsExtracom['!cols'][39] = {wch: 22}; wsExtracom['!cols'][40] = {wch: 22};
+        wsExtracom['!cols'][41] = {wch: 20}; wsExtracom['!cols'][42] = {wch: 14};
+        wsExtracom['!cols'][43] = {wch: 28}; wsExtracom['!cols'][44] = {wch: 14};
+        wsExtracom['!cols'][45] = {wch: 28}; wsExtracom['!cols'][46] = {wch: 28};
+        wsExtracom['!cols'][47] = {wch: 24}; wsExtracom['!cols'][48] = {wch: 24};
+        wsExtracom['!cols'][49] = {wch: 22}; wsExtracom['!cols'][50] = {wch: 30};
+        wsExtracom['!cols'][51] = {wch: 24}; wsExtracom['!cols'][52] = {wch: 22};
+        wsExtracom['!cols'][53] = {wch: 26};
+
+        // ── Merge Cells EXTRACOM (54 Kolom Sesuai Format Baku KIB B) ─────────────
+        wsExtracom['!merges'] = [
+            // Title banners (r0-r2)
+            {s:{r:0,c:0}, e:{r:0,c:53}},
+            {s:{r:1,c:0}, e:{r:1,c:53}},
+            {s:{r:2,c:0}, e:{r:2,c:53}},
+
+            // Col 1: NO (r3-r6, c0)
+            {s:{r:3,c:0}, e:{r:6,c:0}},
+
+            // Col 2-3: Program Pengadaan SIPD (r3-r4 banner, r5-r6 sub-headers)
+            {s:{r:3,c:1}, e:{r:4,c:2}},
+            {s:{r:5,c:1}, e:{r:6,c:1}},  // Kode
+            {s:{r:5,c:2}, e:{r:6,c:2}},  // Nama Program
+
+            // Col 4-5: Kegiatan Pengadaan SIPD
+            {s:{r:3,c:3}, e:{r:4,c:4}},
+            {s:{r:5,c:3}, e:{r:6,c:3}},  // Kode
+            {s:{r:5,c:4}, e:{r:6,c:4}},  // Nama Kegiatan
+
+            // Col 6-7: Sub Kegiatan Pengadaan SIPD
+            {s:{r:3,c:5}, e:{r:4,c:6}},
+            {s:{r:5,c:5}, e:{r:6,c:5}},  // Kode
+            {s:{r:5,c:6}, e:{r:6,c:6}},  // Nama Sub Kegiatan
+
+            // Col 8-15: BELANJA MODAL (Top Banner r3, c7-c14)
+            {s:{r:3,c:7}, e:{r:3,c:14}},
+            // Col 8-9: Rekening Belanja Untuk Pengadaan SIPD
+            {s:{r:4,c:7}, e:{r:4,c:8}},
+            {s:{r:5,c:7}, e:{r:6,c:7}},   // Kode Rek
+            {s:{r:5,c:8}, e:{r:6,c:8}},   // Nama Belanja Pengadaan
+            // Col 10-11: Jenis Aset (PMDN 108)
+            {s:{r:4,c:9}, e:{r:4,c:10}},
+            {s:{r:5,c:9}, e:{r:6,c:9}},   // Kode
+            {s:{r:5,c:10}, e:{r:6,c:10}}, // Nama Jenis Aset
+            // Col 12-13: Sub Rincian Objek (PMDN 108)
+            {s:{r:4,c:11}, e:{r:4,c:12}},
+            {s:{r:5,c:11}, e:{r:6,c:11}}, // Kode
+            {s:{r:5,c:12}, e:{r:6,c:12}}, // Nama Uraian Sub Rincian Objek
+            // Col 14: JUMLAH ANGGARAN (Rp)
+            {s:{r:4,c:13}, e:{r:6,c:13}},
+            // Col 15: JUMLAH REALISASI (Rp)
+            {s:{r:4,c:14}, e:{r:6,c:14}},
+
+            // Col 16-45: RINCIAN BELANJA MODAL ... (Top Banner r3, c15-c44)
+            {s:{r:3,c:15}, e:{r:3,c:44}},
+            // Kolom standalone (r4-r6 merged):
+            {s:{r:4,c:15}, e:{r:6,c:15}},  // Col 16: NAMA BARANG
+            {s:{r:4,c:16}, e:{r:6,c:16}},  // Col 17: Kode Barang
+            {s:{r:4,c:17}, e:{r:6,c:17}},  // Col 18: Merk
+            {s:{r:4,c:18}, e:{r:6,c:18}},  // Col 19: Type
+            {s:{r:4,c:19}, e:{r:6,c:19}},  // Col 20: Ukuran / CC
+            {s:{r:4,c:20}, e:{r:6,c:20}},  // Col 21: No. Pabrik
+            {s:{r:4,c:21}, e:{r:6,c:21}},  // Col 22: No. Rangka
+            {s:{r:4,c:22}, e:{r:6,c:22}},  // Col 23: No. Mesin
+            {s:{r:4,c:23}, e:{r:6,c:23}},  // Col 24: No. BTKB
+            {s:{r:4,c:24}, e:{r:6,c:24}},  // Col 25: No. POLISI
+            {s:{r:4,c:25}, e:{r:6,c:25}},  // Col 26: BAHAN
+            {s:{r:4,c:26}, e:{r:6,c:26}},  // Col 27: Tahun Perolehan
+            // Col 28-35: Riwayat Pembelian (r4 banner c27-c34)
+            {s:{r:4,c:27}, e:{r:4,c:34}},
+            {s:{r:5,c:27}, e:{r:5,c:28}},  // SPK (r5) -> r6: Nomor (c27), Tanggal (c28)
+            {s:{r:5,c:29}, e:{r:5,c:30}},  // Surat Pesanan -> r6: Nomor (c29), Tanggal (c30)
+            {s:{r:5,c:31}, e:{r:5,c:32}},  // Kwitansi -> r6: Nomor (c31), Tanggal (c32)
+            {s:{r:5,c:33}, e:{r:5,c:34}},  // Invoice -> r6: Nomor (c33), Tanggal (c34)
+            // Col 36: Kondisi (B,KB,RB) standalone (r4-r6, c35)
+            {s:{r:4,c:35}, e:{r:6,c:35}},
+            // Col 37-38: VOLUME (r4 banner c36-c37)
+            {s:{r:4,c:36}, e:{r:4,c:37}},
+            {s:{r:5,c:36}, e:{r:6,c:36}},  // Jumlah Barang
+            {s:{r:5,c:37}, e:{r:6,c:37}},  // Nama Satuan Barang
+            // Col 39: Nilai Satuan Barang (r4-r6, c38)
+            {s:{r:4,c:38}, e:{r:6,c:38}},
+            // Col 40: ADMINISTRASI PROYEK (r4-r6, c39)
+            {s:{r:4,c:39}, e:{r:6,c:39}},
+            // Col 41: Total Nilai Barang (r4-r6, c40)
+            {s:{r:4,c:40}, e:{r:6,c:40}},
+            // Col 42-43: SP2D (r4-r5 banner, c41-c42) -> r6: NOMOR, TANGGAL
+            {s:{r:4,c:41}, e:{r:5,c:42}},
+            // Col 44-45: BAST pada SPK/... (r4-r5 banner, c43-c44) -> r6: NOMOR, TANGGAL
+            {s:{r:4,c:43}, e:{r:5,c:44}},
+            // Col 46: RUANG / PEMEGANG (Berdiri Sendiri r3-r6, c45)
+            {s:{r:3,c:45}, e:{r:6,c:45}},
+
+            // Col 47-51: PIHAK PENYEDIA (Top Banner r3-r4, c46-c50)
+            {s:{r:3,c:46}, e:{r:4,c:50}},
+            {s:{r:5,c:46}, e:{r:6,c:46}},  // Nama Penyedia
+            {s:{r:5,c:47}, e:{r:6,c:47}},  // Pemilik Penyedia
+            {s:{r:5,c:48}, e:{r:5,c:49}},  // Rekening -> r6: Nama Rek (c48), Nomor Rek (c49)
+            {s:{r:5,c:50}, e:{r:6,c:50}},  // Alamat Penyedia
+
+            // Col 52-53: Pejabat Pembuat Komitmen (r3-r4, c51-c52)
+            {s:{r:3,c:51}, e:{r:4,c:52}},
+            {s:{r:5,c:51}, e:{r:6,c:51}},  // Nama
+            {s:{r:5,c:52}, e:{r:6,c:52}},  // NIP
+
+            // Col 54: KET. (berdiri sendiri r3-r6, c53)
+            {s:{r:3,c:53}, e:{r:6,c:53}}
+        ];
+
+        applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 54, 31, 7);
         XLSX.utils.book_append_sheet(wb, wsExtracom, "9. Extracom");
 
         // DOWNLOAD FILE EXCEL 4 LANGKAH
@@ -2656,31 +2978,97 @@
 
                             <!-- 2. KIB B (PERALATAN & MESIN) & EXTRACOM -->
                             <template x-if="selectedAstapDetail.category === 'KIB B' || selectedAstapDetail.category === 'EXTRACOM'">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Merk / Brand</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.merk || selectedAstapDetail.spesifikasi_json?.merk || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Type / Model</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.type || selectedAstapDetail.spesifikasi_json?.type || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🧪 Bahan / Material</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.bahan || selectedAstapDetail.spesifikasi_json?.bahan || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🔢 No. Pabrik / Seri</span>
-                                        <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.no_pabrik || selectedAstapDetail.spesifikasi_json?.no_pabrik || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🚗 No. Rangka / Mesin</span>
-                                        <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAstapDetail.spesifikasi_json?.no_rangka || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.no_mesin || '-')"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📋 No. BPKB / Polisi</span>
-                                        <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAstapDetail.spesifikasi_json?.no_bpkb || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.no_polisi || '-')"></span>
-                                    </div>
+                                <div class="space-y-3">
+                                    <!-- Multi-Item Repeater List jika ada mesin_items -->
+                                    <template x-if="selectedAstapDetail.spesifikasi_json?.mesin_items && selectedAstapDetail.spesifikasi_json.mesin_items.length > 0">
+                                        <div class="space-y-2.5">
+                                            <div class="flex items-center justify-between text-xs font-semibold text-slate-300 px-1">
+                                                <span class="flex items-center gap-1.5 text-cyan-400">
+                                                    📦 Rincian Barang Terdaftar (<span x-text="selectedAstapDetail.spesifikasi_json.mesin_items.length"></span> Item)
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || selectedAstapDetail.spesifikasi_json.mesin_items.length) + ' ' + (selectedAstapDetail.satuan || 'Unit')"></span>
+                                            </div>
+                                            <template x-for="(mItem, mIdx) in selectedAstapDetail.spesifikasi_json.mesin_items" :key="mIdx">
+                                                <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-2.5 shadow-sm hover:border-cyan-400/50 transition-all">
+                                                    <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                                                        <div class="flex flex-wrap items-center gap-2">
+                                                            <span class="px-2.5 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono font-bold text-[11px] border border-cyan-500/30"
+                                                                  x-text="'Item #' + (mIdx + 1)"></span>
+                                                            <span class="text-white font-bold text-xs" x-text="(mItem.mesin_merk || '-') + ' ' + (mItem.mesin_type || '')"></span>
+                                                            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
+                                                                  x-text="(mItem.mesin_jumlah_barang || 1) + ' ' + (mItem.mesin_satuan || 'Unit')"></span>
+                                                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border"
+                                                                  :class="{
+                                                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': (mItem.mesin_kondisi === 'Baik' || mItem.mesin_kondisi === 'B'),
+                                                                      'bg-amber-500/20 text-amber-300 border-amber-500/30': (mItem.mesin_kondisi === 'Kurang Baik' || mItem.mesin_kondisi === 'KB'),
+                                                                      'bg-rose-500/20 text-rose-300 border-rose-500/30': (mItem.mesin_kondisi === 'Rusak Berat' || mItem.mesin_kondisi === 'RB')
+                                                                  }"
+                                                                  x-text="'Kondisi: ' + (mItem.mesin_kondisi || 'Baik')"></span>
+                                                        </div>
+                                                        <div class="text-[11px] font-mono">
+                                                            <span class="text-slate-400">Subtotal: </span>
+                                                            <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(mItem.mesin_jumlah_barang) || 1) * (parseFloat(mItem.mesin_nilai_satuan) || 0)) + (parseFloat(mItem.mesin_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏷️ Merk / Type / Bahan</span>
+                                                            <span class="text-cyan-300 font-bold block truncate" x-text="(mItem.mesin_merk || '-') + ' / ' + (mItem.mesin_type || '-')"></span>
+                                                            <span class="text-slate-300 text-[10px]" x-text="'Bhn: ' + (mItem.mesin_bahan || '-') + ' • Uk: ' + (mItem.mesin_ukuran || '-')"></span>
+                                                        </div>
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🔢 Identitas / No. Seri</span>
+                                                            <span class="text-cyan-300 font-mono font-semibold block truncate" x-text="'Pabrik: ' + (mItem.mesin_no_pabrik || '-')"></span>
+                                                            <span class="text-slate-400 font-mono text-[9px] block truncate" x-text="'Rgk: ' + (mItem.mesin_no_rangka || '-') + ' • Msn: ' + (mItem.mesin_no_mesin || '-')"></span>
+                                                        </div>
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Satuan &amp; Adm</span>
+                                                            <span class="text-emerald-300 font-medium block text-[10px]" x-text="'@ Rp ' + Number(mItem.mesin_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                            <span class="text-slate-400 text-[9px]" x-text="'Adm: Rp ' + Number(mItem.mesin_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
+                                                        </div>
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Pemegang</span>
+                                                            <span class="text-amber-300 font-medium block truncate" :title="mItem.ruang_pemegang_mesin" x-text="mItem.ruang_pemegang_mesin || '-'"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    <!-- Fallback jika data single item / legacy -->
+                                    <template x-if="!selectedAstapDetail.spesifikasi_json?.mesin_items || selectedAstapDetail.spesifikasi_json.mesin_items.length === 0">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Merk / Brand</span>
+                                                <span class="text-white font-bold" x-text="selectedAstapDetail.merk || selectedAstapDetail.spesifikasi_json?.merk || '-'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Type / Model</span>
+                                                <span class="text-white font-bold" x-text="selectedAstapDetail.type || selectedAstapDetail.spesifikasi_json?.type || '-'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🧪 Bahan / Material</span>
+                                                <span class="text-white font-bold" x-text="selectedAstapDetail.bahan || selectedAstapDetail.spesifikasi_json?.bahan || '-'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🔢 No. Pabrik / Seri</span>
+                                                <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.no_pabrik || selectedAstapDetail.spesifikasi_json?.no_pabrik || '-'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🚗 No. Rangka / Mesin</span>
+                                                <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAstapDetail.spesifikasi_json?.no_rangka || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.no_mesin || '-')"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📋 No. BPKB / Polisi</span>
+                                                <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAstapDetail.spesifikasi_json?.no_bpkb || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.no_polisi || '-')"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 col-span-full">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏥 Ruang / Unit Pemegang</span>
+                                                <span class="text-amber-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.ruang_pemegang || (selectedAstapDetail.registers && selectedAstapDetail.registers[0] ? selectedAstapDetail.registers[0].ruang_pemegang : '-')"></span>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
 

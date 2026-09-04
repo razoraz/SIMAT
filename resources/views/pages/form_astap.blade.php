@@ -235,7 +235,7 @@
                                     tanah_alamat: ea ? (ea.alamat_barang || '') : ''
                                 }
                             ],
-                        // KIB B Mesin
+                        // KIB B Mesin (Multi-Item Repeater)
                         mesin_nama_barang: nama || '',
                         mesin_kode_barang: kode108Val || '',
                         mesin_merk: spec.merk || '',
@@ -254,6 +254,51 @@
                         mesin_satuan: ea ? (ea.satuan || 'Unit') : 'Unit',
                         mesin_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
                         mesin_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                        mesin_items: (spec && spec.mesin_items && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
+                            ? spec.mesin_items.map(m => ({
+                                mesin_nama_barang: m.mesin_nama_barang || nama || '',
+                                mesin_kode_barang: m.mesin_kode_barang || kode108Val || '',
+                                mesin_merk: m.mesin_merk || '',
+                                mesin_type: m.mesin_type || '',
+                                mesin_ukuran: m.mesin_ukuran || '',
+                                mesin_no_pabrik: m.mesin_no_pabrik || '',
+                                mesin_no_rangka: m.mesin_no_rangka || '',
+                                mesin_no_mesin: m.mesin_no_mesin || '',
+                                mesin_no_bpkb: m.mesin_no_bpkb || '',
+                                mesin_no_polisi: m.mesin_no_polisi || '',
+                                mesin_bahan: m.mesin_bahan || '',
+                                mesin_kondisi: m.mesin_kondisi || 'B',
+                                mesin_jumlah_barang: m.mesin_jumlah_barang || 1,
+                                mesin_satuan: m.mesin_satuan || 'Unit',
+                                mesin_nilai_satuan: m.mesin_nilai_satuan || 0,
+                                mesin_administrasi_proyek: m.mesin_administrasi_proyek || 0,
+                                ruang_pemegang: m.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                isRuangOpen: false,
+                                searchRuang: ''
+                            }))
+                            : [
+                                {
+                                    mesin_nama_barang: nama || '',
+                                    mesin_kode_barang: kode108Val || '',
+                                    mesin_merk: spec.merk || '',
+                                    mesin_type: spec.type || '',
+                                    mesin_ukuran: spec.ukuran || '',
+                                    mesin_no_pabrik: spec.no_pabrik || '',
+                                    mesin_no_rangka: spec.no_rangka || '',
+                                    mesin_no_mesin: spec.no_mesin || '',
+                                    mesin_no_bpkb: spec.no_bpkb || '',
+                                    mesin_no_polisi: spec.no_polisi || '',
+                                    mesin_bahan: spec.bahan || '',
+                                    mesin_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                                    mesin_jumlah_barang: ea ? (ea.jumlah_volume || 1) : 1,
+                                    mesin_satuan: ea ? (ea.satuan || 'Unit') : 'Unit',
+                                    mesin_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
+                                    mesin_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                                    ruang_pemegang: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                    isRuangOpen: false,
+                                    searchRuang: ''
+                                }
+                            ],
                         // KIB C Gedung
                         gedung_nama_barang: nama || '',
                         gedung_kode_barang: kode108Val || '',
@@ -483,6 +528,10 @@
                     // Watchers Langkah 3: Otomatis Sinkronisasi Realisasi Langkah 2 dari Total Nilai Barang
                     this.$watch('formData.tanah_items', () => {
                         this.syncTanahFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }, { deep: true });
+                    this.$watch('formData.mesin_items', () => {
+                        this.syncMesinFieldsToMain();
                         this.syncRealisasiFromStep3();
                     }, { deep: true });
                     this.$watch('formData.tanah_nilai_perencanaan', () => this.syncRealisasiFromStep3());
@@ -819,8 +868,110 @@
                 },
 
                 get totalNilaiMesin() {
+                    if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                        return this.formData.mesin_items.reduce((sum, item) => {
+                            return sum + this.getMesinSubtotal(item);
+                        }, 0);
+                    }
                     return (Number(this.formData.mesin_jumlah_barang || 1) * Number(this.formData.mesin_nilai_satuan || 0)) + 
                            Number(this.formData.mesin_administrasi_proyek || 0);
+                },
+
+                get totalVolumeMesin() {
+                    if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                        return this.formData.mesin_items.reduce((sum, item) => {
+                            return sum + (parseInt(item.mesin_jumlah_barang) || 1);
+                        }, 0);
+                    }
+                    return parseInt(this.formData.mesin_jumlah_barang) || 1;
+                },
+
+                addMesinItem() {
+                    if (!this.formData.mesin_items) {
+                        this.formData.mesin_items = [];
+                    }
+                    this.formData.mesin_items.push({
+                        mesin_nama_barang: this.formData.mesin_nama_barang || this.formData.sub_rincian_nama || '',
+                        mesin_kode_barang: this.formData.mesin_kode_barang || this.formData.sub_rincian_kode || '',
+                        mesin_merk: '',
+                        mesin_type: '',
+                        mesin_ukuran: '',
+                        mesin_no_pabrik: '',
+                        mesin_bahan: '',
+                        mesin_no_rangka: '',
+                        mesin_no_mesin: '',
+                        mesin_no_bpkb: '',
+                        mesin_no_polisi: '',
+                        mesin_kondisi: 'Baik',
+                        mesin_jumlah_barang: 1,
+                        mesin_satuan: 'Unit',
+                        mesin_nilai_satuan: 0,
+                        mesin_administrasi_proyek: 0,
+                        ruang_pemegang: '',
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    });
+                    this.syncMesinFieldsToMain();
+                    this.syncRealisasiFromStep3();
+                },
+
+                removeMesinItem(index) {
+                    if (this.formData.mesin_items && this.formData.mesin_items.length > 1) {
+                        this.formData.mesin_items.splice(index, 1);
+                        this.syncMesinFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }
+                },
+
+                getMesinSubtotal(item) {
+                    return (Number(item.mesin_jumlah_barang || 1) * Number(item.mesin_nilai_satuan || 0)) + Number(item.mesin_administrasi_proyek || 0);
+                },
+
+                syncMesinFieldsToMain() {
+                    if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                        const first = this.formData.mesin_items[0];
+                        this.formData.mesin_nama_barang = first.mesin_nama_barang || this.formData.mesin_nama_barang;
+                        this.formData.mesin_kode_barang = first.mesin_kode_barang || this.formData.mesin_kode_barang;
+                        this.formData.mesin_merk = first.mesin_merk;
+                        this.formData.mesin_type = first.mesin_type;
+                        this.formData.mesin_ukuran = first.mesin_ukuran;
+                        this.formData.mesin_no_pabrik = first.mesin_no_pabrik;
+                        this.formData.mesin_bahan = first.mesin_bahan;
+                        this.formData.mesin_no_rangka = first.mesin_no_rangka;
+                        this.formData.mesin_no_mesin = first.mesin_no_mesin;
+                        this.formData.mesin_no_bpkb = first.mesin_no_bpkb;
+                        this.formData.mesin_no_polisi = first.mesin_no_polisi;
+                        this.formData.mesin_kondisi = first.mesin_kondisi;
+                        this.formData.mesin_satuan = first.mesin_satuan;
+                        this.formData.ruang_pemegang = first.ruang_pemegang;
+                        this.formData.ruang_pemegang_mesin = first.ruang_pemegang;
+
+                        const totalVol = this.formData.mesin_items.reduce((sum, it) => sum + (parseInt(it.mesin_jumlah_barang) || 1), 0);
+                        this.formData.mesin_jumlah_barang = totalVol;
+                        this.formData.jumlah_volume = totalVol;
+
+                        const totalAdmin = this.formData.mesin_items.reduce((sum, it) => sum + (parseFloat(it.mesin_administrasi_proyek) || 0), 0);
+                        this.formData.mesin_administrasi_proyek = totalAdmin;
+
+                        if (this.formData.mesin_items.length === 1) {
+                            this.formData.mesin_nilai_satuan = first.mesin_nilai_satuan;
+                            this.formData.harga_satuan = first.mesin_nilai_satuan;
+                        }
+                    }
+                },
+
+                filterUnitsForItem(item) {
+                    let list = this.masterUnits || [];
+                    if (!item.searchRuang || item.searchRuang.trim() === '') return list;
+                    const q = item.searchRuang.toLowerCase().trim();
+                    return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+                },
+
+                selectUnitForItem(item, unit) {
+                    item.ruang_pemegang = unit.nama;
+                    item.isRuangOpen = false;
+                    item.searchRuang = '';
+                    this.syncMesinFieldsToMain();
                 },
 
                 get totalNilaiGedung() {
@@ -2955,216 +3106,281 @@
 
 
 
-                        <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin (Sisa Kolom) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <!-- 3. Spesifikasi Fisik (Merk, Type, Ukuran) -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">⚙️ 3. Merk, Type & Ukuran:</span>
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Merk Barang</label>
-                                    <input type="text" x-model="formData.mesin_merk" placeholder="Siemens / Mindray / Daikin"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Type / Model</label>
-                                        <input type="text" x-model="formData.mesin_type" placeholder="SOMATOM go.Now"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono">
+                        <!-- ========================================================================= -->
+                        <!-- PEMBUNGKUS BARANG PERALATAN DAN MESIN MULTI-ITEM                          -->
+                        <!-- ========================================================================= -->
+                        <div class="space-y-4">
+                            
+                            <!-- Header Pembungkus Peralatan dan Mesin -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-purple-950/30 border border-purple-500/40 shadow-md">
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm">⚙️</span>
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
+                                            RINCIAN PERALATAN DAN MESIN (<span class="text-purple-400" x-text="formData.mesin_items.length"></span> Barang / Unit Terdaftar)
+                                        </h3>
                                     </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Ukuran / Kapasitas</label>
-                                        <input type="text" x-model="formData.mesin_ukuran" placeholder="128 Slice / 2 PK"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                    </div>
+                                    <p class="text-[11px] text-slate-400">
+                                        Setiap barang memiliki spesifikasi (Merk, Type, Ukuran, No. Pabrik/SN), Volume, Nilai Satuan, dan Ruang/Pemegang penempatan masing-masing.
+                                    </p>
                                 </div>
+                                <button type="button" @click="addMesinItem()" 
+                                        class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-purple-500/20 shrink-0 cursor-pointer">
+                                    <span>➕ Tambah Barang / Unit Baru</span>
+                                </button>
                             </div>
 
-                            <!-- 4. Spesifikasi No Pabrik, Kendaraan, Bahan & Kondisi -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">🏷️ 4. No Pabrik, Kendaraan, Bahan & Kondisi:</span>
-                                </div>
+                            <!-- List Kartu Barang Peralatan & Mesin (Repeater) -->
+                            <div class="space-y-5">
+                                <template x-for="(item, idx) in formData.mesin_items" :key="idx">
+                                    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-purple-500/30 hover:border-purple-500/60 transition-all space-y-4 shadow-xl relative group">
+                                        
+                                        <!-- Header Kartu Tiap Barang -->
+                                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 font-mono font-extrabold text-xs border border-purple-500/40 flex items-center space-x-1.5">
+                                                    <span>⚙️ Barang / Unit #<span x-text="idx + 1"></span></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-300 font-semibold" x-show="item.mesin_merk || item.mesin_type">
+                                                    • <span x-text="(item.mesin_merk || '') + ' ' + (item.mesin_type || '')"></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Qty: <strong class="text-cyan-300" x-text="(item.mesin_jumlah_barang || 1) + ' ' + (item.mesin_satuan || 'Unit')"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getMesinSubtotal(item))"></strong>
+                                                </span>
+                                            </div>
 
-                                <div class="grid grid-cols-2 gap-2.5">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">No Pabrik / SN</label>
-                                        <input type="text" x-model="formData.mesin_no_pabrik" placeholder="SN-RAD-2026-88192"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">Bahan Pembuatan</label>
-                                        <input type="text" x-model="formData.mesin_bahan" placeholder="Logam & Elektronik"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                                    </div>
-                                </div>
+                                            <!-- Tombol Hapus Barang (Muncul jika > 1 item) -->
+                                            <button type="button" 
+                                                    x-show="formData.mesin_items.length > 1" 
+                                                    @click="removeMesinItem(idx)" 
+                                                    class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer">
+                                                <span>🗑️ Hapus Barang Ini</span>
+                                            </button>
+                                        </div>
 
-                                <!-- Detail Kendaraan (2x2 Grid Rapi) -->
-                                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-                                    <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">🚗 Legality Kendaraan (Jika Ada):</span>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-slate-500 text-[9px] mb-0.5">No Rangka</label>
-                                            <input type="text" x-model="formData.mesin_no_rangka" placeholder="MH1JM..."
-                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-500 text-[9px] mb-0.5">No Mesin</label>
-                                            <input type="text" x-model="formData.mesin_no_mesin" placeholder="JM51E..."
-                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-500 text-[9px] mb-0.5">No BPKB</label>
-                                            <input type="text" x-model="formData.mesin_no_bpkb" placeholder="BPKB-88..."
-                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono">
-                                        </div>
-                                        <div>
-                                            <label class="block text-slate-500 text-[9px] mb-0.5">No POLISI / Plat</label>
-                                            <input type="text" x-model="formData.mesin_no_polisi" placeholder="P 1234 WB"
-                                                   class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono font-bold">
-                                        </div>
-                                    </div>
-                                </div>
+                                        <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Barang</label>
-                                    <select x-model="formData.mesin_kondisi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold">
-                                        <option value="B">B (Baik)</option>
-                                        <option value="KB">KB (Kurang Baik)</option>
-                                        <option value="RB">RB (Rusak Berat)</option>
-                                    </select>
-                                </div>
+                                            <!-- 3. Spesifikasi Fisik (Merk, Type, Ukuran & Nama) -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>⚙️ Merk, Type & Ukuran:</span>
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Barang (Spesifik/Custom)</label>
+                                                    <input type="text" x-model="item.mesin_nama_barang" placeholder="Biarkan kosong jika sama dengan sub rincian"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Merk Barang</label>
+                                                    <input type="text" x-model="item.mesin_merk" placeholder="Siemens / Mindray / Daikin / Dell"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1">Type / Model</label>
+                                                        <input type="text" x-model="item.mesin_type" placeholder="SOMATOM go.Now / OptiPlex"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1">Ukuran / Kapasitas</label>
+                                                        <input type="text" x-model="item.mesin_ukuran" placeholder="128 Slice / 2 PK / 16GB"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 4. Spesifikasi No Pabrik, Kendaraan, Bahan & Kondisi -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>🏷️ No Pabrik, Kendaraan, Bahan & Kondisi:</span>
+                                                    </span>
+                                                </div>
+
+                                                <div class="grid grid-cols-2 gap-2.5">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">No Pabrik / SN</label>
+                                                        <input type="text" x-model="item.mesin_no_pabrik" placeholder="SN-RAD-2026-88192"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">Bahan Pembuatan</label>
+                                                        <input type="text" x-model="item.mesin_bahan" placeholder="Logam & Elektronik"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Detail Kendaraan (2x2 Grid Rapi) -->
+                                                <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                                                    <span class="text-[9.5px] font-bold text-slate-400 block uppercase tracking-wider">🚗 Legality Kendaraan (Jika Ada):</span>
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label class="block text-slate-500 text-[9px] mb-0.5">No Rangka</label>
+                                                            <input type="text" x-model="item.mesin_no_rangka" placeholder="MH1JM..."
+                                                                   class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1.5 text-xs text-white font-mono">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-500 text-[9px] mb-0.5">No Mesin</label>
+                                                            <input type="text" x-model="item.mesin_no_mesin" placeholder="JM51E..."
+                                                                   class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1.5 text-xs text-white font-mono">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-500 text-[9px] mb-0.5">No BPKB</label>
+                                                            <input type="text" x-model="item.mesin_no_bpkb" placeholder="BPKB-88..."
+                                                                   class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1.5 text-xs text-white font-mono">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-500 text-[9px] mb-0.5">No POLISI / Plat</label>
+                                                            <input type="text" x-model="item.mesin_no_polisi" placeholder="P 1234 WB"
+                                                                   class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2 py-1.5 text-xs text-amber-300 font-mono font-bold">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Barang</label>
+                                                    <select x-model="item.mesin_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500">
+                                                        <option value="Baik">Baik (B)</option>
+                                                        <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                                        <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- 5. Volume & Nilai Satuan Barang -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5">
+                                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">💰 Volume & Nilai Satuan Barang (Rp):</span>
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah (Volume)</label>
+                                                    <input type="number" min="1" x-model.number="item.mesin_jumlah_barang" placeholder="1"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Satuan</label>
+                                                    <input type="text" x-model="item.mesin_satuan" placeholder="Unit / Buah / Set"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.mesin_nilai_satuan ? Number(item.mesin_nilai_satuan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.mesin_nilai_satuan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                               updateExtracomStatus();
+                                                           "
+                                                           placeholder="185.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Admin Proyek (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.mesin_administrasi_proyek ? Number(item.mesin_administrasi_proyek).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.mesin_administrasi_proyek = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="0"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 6. Ruang / Pemegang Aset -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/40 space-y-2 relative" @click.away="item.isRuangOpen = false">
+                                            <div class="flex items-center justify-between border-b border-amber-500/30 pb-1.5">
+                                                <label class="block text-amber-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>📍 Ruang / Unit Pemegang (Penanggung Jawab & Lokasi):</span>
+                                                </label>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                                        <span>🏥</span>
+                                                        <span>Unit & Paviliun</span>
+                                                    </span>
+                                                    <button type="button" 
+                                                            x-show="item.ruang_pemegang" 
+                                                            @click="item.ruang_pemegang = ''; item.searchRuang = ''; item.isRuangOpen = true" 
+                                                            class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                                        ✕ Reset
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="relative">
+                                                <input type="text" 
+                                                       :value="!item.isRuangOpen ? item.ruang_pemegang : item.searchRuang"
+                                                       @input="item.ruang_pemegang = $event.target.value; item.searchRuang = $event.target.value; item.isRuangOpen = true"
+                                                       @focus="item.isRuangOpen = true"
+                                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                                       class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-white font-semibold focus:outline-none transition-all">
+                                                <svg class="w-3.5 h-3.5 text-amber-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                            </div>
+
+                                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                                            <div x-show="item.isRuangOpen" x-transition x-cloak style="max-height: 180px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                                <div class="px-2.5 py-1 bg-slate-950/80 rounded-lg text-[9.5px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                                    <span class="text-slate-400 font-mono text-[9px]" x-text="filterUnitsForItem(item).length + ' Unit/Ruangan'"></span>
+                                                </div>
+                                                <template x-for="u in filterUnitsForItem(item)" :key="u.id">
+                                                    <div @click="selectUnitForItem(item, u)" class="p-2 rounded-xl bg-slate-950/50 hover:bg-amber-500/15 border border-slate-800/60 hover:border-amber-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                                        <div class="min-w-0 pr-2">
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate" x-text="u.nama"></span>
+                                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                                            </div>
+                                                            <p class="text-[9.5px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                                        </div>
+                                                        <span class="px-2 py-0.5 rounded-lg bg-slate-900 text-amber-300 border border-amber-500/30 text-[9.5px] font-bold shrink-0">Pilih →</span>
+                                                    </div>
+                                                </template>
+                                                <template x-if="filterUnitsForItem(item).length === 0">
+                                                    <div class="p-2.5 text-center text-xs text-slate-400">
+                                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </template>
                             </div>
 
-                        </div>
-
-                        <!-- 5. Volume & Nilai Satuan Barang -->
-                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-emerald-500/40 space-y-3 shadow-lg">
-                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">5. Volume & Nilai Satuan Barang (Rp):</span>
-                            <div class="grid grid-cols-2 gap-2.5">
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Barang (Volume)</label>
-                                    <input type="text" 
-                                    :value="formData.mesin_jumlah_barang ? Number(formData.mesin_jumlah_barang).toLocaleString('id-ID') : ''"
-                                    @input="
-                                        let raw = $event.target.value.replace(/\D/g, '');
-                                        formData.mesin_jumlah_barang = raw ? parseInt(raw, 10) : '';
-                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                        updateExtracomStatus();
-                                    "
-                                    placeholder="1"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
-                                    <input type="text" x-model="formData.mesin_satuan" placeholder="Unit / Buah / Set / Paket"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2.5">
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan Barang (Rp)</label>
-                                    <input type="text" 
-                                    :value="formData.mesin_nilai_satuan ? Number(formData.mesin_nilai_satuan).toLocaleString('id-ID') : ''"
-                                    @input="
-                                        let raw = $event.target.value.replace(/\D/g, '');
-                                        formData.mesin_nilai_satuan = raw ? parseInt(raw, 10) : '';
-                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                        updateExtracomStatus();
-                                    "
-                                    placeholder="185.000.000"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
-                                </div>
-
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Administrasi Proyek (Rp)</label>
-                                    <input type="text" 
-                                    :value="formData.mesin_administrasi_proyek ? Number(formData.mesin_administrasi_proyek).toLocaleString('id-ID') : ''"
-                                    @input="
-                                        let raw = $event.target.value.replace(/\D/g, '');
-                                        formData.mesin_administrasi_proyek = raw ? parseInt(raw, 10) : '';
-                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                    "
-                                    placeholder="0"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
-                                </div>
-                            </div>
-                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
-                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                            <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB B -->
+                            <div class="p-4 rounded-2xl bg-slate-950/90 border border-purple-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
                                 <div class="flex flex-wrap items-center gap-4 sm:gap-6">
                                     <div>
-                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran (Pagu):</span>
                                         <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
                                     </div>
                                     <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
                                     <div>
-                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
-                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                        <span class="text-[10px] text-purple-400 font-semibold block uppercase tracking-wider">📦 Total Volume / Unit:</span>
+                                        <span class="text-sm font-black text-purple-300 font-mono" x-text="totalVolumeMesin + ' Unit/Barang'"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Akumulasi):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
                                     </div>
                                 </div>
                                 <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
-                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Realisasi Pengadaan:</span>
                                     <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiMesin)"></span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 6. Ruang / Pemegang Aset (Ditampilkan tepat diatas Live Preview Excel) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangOpen = false">
-                            <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
-                                <label class="block text-amber-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
-                                </label>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
-                                        <span>🏥</span>
-                                        <span>Tersinkron Unit & Paviliun</span>
-                                    </span>
-                                    <button type="button" 
-                                            x-show="formData.ruang_pemegang" 
-                                            @click="formData.ruang_pemegang = ''; searchRuangPemegang = ''; isRuangPemegangOpen = true" 
-                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
-                                        ✕ Reset
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="relative">
-                                <input type="text" 
-                                       :value="!isRuangPemegangOpen ? formData.ruang_pemegang : searchRuangPemegang"
-                                       @input="formData.ruang_pemegang = $event.target.value; searchRuangPemegang = $event.target.value; isRuangPemegangOpen = true"
-                                       @focus="isRuangPemegangOpen = true"
-                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
-                                       class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
-                                <svg class="w-4 h-4 text-amber-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            </div>
-
-                            <!-- Dropdown List Pilihan Unit & Paviliun -->
-                            <div x-show="isRuangPemegangOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
-                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
-                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsMesin.length + ' Unit/Ruangan'"></span>
-                                </div>
-                                <template x-for="u in filteredUnitsMesin" :key="u.id">
-                                    <div @click="selectUnitMesin(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-amber-500/15 border border-slate-800/60 hover:border-amber-500/40 cursor-pointer transition-all flex items-center justify-between group">
-                                        <div class="min-w-0 pr-2">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate" x-text="u.nama"></span>
-                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
-                                            </div>
-                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
-                                        </div>
-                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-amber-300 border border-amber-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
-                                    </div>
-                                </template>
-                                <template x-if="filteredUnitsMesin.length === 0">
-                                    <div class="p-3 text-center text-xs text-slate-400">
-                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
-                                    </div>
-                                </template>
-                            </div>
                         </div>
 
                         <!-- ============================================================= -->
@@ -3175,7 +3391,7 @@
                                 <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                                     <span>📄 Live Preview Tabel Rincian Belanja Modal Peralatan dan Mesin (Sesuai SPK/Invoice):</span>
                                 </span>
-                                <span class="text-[10px] text-amber-400 font-mono">Format Excel KIB B RSUD (27 Kolom)</span>
+                                <span class="text-[10px] text-amber-400 font-mono" x-text="formData.mesin_items.length + ' Baris Barang Terdaftar'">Format Excel KIB B RSUD (27 Kolom)</span>
                             </div>
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
@@ -3198,8 +3414,12 @@
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">Type</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Ukuran</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Pabrik</th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Rangka</th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Mesin</th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No BPKB</th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Polisi</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">BAHAN</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Tahun Perolehan</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
                                             <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">VOLUME</th>
@@ -3236,35 +3456,41 @@
                                     </thead>
                                     <!-- Body Data Live Sesuai Input User -->
                                     <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
-                                        <tr>
-                                            <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="formData.mesin_nama_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.mesin_kode_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.mesin_merk"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.mesin_type"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.mesin_ukuran"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.mesin_no_pabrik"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.mesin_bahan"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="formData.mesin_kondisi"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="formData.mesin_kondisi"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.mesin_jumlah_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.mesin_satuan"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.mesin_nilai_satuan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.mesin_administrasi_proyek)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(totalNilaiMesin)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal"></td>
-                                            <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.ruang_pemegang"></td>
-                                        </tr>
+                                        <template x-for="(mItem, mIdx) in formData.mesin_items" :key="mIdx">
+                                            <tr>
+                                                <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="mItem.mesin_nama_barang || formData.mesin_nama_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_kode_barang || formData.mesin_kode_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_merk || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_type || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_ukuran || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_pabrik || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_rangka || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_mesin || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_bpkb || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_polisi || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_bahan || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.tahun_perolehan || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="mItem.mesin_kondisi || 'Baik'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_jumlah_barang || 1"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_satuan || 'Unit'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_nilai_satuan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_administrasi_proyek)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(getMesinSubtotal(mItem))"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal || '-'"></td>
+                                                <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="mItem.ruang_pemegang || '-'"></td>
+                                            </tr>
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>

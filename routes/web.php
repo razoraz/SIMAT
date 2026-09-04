@@ -1023,6 +1023,177 @@ Route::middleware('auth')->group(function () {
             }
 
             // =========================================================================
+            // KHUSUS PERALATAN DAN MESIN (1.3.2): MULTI-ITEM REPEATER MESIN
+            // =========================================================================
+            $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
+            if (($jenisPrefix === '1.3.2' || str_starts_with($jenisPrefix, '1.3.2') || $hasMesinItems) && $hasMesinItems) {
+                $totalVolume = 0;
+                $totalRealisasi = 0;
+                $totalBiayaAdm = 0;
+                $allMerk = [];
+                $allType = [];
+                $allUkuran = [];
+                $allBahan = [];
+                $allPabrik = [];
+
+                foreach ($data['mesin_items'] as $mItem) {
+                    $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                    $nilaiSatuan = (float)($mItem['mesin_nilai_satuan'] ?? 0);
+                    $biayaAdmItem = (float)($mItem['mesin_administrasi_proyek'] ?? 0);
+                    
+                    $totalVolume += $qty;
+                    $totalRealisasi += ($qty * $nilaiSatuan) + $biayaAdmItem;
+                    $totalBiayaAdm += $biayaAdmItem;
+
+                    if (!empty($mItem['mesin_merk'])) $allMerk[] = $mItem['mesin_merk'];
+                    if (!empty($mItem['mesin_type'])) $allType[] = $mItem['mesin_type'];
+                    if (!empty($mItem['mesin_ukuran'])) $allUkuran[] = $mItem['mesin_ukuran'];
+                    if (!empty($mItem['mesin_bahan'])) $allBahan[] = $mItem['mesin_bahan'];
+                    if (!empty($mItem['mesin_no_pabrik'])) $allPabrik[] = $mItem['mesin_no_pabrik'];
+                }
+
+                $firstItem = $data['mesin_items'][0] ?? [];
+                $satuan = $firstItem['mesin_satuan'] ?? 'Unit';
+                $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
+                $tahun = $data['tahun_perolehan'] ?? ($data['tahun_anggaran'] ?? date('Y'));
+                $isExtracom = !empty($data['is_extracomtable']) || ($hargaSatuanRata > 0 && $hargaSatuanRata < 300000);
+
+                // Hitung running nomor register
+                $kode108Submitted = $data['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null));
+                $kode108Clean = '132000000000';
+                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
+                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
+                } elseif (!empty($kode108Submitted)) {
+                    $kode108Clean = str_replace('.', '', $kode108Submitted);
+                }
+
+                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                    ->where(function($q) use ($jenisAstapId) {
+                        if ($jenisAstapId) {
+                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $jenisAstapId));
+                        }
+                    })
+                    ->max('no_register_int') ?? 0;
+
+                $runningRegNum = (int) $maxRegInt;
+
+                $specJson = [
+                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
+                    'merk' => count($allMerk) > 0 ? implode(', ', array_unique($allMerk)) : ($firstItem['mesin_merk'] ?? null),
+                    'type' => count($allType) > 0 ? implode(', ', array_unique($allType)) : ($firstItem['mesin_type'] ?? null),
+                    'ukuran' => count($allUkuran) > 0 ? implode(', ', array_unique($allUkuran)) : ($firstItem['mesin_ukuran'] ?? null),
+                    'no_pabrik' => count($allPabrik) > 0 ? implode(', ', array_unique($allPabrik)) : ($firstItem['mesin_no_pabrik'] ?? null),
+                    'no_rangka' => $firstItem['mesin_no_rangka'] ?? null,
+                    'no_mesin' => $firstItem['mesin_no_mesin'] ?? null,
+                    'no_bpkb' => $firstItem['mesin_no_bpkb'] ?? null,
+                    'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
+                    'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
+                    'kondisi' => $firstItem['mesin_kondisi'] ?? 'Baik',
+                    'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? null,
+                    'mesin_items' => $data['mesin_items']
+                ];
+                $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
+
+                $astap = \Illuminate\Support\Facades\DB::transaction(function() use (
+                    $data, $jenisPengadaanId, $rekeningBelanjaId, $jenisAstapId, $namaBarang,
+                    $tahun, $totalVolume, $satuan, $hargaSatuanRata, $totalRealisasi, $totalBiayaAdm,
+                    $isExtracom, $specJson, $kode108Clean, &$runningRegNum
+                ) {
+                    $astapItem = \App\Models\Astap::create([
+                        'jenis_pengadaan_id' => $jenisPengadaanId,
+                        'rekening_belanja_id' => $rekeningBelanjaId,
+                        'jenis_astap_id' => $jenisAstapId,
+                        'nama_barang' => $namaBarang,
+                        'tahun_perolehan' => $tahun,
+                        'triwulan' => $data['triwulan'] ?? 'TW I',
+                        'jumlah_volume' => $totalVolume,
+                        'satuan' => $satuan,
+                        'harga_satuan' => $hargaSatuanRata,
+                        'jumlah_anggaran' => !empty($data['jumlah_anggaran']) ? (float) $data['jumlah_anggaran'] : $totalRealisasi,
+                        'total_realisasi' => $totalRealisasi,
+                        'biaya_administrasi_proyek' => $totalBiayaAdm,
+                        'is_extracomtable' => $isExtracom,
+                        'spk_nomor' => $data['spk_nomor'] ?? null,
+                        'spk_tanggal' => $data['spk_tanggal'] ?? null,
+                        'surat_pesanan_nomor' => $data['surat_pesanan_nomor'] ?? null,
+                        'surat_pesanan_tanggal' => $data['surat_pesanan_tanggal'] ?? null,
+                        'kwitansi_nomor' => $data['kwitansi_nomor'] ?? null,
+                        'kwitansi_tanggal' => $data['kwitansi_tanggal'] ?? null,
+                        'faktur_nomor' => $data['faktur_nomor'] ?? null,
+                        'faktur_tanggal' => $data['faktur_tanggal'] ?? null,
+                        'sp2d_nomor' => $data['sp2d_nomor'] ?? null,
+                        'sp2d_tanggal' => $data['sp2d_tanggal'] ?? null,
+                        'bast_dokumen_nomor' => $data['bast_dokumen_nomor'] ?? null,
+                        'bast_dokumen_tanggal' => $data['bast_dokumen_tanggal'] ?? null,
+                        'alamat_barang' => $data['alamat_barang'] ?? null,
+                        'penyedia_nama' => $data['penyedia_nama'] ?? null,
+                        'penyedia_pemilik' => $data['penyedia_pemilik'] ?? null,
+                        'penyedia_rekening_nama' => $data['penyedia_rekening_nama'] ?? null,
+                        'penyedia_rekening_nomor' => $data['penyedia_rekening_nomor'] ?? null,
+                        'penyedia_alamat' => $data['penyedia_alamat'] ?? null,
+                        'ppk_nama' => $data['ppk_nama'] ?? null,
+                        'ppk_nip' => $data['ppk_nip'] ?? null,
+                        'keterangan_tambahan' => $data['keterangan_tambahan'] ?? ($data['keterangan'] ?? null),
+                        'spesifikasi_json' => $specJson,
+                        'user_id' => auth()->id()
+                    ]);
+
+                    // Buat AstapRegister untuk setiap unit dalam mesin_items
+                    foreach ($data['mesin_items'] as $itemIdx => $mItem) {
+                        $itemQty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                        $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? 'Baik')));
+                        $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                        $ruangPemegang = $mItem['ruang_pemegang_mesin'] ?? null;
+
+                        for ($q = 0; $q < $itemQty; $q++) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                            while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                            }
+
+                            $qrPath = "/scan/{$nibar}";
+                            \App\Models\AstapRegister::create([
+                                'astap_id' => $astapItem->id,
+                                'tahun_perolehan' => $tahun,
+                                'no_register_int' => $runningRegNum,
+                                'no_register' => $nibar,
+                                'nibar' => $nibar,
+                                'qr_code_path' => $qrPath,
+                                'ruang_pemegang' => $ruangPemegang,
+                                'kondisi' => $kondisiStr,
+                                'status' => 'Tersedia'
+                            ]);
+                        }
+                    }
+
+                    return $astapItem;
+                });
+
+                // Kirim Notifikasi Sistem ke Admin & Super Admin
+                try {
+                    \App\Services\NotificationService::sendToAdminAndMaster(
+                        "Aset Peralatan & Mesin Baru ({$totalVolume} {$satuan}): {$namaBarang}",
+                        "{$totalVolume} {$satuan} • " . $tahun,
+                        'astap',
+                        route('astap.index')
+                    );
+                } catch (\Throwable $e) {
+                    \Log::warning("Gagal kirim notif astap store mesin: " . $e->getMessage());
+                }
+
+                session()->flash('success', 'Sebanyak ' . $totalVolume . ' ' . $satuan . ' Peralatan & Mesin "' . $namaBarang . '" berhasil disimpan ke database SIMAT-RK.');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sebanyak ' . $totalVolume . ' ' . $satuan . ' Peralatan & Mesin berhasil didaftarkan ke database SIMAT-RK!'
+                ]);
+            }
+
+            // =========================================================================
             // DEFAULT / JENIS ASET LAINNYA
             // =========================================================================
             $extracted = $extractAstapPayload($data, $jenisPrefix, $jenisAstapRecord);
@@ -1353,6 +1524,8 @@ Route::middleware('auth')->group(function () {
             };
 
             $hasTanahItems = !empty($data['tanah_items']) && is_array($data['tanah_items']) && count($data['tanah_items']) > 0;
+            $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
+
             if (($jenisPrefix === '1.3.1' || str_starts_with($jenisPrefix, '1.3.1') || $hasTanahItems) && $hasTanahItems) {
                 $totalBidang = 0;
                 $totalLuas = 0;
@@ -1400,6 +1573,63 @@ Route::middleware('auth')->group(function () {
                     'totReal' => $totalRealisasi,
                     'biaya' => 0,
                     'extracom' => false,
+                    'spec' => $spec
+                ];
+            } elseif (($jenisPrefix === '1.3.2' || str_starts_with($jenisPrefix, '1.3.2') || $hasMesinItems) && $hasMesinItems) {
+                $totalVolume = 0;
+                $totalRealisasi = 0;
+                $totalBiayaAdm = 0;
+                $allMerk = [];
+                $allType = [];
+                $allUkuran = [];
+                $allBahan = [];
+                $allPabrik = [];
+
+                foreach ($data['mesin_items'] as $mItem) {
+                    $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                    $nilaiSatuan = (float)($mItem['mesin_nilai_satuan'] ?? 0);
+                    $biayaAdmItem = (float)($mItem['mesin_administrasi_proyek'] ?? 0);
+                    
+                    $totalVolume += $qty;
+                    $totalRealisasi += ($qty * $nilaiSatuan) + $biayaAdmItem;
+                    $totalBiayaAdm += $biayaAdmItem;
+
+                    if (!empty($mItem['mesin_merk'])) $allMerk[] = $mItem['mesin_merk'];
+                    if (!empty($mItem['mesin_type'])) $allType[] = $mItem['mesin_type'];
+                    if (!empty($mItem['mesin_ukuran'])) $allUkuran[] = $mItem['mesin_ukuran'];
+                    if (!empty($mItem['mesin_bahan'])) $allBahan[] = $mItem['mesin_bahan'];
+                    if (!empty($mItem['mesin_no_pabrik'])) $allPabrik[] = $mItem['mesin_no_pabrik'];
+                }
+
+                $firstItem = $data['mesin_items'][0] ?? [];
+                $satuan = $firstItem['mesin_satuan'] ?? 'Unit';
+                $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
+                $isExtracom = !empty($data['is_extracomtable']) || ($hargaSatuanRata > 0 && $hargaSatuanRata < 300000);
+
+                $spec = [
+                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
+                    'merk' => count($allMerk) > 0 ? implode(', ', array_unique($allMerk)) : ($firstItem['mesin_merk'] ?? null),
+                    'type' => count($allType) > 0 ? implode(', ', array_unique($allType)) : ($firstItem['mesin_type'] ?? null),
+                    'ukuran' => count($allUkuran) > 0 ? implode(', ', array_unique($allUkuran)) : ($firstItem['mesin_ukuran'] ?? null),
+                    'no_pabrik' => count($allPabrik) > 0 ? implode(', ', array_unique($allPabrik)) : ($firstItem['mesin_no_pabrik'] ?? null),
+                    'no_rangka' => $firstItem['mesin_no_rangka'] ?? null,
+                    'no_mesin' => $firstItem['mesin_no_mesin'] ?? null,
+                    'no_bpkb' => $firstItem['mesin_no_bpkb'] ?? null,
+                    'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
+                    'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
+                    'kondisi' => $firstItem['mesin_kondisi'] ?? 'Baik',
+                    'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? null,
+                    'mesin_items' => $data['mesin_items']
+                ];
+                $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
+
+                $ext = [
+                    'vol' => max(1, $totalVolume),
+                    'sat' => $satuan,
+                    'hrgSat' => $hargaSatuanRata,
+                    'totReal' => $totalRealisasi,
+                    'biaya' => $totalBiayaAdm,
+                    'extracom' => $isExtracom,
                     'spec' => $spec
                 ];
             } else {
@@ -1519,6 +1749,71 @@ Route::middleware('auth')->group(function () {
                 if ($existingCount > $targetCount) {
                     for ($k = $targetCount; $k < $existingCount; $k++) {
                         $existingRegs[$k]->delete();
+                    }
+                }
+            } elseif ($hasMesinItems) {
+                // Flatten target units from mesin_items
+                $targetUnits = [];
+                foreach ($data['mesin_items'] as $mItem) {
+                    $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                    $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? 'Baik')));
+                    $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                    $ruang = $mItem['ruang_pemegang_mesin'] ?? null;
+                    for ($q = 0; $q < $qty; $q++) {
+                        $targetUnits[] = [
+                            'kondisi' => $kondisiStr,
+                            'ruang_pemegang' => $ruang
+                        ];
+                    }
+                }
+
+                $targetCount = count($targetUnits);
+                $existingRegs = $astap->registers()->orderBy('id')->get();
+                $existingCount = $existingRegs->count();
+
+                $kode108Clean = '132000000000';
+                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
+                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
+                } elseif (!empty($data['mesin_kode_barang'])) {
+                    $kode108Clean = str_replace('.', '', $data['mesin_kode_barang']);
+                }
+
+                $tahun = $astap->tahun_perolehan;
+
+                // 1. Update existing registers
+                foreach ($targetUnits as $unitIdx => $unitData) {
+                    if ($unitIdx < $existingCount) {
+                        $reg = $existingRegs[$unitIdx];
+                        $reg->kondisi = $unitData['kondisi'];
+                        $reg->ruang_pemegang = $unitData['ruang_pemegang'];
+                        $reg->save();
+                    } else {
+                        // Tambah register baru
+                        $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                            ->whereHas('astap', fn($q) => $q->where('jenis_astap_id', $astap->jenis_astap_id))
+                            ->max('no_register_int') ?? 0;
+                        $runningRegNum = (int) $maxRegInt + 1;
+                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+
+                        $qrPath = "/scan/{$nibar}";
+                        \App\Models\AstapRegister::create([
+                            'astap_id' => $astap->id,
+                            'tahun_perolehan' => $tahun,
+                            'no_register_int' => $runningRegNum,
+                            'no_register' => $nibar,
+                            'nibar' => $nibar,
+                            'qr_code_path' => $qrPath,
+                            'ruang_pemegang' => $unitData['ruang_pemegang'],
+                            'kondisi' => $unitData['kondisi'],
+                            'status' => 'Tersedia'
+                        ]);
                     }
                 }
             }
