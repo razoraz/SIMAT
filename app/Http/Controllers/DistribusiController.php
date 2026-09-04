@@ -137,14 +137,14 @@ class DistribusiController extends Controller
                 $isValidBast = !empty($d->bast_nomor) && preg_match('/032\s*\/\s*\d+\s*\/\s*430\.10\.7/', (string)$d->bast_nomor);
 
                 if ($d->status === 'Ditolak') {
-                    $bastNomorTampil = '-';
+                    $bastNomorTampil = '(tidak diterbitkan)';
                 } elseif ($isDeliveredOrReceived && $isValidBast) {
                     $bastNomorTampil = $d->bast_nomor;
                 } elseif ($isDeliveredOrReceived) {
                     $bastNomorTampil = self::generateNextBastNomor((int)$tahunStr, $d->id);
                 } else {
                     // Menunggu Konfirmasi atau Draft
-                    $bastNomorTampil = 'Belum Diterbitkan';
+                    $bastNomorTampil = '(Menunggu Konfirmasi)';
                 }
 
                 return [

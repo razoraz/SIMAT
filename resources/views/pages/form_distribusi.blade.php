@@ -152,9 +152,20 @@
 
                         this.formData.kode = loadedData.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100));
                         const isShippingOrReceived = ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(loadedData.status);
-                        const isValidLoadedBast = loadedData.bast_nomor && !loadedData.bast_nomor.includes('Diterbitkan') && loadedData.bast_nomor !== '-';
-                        this.formData.bast_nomor = (isShippingOrReceived && isValidLoadedBast) ? loadedData.bast_nomor : (isShippingOrReceived ? {{ Js::from($nextBastNomor ?? '') }} : '');
+                        const isValidLoadedBast = loadedData.bast_nomor && !loadedData.bast_nomor.includes('Diterbitkan') && loadedData.bast_nomor !== '-' && !loadedData.bast_nomor.includes('Menunggu') && !loadedData.bast_nomor.includes('tidak');
+                        
                         this.formData.status = loadedData.status || (this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman');
+                        if (this.formData.status === 'Ditolak') {
+                            this.formData.bast_nomor = '(tidak diterbitkan)';
+                        } else if (this.formData.status === 'Menunggu Konfirmasi' || this.formData.status === 'Draft') {
+                            this.formData.bast_nomor = '(Menunggu Konfirmasi)';
+                        } else if (isShippingOrReceived && isValidLoadedBast) {
+                            this.formData.bast_nomor = loadedData.bast_nomor;
+                        } else if (isShippingOrReceived) {
+                            this.formData.bast_nomor = {{ Js::from($nextBastNomor ?? '') }};
+                        } else {
+                            this.formData.bast_nomor = '(Menunggu Konfirmasi)';
+                        }
                         this.formData.tujuan = loadedData.unit ? loadedData.unit.nama : (uObj ? uObj.nama : (loadedData.tujuan || ''));
                         this.formData.unit_id = loadedData.unit_id || (uObj ? uObj.id : null);
                         this.formData.tgl = tglStr;
@@ -169,7 +180,7 @@
                         const autoUnit = (this.isSubAdmin && this.userUnit) ? this.userUnit : null;
                         this.formData.kode = {{ Js::from($nextKode ?? ('DST-'.date('Y').'-001')) }};
                         this.formData.status = this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
-                        this.formData.bast_nomor = this.isSubAdmin ? '' : {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
+                        this.formData.bast_nomor = this.isSubAdmin ? '(Menunggu Konfirmasi)' : {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
                         this.formData.tujuan = autoUnit ? autoUnit.nama : '';
                         this.formData.unit_id = autoUnit ? autoUnit.id : null;
                         this.formData.tgl = new Date().toISOString().split('T')[0];
@@ -189,21 +200,29 @@
                 },
                 updateYearInKode() {
                     if (!this.formData.tgl) return;
-                    const year = this.formData.tgl.split('-')[0];
-                    if (year && year.length === 4) {
-                        if (this.formData.kode) {
-                            this.formData.kode = this.formData.kode.replace(/DST-\d{4}-/, 'DST-' + year + '-');
+                    const tahun = this.formData.tgl.split('-')[0];
+                    if (tahun && this.formData.kode && this.formData.kode.startsWith('DST-')) {
+                        const parts = this.formData.kode.split('-');
+                        if (parts.length === 3) {
+                            this.formData.kode = parts[0] + '-' + tahun + '-' + parts[2];
                         }
+                    }
+                    if (['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(this.formData.status)) {
                         if (this.formData.bast_nomor && this.formData.bast_nomor.includes('430.10.7')) {
-                            this.formData.bast_nomor = this.formData.bast_nomor.replace(/\/ \d{4}$/, '/ ' + year);
+                            const bParts = this.formData.bast_nomor.split('/');
+                            if (bParts.length === 4) {
+                                this.formData.bast_nomor = bParts[0].trim() + ' / ' + bParts[1].trim() + ' / ' + bParts[2].trim() + ' / ' + tahun;
+                            }
                         }
                     }
                 },
                 onStatusChange() {
-                    if (this.formData.status === 'Ditolak' || this.formData.status === 'Menunggu Konfirmasi' || this.formData.status === 'Draft') {
-                        this.formData.bast_nomor = '';
+                    if (this.formData.status === 'Ditolak') {
+                        this.formData.bast_nomor = '(tidak diterbitkan)';
+                    } else if (this.formData.status === 'Menunggu Konfirmasi' || this.formData.status === 'Draft') {
+                        this.formData.bast_nomor = '(Menunggu Konfirmasi)';
                     } else if (this.formData.status === 'Dalam Pengiriman' || this.formData.status === 'Telah Diterima') {
-                        if (!this.formData.bast_nomor || this.formData.bast_nomor === '-' || this.formData.bast_nomor.includes('Diterbitkan')) {
+                        if (!this.formData.bast_nomor || this.formData.bast_nomor === '-' || this.formData.bast_nomor === '(tidak diterbitkan)' || this.formData.bast_nomor.includes('Menunggu') || this.formData.bast_nomor.includes('Diterbitkan')) {
                             this.formData.bast_nomor = {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
                         }
                     }
@@ -320,7 +339,7 @@
                     }
 
                     const isShippingOrReceived = ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(this.formData.status);
-                    if (!this.isSubAdmin && isShippingOrReceived && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '')) {
+                    if (!this.isSubAdmin && isShippingOrReceived && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '' || this.formData.bast_nomor === '(tidak diterbitkan)' || this.formData.bast_nomor.includes('Menunggu'))) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNo. BAST Distribusi belum diisi / belum terbit.');
                         return;
                     }
@@ -363,7 +382,7 @@
                             try {
                                 const dbPayload = {
                                     kode: this.formData.kode,
-                                    bast_nomor: this.formData.bast_nomor,
+                                    bast_nomor: isShippingOrReceived ? this.formData.bast_nomor : null,
                                     tujuan: this.formData.tujuan,
                                     unit_id: this.formData.unit_id,
                                     tanggal_distribusi: this.formData.tgl,
@@ -473,15 +492,12 @@
 
                     <!-- Nomor BAST Rujukan -->
                     <div>
-                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
-                            <span>No. BAST Distribusi</span>
-                            <span class="text-[10px] font-normal"
-                                  :class="formData.status === 'Ditolak' ? 'text-rose-400 font-bold' : (formData.status === 'Menunggu Konfirmasi' ? 'text-amber-400' : 'text-teal-400 font-bold')"
-                                  x-text="formData.status === 'Ditolak' ? '❌ Tidak Ada Nomor BAST' : (formData.status === 'Menunggu Konfirmasi' ? '⏳ Diterbitkan saat Pengiriman' : '🚚 Diterbitkan Resmi')"></span>
+                        <label class="block text-slate-300 font-semibold text-xs mb-1.5">
+                            No. BAST Distribusi
                         </label>
                         <input type="text" x-model="formData.bast_nomor"
                                :readonly="isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi'"
-                               :placeholder="formData.status === 'Ditolak' ? 'Tidak memiliki nomor BAST' : (formData.status === 'Menunggu Konfirmasi' ? 'Diterbitkan saat status Dalam Pengiriman' : '032 / ... / 430.10.7 / 2026')"
+                               :placeholder="formData.status === 'Ditolak' ? '(tidak diterbitkan)' : (formData.status === 'Menunggu Konfirmasi' ? '(Menunggu Konfirmasi)' : '032 / ... / 430.10.7 / 2026')"
                                :class="(isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed' : 'bg-slate-950 text-white'"
                                class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-teal-500">
                     </div>
