@@ -267,24 +267,51 @@
                 },
                 getItemMaxQty(item) {
                     if (!item) return 1;
-                    if (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') {
-                        return parseInt(item.qty_acc) || 0;
-                    }
-                    return parseInt(item.qty) || 1;
+                    const qtyPengajuan = parseInt(item.qty) || 0;
+                    const qtyAcc = (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? parseInt(item.qty_acc) : 0;
+                    return Math.max(qtyPengajuan, qtyAcc, 1);
                 },
                 selectNibar(item, n) {
                     if (this.formData.status === 'Ditolak') return;
                     if (!item || !n || (n.status && n.status !== 'Tersedia')) return;
                     if (!item.nibar_selected) item.nibar_selected = [];
+                    const prevCount = item.nibar_selected.length;
                     const maxQty = this.getItemMaxQty(item);
-                    if (maxQty <= 0) { alert('⚠️ Volume ACC bernilai 0. Tidak dapat memilih NIBAR.'); return; }
-                    if (item.nibar_selected.length >= maxQty) { alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai batas Volume ACC (' + maxQty + ' unit).'); return; }
+                    if (maxQty <= 0) { alert('⚠️ Volume bernilai 0. Tidak dapat memilih NIBAR.'); return; }
+                    if (item.nibar_selected.length >= maxQty) {
+                        alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai batas maksimal (' + maxQty + ' ' + (item.satuan || 'Unit') + '). Tambah volume pengajuan / ACC jika ingin memilih lebih banyak NIBAR.');
+                        return;
+                    }
                     item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
+                    const newCount = item.nibar_selected.length;
+                    // Volume Di-ACC otomatis terisi mengikuti NIBAR yang diinput
+                    if (item.qty_acc === null || item.qty_acc === undefined || item.qty_acc === '' || item.qty_acc === prevCount || item.qty_acc < newCount) {
+                        item.qty_acc = newCount;
+                    }
                     this.activeNibarDropdownIndex = null;
                 },
                 removeNibar(item, nibarStr) {
                     if (this.formData.status === 'Ditolak') return;
+                    const prevCount = (item.nibar_selected || []).length;
                     item.nibar_selected = (item.nibar_selected || []).filter(n => n.nibar !== nibarStr);
+                    const newCount = item.nibar_selected.length;
+                    // Jika qty_acc sebelumnya mengikuti jumlah NIBAR, sesuaikan otomatis
+                    if (item.qty_acc === prevCount) {
+                        item.qty_acc = newCount > 0 ? newCount : null;
+                    } else if (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '' && item.qty_acc < newCount) {
+                        item.qty_acc = newCount;
+                    }
+                },
+                validateItemQtyAcc(item) {
+                    if (!item || this.formData.status === 'Ditolak') return;
+                    const nibarCount = (item.nibar_selected || []).length;
+                    if (nibarCount > 0) {
+                        const currentQtyAcc = (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? parseInt(item.qty_acc) : null;
+                        if (currentQtyAcc === null || currentQtyAcc < nibarCount) {
+                            item.qty_acc = nibarCount;
+                            this.showSimatToast('⚠️ Volume Di-ACC tidak boleh kurang dari jumlah NIBAR yang dipilih (' + nibarCount + ' unit). Otomatis disesuaikan ke ' + nibarCount + '.', 'warning');
+                        }
+                    }
                 },
                 getFilteredJenisAstap(query) {
                     const validList = (this.jenisAstapList || []).filter(j => j && j.nama);
@@ -313,7 +340,7 @@
                 },
                 clearItemBarang(item, idx) {
                     if (this.formData.status === 'Ditolak') return;
-                    item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; if (idx !== undefined) this.activeDropdownIndex = idx;
+                    item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; item.qty_acc = null; if (idx !== undefined) this.activeDropdownIndex = idx;
                 },
                 onNamaBarangInput(item) {
                     if (!item.nama_barang || item.nama_barang.trim() === '') { item.kode_barang = ''; return; }
@@ -396,6 +423,21 @@
                     if (emptyItem) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nAda baris barang yang belum dipilih / diisi nama barangnya.');
                         return;
+                    }
+
+                    // ── Validasi Volume Di-ACC tidak boleh kurang dari jumlah NIBAR ──────
+                    if (this.formData.status !== 'Ditolak') {
+                        for (let i = 0; i < this.formData.items.length; i++) {
+                            const it = this.formData.items[i];
+                            const nibarCount = (it.nibar_selected || []).length;
+                            if (nibarCount > 0) {
+                                const currentAcc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : null;
+                                if (currentAcc === null || currentAcc < nibarCount) {
+                                    alert('⚠️ Validasi Gagal pada Barang #' + (i + 1) + ' (' + (it.nama_barang || 'Aset') + '):\n\nVolume Di-ACC (' + (currentAcc !== null ? currentAcc : 'Belum Diisi') + ') tidak boleh kurang dari jumlah NIBAR yang diinput (' + nibarCount + ' unit).\n\nSilakan sesuaikan Volume Di-ACC minimal ' + nibarCount + ' unit.');
+                                    return;
+                                }
+                            }
+                        }
                     }
 
                     this.askConfirmation({
@@ -912,7 +954,7 @@
                                                     <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih nama barang terlebih dahulu</span>
                                                 </template>
                                                 <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline" x-text="(item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? '— pilih maks. sesuai Volume ACC (' + getItemMaxQty(item) + ')' : '— pilih maks. sesuai Volume Pengajuan (' + getItemMaxQty(item) + ')'"></span>
+                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline" x-text="'— batas maks. ' + getItemMaxQty(item) + ' ' + (item.satuan || 'Unit')"></span>
                                                 </template>
                                             </span>
                                             
@@ -1125,8 +1167,11 @@
                                                 <template x-if="item.qty_acc === null || item.qty_acc === ''">
                                                     <span class="text-[10px] text-amber-400 font-semibold">⏳ Belum Di-ACC</span>
                                                 </template>
-                                                <template x-if="item.qty_acc !== null && item.qty_acc !== ''">
+                                                <template x-if="item.qty_acc !== null && item.qty_acc !== '' && (!item.nibar_selected || item.nibar_selected.length <= item.qty_acc)">
                                                     <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
+                                                </template>
+                                                <template x-if="(item.nibar_selected || []).length > 0 && item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length">
+                                                    <span class="text-[10px] text-rose-400 font-bold" x-text="'⚠️ Min. ' + item.nibar_selected.length + ' ' + (item.satuan || 'Unit')"></span>
                                                 </template>
                                             </label>
                                             <div class="relative">
@@ -1139,15 +1184,28 @@
                                                         let raw = $event.target.value.replace(/\D/g, '');
                                                         item.qty_acc = raw !== '' ? parseInt(raw, 10) : null;
                                                         $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                                        if (item.qty_acc !== null && item.nibar_selected && item.nibar_selected.length > item.qty_acc) {
-                                                            item.nibar_selected = item.nibar_selected.slice(0, item.qty_acc);
-                                                        }
                                                     "
+                                                    @change="validateItemQtyAcc(item)"
+                                                    @blur="validateItemQtyAcc(item)"
                                                     placeholder="Kosong = Belum Di-ACC"
-                                                    :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-500 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-emerald-300 border-emerald-500/40 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40'"
+                                                    :class="formData.status === 'Ditolak' 
+                                                        ? 'bg-slate-950/80 text-slate-500 cursor-not-allowed border-slate-800' 
+                                                        : ((item.nibar_selected || []).length > 0 && item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length 
+                                                            ? 'bg-slate-900 text-rose-300 border-rose-500/80 focus:border-rose-400 focus:ring-1 focus:ring-rose-400/40' 
+                                                            : 'bg-slate-900 text-emerald-300 border-emerald-500/40 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40')"
                                                     class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none transition-all placeholder-slate-500">
                                                 <svg class="w-3.5 h-3.5 text-emerald-400 pointer-events-none" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </div>
+                                            <template x-if="(item.nibar_selected || []).length > 0">
+                                                <div class="mt-1.5 flex items-center justify-between text-[10px] px-0.5">
+                                                    <span class="text-amber-400 font-medium flex items-center space-x-1">
+                                                        <span>ℹ️ Min. <span class="font-bold font-mono text-amber-300" x-text="item.nibar_selected.length"></span> unit sesuai NIBAR terpilih</span>
+                                                    </span>
+                                                    <template x-if="item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length">
+                                                        <span class="text-rose-400 font-bold">⚠️ Nilai terlalu kecil!</span>
+                                                    </template>
+                                                </div>
+                                            </template>
                                         </div>
                                     </template>
 
