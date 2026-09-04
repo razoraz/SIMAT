@@ -66,6 +66,26 @@ class Astap extends Model
     {
         $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
 
+        // Cek jika spesifikasi memiliki array mesin_items multi-item
+        $spec = is_array($this->spesifikasi_json) ? $this->spesifikasi_json : (json_decode($this->spesifikasi_json, true) ?? []);
+        if (!empty($spec['mesin_items']) && is_array($spec['mesin_items']) && count($spec['mesin_items']) > 0) {
+            $hasKibB = false;
+            $hasExtracom = false;
+            foreach ($spec['mesin_items'] as $m) {
+                $price = floatval($m['mesin_nilai_satuan'] ?? 0);
+                if ($price >= 300000) {
+                    $hasKibB = true;
+                } else {
+                    $hasExtracom = true;
+                }
+            }
+            if ($hasKibB) {
+                return 'KIB B';
+            } elseif ($hasExtracom) {
+                return 'EXTRACOM';
+            }
+        }
+
         if ($this->is_extracomtable || (str_starts_with($jenisKode, '1.3.2') && $this->harga_satuan > 0 && $this->harga_satuan < 300000)) {
             return 'EXTRACOM';
         }

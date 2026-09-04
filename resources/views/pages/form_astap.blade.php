@@ -272,7 +272,8 @@
                                 mesin_satuan: m.mesin_satuan || 'Unit',
                                 mesin_nilai_satuan: m.mesin_nilai_satuan || 0,
                                 mesin_administrasi_proyek: m.mesin_administrasi_proyek || 0,
-                                ruang_pemegang: m.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                ruang_pemegang: m.ruang_pemegang || m.ruang_pemegang_mesin || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                ruang_pemegang_mesin: m.ruang_pemegang || m.ruang_pemegang_mesin || (reg0 ? (reg0.ruang_pemegang || '') : ''),
                                 isRuangOpen: false,
                                 searchRuang: ''
                             }))
@@ -930,8 +931,16 @@
                 syncMesinFieldsToMain() {
                     if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                         const first = this.formData.mesin_items[0];
-                        this.formData.mesin_nama_barang = first.mesin_nama_barang || this.formData.mesin_nama_barang;
-                        this.formData.mesin_kode_barang = first.mesin_kode_barang || this.formData.mesin_kode_barang;
+                        if (first.mesin_nama_barang && first.mesin_nama_barang.trim() !== '') {
+                            this.formData.mesin_nama_barang = first.mesin_nama_barang;
+                        } else if (this.formData.mesin_nama_barang) {
+                            first.mesin_nama_barang = this.formData.mesin_nama_barang;
+                        }
+                        if (first.mesin_kode_barang && first.mesin_kode_barang.trim() !== '') {
+                            this.formData.mesin_kode_barang = first.mesin_kode_barang;
+                        } else if (this.formData.mesin_kode_barang) {
+                            first.mesin_kode_barang = this.formData.mesin_kode_barang;
+                        }
                         this.formData.mesin_merk = first.mesin_merk;
                         this.formData.mesin_type = first.mesin_type;
                         this.formData.mesin_ukuran = first.mesin_ukuran;
@@ -1383,10 +1392,30 @@
                     const found = this.availableSubSubRincian108.find(s => s.kode === kodeSubSub);
                     if (this.isTanah) {
                         this.formData.tanah_kode_barang = kodeSubSub;
-                        if (found) this.formData.tanah_nama_barang = found.nama;
+                        if (found) {
+                            this.formData.tanah_nama_barang = found.nama;
+                            if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
+                                this.formData.tanah_items.forEach((it, idx) => {
+                                    it.tanah_kode_barang = kodeSubSub;
+                                    if (!it.tanah_nama_barang || it.tanah_nama_barang === '' || idx === 0) {
+                                        it.tanah_nama_barang = found.nama;
+                                    }
+                                });
+                            }
+                        }
                     } else if (this.isMesin) {
                         this.formData.mesin_kode_barang = kodeSubSub;
-                        if (found) this.formData.mesin_nama_barang = found.nama;
+                        if (found) {
+                            this.formData.mesin_nama_barang = found.nama;
+                            if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                                this.formData.mesin_items.forEach((it, idx) => {
+                                    it.mesin_kode_barang = kodeSubSub;
+                                    if (!it.mesin_nama_barang || it.mesin_nama_barang === '' || idx === 0) {
+                                        it.mesin_nama_barang = found.nama;
+                                    }
+                                });
+                            }
+                        }
                     } else if (this.isGedung) {
                         this.formData.gedung_kode_barang = kodeSubSub;
                         if (found) this.formData.gedung_nama_barang = found.nama;
@@ -1424,7 +1453,7 @@
                             this.formData.sub_rincian_kode = parentSubRincian.kode;
                             this.formData.sub_rincian_nama = parentSubRincian.nama;
                         }
-                        if (parentJenis && (!this.formData.jenis_aset_kode || !this.formData.jenis_aset_nama)) {
+                        if (parentJenis) {
                             this.formData.jenis_aset_kode = parentJenis.kode;
                             this.formData.jenis_aset_nama = parentJenis.nama;
                         }
@@ -1625,6 +1654,16 @@
                                 const url = isEdit ? '/astap/' + astapId : '/astap';
                                 const method = isEdit ? 'PUT' : 'POST';
 
+                                const payload = { ...this.formData };
+                                if (this.isMesin) {
+                                    delete payload.tanah_items;
+                                } else if (this.isTanah) {
+                                    delete payload.mesin_items;
+                                } else {
+                                    delete payload.tanah_items;
+                                    delete payload.mesin_items;
+                                }
+
                                 fetch(url, {
                                     method: method,
                                     headers: {
@@ -1632,7 +1671,7 @@
                                         'X-CSRF-TOKEN': token,
                                         'Accept': 'application/json'
                                     },
-                                    body: JSON.stringify(this.formData)
+                                    body: JSON.stringify(payload)
                                 })
                                 .then(async res => {
                                     const data = await res.json().catch(() => ({}));

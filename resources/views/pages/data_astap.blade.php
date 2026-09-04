@@ -263,7 +263,7 @@
             return matchYear && matchTw && matchCategory;
         });
 
-        // Kelompokkan data per Kategori Aset
+        // Kelompokkan data per Kategori Aset (Dengan Dukungan Pemilahan Item KIB B vs EXTRACOM)
         const categories = {
             'KIB A': [],
             'KIB B': [],
@@ -277,10 +277,56 @@
 
         filteredAstaps.forEach(item => {
             const cat = item.category || 'KIB B';
-            if (categories[cat]) {
-                categories[cat].push(item);
+
+            let spec = item.spesifikasi_json;
+            if (typeof spec === 'string') {
+                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+            }
+            const mesinItems = (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) ? spec.mesin_items : null;
+
+            if (mesinItems && (cat === 'KIB B' || cat === 'EXTRACOM' || item.jenis_aset_kode === '1.3.2' || (item.kode_barang && item.kode_barang.startsWith('1.3.2')))) {
+                // Pisahkan per-item mesin_items: >= 300.000 masuk KIB B, < 300.000 masuk EXTRACOM
+                const kibBSubItems = [];
+                const extracomSubItems = [];
+
+                mesinItems.forEach(mItem => {
+                    const price = parseFloat(mItem.mesin_nilai_satuan) || 0;
+                    if (price >= 300000) {
+                        kibBSubItems.push(mItem);
+                    } else {
+                        extracomSubItems.push(mItem);
+                    }
+                });
+
+                if (kibBSubItems.length > 0) {
+                    const kibBItem = { 
+                        ...item, 
+                        category: 'KIB B',
+                        spesifikasi_json: { ...spec, mesin_items: kibBSubItems },
+                        total_realisasi_num: kibBSubItems.reduce((sum, mi) => sum + ((Math.max(1, parseInt(mi.mesin_jumlah_barang) || 1) * (parseFloat(mi.mesin_nilai_satuan) || 0)) + (parseFloat(mi.mesin_administrasi_proyek) || 0)), 0),
+                        jumlah_volume: kibBSubItems.reduce((sum, mi) => sum + Math.max(1, parseInt(mi.mesin_jumlah_barang) || 1), 0)
+                    };
+                    kibBItem.jumlah_realisasi = 'Rp ' + Number(kibBItem.total_realisasi_num).toLocaleString('id-ID');
+                    categories['KIB B'].push(kibBItem);
+                }
+
+                if (extracomSubItems.length > 0) {
+                    const extItem = { 
+                        ...item, 
+                        category: 'EXTRACOM',
+                        spesifikasi_json: { ...spec, mesin_items: extracomSubItems },
+                        total_realisasi_num: extracomSubItems.reduce((sum, mi) => sum + ((Math.max(1, parseInt(mi.mesin_jumlah_barang) || 1) * (parseFloat(mi.mesin_nilai_satuan) || 0)) + (parseFloat(mi.mesin_administrasi_proyek) || 0)), 0),
+                        jumlah_volume: extracomSubItems.reduce((sum, mi) => sum + Math.max(1, parseInt(mi.mesin_jumlah_barang) || 1), 0)
+                    };
+                    extItem.jumlah_realisasi = 'Rp ' + Number(extItem.total_realisasi_num).toLocaleString('id-ID');
+                    categories['EXTRACOM'].push(extItem);
+                }
             } else {
-                categories['KIB B'].push(item);
+                if (categories[cat]) {
+                    categories[cat].push(item);
+                } else {
+                    categories['KIB B'].push(item);
+                }
             }
         });
 
@@ -885,41 +931,158 @@
             ]
         ];
 
-        categories['KIB B'].forEach((item, idx) => {
-            let spec = item.spesifikasi_json;
-            if (typeof spec === 'string') {
-                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+        // ── Kelompokkan Data KIB B per Sub Rincian Objek (PMDN 108) ───────────────
+        const kibBGroups = {};
+        categories['KIB B'].forEach(item => {
+            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 11) : 'KIB-B-DEFAULT');
+            if (!kibBGroups[subKey]) {
+                kibBGroups[subKey] = [];
             }
+            kibBGroups[subKey].push(item);
+        });
 
-            const mesinItems = (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
-                ? spec.mesin_items
-                : null;
+        let globalKibBNo = 1;
+        Object.keys(kibBGroups).forEach(subKey => {
+            const groupItems = kibBGroups[subKey];
+            const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0), 0);
+            const groupAnggaranTotal = parseFloat(groupItems[0].jumlah_anggaran) || groupRealisasiTotal;
 
-            if (mesinItems) {
-                mesinItems.forEach((mItem) => {
-                    const qty = max1(parseInt(mItem.mesin_jumlah_barang) || 1);
-                    const nilaiSatuan = parseFloat(mItem.mesin_nilai_satuan) || 0;
-                    const adminProyek = parseFloat(mItem.mesin_administrasi_proyek) || 0;
-                    const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
-                    const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+            let isFirstRowInGroup = true;
+
+            groupItems.forEach((item) => {
+                let spec = item.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                }
+
+                const mesinItems = (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
+                    ? spec.mesin_items
+                    : null;
+
+                if (mesinItems) {
+                    mesinItems.forEach((mItem) => {
+                        const qty = Math.max(1, parseInt(mItem.mesin_jumlah_barang) || 1);
+                        const nilaiSatuan = parseFloat(mItem.mesin_nilai_satuan) || 0;
+                        const adminProyek = parseFloat(mItem.mesin_administrasi_proyek) || 0;
+                        const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
+                        const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+                        const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                        const ruangUnit = mItem.ruang_pemegang_mesin || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                        let col1to15 = [];
+                        if (isFirstRowInGroup) {
+                            // Baris Pertama Group Sub Rincian: Isi Lengkap Kolom 1 s/d 15
+                            col1to15 = [
+                                globalKibBNo++,
+                                item.program_kode || '-',
+                                item.program_nama || '-',
+                                item.kegiatan_kode || '-',
+                                item.kegiatan_nama || '-',
+                                item.sub_kegiatan_kode || '-',
+                                item.sub_kegiatan_nama || '-',
+                                item.rekening_kode || '-',
+                                item.rekening_nama || '-',
+                                item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.2'),
+                                item.jenis_aset_nama || 'PERALATAN DAN MESIN',
+                                item.sub_rincian_kode || subKey,
+                                item.sub_rincian_nama || '-',
+                                groupAnggaranTotal,
+                                groupRealisasiTotal
+                            ];
+                            isFirstRowInGroup = false;
+                        } else {
+                            // Baris Anak: Kolom 1 s/d 15 Dikosongkan (Blank)
+                            col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                        }
+
+                        kibBRows.push([
+                            ...col1to15,                                 // c0-c14: cols 1-15
+                            item.nama_barang || '-',                     // c15: col 16
+                            item.kode_barang || '-',                     // c16: col 17
+                            mItem.mesin_merk || item.merk || '-',        // c17: col 18
+                            mItem.mesin_type || item.type || '-',        // c18: col 19
+                            mItem.mesin_ukuran || item.ukuran || '-',    // c19: col 20
+                            mItem.mesin_no_pabrik || item.no_pabrik || '-', // c20: col 21
+                            mItem.mesin_no_rangka || item.no_rangka || '-', // c21: col 22
+                            mItem.mesin_no_mesin || item.no_mesin || '-',   // c22: col 23
+                            mItem.mesin_no_bpkb || item.no_btkb || '-',     // c23: col 24
+                            mItem.mesin_no_polisi || item.no_polisi || '-', // c24: col 25
+                            mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
+                            item.tahun_perolehan || '-',                 // c26: col 27
+                            item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
+                            item.spk_tanggal || '-',                     // c28: col 29
+                            item.surat_pesanan_nomor || '-',             // c29: col 30
+                            item.surat_pesanan_tanggal || '-',           // c30: col 31
+                            item.kwitansi_nomor || '-',                  // c31: col 32
+                            item.kwitansi_tanggal || '-',                // c32: col 33
+                            item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
+                            item.faktur_tanggal || '-',                  // c34: col 35
+                            kondisiLabel,                                // c35: col 36
+                            qty,                                         // c36: col 37 (Jumlah Barang)
+                            mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
+                            nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
+                            adminProyek,                                 // c39: col 40 (Admin Proyek)
+                            totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
+                            item.sp2d_nomor || '-',                      // c41: col 42
+                            item.sp2d_tanggal || '-',                    // c42: col 43
+                            item.bast_dokumen_nomor || '-',              // c43: col 44
+                            item.bast_dokumen_tanggal || '-',            // c44: col 45
+                            ruangUnit,                                   // c45: col 46
+                            ...getStep4Columns(item)                     // c46-c53: cols 47-54
+                        ]);
+                    });
+                } else {
+                    const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+                    const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
+                    const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
+                    const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
+                    const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
+                    const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+                    
+                    const rawKondisi = item.kondisi || 'Baik';
                     const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
                                        : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
                                        : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
-                    const ruangUnit = mItem.ruang_pemegang_mesin || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                    let col1to15 = [];
+                    if (isFirstRowInGroup) {
+                        col1to15 = [
+                            globalKibBNo++,
+                            item.program_kode || '-',
+                            item.program_nama || '-',
+                            item.kegiatan_kode || '-',
+                            item.kegiatan_nama || '-',
+                            item.sub_kegiatan_kode || '-',
+                            item.sub_kegiatan_nama || '-',
+                            item.rekening_kode || '-',
+                            item.rekening_nama || '-',
+                            item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.2'),
+                            item.jenis_aset_nama || 'PERALATAN DAN MESIN',
+                            item.sub_rincian_kode || subKey,
+                            item.sub_rincian_nama || '-',
+                            groupAnggaranTotal,
+                            groupRealisasiTotal
+                        ];
+                        isFirstRowInGroup = false;
+                    } else {
+                        col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                    }
 
                     kibBRows.push([
-                        ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
+                        ...col1to15,                                 // c0-c14: cols 1-15
                         item.nama_barang || '-',                     // c15: col 16
                         item.kode_barang || '-',                     // c16: col 17
-                        mItem.mesin_merk || item.merk || '-',        // c17: col 18
-                        mItem.mesin_type || item.type || '-',        // c18: col 19
-                        mItem.mesin_ukuran || item.ukuran || '-',    // c19: col 20
-                        mItem.mesin_no_pabrik || item.no_pabrik || '-', // c20: col 21
-                        mItem.mesin_no_rangka || item.no_rangka || '-', // c21: col 22
-                        mItem.mesin_no_mesin || item.no_mesin || '-',   // c22: col 23
-                        mItem.mesin_no_bpkb || item.no_btkb || '-',     // c23: col 24
-                        mItem.mesin_no_polisi || item.no_polisi || '-', // c24: col 25
-                        mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
+                        item.merk || '-',                            // c17: col 18
+                        item.type || '-',                            // c18: col 19
+                        item.ukuran || '-',                          // c19: col 20
+                        item.no_pabrik || '-',                       // c20: col 21
+                        item.no_rangka || '-',                       // c21: col 22
+                        item.no_mesin || '-',                        // c22: col 23
+                        item.no_btkb || '-',                         // c23: col 24
+                        item.no_polisi || '-',                       // c24: col 25
+                        item.bahan || '-',                           // c25: col 26
                         item.tahun_perolehan || '-',                 // c26: col 27
                         item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
                         item.spk_tanggal || '-',                     // c28: col 29
@@ -930,8 +1093,8 @@
                         item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
                         item.faktur_tanggal || '-',                  // c34: col 35
                         kondisiLabel,                                // c35: col 36
-                        qty,                                         // c36: col 37 (Jumlah Barang)
-                        mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
+                        jumlahBarang,                                // c36: col 37 (Jumlah Barang)
+                        item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
                         nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
                         adminProyek,                                 // c39: col 40 (Admin Proyek)
                         totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
@@ -942,51 +1105,8 @@
                         ruangUnit,                                   // c45: col 46
                         ...getStep4Columns(item)                     // c46-c53: cols 47-54
                     ]);
-                });
-            } else {
-                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-                const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
-                const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
-                const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
-                const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
-                const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
-                
-                kibBRows.push([
-                    ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
-                    item.nama_barang || '-',                     // c15: col 16
-                    item.kode_barang || '-',                     // c16: col 17
-                    item.merk || '-',                            // c17: col 18
-                    item.type || '-',                            // c18: col 19
-                    item.ukuran || '-',                          // c19: col 20
-                    item.no_pabrik || '-',                       // c20: col 21
-                    item.no_rangka || '-',                       // c21: col 22
-                    item.no_mesin || '-',                        // c22: col 23
-                    item.no_btkb || '-',                         // c23: col 24
-                    item.no_polisi || '-',                       // c24: col 25
-                    item.bahan || '-',                           // c25: col 26
-                    item.tahun_perolehan || '-',                 // c26: col 27
-                    item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
-                    item.spk_tanggal || '-',                     // c28: col 29
-                    item.surat_pesanan_nomor || '-',             // c29: col 30
-                    item.surat_pesanan_tanggal || '-',           // c30: col 31
-                    item.kwitansi_nomor || '-',                  // c31: col 32
-                    item.kwitansi_tanggal || '-',                // c32: col 33
-                    item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
-                    item.faktur_tanggal || '-',                  // c34: col 35
-                    item.kondisi || 'Baik',                      // c35: col 36
-                    jumlahBarang,                                // c36: col 37 (Jumlah Barang)
-                    item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
-                    nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
-                    adminProyek,                                 // c39: col 40 (Admin Proyek)
-                    totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
-                    item.sp2d_nomor || '-',                      // c41: col 42
-                    item.sp2d_tanggal || '-',                    // c42: col 43
-                    item.bast_dokumen_nomor || '-',              // c43: col 44
-                    item.bast_dokumen_tanggal || '-',            // c44: col 45
-                    ruangUnit,                                   // c45: col 46
-                    ...getStep4Columns(item)                     // c46-c53: cols 47-54
-                ]);
-            }
+                }
+            });
         });
 
         const wsKibB = XLSX.utils.aoa_to_sheet(kibBRows);
@@ -1602,41 +1722,158 @@
             ]
         ];
 
-        categories['EXTRACOM'].forEach((item, idx) => {
-            let spec = item.spesifikasi_json;
-            if (typeof spec === 'string') {
-                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+        // ── Kelompokkan Data EXTRACOM per Sub Rincian Objek (PMDN 108) ─────────────
+        const extracomGroups = {};
+        categories['EXTRACOM'].forEach(item => {
+            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 11) : 'EXTRACOM-DEFAULT');
+            if (!extracomGroups[subKey]) {
+                extracomGroups[subKey] = [];
             }
+            extracomGroups[subKey].push(item);
+        });
 
-            const mesinItems = (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
-                ? spec.mesin_items
-                : null;
+        let globalExtracomNo = 1;
+        Object.keys(extracomGroups).forEach(subKey => {
+            const groupItems = extracomGroups[subKey];
+            const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0), 0);
+            const groupAnggaranTotal = parseFloat(groupItems[0].jumlah_anggaran) || groupRealisasiTotal;
 
-            if (mesinItems) {
-                mesinItems.forEach((mItem) => {
-                    const qty = max1(parseInt(mItem.mesin_jumlah_barang) || 1);
-                    const nilaiSatuan = parseFloat(mItem.mesin_nilai_satuan) || 0;
-                    const adminProyek = parseFloat(mItem.mesin_administrasi_proyek) || 0;
-                    const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
-                    const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+            let isFirstRowInGroup = true;
+
+            groupItems.forEach((item) => {
+                let spec = item.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                }
+
+                const mesinItems = (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
+                    ? spec.mesin_items
+                    : null;
+
+                if (mesinItems) {
+                    mesinItems.forEach((mItem) => {
+                        const qty = Math.max(1, parseInt(mItem.mesin_jumlah_barang) || 1);
+                        const nilaiSatuan = parseFloat(mItem.mesin_nilai_satuan) || 0;
+                        const adminProyek = parseFloat(mItem.mesin_administrasi_proyek) || 0;
+                        const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
+                        const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+                        const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                        const ruangUnit = mItem.ruang_pemegang_mesin || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                        let col1to15 = [];
+                        if (isFirstRowInGroup) {
+                            // Baris Pertama Group Sub Rincian: Isi Lengkap Kolom 1 s/d 15
+                            col1to15 = [
+                                globalExtracomNo++,
+                                item.program_kode || '-',
+                                item.program_nama || '-',
+                                item.kegiatan_kode || '-',
+                                item.kegiatan_nama || '-',
+                                item.sub_kegiatan_kode || '-',
+                                item.sub_kegiatan_nama || '-',
+                                item.rekening_kode || '-',
+                                item.rekening_nama || '-',
+                                item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.5.4'),
+                                item.jenis_aset_nama || 'EKSTRAKOMTABEL',
+                                item.sub_rincian_kode || subKey,
+                                item.sub_rincian_nama || '-',
+                                groupAnggaranTotal,
+                                groupRealisasiTotal
+                            ];
+                            isFirstRowInGroup = false;
+                        } else {
+                            // Baris Anak: Kolom 1 s/d 15 Dikosongkan (Blank)
+                            col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                        }
+
+                        extracomRows.push([
+                            ...col1to15,                                 // c0-c14: cols 1-15
+                            item.nama_barang || '-',                     // c15: col 16
+                            item.kode_barang || '-',                     // c16: col 17
+                            mItem.mesin_merk || item.merk || '-',        // c17: col 18
+                            mItem.mesin_type || item.type || '-',        // c18: col 19
+                            mItem.mesin_ukuran || item.ukuran || '-',    // c19: col 20
+                            mItem.mesin_no_pabrik || item.no_pabrik || '-', // c20: col 21
+                            mItem.mesin_no_rangka || item.no_rangka || '-', // c21: col 22
+                            mItem.mesin_no_mesin || item.no_mesin || '-',   // c22: col 23
+                            mItem.mesin_no_bpkb || item.no_btkb || '-',     // c23: col 24
+                            mItem.mesin_no_polisi || item.no_polisi || '-', // c24: col 25
+                            mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
+                            item.tahun_perolehan || '-',                 // c26: col 27
+                            item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
+                            item.spk_tanggal || '-',                     // c28: col 29
+                            item.surat_pesanan_nomor || '-',             // c29: col 30
+                            item.surat_pesanan_tanggal || '-',           // c30: col 31
+                            item.kwitansi_nomor || '-',                  // c31: col 32
+                            item.kwitansi_tanggal || '-',                // c32: col 33
+                            item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
+                            item.faktur_tanggal || '-',                  // c34: col 35
+                            kondisiLabel,                                // c35: col 36
+                            qty,                                         // c36: col 37 (Jumlah Barang)
+                            mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
+                            nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
+                            adminProyek,                                 // c39: col 40 (Admin Proyek)
+                            totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
+                            item.sp2d_nomor || '-',                      // c41: col 42
+                            item.sp2d_tanggal || '-',                    // c42: col 43
+                            item.bast_dokumen_nomor || '-',              // c43: col 44
+                            item.bast_dokumen_tanggal || '-',            // c44: col 45
+                            ruangUnit,                                   // c45: col 46
+                            ...getStep4Columns(item)                     // c46-c53: cols 47-54
+                        ]);
+                    });
+                } else {
+                    const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+                    const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
+                    const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
+                    const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
+                    const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
+                    const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+                    
+                    const rawKondisi = item.kondisi || 'Baik';
                     const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
                                        : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
                                        : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
-                    const ruangUnit = mItem.ruang_pemegang_mesin || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                    let col1to15 = [];
+                    if (isFirstRowInGroup) {
+                        col1to15 = [
+                            globalExtracomNo++,
+                            item.program_kode || '-',
+                            item.program_nama || '-',
+                            item.kegiatan_kode || '-',
+                            item.kegiatan_nama || '-',
+                            item.sub_kegiatan_kode || '-',
+                            item.sub_kegiatan_nama || '-',
+                            item.rekening_kode || '-',
+                            item.rekening_nama || '-',
+                            item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.5.4'),
+                            item.jenis_aset_nama || 'EKSTRAKOMTABEL',
+                            item.sub_rincian_kode || subKey,
+                            item.sub_rincian_nama || '-',
+                            groupAnggaranTotal,
+                            groupRealisasiTotal
+                        ];
+                        isFirstRowInGroup = false;
+                    } else {
+                        col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                    }
 
                     extracomRows.push([
-                        ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
+                        ...col1to15,                                 // c0-c14: cols 1-15
                         item.nama_barang || '-',                     // c15: col 16
                         item.kode_barang || '-',                     // c16: col 17
-                        mItem.mesin_merk || item.merk || '-',        // c17: col 18
-                        mItem.mesin_type || item.type || '-',        // c18: col 19
-                        mItem.mesin_ukuran || item.ukuran || '-',    // c19: col 20
-                        mItem.mesin_no_pabrik || item.no_pabrik || '-', // c20: col 21
-                        mItem.mesin_no_rangka || item.no_rangka || '-', // c21: col 22
-                        mItem.mesin_no_mesin || item.no_mesin || '-',   // c22: col 23
-                        mItem.mesin_no_bpkb || item.no_btkb || '-',     // c23: col 24
-                        mItem.mesin_no_polisi || item.no_polisi || '-', // c24: col 25
-                        mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
+                        item.merk || '-',                            // c17: col 18
+                        item.type || '-',                            // c18: col 19
+                        item.ukuran || '-',                          // c19: col 20
+                        item.no_pabrik || '-',                       // c20: col 21
+                        item.no_rangka || '-',                       // c21: col 22
+                        item.no_mesin || '-',                        // c22: col 23
+                        item.no_btkb || '-',                         // c23: col 24
+                        item.no_polisi || '-',                       // c24: col 25
+                        item.bahan || '-',                           // c25: col 26
                         item.tahun_perolehan || '-',                 // c26: col 27
                         item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
                         item.spk_tanggal || '-',                     // c28: col 29
@@ -1647,8 +1884,8 @@
                         item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
                         item.faktur_tanggal || '-',                  // c34: col 35
                         kondisiLabel,                                // c35: col 36
-                        qty,                                         // c36: col 37 (Jumlah Barang)
-                        mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
+                        jumlahBarang,                                // c36: col 37 (Jumlah Barang)
+                        item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
                         nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
                         adminProyek,                                 // c39: col 40 (Admin Proyek)
                         totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
@@ -1659,51 +1896,8 @@
                         ruangUnit,                                   // c45: col 46
                         ...getStep4Columns(item)                     // c46-c53: cols 47-54
                     ]);
-                });
-            } else {
-                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-                const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
-                const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
-                const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
-                const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
-                const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
-                
-                extracomRows.push([
-                    ...getCommonColumns(item, idx),              // c0-c14: cols 1-15
-                    item.nama_barang || '-',                     // c15: col 16
-                    item.kode_barang || '-',                     // c16: col 17
-                    item.merk || '-',                            // c17: col 18
-                    item.type || '-',                            // c18: col 19
-                    item.ukuran || '-',                          // c19: col 20
-                    item.no_pabrik || '-',                       // c20: col 21
-                    item.no_rangka || '-',                       // c21: col 22
-                    item.no_mesin || '-',                        // c22: col 23
-                    item.no_btkb || '-',                         // c23: col 24
-                    item.no_polisi || '-',                       // c24: col 25
-                    item.bahan || '-',                           // c25: col 26
-                    item.tahun_perolehan || '-',                 // c26: col 27
-                    item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
-                    item.spk_tanggal || '-',                     // c28: col 29
-                    item.surat_pesanan_nomor || '-',             // c29: col 30
-                    item.surat_pesanan_tanggal || '-',           // c30: col 31
-                    item.kwitansi_nomor || '-',                  // c31: col 32
-                    item.kwitansi_tanggal || '-',                // c32: col 33
-                    item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
-                    item.faktur_tanggal || '-',                  // c34: col 35
-                    item.kondisi || 'Baik',                      // c35: col 36
-                    jumlahBarang,                                // c36: col 37 (Jumlah Barang)
-                    item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
-                    nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
-                    adminProyek,                                 // c39: col 40 (Admin Proyek)
-                    totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
-                    item.sp2d_nomor || '-',                      // c41: col 42
-                    item.sp2d_tanggal || '-',                    // c42: col 43
-                    item.bast_dokumen_nomor || '-',              // c43: col 44
-                    item.bast_dokumen_tanggal || '-',            // c44: col 45
-                    ruangUnit,                                   // c45: col 46
-                    ...getStep4Columns(item)                     // c46-c53: cols 47-54
-                ]);
-            }
+                }
+            });
         });
 
         const wsExtracom = XLSX.utils.aoa_to_sheet(extracomRows);
@@ -2994,6 +3188,16 @@
                                                         <div class="flex flex-wrap items-center gap-2">
                                                             <span class="px-2.5 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono font-bold text-[11px] border border-cyan-500/30"
                                                                   x-text="'Item #' + (mIdx + 1)"></span>
+                                                            <template x-if="(parseFloat(mItem.mesin_nilai_satuan) || 0) >= 300000">
+                                                                <span class="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold text-[10px] border border-cyan-500/40">
+                                                                    ⚙️ KIB B (≥ Rp 300rb)
+                                                                </span>
+                                                            </template>
+                                                            <template x-if="(parseFloat(mItem.mesin_nilai_satuan) || 0) < 300000">
+                                                                <span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/40">
+                                                                    📦 EXTRACOM (&lt; Rp 300rb)
+                                                                </span>
+                                                            </template>
                                                             <span class="text-white font-bold text-xs" x-text="(mItem.mesin_merk || '-') + ' ' + (mItem.mesin_type || '')"></span>
                                                             <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
                                                                   x-text="(mItem.mesin_jumlah_barang || 1) + ' ' + (mItem.mesin_satuan || 'Unit')"></span>
@@ -3028,7 +3232,7 @@
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Pemegang</span>
-                                                            <span class="text-amber-300 font-medium block truncate" :title="mItem.ruang_pemegang_mesin" x-text="mItem.ruang_pemegang_mesin || '-'"></span>
+                                                            <span class="text-amber-300 font-medium block truncate" :title="mItem.ruang_pemegang || mItem.ruang_pemegang_mesin" x-text="mItem.ruang_pemegang || mItem.ruang_pemegang_mesin || '-'"></span>
                                                         </div>
                                                     </div>
                                                 </div>

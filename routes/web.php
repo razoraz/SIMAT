@@ -873,7 +873,7 @@ Route::middleware('auth')->group(function () {
             // =========================================================================
             // KHUSUS TANAH (1.3.1): MULTI-ITEM REPEATER BIDANG TANAH
             // =========================================================================
-            if ($isTanah && $hasTanahItems) {
+            if ($hasTanahItems) {
                 $totalBidang = 0;
                 $totalLuas = 0;
                 $totalPerencanaan = 0;
@@ -1028,9 +1028,9 @@ Route::middleware('auth')->group(function () {
                     'success' => true,
                     'message' => 'Sebanyak ' . $totalBidang . ' Bidang Tanah berhasil didaftarkan ke database SIMAT-RK!'
                 ]);
-            } elseif ($isMesin && $hasMesinItems) {
+            } elseif ($hasMesinItems) {
                 // =========================================================================
-                // KHUSUS PERALATAN DAN MESIN (1.3.2): MULTI-ITEM REPEATER MESIN
+                // KHUSUS PERALATAN DAN MESIN / EXTRACOM MULTI-ITEM REPEATER MESIN
                 // =========================================================================
                 $totalVolume = 0;
                 $totalRealisasi = 0;
@@ -1061,7 +1061,18 @@ Route::middleware('auth')->group(function () {
                 $satuan = $firstItem['mesin_satuan'] ?? 'Unit';
                 $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
                 $tahun = $data['tahun_perolehan'] ?? ($data['tahun_anggaran'] ?? date('Y'));
-                $isExtracom = !empty($data['is_extracomtable']) || ($hargaSatuanRata > 0 && $hargaSatuanRata < 300000);
+                
+                $hasKibBItem = false;
+                $hasExtracomItem = false;
+                foreach ($data['mesin_items'] as $mItem) {
+                    $price = floatval($mItem['mesin_nilai_satuan'] ?? 0);
+                    if ($price >= 300000) {
+                        $hasKibBItem = true;
+                    } else {
+                        $hasExtracomItem = true;
+                    }
+                }
+                $isExtracom = !$hasKibBItem && ($hasExtracomItem || !empty($data['is_extracomtable']));
 
                 // Hitung running nomor register
                 $kode108Submitted = $data['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null));
@@ -1148,7 +1159,7 @@ Route::middleware('auth')->group(function () {
                         $itemQty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
                         $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? 'Baik')));
                         $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
-                        $ruangPemegang = $mItem['ruang_pemegang_mesin'] ?? null;
+                        $ruangPemegang = $mItem['ruang_pemegang_mesin'] ?? ($mItem['ruang_pemegang'] ?? null);
 
                         for ($q = 0; $q < $itemQty; $q++) {
                             $runningRegNum++;
@@ -1405,8 +1416,8 @@ Route::middleware('auth')->group(function () {
             // Dapatkan Kode 108 Sub-Sub Rincian berdasarkan jenis aset yang dipilih
             $jenisPrefix = substr($data['jenis_aset_kode'] ?? ($data['sub_rincian_kode'] ?? ''), 0, 5);
             $kode108Submitted = match(true) {
-                $jenisPrefix === '1.3.1' => $data['tanah_kode_barang'] ?? null,
-                $jenisPrefix === '1.3.2' => $data['mesin_kode_barang'] ?? null,
+                $jenisPrefix === '1.3.1' => $data['tanah_kode_barang'] ?? ($data['tanah_items'][0]['tanah_kode_barang'] ?? null),
+                $jenisPrefix === '1.3.2' => $data['mesin_kode_barang'] ?? ($data['mesin_items'][0]['mesin_kode_barang'] ?? null),
                 $jenisPrefix === '1.3.3' => $data['gedung_kode_barang'] ?? null,
                 $jenisPrefix === '1.3.4' => $data['jaringan_kode_barang'] ?? null,
                 $jenisPrefix === '1.3.5' => $data['lainnya_kode_barang'] ?? null,
@@ -1414,6 +1425,10 @@ Route::middleware('auth')->group(function () {
                 $jenisPrefix === '1.3.6' => $data['kdp_kode_barang'] ?? null,
                 default => null
             };
+
+            if (empty($kode108Submitted)) {
+                $kode108Submitted = $data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null);
+            }
 
             $jenisAstapRecord = null;
             if ($kode108Submitted) {
@@ -1612,7 +1627,20 @@ Route::middleware('auth')->group(function () {
                 $firstItem = $data['mesin_items'][0] ?? [];
                 $satuan = $firstItem['mesin_satuan'] ?? 'Unit';
                 $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
-                $isExtracom = !empty($data['is_extracomtable']) || ($hargaSatuanRata > 0 && $hargaSatuanRata < 300000);
+                
+                $hasKibBItem = false;
+                $hasExtracomItem = false;
+                foreach ($data['mesin_items'] as $mItem) {
+                    $price = floatval($mItem['mesin_nilai_satuan'] ?? 0);
+                    if ($price >= 300000) {
+                        $hasKibBItem = true;
+                    } else {
+                        $hasExtracomItem = true;
+                    }
+                }
+                $isExtracom = !$hasKibBItem && ($hasExtracomItem || !empty($data['is_extracomtable']));
+
+                $ruangFirst = $firstItem['ruang_pemegang_mesin'] ?? ($firstItem['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? ($data['ruang_pemegang'] ?? null)));
 
                 $spec = [
                     'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
@@ -1626,7 +1654,7 @@ Route::middleware('auth')->group(function () {
                     'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
                     'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
                     'kondisi' => $firstItem['mesin_kondisi'] ?? 'Baik',
-                    'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? null,
+                    'ruang_pemegang' => $ruangFirst,
                     'mesin_items' => $data['mesin_items']
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
@@ -1645,20 +1673,20 @@ Route::middleware('auth')->group(function () {
             }
 
             $namaInput = match(true) {
-                $jenisPrefix === '1.3.1' => $data['tanah_nama_barang'] ?? null,
-                $jenisPrefix === '1.3.2' => $data['mesin_nama_barang'] ?? null,
+                $jenisPrefix === '1.3.1' => $data['tanah_nama_barang'] ?? ($data['tanah_items'][0]['tanah_nama_barang'] ?? null),
+                $jenisPrefix === '1.3.2' => $data['mesin_nama_barang'] ?? ($data['mesin_items'][0]['mesin_nama_barang'] ?? null),
                 $jenisPrefix === '1.3.3' => $data['gedung_nama_barang'] ?? null,
                 $jenisPrefix === '1.3.4' => $data['jaringan_nama_barang'] ?? null,
                 $jenisPrefix === '1.3.5' => $data['lainnya_nama_barang'] ?? null,
                 $jenisPrefix === '1.5.3' => $data['atb_nama_barang'] ?? null,
                 $jenisPrefix === '1.3.6' => $data['kdp_nama_barang'] ?? null,
-                default => null
+                default => $data['nama_barang'] ?? null
             };
 
-            if ($jenisAstapRecord && !empty($jenisAstapRecord->uraian_sub_sub_rincian)) {
-                $astap->nama_barang = $jenisAstapRecord->uraian_sub_sub_rincian;
-            } elseif ($namaInput) {
+            if (!empty($namaInput)) {
                 $astap->nama_barang = $namaInput;
+            } elseif ($jenisAstapRecord && !empty($jenisAstapRecord->uraian_sub_sub_rincian)) {
+                $astap->nama_barang = $jenisAstapRecord->uraian_sub_sub_rincian;
             }
 
             if (!empty($data['tahun_perolehan'])) $astap->tahun_perolehan = $data['tahun_perolehan'];
@@ -1698,8 +1726,8 @@ Route::middleware('auth')->group(function () {
             $astap->spesifikasi_json = $ext['spec'];
             $astap->save();
 
-            // Sync AstapRegisters jika tanah_items
-            if ($hasTanahItems) {
+            // Sync AstapRegisters jika tanah_items atau mesin_items
+            if ($isTanah && $hasTanahItems) {
                 $targetCount = count($data['tanah_items']);
                 $existingRegs = $astap->registers()->orderBy('id')->get();
                 $existingCount = $existingRegs->count();
@@ -1713,25 +1741,40 @@ Route::middleware('auth')->group(function () {
 
                 $tahun = $astap->tahun_perolehan;
 
+                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                    ->where('astap_id', '!=', $astap->id)
+                    ->where(function($q) use ($astap) {
+                        if ($astap->jenis_astap_id) {
+                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $astap->jenis_astap_id));
+                        }
+                    })
+                    ->max('no_register_int') ?? 0;
+                $runningRegNum = (int) $maxRegInt;
+
                 // 1. Update existing registers with current tanah_items
                 foreach ($data['tanah_items'] as $itemIdx => $tItem) {
-                    $alamatLokasi = !empty($tItem['tanah_alamat']) ? $tItem['tanah_alamat'] : ($data['alamat_barang'] ?? 'Bidang #' . ($itemIdx + 1));
                     $rawKondisi = strtoupper(trim((string)($tItem['tanah_kondisi'] ?? 'Baik')));
                     $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
 
+                    $runningRegNum++;
+                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
                     if ($itemIdx < $existingCount) {
                         $reg = $existingRegs[$itemIdx];
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->where('id', '!=', $reg->id)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+                        $reg->tahun_perolehan = $tahun;
+                        $reg->no_register_int = $runningRegNum;
+                        $reg->no_register = $nibar;
+                        $reg->nibar = $nibar;
+                        $reg->qr_code_path = "/scan/{$nibar}";
                         $reg->kondisi = $kondisiStr;
                         $reg->save();
                     } else {
-                        // Tambah register baru
-                        $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
-                            ->whereHas('astap', fn($q) => $q->where('jenis_astap_id', $astap->jenis_astap_id))
-                            ->max('no_register_int') ?? 0;
-                        $runningRegNum = (int) $maxRegInt + 1;
-                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-
                         while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
                             $runningRegNum++;
                             $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
@@ -1766,7 +1809,7 @@ Route::middleware('auth')->group(function () {
                     $qty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
                     $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? 'Baik')));
                     $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
-                    $ruang = $mItem['ruang_pemegang_mesin'] ?? null;
+                    $ruang = $mItem['ruang_pemegang_mesin'] ?? ($mItem['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? ($data['ruang_pemegang'] ?? null)));
                     for ($q = 0; $q < $qty; $q++) {
                         $targetUnits[] = [
                             'kondisi' => $kondisiStr,
@@ -1788,22 +1831,38 @@ Route::middleware('auth')->group(function () {
 
                 $tahun = $astap->tahun_perolehan;
 
-                // 1. Update existing registers
+                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                    ->where('astap_id', '!=', $astap->id)
+                    ->where(function($q) use ($astap) {
+                        if ($astap->jenis_astap_id) {
+                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $astap->jenis_astap_id));
+                        }
+                    })
+                    ->max('no_register_int') ?? 0;
+                $runningRegNum = (int) $maxRegInt;
+
+                // 1. Update existing registers & create new if needed
                 foreach ($targetUnits as $unitIdx => $unitData) {
+                    $runningRegNum++;
+                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
                     if ($unitIdx < $existingCount) {
                         $reg = $existingRegs[$unitIdx];
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->where('id', '!=', $reg->id)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+                        $reg->tahun_perolehan = $tahun;
+                        $reg->no_register_int = $runningRegNum;
+                        $reg->no_register = $nibar;
+                        $reg->nibar = $nibar;
+                        $reg->qr_code_path = "/scan/{$nibar}";
                         $reg->kondisi = $unitData['kondisi'];
                         $reg->ruang_pemegang = $unitData['ruang_pemegang'];
                         $reg->save();
                     } else {
-                        // Tambah register baru
-                        $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
-                            ->whereHas('astap', fn($q) => $q->where('jenis_astap_id', $astap->jenis_astap_id))
-                            ->max('no_register_int') ?? 0;
-                        $runningRegNum = (int) $maxRegInt + 1;
-                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-
                         while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
                             $runningRegNum++;
                             $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
@@ -1822,6 +1881,86 @@ Route::middleware('auth')->group(function () {
                             'kondisi' => $unitData['kondisi'],
                             'status' => 'Tersedia'
                         ]);
+                    }
+                }
+
+                // Hapus register berlebih jika targetCount < existingCount
+                if ($existingCount > $targetCount) {
+                    for ($k = $targetCount; $k < $existingCount; $k++) {
+                        $existingRegs[$k]->delete();
+                    }
+                }
+            } else {
+                // Untuk single item: sync register unit sesuai jumlah volume
+                $targetCount = max(1, (int)$astap->jumlah_volume);
+                $existingRegs = $astap->registers()->orderBy('id')->get();
+                $existingCount = $existingRegs->count();
+
+                $kode108Clean = '130000000000';
+                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
+                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
+                } elseif (!empty($kode108Submitted)) {
+                    $kode108Clean = str_replace('.', '', $kode108Submitted);
+                }
+
+                $tahun = $astap->tahun_perolehan;
+                $ruangSingle = $data['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? null);
+                $rawKondisi = strtoupper(trim((string)($data['kondisi'] ?? ($data['mesin_kondisi'] ?? ($data['gedung_kondisi'] ?? 'Baik')))));
+                $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+
+                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                    ->where('astap_id', '!=', $astap->id)
+                    ->where(function($q) use ($astap) {
+                        if ($astap->jenis_astap_id) {
+                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $astap->jenis_astap_id));
+                        }
+                    })
+                    ->max('no_register_int') ?? 0;
+                $runningRegNum = (int) $maxRegInt;
+
+                for ($u = 0; $u < $targetCount; $u++) {
+                    $runningRegNum++;
+                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                    if ($u < $existingCount) {
+                        $reg = $existingRegs[$u];
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->where('id', '!=', $reg->id)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+                        $reg->tahun_perolehan = $tahun;
+                        $reg->no_register_int = $runningRegNum;
+                        $reg->no_register = $nibar;
+                        $reg->nibar = $nibar;
+                        $reg->qr_code_path = "/scan/{$nibar}";
+                        $reg->ruang_pemegang = $ruangSingle;
+                        $reg->kondisi = $kondisiStr;
+                        $reg->save();
+                    } else {
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+                        \App\Models\AstapRegister::create([
+                            'astap_id' => $astap->id,
+                            'tahun_perolehan' => $tahun,
+                            'no_register_int' => $runningRegNum,
+                            'no_register' => $nibar,
+                            'nibar' => $nibar,
+                            'qr_code_path' => "/scan/{$nibar}",
+                            'ruang_pemegang' => $ruangSingle,
+                            'kondisi' => $kondisiStr,
+                            'status' => 'Tersedia'
+                        ]);
+                    }
+                }
+
+                if ($existingCount > $targetCount) {
+                    for ($k = $targetCount; $k < $existingCount; $k++) {
+                        $existingRegs[$k]->delete();
                     }
                 }
             }
