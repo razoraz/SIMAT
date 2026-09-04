@@ -416,16 +416,42 @@ class DistribusiController extends Controller
                 $finalStatus = !$id ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
             }
 
-            // Validasi: Volume Di-ACC tidak boleh kurang dari jumlah NIBAR yang dipilih (kecuali status Ditolak)
+            // Validasi kelengkapan form distribusi (kecuali status Ditolak)
             if ($finalStatus !== 'Ditolak') {
+                if (empty($validated['keterangan']) || trim($validated['keterangan']) === '-' || trim($validated['keterangan']) === '') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Catatan Umum / Keterangan Penempatan harus diisi.'
+                    ], 422);
+                }
+
                 foreach ($validated['items'] as $itIdx => $itemData) {
+                    $namaBrg = !empty($itemData['nama_barang']) ? $itemData['nama_barang'] : ('Barang #' . ($itIdx + 1));
+                    if (empty($itemData['qty']) || (int)$itemData['qty'] <= 0) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Volume Pengajuan untuk {$namaBrg} harus lebih dari 0."
+                        ], 422);
+                    }
+                    if (!$isSubAdmin && (!isset($itemData['qty_acc']) || $itemData['qty_acc'] === null || (int)$itemData['qty_acc'] <= 0)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Volume Di-ACC untuk {$namaBrg} harus diisi dan lebih dari 0."
+                        ], 422);
+                    }
+                    if (empty($itemData['keterangan']) || trim($itemData['keterangan']) === '-' || trim($itemData['keterangan']) === '') {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Keterangan / Catatan Peruntukan Barang untuk {$namaBrg} harus diisi."
+                        ], 422);
+                    }
+
                     $regCount = !empty($itemData['register_ids']) ? count($itemData['register_ids']) : 0;
                     if ($regCount > 0) {
                         $itemQtyAcc = (isset($itemData['qty_acc']) && $itemData['qty_acc'] !== null && $itemData['qty_acc'] !== '')
                             ? (int)$itemData['qty_acc']
                             : null;
                         if ($itemQtyAcc === null || $itemQtyAcc < $regCount) {
-                            $namaBrg = !empty($itemData['nama_barang']) ? $itemData['nama_barang'] : ('Barang #' . ($itIdx + 1));
                             return response()->json([
                                 'success' => false,
                                 'message' => "Volume Di-ACC untuk {$namaBrg} tidak boleh kurang dari jumlah NIBAR yang dipilih ({$regCount} unit)."

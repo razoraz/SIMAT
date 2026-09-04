@@ -386,9 +386,9 @@
                     setTimeout(() => { this.toast.show = false; }, 4000);
                 },
                 async submitForm() {
-                    // ── Validasi Header Distribusi ──────────────────────────────────────
-                    if (!this.formData.tujuan || this.formData.tujuan.trim() === '') {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTujuan Unit / Paviliun belum dipilih.');
+                    // ── 1. Validasi Header Distribusi ──────────────────────────────────
+                    if (!this.formData.tujuan || this.formData.tujuan.trim() === '' || !this.formData.unit_id) {
+                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTujuan Unit / Ruangan / Paviliun belum dipilih.');
                         return;
                     }
 
@@ -399,12 +399,12 @@
                     }
 
                     if (!this.formData.tgl || this.formData.tgl.trim() === '') {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTanggal Penyerahan belum diisi.');
+                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTanggal ' + (this.isSubAdmin ? 'Pengajuan' : 'Penyerahan') + ' belum diisi.');
                         return;
                     }
 
                     if (!this.formData.penerima || this.formData.penerima.trim() === '') {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNama Penerima / Penanggung Jawab belum diisi.');
+                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNama Penerima / Penanggung Jawab belum diisi (pilih unit tujuan).');
                         return;
                     }
 
@@ -413,31 +413,70 @@
                         return;
                     }
 
-                    // ── Validasi Daftar Barang ──────────────────────────────────────────
+                    // ── 2. Validasi Daftar Barang (Multi-Barang) ───────────────────────
                     if (!this.formData.items || this.formData.items.length === 0) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nMinimal harus ada 1 barang dalam transaksi distribusi.');
                         return;
                     }
 
-                    const emptyItem = this.formData.items.find(it => !it.nama_barang || it.nama_barang.trim() === '');
-                    if (emptyItem) {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nAda baris barang yang belum dipilih / diisi nama barangnya.');
-                        return;
-                    }
+                    for (let i = 0; i < this.formData.items.length; i++) {
+                        const it = this.formData.items[i];
+                        const urut = i + 1;
 
-                    // ── Validasi Volume Di-ACC tidak boleh kurang dari jumlah NIBAR ──────
-                    if (this.formData.status !== 'Ditolak') {
-                        for (let i = 0; i < this.formData.items.length; i++) {
-                            const it = this.formData.items[i];
-                            const nibarCount = (it.nibar_selected || []).length;
-                            if (nibarCount > 0) {
-                                const currentAcc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : null;
-                                if (currentAcc === null || currentAcc < nibarCount) {
-                                    alert('⚠️ Validasi Gagal pada Barang #' + (i + 1) + ' (' + (it.nama_barang || 'Aset') + '):\n\nVolume Di-ACC (' + (currentAcc !== null ? currentAcc : 'Belum Diisi') + ') tidak boleh kurang dari jumlah NIBAR yang diinput (' + nibarCount + ' unit).\n\nSilakan sesuaikan Volume Di-ACC minimal ' + nibarCount + ' unit.');
-                                    return;
-                                }
+                        // a. Validasi Kategori Jenis ASTAP
+                        if (!it.jenis_astap_nama || it.jenis_astap_nama.trim() === '') {
+                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nKategori Jenis ASTAP pada Barang #' + urut + ' belum dipilih.');
+                            return;
+                        }
+
+                        // b. Validasi Nama Barang
+                        if (!it.nama_barang || it.nama_barang.trim() === '') {
+                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNama Barang pada Barang #' + urut + ' belum dipilih.');
+                            return;
+                        }
+
+                        // c. Validasi Pemilihan NIBAR (Khusus Admin jika NIBAR tersedia & status bukan Ditolak)
+                        if (!this.isSubAdmin && this.formData.status !== 'Ditolak' && !this.isNibarEmpty(it)) {
+                            const nibarSelectedCount = (it.nibar_selected || []).length;
+                            if (nibarSelectedCount === 0) {
+                                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNIBAR untuk Barang #' + urut + ' ("' + it.nama_barang + '") belum dipilih.');
+                                return;
                             }
                         }
+
+                        // d. Validasi Volume Pengajuan (Qty)
+                        const qtyPengajuan = parseInt(it.qty);
+                        if (!it.qty || isNaN(qtyPengajuan) || qtyPengajuan <= 0) {
+                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nVolume Pengajuan pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi atau bernilai 0.');
+                            return;
+                        }
+
+                        // e. Validasi Volume Di-ACC (Khusus Admin jika status bukan Ditolak)
+                        if (!this.isSubAdmin && this.formData.status !== 'Ditolak') {
+                            const qtyAcc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : null;
+                            if (qtyAcc === null || isNaN(qtyAcc) || qtyAcc <= 0) {
+                                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nVolume Di-ACC pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi atau bernilai 0.');
+                                return;
+                            }
+
+                            const nibarCount = (it.nibar_selected || []).length;
+                            if (nibarCount > 0 && qtyAcc < nibarCount) {
+                                alert('⚠️ Validasi Gagal pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '"):\n\nVolume Di-ACC (' + qtyAcc + ' unit) tidak boleh kurang dari jumlah NIBAR yang diinput (' + nibarCount + ' unit).\n\nSilakan sesuaikan Volume Di-ACC minimal ' + nibarCount + ' unit.');
+                                return;
+                            }
+                        }
+
+                        // f. Validasi Keterangan / Catatan Spesifik Item Barang
+                        if (this.formData.status !== 'Ditolak' && (!it.keterangan || it.keterangan.trim() === '' || it.keterangan.trim() === '-')) {
+                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nKeterangan / Catatan Peruntukan Barang pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi.');
+                            return;
+                        }
+                    }
+
+                    // ── 3. Validasi Catatan Umum Distribusi ─────────────────────────────
+                    if (this.formData.status !== 'Ditolak' && (!this.formData.keterangan || this.formData.keterangan.trim() === '' || this.formData.keterangan.trim() === '-')) {
+                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nCatatan Umum / Keterangan Penempatan belum diisi.');
+                        return;
                     }
 
                     this.askConfirmation({
@@ -1196,16 +1235,6 @@
                                                     class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none transition-all placeholder-slate-500">
                                                 <svg class="w-3.5 h-3.5 text-emerald-400 pointer-events-none" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </div>
-                                            <template x-if="(item.nibar_selected || []).length > 0">
-                                                <div class="mt-1.5 flex items-center justify-between text-[10px] px-0.5">
-                                                    <span class="text-amber-400 font-medium flex items-center space-x-1">
-                                                        <span>ℹ️ Min. <span class="font-bold font-mono text-amber-300" x-text="item.nibar_selected.length"></span> unit sesuai NIBAR terpilih</span>
-                                                    </span>
-                                                    <template x-if="item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length">
-                                                        <span class="text-rose-400 font-bold">⚠️ Nilai terlalu kecil!</span>
-                                                    </template>
-                                                </div>
-                                            </template>
                                         </div>
                                     </template>
 
@@ -1237,7 +1266,10 @@
 
                                 <!-- Baris 3: Keterangan / Catatan Spesifik Item (Sendiri / Full-Width) -->
                                 <div>
-                                    <label class="block text-slate-400 font-semibold text-xs mb-1.5">Keterangan / Catatan Peruntukan Barang (Opsional)</label>
+                                    <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center space-x-1">
+                                        <span>Keterangan / Catatan Peruntukan Barang</span>
+                                        <span class="text-rose-400 font-bold" x-show="formData.status !== 'Ditolak'">*</span>
+                                    </label>
                                     <input type="text" 
                                            x-model="item.keterangan" 
                                            :disabled="formData.status === 'Ditolak'"
@@ -1273,7 +1305,10 @@
 
             <!-- BAGIAN 3: CATATAN UMUM PENEMPATAN -->
             <div class="pt-4 border-t border-slate-800">
-                <label class="block text-slate-300 font-semibold text-xs mb-1.5">Catatan Umum / Keterangan Penempatan</label>
+                <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center space-x-1">
+                    <span>Catatan Umum / Keterangan Penempatan</span>
+                    <span class="text-rose-400 font-bold" x-show="formData.status !== 'Ditolak'">*</span>
+                </label>
                 <textarea x-model="formData.keterangan" 
                           :disabled="formData.status === 'Ditolak'"
                           :readonly="formData.status === 'Ditolak'"
