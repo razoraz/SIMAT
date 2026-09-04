@@ -228,11 +228,16 @@
                     }
                 },
                 addItem() {
+                    if (this.formData.status === 'Ditolak') return;
                     this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] });
                 },
                 removeItem(index) {
+                    if (this.formData.status === 'Ditolak') return;
                     if (this.formData.items.length <= 1) { alert('⚠️ Minimal harus ada 1 barang!'); return; }
                     this.formData.items.splice(index, 1);
+                },
+                getTotalItemVolume() {
+                    return (this.formData.items || []).reduce((sum, it) => sum + (parseInt(it.qty) || 0), 0);
                 },
                 getItemKode(item) {
                     if (!item) return '';
@@ -262,29 +267,66 @@
                 },
                 getItemMaxQty(item) {
                     if (!item) return 1;
-                    if (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') {
-                        return parseInt(item.qty_acc) || 0;
-                    }
-                    return parseInt(item.qty) || 1;
+                    const qtyPengajuan = parseInt(item.qty) || 0;
+                    const qtyAcc = (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? parseInt(item.qty_acc) : 0;
+                    return Math.max(qtyPengajuan, qtyAcc, 1);
                 },
                 selectNibar(item, n) {
+                    if (this.formData.status === 'Ditolak') return;
                     if (!item || !n || (n.status && n.status !== 'Tersedia')) return;
                     if (!item.nibar_selected) item.nibar_selected = [];
+                    const prevCount = item.nibar_selected.length;
                     const maxQty = this.getItemMaxQty(item);
-                    if (maxQty <= 0) { alert('⚠️ Volume ACC bernilai 0. Tidak dapat memilih NIBAR.'); return; }
-                    if (item.nibar_selected.length >= maxQty) { alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai batas Volume ACC (' + maxQty + ' unit).'); return; }
+                    if (maxQty <= 0) { alert('⚠️ Volume bernilai 0. Tidak dapat memilih NIBAR.'); return; }
+                    if (item.nibar_selected.length >= maxQty) {
+                        alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai batas maksimal (' + maxQty + ' ' + (item.satuan || 'Unit') + '). Tambah volume pengajuan / ACC jika ingin memilih lebih banyak NIBAR.');
+                        return;
+                    }
                     item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
+                    const newCount = item.nibar_selected.length;
+                    // Volume Di-ACC otomatis terisi mengikuti NIBAR yang diinput
+                    if (item.qty_acc === null || item.qty_acc === undefined || item.qty_acc === '' || item.qty_acc === prevCount || item.qty_acc < newCount) {
+                        item.qty_acc = newCount;
+                    }
                     this.activeNibarDropdownIndex = null;
                 },
-                removeNibar(item, nibarStr) { item.nibar_selected = (item.nibar_selected || []).filter(n => n.nibar !== nibarStr); },
+                removeNibar(item, nibarStr) {
+                    if (this.formData.status === 'Ditolak') return;
+                    const prevCount = (item.nibar_selected || []).length;
+                    item.nibar_selected = (item.nibar_selected || []).filter(n => n.nibar !== nibarStr);
+                    const newCount = item.nibar_selected.length;
+                    // Jika qty_acc sebelumnya mengikuti jumlah NIBAR, sesuaikan otomatis
+                    if (item.qty_acc === prevCount) {
+                        item.qty_acc = newCount > 0 ? newCount : null;
+                    } else if (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '' && item.qty_acc < newCount) {
+                        item.qty_acc = newCount;
+                    }
+                },
+                validateItemQtyAcc(item) {
+                    if (!item || this.formData.status === 'Ditolak') return;
+                    const nibarCount = (item.nibar_selected || []).length;
+                    if (nibarCount > 0) {
+                        const currentQtyAcc = (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? parseInt(item.qty_acc) : null;
+                        if (currentQtyAcc === null || currentQtyAcc < nibarCount) {
+                            item.qty_acc = nibarCount;
+                            this.showSimatToast('⚠️ Volume Di-ACC tidak boleh kurang dari jumlah NIBAR yang dipilih (' + nibarCount + ' unit). Otomatis disesuaikan ke ' + nibarCount + '.', 'warning');
+                        }
+                    }
+                },
                 getFilteredJenisAstap(query) {
                     const validList = (this.jenisAstapList || []).filter(j => j && j.nama);
                     if (!query || query.trim() === '') return validList;
                     const q = query.toLowerCase().trim();
                     return validList.filter(j => (j.nama || '').toLowerCase().includes(q));
                 },
-                selectJenisAstap(item, j) { item.jenis_astap_kode = j.kode; item.jenis_astap_nama = j.nama; this.activeJenisDropdownIndex = null; },
-                clearJenisAstap(item, idx) { item.jenis_astap_kode = ''; item.jenis_astap_nama = ''; item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; if (idx !== undefined) this.activeJenisDropdownIndex = idx; },
+                selectJenisAstap(item, j) {
+                    if (this.formData.status === 'Ditolak') return;
+                    item.jenis_astap_kode = j.kode; item.jenis_astap_nama = j.nama; this.activeJenisDropdownIndex = null;
+                },
+                clearJenisAstap(item, idx) {
+                    if (this.formData.status === 'Ditolak') return;
+                    item.jenis_astap_kode = ''; item.jenis_astap_nama = ''; item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; if (idx !== undefined) this.activeJenisDropdownIndex = idx;
+                },
                 getFilteredAstap(item, query) {
                     let list = this.katalogAstap || [];
                     if (item && item.jenis_astap_kode) { list = list.filter(a => a.jenis_kode === item.jenis_astap_kode || (a.kode && a.kode.startsWith(item.jenis_astap_kode))); }
@@ -292,8 +334,14 @@
                     const q = query.toLowerCase();
                     return list.filter(a => (a.nama||'').toLowerCase().includes(q) || (a.kode||'').toLowerCase().includes(q)).slice(0, 15);
                 },
-                selectAstapItem(item, ast) { item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null; },
-                clearItemBarang(item, idx) { item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; if (idx !== undefined) this.activeDropdownIndex = idx; },
+                selectAstapItem(item, ast) {
+                    if (this.formData.status === 'Ditolak') return;
+                    item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null;
+                },
+                clearItemBarang(item, idx) {
+                    if (this.formData.status === 'Ditolak') return;
+                    item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; item.qty_acc = null; if (idx !== undefined) this.activeDropdownIndex = idx;
+                },
                 onNamaBarangInput(item) {
                     if (!item.nama_barang || item.nama_barang.trim() === '') { item.kode_barang = ''; return; }
                     const match = (this.katalogAstap || []).find(a => a.nama && a.nama.toLowerCase().trim() === item.nama_barang.toLowerCase().trim());
@@ -304,8 +352,14 @@
                     const q = this.unitSearch.toLowerCase();
                     return (this.unitList || []).filter(u => u.nama.toLowerCase().includes(q));
                 },
-                selectUnit(u) { this.formData.tujuan = u.nama; this.formData.penerima = u.kepala || ''; this.formData.penerima_nip = u.nip || ''; this.formData.penerima_jabatan = 'Kepala / Penanggung Jawab ' + u.nama; this.formData.unit_id = u.id; this.unitSearch = u.nama; this.selectedUnitObj = u; this.isSearchingUnit = false; },
-                clearUnit() { this.formData.tujuan = ''; this.formData.unit_id = null; this.unitSearch = ''; this.selectedUnitObj = null; this.isSearchingUnit = true; },
+                selectUnit(u) {
+                    if (this.formData.status === 'Ditolak') return;
+                    this.formData.tujuan = u.nama; this.formData.penerima = u.kepala || ''; this.formData.penerima_nip = u.nip || ''; this.formData.penerima_jabatan = 'Kepala / Penanggung Jawab ' + u.nama; this.formData.unit_id = u.id; this.unitSearch = u.nama; this.selectedUnitObj = u; this.isSearchingUnit = false;
+                },
+                clearUnit() {
+                    if (this.formData.status === 'Ditolak') return;
+                    this.formData.tujuan = ''; this.formData.unit_id = null; this.unitSearch = ''; this.selectedUnitObj = null; this.isSearchingUnit = true;
+                },
                 showConfirmModal: false,
                 confirmData: { show: false, title: '', message: '', itemName: '', btnText: '', type: 'danger', onConfirm: null },
                 isSaving: false,
@@ -369,6 +423,21 @@
                     if (emptyItem) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nAda baris barang yang belum dipilih / diisi nama barangnya.');
                         return;
+                    }
+
+                    // ── Validasi Volume Di-ACC tidak boleh kurang dari jumlah NIBAR ──────
+                    if (this.formData.status !== 'Ditolak') {
+                        for (let i = 0; i < this.formData.items.length; i++) {
+                            const it = this.formData.items[i];
+                            const nibarCount = (it.nibar_selected || []).length;
+                            if (nibarCount > 0) {
+                                const currentAcc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : null;
+                                if (currentAcc === null || currentAcc < nibarCount) {
+                                    alert('⚠️ Validasi Gagal pada Barang #' + (i + 1) + ' (' + (it.nama_barang || 'Aset') + '):\n\nVolume Di-ACC (' + (currentAcc !== null ? currentAcc : 'Belum Diisi') + ') tidak boleh kurang dari jumlah NIBAR yang diinput (' + nibarCount + ' unit).\n\nSilakan sesuaikan Volume Di-ACC minimal ' + nibarCount + ' unit.');
+                                    return;
+                                }
+                            }
+                        }
                     }
 
                     this.askConfirmation({
@@ -476,6 +545,24 @@
         <!-- Form Card Container -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
             
+            <!-- Banner Peringatan Status Ditolak -->
+            <div x-show="formData.status === 'Ditolak'" 
+                 x-transition
+                 class="p-4 sm:p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start sm:items-center space-x-3.5 text-rose-300 shadow-lg">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-lg shrink-0 font-bold">
+                    🚫
+                </div>
+                <div class="space-y-0.5 min-w-0 flex-1">
+                    <h4 class="font-extrabold text-white text-xs sm:text-sm flex items-center space-x-2">
+                        <span>Status Distribusi: Ditolak</span>
+                        <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold border border-rose-500/30">Terkunci</span>
+                    </h4>
+                    <p class="text-[11px] sm:text-xs text-rose-200/90 leading-relaxed">
+                        Formulir distribusi ini berstatus <strong>Ditolak</strong> sehingga seluruh isian data terkunci dan tidak dapat diedit. Untuk dapat mengisi atau memperbarui data formulir, silakan ubah <strong>Status Distribusi</strong> ke status lain.
+                    </p>
+                </div>
+            </div>
+
             <!-- BAGIAN 1: INFORMASI TRANSAKSI & TUJUAN PENERIMA (AUTOFILL DATA UNIT) -->
             <div class="space-y-4">
                 <h3 class="text-sm font-extrabold text-teal-300 uppercase tracking-wider flex items-center space-x-2 border-b border-slate-800 pb-3">
@@ -497,6 +584,7 @@
                         </label>
                         <input type="text" x-model="formData.bast_nomor"
                                :readonly="isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi'"
+                               :disabled="formData.status === 'Ditolak'"
                                :placeholder="formData.status === 'Ditolak' ? '(tidak diterbitkan)' : (formData.status === 'Menunggu Konfirmasi' ? '(Menunggu Konfirmasi)' : '032 / ... / 430.10.7 / 2026')"
                                :class="(isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed' : 'bg-slate-950 text-white'"
                                class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-teal-500">
@@ -512,8 +600,9 @@
                         </label>
                         <input type="date" x-model="formData.tgl"
                                @change="updateYearInKode()"
-                               :readonly="isSubAdmin"
-                               :class="isSubAdmin ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed pointer-events-none' : 'bg-slate-950 text-white'"
+                               :readonly="isSubAdmin || formData.status === 'Ditolak'"
+                               :disabled="formData.status === 'Ditolak'"
+                               :class="(isSubAdmin || formData.status === 'Ditolak') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed pointer-events-none' : 'bg-slate-950 text-white'"
                                class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-teal-500">
                     </div>
 
@@ -528,12 +617,12 @@
                         <template x-if="!isSubAdmin">
                             <select x-model="formData.status"
                                     @change="onStatusChange()"
-                                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
+                                    class="w-full bg-slate-950 border rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
                                     :class="{
-                                        'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
-                                        'text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
-                                        'text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending',
-                                        'text-rose-400': formData.status === 'Ditolak'
+                                        'border-rose-500/50 ring-1 ring-rose-500/30 text-rose-400': formData.status === 'Ditolak',
+                                        'border-slate-800 text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',
+                                        'border-slate-800 text-amber-400': formData.status === 'Dalam Pengiriman' || formData.status === 'Dikirim',
+                                        'border-slate-800 text-cyan-400': formData.status === 'Menunggu Konfirmasi' || formData.status === 'Pending'
                                     }">
                                 <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi</option>
                                 <option value="Dalam Pengiriman">🚚 Dalam Pengiriman</option>
@@ -587,8 +676,8 @@
                                     <span>🏥 Unit / Ruangan / Paviliun Tujuan</span>
                                     <span class="text-teal-400 font-mono text-[11px]" x-text="'(' + unitList.length + ' Unit Terdaftar)'"></span>
                                 </label>
-                                <template x-if="formData.tujuan">
-                                    <button type="button" @click="clearUnit()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold">
+                                <template x-if="formData.tujuan && formData.status !== 'Ditolak'">
+                                    <button type="button" @click="clearUnit()" class="text-xs text-rose-400 hover:text-rose-300 font-semibold cursor-pointer">
                                         ✕ Ganti Unit
                                     </button>
                                 </template>
@@ -596,15 +685,18 @@
 
                             <div class="relative">
                                 <input type="text" x-model="unitSearch" 
-                                       @focus="isSearchingUnit = true" 
-                                       @input="isSearchingUnit = true" 
-                                       placeholder="Ketik nama unit / ruangan (contoh: IGD, Melati, Radiologi, Bedah)..." 
-                                       class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all font-semibold">
+                                       :disabled="formData.status === 'Ditolak'"
+                                       :readonly="formData.status === 'Ditolak'"
+                                       @focus="if (formData.status !== 'Ditolak') isSearchingUnit = true" 
+                                       @input="if (formData.status !== 'Ditolak') isSearchingUnit = true" 
+                                       :placeholder="formData.status === 'Ditolak' ? 'Tujuan unit terkunci' : 'Ketik nama unit / ruangan (contoh: IGD, Melati, Radiologi, Bedah)...'" 
+                                       :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-800 focus:border-teal-500'"
+                                       class="w-full border rounded-xl px-4 py-2.5 pl-10 text-xs placeholder-slate-500 focus:outline-none transition-all font-semibold">
                                 <svg class="w-4 h-4 text-teal-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             </div>
 
                             <!-- Dropdown Autocomplete Unit (Dark Themed) -->
-                            <div x-show="isSearchingUnit" 
+                            <div x-show="isSearchingUnit && formData.status !== 'Ditolak'" 
                                  x-transition 
                                  class="absolute left-0 right-0 z-30 mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
                                 <template x-for="u in filteredUnitList.slice(0, 5)" :key="u.id">
@@ -690,12 +782,14 @@
                                 </div>
 
                                 <!-- Tombol Hapus Barang — Masuk di Dalam Form Pojok Kanan Atas Header -->
-                                <button type="button" @click="removeItem(idx)"
-                                        class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center space-x-1.5 transition-all active:scale-95 shrink-0"
-                                        title="Hapus baris barang ini">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    <span class="hidden sm:inline">Hapus</span>
-                                </button>
+                                <template x-if="formData.status !== 'Ditolak'">
+                                    <button type="button" @click="removeItem(idx)"
+                                            class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center space-x-1.5 transition-all active:scale-95 shrink-0 cursor-pointer"
+                                            title="Hapus baris barang ini">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        <span class="hidden sm:inline">Hapus</span>
+                                    </button>
+                                </template>
                             </div>
 
                             <!-- Grid Form Input Barang -->
@@ -714,17 +808,20 @@
                                     <div class="relative flex items-center">
                                         <input type="text" 
                                                x-model="item.jenis_astap_nama" 
-                                               @focus="activeJenisDropdownIndex = idx"
-                                               @input="activeJenisDropdownIndex = idx"
+                                               :disabled="formData.status === 'Ditolak'"
+                                               :readonly="formData.status === 'Ditolak'"
+                                               @focus="if (formData.status !== 'Ditolak') activeJenisDropdownIndex = idx"
+                                               @input="if (formData.status !== 'Ditolak') activeJenisDropdownIndex = idx"
                                                placeholder="Ketik atau pilih Jenis ASTAP (contoh: Peralatan dan Mesin, Gedung, Tanah)..." 
-                                               class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-bold placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all cursor-pointer">
+                                               :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white cursor-pointer border-slate-700/90 focus:border-teal-500 focus:ring-1 focus:ring-teal-500'"
+                                               class="w-full h-11 border rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs font-bold placeholder-slate-500 focus:outline-none transition-all">
                                         
                                         <svg class="w-4 h-4 text-teal-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                                         </svg>
 
                                         <!-- Tombol Silang Bersihkan Jenis ASTAP di Pojok Kanan Dalam Input -->
-                                        <template x-if="item.jenis_astap_nama && item.jenis_astap_nama.trim() !== ''">
+                                        <template x-if="formData.status !== 'Ditolak' && item.jenis_astap_nama && item.jenis_astap_nama.trim() !== ''">
                                             <button type="button" 
                                                     @click.stop="clearJenisAstap(item, idx)" 
                                                     style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
@@ -736,7 +833,7 @@
                                     </div>
 
                                     <!-- Floating Dropdown Hasil Filter Jenis ASTAP (Hanya Menampilkan Nama Jenis) -->
-                                    <div x-show="activeJenisDropdownIndex === idx" 
+                                    <div x-show="formData.status !== 'Ditolak' && activeJenisDropdownIndex === idx" 
                                          x-transition 
                                          class="absolute left-0 right-0 z-50 mt-1.5 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
                                         
@@ -783,17 +880,20 @@
                                         <div class="relative flex items-center">
                                             <input type="text" 
                                                    x-model="item.nama_barang" 
-                                                   @focus="activeDropdownIndex = idx"
-                                                   @input="activeDropdownIndex = idx; onNamaBarangInput(item)"
+                                                   :disabled="formData.status === 'Ditolak'"
+                                                   :readonly="formData.status === 'Ditolak'"
+                                                   @focus="if (formData.status !== 'Ditolak') activeDropdownIndex = idx"
+                                                   @input="if (formData.status !== 'Ditolak') { activeDropdownIndex = idx; onNamaBarangInput(item); }"
                                                    :placeholder="item.jenis_astap_nama ? ('Ketik nama barang dari ' + item.jenis_astap_nama + '...') : 'Ketik nama barang aset (contoh: laptop, monitor, kasur)...'" 
-                                                   class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-bold placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
+                                                   :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-700/90 focus:border-teal-500 focus:ring-1 focus:ring-teal-500'"
+                                                   class="w-full h-11 border rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs font-bold placeholder-slate-500 focus:outline-none transition-all">
                                             
                                             <svg class="w-4 h-4 text-teal-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                             </svg>
 
                                             <!-- Tombol Silang Bersihkan Nama Barang di Pojok Kanan Dalam Input -->
-                                            <template x-if="item.nama_barang && item.nama_barang.trim() !== ''">
+                                            <template x-if="formData.status !== 'Ditolak' && item.nama_barang && item.nama_barang.trim() !== ''">
                                                 <button type="button" 
                                                         @click.stop="clearItemBarang(item, idx)" 
                                                         style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
@@ -805,7 +905,7 @@
                                         </div>
 
                                         <!-- Floating Dropdown Hasil Ketik Filter ASTAP -->
-                                        <div x-show="activeDropdownIndex === idx" 
+                                        <div x-show="formData.status !== 'Ditolak' && activeDropdownIndex === idx" 
                                              x-transition 
                                              class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
                                             
@@ -837,8 +937,9 @@
                                     <!-- 2. Kode Rekening 108 (Sejajar di Samping Nama Barang) -->
                                     <div class="w-48 sm:w-56 shrink-0">
                                         <label class="block text-slate-300 font-semibold text-xs mb-1.5">Kode Rekening 108</label>
-                                        <input type="text" x-model="item.kode_barang" placeholder="Terisi otomatis..."
-                                               class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-cyan-300 font-mono font-bold placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all">
+                                        <input type="text" x-model="item.kode_barang" placeholder="Terisi otomatis..." readonly
+                                               :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-500 border-slate-800' : 'bg-slate-900 text-cyan-300 border-slate-700/90'"
+                                               class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold placeholder-slate-500 focus:outline-none transition-all cursor-not-allowed">
                                     </div>
                                 </div>
 
@@ -853,7 +954,7 @@
                                                     <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih nama barang terlebih dahulu</span>
                                                 </template>
                                                 <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline" x-text="(item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? '— pilih maks. sesuai Volume ACC (' + getItemMaxQty(item) + ')' : '— pilih maks. sesuai Volume Pengajuan (' + getItemMaxQty(item) + ')'"></span>
+                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline" x-text="'— batas maks. ' + getItemMaxQty(item) + ' ' + (item.satuan || 'Unit')"></span>
                                                 </template>
                                             </span>
                                             
@@ -887,7 +988,7 @@
                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
                                                     <template x-for="(n, nIdx) in item.nibar_selected" :key="n.nibar">
                                                         <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-amber-500/40 transition-all shadow-sm">
-                                                            <!-- Info Nomor NIBAR & Ruang -->
+                                                             <!-- Info Nomor NIBAR & Ruang -->
                                                             <div class="min-w-0 flex-1">
                                                                 <div class="flex items-center space-x-1.5">
                                                                     <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-[9px] font-bold font-mono" x-text="nIdx + 1"></span>
@@ -909,11 +1010,13 @@
                                                                 </span>
 
                                                                 <!-- Tombol Hapus NIBAR -->
-                                                                <button type="button" @click.stop="removeNibar(item, n.nibar)"
-                                                                        class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all border border-slate-700 hover:border-rose-500/40"
-                                                                        title="Hapus NIBAR ini">
-                                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                                </button>
+                                                                <template x-if="formData.status !== 'Ditolak'">
+                                                                    <button type="button" @click.stop="removeNibar(item, n.nibar)"
+                                                                            class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all border border-slate-700 hover:border-rose-500/40 cursor-pointer"
+                                                                            title="Hapus NIBAR ini">
+                                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                                    </button>
+                                                                </template>
                                                             </div>
                                                         </div>
                                                     </template>
@@ -955,15 +1058,17 @@
                                                 <div class="relative flex items-center">
                                                     <input type="text" 
                                                            :value="nibarSearch[item.id] || ''"
-                                                           @input="nibarSearch = {...nibarSearch, [item.id]: $event.target.value}; activeNibarDropdownIndex = idx"
-                                                           @focus="activeNibarDropdownIndex = idx"
-                                                           :placeholder="(item.nibar_selected || []).length >= getItemMaxQty(item) ? '✅ Sudah memilih ' + getItemMaxQty(item) + ' NIBAR (sesuai volume ACC)' : 'Ketik atau klik untuk pilih NIBAR...'" 
-                                                           :disabled="(item.nibar_selected || []).length >= getItemMaxQty(item)"
-                                                           class="w-full h-11 bg-slate-900 border border-amber-500/40 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                                           :disabled="formData.status === 'Ditolak' || (item.nibar_selected || []).length >= getItemMaxQty(item)"
+                                                           :readonly="formData.status === 'Ditolak'"
+                                                           @input="if (formData.status !== 'Ditolak') { nibarSearch = {...nibarSearch, [item.id]: $event.target.value}; activeNibarDropdownIndex = idx; }"
+                                                           @focus="if (formData.status !== 'Ditolak') activeNibarDropdownIndex = idx"
+                                                           :placeholder="formData.status === 'Ditolak' ? 'NIBAR terkunci' : ((item.nibar_selected || []).length >= getItemMaxQty(item) ? '✅ Sudah memilih ' + getItemMaxQty(item) + ' NIBAR (sesuai volume ACC)' : 'Ketik atau klik untuk pilih NIBAR...')" 
+                                                           :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-500 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-amber-500/40 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50'"
+                                                           class="w-full h-11 border rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs font-mono placeholder-slate-500 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                                                     <svg class="w-4 h-4 text-amber-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
 
                                                     <!-- Tombol Silang Reset Input Pencarian NIBAR di Pojok Kanan Dalam Input -->
-                                                    <template x-if="(nibarSearch[item.id] || '').trim() !== ''">
+                                                    <template x-if="formData.status !== 'Ditolak' && (nibarSearch[item.id] || '').trim() !== ''">
                                                         <button type="button" 
                                                                 @click.stop="nibarSearch[item.id] = ''" 
                                                                 style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); z-index: 20;"
@@ -975,7 +1080,7 @@
                                                 </div>
 
                                                 <!-- Dropdown NIBAR -->
-                                                <div x-show="activeNibarDropdownIndex === idx"
+                                                <div x-show="formData.status !== 'Ditolak' && activeNibarDropdownIndex === idx"
                                                      x-transition
                                                      class="absolute left-0 right-0 z-40 mt-1.5 bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
 
@@ -1038,13 +1143,17 @@
                                         </label>
                                         <input type="text"
                                             :value="item.qty ? Number(item.qty).toLocaleString('id-ID') : ''"
+                                            :disabled="formData.status === 'Ditolak'"
+                                            :readonly="formData.status === 'Ditolak'"
                                             @input="
+                                                if (formData.status === 'Ditolak') return;
                                                 let raw = $event.target.value.replace(/\D/g, '');
                                                 item.qty = raw ? parseInt(raw, 10) : '';
                                                 $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                             "
                                             placeholder="1"
-                                            class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-teal-500 transition-all">
+                                            :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-700/90 focus:border-teal-500'"
+                                            class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none transition-all">
                                     </div>
 
                                     <!-- Vol 2: Volume ACC — Hanya tampil & bisa diisi Admin/Master Admin -->
@@ -1058,25 +1167,45 @@
                                                 <template x-if="item.qty_acc === null || item.qty_acc === ''">
                                                     <span class="text-[10px] text-amber-400 font-semibold">⏳ Belum Di-ACC</span>
                                                 </template>
-                                                <template x-if="item.qty_acc !== null && item.qty_acc !== ''">
+                                                <template x-if="item.qty_acc !== null && item.qty_acc !== '' && (!item.nibar_selected || item.nibar_selected.length <= item.qty_acc)">
                                                     <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
+                                                </template>
+                                                <template x-if="(item.nibar_selected || []).length > 0 && item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length">
+                                                    <span class="text-[10px] text-rose-400 font-bold" x-text="'⚠️ Min. ' + item.nibar_selected.length + ' ' + (item.satuan || 'Unit')"></span>
                                                 </template>
                                             </label>
                                             <div class="relative">
                                                 <input type="text"
                                                     :value="(item.qty_acc !== null && item.qty_acc !== '') ? Number(item.qty_acc).toLocaleString('id-ID') : ''"
+                                                    :disabled="formData.status === 'Ditolak'"
+                                                    :readonly="formData.status === 'Ditolak'"
                                                     @input="
+                                                        if (formData.status === 'Ditolak') return;
                                                         let raw = $event.target.value.replace(/\D/g, '');
                                                         item.qty_acc = raw !== '' ? parseInt(raw, 10) : null;
                                                         $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                                        if (item.qty_acc !== null && item.nibar_selected && item.nibar_selected.length > item.qty_acc) {
-                                                            item.nibar_selected = item.nibar_selected.slice(0, item.qty_acc);
-                                                        }
                                                     "
+                                                    @change="validateItemQtyAcc(item)"
+                                                    @blur="validateItemQtyAcc(item)"
                                                     placeholder="Kosong = Belum Di-ACC"
-                                                    class="w-full h-11 bg-slate-900 border border-emerald-500/40 rounded-xl px-4 py-2.5 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40 transition-all placeholder-slate-500">
+                                                    :class="formData.status === 'Ditolak' 
+                                                        ? 'bg-slate-950/80 text-slate-500 cursor-not-allowed border-slate-800' 
+                                                        : ((item.nibar_selected || []).length > 0 && item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length 
+                                                            ? 'bg-slate-900 text-rose-300 border-rose-500/80 focus:border-rose-400 focus:ring-1 focus:ring-rose-400/40' 
+                                                            : 'bg-slate-900 text-emerald-300 border-emerald-500/40 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40')"
+                                                    class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none transition-all placeholder-slate-500">
                                                 <svg class="w-3.5 h-3.5 text-emerald-400 pointer-events-none" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </div>
+                                            <template x-if="(item.nibar_selected || []).length > 0">
+                                                <div class="mt-1.5 flex items-center justify-between text-[10px] px-0.5">
+                                                    <span class="text-amber-400 font-medium flex items-center space-x-1">
+                                                        <span>ℹ️ Min. <span class="font-bold font-mono text-amber-300" x-text="item.nibar_selected.length"></span> unit sesuai NIBAR terpilih</span>
+                                                    </span>
+                                                    <template x-if="item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length">
+                                                        <span class="text-rose-400 font-bold">⚠️ Nilai terlalu kecil!</span>
+                                                    </template>
+                                                </div>
+                                            </template>
                                         </div>
                                     </template>
 
@@ -1101,7 +1230,8 @@
                                                x-model="item.satuan"
                                                placeholder="satuan"
                                                readonly
-                                               class="w-full h-11 bg-slate-900 border border-teal-500/50 rounded-xl px-4 py-2.5 text-xs text-teal-300 font-bold focus:outline-none focus:border-teal-500 transition-all">
+                                               :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-500 border-slate-800' : 'bg-slate-900 border-teal-500/50 text-teal-300 focus:border-teal-500'"
+                                               class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none transition-all cursor-not-allowed">
                                     </div>
                                 </div>
 
@@ -1110,8 +1240,11 @@
                                     <label class="block text-slate-400 font-semibold text-xs mb-1.5">Keterangan / Catatan Peruntukan Barang (Opsional)</label>
                                     <input type="text" 
                                            x-model="item.keterangan" 
+                                           :disabled="formData.status === 'Ditolak'"
+                                           :readonly="formData.status === 'Ditolak'"
                                            placeholder="Contoh: u/ Ruang Tindakan IGD / Bed No. 04 / Pengadaan DAK Kesehatan..." 
-                                           class="w-full h-11 bg-slate-900 border border-slate-700/90 rounded-xl px-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all">
+                                           :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-slate-200 border-slate-700/90 focus:border-teal-500'"
+                                           class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs placeholder-slate-500 focus:outline-none transition-all">
                                 </div>
 
                             </div>
@@ -1128,18 +1261,26 @@
                         <span>Akumulasi Volume: <strong class="text-emerald-400 font-extrabold" x-text="getTotalItemVolume() + ' Total Item/Unit'"></strong></span>
                     </div>
 
-                    <button type="button" @click="addItem()" 
-                            class="px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold flex items-center space-x-2 transition-all active:scale-95 self-start sm:self-auto">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        <span>Tambah Barang Lagi</span>
-                    </button>
+                    <template x-if="formData.status !== 'Ditolak'">
+                        <button type="button" @click="addItem()" 
+                                class="px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold flex items-center space-x-2 transition-all active:scale-95 self-start sm:self-auto cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>Tambah Barang Lagi</span>
+                        </button>
+                    </template>
                 </div>
             </div>
 
             <!-- BAGIAN 3: CATATAN UMUM PENEMPATAN -->
             <div class="pt-4 border-t border-slate-800">
                 <label class="block text-slate-300 font-semibold text-xs mb-1.5">Catatan Umum / Keterangan Penempatan</label>
-                <textarea x-model="formData.keterangan" rows="2" placeholder="Contoh: Pengadaan DAK Kesehatan / BLUD untuk kelengkapan ruangan..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500"></textarea>
+                <textarea x-model="formData.keterangan" 
+                          :disabled="formData.status === 'Ditolak'"
+                          :readonly="formData.status === 'Ditolak'"
+                          rows="2" 
+                          placeholder="Contoh: Pengadaan DAK Kesehatan / BLUD untuk kelengkapan ruangan..." 
+                          :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-950 text-white border-slate-800 focus:border-teal-500'"
+                          class="w-full border rounded-xl px-4 py-3 text-xs placeholder-slate-500 focus:outline-none"></textarea>
             </div>
 
             <!-- Tombol Aksi Batal & Simpan (Hanya di Bagian Bawah Form Sesuai Permintaan) -->

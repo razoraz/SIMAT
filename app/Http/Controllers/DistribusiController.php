@@ -416,6 +416,25 @@ class DistribusiController extends Controller
                 $finalStatus = !$id ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
             }
 
+            // Validasi: Volume Di-ACC tidak boleh kurang dari jumlah NIBAR yang dipilih (kecuali status Ditolak)
+            if ($finalStatus !== 'Ditolak') {
+                foreach ($validated['items'] as $itIdx => $itemData) {
+                    $regCount = !empty($itemData['register_ids']) ? count($itemData['register_ids']) : 0;
+                    if ($regCount > 0) {
+                        $itemQtyAcc = (isset($itemData['qty_acc']) && $itemData['qty_acc'] !== null && $itemData['qty_acc'] !== '')
+                            ? (int)$itemData['qty_acc']
+                            : null;
+                        if ($itemQtyAcc === null || $itemQtyAcc < $regCount) {
+                            $namaBrg = !empty($itemData['nama_barang']) ? $itemData['nama_barang'] : ('Barang #' . ($itIdx + 1));
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Volume Di-ACC untuk {$namaBrg} tidak boleh kurang dari jumlah NIBAR yang dipilih ({$regCount} unit)."
+                            ], 422);
+                        }
+                    }
+                }
+            }
+
             // Helper: hitung nomor urut sekuensial kode transaksi per tahun
             $nextSeq = Distribusi::whereYear('tanggal_distribusi', $tahunDistribusi)->count() + 1;
 
