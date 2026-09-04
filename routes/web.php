@@ -427,7 +427,8 @@ Route::middleware('auth')->group(function () {
                                 ];
                             })->values() : []
                         ];
-                    })->values() : []
+                    })->values() : [],
+                    'spesifikasi_json' => $spec
                 ];
             });
         return view('pages.data_astap', compact('astaps'));
@@ -717,14 +718,14 @@ Route::middleware('auth')->group(function () {
             // Dapatkan Kode 108 Sub-Sub Rincian berdasarkan jenis aset yang dipilih
             $jenisPrefix = substr($data['jenis_aset_kode'] ?? ($data['sub_rincian_kode'] ?? ''), 0, 5);
             $kode108Submitted = match(true) {
-                $jenisPrefix === '1.3.1' => $data['tanah_kode_barang'] ?? null,
-                $jenisPrefix === '1.3.2' => $data['mesin_kode_barang'] ?? null,
-                $jenisPrefix === '1.3.3' => $data['gedung_kode_barang'] ?? null,
-                $jenisPrefix === '1.3.4' => $data['jaringan_kode_barang'] ?? null,
-                $jenisPrefix === '1.3.5' => $data['lainnya_kode_barang'] ?? null,
-                $jenisPrefix === '1.5.3' => $data['atb_kode_barang'] ?? null,
-                $jenisPrefix === '1.3.6' => $data['kdp_kode_barang'] ?? null,
-                default => null
+                $jenisPrefix === '1.3.1' => $data['tanah_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)),
+                $jenisPrefix === '1.3.2' => $data['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)),
+                $jenisPrefix === '1.3.3' => $data['gedung_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)),
+                $jenisPrefix === '1.3.4' => $data['jaringan_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)),
+                $jenisPrefix === '1.3.5' => $data['lainnya_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)),
+                $jenisPrefix === '1.5.3' => $data['atb_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)),
+                $jenisPrefix === '1.3.6' => $data['kdp_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null)),
+                default => ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null))
             };
             
             $jenisAstapRecord = null;
@@ -735,17 +736,20 @@ Route::middleware('auth')->group(function () {
                 $jenisAstapRecord = \App\Models\JenisAstap::where('sub_rincian_objek', $data['sub_rincian_kode'])->first()
                     ?? \App\Models\JenisAstap::where('jenis', substr($data['sub_rincian_kode'], 0, 5))->first();
             }
+            if (!$jenisAstapRecord && !empty($data['jenis_aset_kode'])) {
+                $jenisAstapRecord = \App\Models\JenisAstap::where('jenis', $data['jenis_aset_kode'])->first();
+            }
             $jenisAstapId = $jenisAstapRecord ? $jenisAstapRecord->id : null;
 
             $namaInput = match(true) {
-                $jenisPrefix === '1.3.1' => $data['tanah_nama_barang'] ?? null,
-                $jenisPrefix === '1.3.2' => $data['mesin_nama_barang'] ?? null,
-                $jenisPrefix === '1.3.3' => $data['gedung_nama_barang'] ?? null,
-                $jenisPrefix === '1.3.4' => $data['jaringan_nama_barang'] ?? null,
-                $jenisPrefix === '1.3.5' => $data['lainnya_nama_barang'] ?? null,
-                $jenisPrefix === '1.5.3' => $data['atb_nama_barang'] ?? null,
-                $jenisPrefix === '1.3.6' => $data['kdp_nama_barang'] ?? null,
-                default => null
+                $jenisPrefix === '1.3.1' => $data['tanah_nama_barang'] ?? ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Tanah')),
+                $jenisPrefix === '1.3.2' => $data['mesin_nama_barang'] ?? ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Peralatan dan Mesin')),
+                $jenisPrefix === '1.3.3' => $data['gedung_nama_barang'] ?? ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Gedung dan Bangunan')),
+                $jenisPrefix === '1.3.4' => $data['jaringan_nama_barang'] ?? ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Jalan, Irigasi dan Jaringan')),
+                $jenisPrefix === '1.3.5' => $data['lainnya_nama_barang'] ?? ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Aset Tetap Lainnya')),
+                $jenisPrefix === '1.5.3' => $data['atb_nama_barang'] ?? ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Aset Tidak Berwujud')),
+                $jenisPrefix === '1.3.6' => $data['kdp_nama_barang'] ?? ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Konstruksi Dalam Pengerjaan')),
+                default => ($data['sub_rincian_nama'] ?? ($data['jenis_aset_nama'] ?? 'Aset Tetap'))
             };
 
             $namaBarang = 'Barang ASTAP';
@@ -857,6 +861,170 @@ Route::middleware('auth')->group(function () {
                 ];
             };
 
+            // =========================================================================
+            // KHUSUS TANAH (1.3.1): MULTI-ITEM REPEATER BIDANG TANAH
+            // =========================================================================
+            $hasTanahItems = !empty($data['tanah_items']) && is_array($data['tanah_items']) && count($data['tanah_items']) > 0;
+            if (($jenisPrefix === '1.3.1' || str_starts_with($jenisPrefix, '1.3.1') || $hasTanahItems) && $hasTanahItems) {
+                $totalBidang = 0;
+                $totalLuas = 0;
+                $totalPerencanaan = 0;
+                $totalFisik = 0;
+                $totalPengawasan = 0;
+                $allSertifikat = [];
+                $allAlamat = [];
+
+                foreach ($data['tanah_items'] as $tItem) {
+                    $bidangCount = max(1, (int)($tItem['tanah_jumlah_bidang'] ?? 1));
+                    $totalBidang += $bidangCount;
+                    $totalLuas += (float)($tItem['tanah_luas_m2'] ?? 0);
+                    $totalPerencanaan += (float)($tItem['tanah_nilai_perencanaan'] ?? 0);
+                    $totalFisik += (float)($tItem['tanah_nilai_fisik'] ?? 0);
+                    $totalPengawasan += (float)($tItem['tanah_nilai_pengawasan'] ?? 0);
+                    if (!empty($tItem['tanah_sertifikat_no'])) $allSertifikat[] = $tItem['tanah_sertifikat_no'];
+                    if (!empty($tItem['tanah_alamat'])) $allAlamat[] = $tItem['tanah_alamat'];
+                }
+
+                $totalRealisasi = $totalPerencanaan + $totalFisik + $totalPengawasan;
+                $hargaSatuan = $totalBidang > 0 ? ($totalRealisasi / $totalBidang) : $totalRealisasi;
+                $tahun = $data['tahun_perolehan'] ?? ($data['tahun_anggaran'] ?? date('Y'));
+                $firstItem = $data['tanah_items'][0] ?? [];
+
+                // Hitung running nomor register awal untuk tahun dan kode 108 ini
+                $kode108Submitted = $data['tanah_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null));
+                $kode108Clean = '131000000000';
+                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
+                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
+                } elseif (!empty($kode108Submitted)) {
+                    $kode108Clean = str_replace('.', '', $kode108Submitted);
+                }
+
+                $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                    ->where(function($q) use ($jenisAstapId) {
+                        if ($jenisAstapId) {
+                            $q->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $jenisAstapId));
+                        }
+                    })
+                    ->max('no_register_int') ?? 0;
+
+                $runningRegNum = (int) $maxRegInt;
+
+                $specJson = [
+                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
+                    'luas_m2' => $totalLuas,
+                    'hak_tanah' => $firstItem['tanah_hak'] ?? 'Hak Pakai',
+                    'sertifikat_no' => count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstItem['tanah_sertifikat_no'] ?? null),
+                    'sertifikat_tgl' => $firstItem['tanah_sertifikat_tgl'] ?? null,
+                    'penggunaan' => $firstItem['tanah_penggunaan'] ?? 'Bangunan Rumah Sakit & Fasilitas',
+                    'tanah_jumlah_bidang' => $totalBidang,
+                    'nilai_perencanaan' => $totalPerencanaan,
+                    'nilai_fisik' => $totalFisik,
+                    'nilai_pengawasan' => $totalPengawasan,
+                    'kondisi' => $firstItem['tanah_kondisi'] ?? 'B',
+                    'tanah_items' => $data['tanah_items']
+                ];
+                $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
+
+                $astap = \Illuminate\Support\Facades\DB::transaction(function() use (
+                    $data, $jenisPengadaanId, $rekeningBelanjaId, $jenisAstapId, $namaBarang,
+                    $tahun, $totalBidang, $totalRealisasi, $hargaSatuan, $firstItem, $allAlamat,
+                    $specJson, $kode108Clean, &$runningRegNum
+                ) {
+                    // 1. Buat 1 data ASTAP perolehan belanja modal tanah dengan total volume & total realisasi
+                    $astapItem = \App\Models\Astap::create([
+                        'jenis_pengadaan_id' => $jenisPengadaanId,
+                        'rekening_belanja_id' => $rekeningBelanjaId,
+                        'jenis_astap_id' => $jenisAstapId,
+                        'nama_barang' => $namaBarang,
+                        'tahun_perolehan' => $tahun,
+                        'triwulan' => $data['triwulan'] ?? 'TW I',
+                        'jumlah_volume' => $totalBidang,
+                        'satuan' => 'Bidang',
+                        'harga_satuan' => $hargaSatuan,
+                        'jumlah_anggaran' => !empty($data['jumlah_anggaran']) ? (float) $data['jumlah_anggaran'] : $totalRealisasi,
+                        'total_realisasi' => $totalRealisasi,
+                        'biaya_administrasi_proyek' => 0,
+                        'is_extracomtable' => false,
+                        'spk_nomor' => $data['spk_nomor'] ?? null,
+                        'spk_tanggal' => $data['spk_tanggal'] ?? null,
+                        'surat_pesanan_nomor' => $data['surat_pesanan_nomor'] ?? null,
+                        'surat_pesanan_tanggal' => $data['surat_pesanan_tanggal'] ?? null,
+                        'kwitansi_nomor' => $data['kwitansi_nomor'] ?? null,
+                        'kwitansi_tanggal' => $data['kwitansi_tanggal'] ?? null,
+                        'faktur_nomor' => $data['faktur_nomor'] ?? null,
+                        'faktur_tanggal' => $data['faktur_tanggal'] ?? null,
+                        'sp2d_nomor' => $data['sp2d_nomor'] ?? null,
+                        'sp2d_tanggal' => $data['sp2d_tanggal'] ?? null,
+                        'bast_dokumen_nomor' => $data['bast_dokumen_nomor'] ?? null,
+                        'bast_dokumen_tanggal' => $data['bast_dokumen_tanggal'] ?? null,
+                        'alamat_barang' => $firstItem['tanah_alamat'] ?? ($data['alamat_barang'] ?? (count($allAlamat) > 0 ? implode('; ', $allAlamat) : null)),
+                        'penyedia_nama' => $data['penyedia_nama'] ?? null,
+                        'penyedia_pemilik' => $data['penyedia_pemilik'] ?? null,
+                        'penyedia_rekening_nama' => $data['penyedia_rekening_nama'] ?? null,
+                        'penyedia_rekening_nomor' => $data['penyedia_rekening_nomor'] ?? null,
+                        'penyedia_alamat' => $data['penyedia_alamat'] ?? null,
+                        'ppk_nama' => $data['ppk_nama'] ?? null,
+                        'ppk_nip' => $data['ppk_nip'] ?? null,
+                        'keterangan_tambahan' => $data['keterangan_tambahan'] ?? ($data['keterangan'] ?? null),
+                        'spesifikasi_json' => $specJson,
+                        'user_id' => auth()->id()
+                    ]);
+
+                    // 2. Buat seluruh AstapRegister untuk masing-masing item bidang tanah (1 NIBAR per baris tanah_items)
+                    foreach ($data['tanah_items'] as $itemIdx => $tItem) {
+                        $alamatLokasi = !empty($tItem['tanah_alamat']) ? $tItem['tanah_alamat'] : ($data['alamat_barang'] ?? 'Bidang #' . ($itemIdx + 1));
+                        $rawKondisi = strtoupper(trim((string)($tItem['tanah_kondisi'] ?? 'Baik')));
+                        $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+
+                        $runningRegNum++;
+                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+
+                        $qrPath = "/scan/{$nibar}";
+                        \App\Models\AstapRegister::create([
+                            'astap_id' => $astapItem->id,
+                            'tahun_perolehan' => $tahun,
+                            'no_register_int' => $runningRegNum,
+                            'no_register' => $nibar,
+                            'nibar' => $nibar,
+                            'qr_code_path' => $qrPath,
+                            'ruang_pemegang' => $alamatLokasi,
+                            'kondisi' => $kondisiStr,
+                            'status' => 'Tersedia'
+                        ]);
+                    }
+
+                    return $astapItem;
+                });
+
+                // Kirim Notifikasi Sistem ke Admin & Super Admin
+                try {
+                    \App\Services\NotificationService::sendToAdminAndMaster(
+                        "Aset Tanah Baru ({$totalBidang} Bidang): {$namaBarang}",
+                        "{$totalBidang} Bidang Tanah • " . $tahun,
+                        'astap',
+                        route('astap.index')
+                    );
+                } catch (\Throwable $e) {
+                    \Log::warning("Gagal kirim notif astap store tanah: " . $e->getMessage());
+                }
+
+                session()->flash('success', 'Sebanyak ' . $totalBidang . ' Bidang Tanah "' . $namaBarang . '" berhasil disimpan ke database SIMAT-RK.');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sebanyak ' . $totalBidang . ' Bidang Tanah berhasil didaftarkan ke database SIMAT-RK!'
+                ]);
+            }
+
+            // =========================================================================
+            // DEFAULT / JENIS ASET LAINNYA
+            // =========================================================================
             $extracted = $extractAstapPayload($data, $jenisPrefix, $jenisAstapRecord);
 
             $astap = \App\Models\Astap::create([
@@ -1184,7 +1352,59 @@ Route::middleware('auth')->group(function () {
                 ];
             };
 
-            $ext = $extractAstapPayload($data, $jenisPrefix);
+            $hasTanahItems = !empty($data['tanah_items']) && is_array($data['tanah_items']) && count($data['tanah_items']) > 0;
+            if (($jenisPrefix === '1.3.1' || str_starts_with($jenisPrefix, '1.3.1') || $hasTanahItems) && $hasTanahItems) {
+                $totalBidang = 0;
+                $totalLuas = 0;
+                $totalPerencanaan = 0;
+                $totalFisik = 0;
+                $totalPengawasan = 0;
+                $allSertifikat = [];
+                $allAlamat = [];
+
+                foreach ($data['tanah_items'] as $tItem) {
+                    $bidangCount = max(1, (int)($tItem['tanah_jumlah_bidang'] ?? 1));
+                    $totalBidang += $bidangCount;
+                    $totalLuas += (float)($tItem['tanah_luas_m2'] ?? 0);
+                    $totalPerencanaan += (float)($tItem['tanah_nilai_perencanaan'] ?? 0);
+                    $totalFisik += (float)($tItem['tanah_nilai_fisik'] ?? 0);
+                    $totalPengawasan += (float)($tItem['tanah_nilai_pengawasan'] ?? 0);
+                    if (!empty($tItem['tanah_sertifikat_no'])) $allSertifikat[] = $tItem['tanah_sertifikat_no'];
+                    if (!empty($tItem['tanah_alamat'])) $allAlamat[] = $tItem['tanah_alamat'];
+                }
+
+                $totalRealisasi = $totalPerencanaan + $totalFisik + $totalPengawasan;
+                $hargaSatuan = $totalBidang > 0 ? ($totalRealisasi / $totalBidang) : $totalRealisasi;
+                $firstItem = $data['tanah_items'][0] ?? [];
+
+                $spec = [
+                    'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
+                    'luas_m2' => $totalLuas,
+                    'hak_tanah' => $firstItem['tanah_hak'] ?? 'Hak Pakai',
+                    'sertifikat_no' => count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstItem['tanah_sertifikat_no'] ?? null),
+                    'sertifikat_tgl' => $firstItem['tanah_sertifikat_tgl'] ?? null,
+                    'penggunaan' => $firstItem['tanah_penggunaan'] ?? 'Bangunan Rumah Sakit & Fasilitas',
+                    'tanah_jumlah_bidang' => $totalBidang,
+                    'nilai_perencanaan' => $totalPerencanaan,
+                    'nilai_fisik' => $totalFisik,
+                    'nilai_pengawasan' => $totalPengawasan,
+                    'kondisi' => $firstItem['tanah_kondisi'] ?? 'B',
+                    'tanah_items' => $data['tanah_items']
+                ];
+                $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
+
+                $ext = [
+                    'vol' => max(1, $totalBidang),
+                    'sat' => 'Bidang',
+                    'hrgSat' => $hargaSatuan,
+                    'totReal' => $totalRealisasi,
+                    'biaya' => 0,
+                    'extracom' => false,
+                    'spec' => $spec
+                ];
+            } else {
+                $ext = $extractAstapPayload($data, $jenisPrefix);
+            }
 
             $namaInput = match(true) {
                 $jenisPrefix === '1.3.1' => $data['tanah_nama_barang'] ?? null,
@@ -1239,6 +1459,70 @@ Route::middleware('auth')->group(function () {
             }
             $astap->spesifikasi_json = $ext['spec'];
             $astap->save();
+
+            // Sync AstapRegisters jika tanah_items
+            if ($hasTanahItems) {
+                $targetCount = count($data['tanah_items']);
+                $existingRegs = $astap->registers()->orderBy('id')->get();
+                $existingCount = $existingRegs->count();
+
+                $kode108Clean = '131000000000';
+                if ($jenisAstapRecord && !empty($jenisAstapRecord->sub_sub_rincian_objek)) {
+                    $kode108Clean = str_replace('.', '', $jenisAstapRecord->sub_sub_rincian_objek);
+                } elseif (!empty($data['tanah_kode_barang'])) {
+                    $kode108Clean = str_replace('.', '', $data['tanah_kode_barang']);
+                }
+
+                $tahun = $astap->tahun_perolehan;
+
+                // 1. Update existing registers with current tanah_items
+                foreach ($data['tanah_items'] as $itemIdx => $tItem) {
+                    $alamatLokasi = !empty($tItem['tanah_alamat']) ? $tItem['tanah_alamat'] : ($data['alamat_barang'] ?? 'Bidang #' . ($itemIdx + 1));
+                    $rawKondisi = strtoupper(trim((string)($tItem['tanah_kondisi'] ?? 'Baik')));
+                    $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+
+                    if ($itemIdx < $existingCount) {
+                        $reg = $existingRegs[$itemIdx];
+                        $reg->ruang_pemegang = $alamatLokasi;
+                        $reg->kondisi = $kondisiStr;
+                        $reg->save();
+                    } else {
+                        // Tambah register baru
+                        $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                            ->whereHas('astap', fn($q) => $q->where('jenis_astap_id', $astap->jenis_astap_id))
+                            ->max('no_register_int') ?? 0;
+                        $runningRegNum = (int) $maxRegInt + 1;
+                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+
+                        $qrPath = "/scan/{$nibar}";
+                        \App\Models\AstapRegister::create([
+                            'astap_id' => $astap->id,
+                            'tahun_perolehan' => $tahun,
+                            'no_register_int' => $runningRegNum,
+                            'no_register' => $nibar,
+                            'nibar' => $nibar,
+                            'qr_code_path' => $qrPath,
+                            'ruang_pemegang' => $alamatLokasi,
+                            'kondisi' => $kondisiStr,
+                            'status' => 'Tersedia'
+                        ]);
+                    }
+                }
+
+                // Hapus register berlebih jika tanah_items dikurangi
+                if ($existingCount > $targetCount) {
+                    for ($k = $targetCount; $k < $existingCount; $k++) {
+                        $existingRegs[$k]->delete();
+                    }
+                }
+            }
 
             session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil diperbarui.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil diperbarui!']);

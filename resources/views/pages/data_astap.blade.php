@@ -2472,31 +2472,85 @@
 
                             <!-- 1. KIB A (TANAH) -->
                             <template x-if="selectedAstapDetail.category === 'KIB A'">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Tanah (m²)</span>
-                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Total Luas Tanah (m²)</span>
+                                            <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
+                                        </div>
+                                        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌾 Jumlah Bidang Terdaftar</span>
+                                            <span class="text-emerald-400 font-extrabold font-mono" x-text="(selectedAstapDetail.jumlah_volume || selectedAstapDetail.spesifikasi_json?.tanah_jumlah_bidang || (selectedAstapDetail.registers ? selectedAstapDetail.registers.length : 1)) + ' Bidang Tanah'"></span>
+                                        </div>
+                                        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📜 Hak Atas Tanah</span>
+                                            <span class="text-amber-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.hak_tanah || selectedAstapDetail.hak_tanah || 'Hak Pakai'"></span>
+                                        </div>
+                                        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📄 Nomor Sertifikat</span>
+                                            <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.sertifikat_no || selectedAstapDetail.sertifikat_no || '-'"></span>
+                                        </div>
+                                        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏥 Penggunaan Tanah</span>
+                                            <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.penggunaan || selectedAstapDetail.penggunaan || 'Fasilitas Kesehatan RSUD'"></span>
+                                        </div>
+                                        <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                            <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Alamat / Lokasi Tanah</span>
+                                            <span class="text-teal-300 font-bold truncate block" :title="selectedAstapDetail.alamat_barang" x-text="selectedAstapDetail.alamat_barang || 'Kawasan Utama RSUD Dr. H. Koesnandi'"></span>
+                                        </div>
                                     </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📜 Hak Atas Tanah</span>
-                                        <span class="text-amber-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.hak_tanah || selectedAstapDetail.hak_tanah || 'Hak Pakai'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📄 Nomor Sertifikat</span>
-                                        <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.sertifikat_no || selectedAstapDetail.sertifikat_no || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏥 Penggunaan Tanah</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.penggunaan || selectedAstapDetail.penggunaan || 'Fasilitas Kesehatan RSUD'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Alamat / Lokasi Tanah</span>
-                                        <span class="text-teal-300 font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kawasan Utama RSUD Dr. H. Koesnandi'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏛️ Asal Usul Perolehan</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.asal_usul || 'APBD Kabupaten'"></span>
-                                    </div>
+
+                                    <!-- Sub-Card Rincian Masing-Masing Bidang Tanah Jika Multi-Item -->
+                                    <template x-if="selectedAstapDetail.spesifikasi_json?.tanah_items && selectedAstapDetail.spesifikasi_json.tanah_items.length > 0">
+                                        <div class="space-y-2 border-t border-slate-800/80 pt-3">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>🌾 Rincian Masing-Masing Bidang Tanah (<span x-text="selectedAstapDetail.spesifikasi_json.tanah_items.length"></span> Bidang):</span>
+                                                </span>
+                                            </div>
+                                            <div class="grid grid-cols-1 gap-2.5">
+                                                <template x-for="(tItem, tIdx) in selectedAstapDetail.spesifikasi_json.tanah_items" :key="tIdx">
+                                                    <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-2.5 shadow-sm">
+                                                        <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 font-mono font-bold text-[11px] border border-emerald-500/30">
+                                                                    🌾 Bidang Tanah #<span x-text="tIdx + 1"></span>
+                                                                </span>
+                                                                <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[tIdx]">
+                                                                    <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[tIdx].nibar || selectedAstapDetail.registers[tIdx].no_register)"></span>
+                                                                </template>
+                                                            </div>
+                                                            <div class="text-[11px] font-mono">
+                                                                <span class="text-slate-400">Total Realisasi: </span>
+                                                                <strong class="text-emerald-400 font-bold" x-text="'Rp ' + (Number(tItem.tanah_nilai_perencanaan || 0) + Number(tItem.tanah_nilai_fisik || 0) + Number(tItem.tanah_nilai_pengawasan || 0)).toLocaleString('id-ID')"></strong>
+                                                            </div>
+                                                        </div>
+                                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                            <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                                <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📜 Hak &amp; Sertifikat</span>
+                                                                <span class="text-amber-300 font-bold block" x-text="tItem.tanah_hak || 'Hak Pakai'"></span>
+                                                                <span class="text-cyan-300 font-mono text-[10px] block truncate" x-text="tItem.tanah_sertifikat_no ? ('No: ' + tItem.tanah_sertifikat_no) : 'Tanpa No Sertifikat'"></span>
+                                                            </div>
+                                                            <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                                <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Luas &amp; Kondisi</span>
+                                                                <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(tItem.tanah_luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
+                                                                <span class="text-emerald-300 font-semibold text-[10px]" x-text="'Kondisi: ' + (tItem.tanah_kondisi === 'B' ? 'Baik (B)' : (tItem.tanah_kondisi === 'KB' ? 'Kurang Baik (KB)' : 'Rusak Berat (RB)'))"></span>
+                                                            </div>
+                                                            <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                                <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Rincian Komponen Nilai</span>
+                                                                <span class="text-slate-200 font-medium block text-[10px]" x-text="'Fisik: Rp ' + Number(tItem.tanah_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                                <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(tItem.tanah_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Was: ' + Number(tItem.tanah_nilai_pengawasan || 0).toLocaleString('id-ID')"></span>
+                                                            </div>
+                                                            <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                                <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Letak / Alamat Lokasi</span>
+                                                                <span class="text-teal-300 font-medium block truncate" :title="tItem.tanah_alamat" x-text="tItem.tanah_alamat || '-'"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
 
