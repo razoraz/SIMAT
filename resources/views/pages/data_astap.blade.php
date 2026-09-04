@@ -499,68 +499,157 @@
             const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || 0), 0);
             const groupAnggaranTotal = parseFloat(groupItems[0].jumlah_anggaran) || groupRealisasiTotal;
 
-            groupItems.forEach((item, idxChild) => {
-                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-                const nilaiPerencanaan = parseFloat(item.nilai_perencanaan) || 0;
-                const nilaiFisik = parseFloat(item.nilai_fisik) || totalVal;
-                const nilaiPengawasan = parseFloat(item.nilai_pengawasan) || 0;
-                const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || totalVal;
+            let isFirstRowInGroup = true;
 
-                let col1to15 = [];
-                if (idxChild === 0) {
-                    // Baris Pertama Group Sub Rincian: Isi Lengkap Kolom 1 s/d 15
-                    col1to15 = [
-                        globalKibANo++,
-                        item.program_kode || '-',
-                        item.program_nama || '-',
-                        item.kegiatan_kode || '-',
-                        item.kegiatan_nama || '-',
-                        item.sub_kegiatan_kode || '-',
-                        item.sub_kegiatan_nama || '-',
-                        item.rekening_kode || '-',
-                        item.rekening_nama || '-',
-                        item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.1'),
-                        item.jenis_aset_nama || 'TANAH',
-                        item.sub_rincian_kode || subKey,
-                        item.sub_rincian_nama || '-',
-                        groupAnggaranTotal,
-                        groupRealisasiTotal
-                    ];
-                } else {
-                    // Baris Anak (Sub-Sub Rincian ke-2 dst): Kolom 1 s/d 15 Dikosongkan (Blank)
-                    col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+            groupItems.forEach((item) => {
+                let spec = item.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
                 }
 
-                kibARows.push([
-                    ...col1to15,
-                    item.nama_barang || '-',
-                    item.kode_barang || '-',
-                    item.hak_tanah || 'Hak Pakai',
-                    item.sertifikat_tanggal || '-',
-                    item.sertifikat_nomor || '-',
-                    item.spk_nomor || '-',
-                    item.spk_tanggal || '-',
-                    item.surat_pesanan_nomor || '-',
-                    item.surat_pesanan_tanggal || '-',
-                    item.kwitansi_nomor || '-',
-                    item.kwitansi_tanggal || '-',
-                    item.faktur_nomor || '-',
-                    item.faktur_tanggal || '-',
-                    item.kondisi || 'Baik',
-                    item.penggunaan || '-',
-                    item.jumlah_bidang || (item.jumlah_volume || 1),
-                    item.luas_m2 || 0,
-                    nilaiPerencanaan,
-                    nilaiFisik,
-                    nilaiPengawasan,
-                    totalNilaiBarang,
-                    item.sp2d_nomor || '-',
-                    item.sp2d_tanggal || '-',
-                    item.bast_dokumen_nomor || '-',
-                    item.bast_dokumen_tanggal || '-',
-                    item.alamat_barang || '-',
-                    ...getStep4Columns(item)
-                ]);
+                const tanahItems = (spec && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0)
+                    ? spec.tanah_items
+                    : null;
+
+                if (tanahItems) {
+                    tanahItems.forEach((tItem) => {
+                        const nilaiPerencanaan = parseFloat(tItem.tanah_nilai_perencanaan) || 0;
+                        const nilaiFisik = parseFloat(tItem.tanah_nilai_fisik) || 0;
+                        const nilaiPengawasan = parseFloat(tItem.tanah_nilai_pengawasan) || 0;
+                        const totalNilaiBidang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || 0;
+
+                        const rawKondisi = tItem.tanah_kondisi || item.kondisi || 'Baik';
+                        const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                        let col1to15 = [];
+                        if (isFirstRowInGroup) {
+                            // Baris Pertama Group Sub Rincian: Isi Lengkap Kolom 1 s/d 15
+                            col1to15 = [
+                                globalKibANo++,
+                                item.program_kode || '-',
+                                item.program_nama || '-',
+                                item.kegiatan_kode || '-',
+                                item.kegiatan_nama || '-',
+                                item.sub_kegiatan_kode || '-',
+                                item.sub_kegiatan_nama || '-',
+                                item.rekening_kode || '-',
+                                item.rekening_nama || '-',
+                                item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.1'),
+                                item.jenis_aset_nama || 'TANAH',
+                                item.sub_rincian_kode || subKey,
+                                item.sub_rincian_nama || '-',
+                                groupAnggaranTotal,
+                                groupRealisasiTotal
+                            ];
+                            isFirstRowInGroup = false;
+                        } else {
+                            // Baris Anak (Sub-Sub Rincian / Bidang ke-2 dst): Kolom 1 s/d 15 Dikosongkan (Blank)
+                            col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                        }
+
+                        kibARows.push([
+                            ...col1to15,
+                            item.nama_barang || '-',
+                            item.kode_barang || '-',
+                            tItem.tanah_hak || item.hak_tanah || 'Hak Pakai',
+                            tItem.tanah_sertifikat_tgl || item.sertifikat_tanggal || '-',
+                            tItem.tanah_sertifikat_no || item.sertifikat_nomor || '-',
+                            item.spk_nomor || '-',
+                            item.spk_tanggal || '-',
+                            item.surat_pesanan_nomor || '-',
+                            item.surat_pesanan_tanggal || '-',
+                            item.kwitansi_nomor || '-',
+                            item.kwitansi_tanggal || '-',
+                            item.faktur_nomor || '-',
+                            item.faktur_tanggal || '-',
+                            kondisiLabel,
+                            tItem.tanah_penggunaan || item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
+                            parseInt(tItem.tanah_jumlah_bidang) || 1,
+                            parseFloat(tItem.tanah_luas_m2) || 0,
+                            nilaiPerencanaan,
+                            nilaiFisik,
+                            nilaiPengawasan,
+                            totalNilaiBidang,
+                            item.sp2d_nomor || '-',
+                            item.sp2d_tanggal || '-',
+                            item.bast_dokumen_nomor || '-',
+                            item.bast_dokumen_tanggal || '-',
+                            tItem.tanah_alamat || item.alamat_barang || '-',
+                            ...getStep4Columns(item)
+                        ]);
+                    });
+                } else {
+                    // Fallback Single Item jika data belum memakai tanah_items array
+                    const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+                    const nilaiPerencanaan = parseFloat(item.nilai_perencanaan) || 0;
+                    const nilaiFisik = parseFloat(item.nilai_fisik) || totalVal;
+                    const nilaiPengawasan = parseFloat(item.nilai_pengawasan) || 0;
+                    const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || totalVal;
+
+                    const rawKondisi = item.kondisi || 'Baik';
+                    const kondisiLabel = rawKondisi === 'B' || rawKondisi === 'Baik' ? 'Baik' 
+                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                    let col1to15 = [];
+                    if (isFirstRowInGroup) {
+                        // Baris Pertama Group Sub Rincian: Isi Lengkap Kolom 1 s/d 15
+                        col1to15 = [
+                            globalKibANo++,
+                            item.program_kode || '-',
+                            item.program_nama || '-',
+                            item.kegiatan_kode || '-',
+                            item.kegiatan_nama || '-',
+                            item.sub_kegiatan_kode || '-',
+                            item.sub_kegiatan_nama || '-',
+                            item.rekening_kode || '-',
+                            item.rekening_nama || '-',
+                            item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.1'),
+                            item.jenis_aset_nama || 'TANAH',
+                            item.sub_rincian_kode || subKey,
+                            item.sub_rincian_nama || '-',
+                            groupAnggaranTotal,
+                            groupRealisasiTotal
+                        ];
+                        isFirstRowInGroup = false;
+                    } else {
+                        // Baris Anak: Kolom 1 s/d 15 Dikosongkan (Blank)
+                        col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                    }
+
+                    kibARows.push([
+                        ...col1to15,
+                        item.nama_barang || '-',
+                        item.kode_barang || '-',
+                        item.hak_tanah || 'Hak Pakai',
+                        item.sertifikat_tanggal || '-',
+                        item.sertifikat_nomor || '-',
+                        item.spk_nomor || '-',
+                        item.spk_tanggal || '-',
+                        item.surat_pesanan_nomor || '-',
+                        item.surat_pesanan_tanggal || '-',
+                        item.kwitansi_nomor || '-',
+                        item.kwitansi_tanggal || '-',
+                        item.faktur_nomor || '-',
+                        item.faktur_tanggal || '-',
+                        kondisiLabel,
+                        item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
+                        item.jumlah_bidang || (item.jumlah_volume || 1),
+                        parseFloat(item.luas_m2) || 0,
+                        nilaiPerencanaan,
+                        nilaiFisik,
+                        nilaiPengawasan,
+                        totalNilaiBarang,
+                        item.sp2d_nomor || '-',
+                        item.sp2d_tanggal || '-',
+                        item.bast_dokumen_nomor || '-',
+                        item.bast_dokumen_tanggal || '-',
+                        item.alamat_barang || '-',
+                        ...getStep4Columns(item)
+                    ]);
+                }
             });
         });
 
@@ -2494,16 +2583,11 @@
                                                             <strong class="text-emerald-400 font-bold" x-text="'Rp ' + (Number(tItem.tanah_nilai_perencanaan || 0) + Number(tItem.tanah_nilai_fisik || 0) + Number(tItem.tanah_nilai_pengawasan || 0)).toLocaleString('id-ID')"></strong>
                                                         </div>
                                                     </div>
-                                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-[10.5px]">
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📜 Hak &amp; Sertifikat</span>
                                                             <span class="text-amber-300 font-bold block" x-text="tItem.tanah_hak || 'Hak Pakai'"></span>
                                                             <span class="text-cyan-300 font-mono text-[10px] block truncate" x-text="tItem.tanah_sertifikat_no ? ('No: ' + tItem.tanah_sertifikat_no) : 'Tanpa No Sertifikat'"></span>
-                                                        </div>
-                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌾 Volume &amp; Satuan</span>
-                                                            <span class="text-cyan-300 font-mono font-bold block" x-text="(tItem.tanah_jumlah_bidang || 1) + ' ' + (selectedAstapDetail.satuan || 'Bidang')"></span>
-                                                            <span class="text-slate-400 text-[10px]" x-text="'Satuan: ' + (selectedAstapDetail.satuan || 'Bidang')"></span>
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Luas &amp; Kondisi</span>
@@ -2544,16 +2628,11 @@
                                                     <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(selectedAstapDetail.nilai_realisasi || 0).toLocaleString('id-ID')"></strong>
                                                 </div>
                                             </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 text-[10.5px]">
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📜 Hak &amp; Sertifikat</span>
                                                     <span class="text-amber-300 font-bold block" x-text="selectedAstapDetail.spesifikasi_json?.hak_tanah || selectedAstapDetail.hak_tanah || 'Hak Pakai'"></span>
                                                     <span class="text-cyan-300 font-mono text-[10px] block truncate" x-text="selectedAstapDetail.spesifikasi_json?.sertifikat_no || selectedAstapDetail.sertifikat_no ? ('No: ' + (selectedAstapDetail.spesifikasi_json?.sertifikat_no || selectedAstapDetail.sertifikat_no)) : 'Tanpa No Sertifikat'"></span>
-                                                </div>
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌾 Volume &amp; Satuan</span>
-                                                    <span class="text-cyan-300 font-mono font-bold block" x-text="(selectedAstapDetail.jumlah_volume || 1) + ' ' + (selectedAstapDetail.satuan || 'Bidang')"></span>
-                                                    <span class="text-slate-400 text-[10px]" x-text="'Satuan: ' + (selectedAstapDetail.satuan || 'Bidang')"></span>
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Luas &amp; Kondisi</span>
@@ -2761,7 +2840,7 @@
                             <h4 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>📄 Dokumen Pengadaan &amp; Legalisasi BAST</span>
                             </h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-[11px]">
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor SPK / Kontrak:</span>
                                     <span class="text-cyan-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.spk_nomor || '-'"></span>
@@ -2777,6 +2856,72 @@
                                 <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
                                     <span class="text-slate-400 font-medium shrink-0">Nomor Faktur / Invoice:</span>
                                     <span class="text-emerald-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.faktur_nomor || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                                    <span class="text-slate-400 font-medium shrink-0">Nomor SP2D:</span>
+                                    <span class="text-teal-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.sp2d_nomor || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between gap-2 min-w-0">
+                                    <span class="text-slate-400 font-medium shrink-0">Nomor BAST:</span>
+                                    <span class="text-rose-300 font-mono font-bold truncate text-right" x-text="selectedAstapDetail.bast_nomor || '-'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pihak Penyedia & Pejabat Pembuat Komitmen (PPK) -->
+                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <h4 class="text-xs font-extrabold text-teal-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                    <span>🏢 Pihak Penyedia (Rekanan) &amp; Pejabat Pembuat Komitmen (PPK)</span>
+                                </h4>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">Langkah 4 - Rekanan &amp; PPK</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
+                                <!-- Card Pihak Penyedia -->
+                                <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
+                                    <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1">
+                                        <span>🏢 Informasi Rekanan / Vendor</span>
+                                    </span>
+                                    <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                        <div class="flex items-center justify-between pt-1">
+                                            <span class="text-slate-400">Nama Perusahaan / Rekanan:</span>
+                                            <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.penyedia_nama || '-'"></strong>
+                                        </div>
+                                        <div class="flex items-center justify-between pt-1.5">
+                                            <span class="text-slate-400">Nama Pimpinan / Pemilik:</span>
+                                            <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></span>
+                                        </div>
+                                        <div class="flex items-center justify-between pt-1.5">
+                                            <span class="text-slate-400">Rekening Bank:</span>
+                                            <span class="text-amber-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.penyedia_rekening_nomor ? ((selectedAstapDetail.penyedia_rekening_nama ? selectedAstapDetail.penyedia_rekening_nama + ' - ' : '') + selectedAstapDetail.penyedia_rekening_nomor) : (selectedAstapDetail.penyedia_rekening_nama || '-')"></span>
+                                        </div>
+                                        <div class="flex items-start justify-between pt-1.5">
+                                            <span class="text-slate-400 shrink-0">Alamat Perusahaan:</span>
+                                            <span class="text-teal-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.penyedia_alamat || '-'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card PPK -->
+                                <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
+                                    <span class="text-[10.5px] font-extrabold text-amber-400 uppercase tracking-wider block flex items-center space-x-1">
+                                        <span>👔 Pejabat Pembuat Komitmen (PPK)</span>
+                                    </span>
+                                    <div class="space-y-1.5 divide-y divide-slate-800/60">
+                                        <div class="flex items-center justify-between pt-1">
+                                            <span class="text-slate-400">Nama Pejabat (PPK):</span>
+                                            <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.ppk_nama" x-text="selectedAstapDetail.ppk_nama || '-'"></strong>
+                                        </div>
+                                        <div class="flex items-center justify-between pt-1.5">
+                                            <span class="text-slate-400">NIP Pejabat (PPK):</span>
+                                            <span class="text-cyan-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.ppk_nip || '-'"></span>
+                                        </div>
+                                        <div class="flex items-start justify-between pt-1.5">
+                                            <span class="text-slate-400 shrink-0">Keterangan / Catatan:</span>
+                                            <span class="text-slate-300 italic text-right truncate max-w-[55%]" :title="selectedAstapDetail.keterangan_tambahan || selectedAstapDetail.keterangan" x-text="selectedAstapDetail.keterangan_tambahan || selectedAstapDetail.keterangan || '-'"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

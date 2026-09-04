@@ -994,7 +994,7 @@ Route::middleware('auth')->group(function () {
                             'no_register' => $nibar,
                             'nibar' => $nibar,
                             'qr_code_path' => $qrPath,
-                            'ruang_pemegang' => $alamatLokasi,
+                            'ruang_pemegang' => null,
                             'kondisi' => $kondisiStr,
                             'status' => 'Tersedia'
                         ]);
@@ -1483,7 +1483,6 @@ Route::middleware('auth')->group(function () {
 
                     if ($itemIdx < $existingCount) {
                         $reg = $existingRegs[$itemIdx];
-                        $reg->ruang_pemegang = $alamatLokasi;
                         $reg->kondisi = $kondisiStr;
                         $reg->save();
                     } else {
@@ -1509,7 +1508,7 @@ Route::middleware('auth')->group(function () {
                             'no_register' => $nibar,
                             'nibar' => $nibar,
                             'qr_code_path' => $qrPath,
-                            'ruang_pemegang' => $alamatLokasi,
+                            'ruang_pemegang' => null,
                             'kondisi' => $kondisiStr,
                             'status' => 'Tersedia'
                         ]);
