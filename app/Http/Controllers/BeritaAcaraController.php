@@ -282,11 +282,14 @@ class BeritaAcaraController extends Controller
             $firstItemName = count($itemsData) > 0 ? $itemsData[0]['nama_barang'] : 'Barang Aset';
             $moreCount = count($itemsData) > 1 ? ' + ' . (count($itemsData) - 1) . ' item lainnya' : '';
 
+            $isPlaceholderBast = empty($dst->bast_nomor) || str_contains((string)$dst->bast_nomor, 'Diterbitkan') || str_contains((string)$dst->bast_nomor, '[Auto]');
+            $bastNomorResmi = !$isPlaceholderBast ? $dst->bast_nomor : ('032 / ' . str_pad($dst->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunStr);
+
             $distribusiList[] = [
                 'id'                => $dst->id,
                 'kode'              => $dst->kode,
-                'bast_nomor'        => $dst->bast_nomor ?: ('032 / ' . str_pad($dst->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunStr),
-                'nomor_bast'        => $dst->bast_nomor ?: ('032 / ' . str_pad($dst->id, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahunStr),
+                'bast_nomor'        => $bastNomorResmi,
+                'nomor_bast'        => $bastNomorResmi,
                 'tgl'               => $tgl->format('d/m/Y'),
                 'tgl_bast'          => $hariStr . ', ' . $tglAngka . ' ' . $bulanStr . ' ' . $tahunStr,
                 'tanggal_distribusi'=> $tgl->format('Y-m-d'),

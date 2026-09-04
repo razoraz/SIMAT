@@ -324,6 +324,8 @@
                                 this.selectedDistribusi = {
                                     ...this.selectedDistribusi,
                                     status: 'Ditolak',
+                                    bast_nomor: '-',
+                                    nomor_bast: '-',
                                     signed: false,
                                     tgl_signed: '-',
                                     qr_hash: '',
@@ -334,12 +336,16 @@
                             const found = this.distribusis.find(d => String(d.id) === String(item.id));
                             if (found) {
                                 found.status     = 'Ditolak';
+                                found.bast_nomor = '-';
+                                found.nomor_bast = '-';
                                 found.signed     = false;
                                 found.tgl_signed = '-';
                                 found.qr_hash    = '';
                                 found.items      = clearRejectedItems(found.items);
                             }
                             item.status     = 'Ditolak';
+                            item.bast_nomor = '-';
+                            item.nomor_bast = '-';
                             item.signed     = false;
                             item.tgl_signed = '-';
                             item.qr_hash    = '';
@@ -447,10 +453,24 @@
                         const data = await response.json();
                         if (response.ok && data.success) {
                             item.status = newStatus;
+                            if (data.bast_nomor !== undefined) {
+                                item.bast_nomor = data.bast_nomor || '-';
+                                item.nomor_bast = data.bast_nomor || '-';
+                            }
                             const target = this.distribusis.find(d => d.id === item.id);
-                            if (target) target.status = newStatus;
+                            if (target) {
+                                target.status = newStatus;
+                                if (data.bast_nomor !== undefined) {
+                                    target.bast_nomor = data.bast_nomor || '-';
+                                    target.nomor_bast = data.bast_nomor || '-';
+                                }
+                            }
                             if (this.selectedDistribusi && this.selectedDistribusi.id === item.id) {
                                 this.selectedDistribusi.status = newStatus;
+                                if (data.bast_nomor !== undefined) {
+                                    this.selectedDistribusi.bast_nomor = data.bast_nomor || '-';
+                                    this.selectedDistribusi.nomor_bast = data.bast_nomor || '-';
+                                }
                             }
                             this.saveToStorage();
                             this.showSimatToast('✅ Status distribusi ' + (item.kode || '') + ' berhasil diperbarui menjadi ' + newStatus + '!', 'success');
@@ -791,7 +811,7 @@
                         <span class="p-2.5 rounded-2xl bg-teal-500/20 text-teal-300 text-xl border border-teal-500/30">🚚</span>
                         <div>
                             <h3 class="text-base sm:text-lg font-extrabold text-white">Detail Alokasi Penyerahan & Register NIBAR</h3>
-                            <p class="text-xs text-slate-400 font-mono" x-text="selectedDistribusi ? ('Nomor Registrasi: ' + selectedDistribusi.kode + ' • BAST: ' + (selectedDistribusi.bast_nomor || selectedDistribusi.nomor_bast)) : ''"></p>
+                            <p class="text-xs text-slate-400 font-mono" x-text="selectedDistribusi ? ('Nomor Registrasi: ' + selectedDistribusi.kode + (selectedDistribusi.status === 'Ditolak' ? ' • BAST: -' : (' • BAST: ' + (selectedDistribusi.bast_nomor || selectedDistribusi.nomor_bast || 'Belum Diterbitkan')))) : ''"></p>
                         </div>
                     </div>
                     <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg text-lg font-bold">&times;</button>
@@ -1015,8 +1035,8 @@
                         <span>Format NIBAR: 45 Digit Kode BMD RSUD dr. H. Koesnandi</span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <!-- Tombol Barang Diterima (Tampil jika belum Telah Diterima / Ditolak) -->
-                        <template x-if="selectedDistribusi && !['Telah Diterima','Diterima','Ditolak'].includes(selectedDistribusi.status)">
+                        <!-- Tombol Barang Diterima (Hanya muncul ketika status Dalam Pengiriman) -->
+                        <template x-if="selectedDistribusi && ['Dalam Pengiriman', 'Dikirim'].includes(selectedDistribusi.status)">
                             <button type="button"
                                     @click="confirmKonfirmasiDiterima(selectedDistribusi)"
                                     class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5 cursor-pointer">
@@ -1027,8 +1047,8 @@
                             </button>
                         </template>
 
-                        <!-- Tombol Tolak (hanya admin, hanya jika belum Ditolak / Telah Diterima) -->
-                        <template x-if="userRole !== 'sub_admin' && selectedDistribusi && !['Telah Diterima','Diterima','Ditolak'].includes(selectedDistribusi.status)">
+                        <!-- Tombol Tolak (Hanya admin, hilang ketika status Dalam Pengiriman / Telah Diterima / Ditolak) -->
+                        <template x-if="userRole !== 'sub_admin' && selectedDistribusi && !['Dalam Pengiriman', 'Dikirim', 'Telah Diterima', 'Diterima', 'Ditolak'].includes(selectedDistribusi.status)">
                             <button type="button"
                                     @click="confirmTolakDistribusi(selectedDistribusi)"
                                     class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5 cursor-pointer">

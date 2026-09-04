@@ -151,7 +151,9 @@
                         }
 
                         this.formData.kode = loadedData.kode || ('DST-2026-' + Math.floor(Math.random() * 900 + 100));
-                        this.formData.bast_nomor = loadedData.bast_nomor || (loadedData.nomor_bast || ('032 / ' + String(loadedData.id || '').padStart(3, '0') + ' / 430.10.7 / ' + new Date().getFullYear()));
+                        const isShippingOrReceived = ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(loadedData.status);
+                        const isValidLoadedBast = loadedData.bast_nomor && !loadedData.bast_nomor.includes('Diterbitkan') && loadedData.bast_nomor !== '-';
+                        this.formData.bast_nomor = (isShippingOrReceived && isValidLoadedBast) ? loadedData.bast_nomor : (isShippingOrReceived ? {{ Js::from($nextBastNomor ?? '') }} : '');
                         this.formData.status = loadedData.status || (this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman');
                         this.formData.tujuan = loadedData.unit ? loadedData.unit.nama : (uObj ? uObj.nama : (loadedData.tujuan || ''));
                         this.formData.unit_id = loadedData.unit_id || (uObj ? uObj.id : null);
@@ -166,8 +168,8 @@
                     } else {
                         const autoUnit = (this.isSubAdmin && this.userUnit) ? this.userUnit : null;
                         this.formData.kode = {{ Js::from($nextKode ?? ('DST-'.date('Y').'-001')) }};
-                        this.formData.bast_nomor = this.isSubAdmin ? 'Diterbitkan saat Verifikasi BAST' : {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
                         this.formData.status = this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
+                        this.formData.bast_nomor = this.isSubAdmin ? '' : {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
                         this.formData.tujuan = autoUnit ? autoUnit.nama : '';
                         this.formData.unit_id = autoUnit ? autoUnit.id : null;
                         this.formData.tgl = new Date().toISOString().split('T')[0];
@@ -194,6 +196,15 @@
                         }
                         if (this.formData.bast_nomor && this.formData.bast_nomor.includes('430.10.7')) {
                             this.formData.bast_nomor = this.formData.bast_nomor.replace(/\/ \d{4}$/, '/ ' + year);
+                        }
+                    }
+                },
+                onStatusChange() {
+                    if (this.formData.status === 'Ditolak' || this.formData.status === 'Menunggu Konfirmasi' || this.formData.status === 'Draft') {
+                        this.formData.bast_nomor = '';
+                    } else if (this.formData.status === 'Dalam Pengiriman' || this.formData.status === 'Telah Diterima') {
+                        if (!this.formData.bast_nomor || this.formData.bast_nomor === '-' || this.formData.bast_nomor.includes('Diterbitkan')) {
+                            this.formData.bast_nomor = {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
                         }
                     }
                 },
@@ -308,8 +319,9 @@
                         return;
                     }
 
-                    if (!this.isSubAdmin && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '')) {
-                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNo. BAST Distribusi belum diisi.');
+                    const isShippingOrReceived = ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(this.formData.status);
+                    if (!this.isSubAdmin && isShippingOrReceived && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '')) {
+                        alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNo. BAST Distribusi belum diisi / belum terbit.');
                         return;
                     }
 
@@ -463,13 +475,14 @@
                     <div>
                         <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
                             <span>No. BAST Distribusi</span>
-                            <template x-if="isSubAdmin">
-                                <span class="text-[10px] text-slate-400 font-normal">Dibuat oleh Admin</span>
-                            </template>
+                            <span class="text-[10px] font-normal"
+                                  :class="formData.status === 'Ditolak' ? 'text-rose-400 font-bold' : (formData.status === 'Menunggu Konfirmasi' ? 'text-amber-400' : 'text-teal-400 font-bold')"
+                                  x-text="formData.status === 'Ditolak' ? '❌ Tidak Ada Nomor BAST' : (formData.status === 'Menunggu Konfirmasi' ? '⏳ Diterbitkan saat Pengiriman' : '🚚 Diterbitkan Resmi')"></span>
                         </label>
                         <input type="text" x-model="formData.bast_nomor"
-                               :readonly="isSubAdmin"
-                               :class="isSubAdmin ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed' : 'bg-slate-950 text-white'"
+                               :readonly="isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi'"
+                               :placeholder="formData.status === 'Ditolak' ? 'Tidak memiliki nomor BAST' : (formData.status === 'Menunggu Konfirmasi' ? 'Diterbitkan saat status Dalam Pengiriman' : '032 / ... / 430.10.7 / 2026')"
+                               :class="(isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed' : 'bg-slate-950 text-white'"
                                class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-teal-500">
                     </div>
 
@@ -498,6 +511,7 @@
                         <!-- Dropdown Status (Hanya untuk Admin & Master Admin) -->
                         <template x-if="!isSubAdmin">
                             <select x-model="formData.status"
+                                    @change="onStatusChange()"
                                     class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-teal-500 transition-all cursor-pointer"
                                     :class="{
                                         'text-emerald-400': formData.status === 'Telah Diterima' || formData.status === 'Diterima',

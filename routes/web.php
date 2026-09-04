@@ -489,15 +489,27 @@ Route::middleware('auth')->group(function () {
 
         $dst->status = $newStatus;
 
-        if ($newStatus === 'Telah Diterima') {
-            $dst->signed = true;
-            if (!$dst->tgl_signed) {
-                $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+        if (in_array($newStatus, ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])) {
+            if ($newStatus === 'Telah Diterima') {
+                $dst->signed = true;
+                if (!$dst->tgl_signed) {
+                    $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+                }
+            }
+
+            // Terbitkan nomor BAST resmi jika belum ada
+            $tahun = date('Y', strtotime($dst->tanggal_distribusi ?: now()));
+            $isValidExistingBast = !empty($dst->bast_nomor) 
+                && preg_match('/^032\s*\/\s*\d+\s*\/\s*430\.10\.7\s*\/\s*\d{4}$/', trim($dst->bast_nomor));
+
+            if (!$isValidExistingBast) {
+                $dst->bast_nomor = \App\Http\Controllers\DistribusiController::generateNextBastNomor((int)$tahun, $dst->id);
             }
         }
 
         if ($newStatus === 'Ditolak') {
-            // Reset tanda tangan digital
+            // Otomatis tidak memiliki nomor BAST
+            $dst->bast_nomor = null;
             $dst->signed     = false;
             $dst->tgl_signed = null;
 
@@ -525,9 +537,10 @@ Route::middleware('auth')->group(function () {
         $dst->save();
 
         return response()->json([
-            'success' => true,
-            'status'  => $dst->status,
-            'message' => "Status distribusi {$dst->kode} berhasil diperbarui menjadi '{$dst->status}'."
+            'success'    => true,
+            'status'     => $dst->status,
+            'bast_nomor' => $dst->bast_nomor,
+            'message'    => "Status distribusi {$dst->kode} berhasil diperbarui menjadi '{$dst->status}'."
         ]);
     })->name('distribusi.status.update');
 
