@@ -819,7 +819,6 @@ Route::middleware('auth')->group(function () {
                     'no_bpkb' => $data['mesin_no_bpkb'] ?? null,
                     'no_polisi' => $data['mesin_no_polisi'] ?? null,
                     'bahan' => $data['mesin_bahan'] ?? ($data['lainnya_kesenian_bahan'] ?? null),
-                    'kondisi' => $data['tanah_kondisi'] ?? ($data['mesin_kondisi'] ?? ($data['gedung_kondisi'] ?? ($data['jaringan_kondisi'] ?? ($data['kdp_kondisi'] ?? null)))),
                     'bertingkat' => $data['gedung_bertingkat'] ?? ($data['kdp_bangunan'] ?? null),
                     'beton' => $data['gedung_beton'] ?? ($data['kdp_beton'] ?? null),
                     'status_tanah' => $data['gedung_status_tanah'] ?? ($data['jaringan_status_tanah'] ?? ($data['kdp_status_tanah'] ?? null)),
@@ -930,7 +929,6 @@ Route::middleware('auth')->group(function () {
                     'nilai_perencanaan' => $totalPerencanaan,
                     'nilai_fisik' => $totalFisik,
                     'nilai_pengawasan' => $totalPengawasan,
-                    'kondisi' => $firstItem['tanah_kondisi'] ?? 'B',
                     'tanah_items' => $data['tanah_items']
                 ];
                 $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
@@ -1106,7 +1104,6 @@ Route::middleware('auth')->group(function () {
                     'no_bpkb' => $firstItem['mesin_no_bpkb'] ?? null,
                     'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
                     'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
-                    'kondisi' => $firstItem['mesin_kondisi'] ?? 'Baik',
                     'ruang_pemegang' => $firstItem['ruang_pemegang_mesin'] ?? null,
                     'mesin_items' => $data['mesin_items']
                 ];
@@ -1260,7 +1257,6 @@ Route::middleware('auth')->group(function () {
                 $specJson = [
                     'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
                     'luas_m2' => $totalLuas,
-                    'kondisi' => $firstItem['gedung_kondisi'] ?? 'B',
                     'bertingkat' => $firstItem['gedung_bertingkat'] ?? 'Bertingkat',
                     'beton' => $firstItem['gedung_beton'] ?? 'Beton',
                     'status_tanah' => $firstItem['gedung_status_tanah'] ?? 'Tanah Hak Pakai RSUD',
@@ -1432,6 +1428,9 @@ Route::middleware('auth')->group(function () {
             })->max('no_register_int') ?? 0;
 
             $startFrom = $maxRegInt + 1;
+            $ruangSingle = $data['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? ($data['ruang_pemegang_lainnya'] ?? ($data['ruang_pemegang_atb'] ?? null)));
+            $rawKondisi = strtoupper(trim((string)($data['kondisi'] ?? ($data['mesin_kondisi'] ?? ($data['gedung_kondisi'] ?? ($data['tanah_kondisi'] ?? ($data['jaringan_kondisi'] ?? ($data['lainnya_kondisi'] ?? ($data['atb_kondisi'] ?? ($data['kdp_kondisi'] ?? 'Baik'))))))))));
+            $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
 
             for ($i = 0; $i < $vol; $i++) {
                 $regNum = $startFrom + $i;
@@ -1445,8 +1444,8 @@ Route::middleware('auth')->group(function () {
                     'no_register' => $nibar,
                     'nibar' => $nibar,
                     'qr_code_path' => $qrPath,
-                    'ruang_pemegang' => $data['ruang_pemegang'] ?? null,
-                    'kondisi' => in_array($data['kondisi'] ?? '', ['Baik', 'Rusak Ringan', 'Rusak Berat']) ? $data['kondisi'] : 'Baik',
+                    'ruang_pemegang' => $ruangSingle,
+                    'kondisi' => $kondisiStr,
                     'status' => 'Tersedia'
                 ]);
             }
@@ -1754,7 +1753,6 @@ Route::middleware('auth')->group(function () {
                     'nilai_perencanaan' => $totalPerencanaan,
                     'nilai_fisik' => $totalFisik,
                     'nilai_pengawasan' => $totalPengawasan,
-                    'kondisi' => $firstItem['tanah_kondisi'] ?? 'B',
                     'tanah_items' => $data['tanah_items']
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
@@ -1823,7 +1821,6 @@ Route::middleware('auth')->group(function () {
                     'no_bpkb' => $firstItem['mesin_no_bpkb'] ?? null,
                     'no_polisi' => $firstItem['mesin_no_polisi'] ?? null,
                     'bahan' => count($allBahan) > 0 ? implode(', ', array_unique($allBahan)) : ($firstItem['mesin_bahan'] ?? null),
-                    'kondisi' => $firstItem['mesin_kondisi'] ?? 'Baik',
                     'ruang_pemegang' => $ruangFirst,
                     'mesin_items' => $data['mesin_items']
                 ];
@@ -1866,7 +1863,6 @@ Route::middleware('auth')->group(function () {
                 $spec = [
                     'jumlah_anggaran' => $data['jumlah_anggaran'] ?? null,
                     'luas_m2' => $totalLuas,
-                    'kondisi' => $firstItem['gedung_kondisi'] ?? 'B',
                     'bertingkat' => $firstItem['gedung_bertingkat'] ?? 'Bertingkat',
                     'beton' => $firstItem['gedung_beton'] ?? 'Beton',
                     'status_tanah' => $firstItem['gedung_status_tanah'] ?? 'Tanah Hak Pakai RSUD',
@@ -2213,8 +2209,8 @@ Route::middleware('auth')->group(function () {
                 }
 
                 $tahun = $astap->tahun_perolehan;
-                $ruangSingle = $data['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? null);
-                $rawKondisi = strtoupper(trim((string)($data['kondisi'] ?? ($data['mesin_kondisi'] ?? ($data['gedung_kondisi'] ?? 'Baik')))));
+                $ruangSingle = $data['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? ($data['ruang_pemegang_lainnya'] ?? ($data['ruang_pemegang_atb'] ?? null)));
+                $rawKondisi = strtoupper(trim((string)($data['kondisi'] ?? ($data['mesin_kondisi'] ?? ($data['gedung_kondisi'] ?? ($data['tanah_kondisi'] ?? ($data['jaringan_kondisi'] ?? ($data['lainnya_kondisi'] ?? ($data['atb_kondisi'] ?? ($data['kdp_kondisi'] ?? 'Baik'))))))))));
                 $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
 
                 $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
@@ -2314,6 +2310,129 @@ Route::middleware('auth')->group(function () {
             return response()->json(['success' => true, 'message' => 'Unit register berhasil dihapus.']);
         })->name('astap_register.destroy');
 
+        // Route Khusus: Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
+        Route::post('/astap/resequence-nibar', function (\Illuminate\Http\Request $request) {
+            $tahun = $request->input('tahun', 'all');
+            $category = $request->input('category', 'all');
+            $astapId = $request->input('astap_id');
+
+            $query = \App\Models\Astap::with(['registers' => fn($q) => $q->orderBy('id', 'asc'), 'jenisAstap']);
+
+            if ($astapId) {
+                $target = \App\Models\Astap::find($astapId);
+                if (!$target) {
+                    return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
+                }
+                $query->where('tahun_perolehan', $target->tahun_perolehan);
+                if ($target->jenis_astap_id) {
+                    $query->where('jenis_astap_id', $target->jenis_astap_id);
+                } else {
+                    $query->where('id', $target->id);
+                }
+            } else {
+                if ($tahun !== 'all' && !empty($tahun)) {
+                    $query->where('tahun_perolehan', $tahun);
+                }
+                if ($category !== 'all' && !empty($category)) {
+                    $prefix = match($category) {
+                        'KIB A' => '1.3.1',
+                        'KIB B' => '1.3.2',
+                        'KIB C' => '1.3.3',
+                        'KIB D' => '1.3.4',
+                        'KIB E' => '1.3.5',
+                        'KIB F' => '1.3.6',
+                        'ATB'   => '1.5.3',
+                        default => null
+                    };
+                    if ($prefix) {
+                        $query->whereHas('jenisAstap', function($q) use ($prefix) {
+                            $q->where('kode_kelompok', 'like', $prefix . '%')
+                              ->orWhere('kode', 'like', $prefix . '%')
+                              ->orWhere('sub_sub_rincian_objek', 'like', $prefix . '%');
+                        });
+                    }
+                }
+            }
+
+            $allAstaps = $query->get();
+            if ($allAstaps->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tidak ada data register pada filter yang dipilih.',
+                    'count' => 0
+                ]);
+            }
+
+            // Group ASTAPs by (tahun_perolehan, jenis_astap_id)
+            $grouped = $allAstaps->groupBy(function($item) {
+                return ($item->tahun_perolehan ?? '2026') . '_' . ($item->jenis_astap_id ?? 0);
+            });
+
+            $twOrder = ['TW I' => 1, 'TW 1' => 1, 'TW II' => 2, 'TW 2' => 2, 'TW III' => 3, 'TW 3' => 3, 'TW IV' => 4, 'TW 4' => 4];
+            $totalUpdated = 0;
+
+            \Illuminate\Support\Facades\DB::transaction(function() use ($grouped, $twOrder, &$totalUpdated) {
+                foreach ($grouped as $key => $astapsInGroup) {
+                    // Urutkan ASTAP berdasarkan Triwulan (TW I -> TW IV), lalu created_at, lalu id
+                    $sortedAstaps = $astapsInGroup->sort(function($a, $b) use ($twOrder) {
+                        $twA = $twOrder[$a->triwulan ?? 'TW I'] ?? 1;
+                        $twB = $twOrder[$b->triwulan ?? 'TW I'] ?? 1;
+                        if ($twA !== $twB) return $twA <=> $twB;
+                        
+                        $tA = $a->created_at ? $a->created_at->timestamp : $a->id;
+                        $tB = $b->created_at ? $b->created_at->timestamp : $b->id;
+                        if ($tA !== $tB) return $tA <=> $tB;
+
+                        return $a->id <=> $b->id;
+                    });
+
+                    // 1. Berikan prefix temporer unik untuk menghindari tabrakan unique constraint
+                    $allRegs = [];
+                    foreach ($sortedAstaps as $astap) {
+                        foreach ($astap->registers as $reg) {
+                            $allRegs[] = ['reg' => $reg, 'astap' => $astap];
+                            $reg->nibar = 'TEMP_' . $reg->id . '_' . uniqid();
+                            $reg->no_register = $reg->nibar;
+                            $reg->save();
+                        }
+                    }
+
+                    // 2. Berikan nomor urut register murni berurutan tanpa celah dari 1
+                    $runningNum = 0;
+                    foreach ($allRegs as $item) {
+                        $reg = $item['reg'];
+                        $astap = $item['astap'];
+                        $tahun = $astap->tahun_perolehan ?? '2026';
+
+                        $kode108Clean = '132000000000';
+                        if ($astap->jenisAstap && !empty($astap->jenisAstap->sub_sub_rincian_objek)) {
+                            $kode108Clean = str_replace('.', '', $astap->jenisAstap->sub_sub_rincian_objek);
+                        } elseif (!empty($astap->kode_barang)) {
+                            $kode108Clean = str_replace('.', '', $astap->kode_barang);
+                        }
+
+                        $runningNum++;
+                        $noRegStr = str_pad($runningNum, 7, '0', STR_PAD_LEFT);
+                        $finalNibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                        $reg->tahun_perolehan = $tahun;
+                        $reg->no_register_int = $runningNum;
+                        $reg->no_register = $finalNibar;
+                        $reg->nibar = $finalNibar;
+                        $reg->qr_code_path = "/scan/{$finalNibar}";
+                        $reg->save();
+                        $totalUpdated++;
+                    }
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil menyusun dan merapikan {$totalUpdated} unit register NIBAR secara berurutan tanpa celah.",
+                'count' => $totalUpdated
+            ]);
+        })->name('astap.resequence_nibar');
+
         // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
         Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');
         Route::post('/unit-paviliun', [UnitController::class, 'store'])->name('unit.store');
@@ -2357,3 +2476,4 @@ Route::middleware('auth')->group(function () {
     Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
     Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
 });
+
