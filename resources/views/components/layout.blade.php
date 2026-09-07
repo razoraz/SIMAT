@@ -15,6 +15,12 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+    <!-- Flatpickr Datepicker (Indonesian dd/mm/yyyy support) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +29,94 @@
     <style>
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* SIMAT Dark Theme for Flatpickr */
+        .flatpickr-calendar {
+            background: #0f172a !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.6) !important;
+            border-radius: 1rem !important;
+            font-family: inherit !important;
+            overflow: hidden !important;
+            z-index: 99999 !important;
+        }
+        .flatpickr-calendar.arrowTop:before, .flatpickr-calendar.arrowTop:after {
+            border-bottom-color: #0f172a !important;
+        }
+        .flatpickr-calendar.arrowBottom:before, .flatpickr-calendar.arrowBottom:after {
+            border-top-color: #0f172a !important;
+        }
+        .flatpickr-months {
+            background: #1e293b !important;
+            padding: 8px 4px !important;
+            border-bottom: 1px solid #334155 !important;
+        }
+        .flatpickr-months .flatpickr-month {
+            color: #f8fafc !important;
+            fill: #f8fafc !important;
+            height: 32px !important;
+        }
+        .flatpickr-current-month {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            padding-top: 4px !important;
+        }
+        .flatpickr-current-month select {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+            border-radius: 6px !important;
+            padding: 2px 6px !important;
+        }
+        .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month {
+            color: #38bdf8 !important;
+            fill: #38bdf8 !important;
+            padding: 6px !important;
+        }
+        .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg {
+            fill: #06b6d4 !important;
+        }
+        span.flatpickr-weekday {
+            color: #94a3b8 !important;
+            font-weight: 700 !important;
+            font-size: 11px !important;
+        }
+        .flatpickr-day {
+            color: #e2e8f0 !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+            height: 34px !important;
+            line-height: 34px !important;
+            margin: 1px !important;
+        }
+        .flatpickr-day:hover {
+            background: #334155 !important;
+            border-color: #334155 !important;
+        }
+        .flatpickr-day.today {
+            border-color: #06b6d4 !important;
+            color: #38bdf8 !important;
+            font-weight: bold !important;
+        }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover {
+            background: linear-gradient(135deg, #06b6d4, #0284c7) !important;
+            border-color: #06b6d4 !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.4) !important;
+        }
+        .flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover {
+            color: #475569 !important;
+            opacity: 0.4 !important;
+            cursor: not-allowed !important;
+        }
+        .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
+            color: #475569 !important;
+        }
+        .flatpickr-custom-input:disabled {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+        }
 
         @keyframes pageFadeIn {
             from { opacity: 0.4; }
@@ -448,6 +542,125 @@
     </div>
 
     <script>
+        document.addEventListener('alpine:init', () => {
+            if (window.flatpickr && window.flatpickr.l10ns && window.flatpickr.l10ns.id) {
+                window.flatpickr.localize(window.flatpickr.l10ns.id);
+            }
+
+            Alpine.directive('datepicker', (el, { expression }, { Alpine, effect, cleanup }) => {
+                if (!window.flatpickr) return;
+
+                const modelName = el.getAttribute('x-model');
+
+                const getOpts = () => {
+                    let opts = {};
+                    if (expression) {
+                        try {
+                            opts = Alpine.evaluate(el, expression) || {};
+                        } catch (e) {}
+                    }
+                    return opts;
+                };
+
+                const initialOpts = getOpts();
+
+                const fp = window.flatpickr(el, {
+                    altInput: true,
+                    altFormat: "d/m/Y",
+                    dateFormat: "Y-m-d",
+                    allowInput: true,
+                    locale: (window.flatpickr.l10ns && window.flatpickr.l10ns.id) ? window.flatpickr.l10ns.id : 'default',
+                    altInputClass: (el.className || '') + ' flatpickr-custom-input',
+                    minDate: initialOpts.minDate || el.getAttribute('min') || undefined,
+                    maxDate: initialOpts.maxDate || el.getAttribute('max') || undefined,
+                    defaultDate: el.value || undefined,
+                    onChange: function(selectedDates, dateStr) {
+                        el.value = dateStr;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    },
+                    onClose: function(selectedDates, dateStr) {
+                        if (dateStr) {
+                            el.value = dateStr;
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                });
+
+                if (fp.altInput) {
+                    fp.altInput.placeholder = el.placeholder || 'dd/mm/yyyy';
+                    fp.altInput.disabled = el.disabled;
+                    fp.altInput.readOnly = el.readOnly;
+
+                    // Support typing dd/mm/yyyy or dd-mm-yyyy directly
+                    fp.altInput.addEventListener('blur', () => {
+                        const raw = (fp.altInput.value || '').trim();
+                        if (raw) {
+                            const match = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                            if (match) {
+                                const d = match[1].padStart(2, '0');
+                                const m = match[2].padStart(2, '0');
+                                const y = match[3];
+                                const iso = `${y}-${m}-${d}`;
+                                fp.setDate(iso, true);
+                            }
+                        } else {
+                            fp.clear();
+                            el.value = '';
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                }
+
+                effect(() => {
+                    const opts = getOpts();
+                    if (opts.minDate !== undefined && opts.minDate !== fp.config.minDate) {
+                        fp.set('minDate', opts.minDate);
+                    }
+                    if (opts.maxDate !== undefined && opts.maxDate !== fp.config.maxDate) {
+                        fp.set('maxDate', opts.maxDate);
+                    }
+
+                    // React to Alpine x-model variable changes
+                    if (modelName) {
+                        try {
+                            const currentVal = Alpine.evaluate(el, modelName);
+                            if (currentVal !== undefined && currentVal !== null) {
+                                if (currentVal === '' && fp.input.value !== '') {
+                                    fp.clear();
+                                } else if (currentVal !== '' && currentVal !== fp.input.value) {
+                                    fp.setDate(currentVal, false);
+                                }
+                            }
+                        } catch (e) {}
+                    }
+
+                    if (fp.altInput) {
+                        fp.altInput.disabled = el.disabled;
+                        fp.altInput.readOnly = el.readOnly;
+                    }
+                });
+
+                const observer = new MutationObserver(() => {
+                    if (fp && fp.altInput) {
+                        fp.altInput.disabled = el.disabled;
+                        fp.altInput.readOnly = el.readOnly;
+                    }
+                    if (fp && fp.input && el.value !== fp.input.value) {
+                        fp.setDate(el.value, false);
+                    }
+                });
+                observer.observe(el, { attributes: true, attributeFilter: ['disabled', 'readonly', 'class', 'value'] });
+
+                cleanup(() => {
+                    observer.disconnect();
+                    fp.destroy();
+                });
+            });
+        });
+
         window.askSimatConfirm = function(options) {
             window.dispatchEvent(new CustomEvent('ask-confirm', { detail: options }));
         };

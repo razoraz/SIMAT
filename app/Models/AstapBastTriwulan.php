@@ -33,7 +33,12 @@ class AstapBastTriwulan extends Model
     ];
 
     protected $casts = [
-        'tanggal_bast' => 'date',
+        'tanggal_bast' => 'date:d/m/Y',
         'signed'       => 'boolean',
     ];
+
+    public function setTanggalBastAttribute($value)
+    {
+        $this->attributes['tanggal_bast'] = Astap::parseDateInput($value);
+    }
 }

@@ -12,9 +12,14 @@ class Distribusi extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'tanggal_distribusi' => 'date',
+        'tanggal_distribusi' => 'date:d/m/Y',
         'signed'             => 'boolean',
     ];
+
+    public function setTanggalDistribusiAttribute($value)
+    {
+        $this->attributes['tanggal_distribusi'] = Astap::parseDateInput($value);
+    }
 
     /**
      * Listener saat Distribusi dihapus: otomatis reset unit_id, ruang_pemegang, dan status register NIBAR

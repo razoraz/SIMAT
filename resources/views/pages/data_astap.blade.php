@@ -198,6 +198,37 @@
         return [...titleMerges, footerMerge, ...shiftedBaseMerges];
     }
 
+    // HELPER GENERATE UNIQUE GROUP KEY (PER TAHUN, PER TRIWULAN, PER PROGRAM, KEGIATAN, SUB-KEGIATAN, REKENING, & SUB-RINCIAN PMDN 108)
+    function getAstapGroupKey(item, fallbackPrefix = 'DEFAULT') {
+        const yearKey = item.tahun_perolehan ? String(item.tahun_perolehan) : '-';
+        const twKey = item.triwulan ? String(item.triwulan).replace(/[\s_]/g, '').toUpperCase() : '-';
+        const progKey = item.program_kode || '-';
+        const kegKey = item.kegiatan_kode || '-';
+        const subKegKey = item.sub_kegiatan_kode || '-';
+        const rekKey = item.rekening_kode || '-';
+        const subRincianKey = item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : fallbackPrefix));
+        
+        return `${yearKey}___${twKey}___${progKey}___${kegKey}___${subKegKey}___${rekKey}___${subRincianKey}`;
+    }
+
+    // HELPER FORMAT DATE DD/MM/YYYY
+    function formatAstapDate(val) {
+        if (!val || val === '-' || val === '') return '-';
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+        const match = String(val).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            return `${match[3]}/${match[2]}/${match[1]}`;
+        }
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        return val;
+    }
+
     // STYLING ENGINE MASTER 4 LANGKAH (LANGKAH 1 s/d 4)
     function applyUnified4StepMasterSheetStyling(ws, rowCount, colCount, kibL3ColCount, titleRowCount = 5) {
         const thinBorder = {
@@ -469,15 +500,18 @@
 
             const groups = {};
             items.forEach(it => {
-                const subKey = it.sub_rincian_kode || (it.kode_barang ? it.kode_barang.substring(0, 14) : 'DEFAULT');
-                if (!groups[subKey]) groups[subKey] = [];
-                groups[subKey].push(it);
+                const groupKey = getAstapGroupKey(it, 'DEFAULT');
+                if (!groups[groupKey]) groups[groupKey] = [];
+                groups[groupKey].push(it);
             });
 
-            Object.keys(groups).forEach(subKey => {
-                const groupItems = groups[subKey];
+            Object.keys(groups).forEach(groupKey => {
+                const groupItems = groups[groupKey];
                 const groupReal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0), 0);
-                const groupAngg = typeof groupItems[0].anggaran_num === 'number' ? groupItems[0].anggaran_num : (parseFloat(groupItems[0].jumlah_anggaran) || parseFloat(groupItems[0].anggaran) || groupReal);
+                let groupAngg = 0;
+                groupItems.forEach(it => {
+                    groupAngg += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+                });
                 
                 totalReal += groupReal;
                 totalAngg += groupAngg;
@@ -490,6 +524,14 @@
                     if (isMesin && spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
                         spec.mesin_items.forEach(mi => {
                             totalUnits += Math.max(1, parseInt(mi.mesin_jumlah_barang) || 1);
+                        });
+                    } else if (spec && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                        spec.gedung_items.forEach(gi => {
+                            totalUnits += Math.max(1, parseInt(gi.gedung_jumlah_bangunan) || 1);
+                        });
+                    } else if (spec && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                        spec.tanah_items.forEach(ti => {
+                            totalUnits += Math.max(1, parseInt(ti.tanah_jumlah_bidang) || 1);
                         });
                     } else {
                         totalUnits += parseInt(it.jumlah_volume) || parseInt(it.jumlah_unit) || 1;
@@ -821,21 +863,24 @@
         // ------------------------------------------------------------------------
         const kibAGroups = {};
         categories['KIB A'].forEach(item => {
-            const subKey = item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : '1.3.1.01.01.01');
-            if (!kibAGroups[subKey]) {
-                kibAGroups[subKey] = [];
+            const groupKey = getAstapGroupKey(item, '1.3.1.01.01.01');
+            if (!kibAGroups[groupKey]) {
+                kibAGroups[groupKey] = [];
             }
-            kibAGroups[subKey].push(item);
+            kibAGroups[groupKey].push(item);
         });
 
         let globalKibANo = 1;
         let kibATotalAnggaran = 0, kibATotalRealisasi = 0, kibATotalUnit = 0, kibATotalLuas = 0;
         let kibATotalPerencanaan = 0, kibATotalFisik = 0, kibATotalPengawasan = 0, kibATotalNilaiBarang = 0;
 
-        Object.keys(kibAGroups).forEach(subKey => {
-            const groupItems = kibAGroups[subKey];
-            const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || 0), 0);
-            const groupAnggaranTotal = parseFloat(groupItems[0].jumlah_anggaran) || groupRealisasiTotal;
+        Object.keys(kibAGroups).forEach(groupKey => {
+            const groupItems = kibAGroups[groupKey];
+            const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0), 0);
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
 
             kibATotalAnggaran += groupAnggaranTotal;
             kibATotalRealisasi += groupRealisasiTotal;
@@ -888,7 +933,7 @@
                                 item.rekening_nama || '-',
                                 item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.1'),
                                 item.jenis_aset_nama || 'TANAH',
-                                item.sub_rincian_kode || subKey,
+                                item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : '-'),
                                 item.sub_rincian_nama || '-',
                                 groupAnggaranTotal,
                                 groupRealisasiTotal
@@ -904,16 +949,16 @@
                             item.nama_barang || '-',
                             item.kode_barang || '-',
                             tItem.tanah_hak || item.hak_tanah || 'Hak Pakai',
-                            tItem.tanah_sertifikat_tgl || item.sertifikat_tanggal || '-',
+                            tItem.tanah_sertifikat_tgl ? formatAstapDate(tItem.tanah_sertifikat_tgl) : (item.sertifikat_tanggal ? formatAstapDate(item.sertifikat_tanggal) : '-'),
                             tItem.tanah_sertifikat_no || item.sertifikat_nomor || '-',
                             item.spk_nomor || '-',
-                            item.spk_tanggal || '-',
+                            formatAstapDate(item.spk_tanggal),
                             item.surat_pesanan_nomor || '-',
-                            item.surat_pesanan_tanggal || '-',
+                            formatAstapDate(item.surat_pesanan_tanggal),
                             item.kwitansi_nomor || '-',
-                            item.kwitansi_tanggal || '-',
+                            formatAstapDate(item.kwitansi_tanggal),
                             item.faktur_nomor || '-',
-                            item.faktur_tanggal || '-',
+                            formatAstapDate(item.faktur_tanggal),
                             kondisiLabel,
                             tItem.tanah_penggunaan || item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
                             jumlahBidang,
@@ -923,9 +968,9 @@
                             nilaiPengawasan,
                             totalNilaiBidang,
                             item.sp2d_nomor || '-',
-                            item.sp2d_tanggal || '-',
+                            formatAstapDate(item.sp2d_tanggal),
                             item.bast_dokumen_nomor || '-',
-                            item.bast_dokumen_tanggal || '-',
+                            formatAstapDate(item.bast_dokumen_tanggal),
                             tItem.tanah_alamat || item.alamat_barang || '-',
                             ...getStep4Columns(item)
                         ]);
@@ -967,7 +1012,7 @@
                             item.rekening_nama || '-',
                             item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.1'),
                             item.jenis_aset_nama || 'TANAH',
-                            item.sub_rincian_kode || subKey,
+                            item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : '-'),
                             item.sub_rincian_nama || '-',
                             groupAnggaranTotal,
                             groupRealisasiTotal
@@ -983,16 +1028,16 @@
                         item.nama_barang || '-',
                         item.kode_barang || '-',
                         item.hak_tanah || 'Hak Pakai',
-                        item.sertifikat_tanggal || '-',
+                        formatAstapDate(item.sertifikat_tanggal),
                         item.sertifikat_nomor || '-',
                         item.spk_nomor || '-',
-                        item.spk_tanggal || '-',
+                        formatAstapDate(item.spk_tanggal),
                         item.surat_pesanan_nomor || '-',
-                        item.surat_pesanan_tanggal || '-',
+                        formatAstapDate(item.surat_pesanan_tanggal),
                         item.kwitansi_nomor || '-',
-                        item.kwitansi_tanggal || '-',
+                        formatAstapDate(item.kwitansi_tanggal),
                         item.faktur_nomor || '-',
-                        item.faktur_tanggal || '-',
+                        formatAstapDate(item.faktur_tanggal),
                         kondisiLabel,
                         item.penggunaan || 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
                         jumlahBidang,
@@ -1002,9 +1047,9 @@
                         nilaiPengawasan,
                         totalNilaiBarang,
                         item.sp2d_nomor || '-',
-                        item.sp2d_tanggal || '-',
+                        formatAstapDate(item.sp2d_tanggal),
                         item.bast_dokumen_nomor || '-',
-                        item.bast_dokumen_tanggal || '-',
+                        formatAstapDate(item.bast_dokumen_tanggal),
                         item.alamat_barang || '-',
                         ...getStep4Columns(item)
                     ]);
@@ -1254,20 +1299,23 @@
         // ── Kelompokkan Data KIB B per Sub Rincian Objek (PMDN 108) ───────────────
         const kibBGroups = {};
         categories['KIB B'].forEach(item => {
-            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 11) : 'KIB-B-DEFAULT');
-            if (!kibBGroups[subKey]) {
-                kibBGroups[subKey] = [];
+            const groupKey = getAstapGroupKey(item, '1.3.2');
+            if (!kibBGroups[groupKey]) {
+                kibBGroups[groupKey] = [];
             }
-            kibBGroups[subKey].push(item);
+            kibBGroups[groupKey].push(item);
         });
 
         let globalKibBNo = 1;
         let kibBTotalAnggaran = 0, kibBTotalRealisasi = 0, kibBTotalUnit = 0, kibBTotalAdminProyek = 0, kibBTotalNilaiBarang = 0;
 
-        Object.keys(kibBGroups).forEach(subKey => {
-            const groupItems = kibBGroups[subKey];
+        Object.keys(kibBGroups).forEach(groupKey => {
+            const groupItems = kibBGroups[groupKey];
             const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0), 0);
-            const groupAnggaranTotal = parseFloat(groupItems[0].jumlah_anggaran) || groupRealisasiTotal;
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
 
             kibBTotalAnggaran += groupAnggaranTotal;
             kibBTotalRealisasi += groupRealisasiTotal;
@@ -1316,7 +1364,7 @@
                                 item.rekening_nama || '-',
                                 item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.2'),
                                 item.jenis_aset_nama || 'PERALATAN DAN MESIN',
-                                item.sub_rincian_kode || subKey,
+                                item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                                 item.sub_rincian_nama || '-',
                                 groupAnggaranTotal,
                                 groupRealisasiTotal
@@ -1342,33 +1390,33 @@
                             mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
                             item.tahun_perolehan || '-',                 // c26: col 27
                             item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
-                            item.spk_tanggal || '-',                     // c28: col 29
+                            formatAstapDate(item.spk_tanggal),           // c28: col 29
                             item.surat_pesanan_nomor || '-',             // c29: col 30
-                            item.surat_pesanan_tanggal || '-',           // c30: col 31
+                            formatAstapDate(item.surat_pesanan_tanggal), // c30: col 31
                             item.kwitansi_nomor || '-',                  // c31: col 32
-                            item.kwitansi_tanggal || '-',                // c32: col 33
+                            formatAstapDate(item.kwitansi_tanggal),      // c32: col 33
                             item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
-                            item.faktur_tanggal || '-',                  // c34: col 35
+                            formatAstapDate(item.faktur_tanggal),        // c34: col 35
                             kondisiLabel,                                // c35: col 36
                             qty,                                         // c36: col 37 (Jumlah Barang)
                             mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
                             nilaiSatuan,                                 // c38: col 39 (Nilai Satuan)
                             adminProyek,                                 // c39: col 40 (Admin Proyek)
-                            totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
-                            item.sp2d_nomor || '-',                      // c41: col 42
-                            item.sp2d_tanggal || '-',                    // c42: col 43
-                            item.bast_dokumen_nomor || '-',              // c43: col 44
-                            item.bast_dokumen_tanggal || '-',            // c44: col 45
-                            ruangUnit,                                   // c45: col 46
+                            totalNilaiBarang,                            // c40: col 41 (Total Nilai Barang)
+                            item.sp2d_nomor || '-',                      // c41: col 42 (SP2D NOMOR)
+                            formatAstapDate(item.sp2d_tanggal),          // c42: col 43 (SP2D TANGGAL)
+                            item.bast_dokumen_nomor || '-',              // c43: col 44 (BAST NOMOR)
+                            formatAstapDate(item.bast_dokumen_tanggal),  // c44: col 45 (BAST TANGGAL)
+                            ruangUnit,                                   // c45: col 46 (Ruang / Unit Pemegang)
                             ...getStep4Columns(item)                     // c46-c53: cols 47-54
                         ]);
                     });
                 } else {
                     const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-                    const adminProyek = parseFloat(item.biaya_administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
-                    const jumlahBarang = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
-                    const nilaiSatuan = parseFloat(item.harga_satuan) || (jumlahBarang > 0 ? (totalVal / jumlahBarang) : totalVal);
-                    const totalNilaiBarang = totalVal || (nilaiSatuan * jumlahBarang + adminProyek);
+                    const nilaiSatuan = typeof item.harga_satuan_num === 'number' ? item.harga_satuan_num : (parseFloat(item.harga_satuan) || 0);
+                    const adminProyek = typeof item.biaya_administrasi_proyek_num === 'number' ? item.biaya_administrasi_proyek_num : (parseFloat(item.biaya_administrasi_proyek) || 0);
+                    const jumlahBarang = typeof item.jumlah_volume === 'number' ? item.jumlah_volume : (parseInt(item.jumlah_volume) || 1);
+                    const totalNilaiBarang = totalVal || ((jumlahBarang * nilaiSatuan) + adminProyek);
                     const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
                     
                     kibBTotalUnit += jumlahBarang;
@@ -1394,7 +1442,7 @@
                             item.rekening_nama || '-',
                             item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.2'),
                             item.jenis_aset_nama || 'PERALATAN DAN MESIN',
-                            item.sub_rincian_kode || subKey,
+                            item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                             item.sub_rincian_nama || '-',
                             groupAnggaranTotal,
                             groupRealisasiTotal
@@ -1419,13 +1467,13 @@
                         item.bahan || '-',                           // c25: col 26
                         item.tahun_perolehan || '-',                 // c26: col 27
                         item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
-                        item.spk_tanggal || '-',                     // c28: col 29
+                        formatAstapDate(item.spk_tanggal),           // c28: col 29
                         item.surat_pesanan_nomor || '-',             // c29: col 30
-                        item.surat_pesanan_tanggal || '-',           // c30: col 31
+                        formatAstapDate(item.surat_pesanan_tanggal), // c30: col 31
                         item.kwitansi_nomor || '-',                  // c31: col 32
-                        item.kwitansi_tanggal || '-',                // c32: col 33
+                        formatAstapDate(item.kwitansi_tanggal),      // c32: col 33
                         item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
-                        item.faktur_tanggal || '-',                  // c34: col 35
+                        formatAstapDate(item.faktur_tanggal),        // c34: col 35
                         kondisiLabel,                                // c35: col 36
                         jumlahBarang,                                // c36: col 37 (Jumlah Barang)
                         item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
@@ -1433,9 +1481,9 @@
                         adminProyek,                                 // c39: col 40 (Admin Proyek)
                         totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
                         item.sp2d_nomor || '-',                      // c41: col 42
-                        item.sp2d_tanggal || '-',                    // c42: col 43
+                        formatAstapDate(item.sp2d_tanggal),          // c42: col 43
                         item.bast_dokumen_nomor || '-',              // c43: col 44
-                        item.bast_dokumen_tanggal || '-',            // c44: col 45
+                        formatAstapDate(item.bast_dokumen_tanggal),  // c44: col 45
                         ruangUnit,                                   // c45: col 46
                         ...getStep4Columns(item)                     // c46-c53: cols 47-54
                     ]);
@@ -1699,21 +1747,21 @@
         // ── Grouping KIB C Berdasarkan Sub Rincian Objek PMDN 108 ──────────────
         const kibCGroups = {};
         categories['KIB C'].forEach(item => {
-            const subKey = item.sub_rincian_kode || item.kode_barang || 'NO_SUB';
-            if (!kibCGroups[subKey]) kibCGroups[subKey] = [];
-            kibCGroups[subKey].push(item);
+            const groupKey = getAstapGroupKey(item, '1.3.3.01.01.01');
+            if (!kibCGroups[groupKey]) kibCGroups[groupKey] = [];
+            kibCGroups[groupKey].push(item);
         });
 
         let globalKibCNo = 1;
         let kibCTotalAnggaran = 0, kibCTotalRealisasi = 0, kibCTotalLuas = 0, kibCTotalUnit = 0;
         let kibCTotalPerencanaan = 0, kibCTotalFisik = 0, kibCTotalPengawasan = 0, kibCTotalNilaiBarang = 0;
 
-        Object.keys(kibCGroups).forEach(subKey => {
-            const groupItems = kibCGroups[subKey];
-            const groupAnggaranTotal = groupItems.reduce((acc, curr) => {
-                const val = typeof curr.anggaran_num === 'number' ? curr.anggaran_num : (parseFloat(curr.anggaran) || 0);
-                return acc + val;
-            }, 0);
+        Object.keys(kibCGroups).forEach(groupKey => {
+            const groupItems = kibCGroups[groupKey];
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
             const groupRealisasiTotal = groupItems.reduce((acc, curr) => {
                 const val = typeof curr.total_realisasi_num === 'number' ? curr.total_realisasi_num : (parseFloat(curr.total_realisasi) || 0);
                 return acc + val;
@@ -1725,82 +1773,168 @@
             let isFirstRowInGroup = true;
 
             groupItems.forEach((item) => {
-                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-                const nilaiPerencanaan = parseFloat(item.gedung_nilai_perencanaan) || parseFloat(item.nilai_perencanaan) || 0;
-                const nilaiFisik = parseFloat(item.gedung_nilai_fisik) || parseFloat(item.nilai_fisik) || totalVal;
-                const nilaiPengawasan = parseFloat(item.gedung_nilai_pengawasan) || parseFloat(item.nilai_pengawasan) || 0;
-                const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || totalVal;
-                const jumlahBangunan = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
-                const luasM2 = parseFloat(item.luas_m2) || 0;
+                const subGedungItems = (item.spesifikasi_json && Array.isArray(item.spesifikasi_json.gedung_items) && item.spesifikasi_json.gedung_items.length > 0)
+                    ? item.spesifikasi_json.gedung_items
+                    : null;
 
-                kibCTotalLuas += luasM2;
-                kibCTotalUnit += jumlahBangunan;
-                kibCTotalPerencanaan += nilaiPerencanaan;
-                kibCTotalFisik += nilaiFisik;
-                kibCTotalPengawasan += nilaiPengawasan;
-                kibCTotalNilaiBarang += totalNilaiBarang;
+                if (subGedungItems) {
+                    subGedungItems.forEach((gItem) => {
+                        const nilaiPerencanaan = parseFloat(gItem.gedung_nilai_perencanaan) || 0;
+                        const nilaiFisik = parseFloat(gItem.gedung_nilai_fisik) || 0;
+                        const nilaiPengawasan = parseFloat(gItem.gedung_nilai_pengawasan) || 0;
+                        const nilaiPip = parseFloat(gItem.gedung_nilai_pip) || 0;
+                        const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan + nilaiPip) || (parseFloat(item.total_realisasi) || 0);
+                        const jumlahBangunan = parseInt(gItem.gedung_jumlah_bangunan) || 1;
+                        const luasM2 = parseFloat(gItem.gedung_luas_m2) || 0;
 
-                const kondisiLabel = item.kondisi ? (item.kondisi === 'B' ? 'Baik' : (item.kondisi === 'KB' ? 'Kurang Baik' : (item.kondisi === 'RB' ? 'Rusak Berat' : item.kondisi))) : 'Baik';
+                        kibCTotalLuas += luasM2;
+                        kibCTotalUnit += jumlahBangunan;
+                        kibCTotalPerencanaan += nilaiPerencanaan;
+                        kibCTotalFisik += nilaiFisik;
+                        kibCTotalPengawasan += nilaiPengawasan;
+                        kibCTotalNilaiBarang += totalNilaiBarang;
 
-                let col1to15 = [];
-                if (isFirstRowInGroup) {
-                    col1to15 = [
-                        globalKibCNo++,
-                        item.program_kode || '-',
-                        item.program_nama || '-',
-                        item.kegiatan_kode || '-',
-                        item.kegiatan_nama || '-',
-                        item.sub_kegiatan_kode || '-',
-                        item.sub_kegiatan_nama || '-',
-                        item.rekening_kode || '-',
-                        item.rekening_nama || '-',
-                        item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.3'),
-                        item.jenis_aset_nama || 'GEDUNG DAN BANGUNAN',
-                        item.sub_rincian_kode || subKey,
-                        item.sub_rincian_nama || '-',
-                        groupAnggaranTotal,
-                        groupRealisasiTotal
-                    ];
-                    isFirstRowInGroup = false;
+                        const rawKondisi = gItem.gedung_kondisi || item.kondisi || 'B';
+                        const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' : ((rawKondisi === 'KB' || rawKondisi === 'Kurang Baik') ? 'Kurang Baik' : ((rawKondisi === 'RB' || rawKondisi === 'Rusak Berat') ? 'Rusak Berat' : rawKondisi));
+
+                        let col1to15 = [];
+                        if (isFirstRowInGroup) {
+                            col1to15 = [
+                                globalKibCNo++,
+                                item.program_kode || '-',
+                                item.program_nama || '-',
+                                item.kegiatan_kode || '-',
+                                item.kegiatan_nama || '-',
+                                item.sub_kegiatan_kode || '-',
+                                item.sub_kegiatan_nama || '-',
+                                item.rekening_kode || '-',
+                                item.rekening_nama || '-',
+                                item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.3'),
+                                item.jenis_aset_nama || 'GEDUNG DAN BANGUNAN',
+                                item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
+                                item.sub_rincian_nama || '-',
+                                groupAnggaranTotal,
+                                groupRealisasiTotal
+                            ];
+                            isFirstRowInGroup = false;
+                        } else {
+                            col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                        }
+
+                        kibCRows.push([
+                            ...col1to15,                                                 // c0-c14: cols 1-15
+                            gItem.gedung_nama_barang || item.nama_barang || '-',         // c15: col 16 (Nama Barang)
+                            gItem.gedung_kode_barang || item.kode_barang || '-',         // c16: col 17 (Kode Barang)
+                            luasM2,                                                      // c17: col 18 (Luas Lantai M²)
+                            kondisiLabel,                                                // c18: col 19 (Kondisi B/KB/RB)
+                            gItem.gedung_bertingkat || 'Bertingkat',                      // c19: col 20 (Bertingkat / Tidak)
+                            gItem.gedung_beton || 'Beton',                                // c20: col 21 (Beton / Tidak)
+                            gItem.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
+                            gItem.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
+                            gItem.gedung_is_baru || 'Baru',                               // c23: col 24 (Baru)
+                            totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
+                            gItem.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
+                            parseFloat(gItem.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
+                            item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
+                            formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
+                            item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
+                            formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 31 (Surat Pesanan Tgl)
+                            item.kwitansi_nomor || '-',                                  // c31: col 32 (Kwitansi No)
+                            formatAstapDate(item.kwitansi_tanggal),                      // c32: col 33 (Kwitansi Tgl)
+                            item.faktur_nomor || '-',                                    // c33: col 34 (Invoice No)
+                            formatAstapDate(item.faktur_tanggal),                        // c34: col 35 (Invoice Tgl)
+                            jumlahBangunan,                                              // c35: col 36 (Jumlah Bangunan)
+                            gItem.gedung_satuan || item.satuan || 'Gedung',              // c36: col 37 (Nama Satuan Barang)
+                            nilaiPerencanaan,                                            // c37: col 38 (Nilai Perencanaan)
+                            nilaiFisik,                                                  // c38: col 39 (Nilai Fisik)
+                            nilaiPengawasan,                                             // c39: col 40 (Nilai Pengawasan)
+                            totalNilaiBarang,                                            // c40: col 41 (Total Nilai Barang)
+                            item.sp2d_nomor || '-',                                      // c41: col 42 (SP2D NOMOR)
+                            formatAstapDate(item.sp2d_tanggal),                          // c42: col 43 (SP2D TANGGAL)
+                            item.bast_dokumen_nomor || '-',                              // c43: col 44 (BAST NOMOR)
+                            formatAstapDate(item.bast_dokumen_tanggal),                  // c44: col 45 (BAST TANGGAL)
+                            gItem.gedung_alamat || item.alamat_barang || '-',            // c45: col 46 (Letak/ Alamat)
+                            ...getStep4Columns(item)                                     // c46-c53: cols 47-54
+                        ]);
+                    });
                 } else {
-                    col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
-                }
+                    const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+                    const nilaiPerencanaan = parseFloat(item.gedung_nilai_perencanaan) || parseFloat(item.nilai_perencanaan) || 0;
+                    const nilaiFisik = parseFloat(item.gedung_nilai_fisik) || parseFloat(item.nilai_fisik) || totalVal;
+                    const nilaiPengawasan = parseFloat(item.gedung_nilai_pengawasan) || parseFloat(item.nilai_pengawasan) || 0;
+                    const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || totalVal;
+                    const jumlahBangunan = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
+                    const luasM2 = parseFloat(item.luas_m2) || 0;
 
-                kibCRows.push([
-                    ...col1to15,                                                 // c0-c14: cols 1-15
-                    item.nama_barang || '-',                                     // c15: col 16 (Nama Barang)
-                    item.kode_barang || '-',                                     // c16: col 17 (Kode Barang)
-                    luasM2,                                                      // c17: col 18 (Luas Lantai M²)
-                    kondisiLabel,                                                // c18: col 19 (Kondisi B/KB/RB)
-                    item.gedung_bertingkat || 'Bertingkat',                      // c19: col 20 (Bertingkat / Tidak)
-                    item.gedung_beton || 'Beton',                                // c20: col 21 (Beton / Tidak)
-                    item.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
-                    item.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
-                    item.gedung_is_baru || 'Baru',                               // c23: col 24 (Baru)
-                    totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
-                    item.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
-                    parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
-                    item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
-                    item.spk_tanggal || '-',                                     // c28: col 29 (SPK Tgl)
-                    item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
-                    item.surat_pesanan_tanggal || '-',                           // c30: col 31 (Surat Pesanan Tgl)
-                    item.kwitansi_nomor || '-',                                  // c31: col 32 (Kwitansi No)
-                    item.kwitansi_tanggal || '-',                                // c32: col 33 (Kwitansi Tgl)
-                    item.faktur_nomor || '-',                                    // c33: col 34 (Invoice No)
-                    item.faktur_tanggal || '-',                                  // c34: col 35 (Invoice Tgl)
-                    jumlahBangunan,                                              // c35: col 36 (Jumlah Bangunan)
-                    item.satuan || 'Unit Bangunan',                              // c36: col 37 (Nama Satuan Barang)
-                    nilaiPerencanaan,                                            // c37: col 38 (Nilai Perencanaan)
-                    nilaiFisik,                                                  // c38: col 39 (Nilai Fisik)
-                    nilaiPengawasan,                                             // c39: col 40 (Nilai Pengawasan)
-                    totalNilaiBarang,                                            // c40: col 41 (Total Nilai Barang)
-                    item.sp2d_nomor || '-',                                      // c41: col 42 (SP2D NOMOR)
-                    item.sp2d_tanggal || '-',                                    // c42: col 43 (SP2D TANGGAL)
-                    item.bast_dokumen_nomor || '-',                              // c43: col 44 (BAST NOMOR)
-                    item.bast_dokumen_tanggal || '-',                            // c44: col 45 (BAST TANGGAL)
-                    item.alamat_barang || '-',                                   // c45: col 46 (Letak/ Alamat)
-                    ...getStep4Columns(item)                                     // c46-c53: cols 47-54
-                ]);
+                    kibCTotalLuas += luasM2;
+                    kibCTotalUnit += jumlahBangunan;
+                    kibCTotalPerencanaan += nilaiPerencanaan;
+                    kibCTotalFisik += nilaiFisik;
+                    kibCTotalPengawasan += nilaiPengawasan;
+                    kibCTotalNilaiBarang += totalNilaiBarang;
+
+                    const kondisiLabel = item.kondisi ? (item.kondisi === 'B' ? 'Baik' : (item.kondisi === 'KB' ? 'Kurang Baik' : (item.kondisi === 'RB' ? 'Rusak Berat' : item.kondisi))) : 'Baik';
+
+                    let col1to15 = [];
+                    if (isFirstRowInGroup) {
+                        col1to15 = [
+                            globalKibCNo++,
+                            item.program_kode || '-',
+                            item.program_nama || '-',
+                            item.kegiatan_kode || '-',
+                            item.kegiatan_nama || '-',
+                            item.sub_kegiatan_kode || '-',
+                            item.sub_kegiatan_nama || '-',
+                            item.rekening_kode || '-',
+                            item.rekening_nama || '-',
+                            item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.3'),
+                            item.jenis_aset_nama || 'GEDUNG DAN BANGUNAN',
+                            item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
+                            item.sub_rincian_nama || '-',
+                            groupAnggaranTotal,
+                            groupRealisasiTotal
+                        ];
+                        isFirstRowInGroup = false;
+                    } else {
+                        col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                    }
+
+                    kibCRows.push([
+                        ...col1to15,                                                 // c0-c14: cols 1-15
+                        item.nama_barang || '-',                                     // c15: col 16 (Nama Barang)
+                        item.kode_barang || '-',                                     // c16: col 17 (Kode Barang)
+                        luasM2,                                                      // c17: col 18 (Luas Lantai M²)
+                        kondisiLabel,                                                // c18: col 19 (Kondisi B/KB/RB)
+                        item.gedung_bertingkat || 'Bertingkat',                      // c19: col 20 (Bertingkat / Tidak)
+                        item.gedung_beton || 'Beton',                                // c20: col 21 (Beton / Tidak)
+                        item.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
+                        item.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
+                        item.gedung_is_baru || 'Baru',                               // c23: col 24 (Baru)
+                        totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
+                        item.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
+                        parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
+                        item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
+                        formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
+                        item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
+                        formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 31 (Surat Pesanan Tgl)
+                        item.kwitansi_nomor || '-',                                  // c31: col 32 (Kwitansi No)
+                        formatAstapDate(item.kwitansi_tanggal),                      // c32: col 33 (Kwitansi Tgl)
+                        item.faktur_nomor || '-',                                    // c33: col 34 (Invoice No)
+                        formatAstapDate(item.faktur_tanggal),                        // c34: col 35 (Invoice Tgl)
+                        jumlahBangunan,                                              // c35: col 36 (Jumlah Bangunan)
+                        item.satuan || 'Unit Bangunan',                              // c36: col 37 (Nama Satuan Barang)
+                        nilaiPerencanaan,                                            // c37: col 38 (Nilai Perencanaan)
+                        nilaiFisik,                                                  // c38: col 39 (Nilai Fisik)
+                        nilaiPengawasan,                                             // c39: col 40 (Nilai Pengawasan)
+                        totalNilaiBarang,                                            // c40: col 41 (Total Nilai Barang)
+                        item.sp2d_nomor || '-',                                      // c41: col 42 (SP2D NOMOR)
+                        formatAstapDate(item.sp2d_tanggal),                          // c42: col 43 (SP2D TANGGAL)
+                        item.bast_dokumen_nomor || '-',                              // c43: col 44 (BAST NOMOR)
+                        formatAstapDate(item.bast_dokumen_tanggal),                  // c44: col 45 (BAST TANGGAL)
+                        item.alamat_barang || '-',                                   // c45: col 46 (Letak/ Alamat)
+                        ...getStep4Columns(item)                                     // c46-c53: cols 47-54
+                    ]);
+                }
             });
         });
 
@@ -2066,21 +2200,21 @@
         // ── Grouping KIB D Berdasarkan Sub Rincian Objek PMDN 108 ──────────────
         const kibDGroups = {};
         categories['KIB D'].forEach(item => {
-            const subKey = item.sub_rincian_kode || item.kode_barang || 'NO_SUB';
-            if (!kibDGroups[subKey]) kibDGroups[subKey] = [];
-            kibDGroups[subKey].push(item);
+            const groupKey = getAstapGroupKey(item, '1.3.4.01.01.01');
+            if (!kibDGroups[groupKey]) kibDGroups[groupKey] = [];
+            kibDGroups[groupKey].push(item);
         });
 
         let globalKibDNo = 1;
         let kibDTotalAnggaran = 0, kibDTotalRealisasi = 0, kibDTotalLuas = 0, kibDTotalUnit = 0;
         let kibDTotalPerencanaan = 0, kibDTotalFisik = 0, kibDTotalPengawasan = 0, kibDTotalNilaiBarang = 0;
 
-        Object.keys(kibDGroups).forEach(subKey => {
-            const groupItems = kibDGroups[subKey];
-            const groupAnggaranTotal = groupItems.reduce((acc, curr) => {
-                const val = typeof curr.anggaran_num === 'number' ? curr.anggaran_num : (parseFloat(curr.anggaran) || 0);
-                return acc + val;
-            }, 0);
+        Object.keys(kibDGroups).forEach(groupKey => {
+            const groupItems = kibDGroups[groupKey];
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
             const groupRealisasiTotal = groupItems.reduce((acc, curr) => {
                 const val = typeof curr.total_realisasi_num === 'number' ? curr.total_realisasi_num : (parseFloat(curr.total_realisasi) || 0);
                 return acc + val;
@@ -2123,7 +2257,7 @@
                         item.rekening_nama || '-',
                         item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.4'),
                         item.jenis_aset_nama || 'JALAN, IRIGASI DAN JARINGAN',
-                        item.sub_rincian_kode || subKey,
+                        item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                         item.sub_rincian_nama || '-',
                         groupAnggaranTotal,
                         groupRealisasiTotal
@@ -2148,13 +2282,13 @@
                     item.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
                     parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
                     item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
-                    item.spk_tanggal || '-',                                     // c28: col 29 (SPK Tgl)
+                    formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
                     item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
-                    item.surat_pesanan_tanggal || '-',                           // c30: col 31 (Surat Pesanan Tgl)
+                    formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 31 (Surat Pesanan Tgl)
                     item.kwitansi_nomor || '-',                                  // c31: col 32 (Kwitansi No)
-                    item.kwitansi_tanggal || '-',                                // c32: col 33 (Kwitansi Tgl)
+                    formatAstapDate(item.kwitansi_tanggal),                      // c32: col 33 (Kwitansi Tgl)
                     item.faktur_nomor || '-',                                    // c33: col 34 (Invoice No)
-                    item.faktur_tanggal || '-',                                  // c34: col 35 (Invoice Tgl)
+                    formatAstapDate(item.faktur_tanggal),                        // c34: col 35 (Invoice Tgl)
                     jumlahUnit,                                                  // c35: col 36 (Jumlah)
                     item.satuan || 'Meter / Jaringan',                           // c36: col 37 (Nama Satuan Barang)
                     nilaiPerencanaan,                                            // c37: col 38 (Nilai Perencanaan)
@@ -2162,9 +2296,9 @@
                     nilaiPengawasan,                                             // c39: col 40 (Nilai Pengawasan)
                     totalNilaiBarang,                                            // c40: col 41 (Total Nilai Barang)
                     item.sp2d_nomor || '-',                                      // c41: col 42 (SP2D NOMOR)
-                    item.sp2d_tanggal || '-',                                    // c42: col 43 (SP2D TANGGAL)
+                    formatAstapDate(item.sp2d_tanggal),                          // c42: col 43 (SP2D TANGGAL)
                     item.bast_dokumen_nomor || '-',                              // c43: col 44 (BAST NOMOR)
-                    item.bast_dokumen_tanggal || '-',                            // c44: col 45 (BAST TANGGAL)
+                    formatAstapDate(item.bast_dokumen_tanggal),                  // c44: col 45 (BAST TANGGAL)
                     item.alamat_barang || '-',                                   // c45: col 46 (Letak/ Alamat)
                     ...getStep4Columns(item)                                     // c46-c53: cols 47-54
                 ]);
@@ -2426,19 +2560,19 @@
         // ── Grouping KIB E Berdasarkan Sub Rincian Objek PMDN 108 ──────────────
         const kibEGroups = {};
         categories['KIB E'].forEach(item => {
-            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 14) : '1.3.5.01.01.01');
-            if (!kibEGroups[subKey]) kibEGroups[subKey] = [];
-            kibEGroups[subKey].push(item);
+            const groupKey = getAstapGroupKey(item, '1.3.5.01.01.01');
+            if (!kibEGroups[groupKey]) kibEGroups[groupKey] = [];
+            kibEGroups[groupKey].push(item);
         });
 
         let globalKibENo = 1;
         let kibETotalAnggaran = 0, kibETotalRealisasi = 0, kibETotalUnit = 0, kibETotalAdminProyek = 0, kibETotalNilaiBarang = 0;
-        Object.keys(kibEGroups).forEach(subKey => {
-            const groupItems = kibEGroups[subKey];
-            const groupAnggaranTotal = groupItems.reduce((acc, curr) => {
-                const val = typeof curr.anggaran_num === 'number' ? curr.anggaran_num : (parseFloat(curr.jumlah_anggaran) || parseFloat(curr.anggaran) || 0);
-                return acc + val;
-            }, 0);
+        Object.keys(kibEGroups).forEach(groupKey => {
+            const groupItems = kibEGroups[groupKey];
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
             const groupRealisasiTotal = groupItems.reduce((acc, curr) => {
                 const val = typeof curr.total_realisasi_num === 'number' ? curr.total_realisasi_num : (parseFloat(curr.total_realisasi) || 0);
                 return acc + val;
@@ -2475,7 +2609,7 @@
                         item.rekening_nama || '-',
                         item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.5'),
                         item.jenis_aset_nama || 'ASET TETAP LAINNYA',
-                        item.sub_rincian_kode || subKey,
+                        item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                         item.sub_rincian_nama || '-',
                         groupAnggaranTotal,
                         groupRealisasiTotal
@@ -2500,13 +2634,13 @@
                     item.judul_hewan || item.nama_barang || '-',                 // c25: col 27 (Judul/Jenis Hewan)
                     item.spesifikasi || '-',                                     // c26: col 28 (Spesifikasi Hewan)
                     item.spk_nomor || '-',                                       // c27: col 29 (SPK No)
-                    item.spk_tanggal || '-',                                     // c28: col 30 (SPK Tgl)
+                    formatAstapDate(item.spk_tanggal),                           // c28: col 30 (SPK Tgl)
                     item.surat_pesanan_nomor || '-',                             // c29: col 31 (Surat Pesanan No)
-                    item.surat_pesanan_tanggal || '-',                           // c30: col 32 (Surat Pesanan Tgl)
+                    formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 32 (Surat Pesanan Tgl)
                     item.kwitansi_nomor || '-',                                  // c31: col 33 (Kwitansi No)
-                    item.kwitansi_tanggal || '-',                                // c32: col 34 (Kwitansi Tgl)
+                    formatAstapDate(item.kwitansi_tanggal),                      // c32: col 34 (Kwitansi Tgl)
                     item.faktur_nomor || '-',                                    // c33: col 35 (Invoice No)
-                    item.faktur_tanggal || '-',                                  // c34: col 36 (Invoice Tgl)
+                    formatAstapDate(item.faktur_tanggal),                        // c34: col 36 (Invoice Tgl)
                     jumlahUnit,                                                  // c35: col 37 (Jumlah Barang)
                     item.satuan || 'Eks / Buah',                                 // c36: col 38 (Nama Satuan Barang)
                     hargaSatuan,                                                 // c37: col 39 (Nilai Satuan Barang)
@@ -2761,19 +2895,19 @@
         // ── Grouping KIB F Berdasarkan Sub Rincian Objek PMDN 108 ──────────────
         const kibFGroups = {};
         categories['KIB F'].forEach(item => {
-            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 14) : '1.3.6.01.01.01');
-            if (!kibFGroups[subKey]) kibFGroups[subKey] = [];
-            kibFGroups[subKey].push(item);
+            const groupKey = getAstapGroupKey(item, '1.3.6.01.01.01');
+            if (!kibFGroups[groupKey]) kibFGroups[groupKey] = [];
+            kibFGroups[groupKey].push(item);
         });
 
         let globalKibFNo = 1;
         let kibFTotalAnggaran = 0, kibFTotalRealisasi = 0, kibFTotalLuas = 0, kibFTotalUnit = 0, kibFTotalPerencanaan = 0, kibFTotalFisik = 0, kibFTotalPengawasan = 0, kibFTotalAdminProyek = 0, kibFTotalNilaiBarang = 0;
-        Object.keys(kibFGroups).forEach(subKey => {
-            const groupItems = kibFGroups[subKey];
-            const groupAnggaranTotal = groupItems.reduce((acc, curr) => {
-                const val = typeof curr.anggaran_num === 'number' ? curr.anggaran_num : (parseFloat(curr.jumlah_anggaran) || parseFloat(curr.anggaran) || 0);
-                return acc + val;
-            }, 0);
+        Object.keys(kibFGroups).forEach(groupKey => {
+            const groupItems = kibFGroups[groupKey];
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
             const groupRealisasiTotal = groupItems.reduce((acc, curr) => {
                 const val = typeof curr.total_realisasi_num === 'number' ? curr.total_realisasi_num : (parseFloat(curr.total_realisasi) || 0);
                 return acc + val;
@@ -2817,7 +2951,7 @@
                         item.rekening_nama || '-',
                         item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.6'),
                         item.jenis_aset_nama || 'KONSTRUKSI DALAM PENGERJAAN',
-                        item.sub_rincian_kode || subKey,
+                        item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                         item.sub_rincian_nama || '-',
                         groupAnggaranTotal,
                         groupRealisasiTotal
@@ -2842,13 +2976,13 @@
                     item.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
                     parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
                     item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
-                    item.spk_tanggal || '-',                                     // c28: col 29 (SPK Tgl)
+                    formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
                     item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
-                    item.surat_pesanan_tanggal || '-',                           // c30: col 31 (Surat Pesanan Tgl)
+                    formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 31 (Surat Pesanan Tgl)
                     item.kwitansi_nomor || '-',                                  // c31: col 32 (Kwitansi No)
-                    item.kwitansi_tanggal || '-',                                // c32: col 33 (Kwitansi Tgl)
+                    formatAstapDate(item.kwitansi_tanggal),                      // c32: col 33 (Kwitansi Tgl)
                     item.faktur_nomor || '-',                                    // c33: col 34 (Invoice No)
-                    item.faktur_tanggal || '-',                                  // c34: col 35 (Invoice Tgl)
+                    formatAstapDate(item.faktur_tanggal),                        // c34: col 35 (Invoice Tgl)
                     jumlahBangunan,                                              // c35: col 36 (Jumlah Bangunan)
                     item.satuan || 'Unit / Bangunan',                            // c36: col 37 (Nama Satuan Barang)
                     nilaiPerencanaan,                                            // c37: col 38 (Nilai Perencanaan)
@@ -2857,9 +2991,9 @@
                     adminProyek,                                                 // c40: col 41 (Nilai AP)
                     totalNilaiBarang,                                            // c41: col 42 (Total Nilai Barang)
                     item.bast_dokumen_nomor || '-',                              // c42: col 43 (BAST NOMOR)
-                    item.bast_dokumen_tanggal || '-',                            // c43: col 44 (BAST TANGGAL)
+                    formatAstapDate(item.bast_dokumen_tanggal),                  // c43: col 44 (BAST TANGGAL)
                     item.sp2d_nomor || '-',                                      // c44: col 45 (SP2D NOMOR)
-                    item.sp2d_tanggal || '-',                                    // c45: col 46 (SP2D TANGGAL)
+                    formatAstapDate(item.sp2d_tanggal),                          // c45: col 46 (SP2D TANGGAL)
                     item.alamat_barang || '-',                                   // c46: col 47 (Letak/ Alamat)
                     ...getStep4Columns(item)                                     // c47-c54: cols 48-55
                 ]);
@@ -3122,19 +3256,19 @@
         // ── Grouping ATB Berdasarkan Sub Rincian Objek PMDN 108 ──────────────
         const atbGroups = {};
         categories['ATB'].forEach(item => {
-            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 14) : '1.5.3.01.01.01');
-            if (!atbGroups[subKey]) atbGroups[subKey] = [];
-            atbGroups[subKey].push(item);
+            const groupKey = getAstapGroupKey(item, '1.5.3.01.01.01');
+            if (!atbGroups[groupKey]) atbGroups[groupKey] = [];
+            atbGroups[groupKey].push(item);
         });
 
         let globalAtbNo = 1;
         let atbTotalAnggaran = 0, atbTotalRealisasi = 0, atbTotalUnit = 0, atbTotalAdminProyek = 0, atbTotalNilaiBarang = 0;
-        Object.keys(atbGroups).forEach(subKey => {
-            const groupItems = atbGroups[subKey];
-            const groupAnggaranTotal = groupItems.reduce((acc, curr) => {
-                const val = typeof curr.anggaran_num === 'number' ? curr.anggaran_num : (parseFloat(curr.jumlah_anggaran) || parseFloat(curr.anggaran) || 0);
-                return acc + val;
-            }, 0);
+        Object.keys(atbGroups).forEach(groupKey => {
+            const groupItems = atbGroups[groupKey];
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
             const groupRealisasiTotal = groupItems.reduce((acc, curr) => {
                 const val = typeof curr.total_realisasi_num === 'number' ? curr.total_realisasi_num : (parseFloat(curr.total_realisasi) || 0);
                 return acc + val;
@@ -3172,7 +3306,7 @@
                         item.rekening_nama || '-',
                         item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.5.3'),
                         item.jenis_aset_nama || 'ASET TIDAK BERWUJUD',
-                        item.sub_rincian_kode || subKey,
+                        item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                         item.sub_rincian_nama || '-',
                         groupAnggaranTotal,
                         groupRealisasiTotal
@@ -3190,22 +3324,22 @@
                     item.pencipta || item.pengarang || item.vendor || '-',       // c18: col 19 (Pencipta)
                     item.spesifikasi || '-',                                     // c19: col 20 (Spesifikasi)
                     item.spk_nomor || '-',                                       // c20: col 21 (SPK No)
-                    item.spk_tanggal || '-',                                     // c21: col 22 (SPK Tgl)
+                    formatAstapDate(item.spk_tanggal),                           // c21: col 22 (SPK Tgl)
                     item.surat_pesanan_nomor || '-',                             // c22: col 23 (Surat Pesanan No)
-                    item.surat_pesanan_tanggal || '-',                           // c23: col 24 (Surat Pesanan Tgl)
+                    formatAstapDate(item.surat_pesanan_tanggal),                 // c23: col 24 (Surat Pesanan Tgl)
                     item.kwitansi_nomor || '-',                                  // c24: col 25 (Kwitansi No)
-                    item.kwitansi_tanggal || '-',                                // c25: col 26 (Kwitansi Tgl)
+                    formatAstapDate(item.kwitansi_tanggal),                      // c25: col 26 (Kwitansi Tgl)
                     item.faktur_nomor || '-',                                    // c26: col 27 (Invoice No)
-                    item.faktur_tanggal || '-',                                  // c27: col 28 (Invoice Tgl)
+                    formatAstapDate(item.faktur_tanggal),                        // c27: col 28 (Invoice Tgl)
                     jumlahUnit,                                                  // c28: col 29 (Jumlah)
                     item.satuan || 'Paket Lisensi',                              // c29: col 30 (Nama Satuan Barang)
                     hargaSatuan,                                                 // c30: col 31 (Nilai Satuan Barang)
                     adminProyek,                                                 // c31: col 32 (ADMINISTRASI PROYEK)
                     totalNilaiBarang,                                            // c32: col 33 (Total Nilai Barang)
                     item.sp2d_nomor || '-',                                      // c33: col 34 (SP2D NOMOR)
-                    item.sp2d_tanggal || '-',                                    // c34: col 35 (SP2D TANGGAL)
+                    formatAstapDate(item.sp2d_tanggal),                          // c34: col 35 (SP2D TANGGAL)
                     item.bast_dokumen_nomor || '-',                              // c35: col 36 (BAST NOMOR)
-                    item.bast_dokumen_tanggal || '-',                            // c36: col 37 (BAST TANGGAL)
+                    formatAstapDate(item.bast_dokumen_tanggal),                  // c36: col 37 (BAST TANGGAL)
                     ruangUnit,                                                   // c37: col 38 (Ruang / Pemegang)
                     item.penyedia_nama || '-',                                   // c38: col 39 (Nama Penyedia)
                     item.penyedia_pemilik || '-',                                // c39: col 40 (Pemilik Penyedia)
@@ -3451,19 +3585,22 @@
         // ── Kelompokkan Data EXTRACOM per Sub Rincian Objek (PMDN 108) ─────────────
         const extracomGroups = {};
         categories['EXTRACOM'].forEach(item => {
-            const subKey = item.sub_rincian_kode || (item.kode_barang ? item.kode_barang.substring(0, 11) : 'EXTRACOM-DEFAULT');
-            if (!extracomGroups[subKey]) {
-                extracomGroups[subKey] = [];
+            const groupKey = getAstapGroupKey(item, '1.5.4.01.01.01');
+            if (!extracomGroups[groupKey]) {
+                extracomGroups[groupKey] = [];
             }
-            extracomGroups[subKey].push(item);
+            extracomGroups[groupKey].push(item);
         });
 
         let globalExtracomNo = 1;
         let extracomTotalAnggaran = 0, extracomTotalRealisasi = 0, extracomTotalUnit = 0, extracomTotalAdminProyek = 0, extracomTotalNilaiBarang = 0;
-        Object.keys(extracomGroups).forEach(subKey => {
-            const groupItems = extracomGroups[subKey];
+        Object.keys(extracomGroups).forEach(groupKey => {
+            const groupItems = extracomGroups[groupKey];
+            let groupAnggaranTotal = 0;
+            groupItems.forEach(it => {
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0));
+            });
             const groupRealisasiTotal = groupItems.reduce((acc, it) => acc + (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0), 0);
-            const groupAnggaranTotal = parseFloat(groupItems[0].jumlah_anggaran) || groupRealisasiTotal;
 
             extracomTotalAnggaran += groupAnggaranTotal;
             extracomTotalRealisasi += groupRealisasiTotal;
@@ -3512,7 +3649,7 @@
                                 item.rekening_nama || '-',
                                 item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.5.4'),
                                 item.jenis_aset_nama || 'EKSTRAKOMTABEL',
-                                item.sub_rincian_kode || subKey,
+                                item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                                 item.sub_rincian_nama || '-',
                                 groupAnggaranTotal,
                                 groupRealisasiTotal
@@ -3538,13 +3675,13 @@
                             mItem.mesin_bahan || item.bahan || '-',         // c25: col 26
                             item.tahun_perolehan || '-',                 // c26: col 27
                             item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
-                            item.spk_tanggal || '-',                     // c28: col 29
+                            formatAstapDate(item.spk_tanggal),           // c28: col 29
                             item.surat_pesanan_nomor || '-',             // c29: col 30
-                            item.surat_pesanan_tanggal || '-',           // c30: col 31
+                            formatAstapDate(item.surat_pesanan_tanggal), // c30: col 31
                             item.kwitansi_nomor || '-',                  // c31: col 32
-                            item.kwitansi_tanggal || '-',                // c32: col 33
+                            formatAstapDate(item.kwitansi_tanggal),      // c32: col 33
                             item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
-                            item.faktur_tanggal || '-',                  // c34: col 35
+                            formatAstapDate(item.faktur_tanggal),        // c34: col 35
                             kondisiLabel,                                // c35: col 36
                             qty,                                         // c36: col 37 (Jumlah Barang)
                             mItem.mesin_satuan || item.satuan || 'Unit', // c37: col 38 (Nama Satuan Barang)
@@ -3552,9 +3689,9 @@
                             adminProyek,                                 // c39: col 40 (Admin Proyek)
                             totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
                             item.sp2d_nomor || '-',                      // c41: col 42
-                            item.sp2d_tanggal || '-',                    // c42: col 43
+                            formatAstapDate(item.sp2d_tanggal),          // c42: col 43
                             item.bast_dokumen_nomor || '-',              // c43: col 44
-                            item.bast_dokumen_tanggal || '-',            // c44: col 45
+                            formatAstapDate(item.bast_dokumen_tanggal),  // c44: col 45
                             ruangUnit,                                   // c45: col 46
                             ...getStep4Columns(item)                     // c46-c53: cols 47-54
                         ]);
@@ -3590,7 +3727,7 @@
                             item.rekening_nama || '-',
                             item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.5.4'),
                             item.jenis_aset_nama || 'EKSTRAKOMTABEL',
-                            item.sub_rincian_kode || subKey,
+                            item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
                             item.sub_rincian_nama || '-',
                             groupAnggaranTotal,
                             groupRealisasiTotal
@@ -3615,13 +3752,13 @@
                         item.bahan || '-',                           // c25: col 26
                         item.tahun_perolehan || '-',                 // c26: col 27
                         item.spk_nomor || '-',                       // c27: col 28 (SPK Nomor)
-                        item.spk_tanggal || '-',                     // c28: col 29
+                        formatAstapDate(item.spk_tanggal),           // c28: col 29
                         item.surat_pesanan_nomor || '-',             // c29: col 30
-                        item.surat_pesanan_tanggal || '-',           // c30: col 31
+                        formatAstapDate(item.surat_pesanan_tanggal), // c30: col 31
                         item.kwitansi_nomor || '-',                  // c31: col 32
-                        item.kwitansi_tanggal || '-',                // c32: col 33
+                        formatAstapDate(item.kwitansi_tanggal),      // c32: col 33
                         item.faktur_nomor || '-',                    // c33: col 34 (Invoice Nomor)
-                        item.faktur_tanggal || '-',                  // c34: col 35
+                        formatAstapDate(item.faktur_tanggal),        // c34: col 35
                         kondisiLabel,                                // c35: col 36
                         jumlahBarang,                                // c36: col 37 (Jumlah Barang)
                         item.satuan || 'Unit',                       // c37: col 38 (Nama Satuan Barang)
@@ -3629,9 +3766,9 @@
                         adminProyek,                                 // c39: col 40 (Admin Proyek)
                         totalNilaiBarang,                            // c40: col 41 (Total = 39+40)
                         item.sp2d_nomor || '-',                      // c41: col 42
-                        item.sp2d_tanggal || '-',                    // c42: col 43
+                        formatAstapDate(item.sp2d_tanggal),          // c42: col 43
                         item.bast_dokumen_nomor || '-',              // c43: col 44
-                        item.bast_dokumen_tanggal || '-',            // c44: col 45
+                        formatAstapDate(item.bast_dokumen_tanggal),  // c44: col 45
                         ruangUnit,                                   // c45: col 46
                         ...getStep4Columns(item)                     // c46-c53: cols 47-54
                     ]);
@@ -5022,31 +5159,85 @@
 
                             <!-- 3. KIB C (GEDUNG & BANGUNAN) -->
                             <template x-if="selectedAstapDetail.category === 'KIB C'">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏢 Tipe Konstruksi</span>
-                                        <span class="text-purple-300 font-bold" x-text="(selectedAstapDetail.spesifikasi_json?.bertingkat || 'Bertingkat') + ' • ' + (selectedAstapDetail.spesifikasi_json?.beton || 'Beton')"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Lantai Gedung</span>
-                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Hak Tanah Gedung</span>
-                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.status_tanah || 'Tanah Hak Pakai RSUD'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Kode Aset Tanah Induk</span>
-                                        <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.kode_aset_tanah || '1.3.1.01.01.02.013'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Nilai Perencanaan</span>
-                                        <span class="text-emerald-400 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.nilai_perencanaan ? 'Rp ' + Number(selectedAstapDetail.spesifikasi_json.nilai_perencanaan).toLocaleString('id-ID') : '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Alamat Bangunan</span>
-                                        <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kompleks Utama RSUD Dr. H. Koesnandi'"></span>
-                                    </div>
+                                <div class="space-y-3">
+                                    <!-- Jika Multi-Item Gedung -->
+                                    <template x-if="selectedAstapDetail.spesifikasi_json?.gedung_items && selectedAstapDetail.spesifikasi_json.gedung_items.length > 0">
+                                        <div class="space-y-2.5">
+                                            <div class="flex items-center justify-between px-1">
+                                                <span class="text-[11px] font-bold text-purple-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>🏢 Rincian Gedung & Bangunan:</span>
+                                                </span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold border border-purple-500/30" 
+                                                      x-text="selectedAstapDetail.spesifikasi_json.gedung_items.length + ' Gedung/Bangunan Terdaftar'"></span>
+                                            </div>
+                                            <template x-for="(gItem, gIdx) in selectedAstapDetail.spesifikasi_json.gedung_items" :key="gIdx">
+                                                <div class="p-3 rounded-2xl bg-slate-900/90 border border-purple-500/30 hover:border-purple-500/60 transition-all space-y-2.5">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="px-2 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40" x-text="'Gedung #' + (gIdx + 1)"></span>
+                                                            <span class="text-xs font-bold text-white" x-text="gItem.gedung_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                        </div>
+                                                        <div class="flex items-center space-x-3 text-[10.5px] font-mono">
+                                                            <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_m2 || 0) + ' M²'"></strong></span>
+                                                            <span class="text-slate-400">Kondisi: <strong class="text-white" x-text="gItem.gedung_kondisi || 'B'"></strong></span>
+                                                            <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_pip || 0)).toLocaleString('id-ID')"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏢 Konstruksi</span>
+                                                            <span class="text-purple-300 font-bold block" x-text="(gItem.gedung_bertingkat || 'Bertingkat') + ' • ' + (gItem.gedung_beton || 'Beton')"></span>
+                                                            <span class="text-slate-300 text-[9.5px]" x-text="'Tipe: ' + (gItem.gedung_is_baru || 'Baru')"></span>
+                                                        </div>
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌱 Status & Kode Tanah</span>
+                                                            <span class="text-teal-300 font-semibold block truncate" x-text="gItem.gedung_status_tanah || 'Hak Pakai RSUD'"></span>
+                                                            <span class="text-cyan-400 font-mono text-[9px] block truncate" x-text="gItem.gedung_kode_aset_tanah || '1.3.1.01.01.02.013'"></span>
+                                                        </div>
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Nilai</span>
+                                                            <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik: Rp ' + Number(gItem.gedung_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                            <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(gItem.gedung_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Pws: ' + Number(gItem.gedung_nilai_pengawasan || 0).toLocaleString('id-ID')"></span>
+                                                        </div>
+                                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Letak / Lokasi Fisik</span>
+                                                            <span class="text-emerald-300 font-medium block truncate" :title="gItem.gedung_alamat" x-text="gItem.gedung_alamat || selectedAstapDetail.alamat_barang || '-'"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    <!-- Fallback jika data single item / legacy -->
+                                    <template x-if="!selectedAstapDetail.spesifikasi_json?.gedung_items || selectedAstapDetail.spesifikasi_json.gedung_items.length === 0">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏢 Tipe Konstruksi</span>
+                                                <span class="text-purple-300 font-bold" x-text="(selectedAstapDetail.spesifikasi_json?.bertingkat || 'Bertingkat') + ' • ' + (selectedAstapDetail.spesifikasi_json?.beton || 'Beton')"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Lantai Gedung</span>
+                                                <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.volume_satuan || '-') + ' m²'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Hak Tanah Gedung</span>
+                                                <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.status_tanah || 'Tanah Hak Pakai RSUD'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Kode Aset Tanah Induk</span>
+                                                <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.kode_aset_tanah || '1.3.1.01.01.02.013'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Nilai Perencanaan</span>
+                                                <span class="text-emerald-400 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.nilai_perencanaan ? 'Rp ' + Number(selectedAstapDetail.spesifikasi_json.nilai_perencanaan).toLocaleString('id-ID') : '-'"></span>
+                                            </div>
+                                            <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Alamat Bangunan</span>
+                                                <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kompleks Utama RSUD Dr. H. Koesnandi'"></span>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
 

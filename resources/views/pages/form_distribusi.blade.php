@@ -637,8 +637,9 @@
                                 <span class="text-[10px] text-slate-400 font-normal">Auto Hari Ini</span>
                             </template>
                         </label>
-                        <input type="date" x-model="formData.tgl"
+                        <input type="text" x-datepicker x-model="formData.tgl"
                                @change="updateYearInKode()"
+                               placeholder="dd/mm/yyyy"
                                :readonly="isSubAdmin || formData.status === 'Ditolak'"
                                :disabled="formData.status === 'Ditolak'"
                                :class="(isSubAdmin || formData.status === 'Ditolak') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed pointer-events-none' : 'bg-slate-950 text-white'"

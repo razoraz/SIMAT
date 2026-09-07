@@ -255,12 +255,13 @@
                 </div>
                 <div>
                     <label class="block text-slate-300 font-semibold text-xs mb-1.5">Tanggal Pelaksanaan</label>
-                    <input type="date" x-model="formData.tgl" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white">
+                    <input type="text" x-datepicker x-model="formData.tgl" placeholder="dd/mm/yyyy" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white">
                 </div>
                 <div x-show="formData.status === 'Selesai'" x-transition x-cloak>
                     <label class="block text-emerald-400 font-semibold text-xs mb-1.5">Tanggal Selesai</label>
-                    <input type="date" 
+                    <input type="text" x-datepicker 
                         x-model="formData.tgl_selesai" 
+                        placeholder="dd/mm/yyyy"
                         class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-4 py-3 text-xs text-emerald-300 focus:outline-none focus:border-emerald-400">
                 </div>
             </div>

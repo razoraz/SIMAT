@@ -300,7 +300,7 @@
                                     searchRuang: ''
                                 }
                             ],
-                        // KIB C Gedung
+                        // KIB C Gedung (Multi-Item Repeater)
                         gedung_nama_barang: nama || '',
                         gedung_kode_barang: kode108Val || '',
                         gedung_luas_m2: spec.luas_m2 || 0,
@@ -318,6 +318,49 @@
                         gedung_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
                         gedung_nilai_pengawasan: spec.nilai_pengawasan || 0,
                         gedung_nilai_pip: spec.nilai_pip || 0,
+                        gedung_items: (spec && spec.gedung_items && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0)
+                            ? spec.gedung_items.map(g => ({
+                                gedung_nama_barang: g.gedung_nama_barang || nama || '',
+                                gedung_kode_barang: g.gedung_kode_barang || kode108Val || '',
+                                gedung_luas_m2: g.gedung_luas_m2 || 0,
+                                gedung_kondisi: g.gedung_kondisi || 'B',
+                                gedung_bertingkat: g.gedung_bertingkat || 'Bertingkat',
+                                gedung_beton: g.gedung_beton || 'Beton',
+                                gedung_status_tanah: g.gedung_status_tanah || 'Tanah Hak Pakai RSUD',
+                                gedung_kode_aset_tanah: g.gedung_kode_aset_tanah || '1.3.1.01.01.02.013',
+                                gedung_is_baru: g.gedung_is_baru || 'Baru',
+                                gedung_kapitalisasi_tahun_induk: g.gedung_kapitalisasi_tahun_induk || '',
+                                gedung_kapitalisasi_nilai_induk: g.gedung_kapitalisasi_nilai_induk || 0,
+                                gedung_jumlah_bangunan: g.gedung_jumlah_bangunan || 1,
+                                gedung_satuan: g.gedung_satuan || 'Gedung',
+                                gedung_nilai_perencanaan: g.gedung_nilai_perencanaan || 0,
+                                gedung_nilai_fisik: g.gedung_nilai_fisik || 0,
+                                gedung_nilai_pengawasan: g.gedung_nilai_pengawasan || 0,
+                                gedung_nilai_pip: g.gedung_nilai_pip || 0,
+                                gedung_alamat: g.gedung_alamat || (ea ? (ea.alamat_barang || '') : '')
+                            }))
+                            : [
+                                {
+                                    gedung_nama_barang: nama || '',
+                                    gedung_kode_barang: kode108Val || '',
+                                    gedung_luas_m2: spec.luas_m2 || 0,
+                                    gedung_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                                    gedung_bertingkat: spec.bertingkat || 'Bertingkat',
+                                    gedung_beton: spec.beton || 'Beton',
+                                    gedung_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                                    gedung_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
+                                    gedung_is_baru: spec.is_baru || 'Baru',
+                                    gedung_kapitalisasi_tahun_induk: spec.kapitalisasi_tahun_induk || '',
+                                    gedung_kapitalisasi_nilai_induk: spec.kapitalisasi_nilai_induk || 0,
+                                    gedung_jumlah_bangunan: ea ? (ea.jumlah_volume || 1) : 1,
+                                    gedung_satuan: ea ? (ea.satuan || 'Gedung') : 'Gedung',
+                                    gedung_nilai_perencanaan: spec.nilai_perencanaan || 0,
+                                    gedung_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
+                                    gedung_nilai_pengawasan: spec.nilai_pengawasan || 0,
+                                    gedung_nilai_pip: spec.nilai_pip || 0,
+                                    gedung_alamat: ea ? (ea.alamat_barang || '') : ''
+                                }
+                            ],
                         // KIB D Jaringan
                         jaringan_nama_barang: nama || '',
                         jaringan_kode_barang: kode108Val || '',
@@ -533,6 +576,10 @@
                     }, { deep: true });
                     this.$watch('formData.mesin_items', () => {
                         this.syncMesinFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }, { deep: true });
+                    this.$watch('formData.gedung_items', () => {
+                        this.syncGedungFieldsToMain();
                         this.syncRealisasiFromStep3();
                     }, { deep: true });
                     this.$watch('formData.tanah_nilai_perencanaan', () => this.syncRealisasiFromStep3());
@@ -984,10 +1031,103 @@
                 },
 
                 get totalNilaiGedung() {
+                    if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                        return this.formData.gedung_items.reduce((sum, item) => sum + this.getGedungSubtotal(item), 0);
+                    }
                     return Number(this.formData.gedung_nilai_perencanaan || 0) + 
                            Number(this.formData.gedung_nilai_fisik || 0) + 
                            Number(this.formData.gedung_nilai_pengawasan || 0) + 
                            Number(this.formData.gedung_nilai_pip || 0);
+                },
+
+                get totalVolumeGedung() {
+                    if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                        return this.formData.gedung_items.reduce((sum, item) => sum + (parseInt(item.gedung_jumlah_bangunan) || 1), 0);
+                    }
+                    return parseInt(this.formData.gedung_jumlah_bangunan) || 1;
+                },
+
+                getGedungSubtotal(item) {
+                    return Number(item.gedung_nilai_perencanaan || 0) + 
+                           Number(item.gedung_nilai_fisik || 0) + 
+                           Number(item.gedung_nilai_pengawasan || 0) + 
+                           Number(item.gedung_nilai_pip || 0);
+                },
+
+                addGedungItem() {
+                    if (!this.formData.gedung_items) {
+                        this.formData.gedung_items = [];
+                    }
+                    this.formData.gedung_items.push({
+                        gedung_nama_barang: this.formData.gedung_nama_barang || this.formData.sub_rincian_nama || '',
+                        gedung_kode_barang: this.formData.gedung_kode_barang || this.formData.sub_rincian_kode || '',
+                        gedung_luas_m2: 0,
+                        gedung_kondisi: 'B',
+                        gedung_bertingkat: 'Bertingkat',
+                        gedung_beton: 'Beton',
+                        gedung_status_tanah: 'Tanah Hak Pakai RSUD',
+                        gedung_kode_aset_tanah: '1.3.1.01.01.02.013',
+                        gedung_is_baru: 'Baru',
+                        gedung_kapitalisasi_tahun_induk: '',
+                        gedung_kapitalisasi_nilai_induk: 0,
+                        gedung_jumlah_bangunan: 1,
+                        gedung_satuan: 'Gedung',
+                        gedung_nilai_perencanaan: 0,
+                        gedung_nilai_fisik: 0,
+                        gedung_nilai_pengawasan: 0,
+                        gedung_nilai_pip: 0,
+                        gedung_alamat: ''
+                    });
+                    this.syncGedungFieldsToMain();
+                    this.syncRealisasiFromStep3();
+                },
+
+                removeGedungItem(index) {
+                    if (this.formData.gedung_items && this.formData.gedung_items.length > 1) {
+                        this.formData.gedung_items.splice(index, 1);
+                        this.syncGedungFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }
+                },
+
+                syncGedungFieldsToMain() {
+                    if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                        const first = this.formData.gedung_items[0];
+                        if (first.gedung_nama_barang && first.gedung_nama_barang.trim() !== '') {
+                            this.formData.gedung_nama_barang = first.gedung_nama_barang;
+                        } else if (this.formData.gedung_nama_barang) {
+                            first.gedung_nama_barang = this.formData.gedung_nama_barang;
+                        }
+                        if (first.gedung_kode_barang && first.gedung_kode_barang.trim() !== '') {
+                            this.formData.gedung_kode_barang = first.gedung_kode_barang;
+                        } else if (this.formData.gedung_kode_barang) {
+                            first.gedung_kode_barang = this.formData.gedung_kode_barang;
+                        }
+                        this.formData.gedung_kondisi = first.gedung_kondisi;
+                        this.formData.gedung_bertingkat = first.gedung_bertingkat;
+                        this.formData.gedung_beton = first.gedung_beton;
+                        this.formData.gedung_status_tanah = first.gedung_status_tanah;
+                        this.formData.gedung_kode_aset_tanah = first.gedung_kode_aset_tanah;
+                        this.formData.gedung_is_baru = first.gedung_is_baru;
+                        this.formData.gedung_kapitalisasi_tahun_induk = first.gedung_kapitalisasi_tahun_induk;
+                        this.formData.gedung_kapitalisasi_nilai_induk = first.gedung_kapitalisasi_nilai_induk;
+                        this.formData.gedung_satuan = first.gedung_satuan;
+
+                        const totalLuas = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_luas_m2) || 0), 0);
+                        this.formData.gedung_luas_m2 = totalLuas;
+
+                        const totalBangunan = this.formData.gedung_items.reduce((sum, it) => sum + (parseInt(it.gedung_jumlah_bangunan) || 1), 0);
+                        this.formData.gedung_jumlah_bangunan = totalBangunan;
+                        this.formData.jumlah_volume = totalBangunan;
+
+                        this.formData.gedung_nilai_perencanaan = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_perencanaan) || 0), 0);
+                        this.formData.gedung_nilai_fisik = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_fisik) || 0), 0);
+                        this.formData.gedung_nilai_pengawasan = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_pengawasan) || 0), 0);
+                        this.formData.gedung_nilai_pip = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_pip) || 0), 0);
+
+                        const alamatList = this.formData.gedung_items.map(it => it.gedung_alamat).filter(Boolean);
+                        this.formData.alamat_barang = alamatList.length > 0 ? alamatList.join('; ') : (first.gedung_alamat || '');
+                    }
                 },
 
                 get totalNilaiJaringan() {
@@ -1418,7 +1558,17 @@
                         }
                     } else if (this.isGedung) {
                         this.formData.gedung_kode_barang = kodeSubSub;
-                        if (found) this.formData.gedung_nama_barang = found.nama;
+                        if (found) {
+                            this.formData.gedung_nama_barang = found.nama;
+                            if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                                this.formData.gedung_items.forEach((it, idx) => {
+                                    it.gedung_kode_barang = kodeSubSub;
+                                    if (!it.gedung_nama_barang || it.gedung_nama_barang === '' || idx === 0) {
+                                        it.gedung_nama_barang = found.nama;
+                                    }
+                                });
+                            }
+                        }
                     } else if (this.isJaringan) {
                         this.formData.jaringan_kode_barang = kodeSubSub;
                         if (found) this.formData.jaringan_nama_barang = found.nama;
@@ -1544,6 +1694,23 @@
                     return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0);
                 },
 
+                formatDateDisplay(val) {
+                    if (!val || val === '-' || val === '') return '-';
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+                    const match = String(val).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        return `${match[3]}/${match[2]}/${match[1]}`;
+                    }
+                    const d = new Date(val);
+                    if (!isNaN(d.getTime())) {
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const year = d.getFullYear();
+                        return `${day}/${month}/${year}`;
+                    }
+                    return val;
+                },
+
                 showConfirmModal: false,
                 confirmData: {
                     title: 'Konfirmasi Tindakan',
@@ -1598,6 +1765,7 @@
                     // Sinkronisasi otomatis nilai realisasi dari rincian Nilai Barang Langkah 3
                     if (this.isTanah) this.syncTanahFieldsToMain();
                     if (this.isMesin) this.syncMesinFieldsToMain();
+                    if (this.isGedung) this.syncGedungFieldsToMain();
                     this.syncRealisasiFromStep3();
 
                     if (!this.formData.jumlah_realisasi || Number(this.formData.jumlah_realisasi) <= 0) {
@@ -1657,11 +1825,17 @@
                                 const payload = { ...this.formData };
                                 if (this.isMesin) {
                                     delete payload.tanah_items;
+                                    delete payload.gedung_items;
                                 } else if (this.isTanah) {
+                                    delete payload.mesin_items;
+                                    delete payload.gedung_items;
+                                } else if (this.isGedung) {
+                                    delete payload.tanah_items;
                                     delete payload.mesin_items;
                                 } else {
                                     delete payload.tanah_items;
                                     delete payload.mesin_items;
+                                    delete payload.gedung_items;
                                 }
 
                                 fetch(url, {
@@ -2563,8 +2737,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
-                                               :disabled="formData.doc_type !== 'spk'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.spk_tanggal" @change="onDocDateChange(formData.spk_tanggal, 'spk_tanggal')" 
+                                               :disabled="formData.doc_type !== 'spk'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -2588,8 +2762,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
-                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange(formData.surat_pesanan_tanggal, 'surat_pesanan_tanggal')" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -2613,8 +2787,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
-                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.kwitansi_tanggal" @change="onDocDateChange(formData.kwitansi_tanggal, 'kwitansi_tanggal')" 
+                                               :disabled="formData.doc_type !== 'kwitansi'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -2638,8 +2812,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
-                                               :disabled="formData.doc_type !== 'faktur'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.faktur_tanggal" @change="onDocDateChange(formData.faktur_tanggal, 'faktur_tanggal')" 
+                                               :disabled="formData.doc_type !== 'faktur'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -2663,7 +2837,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'sp2d_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.sp2d_tanggal" @change="onDocDateChange(formData.sp2d_tanggal, 'sp2d_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -2674,7 +2848,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'bast_dokumen_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.bast_dokumen_tanggal" @change="onDocDateChange(formData.bast_dokumen_tanggal, 'bast_dokumen_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -2760,8 +2934,8 @@
                                                     </div>
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1">Sertifikat Tanggal</label>
-                                                        <input type="date" x-model="item.tanah_sertifikat_tgl"
-                                                               :max="maxDateToday" @change="if(item.tanah_sertifikat_tgl > maxDateToday) item.tanah_sertifikat_tgl = maxDateToday"
+                                                        <input type="text" x-datepicker="{ maxDate: maxDateToday }" x-model="item.tanah_sertifikat_tgl" placeholder="dd/mm/yyyy"
+                                                               @change="if(item.tanah_sertifikat_tgl > maxDateToday) item.tanah_sertifikat_tgl = maxDateToday"
                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-amber-500">
                                                     </div>
                                                 </div>
@@ -2957,16 +3131,16 @@
                                                 <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="formData.tanah_nama_barang"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.tanah_kode_barang"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="tItem.tanah_hak"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="tItem.tanah_sertifikat_tgl"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(tItem.tanah_sertifikat_tgl)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="tItem.tanah_sertifikat_no"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="(tItem.tanah_kondisi === 'Baik' || tItem.tanah_kondisi === 'B') ? 'Baik' : ((tItem.tanah_kondisi === 'Kurang Baik' || tItem.tanah_kondisi === 'KB') ? 'Kurang Baik' : 'Rusak Berat')"></td>
                                                 <td class="px-2 py-2 border border-slate-400 text-left" x-text="tItem.tanah_penggunaan"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="tItem.tanah_jumlah_bidang"></td>
@@ -2976,9 +3150,9 @@
                                                 <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(tItem.tanah_nilai_pengawasan)"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(getTanahSubtotal(tItem))"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
                                                 <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="tItem.tanah_alamat || formData.alamat_barang"></td>
                                             </tr>
                                         </template>
@@ -3028,8 +3202,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
-                                               :disabled="formData.doc_type !== 'spk'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.spk_tanggal" @change="onDocDateChange(formData.spk_tanggal, 'spk_tanggal')" 
+                                               :disabled="formData.doc_type !== 'spk'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3053,8 +3227,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
-                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange(formData.surat_pesanan_tanggal, 'surat_pesanan_tanggal')" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3078,8 +3252,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
-                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.kwitansi_tanggal" @change="onDocDateChange(formData.kwitansi_tanggal, 'kwitansi_tanggal')" 
+                                               :disabled="formData.doc_type !== 'kwitansi'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3103,8 +3277,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
-                                               :disabled="formData.doc_type !== 'faktur'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.faktur_tanggal" @change="onDocDateChange(formData.faktur_tanggal, 'faktur_tanggal')" 
+                                               :disabled="formData.doc_type !== 'faktur'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3128,7 +3302,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'sp2d_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.sp2d_tanggal" @change="onDocDateChange(formData.sp2d_tanggal, 'sp2d_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -3139,7 +3313,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'bast_dokumen_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.bast_dokumen_tanggal" @change="onDocDateChange(formData.bast_dokumen_tanggal, 'bast_dokumen_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -3519,13 +3693,13 @@
                                                 <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_bahan || '-'"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.tahun_perolehan || '-'"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="mItem.mesin_kondisi || 'Baik'"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_jumlah_barang || 1"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_satuan || 'Unit'"></td>
@@ -3533,9 +3707,9 @@
                                                 <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_administrasi_proyek)"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(getMesinSubtotal(mItem))"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
                                                 <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="mItem.ruang_pemegang || '-'"></td>
                                             </tr>
                                         </template>
@@ -3585,8 +3759,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
-                                               :disabled="formData.doc_type !== 'spk'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.spk_tanggal" @change="onDocDateChange(formData.spk_tanggal, 'spk_tanggal')" 
+                                               :disabled="formData.doc_type !== 'spk'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3610,8 +3784,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
-                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange(formData.surat_pesanan_tanggal, 'surat_pesanan_tanggal')" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3635,8 +3809,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
-                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.kwitansi_tanggal" @change="onDocDateChange(formData.kwitansi_tanggal, 'kwitansi_tanggal')" 
+                                               :disabled="formData.doc_type !== 'kwitansi'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3660,8 +3834,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
-                                               :disabled="formData.doc_type !== 'faktur'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.faktur_tanggal" @change="onDocDateChange(formData.faktur_tanggal, 'faktur_tanggal')" 
+                                               :disabled="formData.doc_type !== 'faktur'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -3685,7 +3859,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'sp2d_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.sp2d_tanggal" @change="onDocDateChange(formData.sp2d_tanggal, 'sp2d_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -3696,164 +3870,290 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'bast_dokumen_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.bast_dokumen_tanggal" @change="onDocDateChange(formData.bast_dokumen_tanggal, 'bast_dokumen_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Grid Form Pengisian Spesifikasi Gedung dan Bangunan (Sisa Kolom) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <!-- 3. Kondisi & Spesifikasi Bangunan (Luas, Kondisi, Bertingkat, Beton) -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">🏗️ 3. Kondisi & Spesifikasi:</span>
+                        <!-- ========================================================================= -->
+                        <!-- PEMBUNGKUS GEDUNG DAN BANGUNAN MULTI-ITEM (KIB C)                         -->
+                        <!-- ========================================================================= -->
+                        <div class="space-y-4">
+                            
+                            <!-- Header Pembungkus Gedung dan Bangunan -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-purple-950/30 border border-purple-500/40 shadow-md">
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm">🏢</span>
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
+                                            RINCIAN GEDUNG DAN BANGUNAN (<span class="text-purple-400" x-text="formData.gedung_items.length"></span> Gedung / Bangunan Terdaftar)
+                                        </h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400">
+                                        Setiap gedung/bangunan memiliki Luas, Kondisi, Status Tanah, Volume, Komponen Nilai (Perencanaan, Fisik, Pengawasan, PIP), dan Alamat Lokasi Fisik masing-masing.
+                                    </p>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Luas (M2/Lt)</label>
-                                        <input type="number" x-model.number="formData.gedung_luas_m2" placeholder="850"
-                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kondisi (B/KB/RB)</label>
-                                        <select x-model="formData.gedung_kondisi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
-                                            <option value="B">B (Baik)</option>
-                                            <option value="KB">KB (Kurang Baik)</option>
-                                            <option value="RB">RB (Rusak Berat)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Bertingkat / Tidak</label>
-                                        <select x-model="formData.gedung_bertingkat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold">
-                                            <option value="Bertingkat">Bertingkat</option>
-                                            <option value="Tidak">Tidak Bertingkat</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Beton / Tidak</label>
-                                        <select x-model="formData.gedung_beton" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold">
-                                            <option value="Beton">Beton</option>
-                                            <option value="Tidak">Bukan Beton</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                <button type="button" @click="addGedungItem()" 
+                                        class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-purple-500/20 shrink-0 cursor-pointer">
+                                    <span>➕ Tambah Gedung / Bangunan Baru</span>
+                                </button>
                             </div>
 
-                            <!-- 4. Jenis Bangunan & Status Tanah (KIB A) -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">📜 4. Status Tanah & Kapitalisasi:</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Status Tanah</label>
-                                        <input type="text" x-model="formData.gedung_status_tanah" placeholder="Hak Pakai Pemkab"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                            <!-- List Kartu Gedung & Bangunan (Repeater) -->
+                            <div class="space-y-5">
+                                <template x-for="(item, idx) in formData.gedung_items" :key="idx">
+                                    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-purple-500/30 hover:border-purple-500/60 transition-all space-y-4 shadow-xl relative group">
+                                        
+                                        <!-- Header Kartu Tiap Gedung -->
+                                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 font-mono font-extrabold text-xs border border-purple-500/40 flex items-center space-x-1.5">
+                                                    <span>🏢 Gedung / Bangunan #<span x-text="idx + 1"></span></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-300 font-semibold" x-show="item.gedung_nama_barang">
+                                                    • <span x-text="item.gedung_nama_barang"></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Luas: <strong class="text-cyan-300" x-text="(item.gedung_luas_m2 || 0) + ' M²'"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Qty: <strong class="text-amber-300" x-text="(item.gedung_jumlah_bangunan || 1) + ' ' + (item.gedung_satuan || 'Gedung')"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getGedungSubtotal(item))"></strong>
+                                                </span>
+                                            </div>
+
+                                            <!-- Tombol Hapus Gedung (Muncul jika > 1 item) -->
+                                            <button type="button" 
+                                                    x-show="formData.gedung_items.length > 1" 
+                                                    @click="removeGedungItem(idx)" 
+                                                    class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer">
+                                                <span>🗑️ Hapus Gedung Ini</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Grid Form Pengisian Spesifikasi Gedung dan Bangunan -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                            <!-- 3. Kondisi & Spesifikasi Bangunan (Luas, Kondisi, Bertingkat, Beton) -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>🏗️ 3. Kondisi & Spesifikasi:</span>
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Bangunan (Spesifik / Custom)</label>
+                                                    <input type="text" x-model="item.gedung_nama_barang" placeholder="Contoh: Gedung Paviliun Melati / Gedung Rawat Inap VIP"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas (M2/Lt)</label>
+                                                        <input type="number" x-model.number="item.gedung_luas_m2" placeholder="850"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi (B/KB/RB)</label>
+                                                        <select x-model="item.gedung_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-amber-500">
+                                                            <option value="B">B (Baik)</option>
+                                                            <option value="KB">KB (Kurang Baik)</option>
+                                                            <option value="RB">RB (Rusak Berat)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bertingkat / Tidak</label>
+                                                        <select x-model="item.gedung_bertingkat" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                            <option value="Bertingkat">Bertingkat</option>
+                                                            <option value="Tidak">Tidak Bertingkat</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Beton / Tidak</label>
+                                                        <select x-model="item.gedung_beton" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                            <option value="Beton">Beton</option>
+                                                            <option value="Tidak">Bukan Beton</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 4. Jenis Bangunan & Status Tanah (KIB A) -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>📜 4. Status Tanah & Kapitalisasi:</span>
+                                                    </span>
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Tanah</label>
+                                                        <input type="text" x-model="item.gedung_status_tanah" placeholder="Hak Pakai RSUD"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-cyan-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kode Aset Tanah</label>
+                                                        <input type="text" x-model="item.gedung_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono focus:border-cyan-500">
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-1.5">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Bangunan Baru</label>
+                                                        <select x-model="item.gedung_is_baru" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500">
+                                                            <option value="Baru">Baru</option>
+                                                            <option value="Lama">Lama</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Tahun Induk</label>
+                                                        <input type="text" x-model="item.gedung_kapitalisasi_tahun_induk" placeholder="2020"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-cyan-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Induk</label>
+                                                        <input type="text" 
+                                                               :value="item.gedung_kapitalisasi_nilai_induk ? Number(item.gedung_kapitalisasi_nilai_induk).toLocaleString('id-ID') : ''"
+                                                               @input="
+                                                                   let raw = $event.target.value.replace(/\D/g, '');
+                                                                   item.gedung_kapitalisasi_nilai_induk = raw ? parseInt(raw, 10) : 0;
+                                                                   $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                               "
+                                                               placeholder="3.500.000.000"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-1.5 py-2 text-[10px] text-amber-300 font-mono focus:border-cyan-500">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- 5. Volume & Nilai Satuan Bangunan (Rp) -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5">
+                                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">💰 5. Volume & Rincian Nilai Bangunan (Rp):</span>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Bangunan</label>
+                                                    <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan" placeholder="1"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
+                                                    <select x-model="item.gedung_satuan" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-emerald-500">
+                                                        <option value="Gedung">Gedung</option>
+                                                        <option value="Unit">Unit</option>
+                                                        <option value="Paket">Paket</option>
+                                                        <option value="M²">M²</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Perencanaan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.gedung_nilai_perencanaan ? Number(item.gedung_nilai_perencanaan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.gedung_nilai_perencanaan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="75.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Fisik (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.gedung_nilai_fisik ? Number(item.gedung_nilai_fisik).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.gedung_nilai_fisik = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="1.850.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Pengawasan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.gedung_nilai_pengawasan ? Number(item.gedung_nilai_pengawasan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.gedung_nilai_pengawasan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="50.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai PIP (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.gedung_nilai_pip ? Number(item.gedung_nilai_pip).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.gedung_nilai_pip = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="25.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                            </div>
+
+                                            <div class="pt-1 flex items-center justify-between border-t border-slate-800">
+                                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Subtotal Nilai Gedung Ini:</span>
+                                                <span class="text-xs font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(getGedungSubtotal(item))"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- 6. Letak / Alamat Lokasi Fisik Gedung -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/40 space-y-1.5">
+                                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
+                                                <label class="block text-emerald-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>📍 6. Letak / Alamat Lokasi Fisik Bangunan:</span>
+                                                </label>
+                                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik</span>
+                                            </div>
+                                            <input type="text" x-model="item.gedung_alamat" placeholder="Contoh: Jl. Piere Tendean No. 3 Bondowoso (Kompleks RSUD Dr. H. Koesnandi - Blok Paviliun Melati)"
+                                                   class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500 transition-all">
+                                        </div>
+
                                     </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kode Aset Tanah</label>
-                                        <input type="text" x-model="formData.gedung_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-1.5">
-                                    <div>
-                                        <label class="block text-slate-400 text-[9px] mb-1">Bangunan Baru</label>
-                                        <select x-model="formData.gedung_is_baru" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white">
-                                            <option value="Baru">Baru</option>
-                                            <option value="Tidak">Renovasi</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[9px] mb-1">Tahun Induk</label>
-                                        <input type="text" x-model="formData.gedung_kapitalisasi_tahun_induk" placeholder="2020"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[9px] mb-1">Nilai Induk 2026</label>
-                                        <input type="number" x-model.number="formData.gedung_kapitalisasi_nilai_induk" placeholder="3500000000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-1.5 py-2 text-[10px] text-amber-300 font-mono">
-                                    </div>
-                                </div>
+                                </template>
                             </div>
 
-                        </div>
+                            <!-- Tombol Tambah Gedung / Bangunan Baru (Besar & Jelas) -->
+                            <button type="button" @click="addGedungItem()" 
+                                    class="w-full py-3.5 border-2 border-dashed border-purple-500/50 hover:border-purple-400 bg-purple-950/20 hover:bg-purple-950/40 text-purple-300 hover:text-purple-200 font-bold rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-md group cursor-pointer">
+                                <span class="text-base group-hover:scale-125 transition-transform">➕</span>
+                                <span class="text-xs sm:text-sm">Klik Disini untuk Menambah Gedung & Bangunan Lainnya</span>
+                            </button>
 
-                        <!-- 5. Volume & Nilai Satuan Bangunan (Rp) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-lg">
-                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">5. Volume & Nilai Satuan Bangunan (Rp):</span>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Jumlah Bangunan</label>
-                                    <input type="number" x-model.number="formData.gedung_jumlah_bangunan" placeholder="1"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Nama Satuan Barang</label>
-                                    <select x-model="formData.gedung_satuan" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
-                                        <option value="Gedung">Gedung</option>
-                                        <option value="Unit">Unit</option>
-                                        <option value="Paket">Paket</option>
-                                        <option value="M²">M²</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Perencanaan</label>
-                                    <input type="number" x-model.number="formData.gedung_nilai_perencanaan" placeholder="75000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Fisik (Rp)</label>
-                                    <input type="number" x-model.number="formData.gedung_nilai_fisik" placeholder="1850000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Pengawasan</label>
-                                    <input type="number" x-model.number="formData.gedung_nilai_pengawasan" placeholder="50000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai PIP (Rp)</label>
-                                    <input type="number" x-model.number="formData.gedung_nilai_pip" placeholder="25000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                            </div>
-                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
-                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                            <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB C -->
+                            <div class="p-4 rounded-2xl bg-slate-950/90 border border-purple-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
                                 <div class="flex flex-wrap items-center gap-4 sm:gap-6">
                                     <div>
-                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran (Pagu):</span>
                                         <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
                                     </div>
                                     <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
                                     <div>
-                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
-                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                        <span class="text-[10px] text-purple-400 font-semibold block uppercase tracking-wider">🏢 Total Volume / Bangunan:</span>
+                                        <span class="text-sm font-black text-purple-300 font-mono" x-text="totalVolumeGedung + ' Bangunan'"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Akumulasi):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiGedung)"></span>
                                     </div>
                                 </div>
                                 <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
-                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Realisasi Pengadaan:</span>
                                     <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiGedung)"></span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 6. Letak / Alamat Lokasi Gedung dan Bangunan (Ditampilkan tepat diatas Live Preview Excel) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-emerald-500/40 space-y-2 shadow-lg">
-                            <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-                                <label class="block text-emerald-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 LETAK / ALAMAT LOKASI GEDUNG & BANGUNAN:</span>
-                                </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik Bangunan</span>
-                            </div>
-                            <input type="text" x-model="formData.alamat_barang" placeholder="Contoh: Jl. Piere Tendean No. 3 Bondowoso (Kompleks RSUD Dr. H. Koesnandi)"
-                                   class="w-full bg-slate-900 border border-slate-700 hover:border-emerald-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500 transition-all">
                         </div>
 
                         <!-- ============================================================= -->
@@ -3864,7 +4164,7 @@
                                 <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                                     <span>📄 Live Preview Tabel Rincian Belanja Modal Gedung dan Bangunan (Sesuai SPK/Invoice):</span>
                                 </span>
-                                <span class="text-[10px] text-indigo-400 font-mono">Format Excel KIB C RSUD (31 Kolom)</span>
+                                <span class="text-[10px] text-purple-400 font-mono" x-text="formData.gedung_items.length + ' Gedung/Bangunan Terdaftar'">Format Excel KIB C RSUD (31 Kolom)</span>
                             </div>
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
@@ -3931,42 +4231,45 @@
                                             <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
                                         </tr>
                                     </thead>
-                                    <!-- Body Data Live Sesuai Input User -->
+                                    <!-- Body Data Live Sesuai Input User (Looping gedung_items) -->
                                     <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
-                                        <tr>
-                                            <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="formData.gedung_nama_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.gedung_kode_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.gedung_luas_m2"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="formData.gedung_kondisi"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.gedung_bertingkat"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.gedung_beton"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.gedung_status_tanah"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.gedung_kode_aset_tanah"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.gedung_is_baru"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.gedung_kapitalisasi_tahun_induk"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.gedung_kapitalisasi_nilai_induk)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.gedung_jumlah_bangunan"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.gedung_satuan"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.gedung_nilai_perencanaan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.gedung_nilai_fisik)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.gedung_nilai_pengawasan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.gedung_nilai_pip)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(totalNilaiGedung)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal"></td>
-                                            <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.alamat_barang"></td>
-                                        </tr>
+                                        <template x-for="(gItem, gIdx) in formData.gedung_items" :key="gIdx">
+                                            <tr>
+                                                <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="gItem.gedung_nama_barang || formData.gedung_nama_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="gItem.gedung_kode_barang || formData.gedung_kode_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="gItem.gedung_luas_m2"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="gItem.gedung_kondisi"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="gItem.gedung_bertingkat"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="gItem.gedung_beton"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="gItem.gedung_status_tanah"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="gItem.gedung_kode_aset_tanah"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="gItem.gedung_is_baru"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="gItem.gedung_kapitalisasi_tahun_induk"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_kapitalisasi_nilai_induk)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="gItem.gedung_jumlah_bangunan"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="gItem.gedung_satuan"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_perencanaan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_fisik)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_pengawasan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_pip)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(getGedungSubtotal(gItem))"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
+                                                <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="gItem.gedung_alamat || formData.alamat_barang"></td>
+                                            </tr>
+                                        </template>
                                     </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -4010,8 +4313,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
-                                               :disabled="formData.doc_type !== 'spk'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.spk_tanggal" @change="onDocDateChange(formData.spk_tanggal, 'spk_tanggal')" 
+                                               :disabled="formData.doc_type !== 'spk'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4035,8 +4338,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
-                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange(formData.surat_pesanan_tanggal, 'surat_pesanan_tanggal')" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4060,8 +4363,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
-                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.kwitansi_tanggal" @change="onDocDateChange(formData.kwitansi_tanggal, 'kwitansi_tanggal')" 
+                                               :disabled="formData.doc_type !== 'kwitansi'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4085,8 +4388,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
-                                               :disabled="formData.doc_type !== 'faktur'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.faktur_tanggal" @change="onDocDateChange(formData.faktur_tanggal, 'faktur_tanggal')" 
+                                               :disabled="formData.doc_type !== 'faktur'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4110,7 +4413,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'sp2d_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.sp2d_tanggal" @change="onDocDateChange(formData.sp2d_tanggal, 'sp2d_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -4121,7 +4424,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'bast_dokumen_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.bast_dokumen_tanggal" @change="onDocDateChange(formData.bast_dokumen_tanggal, 'bast_dokumen_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -4374,13 +4677,13 @@
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.jaringan_kapitalisasi_tahun_induk"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_kapitalisasi_nilai_induk)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.jaringan_jumlah"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.jaringan_satuan"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_nilai_perencanaan)"></td>
@@ -4389,9 +4692,9 @@
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_nilai_pip)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-teal-800" x-text="formatRupiah(totalNilaiJaringan)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
                                             <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.alamat_barang"></td>
                                         </tr>
                                     </tbody>
@@ -4440,8 +4743,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
-                                               :disabled="formData.doc_type !== 'spk'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.spk_tanggal" @change="onDocDateChange(formData.spk_tanggal, 'spk_tanggal')" 
+                                               :disabled="formData.doc_type !== 'spk'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4465,8 +4768,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
-                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange(formData.surat_pesanan_tanggal, 'surat_pesanan_tanggal')" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4490,8 +4793,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
-                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.kwitansi_tanggal" @change="onDocDateChange(formData.kwitansi_tanggal, 'kwitansi_tanggal')" 
+                                               :disabled="formData.doc_type !== 'kwitansi'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4515,8 +4818,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
-                                               :disabled="formData.doc_type !== 'faktur'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.faktur_tanggal" @change="onDocDateChange(formData.faktur_tanggal, 'faktur_tanggal')" 
+                                               :disabled="formData.doc_type !== 'faktur'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4540,7 +4843,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'sp2d_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.sp2d_tanggal" @change="onDocDateChange(formData.sp2d_tanggal, 'sp2d_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -4551,7 +4854,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'bast_dokumen_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.bast_dokumen_tanggal" @change="onDocDateChange(formData.bast_dokumen_tanggal, 'bast_dokumen_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -4845,22 +5148,22 @@
                                             <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_hewan_jenis"></td>
                                             <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_hewan_spesifikasi"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.lainnya_jumlah_barang"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.lainnya_satuan"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.lainnya_nilai_satuan)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.lainnya_administrasi_proyek)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-rose-800" x-text="formatRupiah(totalNilaiAsetLainnya)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
                                             <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.ruang_pemegang_lainnya"></td>
                                         </tr>
                                     </tbody>
@@ -4906,8 +5209,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
-                                               :disabled="formData.doc_type !== 'spk'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.spk_tanggal" @change="onDocDateChange(formData.spk_tanggal, 'spk_tanggal')" 
+                                               :disabled="formData.doc_type !== 'spk'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4931,8 +5234,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
-                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange(formData.surat_pesanan_tanggal, 'surat_pesanan_tanggal')" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4956,8 +5259,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
-                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.kwitansi_tanggal" @change="onDocDateChange(formData.kwitansi_tanggal, 'kwitansi_tanggal')" 
+                                               :disabled="formData.doc_type !== 'kwitansi'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -4981,8 +5284,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
-                                               :disabled="formData.doc_type !== 'faktur'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.faktur_tanggal" @change="onDocDateChange(formData.faktur_tanggal, 'faktur_tanggal')" 
+                                               :disabled="formData.doc_type !== 'faktur'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -5006,7 +5309,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'sp2d_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.sp2d_tanggal" @change="onDocDateChange(formData.sp2d_tanggal, 'sp2d_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -5017,7 +5320,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'bast_dokumen_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.bast_dokumen_tanggal" @change="onDocDateChange(formData.bast_dokumen_tanggal, 'bast_dokumen_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -5248,22 +5551,22 @@
                                             <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.atb_pencipta"></td>
                                             <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.atb_spesifikasi"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.atb_jumlah"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.atb_satuan"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.atb_nilai_satuan)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.atb_administrasi_proyek)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-violet-800" x-text="formatRupiah(totalNilaiAtb)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
                                             <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.ruang_pemegang_atb"></td>
                                         </tr>
                                     </tbody>
@@ -5312,8 +5615,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal SPK</label>
-                                        <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
-                                               :disabled="formData.doc_type !== 'spk'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.spk_tanggal" @change="onDocDateChange(formData.spk_tanggal, 'spk_tanggal')" 
+                                               :disabled="formData.doc_type !== 'spk'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -5337,8 +5640,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Surat Pesanan</label>
-                                        <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
-                                               :disabled="formData.doc_type !== 'surat_pesanan'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.surat_pesanan_tanggal" @change="onDocDateChange(formData.surat_pesanan_tanggal, 'surat_pesanan_tanggal')" 
+                                               :disabled="formData.doc_type !== 'surat_pesanan'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -5362,8 +5665,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Kwitansi</label>
-                                        <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
-                                               :disabled="formData.doc_type !== 'kwitansi'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.kwitansi_tanggal" @change="onDocDateChange(formData.kwitansi_tanggal, 'kwitansi_tanggal')" 
+                                               :disabled="formData.doc_type !== 'kwitansi'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -5387,8 +5690,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[9px] mb-0.5 font-semibold">Tanggal Invoice</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
-                                               :disabled="formData.doc_type !== 'faktur'"
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.faktur_tanggal" @change="onDocDateChange(formData.faktur_tanggal, 'faktur_tanggal')" 
+                                               :disabled="formData.doc_type !== 'faktur'" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white disabled:opacity-50 disabled:cursor-not-allowed">
                                     </div>
                                 </div>
@@ -5412,7 +5715,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal SP2D</label>
-                                        <input type="date" x-model="formData.sp2d_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'sp2d_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.sp2d_tanggal" @change="onDocDateChange(formData.sp2d_tanggal, 'sp2d_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -5423,7 +5726,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-500 text-[9px]">Tanggal BAST</label>
-                                        <input type="date" x-model="formData.bast_dokumen_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'bast_dokumen_tanggal')" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+                                        <input type="text" x-datepicker="{ minDate: minDateTriwulan, maxDate: maxDateTriwulan }" x-model="formData.bast_dokumen_tanggal" @change="onDocDateChange(formData.bast_dokumen_tanggal, 'bast_dokumen_tanggal')" placeholder="dd/mm/yyyy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
                             </div>
@@ -5502,12 +5805,12 @@
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1">Tgl Mulai Pengerjaan</label>
-                                        <input type="date" x-model="formData.kdp_tgl_mulai"
+                                        <input type="text" x-datepicker x-model="formData.kdp_tgl_mulai" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1">Target Selesai</label>
-                                        <input type="date" x-model="formData.kdp_tgl_target_selesai"
+                                        <input type="text" x-datepicker x-model="formData.kdp_tgl_target_selesai" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
                                     </div>
                                 </div>
@@ -5656,25 +5959,25 @@
                                             <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.kdp_status_tanah"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.kdp_kode_aset_tanah"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kdp_sertifikat_no"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kdp_tgl_mulai"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kdp_tgl_target_selesai"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kdp_tgl_mulai)"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kdp_tgl_target_selesai)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.spk_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.surat_pesanan_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.kwitansi_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.faktur_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_perencanaan)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_fisik)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_pengawasan)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_pip)"></td>
                                             <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-amber-800" x-text="formatRupiah(totalNilaiKdp)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.sp2d_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
                                             <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.bast_dokumen_tanggal"></td>
+                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
                                             <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.alamat_barang"></td>
                                         </tr>
                                     </tbody>
@@ -5705,7 +6008,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[11px] mb-1">Tanggal SPK</label>
-                                    <input type="date" x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" 
+                                    <input type="text" x-datepicker x-model="formData.spk_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'spk_tanggal')" placeholder="dd/mm/yyyy"
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-500">
                                 </div>
                             </div>
@@ -5723,7 +6026,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[11px] mb-1">Tanggal Surat Pesanan</label>
-                                    <input type="date" x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" 
+                                    <input type="text" x-datepicker x-model="formData.surat_pesanan_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'surat_pesanan_tanggal')" placeholder="dd/mm/yyyy"
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500">
                                 </div>
                             </div>
@@ -5741,7 +6044,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[11px] mb-1">Tanggal Kwitansi</label>
-                                    <input type="date" x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" 
+                                    <input type="text" x-datepicker x-model="formData.kwitansi_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'kwitansi_tanggal')" placeholder="dd/mm/yyyy"
                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
                                 </div>
                             </div>
@@ -5760,7 +6063,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[11px] mb-1">Tanggal Faktur</label>
-                                        <input type="date" x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" 
+                                        <input type="text" x-datepicker x-model="formData.faktur_tanggal" :min="minDateTriwulan" :max="maxDateTriwulan" @change="onDocDateChange($event.target.value, 'faktur_tanggal')" placeholder="dd/mm/yyyy"
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
                                     </div>
                                 </div>

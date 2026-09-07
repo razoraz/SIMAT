@@ -12,11 +12,16 @@ class AstapMutasi extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'tanggal_mutasi'           => 'date',
+        'tanggal_mutasi'           => 'date:d/m/Y',
         'tgl_persetujuan_pengirim' => 'datetime',
         'tgl_persetujuan_penerima' => 'datetime',
         'tgl_persetujuan_admin'    => 'datetime',
     ];
+
+    public function setTanggalMutasiAttribute($value)
+    {
+        $this->attributes['tanggal_mutasi'] = Astap::parseDateInput($value);
+    }
 
     /**
      * Rincian item register yang dimutasi dalam Berita Acara ini.

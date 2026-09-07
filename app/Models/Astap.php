@@ -19,13 +19,72 @@ class Astap extends Model
         'harga_satuan' => 'decimal:2',
         'total_realisasi' => 'decimal:2',
         'biaya_administrasi_proyek' => 'decimal:2',
-        'spk_tanggal' => 'date',
-        'surat_pesanan_tanggal' => 'date',
-        'kwitansi_tanggal' => 'date',
-        'faktur_tanggal' => 'date',
-        'sp2d_tanggal' => 'date',
-        'bast_dokumen_tanggal' => 'date',
+        'spk_tanggal' => 'date:d/m/Y',
+        'surat_pesanan_tanggal' => 'date:d/m/Y',
+        'kwitansi_tanggal' => 'date:d/m/Y',
+        'faktur_tanggal' => 'date:d/m/Y',
+        'sp2d_tanggal' => 'date:d/m/Y',
+        'bast_dokumen_tanggal' => 'date:d/m/Y',
     ];
+
+    /**
+     * Helper universal parse string tanggal dari frontend (mendukung dd/mm/yyyy, dd-mm-yyyy, dan yyyy-mm-dd)
+     */
+    public static function parseDateInput($value): ?string
+    {
+        if (empty($value)) return null;
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+        $value = trim((string)$value);
+        if ($value === '' || $value === '-') return null;
+
+        // dd/mm/yyyy atau dd-mm-yyyy
+        if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $value, $m)) {
+            return sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
+        }
+
+        // yyyy-mm-dd
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $value, $m)) {
+            return sprintf('%04d-%02d-%02d', (int)$m[1], (int)$m[2], (int)$m[3]);
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return $value;
+        }
+    }
+
+    public function setSpkTanggalAttribute($value)
+    {
+        $this->attributes['spk_tanggal'] = static::parseDateInput($value);
+    }
+
+    public function setSuratPesananTanggalAttribute($value)
+    {
+        $this->attributes['surat_pesanan_tanggal'] = static::parseDateInput($value);
+    }
+
+    public function setKwitansiTanggalAttribute($value)
+    {
+        $this->attributes['kwitansi_tanggal'] = static::parseDateInput($value);
+    }
+
+    public function setFakturTanggalAttribute($value)
+    {
+        $this->attributes['faktur_tanggal'] = static::parseDateInput($value);
+    }
+
+    public function setSp2dTanggalAttribute($value)
+    {
+        $this->attributes['sp2d_tanggal'] = static::parseDateInput($value);
+    }
+
+    public function setBastDokumenTanggalAttribute($value)
+    {
+        $this->attributes['bast_dokumen_tanggal'] = static::parseDateInput($value);
+    }
 
     public function jenisPengadaan()
     {
