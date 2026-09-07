@@ -1831,10 +1831,10 @@
                             gItem.gedung_beton || 'Beton',                                // c20: col 21 (Beton / Tidak)
                             gItem.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
                             gItem.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
-                            gItem.gedung_is_baru || 'Baru',                               // c23: col 24 (Baru)
+                            (gItem.gedung_is_baru === 'Baru' || !gItem.gedung_is_baru) ? '1' : '-',      // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
                             totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
-                            gItem.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
-                            parseFloat(gItem.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
+                            (gItem.gedung_is_baru === 'Baru' || !gItem.gedung_is_baru) ? '-' : (gItem.gedung_kapitalisasi_tahun_induk || '-'), // c25: col 26 (Tahun Induk)
+                            (gItem.gedung_is_baru === 'Baru' || !gItem.gedung_is_baru) ? '-' : (parseFloat(gItem.gedung_kapitalisasi_nilai_induk) || 0), // c26: col 27 (Nilai Induk s/d ...)
                             item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
                             formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
                             item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
@@ -1909,10 +1909,10 @@
                         item.gedung_beton || 'Beton',                                // c20: col 21 (Beton / Tidak)
                         item.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
                         item.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
-                        item.gedung_is_baru || 'Baru',                               // c23: col 24 (Baru)
+                        (item.gedung_is_baru === 'Baru' || !item.gedung_is_baru) ? '1' : '-',        // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
                         totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
-                        item.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
-                        parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
+                        (item.gedung_is_baru === 'Baru' || !item.gedung_is_baru) ? '-' : (item.gedung_kapitalisasi_tahun_induk || '-'), // c25: col 26 (Tahun Induk)
+                        (item.gedung_is_baru === 'Baru' || !item.gedung_is_baru) ? '-' : (parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0), // c26: col 27 (Nilai Induk s/d ...)
                         item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
                         formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
                         item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
@@ -4258,10 +4258,21 @@
                 },
 
                 formatTanggalIndo(dateStr) {
-                    if (!dateStr) return '-';
+                    if (!dateStr || dateStr === '-') return '-';
                     if (String(dateStr).length === 4) return '01 Jan ' + dateStr;
                     try {
-                        const d = new Date(dateStr);
+                        let str = String(dateStr).trim();
+                        // Jika berformat DD/MM/YYYY (misal: 12/05/2026), ubah ke YYYY-MM-DD agar JS tidak salah membaca bulan/hari (US format)
+                        if (str.includes('/')) {
+                            const parts = str.split('/');
+                            if (parts.length === 3) {
+                                const day = parts[0].padStart(2, '0');
+                                const month = parts[1].padStart(2, '0');
+                                const year = parts[2];
+                                str = `${year}-${month}-${day}`;
+                            }
+                        }
+                        const d = new Date(str);
                         if (isNaN(d.getTime())) return String(dateStr);
                         return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                     } catch(e) {
@@ -5267,7 +5278,7 @@
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏢 Konstruksi</span>
                                                             <span class="text-purple-300 font-bold block" x-text="(gItem.gedung_bertingkat || 'Bertingkat') + ' • ' + (gItem.gedung_beton || 'Beton')"></span>
-                                                            <span class="text-slate-300 text-[9.5px]" x-text="'Tipe: ' + (gItem.gedung_is_baru || 'Baru')"></span>
+                                                            <span class="text-slate-300 text-[9.5px]" x-text="'Bangunan: ' + (gItem.gedung_is_baru === 'Baru' ? 'Baru (1)' : 'Lama (-)')"></span>
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌱 Status & Kode Tanah</span>

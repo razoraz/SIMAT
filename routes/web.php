@@ -290,6 +290,7 @@ Route::middleware('auth')->group(function () {
 
                 return [
                     'id' => $a->id,
+                    'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'category' => $a->category,
                     'kode_barang' => $kode108Val,
                     'nama_barang' => $a->nama_barang,
@@ -2270,6 +2271,18 @@ Route::middleware('auth')->group(function () {
                 }
             }
 
+            // Kirim Notifikasi Sistem ke Admin & Super Admin saat Terjadi Perubahan ASTAP
+            try {
+                \App\Services\NotificationService::sendToAdminAndMaster(
+                    "Aset Diperbarui: {$astap->nama_barang}",
+                    "{$astap->jumlah_volume} {$astap->satuan} • " . ($astap->tahun_perolehan ?: date('Y')),
+                    'astap',
+                    route('astap.index')
+                );
+            } catch (\Throwable $e) {
+                \Log::warning("Gagal kirim notif astap update: " . $e->getMessage());
+            }
+
             session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil diperbarui.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil diperbarui!']);
         })->name('astap.update');
@@ -2277,8 +2290,24 @@ Route::middleware('auth')->group(function () {
         Route::delete('/astap/{id}', function ($id) {
             $astap = \App\Models\Astap::find($id);
             if ($astap) {
+                $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
+                $tahun = $astap->tahun_perolehan ?: date('Y');
+                $vol = $astap->jumlah_volume . ' ' . ($astap->satuan ?: 'Unit');
+
                 $astap->registers()->delete();
                 $astap->delete();
+
+                // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
+                try {
+                    \App\Services\NotificationService::sendToAdminAndMaster(
+                        "Aset Dihapus: {$namaBarang}",
+                        "{$vol} • {$tahun}",
+                        'astap',
+                        route('astap.index')
+                    );
+                } catch (\Throwable $e) {
+                    \Log::warning("Gagal kirim notif astap delete: " . $e->getMessage());
+                }
             }
             session()->flash('success', 'Data ASTAP berhasil dihapus.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dihapus.']);
@@ -2286,7 +2315,7 @@ Route::middleware('auth')->group(function () {
 
         // Route Update & Delete Register ASTAP (NIBAR Per-Unit)
         Route::put('/astap-register/{id}', function (\Illuminate\Http\Request $request, $id) {
-            $reg = \App\Models\AstapRegister::find($id);
+            $reg = \App\Models\AstapRegister::with('astap')->find($id);
             if (!$reg) {
                 return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
             }
@@ -2302,9 +2331,23 @@ Route::middleware('auth')->group(function () {
         })->name('astap_register.update');
 
         Route::delete('/astap-register/{id}', function ($id) {
-            $reg = \App\Models\AstapRegister::find($id);
+            $reg = \App\Models\AstapRegister::with('astap')->find($id);
             if ($reg) {
+                $nibar = $reg->nibar ?: $reg->no_register;
+                $nama = $reg->astap?->nama_barang ?? 'Aset ASTAP';
                 $reg->delete();
+
+                // Kirim Notifikasi Sistem saat Unit NIBAR Dihapus
+                try {
+                    \App\Services\NotificationService::sendToAdminAndMaster(
+                        "Unit Register Dihapus: {$nibar}",
+                        "{$nama} • Register dihapus",
+                        'astap',
+                        route('astap.index')
+                    );
+                } catch (\Throwable $e) {
+                    \Log::warning("Gagal kirim notif register delete: " . $e->getMessage());
+                }
             }
             session()->flash('success', 'Unit register NIBAR berhasil dihapus.');
             return response()->json(['success' => true, 'message' => 'Unit register berhasil dihapus.']);

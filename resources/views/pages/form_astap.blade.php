@@ -3977,11 +3977,11 @@
                                         <!-- Grid Form Pengisian Spesifikasi Gedung dan Bangunan -->
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                                            <!-- 3. Kondisi & Spesifikasi Bangunan (Luas, Kondisi, Bertingkat, Beton) -->
+                                            <!-- Kondisi & Spesifikasi Bangunan (Luas, Kondisi, Bertingkat, Beton) -->
                                             <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
                                                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                                     <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
-                                                        <span>🏗️ 3. Kondisi & Spesifikasi:</span>
+                                                        <span>🏗️ Kondisi & Spesifikasi:</span>
                                                     </span>
                                                 </div>
                                                 <div>
@@ -4022,11 +4022,11 @@
                                                 </div>
                                             </div>
 
-                                            <!-- 4. Jenis Bangunan & Status Tanah (KIB A) -->
+                                            <!-- Jenis Bangunan & Status Tanah (KIB A) -->
                                             <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
                                                 <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                                     <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
-                                                        <span>📜 4. Status Tanah & Kapitalisasi:</span>
+                                                        <span>📜 Status Tanah & Kapitalisasi:</span>
                                                     </span>
                                                 </div>
                                                 <div class="grid grid-cols-2 gap-2">
@@ -4044,36 +4044,43 @@
                                                 <div class="grid grid-cols-3 gap-1.5">
                                                     <div>
                                                         <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Bangunan Baru</label>
-                                                        <select x-model="item.gedung_is_baru" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500">
+                                                        <select x-model="item.gedung_is_baru" 
+                                                                @change="if (item.gedung_is_baru === 'Baru') { item.gedung_kapitalisasi_tahun_induk = ''; item.gedung_kapitalisasi_nilai_induk = 0; }"
+                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500">
                                                             <option value="Baru">Baru</option>
                                                             <option value="Lama">Lama</option>
                                                         </select>
                                                     </div>
                                                     <div>
                                                         <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Tahun Induk</label>
-                                                        <input type="text" x-model="item.gedung_kapitalisasi_tahun_induk" placeholder="2020"
-                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-cyan-500">
+                                                        <input type="text" x-model="item.gedung_kapitalisasi_tahun_induk" 
+                                                               :disabled="item.gedung_is_baru === 'Baru'"
+                                                               :class="item.gedung_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700 focus:border-cyan-500 text-white'"
+                                                               placeholder="2020"
+                                                               class="w-full border rounded-xl px-2 py-2 text-xs font-mono transition-all">
                                                     </div>
                                                     <div>
                                                         <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Induk</label>
                                                         <input type="text" 
-                                                               :value="item.gedung_kapitalisasi_nilai_induk ? Number(item.gedung_kapitalisasi_nilai_induk).toLocaleString('id-ID') : ''"
+                                                               :disabled="item.gedung_is_baru === 'Baru'"
+                                                               :class="item.gedung_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700 focus:border-cyan-500 text-amber-300'"
+                                                               :value="item.gedung_is_baru === 'Baru' ? '' : (item.gedung_kapitalisasi_nilai_induk ? Number(item.gedung_kapitalisasi_nilai_induk).toLocaleString('id-ID') : '')"
                                                                @input="
                                                                    let raw = $event.target.value.replace(/\D/g, '');
                                                                    item.gedung_kapitalisasi_nilai_induk = raw ? parseInt(raw, 10) : 0;
                                                                    $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                                                "
                                                                placeholder="3.500.000.000"
-                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-1.5 py-2 text-[10px] text-amber-300 font-mono focus:border-cyan-500">
+                                                               class="w-full border rounded-xl px-1.5 py-2 text-[10px] font-mono transition-all">
                                                     </div>
                                                 </div>
                                             </div>
 
                                         </div>
 
-                                        <!-- 5. Volume & Nilai Satuan Bangunan (Rp) -->
+                                        <!-- Volume & Nilai Satuan Bangunan (Rp) -->
                                         <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5">
-                                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">💰 5. Volume & Rincian Nilai Bangunan (Rp):</span>
+                                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">💰 Volume & Rincian Nilai Bangunan (Rp):</span>
                                             <div class="grid grid-cols-2 gap-2">
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Bangunan</label>
@@ -4147,11 +4154,11 @@
                                             </div>
                                         </div>
 
-                                        <!-- 6. Letak / Alamat Lokasi Fisik Gedung -->
+                                        <!-- Letak / Alamat Lokasi Fisik Gedung -->
                                         <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/40 space-y-1.5">
                                             <div class="flex items-center justify-between border-b border-emerald-500/30 pb-1.5">
                                                 <label class="block text-emerald-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
-                                                    <span>📍 6. Letak / Alamat Lokasi Fisik Bangunan:</span>
+                                                    <span>📍 Letak / Alamat Lokasi Fisik Bangunan:</span>
                                                 </label>
                                                 <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">Lokasi Fisik</span>
                                             </div>
@@ -4283,9 +4290,9 @@
                                                 <td class="px-2 py-2 border border-slate-400" x-text="gItem.gedung_beton"></td>
                                                 <td class="px-2 py-2 border border-slate-400 text-left" x-text="gItem.gedung_status_tanah"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="gItem.gedung_kode_aset_tanah"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="gItem.gedung_is_baru"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="gItem.gedung_kapitalisasi_tahun_induk"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_kapitalisasi_nilai_induk)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="gItem.gedung_is_baru === 'Baru' ? '1' : '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="gItem.gedung_is_baru === 'Baru' ? '-' : (gItem.gedung_kapitalisasi_tahun_induk || '-')"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="gItem.gedung_is_baru === 'Baru' ? '-' : (gItem.gedung_kapitalisasi_nilai_induk ? formatRupiah(gItem.gedung_kapitalisasi_nilai_induk) : '-')"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
