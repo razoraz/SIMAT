@@ -239,6 +239,18 @@
                 getTotalItemVolume() {
                     return (this.formData.items || []).reduce((sum, it) => sum + (parseInt(it.qty) || 0), 0);
                 },
+                getTotalRincianAcc() {
+                    return (this.formData.items || []).filter(it => {
+                        const acc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : ((it.nibar_selected || []).length);
+                        return acc > 0;
+                    }).length;
+                },
+                getTotalItemVolumeAcc() {
+                    return (this.formData.items || []).reduce((sum, it) => {
+                        const acc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : ((it.nibar_selected || []).length);
+                        return sum + (acc > 0 ? acc : 0);
+                    }, 0);
+                },
                 getItemKode(item) {
                     if (!item) return '';
                     if (item.kode_barang && item.kode_barang.trim() !== '') return item.kode_barang.trim();
@@ -1277,20 +1289,68 @@
                 </div>
 
                 <!-- Ringkasan Akumulasi Volume Multi-Barang & Tombol Tambah Bawah -->
-                <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-950 rounded-2xl border border-slate-800 text-xs">
-                    <div class="flex items-center space-x-3 text-slate-300">
-                        <span>Total Rincian: <strong class="text-teal-400 font-extrabold" x-text="formData.items.length + ' Jenis Barang'"></strong></span>
-                        <span>•</span>
-                        <span>Akumulasi Volume: <strong class="text-emerald-400 font-extrabold" x-text="getTotalItemVolume() + ' Total Item/Unit'"></strong></span>
+                <div class="mt-4 p-4 sm:p-5 bg-slate-950/90 rounded-2xl border border-slate-800 shadow-lg space-y-3">
+                    
+                    <!-- Baris Atas: Tombol Tambah Barang di Atas -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span>📊</span>
+                            <span>Ringkasan Rincian & Akumulasi Volume</span>
+                        </span>
+
+                        <template x-if="formData.status !== 'Ditolak'">
+                            <button type="button" @click="addItem()" 
+                                    class="px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold text-xs flex items-center space-x-2 transition-all active:scale-95 cursor-pointer shadow-sm">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                <span>Tambah Barang Lagi</span>
+                            </button>
+                        </template>
                     </div>
 
-                    <template x-if="formData.status !== 'Ditolak'">
-                        <button type="button" @click="addItem()" 
-                                class="px-4 py-2 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 font-bold flex items-center space-x-2 transition-all active:scale-95 self-start sm:self-auto cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span>Tambah Barang Lagi</span>
-                        </button>
-                    </template>
+                    <!-- Baris Bawah: Grid 2 Kotak (Pengajuan & ACC Tetap Kanan-Kiri, Lebih Pendek & Proporsional) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        
+                        <!-- Kotak 1: Ringkasan Pengajuan -->
+                        <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-teal-500/30 shadow-sm hover:border-teal-500/50 transition-all">
+                            <div class="flex items-center space-x-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-300 text-xs shrink-0">
+                                    📋
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-[10px] font-extrabold tracking-wider uppercase text-teal-400 block leading-tight">Pengajuan</span>
+                                    <p class="text-xs font-semibold text-slate-300 truncate">
+                                        <strong class="text-white font-extrabold" x-text="formData.items.length"></strong>
+                                        <span class="text-slate-400 text-[11px] ml-1">Jenis Barang</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right pl-3.5 border-l border-slate-800 shrink-0">
+                                <span class="text-[9.5px] text-slate-400 font-semibold block leading-tight">Akumulasi Vol</span>
+                                <span class="text-xs sm:text-sm font-mono font-black text-teal-300" x-text="getTotalItemVolume() + ' Unit'"></span>
+                            </div>
+                        </div>
+
+                        <!-- Kotak 2: Ringkasan ACC (Ukuran & Layout Sama Persis) -->
+                        <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30 shadow-sm hover:border-emerald-500/50 transition-all">
+                            <div class="flex items-center space-x-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-300 text-xs shrink-0">
+                                    ✅
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-[10px] font-extrabold tracking-wider uppercase text-emerald-400 block leading-tight">ACC</span>
+                                    <p class="text-xs font-semibold text-slate-300 truncate">
+                                        <strong class="text-white font-extrabold" x-text="getTotalRincianAcc()"></strong>
+                                        <span class="text-slate-400 text-[11px] ml-1">Jenis Barang</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right pl-3.5 border-l border-slate-800 shrink-0">
+                                <span class="text-[9.5px] text-slate-400 font-semibold block leading-tight">Akumulasi Vol</span>
+                                <span class="text-xs sm:text-sm font-mono font-black text-emerald-400" x-text="getTotalItemVolumeAcc() + ' Unit'"></span>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
 
