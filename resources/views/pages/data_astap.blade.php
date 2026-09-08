@@ -2603,75 +2603,185 @@
             let isFirstRowInGroup = true;
 
             groupItems.forEach((item) => {
-                const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
-                const jumlahUnit = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
-                const hargaSatuan = parseFloat(item.harga_satuan) || (jumlahUnit > 0 ? (totalVal / jumlahUnit) : totalVal);
-                const adminProyek = parseFloat(item.administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
-                const totalNilaiBarang = (hargaSatuan * jumlahUnit + adminProyek) || totalVal;
-                const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
-
-                kibETotalUnit += jumlahUnit;
-                kibETotalAdminProyek += adminProyek;
-                kibETotalNilaiBarang += totalNilaiBarang;
-
-                let col1to15 = [];
-                if (isFirstRowInGroup) {
-                    col1to15 = [
-                        globalKibENo++,
-                        item.program_kode || '-',
-                        item.program_nama || '-',
-                        item.kegiatan_kode || '-',
-                        item.kegiatan_nama || '-',
-                        item.sub_kegiatan_kode || '-',
-                        item.sub_kegiatan_nama || '-',
-                        item.rekening_kode || '-',
-                        item.rekening_nama || '-',
-                        item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.5'),
-                        item.jenis_aset_nama || 'ASET TETAP LAINNYA',
-                        item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
-                        item.sub_rincian_nama || '-',
-                        groupAnggaranTotal,
-                        groupRealisasiTotal
-                    ];
-                    isFirstRowInGroup = false;
-                } else {
-                    col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                let spec = item.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+                } else if (!spec || typeof spec !== 'object') {
+                    spec = {};
                 }
 
-                kibERows.push([
-                    ...col1to15,                                                 // c0-c14: cols 1-15
-                    item.nama_barang || '-',                                     // c15: col 16/17 (Nama Barang)
-                    item.kode_barang || '-',                                     // c16: col 17/18 (Kode Barang)
-                    item.judul_buku || item.judul_pencipta || item.nama_barang || '-', // c17: col 19 (Judul Buku)
-                    item.pencipta || item.judul_pencipta || '-',                // c18: col 20 (Pencipta Buku)
-                    item.spesifikasi || '-',                                     // c19: col 21 (Spesifikasi Buku)
-                    item.asal_kesenian || '-',                                   // c20: col 22 (Asal Daerah)
-                    item.pencipta_kesenian || item.judul_pencipta || '-',        // c21: col 23 (Pencipta Seni)
-                    item.spesifikasi || '-',                                     // c22: col 24 (Spesifikasi Seni)
-                    item.bahan || '-',                                           // c23: col 25 (Bahan Seni)
-                    item.ukuran || '-',                                          // c24: col 26 (Ukuran m/cm)
-                    item.judul_hewan || item.nama_barang || '-',                 // c25: col 27 (Judul/Jenis Hewan)
-                    item.spesifikasi || '-',                                     // c26: col 28 (Spesifikasi Hewan)
-                    item.spk_nomor || '-',                                       // c27: col 29 (SPK No)
-                    formatAstapDate(item.spk_tanggal),                           // c28: col 30 (SPK Tgl)
-                    item.surat_pesanan_nomor || '-',                             // c29: col 31 (Surat Pesanan No)
-                    formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 32 (Surat Pesanan Tgl)
-                    item.kwitansi_nomor || '-',                                  // c31: col 33 (Kwitansi No)
-                    formatAstapDate(item.kwitansi_tanggal),                      // c32: col 34 (Kwitansi Tgl)
-                    item.faktur_nomor || '-',                                    // c33: col 35 (Invoice No)
-                    formatAstapDate(item.faktur_tanggal),                        // c34: col 36 (Invoice Tgl)
-                    jumlahUnit,                                                  // c35: col 37 (Jumlah Barang)
-                    item.satuan || 'Eks / Buah',                                 // c36: col 38 (Nama Satuan Barang)
-                    hargaSatuan,                                                 // c37: col 39 (Nilai Satuan Barang)
-                    adminProyek,                                                 // c38: col 40 (Administrasi Proyek)
-                    totalNilaiBarang,                                            // c39: col 41 (Total Nilai Barang)
-                    item.sp2d_nomor || '-',                                      // c40: col 42 (SP2D NOMOR)
-                    item.sp2d_tanggal || '-',                                    // c41: col 43 (SP2D TANGGAL)
-                    item.bast_dokumen_nomor || '-',                              // c42: col 44 (BAST NOMOR)
-                    item.bast_dokumen_tanggal || '-',                            // c43: col 45 (BAST TANGGAL)
-                    ruangUnit,                                                   // c44: col 46 (RUANG / PEMEGANG)
-                    ...getStep4Columns(item)                                     // c45-c52: cols 47-54 (Penyedia, PPK, Ket)
-                ]);
+                if (spec.lainnya_items && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
+                    spec.lainnya_items.forEach((lItem) => {
+                        const qty = parseInt(lItem.lainnya_jumlah_barang) || 1;
+                        const nilaiSatuan = parseFloat(lItem.lainnya_nilai_satuan) || 0;
+                        const adminProyek = parseFloat(lItem.lainnya_administrasi_proyek) || 0;
+                        const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
+                        const ruangUnit = lItem.ruang_pemegang_lainnya || lItem.ruang_pemegang || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                        kibETotalUnit += qty;
+                        kibETotalAdminProyek += adminProyek;
+                        kibETotalNilaiBarang += totalNilaiBarang;
+
+                        const subType = lItem.kib_e_sub_type || spec.kib_e_sub_type || 'buku';
+
+                        const judulBuku = (subType === 'buku') ? (lItem.lainnya_buku_judul || lItem.lainnya_nama_barang || item.nama_barang || '-') : '-';
+                        const penciptaBuku = (subType === 'buku') ? (lItem.lainnya_buku_pencipta || '-') : '-';
+                        const spesifikasiBuku = (subType === 'buku') ? (lItem.lainnya_buku_spesifikasi || '-') : '-';
+
+                        const asalKesenian = (subType === 'kesenian') ? (lItem.lainnya_kesenian_asal || '-') : '-';
+                        const penciptaKesenian = (subType === 'kesenian') ? (lItem.lainnya_kesenian_pencipta || '-') : '-';
+                        const spesifikasiKesenian = (subType === 'kesenian') ? (lItem.lainnya_kesenian_spesifikasi || '-') : '-';
+                        const bahanKesenian = (subType === 'kesenian') ? (lItem.lainnya_kesenian_bahan || '-') : '-';
+                        const ukuranKesenian = (subType === 'kesenian') ? (lItem.lainnya_kesenian_ukuran || '-') : '-';
+
+                        const judulHewan = (subType === 'hewan_tumbuhan') ? (lItem.lainnya_hewan_judul || lItem.lainnya_hewan_jenis || lItem.lainnya_nama_barang || item.nama_barang || '-') : '-';
+                        const spesifikasiHewan = (subType === 'hewan_tumbuhan') ? (lItem.lainnya_hewan_spesifikasi || '-') : '-';
+
+                        let col1to15 = [];
+                        if (isFirstRowInGroup) {
+                            col1to15 = [
+                                globalKibENo++,
+                                item.program_kode || '-',
+                                item.program_nama || '-',
+                                item.kegiatan_kode || '-',
+                                item.kegiatan_nama || '-',
+                                item.sub_kegiatan_kode || '-',
+                                item.sub_kegiatan_nama || '-',
+                                item.rekening_kode || '-',
+                                item.rekening_nama || '-',
+                                item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.5'),
+                                item.jenis_aset_nama || 'ASET TETAP LAINNYA',
+                                item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
+                                item.sub_rincian_nama || '-',
+                                groupAnggaranTotal,
+                                groupRealisasiTotal
+                            ];
+                            isFirstRowInGroup = false;
+                        } else {
+                            col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                        }
+
+                        kibERows.push([
+                            ...col1to15,                                                 // c0-c14: cols 1-15
+                            lItem.lainnya_nama_barang || item.nama_barang || '-',        // c15: col 16/17 (Nama Barang)
+                            lItem.lainnya_kode_barang || item.kode_barang || '-',        // c16: col 17/18 (Kode Barang)
+                            judulBuku,                                                   // c17: col 19 (Judul Buku)
+                            penciptaBuku,                                                // c18: col 20 (Pencipta Buku)
+                            spesifikasiBuku,                                             // c19: col 21 (Spesifikasi Buku)
+                            asalKesenian,                                                // c20: col 22 (Asal Daerah)
+                            penciptaKesenian,                                            // c21: col 23 (Pencipta Seni)
+                            spesifikasiKesenian,                                         // c22: col 24 (Spesifikasi Seni)
+                            bahanKesenian,                                               // c23: col 25 (Bahan Seni)
+                            ukuranKesenian,                                              // c24: col 26 (Ukuran m/cm)
+                            judulHewan,                                                  // c25: col 27 (Judul/Jenis Hewan)
+                            spesifikasiHewan,                                            // c26: col 28 (Spesifikasi Hewan)
+                            item.spk_nomor || '-',                                       // c27: col 29 (SPK No)
+                            formatAstapDate(item.spk_tanggal),                           // c28: col 30 (SPK Tgl)
+                            item.surat_pesanan_nomor || '-',                             // c29: col 31 (Surat Pesanan No)
+                            formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 32 (Surat Pesanan Tgl)
+                            item.kwitansi_nomor || '-',                                  // c31: col 33 (Kwitansi No)
+                            formatAstapDate(item.kwitansi_tanggal),                      // c32: col 34 (Kwitansi Tgl)
+                            item.faktur_nomor || '-',                                    // c33: col 35 (Invoice No)
+                            formatAstapDate(item.faktur_tanggal),                        // c34: col 36 (Invoice Tgl)
+                            qty,                                                         // c35: col 37 (Jumlah Barang)
+                            lItem.lainnya_satuan || item.satuan || 'Eksemplar',          // c36: col 38 (Nama Satuan Barang)
+                            nilaiSatuan,                                                 // c37: col 39 (Nilai Satuan Barang)
+                            adminProyek,                                                 // c38: col 40 (Administrasi Proyek)
+                            totalNilaiBarang,                                            // c39: col 41 (Total Nilai Barang)
+                            item.sp2d_nomor || '-',                                      // c40: col 42 (SP2D NOMOR)
+                            item.sp2d_tanggal || '-',                                    // c41: col 43 (SP2D TANGGAL)
+                            item.bast_dokumen_nomor || '-',                              // c42: col 44 (BAST NOMOR)
+                            item.bast_dokumen_tanggal || '-',                            // c43: col 45 (BAST TANGGAL)
+                            ruangUnit,                                                   // c44: col 46 (RUANG / PEMEGANG)
+                            ...getStep4Columns(item)                                     // c45-c52: cols 47-54 (Penyedia, PPK, Ket)
+                        ]);
+                    });
+                } else {
+                    const totalVal = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+                    const jumlahUnit = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
+                    const hargaSatuan = parseFloat(item.harga_satuan) || (jumlahUnit > 0 ? (totalVal / jumlahUnit) : totalVal);
+                    const adminProyek = parseFloat(item.administrasi_proyek) || parseFloat(item.admin_proyek) || 0;
+                    const totalNilaiBarang = (hargaSatuan * jumlahUnit + adminProyek) || totalVal;
+                    const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-');
+
+                    kibETotalUnit += jumlahUnit;
+                    kibETotalAdminProyek += adminProyek;
+                    kibETotalNilaiBarang += totalNilaiBarang;
+
+                    const subType = spec.kib_e_sub_type || (spec.buku_judul || item.judul_buku ? 'buku' : (spec.kesenian_asal || item.asal_kesenian ? 'kesenian' : (spec.hewan_jenis || item.judul_hewan ? 'hewan_tumbuhan' : '')));
+
+                    const judulBuku = (subType === 'buku' || (!subType && (spec.buku_judul || item.judul_buku))) ? (spec.buku_judul || item.judul_buku || item.judul_pencipta || item.nama_barang || '-') : '-';
+                    const penciptaBuku = (subType === 'buku' || (!subType && (spec.buku_pencipta || item.pencipta))) ? (spec.buku_pencipta || item.pencipta || item.judul_pencipta || '-') : '-';
+                    const spesifikasiBuku = (subType === 'buku' || (!subType && (spec.buku_spesifikasi || item.spesifikasi))) ? (spec.buku_spesifikasi || item.spesifikasi || '-') : '-';
+
+                    const asalKesenian = (subType === 'kesenian' || (!subType && (spec.kesenian_asal || item.asal_kesenian))) ? (spec.kesenian_asal || item.asal_kesenian || '-') : '-';
+                    const penciptaKesenian = (subType === 'kesenian' || (!subType && (spec.kesenian_pencipta || item.pencipta_kesenian))) ? (spec.kesenian_pencipta || item.pencipta_kesenian || item.pencipta || '-') : '-';
+                    const spesifikasiKesenian = (subType === 'kesenian' || (!subType && (spec.kesenian_spesifikasi || item.spesifikasi))) ? (spec.kesenian_spesifikasi || item.spesifikasi || '-') : '-';
+                    const bahanKesenian = (subType === 'kesenian' || (!subType && (spec.kesenian_bahan || spec.bahan || item.bahan))) ? (spec.kesenian_bahan || spec.bahan || item.bahan || '-') : '-';
+                    const ukuranKesenian = (subType === 'kesenian' || (!subType && (spec.kesenian_ukuran || spec.ukuran || item.ukuran))) ? (spec.kesenian_ukuran || spec.ukuran || item.ukuran || '-') : '-';
+
+                    const judulHewan = (subType === 'hewan_tumbuhan' || (!subType && (spec.hewan_judul || spec.hewan_jenis || item.judul_hewan))) ? (spec.hewan_judul || spec.hewan_jenis || item.judul_hewan || item.nama_barang || '-') : '-';
+                    const spesifikasiHewan = (subType === 'hewan_tumbuhan' || (!subType && (spec.hewan_spesifikasi || item.spesifikasi))) ? (spec.hewan_spesifikasi || item.spesifikasi || '-') : '-';
+
+                    let col1to15 = [];
+                    if (isFirstRowInGroup) {
+                        col1to15 = [
+                            globalKibENo++,
+                            item.program_kode || '-',
+                            item.program_nama || '-',
+                            item.kegiatan_kode || '-',
+                            item.kegiatan_nama || '-',
+                            item.sub_kegiatan_kode || '-',
+                            item.sub_kegiatan_nama || '-',
+                            item.rekening_kode || '-',
+                            item.rekening_nama || '-',
+                            item.jenis_aset_kode || (item.kode_barang ? item.kode_barang.substring(0, 5) : '1.3.5'),
+                            item.jenis_aset_nama || 'ASET TETAP LAINNYA',
+                            item.sub_rincian_kode || (item.kode_barang && item.kode_barang.length >= 14 ? item.kode_barang.substring(0, 14) : (item.kode_barang ? item.kode_barang.substring(0, 11) : '-')),
+                            item.sub_rincian_nama || '-',
+                            groupAnggaranTotal,
+                            groupRealisasiTotal
+                        ];
+                        isFirstRowInGroup = false;
+                    } else {
+                        col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+                    }
+
+                    kibERows.push([
+                        ...col1to15,                                                 // c0-c14: cols 1-15
+                        item.nama_barang || '-',                                     // c15: col 16/17 (Nama Barang)
+                        item.kode_barang || '-',                                     // c16: col 17/18 (Kode Barang)
+                        judulBuku,                                                   // c17: col 19 (Judul Buku)
+                        penciptaBuku,                                                // c18: col 20 (Pencipta Buku)
+                        spesifikasiBuku,                                             // c19: col 21 (Spesifikasi Buku)
+                        asalKesenian,                                                // c20: col 22 (Asal Daerah)
+                        penciptaKesenian,                                            // c21: col 23 (Pencipta Seni)
+                        spesifikasiKesenian,                                         // c22: col 24 (Spesifikasi Seni)
+                        bahanKesenian,                                               // c23: col 25 (Bahan Seni)
+                        ukuranKesenian,                                              // c24: col 26 (Ukuran m/cm)
+                        judulHewan,                                                  // c25: col 27 (Judul/Jenis Hewan)
+                        spesifikasiHewan,                                            // c26: col 28 (Spesifikasi Hewan)
+                        item.spk_nomor || '-',                                       // c27: col 29 (SPK No)
+                        formatAstapDate(item.spk_tanggal),                           // c28: col 30 (SPK Tgl)
+                        item.surat_pesanan_nomor || '-',                             // c29: col 31 (Surat Pesanan No)
+                        formatAstapDate(item.surat_pesanan_tanggal),                 // c30: col 32 (Surat Pesanan Tgl)
+                        item.kwitansi_nomor || '-',                                  // c31: col 33 (Kwitansi No)
+                        formatAstapDate(item.kwitansi_tanggal),                      // c32: col 34 (Kwitansi Tgl)
+                        item.faktur_nomor || '-',                                    // c33: col 35 (Invoice No)
+                        formatAstapDate(item.faktur_tanggal),                        // c34: col 36 (Invoice Tgl)
+                        jumlahUnit,                                                  // c35: col 37 (Jumlah Barang)
+                        item.satuan || 'Eks / Buah',                                 // c36: col 38 (Nama Satuan Barang)
+                        hargaSatuan,                                                 // c37: col 39 (Nilai Satuan Barang)
+                        adminProyek,                                                 // c38: col 40 (Administrasi Proyek)
+                        totalNilaiBarang,                                            // c39: col 41 (Total Nilai Barang)
+                        item.sp2d_nomor || '-',                                      // c40: col 42 (SP2D NOMOR)
+                        item.sp2d_tanggal || '-',                                    // c41: col 43 (SP2D TANGGAL)
+                        item.bast_dokumen_nomor || '-',                              // c42: col 44 (BAST NOMOR)
+                        item.bast_dokumen_tanggal || '-',                            // c43: col 45 (BAST TANGGAL)
+                        ruangUnit,                                                   // c44: col 46 (RUANG / PEMEGANG)
+                        ...getStep4Columns(item)                                     // c45-c52: cols 47-54 (Penyedia, PPK, Ket)
+                    ]);
+                }
             });
         });
 
@@ -4433,10 +4543,51 @@
 
                 openDetail(item) {
                     this.selectedAstapDetail = item;
+                    if (this.selectedAstapDetail && typeof this.selectedAstapDetail.spesifikasi_json === 'string') {
+                        try {
+                            this.selectedAstapDetail.spesifikasi_json = JSON.parse(this.selectedAstapDetail.spesifikasi_json);
+                        } catch(e) {}
+                    }
                     this.detailKondisiFilter = 'all';
                     this.detailPenempatanFilter = 'all';
                     this.detailSearchQuery = '';
                     this.showDetailModal = true;
+                },
+
+                getLainnyaItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    // Jika ada lainnya_items tersimpan (multi-item modern), langsung gunakan
+                    if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
+                        return spec.lainnya_items;
+                    }
+                    // Fallback legacy: bangun 1 item dari field level atas di spesifikasi_json
+                    const subType = (spec && spec.kib_e_sub_type) || (spec && spec.buku_judul ? 'buku' : (spec && (spec.kesenian_asal || spec.kesenian_pencipta) ? 'kesenian' : (spec && (spec.hewan_jenis || spec.hewan_judul) ? 'hewan_tumbuhan' : 'buku')));
+                    return [{
+                        kib_e_sub_type: subType,
+                        lainnya_nama_barang: (spec && spec.lainnya_nama_barang) || astap.nama_barang || 'Aset Tetap Lainnya',
+                        lainnya_buku_judul: (spec && spec.buku_judul) || (spec && spec.lainnya_buku_judul) || '',
+                        lainnya_buku_pencipta: (spec && spec.buku_pencipta) || (spec && spec.lainnya_buku_pencipta) || '',
+                        lainnya_buku_spesifikasi: (spec && spec.buku_spesifikasi) || (spec && spec.lainnya_buku_spesifikasi) || '',
+                        lainnya_kesenian_asal: (spec && spec.kesenian_asal) || (spec && spec.lainnya_kesenian_asal) || '',
+                        lainnya_kesenian_pencipta: (spec && spec.kesenian_pencipta) || (spec && spec.lainnya_kesenian_pencipta) || '',
+                        lainnya_kesenian_spesifikasi: (spec && spec.kesenian_spesifikasi) || (spec && spec.lainnya_kesenian_spesifikasi) || '',
+                        lainnya_kesenian_bahan: (spec && spec.kesenian_bahan) || (spec && spec.bahan) || (spec && spec.lainnya_kesenian_bahan) || '',
+                        lainnya_kesenian_ukuran: (spec && spec.kesenian_ukuran) || (spec && spec.ukuran) || (spec && spec.lainnya_kesenian_ukuran) || '',
+                        lainnya_hewan_jenis: (spec && spec.hewan_jenis) || (spec && spec.hewan_judul) || (spec && spec.lainnya_hewan_jenis) || '',
+                        lainnya_hewan_judul: (spec && spec.hewan_judul) || (spec && spec.hewan_jenis) || (spec && spec.lainnya_hewan_judul) || '',
+                        lainnya_hewan_spesifikasi: (spec && spec.hewan_spesifikasi) || (spec && spec.lainnya_hewan_spesifikasi) || '',
+                        lainnya_jumlah_barang: astap.jumlah_volume || 1,
+                        lainnya_satuan: astap.satuan || 'Eksemplar',
+                        lainnya_kondisi: astap.kondisi || (spec && spec.lainnya_kondisi) || 'Baik',
+                        lainnya_nilai_satuan: astap.harga_satuan || (spec && spec.lainnya_nilai_satuan) || (spec && spec.harga_satuan) || 0,
+                        lainnya_administrasi_proyek: astap.biaya_administrasi_proyek || (spec && spec.lainnya_administrasi_proyek) || 0,
+                        ruang_pemegang: (spec && spec.ruang_pemegang) || astap.ruang_unit || '-',
+                        ruang_pemegang_lainnya: (spec && spec.ruang_pemegang) || astap.ruang_unit || '-'
+                    }];
                 },
 
                 getRiwayatServis(astap) {
@@ -5331,74 +5482,119 @@
                                                 <span class="text-cyan-300 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.kode_aset_tanah || '1.3.1.01.01.02.013'"></span>
                                             </div>
                                             <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Nilai Perencanaan</span>
-                                                <span class="text-emerald-400 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.nilai_perencanaan ? 'Rp ' + Number(selectedAstapDetail.spesifikasi_json.nilai_perencanaan).toLocaleString('id-ID') : '-'"></span>
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Nilai Fisik & Perencanaan</span>
+                                                <span class="text-emerald-400 font-mono font-bold" x-text="'Fisik: Rp ' + Number(selectedAstapDetail.spesifikasi_json?.nilai_fisik || selectedAstapDetail.nilai_perolehan || 0).toLocaleString('id-ID')"></span>
                                             </div>
                                             <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Alamat Bangunan</span>
-                                                <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kompleks Utama RSUD Dr. H. Koesnandi'"></span>
+                                                <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Alamat Jaringan</span>
+                                                <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kawasan RSUD Dr. H. Koesnandi'"></span>
                                             </div>
                                         </div>
                                     </template>
                                 </div>
                             </template>
 
-                            <!-- 4. KIB D (JALAN, IRIGASI & JARINGAN) -->
-                            <template x-if="selectedAstapDetail.category === 'KIB D'">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🛤️ Konstruksi Jaringan</span>
-                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.konstruksi || 'Konstruksi Jaringan Aspal/Beton'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📏 Dimensi Jaringan (P x L)</span>
-                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.panjang_m || 0) + 'm (P) x ' + (selectedAstapDetail.spesifikasi_json?.lebar_m || 0) + 'm (L)'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Total Luas Jaringan</span>
-                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || '-') + ' m²'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Lahan Jaringan</span>
-                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.status_tanah || 'Tanah Hak Pakai RSUD'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Nilai Perencanaan</span>
-                                        <span class="text-emerald-400 font-mono font-bold" x-text="selectedAstapDetail.spesifikasi_json?.nilai_perencanaan ? 'Rp ' + Number(selectedAstapDetail.spesifikasi_json.nilai_perencanaan).toLocaleString('id-ID') : '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Penempatan</span>
-                                        <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kawasan Jaringan RSUD'"></span>
-                                    </div>
-                                </div>
-                            </template>
-
                             <!-- 5. KIB E (ASET TETAP LAINNYA) -->
                             <template x-if="selectedAstapDetail.category === 'KIB E'">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📚 Judul / Pencipta Buku</span>
-                                        <span class="text-orange-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.buku_judul ? (selectedAstapDetail.spesifikasi_json.buku_judul + ' (' + (selectedAstapDetail.spesifikasi_json.buku_pencipta || '-') + ')') : '-'"></span>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-300 px-1">
+                                        <span class="flex items-center gap-1.5 text-orange-400 font-bold uppercase tracking-wider text-[11px]">
+                                            📚 Rincian Barang Terdaftar (<span x-text="getLainnyaItemsForDetail(selectedAstapDetail).length"></span> Item)
+                                        </span>
+                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getLainnyaItemsForDetail(selectedAstapDetail).reduce((acc, it) => acc + (parseFloat(it.lainnya_jumlah_barang) || 1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Eksemplar/Unit')"></span>
                                     </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🎨 Kesenian / Kebudayaan</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.kesenian_asal ? (selectedAstapDetail.spesifikasi_json.kesenian_asal + ' - ' + (selectedAstapDetail.spesifikasi_json.kesenian_bahan || '-')) : '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🐾 Hewan / Tumbuhan</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.hewan_jenis || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📏 Ukuran & Spesifikasi</span>
-                                        <span class="text-slate-200 font-medium" x-text="selectedAstapDetail.spesifikasi_json?.buku_spesifikasi || selectedAstapDetail.spesifikasi_json?.kesenian_ukuran || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏛️ Asal Usul Aset</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.asal_usul || 'APBD'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Kondisi Aset</span>
-                                        <span class="text-emerald-300 font-bold" x-text="selectedAstapDetail.kondisi || 'Baik'"></span>
+
+                                    <!-- Loop Semua Item KIB E (Item #1, Item #2, dst) -->
+                                    <div class="space-y-2.5">
+                                        <template x-for="(lItem, lIdx) in getLainnyaItemsForDetail(selectedAstapDetail)" :key="lIdx">
+                                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-orange-500/30 space-y-2.5 shadow-sm hover:border-orange-400/50 transition-all">
+                                                <!-- Header Card Item -->
+                                                <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="px-2.5 py-0.5 rounded-lg bg-orange-500/20 text-orange-300 font-mono font-bold text-[11px] border border-orange-500/30"
+                                                              x-text="'Item #' + (lIdx + 1)"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold border"
+                                                              :class="{
+                                                                  'bg-amber-500/20 text-amber-300 border-amber-500/40': (lItem.kib_e_sub_type || 'buku') === 'buku',
+                                                                  'bg-purple-500/20 text-purple-300 border-purple-500/40': lItem.kib_e_sub_type === 'kesenian',
+                                                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': lItem.kib_e_sub_type === 'hewan_tumbuhan'
+                                                              }"
+                                                              x-text="(lItem.kib_e_sub_type === 'kesenian' ? '🎨 Kesenian & Budaya' : (lItem.kib_e_sub_type === 'hewan_tumbuhan' ? '🌿 Hewan & Tumbuhan' : '📚 Buku Perpustakaan'))"></span>
+                                                        <span class="text-white font-bold text-xs" x-text="lItem.lainnya_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
+                                                              x-text="(lItem.lainnya_jumlah_barang || 1) + ' ' + (lItem.lainnya_satuan || 'Eksemplar')"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border"
+                                                              :class="{
+                                                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': (lItem.lainnya_kondisi === 'Baik' || lItem.lainnya_kondisi === 'B'),
+                                                                  'bg-amber-500/20 text-amber-300 border-amber-500/30': (lItem.lainnya_kondisi === 'Kurang Baik' || lItem.lainnya_kondisi === 'KB'),
+                                                                  'bg-rose-500/20 text-rose-300 border-rose-500/30': (lItem.lainnya_kondisi === 'Rusak Berat' || lItem.lainnya_kondisi === 'RB')
+                                                              }"
+                                                              x-text="'Kondisi: ' + (lItem.lainnya_kondisi === 'B' ? 'Baik (B)' : (lItem.lainnya_kondisi === 'KB' ? 'Kurang Baik (KB)' : (lItem.lainnya_kondisi === 'RB' ? 'Rusak Berat (RB)' : (lItem.lainnya_kondisi || 'Baik'))))"></span>
+                                                        <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[lIdx]">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[lIdx].nibar || selectedAstapDetail.registers[lIdx].no_register)"></span>
+                                                        </template>
+                                                    </div>
+                                                    <div class="text-[11px] font-mono">
+                                                        <span class="text-slate-400">Subtotal: </span>
+                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(lItem.lainnya_jumlah_barang) || 1) * (parseFloat(lItem.lainnya_nilai_satuan) || 0)) + (parseFloat(lItem.lainnya_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Grid Informasi 4 Kolom -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                    <!-- Kolom 1: Identitas / Judul -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <template x-if="(lItem.kib_e_sub_type || 'buku') === 'buku'">
+                                                            <div>
+                                                                <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📚 Judul &amp; Pencipta</span>
+                                                                <span class="text-amber-300 font-bold block truncate" :title="lItem.lainnya_buku_judul" x-text="lItem.lainnya_buku_judul || '-'"></span>
+                                                                <span class="text-slate-300 text-[9.5px] block truncate" x-text="'Penulis: ' + (lItem.lainnya_buku_pencipta || '-')"></span>
+                                                            </div>
+                                                        </template>
+                                                        <template x-if="lItem.kib_e_sub_type === 'kesenian'">
+                                                            <div>
+                                                                <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🎨 Asal &amp; Seniman</span>
+                                                                <span class="text-purple-300 font-bold block truncate" :title="lItem.lainnya_kesenian_asal" x-text="lItem.lainnya_kesenian_asal || '-'"></span>
+                                                                <span class="text-slate-300 text-[9.5px] block truncate" x-text="'Seniman: ' + (lItem.lainnya_kesenian_pencipta || '-')"></span>
+                                                            </div>
+                                                        </template>
+                                                        <template x-if="lItem.kib_e_sub_type === 'hewan_tumbuhan'">
+                                                            <div>
+                                                                <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌿 Jenis Hewan/Tumbuhan</span>
+                                                                <span class="text-emerald-300 font-bold block truncate" :title="lItem.lainnya_hewan_jenis || lItem.lainnya_hewan_judul" x-text="lItem.lainnya_hewan_jenis || lItem.lainnya_hewan_judul || '-'"></span>
+                                                                <span class="text-slate-300 text-[9.5px] block truncate" x-text="'Varietas: ' + (lItem.lainnya_hewan_spesifikasi || '-')"></span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    <!-- Kolom 2: Spesifikasi Fisik & Ukuran -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🔍 Detail &amp; Spesifikasi</span>
+                                                        <span class="text-slate-200 font-medium block truncate"
+                                                              :title="lItem.lainnya_buku_spesifikasi || lItem.lainnya_kesenian_spesifikasi || lItem.lainnya_hewan_spesifikasi || '-'"
+                                                              x-text="lItem.lainnya_buku_spesifikasi || lItem.lainnya_kesenian_spesifikasi || lItem.lainnya_hewan_spesifikasi || '-'"></span>
+                                                        <template x-if="lItem.kib_e_sub_type === 'kesenian'">
+                                                            <span class="text-slate-400 text-[9px] block truncate" x-text="'Bahan: ' + (lItem.lainnya_kesenian_bahan || '-') + ' • Uk: ' + (lItem.lainnya_kesenian_ukuran || '-')"></span>
+                                                        </template>
+                                                    </div>
+
+                                                    <!-- Kolom 3: Nilai Satuan & Adm -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Satuan &amp; Adm</span>
+                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'@ Rp ' + Number(lItem.lainnya_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-slate-400 text-[9px]" x-text="'Adm: Rp ' + Number(lItem.lainnya_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 4: Ruang / Unit Pemegang -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Pemegang</span>
+                                                        <span class="text-amber-300 font-medium block truncate"
+                                                              :title="lItem.ruang_pemegang_lainnya || lItem.ruang_pemegang || selectedAstapDetail.ruang_unit"
+                                                              x-text="lItem.ruang_pemegang_lainnya || lItem.ruang_pemegang || selectedAstapDetail.ruang_unit || '-'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </template>
@@ -5521,7 +5717,7 @@
                                             <span class="text-slate-400">Nama Pimpinan / Pemilik:</span>
                                             <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></span>
                                         </div>
-                                        <template x-if="selectedAstapDetail.category === 'EXTRACOM' || selectedAstapDetail.category === 'ATB' || selectedAstapDetail.penyedia_telepon">
+                                        <template x-if="selectedAstapDetail.category === 'EXTRACOM' || selectedAstapDetail.category === 'Extracom' || selectedAstapDetail.is_extracomtable || selectedAstapDetail.category === 'ATB'">
                                             <div class="flex items-center justify-between pt-1.5">
                                                 <span class="text-slate-400">No. HP / WhatsApp Aktif:</span>
                                                 <span class="text-amber-400 font-mono font-bold truncate max-w-[55%] flex items-center gap-1.5">

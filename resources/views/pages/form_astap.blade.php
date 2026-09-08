@@ -364,7 +364,7 @@
                                     gedung_alamat: ea ? (ea.alamat_barang || '') : ''
                                 }
                             ],
-                        // KIB D Jaringan
+                        // KIB D Jaringan (Multi-Item Repeater)
                         jaringan_nama_barang: nama || '',
                         jaringan_kode_barang: kode108Val || '',
                         jaringan_konstruksi: spec.konstruksi || '',
@@ -372,6 +372,8 @@
                         jaringan_lebar_m: spec.lebar_m || 0,
                         jaringan_luas_m2: spec.luas_m2 || 0,
                         jaringan_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                        jaringan_bertingkat: spec.bertingkat || 'Bertingkat',
+                        jaringan_beton: spec.beton || 'Beton',
                         jaringan_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
                         jaringan_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
                         jaringan_is_baru: spec.is_baru || 'Baru',
@@ -382,8 +384,62 @@
                         jaringan_nilai_perencanaan: spec.nilai_perencanaan || 0,
                         jaringan_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
                         jaringan_nilai_pengawasan: spec.nilai_pengawasan || 0,
-                        jaringan_nilai_pip: spec.nilai_pip || 0,
-                        // KIB E Lainnya
+                        jaringan_nilai_ap: spec.nilai_ap || spec.nilai_pip || 0,
+                        jaringan_nilai_pip: spec.nilai_ap || spec.nilai_pip || 0,
+                        jaringan_items: (spec && spec.jaringan_items && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0)
+                            ? spec.jaringan_items.map(j => ({
+                                jaringan_nama_barang: j.jaringan_nama_barang || nama || '',
+                                jaringan_kode_barang: j.jaringan_kode_barang || kode108Val || '',
+                                jaringan_konstruksi: j.jaringan_konstruksi || '',
+                                jaringan_panjang_m: j.jaringan_panjang_m || 0,
+                                jaringan_lebar_m: j.jaringan_lebar_m || 0,
+                                jaringan_luas_m2: j.jaringan_luas_m2 || ((parseFloat(j.jaringan_panjang_m) || 0) * (parseFloat(j.jaringan_lebar_m) || 0)) || 0,
+                                jaringan_kondisi: j.jaringan_kondisi || 'B',
+                                jaringan_bertingkat: j.jaringan_bertingkat || 'Bertingkat',
+                                jaringan_beton: j.jaringan_beton || 'Beton',
+                                jaringan_status_tanah: j.jaringan_status_tanah || 'Tanah Hak Pakai RSUD',
+                                jaringan_kode_aset_tanah: j.jaringan_kode_aset_tanah || '1.3.1.01.01.02.013',
+                                jaringan_is_baru: j.jaringan_is_baru || 'Baru',
+                                jaringan_kapitalisasi_tahun_induk: j.jaringan_kapitalisasi_tahun_induk || '',
+                                jaringan_kapitalisasi_nilai_induk: j.jaringan_kapitalisasi_nilai_induk || 0,
+                                jaringan_jumlah: j.jaringan_jumlah || 1,
+                                jaringan_satuan: j.jaringan_satuan || 'Paket',
+                                jaringan_nilai_perencanaan: j.jaringan_nilai_perencanaan || 0,
+                                jaringan_nilai_fisik: j.jaringan_nilai_fisik || 0,
+                                jaringan_nilai_pengawasan: j.jaringan_nilai_pengawasan || 0,
+                                jaringan_nilai_ap: j.jaringan_nilai_ap || j.jaringan_nilai_pip || 0,
+                                jaringan_nilai_pip: j.jaringan_nilai_ap || j.jaringan_nilai_pip || 0,
+                                jaringan_alamat: j.jaringan_alamat || (ea ? (ea.alamat_barang || '') : '')
+                            }))
+                            : [
+                                {
+                                    jaringan_nama_barang: nama || '',
+                                    jaringan_kode_barang: kode108Val || '',
+                                    jaringan_konstruksi: spec.konstruksi || '',
+                                    jaringan_panjang_m: spec.panjang_m || 0,
+                                    jaringan_lebar_m: spec.lebar_m || 0,
+                                    jaringan_luas_m2: spec.luas_m2 || ((parseFloat(spec.panjang_m) || 0) * (parseFloat(spec.lebar_m) || 0)) || 0,
+                                    jaringan_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                                    jaringan_bertingkat: spec.bertingkat || 'Bertingkat',
+                                    jaringan_beton: spec.beton || 'Beton',
+                                    jaringan_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                                    jaringan_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
+                                    jaringan_is_baru: spec.is_baru || 'Baru',
+                                    jaringan_kapitalisasi_tahun_induk: spec.kapitalisasi_tahun_induk || '',
+                                    jaringan_kapitalisasi_nilai_induk: spec.kapitalisasi_nilai_induk || 0,
+                                    jaringan_jumlah: ea ? (ea.jumlah_volume || 1) : 1,
+                                    jaringan_satuan: ea ? (ea.satuan || 'Paket') : 'Paket',
+                                    jaringan_nilai_perencanaan: spec.nilai_perencanaan || 0,
+                                    jaringan_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
+                                    jaringan_nilai_pengawasan: spec.nilai_pengawasan || 0,
+                                    jaringan_nilai_ap: spec.nilai_ap || spec.nilai_pip || 0,
+                                    jaringan_nilai_pip: spec.nilai_ap || spec.nilai_pip || 0,
+                                    jaringan_alamat: ea ? (ea.alamat_barang || '') : ''
+                                }
+                            ],
+                        // KIB E Lainnya (Multi-Item Repeater)
+                        kib_e_sub_type: ea ? (spec.kib_e_sub_type || (spec.buku_judul ? 'buku' : (spec.kesenian_asal || spec.kesenian_pencipta || spec.kesenian_bahan ? 'kesenian' : (spec.hewan_jenis || spec.hewan_judul ? 'hewan_tumbuhan' : 'buku')))) : 'buku',
+                        kib_e_default_type: ea ? (spec.kib_e_sub_type || (spec.buku_judul ? 'buku' : (spec.kesenian_asal || spec.kesenian_pencipta || spec.kesenian_bahan ? 'kesenian' : (spec.hewan_jenis || spec.hewan_judul ? 'hewan_tumbuhan' : 'buku')))) : 'buku',
                         lainnya_nama_barang: nama || '',
                         lainnya_kode_barang: kode108Val || '',
                         lainnya_buku_judul: spec.buku_judul || '',
@@ -394,7 +450,8 @@
                         lainnya_kesenian_spesifikasi: spec.kesenian_spesifikasi || '',
                         lainnya_kesenian_bahan: spec.kesenian_bahan || '',
                         lainnya_kesenian_ukuran: spec.kesenian_ukuran || '',
-                        lainnya_hewan_jenis: spec.hewan_jenis || '',
+                        lainnya_hewan_judul: spec.hewan_judul || spec.hewan_jenis || '',
+                        lainnya_hewan_jenis: spec.hewan_jenis || spec.hewan_judul || '',
                         lainnya_hewan_spesifikasi: spec.hewan_spesifikasi || '',
                         ruang_pemegang_lainnya: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
                         lainnya_kondisi: reg0 ? (reg0.kondisi || 'Baik') : 'Baik',
@@ -402,6 +459,59 @@
                         lainnya_satuan: ea ? (ea.satuan || 'Eksemplar') : 'Eksemplar',
                         lainnya_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
                         lainnya_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                        lainnya_items: (spec && spec.lainnya_items && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0)
+                            ? spec.lainnya_items.map(l => ({
+                                kib_e_sub_type: l.kib_e_sub_type || (l.lainnya_buku_judul ? 'buku' : (l.lainnya_kesenian_asal || l.lainnya_kesenian_pencipta ? 'kesenian' : (l.lainnya_hewan_jenis || l.lainnya_hewan_judul ? 'hewan_tumbuhan' : 'buku'))),
+                                lainnya_nama_barang: l.lainnya_nama_barang || nama || '',
+                                lainnya_kode_barang: l.lainnya_kode_barang || kode108Val || '',
+                                lainnya_buku_judul: l.lainnya_buku_judul || '',
+                                lainnya_buku_pencipta: l.lainnya_buku_pencipta || '',
+                                lainnya_buku_spesifikasi: l.lainnya_buku_spesifikasi || '',
+                                lainnya_kesenian_asal: l.lainnya_kesenian_asal || '',
+                                lainnya_kesenian_pencipta: l.lainnya_kesenian_pencipta || '',
+                                lainnya_kesenian_spesifikasi: l.lainnya_kesenian_spesifikasi || '',
+                                lainnya_kesenian_bahan: l.lainnya_kesenian_bahan || '',
+                                lainnya_kesenian_ukuran: l.lainnya_kesenian_ukuran || '',
+                                lainnya_hewan_judul: l.lainnya_hewan_judul || l.lainnya_hewan_jenis || '',
+                                lainnya_hewan_jenis: l.lainnya_hewan_jenis || l.lainnya_hewan_judul || '',
+                                lainnya_hewan_spesifikasi: l.lainnya_hewan_spesifikasi || '',
+                                ruang_pemegang: l.ruang_pemegang || l.ruang_pemegang_lainnya || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                ruang_pemegang_lainnya: l.ruang_pemegang || l.ruang_pemegang_lainnya || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                lainnya_kondisi: l.lainnya_kondisi || (reg0 ? (reg0.kondisi || 'Baik') : 'Baik'),
+                                lainnya_jumlah_barang: l.lainnya_jumlah_barang || 1,
+                                lainnya_satuan: l.lainnya_satuan || 'Eksemplar',
+                                lainnya_nilai_satuan: l.lainnya_nilai_satuan || 0,
+                                lainnya_administrasi_proyek: l.lainnya_administrasi_proyek || 0,
+                                isRuangOpen: false,
+                                searchRuang: ''
+                            }))
+                            : [
+                                {
+                                    kib_e_sub_type: spec.kib_e_sub_type || (spec.buku_judul ? 'buku' : (spec.kesenian_asal || spec.kesenian_pencipta || spec.kesenian_bahan ? 'kesenian' : (spec.hewan_jenis || spec.hewan_judul ? 'hewan_tumbuhan' : 'buku'))),
+                                    lainnya_nama_barang: nama || '',
+                                    lainnya_kode_barang: kode108Val || '',
+                                    lainnya_buku_judul: spec.buku_judul || '',
+                                    lainnya_buku_pencipta: spec.buku_pencipta || '',
+                                    lainnya_buku_spesifikasi: spec.buku_spesifikasi || '',
+                                    lainnya_kesenian_asal: spec.kesenian_asal || '',
+                                    lainnya_kesenian_pencipta: spec.kesenian_pencipta || '',
+                                    lainnya_kesenian_spesifikasi: spec.kesenian_spesifikasi || '',
+                                    lainnya_kesenian_bahan: spec.kesenian_bahan || '',
+                                    lainnya_kesenian_ukuran: spec.kesenian_ukuran || '',
+                                    lainnya_hewan_judul: spec.hewan_judul || spec.hewan_jenis || '',
+                                    lainnya_hewan_jenis: spec.hewan_jenis || spec.hewan_judul || '',
+                                    lainnya_hewan_spesifikasi: spec.hewan_spesifikasi || '',
+                                    ruang_pemegang: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                    ruang_pemegang_lainnya: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                    lainnya_kondisi: reg0 ? (reg0.kondisi || 'Baik') : 'Baik',
+                                    lainnya_jumlah_barang: ea ? (ea.jumlah_volume || 1) : 1,
+                                    lainnya_satuan: ea ? (ea.satuan || 'Eksemplar') : 'Eksemplar',
+                                    lainnya_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
+                                    lainnya_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                                    isRuangOpen: false,
+                                    searchRuang: ''
+                                }
+                            ],
                         // ATB
                         atb_nama_barang: nama || '',
                         atb_kode_barang: kode108Val || '',
@@ -587,6 +697,14 @@
                     }, { deep: true });
                     this.$watch('formData.gedung_items', () => {
                         this.syncGedungFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }, { deep: true });
+                    this.$watch('formData.jaringan_items', () => {
+                        this.syncJaringanFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }, { deep: true });
+                    this.$watch('formData.lainnya_items', () => {
+                        this.syncLainnyaFieldsToMain();
                         this.syncRealisasiFromStep3();
                     }, { deep: true });
                     this.$watch('formData.tanah_nilai_perencanaan', () => this.syncRealisasiFromStep3());
@@ -1130,15 +1248,245 @@
                 },
 
                 get totalNilaiJaringan() {
+                    if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                        return this.formData.jaringan_items.reduce((sum, item) => sum + this.getJaringanSubtotal(item), 0);
+                    }
                     return Number(this.formData.jaringan_nilai_perencanaan || 0) + 
                            Number(this.formData.jaringan_nilai_fisik || 0) + 
                            Number(this.formData.jaringan_nilai_pengawasan || 0) + 
-                           Number(this.formData.jaringan_nilai_pip || 0);
+                           Number(this.formData.jaringan_nilai_ap || this.formData.jaringan_nilai_pip || 0);
+                },
+
+                get totalVolumeJaringan() {
+                    if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                        return this.formData.jaringan_items.reduce((sum, item) => sum + (parseInt(item.jaringan_jumlah) || 1), 0);
+                    }
+                    return parseInt(this.formData.jaringan_jumlah) || 1;
+                },
+
+                getJaringanSubtotal(item) {
+                    return Number(item.jaringan_nilai_perencanaan || 0) + 
+                           Number(item.jaringan_nilai_fisik || 0) + 
+                           Number(item.jaringan_nilai_pengawasan || 0) + 
+                           Number(item.jaringan_nilai_ap || item.jaringan_nilai_pip || 0);
+                },
+
+                addJaringanItem() {
+                    if (!this.formData.jaringan_items) {
+                        this.formData.jaringan_items = [];
+                    }
+                    this.formData.jaringan_items.push({
+                        jaringan_nama_barang: this.formData.jaringan_nama_barang || this.formData.sub_rincian_nama || '',
+                        jaringan_kode_barang: this.formData.jaringan_kode_barang || this.formData.sub_rincian_kode || '',
+                        jaringan_konstruksi: '',
+                        jaringan_panjang_m: 0,
+                        jaringan_lebar_m: 0,
+                        jaringan_luas_m2: 0,
+                        jaringan_kondisi: 'B',
+                        jaringan_bertingkat: 'Bertingkat',
+                        jaringan_beton: 'Beton',
+                        jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
+                        jaringan_kode_aset_tanah: '1.3.1.01.01.02.013',
+                        jaringan_is_baru: 'Baru',
+                        jaringan_kapitalisasi_tahun_induk: '',
+                        jaringan_kapitalisasi_nilai_induk: 0,
+                        jaringan_jumlah: 1,
+                        jaringan_satuan: 'Paket',
+                        jaringan_nilai_perencanaan: 0,
+                        jaringan_nilai_fisik: 0,
+                        jaringan_nilai_pengawasan: 0,
+                        jaringan_nilai_ap: 0,
+                        jaringan_nilai_pip: 0,
+                        jaringan_alamat: ''
+                    });
+                    this.syncJaringanFieldsToMain();
+                    this.syncRealisasiFromStep3();
+                },
+
+                removeJaringanItem(index) {
+                    if (this.formData.jaringan_items && this.formData.jaringan_items.length > 1) {
+                        this.formData.jaringan_items.splice(index, 1);
+                        this.syncJaringanFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }
+                },
+
+                syncJaringanFieldsToMain() {
+                    if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                        const first = this.formData.jaringan_items[0];
+                        if (first.jaringan_nama_barang && first.jaringan_nama_barang.trim() !== '') {
+                            this.formData.jaringan_nama_barang = first.jaringan_nama_barang;
+                        } else if (this.formData.jaringan_nama_barang) {
+                            first.jaringan_nama_barang = this.formData.jaringan_nama_barang;
+                        }
+                        if (first.jaringan_kode_barang && first.jaringan_kode_barang.trim() !== '') {
+                            this.formData.jaringan_kode_barang = first.jaringan_kode_barang;
+                        } else if (this.formData.jaringan_kode_barang) {
+                            first.jaringan_kode_barang = this.formData.jaringan_kode_barang;
+                        }
+                        this.formData.jaringan_konstruksi = first.jaringan_konstruksi;
+                        this.formData.jaringan_kondisi = first.jaringan_kondisi;
+                        this.formData.jaringan_bertingkat = first.jaringan_bertingkat;
+                        this.formData.jaringan_beton = first.jaringan_beton;
+                        this.formData.jaringan_status_tanah = first.jaringan_status_tanah;
+                        this.formData.jaringan_kode_aset_tanah = first.jaringan_kode_aset_tanah;
+                        this.formData.jaringan_is_baru = first.jaringan_is_baru;
+                        this.formData.jaringan_kapitalisasi_tahun_induk = first.jaringan_kapitalisasi_tahun_induk;
+                        this.formData.jaringan_kapitalisasi_nilai_induk = first.jaringan_kapitalisasi_nilai_induk;
+                        this.formData.jaringan_satuan = first.jaringan_satuan;
+
+                        const totalPanjang = this.formData.jaringan_items.reduce((sum, it) => sum + (parseFloat(it.jaringan_panjang_m) || 0), 0);
+                        this.formData.jaringan_panjang_m = totalPanjang;
+
+                        const totalLebar = this.formData.jaringan_items.reduce((sum, it) => sum + (parseFloat(it.jaringan_lebar_m) || 0), 0);
+                        this.formData.jaringan_lebar_m = totalLebar;
+
+                        const totalLuas = this.formData.jaringan_items.reduce((sum, it) => sum + (parseFloat(it.jaringan_luas_m2) || 0), 0);
+                        this.formData.jaringan_luas_m2 = totalLuas;
+
+                        const totalRuas = this.formData.jaringan_items.reduce((sum, it) => sum + (parseInt(it.jaringan_jumlah) || 1), 0);
+                        this.formData.jaringan_jumlah = totalRuas;
+                        this.formData.jumlah_volume = totalRuas;
+
+                        this.formData.jaringan_nilai_perencanaan = this.formData.jaringan_items.reduce((sum, it) => sum + (parseFloat(it.jaringan_nilai_perencanaan) || 0), 0);
+                        this.formData.jaringan_nilai_fisik = this.formData.jaringan_items.reduce((sum, it) => sum + (parseFloat(it.jaringan_nilai_fisik) || 0), 0);
+                        this.formData.jaringan_nilai_pengawasan = this.formData.jaringan_items.reduce((sum, it) => sum + (parseFloat(it.jaringan_nilai_pengawasan) || 0), 0);
+                        this.formData.jaringan_nilai_ap = this.formData.jaringan_items.reduce((sum, it) => sum + (parseFloat(it.jaringan_nilai_ap || it.jaringan_nilai_pip) || 0), 0);
+                        this.formData.jaringan_nilai_pip = this.formData.jaringan_nilai_ap;
+
+                        const alamatList = this.formData.jaringan_items.map(it => it.jaringan_alamat).filter(Boolean);
+                        this.formData.alamat_barang = alamatList.length > 0 ? alamatList.join('; ') : (first.jaringan_alamat || '');
+                    }
                 },
 
                 get totalNilaiAsetLainnya() {
+                    if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                        return this.formData.lainnya_items.reduce((sum, item) => sum + this.getLainnyaSubtotal(item), 0);
+                    }
                     return (Number(this.formData.lainnya_jumlah_barang || 1) * Number(this.formData.lainnya_nilai_satuan || 0)) + 
                            Number(this.formData.lainnya_administrasi_proyek || 0);
+                },
+
+                get totalVolumeAsetLainnya() {
+                    if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                        return this.formData.lainnya_items.reduce((sum, item) => sum + (parseInt(item.lainnya_jumlah_barang) || 1), 0);
+                    }
+                    return parseInt(this.formData.lainnya_jumlah_barang) || 1;
+                },
+
+                getLainnyaSubtotal(item) {
+                    return (Number(item.lainnya_jumlah_barang || 1) * Number(item.lainnya_nilai_satuan || 0)) + Number(item.lainnya_administrasi_proyek || 0);
+                },
+
+                setKibESubType(type) {
+                    this.formData.kib_e_sub_type = type;
+                    if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                        this.formData.lainnya_items.forEach(it => {
+                            it.kib_e_sub_type = type;
+                        });
+                    }
+                    this.syncLainnyaFieldsToMain();
+                    this.syncRealisasiFromStep3();
+                },
+
+                addLainnyaItem() {
+                    if (!this.formData.lainnya_items) {
+                        this.formData.lainnya_items = [];
+                    }
+                    this.formData.lainnya_items.push({
+                        kib_e_sub_type: this.formData.kib_e_default_type || this.formData.kib_e_sub_type || 'buku',
+                        lainnya_nama_barang: this.formData.lainnya_nama_barang || this.formData.sub_rincian_nama || '',
+                        lainnya_kode_barang: this.formData.lainnya_kode_barang || this.formData.sub_rincian_kode || '',
+                        lainnya_buku_judul: '',
+                        lainnya_buku_pencipta: '',
+                        lainnya_buku_spesifikasi: '',
+                        lainnya_kesenian_asal: '',
+                        lainnya_kesenian_pencipta: '',
+                        lainnya_kesenian_spesifikasi: '',
+                        lainnya_kesenian_bahan: '',
+                        lainnya_kesenian_ukuran: '',
+                        lainnya_hewan_judul: '',
+                        lainnya_hewan_jenis: '',
+                        lainnya_hewan_spesifikasi: '',
+                        ruang_pemegang: this.formData.ruang_pemegang || '',
+                        ruang_pemegang_lainnya: this.formData.ruang_pemegang_lainnya || '',
+                        lainnya_kondisi: 'Baik',
+                        lainnya_jumlah_barang: 1,
+                        lainnya_satuan: 'Eksemplar',
+                        lainnya_nilai_satuan: 0,
+                        lainnya_administrasi_proyek: 0,
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    });
+                    this.syncLainnyaFieldsToMain();
+                    this.syncRealisasiFromStep3();
+                },
+
+                removeLainnyaItem(index) {
+                    if (this.formData.lainnya_items && this.formData.lainnya_items.length > 1) {
+                        this.formData.lainnya_items.splice(index, 1);
+                        this.syncLainnyaFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }
+                },
+
+                syncLainnyaFieldsToMain() {
+                    if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                        const first = this.formData.lainnya_items[0];
+                        if (first.lainnya_nama_barang && first.lainnya_nama_barang.trim() !== '') {
+                            this.formData.lainnya_nama_barang = first.lainnya_nama_barang;
+                        } else if (this.formData.lainnya_nama_barang) {
+                            first.lainnya_nama_barang = this.formData.lainnya_nama_barang;
+                        }
+                        if (first.lainnya_kode_barang && first.lainnya_kode_barang.trim() !== '') {
+                            this.formData.lainnya_kode_barang = first.lainnya_kode_barang;
+                        } else if (this.formData.lainnya_kode_barang) {
+                            first.lainnya_kode_barang = this.formData.lainnya_kode_barang;
+                        }
+                        this.formData.kib_e_sub_type = first.kib_e_sub_type;
+                        this.formData.lainnya_buku_judul = first.lainnya_buku_judul;
+                        this.formData.lainnya_buku_pencipta = first.lainnya_buku_pencipta;
+                        this.formData.lainnya_buku_spesifikasi = first.lainnya_buku_spesifikasi;
+                        this.formData.lainnya_kesenian_asal = first.lainnya_kesenian_asal;
+                        this.formData.lainnya_kesenian_pencipta = first.lainnya_kesenian_pencipta;
+                        this.formData.lainnya_kesenian_spesifikasi = first.lainnya_kesenian_spesifikasi;
+                        this.formData.lainnya_kesenian_bahan = first.lainnya_kesenian_bahan;
+                        this.formData.lainnya_kesenian_ukuran = first.lainnya_kesenian_ukuran;
+                        this.formData.lainnya_hewan_judul = first.lainnya_hewan_judul;
+                        this.formData.lainnya_hewan_jenis = first.lainnya_hewan_jenis;
+                        this.formData.lainnya_hewan_spesifikasi = first.lainnya_hewan_spesifikasi;
+                        this.formData.lainnya_kondisi = first.lainnya_kondisi;
+                        this.formData.lainnya_satuan = first.lainnya_satuan;
+                        this.formData.ruang_pemegang = first.ruang_pemegang || first.ruang_pemegang_lainnya;
+                        this.formData.ruang_pemegang_lainnya = first.ruang_pemegang || first.ruang_pemegang_lainnya;
+
+                        const totalVol = this.formData.lainnya_items.reduce((sum, it) => sum + (parseInt(it.lainnya_jumlah_barang) || 1), 0);
+                        this.formData.lainnya_jumlah_barang = totalVol;
+                        this.formData.jumlah_volume = totalVol;
+
+                        const totalAdmin = this.formData.lainnya_items.reduce((sum, it) => sum + (parseFloat(it.lainnya_administrasi_proyek) || 0), 0);
+                        this.formData.lainnya_administrasi_proyek = totalAdmin;
+
+                        if (this.formData.lainnya_items.length === 1) {
+                            this.formData.lainnya_nilai_satuan = first.lainnya_nilai_satuan;
+                            this.formData.harga_satuan = first.lainnya_nilai_satuan;
+                        }
+                    }
+                },
+
+                filterUnitsForLainnyaItem(item) {
+                    let list = this.masterUnits || [];
+                    if (!item.searchRuang || item.searchRuang.trim() === '') return list;
+                    const q = item.searchRuang.toLowerCase().trim();
+                    return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+                },
+
+                selectUnitForLainnyaItem(item, unit) {
+                    item.ruang_pemegang = unit.nama;
+                    item.ruang_pemegang_lainnya = unit.nama;
+                    item.isRuangOpen = false;
+                    item.searchRuang = '';
+                    this.syncLainnyaFieldsToMain();
                 },
 
                 get totalNilaiAtb() {
@@ -1859,16 +2207,24 @@
                                 if (this.isMesin) {
                                     delete payload.tanah_items;
                                     delete payload.gedung_items;
+                                    delete payload.jaringan_items;
                                 } else if (this.isTanah) {
                                     delete payload.mesin_items;
                                     delete payload.gedung_items;
+                                    delete payload.jaringan_items;
                                 } else if (this.isGedung) {
                                     delete payload.tanah_items;
                                     delete payload.mesin_items;
+                                    delete payload.jaringan_items;
+                                } else if (this.isJaringan) {
+                                    delete payload.tanah_items;
+                                    delete payload.mesin_items;
+                                    delete payload.gedung_items;
                                 } else {
                                     delete payload.tanah_items;
                                     delete payload.mesin_items;
                                     delete payload.gedung_items;
+                                    delete payload.jaringan_items;
                                 }
 
                                 fetch(url, {
@@ -2991,14 +3347,18 @@
                                                     </div>
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1">Jumlah Bidang</label>
-                                                        <input type="number" x-model.number="item.tanah_jumlah_bidang" placeholder="1"
+                                                        <input type="number" min="1" x-model.number="item.tanah_jumlah_bidang" 
+                                                               @input="if (item.tanah_jumlah_bidang < 1) item.tanah_jumlah_bidang = 1;"
+                                                               placeholder="1"
                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-cyan-500">
                                                     </div>
                                                 </div>
                                                 <div class="grid grid-cols-2 gap-2">
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1">Luas Tanah (m²)</label>
-                                                        <input type="number" x-model.number="item.tanah_luas_m2" placeholder="35400"
+                                                        <input type="number" min="0" step="any" x-model.number="item.tanah_luas_m2" 
+                                                               @input="if (item.tanah_luas_m2 < 0) item.tanah_luas_m2 = 0;"
+                                                               placeholder="35400"
                                                                class="w-full bg-slate-950 border border-cyan-500/40 rounded-xl px-2.5 py-2 text-xs text-cyan-300 font-mono font-bold focus:border-cyan-500">
                                                     </div>
                                                     <div>
@@ -4172,7 +4532,9 @@
                                                 <div class="grid grid-cols-2 gap-2">
                                                     <div>
                                                         <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas (M2/Lt)</label>
-                                                        <input type="number" x-model.number="item.gedung_luas_m2" placeholder="850"
+                                                        <input type="number" min="0" step="any" x-model.number="item.gedung_luas_m2" 
+                                                               @input="if (item.gedung_luas_m2 < 0) item.gedung_luas_m2 = 0;"
+                                                               placeholder="850"
                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-amber-500">
                                                     </div>
                                                     <div>
@@ -4264,7 +4626,9 @@
                                             <div class="grid grid-cols-2 gap-2">
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Bangunan</label>
-                                                    <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan" placeholder="1"
+                                                    <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan" 
+                                                           @input="if (item.gedung_jumlah_bangunan < 1) item.gedung_jumlah_bangunan = 1;"
+                                                           placeholder="1"
                                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500">
                                                 </div>
                                                 <div>
@@ -4660,158 +5024,325 @@
 
 
 
-                        <!-- Grid Form Pengisian Spesifikasi Jalan & Jaringan (Sisa Kolom) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <!-- 3. Konstruksi & Dimensi Jaringan (Panjang, Lebar, Luas, Kondisi) -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">📐 3. Konstruksi & Dimensi:</span>
+                        <!-- ========================================================================= -->
+                        <!-- PEMBUNGKUS JALAN, IRIGASI DAN JARINGAN MULTI-ITEM (KIB D)                  -->
+                        <!-- ========================================================================= -->
+                        <div class="space-y-4">
+                            
+                            <!-- Header Pembungkus Jalan, Irigasi & Jaringan -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-teal-950/30 border border-teal-500/40 shadow-md">
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 text-sm">🛣️</span>
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
+                                            RINCIAN JALAN, IRIGASI DAN JARINGAN (<span class="text-teal-400" x-text="formData.jaringan_items.length"></span> Jaringan / Ruas Terdaftar)
+                                        </h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400">
+                                        Setiap jaringan/ruas memiliki Konstruksi (Bertingkat/Beton), Dimensi (Panjang, Lebar, Luas P × L, Kondisi), Status Tanah & Kapitalisasi, Volume, Rincian Nilai (Perencanaan, Fisik, Pengawasan, AP), dan Alamat Lokasi Fisik masing-masing.
+                                    </p>
                                 </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Bahan Konstruksi</label>
-                                    <input type="text" x-model="formData.jaringan_konstruksi" placeholder="Pipa Tembaga Medis ASTM B819 & Zone Valve"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                </div>
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Panjang (M)</label>
-                                        <input type="number" x-model.number="formData.jaringan_panjang_m" placeholder="450"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Lebar (M)</label>
-                                        <input type="number" x-model.number="formData.jaringan_lebar_m" placeholder="0"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Luas (M²)</label>
-                                        <input type="number" x-model.number="formData.jaringan_luas_m2" placeholder="0"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kondisi</label>
-                                        <select x-model="formData.jaringan_kondisi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-bold">
-                                            <option value="B">B (Baik)</option>
-                                            <option value="KB">KB (Kurang Baik)</option>
-                                            <option value="RB">RB (Rusak Berat)</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                <button type="button" @click="addJaringanItem()" 
+                                        class="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-teal-500/20 shrink-0 cursor-pointer">
+                                    <span>➕ Tambah Jaringan / Ruas Baru</span>
+                                </button>
                             </div>
 
-                            <!-- 4. Status Tanah KIB A & Kapitalisasi Jaringan -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">📜 4. Status Tanah & Kapitalisasi:</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Status Tanah</label>
-                                        <input type="text" x-model="formData.jaringan_status_tanah" placeholder="Hak Pakai RSUD"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                            <!-- List Kartu Jaringan & Ruas (Repeater) -->
+                            <div class="space-y-5">
+                                <template x-for="(item, idx) in formData.jaringan_items" :key="idx">
+                                    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-teal-500/30 hover:border-teal-500/60 transition-all space-y-4 shadow-xl relative group">
+                                        
+                                        <!-- Header Kartu Tiap Jaringan / Ruas -->
+                                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="px-3 py-1 rounded-xl bg-teal-500/20 text-teal-300 font-mono font-extrabold text-xs border border-teal-500/40 flex items-center space-x-1.5">
+                                                    <span>🛣️ Jaringan / Ruas #<span x-text="idx + 1"></span></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-300 font-semibold" x-show="item.jaringan_nama_barang">
+                                                    • <span x-text="item.jaringan_nama_barang"></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Dimensi: <strong class="text-cyan-300" x-text="(item.jaringan_panjang_m || 0) + ' M × ' + (item.jaringan_lebar_m || 0) + ' M (' + (item.jaringan_luas_m2 || 0) + ' M²)'"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Qty: <strong class="text-amber-300" x-text="(item.jaringan_jumlah || 1) + ' ' + (item.jaringan_satuan || 'Paket')"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getJaringanSubtotal(item))"></strong>
+                                                </span>
+                                            </div>
+
+                                            <!-- Tombol Hapus Jaringan (Muncul jika > 1 item) -->
+                                            <button type="button" 
+                                                    x-show="formData.jaringan_items.length > 1" 
+                                                    @click="removeJaringanItem(idx)" 
+                                                    class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer">
+                                                <span>🗑️ Hapus Jaringan Ini</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Grid Form Pengisian Spesifikasi Jalan & Jaringan (Seksi 1 & 2) -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                            <!-- 1. Kondisi & Spesifikasi Jaringan (Panjang, Lebar, Luas P x L, Kondisi, Bertingkat, Beton) -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>🏗️ Kondisi & Spesifikasi:</span>
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Jaringan / Ruas (Spesifik / Custom)</label>
+                                                    <input type="text" x-model="item.jaringan_nama_barang" placeholder="Contoh: Jaringan Pipa Gas Oksigen Sentral Medis / Ruas Jalan Paviliun"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                </div>
+                                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Panjang (M)</label>
+                                                        <input type="number" min="0" step="any" x-model.number="item.jaringan_panjang_m" 
+                                                               @input="
+                                                                   if (item.jaringan_panjang_m < 0) item.jaringan_panjang_m = 0;
+                                                                   if (item.jaringan_panjang_m !== null && item.jaringan_panjang_m !== undefined && item.jaringan_lebar_m !== null && item.jaringan_lebar_m !== undefined) { 
+                                                                       item.jaringan_luas_m2 = parseFloat(((parseFloat(item.jaringan_panjang_m) || 0) * (parseFloat(item.jaringan_lebar_m) || 0)).toFixed(2)); 
+                                                                   }
+                                                               "
+                                                               placeholder="450"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono font-bold focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Lebar (M)</label>
+                                                        <input type="number" min="0" step="any" x-model.number="item.jaringan_lebar_m" 
+                                                               @input="
+                                                                   if (item.jaringan_lebar_m < 0) item.jaringan_lebar_m = 0;
+                                                                   if (item.jaringan_panjang_m !== null && item.jaringan_panjang_m !== undefined && item.jaringan_lebar_m !== null && item.jaringan_lebar_m !== undefined) { 
+                                                                       item.jaringan_luas_m2 = parseFloat(((parseFloat(item.jaringan_panjang_m) || 0) * (parseFloat(item.jaringan_lebar_m) || 0)).toFixed(2)); 
+                                                                   }
+                                                               "
+                                                               placeholder="0"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                                            <span>Luas (M2/Lt)</span>
+                                                            <span class="text-[9px] text-amber-400 font-mono">(P × L)</span>
+                                                        </label>
+                                                        <input type="number" min="0" step="any" x-model.number="item.jaringan_luas_m2" 
+                                                               @input="if (item.jaringan_luas_m2 < 0) item.jaringan_luas_m2 = 0;"
+                                                               placeholder="0"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-cyan-300 font-mono font-bold focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi (B/KB/RB)</label>
+                                                        <select x-model="item.jaringan_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-bold focus:border-amber-500">
+                                                            <option value="B">B (Baik)</option>
+                                                            <option value="KB">KB (Kurang Baik)</option>
+                                                            <option value="RB">RB (Rusak Berat)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bertingkat / Tidak</label>
+                                                        <select x-model="item.jaringan_bertingkat" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                            <option value="Bertingkat">Bertingkat</option>
+                                                            <option value="Tidak">Tidak Bertingkat</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Beton / Tidak</label>
+                                                        <select x-model="item.jaringan_beton" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                            <option value="Beton">Beton</option>
+                                                            <option value="Tidak">Bukan Beton</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 2. Status Tanah & Kapitalisasi Jaringan -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>📜 Status Tanah & Kapitalisasi:</span>
+                                                    </span>
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Tanah</label>
+                                                        <input type="text" x-model="item.jaringan_status_tanah" placeholder="Hak Pakai RSUD"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-cyan-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kode Aset Tanah</label>
+                                                        <input type="text" x-model="item.jaringan_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono focus:border-cyan-500">
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-1.5">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Jaringan Baru</label>
+                                                        <select x-model="item.jaringan_is_baru" 
+                                                                @change="if (item.jaringan_is_baru === 'Baru') { item.jaringan_kapitalisasi_tahun_induk = ''; item.jaringan_kapitalisasi_nilai_induk = 0; }"
+                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500">
+                                                            <option value="Baru">Baru</option>
+                                                            <option value="Lama">Lama</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Tahun Induk</label>
+                                                        <input type="text" x-model="item.jaringan_kapitalisasi_tahun_induk" 
+                                                               :disabled="item.jaringan_is_baru === 'Baru'"
+                                                               :class="item.jaringan_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700 focus:border-cyan-500 text-white'"
+                                                               placeholder="2021"
+                                                               class="w-full border rounded-xl px-2 py-2 text-xs font-mono transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Induk</label>
+                                                        <input type="text" 
+                                                               :disabled="item.jaringan_is_baru === 'Baru'"
+                                                               :class="item.jaringan_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700 focus:border-cyan-500 text-amber-300'"
+                                                               :value="item.jaringan_is_baru === 'Baru' ? '' : (item.jaringan_kapitalisasi_nilai_induk ? Number(item.jaringan_kapitalisasi_nilai_induk).toLocaleString('id-ID') : '')"
+                                                               @input="
+                                                                   let raw = $event.target.value.replace(/\D/g, '');
+                                                                   item.jaringan_kapitalisasi_nilai_induk = raw ? parseInt(raw, 10) : 0;
+                                                                   $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                               "
+                                                               placeholder="850.000.000"
+                                                               class="w-full border rounded-xl px-1.5 py-2 text-[10px] font-mono transition-all">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- 3. Volume & Nilai Satuan Jaringan (Rp) -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-teal-500/30 space-y-2.5">
+                                            <span class="text-xs font-bold text-teal-400 block uppercase tracking-wider">💰 Volume & Rincian Nilai Jaringan (Rp):</span>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Jaringan / Ruas</label>
+                                                    <input type="number" min="1" x-model.number="item.jaringan_jumlah" 
+                                                           @input="if (item.jaringan_jumlah < 1) item.jaringan_jumlah = 1;"
+                                                           placeholder="1"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-teal-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
+                                                    <select x-model="item.jaringan_satuan" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-teal-500">
+                                                        <option value="Paket">Paket</option>
+                                                        <option value="Ruas">Ruas</option>
+                                                        <option value="Meter">Meter</option>
+                                                        <option value="Titik">Titik</option>
+                                                        <option value="Unit">Unit</option>
+                                                        <option value="Jaringan">Jaringan</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Perencanaan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.jaringan_nilai_perencanaan ? Number(item.jaringan_nilai_perencanaan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.jaringan_nilai_perencanaan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="35.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-teal-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Fisik (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.jaringan_nilai_fisik ? Number(item.jaringan_nilai_fisik).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.jaringan_nilai_fisik = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="620.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-teal-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Pengawasan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.jaringan_nilai_pengawasan ? Number(item.jaringan_nilai_pengawasan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.jaringan_nilai_pengawasan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="25.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-teal-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai AP (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="(item.jaringan_nilai_ap || item.jaringan_nilai_pip) ? Number(item.jaringan_nilai_ap || item.jaringan_nilai_pip).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.jaringan_nilai_ap = raw ? parseInt(raw, 10) : 0;
+                                                               item.jaringan_nilai_pip = item.jaringan_nilai_ap;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="15.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-teal-500">
+                                                </div>
+                                            </div>
+
+                                            <div class="pt-1 flex items-center justify-between border-t border-slate-800">
+                                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Subtotal Nilai Jaringan Ini:</span>
+                                                <span class="text-xs font-black text-teal-400 font-mono" x-text="'Rp ' + formatRupiah(getJaringanSubtotal(item))"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Letak / Alamat Lokasi Fisik Jaringan -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-teal-500/40 space-y-1.5">
+                                            <div class="flex items-center justify-between border-b border-teal-500/30 pb-1.5">
+                                                <label class="block text-teal-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>📍 Letak / Alamat Lokasi Fisik Jaringan & Bangunan:</span>
+                                                </label>
+                                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Lokasi Fisik Jaringan</span>
+                                            </div>
+                                            <input type="text" x-model="item.jaringan_alamat" placeholder="Contoh: Jalur Utilitas Gedung Bedah Sentral & Paviliun Teratai RSUD Dr. H. Koesnandi"
+                                                   class="w-full bg-slate-950 border border-slate-700 hover:border-teal-500 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-teal-500 transition-all">
+                                        </div>
+
                                     </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kode Aset Tanah</label>
-                                        <input type="text" x-model="formData.jaringan_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-1.5">
-                                    <div>
-                                        <label class="block text-slate-400 text-[9px] mb-1">Jaringan Baru</label>
-                                        <select x-model="formData.jaringan_is_baru" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white">
-                                            <option value="Baru">Baru</option>
-                                            <option value="Tidak">Peningkatan</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[9px] mb-1">Tahun Induk</label>
-                                        <input type="text" x-model="formData.jaringan_kapitalisasi_tahun_induk" placeholder="2021"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[9px] mb-1">Nilai Induk 2026</label>
-                                        <input type="number" x-model.number="formData.jaringan_kapitalisasi_nilai_induk" placeholder="850000000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-1.5 py-2 text-[10px] text-amber-300 font-mono">
-                                    </div>
-                                </div>
+                                </template>
                             </div>
 
-                        </div>
+                            <!-- Tombol Tambah Jaringan / Ruas Baru (Besar & Jelas) -->
+                            <button type="button" @click="addJaringanItem()" 
+                                    class="w-full py-3.5 border-2 border-dashed border-teal-500/50 hover:border-teal-400 bg-teal-950/20 hover:bg-teal-950/40 text-teal-300 hover:text-teal-200 font-bold rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-md group cursor-pointer">
+                                <span class="text-base group-hover:scale-125 transition-transform">➕</span>
+                                <span class="text-xs sm:text-sm">Klik Disini untuk Menambah Jaringan / Ruas Jalan Lainnya</span>
+                            </button>
 
-                        <!-- 5. Volume & Nilai Jaringan (Rp) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-lg">
-                            <span class="text-xs font-bold text-teal-400 block uppercase tracking-wider">5. Volume & Nilai Jaringan (Rp):</span>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Jumlah Jaringan / Ruas</label>
-                                    <input type="number" x-model.number="formData.jaringan_jumlah" placeholder="1"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1">Nama Satuan Barang</label>
-                                    <select x-model="formData.jaringan_satuan" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
-                                        <option value="Paket">Paket</option>
-                                        <option value="Ruas">Ruas</option>
-                                        <option value="Meter">Meter</option>
-                                        <option value="Titik">Titik</option>
-                                        <option value="Unit">Unit</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Perencanaan</label>
-                                    <input type="number" x-model.number="formData.jaringan_nilai_perencanaan" placeholder="35000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Fisik (Rp)</label>
-                                    <input type="number" x-model.number="formData.jaringan_nilai_fisik" placeholder="620000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Pengawasan</label>
-                                    <input type="number" x-model.number="formData.jaringan_nilai_pengawasan" placeholder="25000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai PIP (Rp)</label>
-                                    <input type="number" x-model.number="formData.jaringan_nilai_pip" placeholder="15000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                            </div>
-                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
-                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                            <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB D -->
+                            <div class="p-4 rounded-2xl bg-slate-950/90 border border-teal-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
                                 <div class="flex flex-wrap items-center gap-4 sm:gap-6">
                                     <div>
-                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran (Pagu):</span>
                                         <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
                                     </div>
                                     <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
                                     <div>
-                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
-                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                        <span class="text-[10px] text-teal-400 font-semibold block uppercase tracking-wider">🛣️ Total Volume / Ruas:</span>
+                                        <span class="text-sm font-black text-teal-300 font-mono" x-text="totalVolumeJaringan + ' ' + (formData.jaringan_satuan || 'Paket')"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Akumulasi):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiJaringan)"></span>
                                     </div>
                                 </div>
                                 <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
-                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Realisasi Pengadaan:</span>
                                     <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiJaringan)"></span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 6. Letak / Lokasi Jaringan (Ditampilkan tepat diatas Live Preview Excel) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-teal-500/40 space-y-2 shadow-lg">
-                            <div class="flex items-center justify-between border-b border-teal-500/30 pb-2">
-                                <label class="block text-teal-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 LETAK / LOKASI JARINGAN & BANGUNAN:</span>
-                                </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold">Lokasi Fisik Jaringan</span>
-                            </div>
-                            <input type="text" x-model="formData.alamat_barang" placeholder="Contoh: Jalur Utilitas Gedung Bedah Sentral & Paviliun Teratai RSUD Dr. H. Koesnandi"
-                                   class="w-full bg-slate-900 border border-slate-700 hover:border-teal-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-teal-500 transition-all">
                         </div>
 
                         <!-- ============================================================= -->
@@ -4820,33 +5351,30 @@
                         <div class="space-y-2 pt-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span>📄 Live Preview Tabel Rincian Belanja Modal Jalan, Irigasi dan Jaringan (Format Excel):</span>
+                                    <span>📄 Live Preview Tabel Rincian Belanja Modal Jalan, Irigasi dan Jaringan (Sesuai SPK/Invoice):</span>
                                 </span>
-                                <span class="text-[10px] text-teal-400 font-mono">Format Excel KIB D RSUD (32 Kolom)</span>
+                                <span class="text-[10px] text-teal-400 font-mono" x-text="formData.jaringan_items.length + ' Jaringan/Ruas Terdaftar'">Format Excel KIB D RSUD (31 Kolom)</span>
                             </div>
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
-                                <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1650px]">
+                                <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1600px]">
                                     <!-- Header Utama Pastel Senada -->
                                     <thead>
                                         <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="31" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
+                                            <th colspan="30" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
                                                 RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
-                                                Letak / Lokasi<br>Jaringan
+                                                Letak / Alamat
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
                                         <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Konstruksi</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Panjang<br>(M)</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Lebar<br>(M)</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Luas<br>(M²)</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
-                                            <th colspan="5" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Jenis Jaringan / Status Tanah</th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Luas (M2/Lt)</th>
+                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Kondisi / Spesifikasi</th>
+                                            <th colspan="5" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Jenis Jaringan</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
                                             <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
@@ -4856,6 +5384,9 @@
                                         </tr>
                                         <!-- Header Tingkat 2 -->
                                         <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500 text-[9.5px]">
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">(B,KB,RB)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Bertingkat/<br>Tidak</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Beton/<br>Tidak</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Status Tanah</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Kode Aset<br>Tanah</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Baru</th>
@@ -4869,7 +5400,7 @@
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Perencanaan (Rp)</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik (Rp)</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Pengawasan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai PIP</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai AP</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -4889,42 +5420,43 @@
                                             <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
                                         </tr>
                                     </thead>
-                                    <!-- Body Data Live Sesuai Input User -->
+                                    <!-- Body Data Live Sesuai Input User (Looping jaringan_items) -->
                                     <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
-                                        <tr>
-                                            <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="formData.jaringan_nama_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.jaringan_kode_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.jaringan_konstruksi"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.jaringan_panjang_m"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.jaringan_lebar_m"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.jaringan_luas_m2"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="formData.jaringan_kondisi"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.jaringan_status_tanah"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.jaringan_kode_aset_tanah"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formData.jaringan_is_baru"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.jaringan_kapitalisasi_tahun_induk"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_kapitalisasi_nilai_induk)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.jaringan_jumlah"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.jaringan_satuan"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_nilai_perencanaan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_nilai_fisik)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_nilai_pengawasan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.jaringan_nilai_pip)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-teal-800" x-text="formatRupiah(totalNilaiJaringan)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
-                                            <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.alamat_barang"></td>
-                                        </tr>
+                                        <template x-for="(jItem, jIdx) in formData.jaringan_items" :key="jIdx">
+                                             <tr class="hover:bg-slate-50 transition-colors">
+                                                <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="jItem.jaringan_nama_barang || formData.jaringan_nama_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="jItem.jaringan_kode_barang || formData.jaringan_kode_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="jItem.jaringan_luas_m2"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="jItem.jaringan_kondisi"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="jItem.jaringan_bertingkat"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="jItem.jaringan_beton"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="jItem.jaringan_status_tanah"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="jItem.jaringan_kode_aset_tanah"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="jItem.jaringan_is_baru === 'Baru' ? '1' : '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="jItem.jaringan_is_baru === 'Baru' ? '-' : (jItem.jaringan_kapitalisasi_tahun_induk || '-')"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="jItem.jaringan_is_baru === 'Baru' ? '-' : (jItem.jaringan_kapitalisasi_nilai_induk ? formatRupiah(jItem.jaringan_kapitalisasi_nilai_induk) : '-')"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="jItem.jaringan_jumlah"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="jItem.jaringan_satuan"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(jItem.jaringan_nilai_perencanaan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(jItem.jaringan_nilai_fisik)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(jItem.jaringan_nilai_pengawasan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(jItem.jaringan_nilai_ap || jItem.jaringan_nilai_pip)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-teal-800" x-text="formatRupiah(getJaringanSubtotal(jItem))"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
+                                                <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="jItem.jaringan_alamat || formData.alamat_barang"></td>
+                                            </tr>
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>
@@ -4940,11 +5472,11 @@
                     <div class="space-y-6">
 
                         <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1 & 2) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">
+                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-orange-500/40 space-y-4 shadow-lg">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">1. RIWAYAT DOKUMEN PEMBELIAN (PILIH 1 DOKUMEN UTAMA):</span>
-                                    <span x-show="formData.tahun_anggaran && formData.triwulan" class="text-[10px] px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold border border-purple-500/30">
+                                    <span class="text-xs font-bold text-orange-300 uppercase tracking-wider">1. RIWAYAT DOKUMEN PEMBELIAN (PILIH 1 DOKUMEN UTAMA):</span>
+                                    <span x-show="formData.tahun_anggaran && formData.triwulan" class="text-[10px] px-2.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-mono font-bold border border-orange-500/30">
                                         📅 Periode: <span x-text="triwulanDateLabel"></span>
                                     </span>
                                 </div>
@@ -5088,223 +5620,451 @@
                             </div>
                         </div>
 
-
-
-                        <!-- Grid Form Pengisian Rincian Aset Tetap Lainnya (Sisa Kolom) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <!-- 3. BUKU PERPUSTAKAAN (JUDUL, PENCIPTA, SPESIFIKASI) -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">📚 3. Buku Perpustakaan</span>
-                                    </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Kolom Excel</span>
+                        <!-- 3. PILIH KATEGORI ASET TETAP LAINNYA -->
+                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-orange-500/40 space-y-3 shadow-lg">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-orange-400 block uppercase tracking-wider">3. PILIH KATEGORI ASET TETAP LAINNYA:</span>
+                                    <span class="text-[10px] text-slate-400 font-medium">Kategori ini berlaku sebagai default untuk setiap item baru</span>
                                 </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Judul Buku</label>
-                                    <input type="text" x-model="formData.lainnya_buku_judul" placeholder="Pedoman Standar Pelayanan Klinis..."
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Pencipta / Penulis / Penerbit</label>
-                                    <input type="text" x-model="formData.lainnya_buku_pencipta" placeholder="Komite Medik & Tim Farmasi RSUD"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Spesifikasi Buku</label>
-                                    <input type="text" x-model="formData.lainnya_buku_spesifikasi" placeholder="Edisi Revisi 2026 / Hardcover Lux / 850 Hal"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 focus:outline-none focus:border-amber-500">
-                                </div>
+                                <!-- Badge kategori terpilih -->
+                                <span class="text-[10px] px-2.5 py-1 rounded-full font-bold border"
+                                      :class="{
+                                          'bg-amber-500/20 text-amber-300 border-amber-500/40': (formData.kib_e_default_type || 'buku') === 'buku',
+                                          'bg-purple-500/20 text-purple-300 border-purple-500/40': formData.kib_e_default_type === 'kesenian',
+                                          'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': formData.kib_e_default_type === 'hewan_tumbuhan'
+                                      }"
+                                      x-text="formData.kib_e_default_type === 'kesenian' ? '🎨 Kesenian & Budaya Terpilih' : (formData.kib_e_default_type === 'hewan_tumbuhan' ? '🌿 Hewan & Tumbuhan Terpilih' : '📚 Buku Perpustakaan Terpilih')">
+                                </span>
                             </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
-                            <!-- 4. BARANG BERCORAK KESENIAN / KEBUDAYAAN & HEWAN/TUMBUHAN -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">🎨 4. Kesenian & 🌿 Tanaman</span>
+                                <!-- Opsi 1: Buku Perpustakaan -->
+                                <div @click="formData.kib_e_default_type = 'buku'; syncLainnyaFieldsToMain();"
+                                     :class="(formData.kib_e_default_type || 'buku') === 'buku' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500 shadow-lg shadow-amber-500/10' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-amber-500/50'"
+                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2.5">
+                                            <input type="radio" name="kib_e_default_type_radio" value="buku"
+                                                   :checked="(formData.kib_e_default_type || 'buku') === 'buku'"
+                                                   @change="formData.kib_e_default_type = 'buku'; syncLainnyaFieldsToMain();"
+                                                   class="text-amber-500 focus:ring-amber-500">
+                                            <span class="text-sm font-extrabold text-amber-400">📚 Buku Perpustakaan</span>
+                                        </div>
+                                        <span x-show="(formData.kib_e_default_type || 'buku') === 'buku'"
+                                              class="text-[9px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">✓ Terpilih</span>
                                     </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Kolom Excel</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Asal Kesenian</label>
-                                        <input type="text" x-model="formData.lainnya_kesenian_asal" placeholder="Jatim / Bondowoso"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Pencipta Kesenian</label>
-                                        <input type="text" x-model="formData.lainnya_kesenian_pencipta" placeholder="Sanggar Budaya"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                    </div>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Spesifikasi Kesenian</label>
-                                    <input type="text" x-model="formData.lainnya_kesenian_spesifikasi" placeholder="Lukisan Sejarah Rumah Sakit..."
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 focus:outline-none focus:border-purple-500">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Bahan Kesenian</label>
-                                        <input type="text" x-model="formData.lainnya_kesenian_bahan" placeholder="Kanvas & Kayu"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Ukuran Kesenian (m/cm)</label>
-                                        <input type="text" x-model="formData.lainnya_kesenian_ukuran" placeholder="200 x 120 cm"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">Buku, jurnal ilmiah kedokteran, literatur medis, dan arsip pustaka rumah sakit. Kolom: Judul, Pencipta, Spesifikasi.</p>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-700/30">📖 Judul Buku</span>
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-700/30">✍️ Pencipta</span>
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-700/30">📋 Spesifikasi</span>
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Jenis Hewan/Tanaman</label>
-                                        <input type="text" x-model="formData.lainnya_hewan_jenis" placeholder="Peneduh/Taman"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
+
+                                <!-- Opsi 2: Kesenian & Kebudayaan -->
+                                <div @click="formData.kib_e_default_type = 'kesenian'; syncLainnyaFieldsToMain();"
+                                     :class="formData.kib_e_default_type === 'kesenian' ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500 shadow-lg shadow-purple-500/10' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-purple-500/50'"
+                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2.5">
+                                            <input type="radio" name="kib_e_default_type_radio" value="kesenian"
+                                                   :checked="formData.kib_e_default_type === 'kesenian'"
+                                                   @change="formData.kib_e_default_type = 'kesenian'; syncLainnyaFieldsToMain();"
+                                                   class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-sm font-extrabold text-purple-400">🎨 Kesenian & Kebudayaan</span>
+                                        </div>
+                                        <span x-show="formData.kib_e_default_type === 'kesenian'"
+                                              class="text-[9px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
                                     </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Spesifikasi Tanaman</label>
-                                        <input type="text" x-model="formData.lainnya_hewan_spesifikasi" placeholder="Tabebuya Tinggi 3M"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-300">
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">Lukisan, patung, ornamen dekoratif, dan benda seni atau budaya bersejarah milik rumah sakit. Kolom: Asal Daerah, Pencipta, Spesifikasi, Bahan, Ukuran.</p>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">🗺️ Asal Daerah</span>
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">🎭 Pencipta</span>
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">🧱 Bahan</span>
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-700/30">📐 Ukuran</span>
                                     </div>
                                 </div>
+
+                                <!-- Opsi 3: Hewan & Tumbuhan -->
+                                <div @click="formData.kib_e_default_type = 'hewan_tumbuhan'; syncLainnyaFieldsToMain();"
+                                     :class="formData.kib_e_default_type === 'hewan_tumbuhan' ? 'border-emerald-500 bg-emerald-950/40 ring-1 ring-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-emerald-500/50'"
+                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2.5">
+                                            <input type="radio" name="kib_e_default_type_radio" value="hewan_tumbuhan"
+                                                   :checked="formData.kib_e_default_type === 'hewan_tumbuhan'"
+                                                   @change="formData.kib_e_default_type = 'hewan_tumbuhan'; syncLainnyaFieldsToMain();"
+                                                   class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-sm font-extrabold text-emerald-400">🌿 Hewan & Tumbuhan</span>
+                                        </div>
+                                        <span x-show="formData.kib_e_default_type === 'hewan_tumbuhan'"
+                                              class="text-[9px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 leading-relaxed">Tanaman taman, pohon peneduh, hewan ternak, dan hewan peliharaan yang merupakan aset tetap milik rumah sakit. Kolom: Judul/Jenis, Spesifikasi.</p>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-700/30">🐄 Jenis Hewan</span>
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-700/30">🌳 Spesifikasi</span>
+                                    </div>
+                                </div>
+
                             </div>
-
                         </div>
 
-                        <!-- 5. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                <span class="text-xs font-bold text-rose-400 block uppercase tracking-wider">5. Volume & Nilai Barang:</span>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">Kalkulasi Otomatis</span>
+                        <!-- ========================================================================= -->
+                        <!-- PEMBUNGKUS ASET TETAP LAINNYA MULTI-ITEM REPEATER (MODEL PERSIS KIB B)     -->
+                        <!-- ========================================================================= -->
+                        <div class="space-y-4">
+                            
+                            <!-- Header Pembungkus Aset Tetap Lainnya Multi-Item -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-orange-950/30 border border-orange-500/40 shadow-md">
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="p-1.5 rounded-lg bg-orange-500/20 text-orange-400 text-sm">📚</span>
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
+                                            RINCIAN ASET TETAP LAINNYA
+                                            (<span class="text-orange-400" x-text="formData.lainnya_items.length"></span> Item Terdaftar)
+                                        </h3>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400">
+                                        Setiap item aset tetap lainnya memiliki kategori (Buku Perpustakaan, Kesenian/Kebudayaan, Hewan/Tumbuhan), spesifikasi, volume, nilai satuan, dan ruang/pemegang penempatan masing-masing.
+                                    </p>
+                                </div>
+                                <button type="button" @click="addLainnyaItem()" 
+                                        class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-orange-500/20 shrink-0 cursor-pointer">
+                                    <span>➕ Tambah Item Aset Tetap Lainnya Baru</span>
+                                </button>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[11px] mb-1">Jumlah Barang</label>
-                                    <input type="number" x-model.number="formData.lainnya_jumlah_barang" placeholder="15"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[11px] mb-1">Nama Satuan</label>
-                                    <select x-model="formData.lainnya_satuan"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                        <option value="Eksemplar">Eksemplar</option>
-                                        <option value="Buah">Buah</option>
-                                        <option value="Batang">Batang</option>
-                                        <option value="Ekor">Ekor</option>
-                                        <option value="Paket">Paket</option>
-                                        <option value="Unit">Unit</option>
-                                        <option value="Set">Set</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[11px] mb-1">Kondisi</label>
-                                    <select x-model="formData.lainnya_kondisi"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
-                                        <option value="Baik">Baik (B)</option>
-                                        <option value="Kurang Baik">Kurang Baik (KB)</option>
-                                        <option value="Rusak Berat">Rusak Berat (RB)</option>
-                                    </select>
-                                </div>
+
+                            <!-- List Kartu Item Aset Tetap Lainnya (Repeater) -->
+                            <div class="space-y-5">
+                                <template x-for="(item, idx) in formData.lainnya_items" :key="idx">
+                                    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-orange-500/30 hover:border-orange-500/60 transition-all space-y-4 shadow-xl relative group">
+                                        
+                                        <!-- Header Kartu Tiap Item -->
+                                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="px-3 py-1 rounded-xl bg-orange-500/20 text-orange-300 font-mono font-extrabold text-xs border border-orange-500/40 flex items-center space-x-1.5">
+                                                    <span>📚 Item #<span x-text="idx + 1"></span></span>
+                                                </span>
+                                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold"
+                                                      :class="{
+                                                          'bg-amber-500/20 text-amber-300 border border-amber-500/40': (item.kib_e_sub_type || 'buku') === 'buku',
+                                                          'bg-purple-500/20 text-purple-300 border border-purple-500/40': item.kib_e_sub_type === 'kesenian',
+                                                          'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40': item.kib_e_sub_type === 'hewan_tumbuhan'
+                                                      }"
+                                                      x-text="(item.kib_e_sub_type === 'kesenian' ? '🎨 Kesenian & Budaya' : (item.kib_e_sub_type === 'hewan_tumbuhan' ? '🌿 Hewan & Tumbuhan' : '📚 Buku Perpustakaan'))">
+                                                </span>
+                                                <span class="text-[11px] text-slate-300 font-semibold" x-show="item.lainnya_buku_judul || item.lainnya_kesenian_asal || item.lainnya_hewan_jenis">
+                                                    • <span x-text="item.kib_e_sub_type === 'buku' ? item.lainnya_buku_judul : (item.kib_e_sub_type === 'kesenian' ? item.lainnya_kesenian_asal : (item.lainnya_hewan_jenis || item.lainnya_hewan_judul))"></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Qty: <strong class="text-cyan-300" x-text="(item.lainnya_jumlah_barang || 1) + ' ' + (item.lainnya_satuan || 'Eksemplar')"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getLainnyaSubtotal(item))"></strong>
+                                                </span>
+                                            </div>
+
+                                            <!-- Tombol Hapus Item (Muncul jika > 1 item) -->
+                                            <button type="button" 
+                                                    x-show="formData.lainnya_items.length > 1" 
+                                                    @click="removeLainnyaItem(idx)" 
+                                                    class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer">
+                                                <span>🗑️ Hapus Item Ini</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Sync kategori dari Section No. 3 global ke tiap item -->
+                                        <template x-effect="item.kib_e_sub_type = formData.kib_e_default_type || 'buku'"></template>
+
+                                        <!-- Grid Form Pengisian Spesifikasi Aset Tetap Lainnya -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                            <!-- Sisi Kiri: Nama & Identitas Kategori -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span x-text="(item.kib_e_sub_type === 'kesenian' ? '🎨 Identitas Karya Seni' : (item.kib_e_sub_type === 'hewan_tumbuhan' ? '🌿 Identitas Hewan & Tumbuhan' : '📚 Identitas Buku Perpustakaan'))"></span>
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                                        <span>Nama Barang (PMDN 108)</span>
+                                                        <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
+                                                            <span>🔒</span>
+                                                            <span>Otomatis dari Langkah 2</span>
+                                                        </span>
+                                                    </label>
+                                                    <input type="text" 
+                                                           :value="item.lainnya_nama_barang || formData.lainnya_nama_barang || formData.sub_rincian_nama || 'Aset Tetap Lainnya'"
+                                                           readonly
+                                                           class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                                </div>
+
+                                                <!-- Form Spesifik: Buku -->
+                                                <template x-if="(item.kib_e_sub_type || 'buku') === 'buku'">
+                                                    <div class="space-y-2.5">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Judul Buku / Literatur Medis</label>
+                                                            <input type="text" x-model="item.lainnya_buku_judul" placeholder="Pedoman Standar Pelayanan Klinis Kedokteran 2026"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pencipta / Penulis / Penerbit</label>
+                                                            <input type="text" x-model="item.lainnya_buku_pencipta" placeholder="Komite Medik & Tim Farmasi RSUD"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500">
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Form Spesifik: Kesenian -->
+                                                <template x-if="item.kib_e_sub_type === 'kesenian'">
+                                                    <div class="space-y-2.5">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Asal Daerah / Wilayah Budaya</label>
+                                                            <input type="text" x-model="item.lainnya_kesenian_asal" placeholder="Jawa Timur / Bondowoso"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-purple-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pencipta / Seniman</label>
+                                                            <input type="text" x-model="item.lainnya_kesenian_pencipta" placeholder="Sanggar Seni Budaya Bondowoso"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-purple-500">
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Form Spesifik: Hewan & Tumbuhan -->
+                                                <template x-if="item.kib_e_sub_type === 'hewan_tumbuhan'">
+                                                    <div class="space-y-2.5">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Judul / Jenis Hewan & Tumbuhan</label>
+                                                            <input type="text" x-model="item.lainnya_hewan_jenis" @input="item.lainnya_hewan_judul = $event.target.value" placeholder="Pohon Tabebuya Emas / Tanaman Lanskap Taman"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500">
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <!-- Sisi Kanan: Spesifikasi Fisik, Bahan, Ukuran & Kondisi -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>🔍 Spesifikasi Fisik & Kondisi:</span>
+                                                    </span>
+                                                </div>
+
+                                                <!-- Spesifikasi Buku -->
+                                                <template x-if="(item.kib_e_sub_type || 'buku') === 'buku'">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">Spesifikasi Buku / Literatur</label>
+                                                        <input type="text" x-model="item.lainnya_buku_spesifikasi" placeholder="Edisi Revisi 2026 / Hardcover Lux / 850 Halaman"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 focus:border-amber-500">
+                                                    </div>
+                                                </template>
+
+                                                <!-- Spesifikasi Kesenian -->
+                                                <template x-if="item.kib_e_sub_type === 'kesenian'">
+                                                    <div class="space-y-2.5">
+                                                        <div>
+                                                            <label class="block text-slate-400 text-[10px] mb-1 font-medium">Spesifikasi Karya Seni</label>
+                                                            <input type="text" x-model="item.lainnya_kesenian_spesifikasi" placeholder="Lukisan Panorama Rumah Sakit / Patung Lambang Daerah"
+                                                                   class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-purple-300 focus:border-purple-500">
+                                                        </div>
+                                                        <div class="grid grid-cols-2 gap-2">
+                                                            <div>
+                                                                <label class="block text-slate-400 text-[10px] mb-1 font-medium">Bahan Seni</label>
+                                                                <input type="text" x-model="item.lainnya_kesenian_bahan" placeholder="Kanvas & Kayu Jati"
+                                                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-purple-500">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-slate-400 text-[10px] mb-1 font-medium">Ukuran (m/cm)</label>
+                                                                <input type="text" x-model="item.lainnya_kesenian_ukuran" placeholder="200 x 120 cm"
+                                                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-purple-500">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Spesifikasi Hewan & Tumbuhan -->
+                                                <template x-if="item.kib_e_sub_type === 'hewan_tumbuhan'">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">Spesifikasi Tanaman / Hewan</label>
+                                                        <input type="text" x-model="item.lainnya_hewan_spesifikasi" placeholder="Bibit Unggul Tinggi 3.5 Meter Siap Tanam"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 focus:border-emerald-500">
+                                                    </div>
+                                                </template>
+
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Barang</label>
+                                                    <select x-model="item.lainnya_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500">
+                                                        <option value="Baik">Baik (B)</option>
+                                                        <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                                        <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- Volume & Nilai Satuan Barang -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5">
+                                            <div class="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+                                                <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>💰 Volume & Nilai Satuan Barang (Rp):</span>
+                                                </span>
+                                                <div class="flex items-center space-x-1.5 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
+                                                    <span class="text-[10px] text-slate-300 font-semibold">Sub Total Item #<span x-text="idx + 1"></span>:</span>
+                                                    <span class="text-xs font-black text-emerald-400 font-mono" x-text="'Rp ' + Number(getLainnyaSubtotal(item)).toLocaleString('id-ID')"></span>
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah (Volume)</label>
+                                                    <input type="number" min="1" x-model.number="item.lainnya_jumlah_barang" placeholder="1"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Satuan</label>
+                                                    <input type="text" x-model="item.lainnya_satuan" placeholder="Eksemplar / Buah / Batang / Unit"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.lainnya_nilai_satuan ? Number(item.lainnya_nilai_satuan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.lainnya_nilai_satuan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="450.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 text-emerald-300 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Admin Proyek (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.lainnya_administrasi_proyek ? Number(item.lainnya_administrasi_proyek).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.lainnya_administrasi_proyek = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="0"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                </div>
+                                                <div class="col-span-2 sm:col-span-1">
+                                                    <label class="block text-emerald-400 text-[10px] mb-1 font-bold">Sub Total (Rp)</label>
+                                                    <div class="w-full bg-slate-950/90 border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-black flex items-center justify-between shadow-inner">
+                                                        <span class="text-emerald-500 text-[10px]">Rp</span>
+                                                        <span x-text="Number(getLainnyaSubtotal(item)).toLocaleString('id-ID')"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Ruang / Pemegang Aset -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/40 space-y-2 relative" @click.away="item.isRuangOpen = false">
+                                            <div class="flex items-center justify-between border-b border-amber-500/30 pb-1.5">
+                                                <label class="block text-amber-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>📍 Ruang / Unit Pemegang (Penanggung Jawab & Lokasi):</span>
+                                                </label>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                                        <span>🏥</span>
+                                                        <span>Unit & Paviliun</span>
+                                                    </span>
+                                                    <button type="button" 
+                                                            x-show="item.ruang_pemegang || item.ruang_pemegang_lainnya" 
+                                                            @click="item.ruang_pemegang = ''; item.ruang_pemegang_lainnya = ''; item.searchRuang = ''; item.isRuangOpen = true; syncLainnyaFieldsToMain();" 
+                                                            class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                                        ✕ Reset
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="relative">
+                                                <input type="text" 
+                                                       :value="!item.isRuangOpen ? (item.ruang_pemegang || item.ruang_pemegang_lainnya) : item.searchRuang"
+                                                       @input="item.ruang_pemegang = $event.target.value; item.ruang_pemegang_lainnya = $event.target.value; item.searchRuang = $event.target.value; item.isRuangOpen = true; syncLainnyaFieldsToMain();"
+                                                       @focus="item.isRuangOpen = true"
+                                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                                       class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-white font-semibold focus:outline-none transition-all">
+                                                <svg class="w-3.5 h-3.5 text-amber-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                            </div>
+
+                                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                                            <div x-show="item.isRuangOpen" x-transition x-cloak style="max-height: 180px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                                <div class="px-2.5 py-1 bg-slate-950/80 rounded-lg text-[9.5px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                                    <span class="text-slate-400 font-mono text-[9px]" x-text="filterUnitsForLainnyaItem(item).length + ' Unit/Ruangan'"></span>
+                                                </div>
+                                                <template x-for="u in filterUnitsForLainnyaItem(item)" :key="u.id">
+                                                    <div @click="selectUnitForLainnyaItem(item, u)" class="p-2 rounded-xl bg-slate-950/50 hover:bg-amber-500/15 border border-slate-800/60 hover:border-amber-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                                        <div class="min-w-0 pr-2">
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate" x-text="u.nama"></span>
+                                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                                            </div>
+                                                            <p class="text-[9.5px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                                        </div>
+                                                        <span class="px-2 py-0.5 rounded-lg bg-slate-900 text-amber-300 border border-amber-500/30 text-[9.5px] font-bold shrink-0">Pilih →</span>
+                                                    </div>
+                                                </template>
+                                                <template x-if="filterUnitsForLainnyaItem(item).length === 0">
+                                                    <div class="p-2.5 text-center text-xs text-slate-400">
+                                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </template>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[11px] mb-1">Nilai Satuan Barang (Rp)</label>
-                                    <input type="number" x-model.number="formData.lainnya_nilai_satuan" placeholder="450000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-rose-300 font-mono font-bold">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[11px] mb-1">Administrasi Proyek (Rp)</label>
-                                    <input type="number" x-model.number="formData.lainnya_administrasi_proyek" placeholder="250000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold">
-                                </div>
-                            </div>
-                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
-                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+
+                            <!-- Tombol Tambah Item Aset Tetap Lainnya Baru (Besar & Jelas) -->
+                            <button type="button" @click="addLainnyaItem()" 
+                                    class="w-full py-3.5 border-2 border-dashed border-orange-500/50 hover:border-orange-400 bg-orange-950/20 hover:bg-orange-950/40 text-orange-300 hover:text-orange-200 font-bold rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-md group cursor-pointer">
+                                <span class="text-base group-hover:scale-125 transition-transform">➕</span>
+                                <span class="text-xs sm:text-sm">Klik Disini untuk Menambah Item Aset Tetap Lainnya Baru</span>
+                            </button>
+
+                            <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB E -->
+                            <div class="p-4 rounded-2xl bg-slate-950/90 border border-orange-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
                                 <div class="flex flex-wrap items-center gap-4 sm:gap-6">
                                     <div>
-                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran (Pagu):</span>
                                         <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
                                     </div>
                                     <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
                                     <div>
-                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
-                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                        <span class="text-[10px] text-orange-400 font-semibold block uppercase tracking-wider">📦 Total Volume / Item:</span>
+                                        <span class="text-sm font-black text-orange-300 font-mono" x-text="totalVolumeAsetLainnya + ' Item/Barang'"></span>
+                                    </div>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Akumulasi):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAsetLainnya)"></span>
                                     </div>
                                 </div>
                                 <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
-                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Realisasi Pengadaan:</span>
                                     <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAsetLainnya)"></span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 6. Ruang / Pemegang (Ditampilkan tepat diatas Live Preview Excel KIB E) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-rose-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangLainnyaOpen = false">
-                            <div class="flex items-center justify-between border-b border-rose-500/30 pb-2">
-                                <label class="block text-rose-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
-                                </label>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
-                                        <span>🏥</span>
-                                        <span>Tersinkron Unit & Paviliun</span>
-                                    </span>
-                                    <button type="button" 
-                                            x-show="formData.ruang_pemegang_lainnya" 
-                                            @click="formData.ruang_pemegang_lainnya = ''; searchRuangPemegangLainnya = ''; isRuangPemegangLainnyaOpen = true" 
-                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
-                                        ✕ Reset
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="relative">
-                                <input type="text" 
-                                       :value="!isRuangPemegangLainnyaOpen ? formData.ruang_pemegang_lainnya : searchRuangPemegangLainnya"
-                                       @input="formData.ruang_pemegang_lainnya = $event.target.value; searchRuangPemegangLainnya = $event.target.value; isRuangPemegangLainnyaOpen = true"
-                                       @focus="isRuangPemegangLainnyaOpen = true"
-                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
-                                       class="w-full bg-slate-900 border border-slate-700 hover:border-rose-500 focus:border-rose-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
-                                <svg class="w-4 h-4 text-rose-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            </div>
-
-                            <!-- Dropdown List Pilihan Unit & Paviliun -->
-                            <div x-show="isRuangPemegangLainnyaOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-rose-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
-                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-rose-400 uppercase tracking-wider flex items-center justify-between">
-                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
-                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsLainnya.length + ' Unit/Ruangan'"></span>
-                                </div>
-                                <template x-for="u in filteredUnitsLainnya" :key="u.id">
-                                    <div @click="selectUnitLainnya(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-rose-500/15 border border-slate-800/60 hover:border-rose-500/40 cursor-pointer transition-all flex items-center justify-between group">
-                                        <div class="min-w-0 pr-2">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs font-bold text-white group-hover:text-rose-300 truncate" x-text="u.nama"></span>
-                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
-                                            </div>
-                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
-                                        </div>
-                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-rose-300 border border-rose-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
-                                    </div>
-                                </template>
-                                <template x-if="filteredUnitsLainnya.length === 0">
-                                    <div class="p-3 text-center text-xs text-slate-400">
-                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
-                                    </div>
-                                </template>
-                            </div>
                         </div>
 
                         <!-- ========================================================================= -->
-                        <!-- LIVE PREVIEW TABEL PERSIS SEPERTI GAMBAR SCREENSHOT USER (KIB E)          -->
+                        <!-- LIVE PREVIEW TABEL EXCEL RESMI KIB E (30 KOLOM) DENGAN LOOP MULTI-ITEM   -->
                         <!-- ========================================================================= -->
-                        <div class="space-y-2 pt-4">
+                        <div class="space-y-2 pt-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span>📄 Live Preview Tabel Aset Tetap Lainnya Sesuai Gambar:</span>
+                                    <span>📄 Live Preview Tabel Aset Tetap Lainnya (Format Excel Resmi KIB E RSUD):</span>
                                 </span>
-                                <span class="text-[10px] text-rose-400 font-mono">Format Excel Resmi KIB E (30 Kolom)</span>
+                                <span class="text-[10px] text-orange-400 font-mono" x-text="formData.lainnya_items.length + ' Baris Item Terdaftar (KIB E 30 Kolom)'">Format Excel Resmi KIB E (30 Kolom)</span>
                             </div>
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
@@ -5343,7 +6103,7 @@
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Spesifikasi</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Bahan</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Ukuran<br>(m/cm)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Jenis</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Judul</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Spesifikasi</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">SPK</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
@@ -5369,40 +6129,53 @@
                                             <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
                                         </tr>
                                     </thead>
-                                    <!-- Body Data Live Sesuai Input User -->
+                                    <!-- Body Data Live Sesuai Input User (Looping lainnya_items) -->
                                     <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
-                                        <tr>
-                                            <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="formData.lainnya_nama_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.lainnya_kode_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_buku_judul"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_buku_pencipta"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_buku_spesifikasi"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_kesenian_asal"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_kesenian_pencipta"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_kesenian_spesifikasi"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.lainnya_kesenian_bahan"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.lainnya_kesenian_ukuran"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_hewan_jenis"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.lainnya_hewan_spesifikasi"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.lainnya_jumlah_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.lainnya_satuan"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.lainnya_nilai_satuan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.lainnya_administrasi_proyek)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-rose-800" x-text="formatRupiah(totalNilaiAsetLainnya)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
-                                            <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.ruang_pemegang_lainnya"></td>
-                                        </tr>
+                                        <template x-for="(lItem, lIdx) in formData.lainnya_items" :key="lIdx">
+                                            <tr class="hover:bg-slate-50 transition-colors">
+                                                <!-- 1. NAMA BARANG -->
+                                                <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="lItem.lainnya_nama_barang || formData.lainnya_nama_barang || formData.sub_rincian_nama"></td>
+                                                <!-- 2. KODE BARANG -->
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="lItem.lainnya_kode_barang || formData.lainnya_kode_barang || formData.sub_rincian_kode"></td>
+                                                <!-- 3-5. BUKU PERPUSTAKAAN -->
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="lItem.lainnya_buku_judul || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="lItem.lainnya_buku_pencipta || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="lItem.lainnya_buku_spesifikasi || '-'"></td>
+                                                <!-- 6-10. KESENIAN / KEBUDAYAAN -->
+                                                <td class="px-2 py-2 border border-slate-400" x-text="lItem.lainnya_kesenian_asal || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="lItem.lainnya_kesenian_pencipta || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="lItem.lainnya_kesenian_spesifikasi || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="lItem.lainnya_kesenian_bahan || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="lItem.lainnya_kesenian_ukuran || '-'"></td>
+                                                <!-- 11-12. HEWAN / TUMBUHAN -->
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="lItem.lainnya_hewan_judul || lItem.lainnya_hewan_jenis || '-'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="lItem.lainnya_hewan_spesifikasi || '-'"></td>
+                                                <!-- 13-20. RIWAYAT PEMBELIAN -->
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
+                                                <!-- 21-23. VOLUME & NILAI SATUAN -->
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="lItem.lainnya_jumlah_barang || 1"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="lItem.lainnya_satuan || 'Eksemplar'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(lItem.lainnya_nilai_satuan || 0)"></td>
+                                                <!-- 24-25. ADMIN PROYEK & TOTAL NILAI -->
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(lItem.lainnya_administrasi_proyek || 0)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-orange-800" x-text="formatRupiah(getLainnyaSubtotal(lItem))"></td>
+                                                <!-- 26-27. SP2D -->
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
+                                                <!-- 28-29. BAST -->
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor || '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
+                                                <!-- 30. RUANG / PEMEGANG -->
+                                                <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="lItem.ruang_pemegang || lItem.ruang_pemegang_lainnya || formData.ruang_pemegang || formData.ruang_pemegang_lainnya || '-'"></td>
+                                            </tr>
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>
@@ -5991,7 +6764,9 @@
                                 <div class="grid grid-cols-2 gap-2">
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1">Luas Rencana (M²)</label>
-                                        <input type="number" x-model.number="formData.kdp_luas_m2" placeholder="1200"
+                                        <input type="number" min="0" step="any" x-model.number="formData.kdp_luas_m2" 
+                                               @input="if (formData.kdp_luas_m2 < 0) formData.kdp_luas_m2 = 0;"
+                                               placeholder="1200"
                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold">
                                     </div>
                                     <div>
