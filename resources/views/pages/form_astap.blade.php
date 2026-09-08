@@ -806,18 +806,7 @@
                 },
 
                 updateExtracomStatus() {
-                    const unitPrice = this.isMesin ? Number(this.formData.mesin_nilai_satuan || 0)
-                        : (this.isAsetLainnya ? Number(this.formData.lainnya_nilai_satuan || 0)
-                        : (this.isAtb ? Number(this.formData.atb_nilai_satuan || 0)
-                        : Number(this.formData.harga_satuan || 0)));
-
-                    if (this.isMesin) {
-                        if (unitPrice > 0 && unitPrice < 300000) {
-                            this.formData.is_extracomtable = true;
-                        } else if (unitPrice >= 300000) {
-                            this.formData.is_extracomtable = false;
-                        }
-                    }
+                    // Status extracomtable sekarang ditentukan langsung oleh pilihan eksplisit user di Langkah 3
                 },
 
                 get isTanah() {
@@ -1681,6 +1670,21 @@
                                     return;
                                 }
 
+                                if (this.isMesin && this.formData.is_extracomtable) {
+                                    const invalidItem = (this.formData.mesin_items || []).find(it => Number(it.mesin_nilai_satuan || 0) > 300000);
+                                    if (invalidItem) {
+                                        this.toast = { 
+                                            show: true, 
+                                            message: '⚠️ Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' + this.formatRupiah(invalidItem.mesin_nilai_satuan) + ')', 
+                                            type: 'warning' 
+                                        };
+                                        alert('⚠️ Nilai Satuan Barang Ekstrakomtabel TIDAK BOLEH lebih dari Rp 300.000!\n\nDitemukan barang dengan nilai satuan: Rp ' + this.formatRupiah(invalidItem.mesin_nilai_satuan) + '.\n\nSilakan sesuaikan harga satuan barang atau pilih kategori Peralatan & Mesin (KIB B Reguler).');
+                                        this.currentStep = 3;
+                                        this.scrollToTop();
+                                        return;
+                                    }
+                                }
+
                                 if (anggaran > 0 && realisasi > anggaran) {
                                     const selisih = realisasi - anggaran;
                                     this.toast = { 
@@ -1790,11 +1794,17 @@
                         this.currentStep = 3;
                         return;
                     }
-                    if (Number(this.formData.jumlah_realisasi || 0) > Number(this.formData.jumlah_anggaran || 0)) {
-                        this.toast = { show: true, message: '⚠️ Total Nilai Realisasi (Rp ' + this.formatRupiah(this.formData.jumlah_realisasi) + ') melebihi Jumlah Anggaran (Rp ' + this.formatRupiah(this.formData.jumlah_anggaran) + ')!', type: 'warning' };
-                        setTimeout(() => { this.toast.show = false; }, 4000);
-                        this.currentStep = 3;
-                        return;
+                    if (this.isMesin && this.formData.is_extracomtable) {
+                        const invalidItem = (this.formData.mesin_items || []).find(it => Number(it.mesin_nilai_satuan || 0) > 300000);
+                        if (invalidItem) {
+                            this.toast = { 
+                                show: true, 
+                                message: '⚠️ Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' + this.formatRupiah(invalidItem.mesin_nilai_satuan) + ')', 
+                                type: 'warning' 
+                            };
+                            this.currentStep = 3;
+                            return;
+                        }
                     }
 
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -3083,10 +3093,10 @@
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
                                 <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1300px]">
-                                    <!-- Header Utama Hijau Pastel -->
+                                    <!-- Header Utama Pastel Senada -->
                                     <thead>
-                                        <tr class="bg-[#d7e4bc] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="25" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#d7e4bc]">
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                            <th colspan="25" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
                                                 RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
@@ -3094,15 +3104,15 @@
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
-                                        <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-500">
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#d7e4bc]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Status Tanah</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-32 align-middle bg-[#d7e4bc]">Penggunaan</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">VOLUME</th>
-                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">Nilai Barang (Rp)</th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-32 align-middle bg-[#fde9d9]">Penggunaan</th>
+                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Nilai Barang (Rp)</th>
                                             <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
@@ -3115,11 +3125,11 @@
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice (Tanggal dan Nomor)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Jumlah Bidang Tanah</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Luas Tanah (m²)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Perencanaan (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Fisik (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Pengawasan</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah Bidang Tanah</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Luas Tanah (m²)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Perencanaan (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Pengawasan</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -3336,22 +3346,68 @@
 
 
 
+                        <!-- 3. PILIHAN KATEGORI PENCATATAN: KIB B STANDAR vs EKSTRAKOMTABEL -->
+                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">3. PILIHAN KATEGORI PENCATATAN BARANG:</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-medium">Pilih salah satu kategori pencatatan aset di bawah ini</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <!-- Opsi 1: Peralatan & Mesin (KIB B Reguler) -->
+                                <div @click="formData.is_extracomtable = false" 
+                                     :class="!formData.is_extracomtable ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <input type="radio" name="kategori_extracom_choice" :checked="!formData.is_extracomtable" @change="formData.is_extracomtable = false" class="text-purple-500 focus:ring-purple-500">
+                                            <span class="text-xs font-black text-purple-300">⚙️ Peralatan & Mesin (KIB B Reguler)</span>
+                                        </div>
+                                        <span x-show="!formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                                        Aset peralatan & mesin standar kapitalisasi penuh. Mendukung spesifikasi lengkap termasuk legalitas kendaraan bermotor (<strong class="text-amber-300">No. Rangka, No. Mesin, No. BPKB, dan No. Polisi</strong>) dengan nilai perolehan bebas/standar.
+                                    </p>
+                                </div>
+
+                                <!-- Opsi 2: Barang Ekstrakomtabel (Extracom) -->
+                                <div @click="formData.is_extracomtable = true" 
+                                     :class="formData.is_extracomtable ? 'border-cyan-500 bg-cyan-950/40 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <input type="radio" name="kategori_extracom_choice" :checked="formData.is_extracomtable" @change="formData.is_extracomtable = true" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-xs font-black text-cyan-300">📦 Barang Ekstrakomtabel (Extracom)</span>
+                                        </div>
+                                        <span x-show="formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                                        Barang non-kapitalisasi (ekstrakomtabel) dengan nilai perolehan satuan <strong class="text-amber-300">maksimal Rp 300.000 / unit</strong>. Inputan legalitas kendaraan (No. Rangka, No. Mesin, No. BPKB, No. Polisi) ditiadakan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- ========================================================================= -->
-                        <!-- PEMBUNGKUS BARANG PERALATAN DAN MESIN MULTI-ITEM                          -->
+                        <!-- PEMBUNGKUS BARANG PERALATAN DAN MESIN / EXTRACOM MULTI-ITEM               -->
                         <!-- ========================================================================= -->
                         <div class="space-y-4">
                             
-                            <!-- Header Pembungkus Peralatan dan Mesin -->
+                            <!-- Header Pembungkus Peralatan dan Mesin / Extracom -->
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-purple-950/30 border border-purple-500/40 shadow-md">
                                 <div class="space-y-0.5">
                                     <div class="flex items-center space-x-2">
-                                        <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm">⚙️</span>
+                                        <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm" x-text="formData.is_extracomtable ? '📦' : '⚙️'"></span>
                                         <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
-                                            RINCIAN PERALATAN DAN MESIN (<span class="text-purple-400" x-text="formData.mesin_items.length"></span> Barang / Unit Terdaftar)
+                                            <span x-text="formData.is_extracomtable ? 'RINCIAN BARANG EKSTRAKOMTABEL' : 'RINCIAN PERALATAN DAN MESIN'"></span>
+                                            (<span class="text-purple-400" x-text="formData.mesin_items.length"></span> Barang / Unit Terdaftar)
                                         </h3>
                                     </div>
                                     <p class="text-[11px] text-slate-400">
-                                        Setiap barang memiliki spesifikasi (Merk, Type, Ukuran, No. Pabrik/SN), Volume, Nilai Satuan, dan Ruang/Pemegang penempatan masing-masing.
+                                        <span x-show="!formData.is_extracomtable">Setiap barang memiliki spesifikasi (Merk, Type, Ukuran, No. Pabrik/SN), Legalitas Kendaraan, Volume, Nilai Satuan, dan Ruang/Pemegang penempatan masing-masing.</span>
+                                        <span x-show="formData.is_extracomtable">Setiap barang memiliki spesifikasi (Merk, Type, Ukuran, No. Pabrik/SN), Bahan, Kondisi, Volume, Nilai Satuan (Maks. Rp 300.000), dan Ruang/Pemegang penempatan masing-masing.</span>
                                     </p>
                                 </div>
                                 <button type="button" @click="addMesinItem()" 
@@ -3379,6 +3435,9 @@
                                                 </span>
                                                 <span class="text-[11px] text-slate-400 font-mono">
                                                     • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getMesinSubtotal(item))"></strong>
+                                                </span>
+                                                <span x-show="formData.is_extracomtable" class="text-[10px] px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+                                                    Ekstrakomtabel (≤ 300rb)
                                                 </span>
                                             </div>
 
@@ -3456,8 +3515,8 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Detail Kendaraan (2x2 Grid Rapi) -->
-                                                <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                                                <!-- Detail Kendaraan (2x2 Grid Rapi) - Hanya tampil jika BUKAN Extracom -->
+                                                <div x-show="!formData.is_extracomtable" class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5 transition-all">
                                                     <span class="text-[9.5px] font-bold text-slate-400 block uppercase tracking-wider">🚗 Legality Kendaraan (Jika Ada):</span>
                                                     <div class="grid grid-cols-2 gap-2">
                                                         <div>
@@ -3518,17 +3577,23 @@
                                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
                                                 </div>
                                                 <div>
-                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan (Rp)</label>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                                        <span>Nilai Satuan (Rp)</span>
+                                                        <span x-show="formData.is_extracomtable" class="text-[9px] font-bold text-amber-400">Maks. Rp 300.000</span>
+                                                    </label>
                                                     <input type="text" 
                                                            :value="item.mesin_nilai_satuan ? Number(item.mesin_nilai_satuan).toLocaleString('id-ID') : ''"
                                                            @input="
                                                                let raw = $event.target.value.replace(/\D/g, '');
                                                                item.mesin_nilai_satuan = raw ? parseInt(raw, 10) : 0;
                                                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                                               updateExtracomStatus();
                                                            "
-                                                           placeholder="185.000.000"
-                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                           :class="formData.is_extracomtable && Number(item.mesin_nilai_satuan || 0) > 300000 ? 'border-rose-500 text-rose-300 focus:border-rose-400 ring-1 ring-rose-500' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
+                                                           :placeholder="formData.is_extracomtable ? 'Maks: 300.000' : '185.000.000'"
+                                                           class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none">
+                                                    <span x-show="formData.is_extracomtable && Number(item.mesin_nilai_satuan || 0) > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                                        ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
+                                                    </span>
                                                 </div>
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Admin Proyek (Rp)</label>
@@ -3616,10 +3681,10 @@
                             <button type="button" @click="addMesinItem()" 
                                     class="w-full py-3.5 border-2 border-dashed border-cyan-500/50 hover:border-cyan-400 bg-cyan-950/20 hover:bg-cyan-950/40 text-cyan-300 hover:text-cyan-200 font-bold rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-md group cursor-pointer">
                                 <span class="text-base group-hover:scale-125 transition-transform">➕</span>
-                                <span class="text-xs sm:text-sm">Klik Disini untuk Menambah Barang Peralatan & Mesin Lainnya</span>
+                                <span class="text-xs sm:text-sm" x-text="formData.is_extracomtable ? 'Klik Disini untuk Menambah Barang Ekstrakomtabel Lainnya' : 'Klik Disini untuk Menambah Barang Peralatan & Mesin Lainnya'"></span>
                             </button>
 
-                            <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB B -->
+                            <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB B / Extracom -->
                             <div class="p-4 rounded-2xl bg-slate-950/90 border border-purple-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
                                 <div class="flex flex-wrap items-center gap-4 sm:gap-6">
                                     <div>
@@ -3646,116 +3711,224 @@
                         </div>
 
                         <!-- ============================================================= -->
-                        <!-- LIVE PREVIEW TABEL EXCEL SESUAI GAMBAR USER (KHUSUS MESIN)    -->
+                        <!-- LIVE PREVIEW TABEL EXCEL: KIB B STANDAR vs EKSTRAKOMTABEL      -->
                         <!-- ============================================================= -->
                         <div class="space-y-2 pt-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span>📄 Live Preview Tabel Rincian Belanja Modal Peralatan dan Mesin (Sesuai SPK/Invoice):</span>
-                                </span>
-                                <span class="text-[10px] text-amber-400 font-mono" x-text="formData.mesin_items.length + ' Baris Barang Terdaftar'">Format Excel KIB B RSUD (27 Kolom)</span>
+                            
+                            <!-- 1. LIVE PREVIEW TABEL KIB B REGULER (JIKA BUKAN EXTRACOM - 31 KOLOM) -->
+                            <div x-show="!formData.is_extracomtable" class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>📄 Live Preview Tabel Rincian Belanja Modal Peralatan dan Mesin (Sesuai SPK/Invoice):</span>
+                                    </span>
+                                    <span class="text-[10px] text-amber-400 font-mono" x-text="formData.mesin_items.length + ' Baris Barang Terdaftar (KIB B 31 Kolom)'">Format Excel KIB B RSUD (31 Kolom)</span>
+                                </div>
+
+                                <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
+                                    <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1450px]">
+                                        <!-- Header Utama Pastel Senada -->
+                                        <thead>
+                                            <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                                <th colspan="30" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
+                                                    RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
+                                                </th>
+                                                <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
+                                                    RUANG /<br>PEMEGANG
+                                                </th>
+                                            </tr>
+                                            <!-- Header Tingkat 1 -->
+                                            <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">Merk</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">Type</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Ukuran</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Pabrik</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Rangka</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Mesin</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No BPKB</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Polisi</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">BAHAN</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Tahun Perolehan</th>
+                                                <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
+                                                <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                                <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">ADMINISTRASI PROYEK (Rp)</th>
+                                                <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
+                                                <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
+                                                <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
+                                            </tr>
+                                            <!-- Header Tingkat 2 -->
+                                            <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500 text-[9.5px]">
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">SPK</th>
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice (Tanggal dan Nomor)</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah Barang</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nama Satuan Barang</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
+                                            </tr>
+                                            <!-- Header Tingkat 3 -->
+                                            <tr class="bg-[#fde9d9] text-slate-900 font-semibold border-b border-slate-600 text-[9px]">
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                            </tr>
+                                        </thead>
+                                        <!-- Body Data Live Sesuai Input User -->
+                                        <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
+                                            <template x-for="(mItem, mIdx) in formData.mesin_items" :key="mIdx">
+                                                <tr>
+                                                    <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="mItem.mesin_nama_barang || formData.mesin_nama_barang"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_kode_barang || formData.mesin_kode_barang"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_merk || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_type || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_ukuran || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_pabrik || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_rangka || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_mesin || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_bpkb || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_polisi || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_bahan || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.tahun_perolehan || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="mItem.mesin_kondisi || 'Baik'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_jumlah_barang || 1"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_satuan || 'Unit'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_nilai_satuan)"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_administrasi_proyek)"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(getMesinSubtotal(mItem))"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
+                                                    <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="mItem.ruang_pemegang || '-'"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
-                            <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
-                                <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1450px]">
-                                    <!-- Header Utama Hijau Pastel -->
-                                    <thead>
-                                        <tr class="bg-[#d7e4bc] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="26" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#d7e4bc]">
-                                                RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
-                                            </th>
-                                            <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
-                                                RUANG /<br>PEMEGANG
-                                            </th>
-                                        </tr>
-                                        <!-- Header Tingkat 1 -->
-                                        <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-500">
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#d7e4bc]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">Merk</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">Type</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Ukuran</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Pabrik</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Rangka</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Mesin</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No BPKB</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Polisi</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">BAHAN</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Tahun Perolehan</th>
-                                            <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
-                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">VOLUME</th>
-                                            <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">ADMINISTRASI PROYEK (Rp)</th>
-                                            <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
-                                        </tr>
-                                        <!-- Header Tingkat 2 -->
-                                        <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500 text-[9.5px]">
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">SPK</th>
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice (Tanggal dan Nomor)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Jumlah Barang</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nama Satuan Barang</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Satuan Barang (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
-                                        </tr>
-                                        <!-- Header Tingkat 3 -->
-                                        <tr class="bg-[#fde9d9] text-slate-900 font-semibold border-b border-slate-600 text-[9px]">
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
-                                            <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
-                                        </tr>
-                                    </thead>
-                                    <!-- Body Data Live Sesuai Input User -->
-                                    <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
-                                        <template x-for="(mItem, mIdx) in formData.mesin_items" :key="mIdx">
-                                            <tr>
-                                                <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="mItem.mesin_nama_barang || formData.mesin_nama_barang"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_kode_barang || formData.mesin_kode_barang"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_merk || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_type || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_ukuran || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_pabrik || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_rangka || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_mesin || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_bpkb || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_polisi || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_bahan || '-'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.tahun_perolehan || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="mItem.mesin_kondisi || 'Baik'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_jumlah_barang || 1"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_satuan || 'Unit'"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_nilai_satuan)"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_administrasi_proyek)"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(getMesinSubtotal(mItem))"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor || '-'"></td>
-                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
-                                                <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="mItem.ruang_pemegang || '-'"></td>
+                            <!-- 2. LIVE PREVIEW TABEL EKSTRAKOMTABEL (JIKA MEMILIH EXTRACOM - 27 KOLOM TANPA KENDARAAN) -->
+                            <div x-show="formData.is_extracomtable" class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>📄 Live Preview Tabel Rincian Belanja Ekstrakomtabel (Sesuai SPK/Invoice):</span>
+                                    </span>
+                                    <span class="text-[10px] text-cyan-400 font-mono" x-text="formData.mesin_items.length + ' Baris Barang Terdaftar (Extracom 27 Kolom)'">Format Excel Ekstrakomtabel RSUD (27 Kolom)</span>
+                                </div>
+
+                                <div class="overflow-x-auto rounded-2xl border border-cyan-500/40 shadow-2xl">
+                                    <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1350px]">
+                                        <!-- Header Utama Pastel Senada -->
+                                        <thead>
+                                            <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                                <th colspan="26" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
+                                                    RINCIAN BELANJA MODAL EKSTRAKOMTABEL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
+                                                </th>
+                                                <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
+                                                    RUANG /<br>PEMEGANG
+                                                </th>
                                             </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
+                                            <!-- Header Tingkat 1 -->
+                                            <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">Merk</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">Type</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Ukuran</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">No Pabrik</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-24 align-middle bg-[#fde9d9]">BAHAN</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Tahun Perolehan</th>
+                                                <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
+                                                <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
+                                                <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                                <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">ADMINISTRASI PROYEK (Rp)</th>
+                                                <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
+                                                <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
+                                                <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
+                                            </tr>
+                                            <!-- Header Tingkat 2 -->
+                                            <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500 text-[9.5px]">
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">SPK</th>
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
+                                                <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice (Tanggal dan Nomor)</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah Barang</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nama Satuan Barang</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
+                                                <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
+                                            </tr>
+                                            <!-- Header Tingkat 3 -->
+                                            <tr class="bg-[#fde9d9] text-slate-900 font-semibold border-b border-slate-600 text-[9px]">
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
+                                                <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
+                                            </tr>
+                                        </thead>
+                                        <!-- Body Data Live Sesuai Input User -->
+                                        <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
+                                            <template x-for="(mItem, mIdx) in formData.mesin_items" :key="mIdx">
+                                                <tr>
+                                                    <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="mItem.mesin_nama_barang || formData.mesin_nama_barang"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_kode_barang || formData.mesin_kode_barang"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_merk || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_type || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_ukuran || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="mItem.mesin_no_pabrik || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400" x-text="mItem.mesin_bahan || '-'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono" x-text="formData.tahun_perolehan || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="mItem.mesin_kondisi || 'Baik'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="mItem.mesin_jumlah_barang || 1"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="mItem.mesin_satuan || 'Unit'"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_nilai_satuan)"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(mItem.mesin_administrasi_proyek)"></td>
+                                                    <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-cyan-800" x-text="formatRupiah(getMesinSubtotal(mItem))"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor || '-'"></td>
+                                                    <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
+                                                    <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="mItem.ruang_pemegang || '-'"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
+
                         </div>
 
                     </div>
@@ -4216,10 +4389,10 @@
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
                                 <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1600px]">
-                                    <!-- Header Utama Hijau Pastel -->
+                                    <!-- Header Utama Pastel Senada -->
                                     <thead>
-                                        <tr class="bg-[#d7e4bc] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="30" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#d7e4bc]">
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                            <th colspan="30" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
                                                 RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
@@ -4227,15 +4400,15 @@
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
-                                        <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-500">
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#d7e4bc]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Luas (M2/Lt)</th>
                                             <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Kondisi / Spesifikasi</th>
                                             <th colspan="5" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Jenis Bangunan</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">VOLUME</th>
-                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">Nilai Satuan Barang (Rp)</th>
+                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
                                             <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
@@ -4253,12 +4426,12 @@
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Jumlah Bangunan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nama Satuan Barang</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Perencanaan (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Fisik (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Pengawasan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai PIP</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah Bangunan</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nama Satuan Barang</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Perencanaan (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Pengawasan</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai PIP</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -4646,10 +4819,10 @@
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
                                 <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1650px]">
-                                    <!-- Header Utama Hijau Pastel -->
+                                    <!-- Header Utama Pastel Senada -->
                                     <thead>
-                                        <tr class="bg-[#d7e4bc] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="31" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#d7e4bc]">
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                            <th colspan="31" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
                                                 RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
@@ -4657,9 +4830,9 @@
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
-                                        <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-500">
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#d7e4bc]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Konstruksi</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Panjang<br>(M)</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Lebar<br>(M)</th>
@@ -4667,8 +4840,8 @@
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Kondisi<br><span class="font-normal text-[9px]">(B,KB,RB)</span></th>
                                             <th colspan="5" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Jenis Jaringan / Status Tanah</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">VOLUME</th>
-                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">Nilai Satuan Barang (Rp)</th>
+                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
                                             <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
@@ -4683,12 +4856,12 @@
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Jumlah Jaringan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nama Satuan Barang</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Perencanaan (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Fisik (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Pengawasan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai PIP</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah Jaringan</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nama Satuan Barang</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Perencanaan (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Pengawasan</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai PIP</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -5128,10 +5301,10 @@
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
                                 <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1650px]">
-                                    <!-- Header Utama Hijau Pastel -->
+                                    <!-- Header Utama Pastel Senada -->
                                     <thead>
-                                        <tr class="bg-[#d7e4bc] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="29" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#d7e4bc]">
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                            <th colspan="29" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
                                                 RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
@@ -5139,15 +5312,15 @@
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
-                                        <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-500">
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#d7e4bc]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BUKU PERPUSTAKAAN</th>
                                             <th colspan="5" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Barang Bercorak Kesenian / Kebudayaan</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Hewan Ternak / Tumbuhan</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
-                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">VOLUME</th>
-                                            <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">ADMINISTRASI PROYEK (Rp)</th>
+                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                            <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">ADMINISTRASI PROYEK (Rp)</th>
                                             <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
@@ -5168,9 +5341,9 @@
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Jumlah Barang</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nama Satuan Barang</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Satuan Barang (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah Barang</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nama Satuan Barang</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -5557,10 +5730,10 @@
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
                                 <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1450px]">
-                                    <!-- Header Utama Hijau Pastel -->
+                                    <!-- Header Utama Pastel Senada -->
                                     <thead>
-                                        <tr class="bg-[#d7e4bc] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="22" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#d7e4bc]">
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                            <th colspan="22" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
                                                 RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
@@ -5568,16 +5741,16 @@
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
-                                        <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-500">
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#d7e4bc]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">Judul / Nama</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-32 align-middle bg-[#fde9d9]">Pencipta</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">Spesifikasi</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">VOLUME</th>
-                                            <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Nilai Satuan Barang (Rp)</th>
-                                            <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">ADMINISTRASI PROYEK (Rp)</th>
+                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                            <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
+                                            <th rowspan="3" class="px-2.5 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">ADMINISTRASI PROYEK (Rp)</th>
                                             <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
@@ -5588,8 +5761,8 @@
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Jumlah</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nama Satuan Barang</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nama Satuan Barang</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -5953,10 +6126,10 @@
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
                                 <table class="w-full text-center text-[10px] border-collapse font-sans min-w-[1600px]">
-                                    <!-- Header Utama Hijau Pastel -->
+                                    <!-- Header Utama Pastel Senada -->
                                     <thead>
-                                        <tr class="bg-[#d7e4bc] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="27" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#d7e4bc]">
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
+                                            <th colspan="27" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
                                                 RINCIAN BELANJA MODAL KONSTRUKSI DALAM PENGERJAAN (KIB F) SESUAI KONTRAK/SPK/INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
@@ -5964,16 +6137,16 @@
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
-                                        <tr class="bg-[#eaf1dd] text-slate-950 font-bold border-b border-slate-500">
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#d7e4bc]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#d7e4bc]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
+                                        <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Luas Rencana<br>(M²)</th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Progres<br>(%)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Konstruksi</th>
                                             <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Status Tanah KIB A</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Waktu Pengerjaan</th>
                                             <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Kontrak & Pembelian</th>
-                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#d7e4bc]">Nilai Realisasi Biaya KDP (Rp)</th>
+                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Nilai Realisasi Biaya KDP (Rp)</th>
                                             <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Akumulasi Biaya KDP (Rp)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST Kemajuan Fisik / MC</th>
@@ -5991,10 +6164,10 @@
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan / BAP</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi Termin</th>
                                             <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice Kontraktor</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Perencanaan (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Fisik Termin (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai Pengawasan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#d7e4bc]">Nilai PIP</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Perencanaan (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik Termin (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Pengawasan</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai PIP</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>

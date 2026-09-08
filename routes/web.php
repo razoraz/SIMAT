@@ -797,8 +797,8 @@ Route::middleware('auth')->group(function () {
 
                 $biayaAdm = (float) ($data['biaya_administrasi_proyek'] ?? ($data['mesin_administrasi_proyek'] ?? ($data['lainnya_administrasi_proyek'] ?? ($data['atb_administrasi_proyek'] ?? 0))));
 
-                // Extracom: harga < 300rb atau flag manual
-                $isExtracom = !empty($data['is_extracomtable']) || ($jenisPrefix === '1.3.2' && $hargaSatuan > 0 && $hargaSatuan < 300000);
+                // Extracom: murni dari pilihan user pada form
+                $isExtracom = !empty($data['is_extracomtable']);
 
                 // Spesifikasi JSON
                 $specJson = [
@@ -1063,17 +1063,7 @@ Route::middleware('auth')->group(function () {
                 $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
                 $tahun = $data['tahun_perolehan'] ?? ($data['tahun_anggaran'] ?? date('Y'));
                 
-                $hasKibBItem = false;
-                $hasExtracomItem = false;
-                foreach ($data['mesin_items'] as $mItem) {
-                    $price = floatval($mItem['mesin_nilai_satuan'] ?? 0);
-                    if ($price >= 300000) {
-                        $hasKibBItem = true;
-                    } else {
-                        $hasExtracomItem = true;
-                    }
-                }
-                $isExtracom = !$hasKibBItem && ($hasExtracomItem || !empty($data['is_extracomtable']));
+                $isExtracom = !empty($data['is_extracomtable']);
 
                 // Hitung running nomor register
                 $kode108Submitted = $data['mesin_kode_barang'] ?? ($data['sub_rincian_kode'] ?? ($data['jenis_aset_kode'] ?? null));
@@ -1655,7 +1645,7 @@ Route::middleware('auth')->group(function () {
 
                 $biaya = (float) ($d['biaya_administrasi_proyek'] ?? ($d['mesin_administrasi_proyek'] ?? ($d['lainnya_administrasi_proyek'] ?? ($d['atb_administrasi_proyek'] ?? 0))));
 
-                $extracom = !empty($d['is_extracomtable']) || ($prefix === '1.3.2' && $hrgSat > 0 && $hrgSat < 300000);
+                $extracom = !empty($d['is_extracomtable']);
 
                 $spec = [
                     'jumlah_anggaran' => $d['jumlah_anggaran'] ?? null,
@@ -1797,17 +1787,7 @@ Route::middleware('auth')->group(function () {
                 $satuan = $firstItem['mesin_satuan'] ?? 'Unit';
                 $hargaSatuanRata = $totalVolume > 0 ? ($totalRealisasi / $totalVolume) : 0;
                 
-                $hasKibBItem = false;
-                $hasExtracomItem = false;
-                foreach ($data['mesin_items'] as $mItem) {
-                    $price = floatval($mItem['mesin_nilai_satuan'] ?? 0);
-                    if ($price >= 300000) {
-                        $hasKibBItem = true;
-                    } else {
-                        $hasExtracomItem = true;
-                    }
-                }
-                $isExtracom = !$hasKibBItem && ($hasExtracomItem || !empty($data['is_extracomtable']));
+                $isExtracom = !empty($data['is_extracomtable']);
 
                 $ruangFirst = $firstItem['ruang_pemegang_mesin'] ?? ($firstItem['ruang_pemegang'] ?? ($data['ruang_pemegang_mesin'] ?? ($data['ruang_pemegang'] ?? null)));
 
