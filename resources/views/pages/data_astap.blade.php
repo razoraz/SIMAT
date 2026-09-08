@@ -2162,7 +2162,7 @@
                 "",
                 "",
                 "",
-                "(B,KB,RB)", "Konstruksi Jaringan", "Bahan Jaringan",
+                "(B,KB,RB)", "Bertingkat/ Tidak", "Beton/ Tidak",
                 "Status Tanah",
                 "Kode aset Tanah",
                 "Baru",
@@ -2289,8 +2289,8 @@
                     item.kode_barang || '-',                                     // c16: col 17 (Kode Barang)
                     luasM2,                                                      // c17: col 18 (Luas M²)
                     kondisiLabel,                                                // c18: col 19 (Kondisi B/KB/RB)
-                    item.jaringan_konstruksi || item.gedung_bertingkat || '-',  // c19: col 20 (Konstruksi Jaringan)
-                    item.gedung_beton || '-',                                    // c20: col 21 (Bahan Jaringan)
+                    item.jaringan_bertingkat || item.bertingkat || item.gedung_bertingkat || '-', // c19: col 20 (Bertingkat/ Tidak)
+                    item.jaringan_beton || item.beton || item.gedung_beton || '-',                // c20: col 21 (Beton/ Tidak)
                     item.jaringan_status_tanah || item.gedung_status_tanah || 'Tanah Hak Pakai RSUD', // c21: col 22 (Status Tanah)
                     item.jaringan_kode_aset_tanah || item.gedung_kode_aset_tanah || '-', // c22: col 23 (Kode aset Tanah)
                     isBaru ? '1' : '-',                                          // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
@@ -2413,8 +2413,8 @@
             // Col 19-21: Kondisi / Spesifikasi (r4 banner c18-c20)
             {s:{r:4,c:18}, e:{r:4,c:20}},
             {s:{r:5,c:18}, e:{r:6,c:18}},  // Col 19: (B,KB,RB)
-            {s:{r:5,c:19}, e:{r:6,c:19}},  // Col 20: Konstruksi Jaringan
-            {s:{r:5,c:20}, e:{r:6,c:20}},  // Col 21: Bahan Jaringan
+            {s:{r:5,c:19}, e:{r:6,c:19}},  // Col 20: Bertingkat/ Tidak
+            {s:{r:5,c:20}, e:{r:6,c:20}},  // Col 21: Beton/ Tidak
 
             // Col 22-27: Jenis Bangunan (Top banner on r4, c21-c26)
             {s:{r:4,c:21}, e:{r:4,c:26}},
