@@ -729,6 +729,34 @@
             ];
         }
 
+        // HELPER FUNGSI UNTUK MENGAMBIL NIBAR DARI ASTAP REGISTERS (DENGAN FALLBACK)
+        function getAstapNibar(item, subItem = null, idx = 0) {
+            let spec = item ? item.spesifikasi_json : null;
+            if (typeof spec === 'string') {
+                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+            }
+
+            // 1. Cek subItem registers jika ada
+            if (subItem && subItem.registers && Array.isArray(subItem.registers) && subItem.registers.length > 0) {
+                const list = subItem.registers.map(r => r.nibar || r.no_register).filter(Boolean);
+                if (list.length > 0) return list.join(', ');
+            }
+
+            // 2. Cek item.registers (dari relasi astaps register)
+            if (item && item.registers && Array.isArray(item.registers) && item.registers.length > 0) {
+                if (subItem && item.registers[idx] && (item.registers[idx].nibar || item.registers[idx].no_register)) {
+                    return item.registers[idx].nibar || item.registers[idx].no_register;
+                }
+                const list = item.registers.map(r => r.nibar || r.no_register).filter(Boolean);
+                if (list.length > 0) return list.join(', ');
+            }
+
+            // 3. Fallback ke property kapitalisasi_nibar / nibar
+            return (subItem && (subItem.gedung_kapitalisasi_nibar || subItem.jaringan_kapitalisasi_nibar || subItem.nibar))
+                || (item && (item.gedung_kapitalisasi_nibar || item.jaringan_kapitalisasi_nibar || (spec ? spec.kapitalisasi_nibar : null) || item.nibar))
+                || '-';
+        }
+
         // ------------------------------------------------------------------------
         // 2. KIB A (TANAH) - COMPLETE 4-STEP MASTER SHEET (49 KOLOM SESUAI FORMAT BAKU)
         // ------------------------------------------------------------------------
@@ -1641,10 +1669,7 @@
                 "Kode Barang (Kode Sub Sub Rincian Objek PMDN 108)",
                 "Luas Lantai (m²)",
                 "Kondisi / Spesifikasi", "", "",
-                "Status Tanah",
-                "Kode aset Tanah",
-                "Baru",
-                "Jenis Bangunan", "", "",
+                "Jenis Bangunan", "", "", "", "", "",
                 "Riwayat Pembelian", "", "", "", "", "", "", "",
                 "VOLUME", "",
                 "Nilai Barang (Rp)", "", "",
@@ -1673,9 +1698,9 @@
                 "",
                 "",
                 "(B,KB,RB)", "Bertingkat / Tidak", "Beton / Tidak",
-                "",
-                "",
-                "",
+                "Status Tanah",
+                "Kode aset Tanah",
+                "Baru",
                 "Kapitalisasi", "", "",
                 "SPK", "",
                 "Surat Pesanan", "",
@@ -1696,8 +1721,9 @@
             // r6: Technical Sub Detail (Level 4)
             [
                 "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-                "", "", "", "", "", "", "", "", "",
-                "Nilai", "Tahun Induk", "Nilai Induk s/d " + (parseInt(yearLabel) - 1 || '2025'),
+                "", "", "", "", "", "",
+                "", "", "",
+                "Nibar", "Tahun Induk", "Nilai Induk s/d " + (parseInt(yearLabel) - 1 || '2025'),
                 "Nomor", "Tanggal",
                 "Nomor", "Tanggal",
                 "Nomor", "Tanggal",
@@ -1754,7 +1780,7 @@
                     : null;
 
                 if (subGedungItems) {
-                    subGedungItems.forEach((gItem) => {
+                    subGedungItems.forEach((gItem, gIdx) => {
                         const nilaiPerencanaan = parseFloat(gItem.gedung_nilai_perencanaan) || 0;
                         const nilaiFisik = parseFloat(gItem.gedung_nilai_fisik) || 0;
                         const nilaiPengawasan = parseFloat(gItem.gedung_nilai_pengawasan) || 0;
@@ -1797,6 +1823,8 @@
                             col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
                         }
 
+                        const isGedungBaru = (gItem.gedung_is_baru === 'Baru' || !gItem.gedung_is_baru);
+
                         kibCRows.push([
                             ...col1to15,                                                 // c0-c14: cols 1-15
                             gItem.gedung_nama_barang || item.nama_barang || '-',         // c15: col 16 (Nama Barang)
@@ -1807,10 +1835,10 @@
                             gItem.gedung_beton || 'Beton',                                // c20: col 21 (Beton / Tidak)
                             gItem.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
                             gItem.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
-                            (gItem.gedung_is_baru === 'Baru' || !gItem.gedung_is_baru) ? '1' : '-',      // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
-                            totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
-                            (gItem.gedung_is_baru === 'Baru' || !gItem.gedung_is_baru) ? '-' : (gItem.gedung_kapitalisasi_tahun_induk || '-'), // c25: col 26 (Tahun Induk)
-                            (gItem.gedung_is_baru === 'Baru' || !gItem.gedung_is_baru) ? '-' : (parseFloat(gItem.gedung_kapitalisasi_nilai_induk) || 0), // c26: col 27 (Nilai Induk s/d ...)
+                            isGedungBaru ? '1' : '-',                                     // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
+                            getAstapNibar(item, gItem, gIdx),                            // c24: col 25 (Nibar diambil dari astaps register)
+                            isGedungBaru ? '-' : (gItem.gedung_kapitalisasi_tahun_induk || '-'), // c25: col 26 (Tahun Induk)
+                            isGedungBaru ? '-' : (parseFloat(gItem.gedung_kapitalisasi_nilai_induk) || 0), // c26: col 27 (Nilai Induk s/d ...)
                             item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
                             formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
                             item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
@@ -1875,6 +1903,8 @@
                         col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
                     }
 
+                    const isGedungBaru = (item.gedung_is_baru === 'Baru' || !item.gedung_is_baru);
+
                     kibCRows.push([
                         ...col1to15,                                                 // c0-c14: cols 1-15
                         item.nama_barang || '-',                                     // c15: col 16 (Nama Barang)
@@ -1885,10 +1915,10 @@
                         item.gedung_beton || 'Beton',                                // c20: col 21 (Beton / Tidak)
                         item.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
                         item.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
-                        (item.gedung_is_baru === 'Baru' || !item.gedung_is_baru) ? '1' : '-',        // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
-                        totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
-                        (item.gedung_is_baru === 'Baru' || !item.gedung_is_baru) ? '-' : (item.gedung_kapitalisasi_tahun_induk || '-'), // c25: col 26 (Tahun Induk)
-                        (item.gedung_is_baru === 'Baru' || !item.gedung_is_baru) ? '-' : (parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0), // c26: col 27 (Nilai Induk s/d ...)
+                        isGedungBaru ? '1' : '-',                                    // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
+                        getAstapNibar(item),                                         // c24: col 25 (Nibar diambil dari astaps register)
+                        isGedungBaru ? '-' : (item.gedung_kapitalisasi_tahun_induk || '-'), // c25: col 26 (Tahun Induk)
+                        isGedungBaru ? '-' : (parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0), // c26: col 27 (Nilai Induk s/d ...)
                         item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
                         formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
                         item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
@@ -2008,13 +2038,16 @@
             {s:{r:5,c:18}, e:{r:6,c:18}},  // Col 19: (B,KB,RB)
             {s:{r:5,c:19}, e:{r:6,c:19}},  // Col 20: Bertingkat / Tidak
             {s:{r:5,c:20}, e:{r:6,c:20}},  // Col 21: Beton / Tidak
-            {s:{r:4,c:21}, e:{r:6,c:21}},  // Col 22: Status Tanah
-            {s:{r:4,c:22}, e:{r:6,c:22}},  // Col 23: Kode aset Tanah
-            {s:{r:4,c:23}, e:{r:6,c:23}},  // Col 24: Baru
-            // Col 25-27: Jenis Bangunan (r4 banner c24-c26) -> r5: Kapitalisasi (c24-c26)
-            {s:{r:4,c:24}, e:{r:4,c:26}},
+
+            // Col 22-27: Jenis Bangunan (Top banner on r4, c21-c26)
+            {s:{r:4,c:21}, e:{r:4,c:26}},
+            {s:{r:5,c:21}, e:{r:6,c:21}},  // Col 22: Status Tanah (r5-r6)
+            {s:{r:5,c:22}, e:{r:6,c:22}},  // Col 23: Kode aset Tanah (r5-r6)
+            {s:{r:5,c:23}, e:{r:6,c:23}},  // Col 24: Baru (r5-r6)
+            // Col 25-27: Kapitalisasi (Sub banner on r5, c24-c26)
             {s:{r:5,c:24}, e:{r:5,c:26}},
-            // r6: Nilai (c24), Tahun Induk (c25), Nilai Induk (c26)
+            // r6: Nibar (c24), Tahun Induk (c25), Nilai Induk (c26)
+
             // Col 28-35: Riwayat Pembelian (r4 banner c27-c34)
             {s:{r:4,c:27}, e:{r:4,c:34}},
             {s:{r:5,c:27}, e:{r:5,c:28}},  // SPK (r5) -> r6: Nomor (c27), Tanggal (c28)
@@ -2094,10 +2127,7 @@
                 "Kode Barang (Kode Sub Sub Rincian Objek PMDN 108)",
                 "Luas (m²)",
                 "Kondisi / Spesifikasi", "", "",
-                "Status Tanah",
-                "Kode aset Tanah",
-                "Baru",
-                "Jenis Jaringan / Bangunan", "", "",
+                "Jenis Bangunan", "", "", "", "", "",
                 "Riwayat Pembelian", "", "", "", "", "", "", "",
                 "VOLUME", "",
                 "Nilai Satuan Barang (Rp)", "", "",
@@ -2126,9 +2156,9 @@
                 "",
                 "",
                 "(B,KB,RB)", "Konstruksi Jaringan", "Bahan Jaringan",
-                "",
-                "",
-                "",
+                "Status Tanah",
+                "Kode aset Tanah",
+                "Baru",
                 "Kapitalisasi", "", "",
                 "SPK", "",
                 "Surat Pesanan", "",
@@ -2149,8 +2179,9 @@
             // r6: Technical Sub Detail (Level 4)
             [
                 "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
-                "", "", "", "", "", "", "", "", "",
-                "Nilai", "Tahun Induk", "Nilai Induk s/d " + (parseInt(yearLabel) - 1 || '2025'),
+                "", "", "", "", "", "",
+                "", "", "",
+                "Nibar", "Tahun Induk", "Nilai Induk s/d " + (parseInt(yearLabel) - 1 || '2025'),
                 "Nomor", "Tanggal",
                 "Nomor", "Tanggal",
                 "Nomor", "Tanggal",
@@ -2243,6 +2274,8 @@
                     col1to15 = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
                 }
 
+                const isBaru = (item.jaringan_is_baru === 'Baru' || item.gedung_is_baru === 'Baru' || !item.jaringan_is_baru);
+
                 kibDRows.push([
                     ...col1to15,                                                 // c0-c14: cols 1-15
                     item.nama_barang || '-',                                     // c15: col 16 (Nama Barang)
@@ -2253,10 +2286,10 @@
                     item.gedung_beton || '-',                                    // c20: col 21 (Bahan Jaringan)
                     item.jaringan_status_tanah || item.gedung_status_tanah || 'Tanah Hak Pakai RSUD', // c21: col 22 (Status Tanah)
                     item.jaringan_kode_aset_tanah || item.gedung_kode_aset_tanah || '-', // c22: col 23 (Kode aset Tanah)
-                    item.gedung_is_baru || 'Baru',                               // c23: col 24 (Baru)
-                    totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
-                    item.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
-                    parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
+                    isBaru ? '1' : '-',                                          // c23: col 24 (Baru: '1' jika Baru, '-' jika Lama)
+                    getAstapNibar(item),                                         // c24: col 25 (Nibar diambil dari astaps register)
+                    isBaru ? '-' : (item.jaringan_kapitalisasi_tahun_induk || item.gedung_kapitalisasi_tahun_induk || '-'),                 // c25: col 26 (Tahun Induk)
+                    isBaru ? '-' : (parseFloat(item.jaringan_kapitalisasi_nilai_induk || item.gedung_kapitalisasi_nilai_induk) || 0),       // c26: col 27 (Nilai Induk s/d ...)
                     item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
                     formatAstapDate(item.spk_tanggal),                           // c28: col 29 (SPK Tgl)
                     item.surat_pesanan_nomor || '-',                             // c29: col 30 (Surat Pesanan No)
@@ -2375,13 +2408,16 @@
             {s:{r:5,c:18}, e:{r:6,c:18}},  // Col 19: (B,KB,RB)
             {s:{r:5,c:19}, e:{r:6,c:19}},  // Col 20: Konstruksi Jaringan
             {s:{r:5,c:20}, e:{r:6,c:20}},  // Col 21: Bahan Jaringan
-            {s:{r:4,c:21}, e:{r:6,c:21}},  // Col 22: Status Tanah
-            {s:{r:4,c:22}, e:{r:6,c:22}},  // Col 23: Kode aset Tanah
-            {s:{r:4,c:23}, e:{r:6,c:23}},  // Col 24: Baru
-            // Col 25-27: Jenis Jaringan / Bangunan (r4 banner c24-c26) -> r5: Kapitalisasi (c24-c26)
-            {s:{r:4,c:24}, e:{r:4,c:26}},
+
+            // Col 22-27: Jenis Bangunan (Top banner on r4, c21-c26)
+            {s:{r:4,c:21}, e:{r:4,c:26}},
+            {s:{r:5,c:21}, e:{r:6,c:21}},  // Col 22: Status Tanah (r5-r6)
+            {s:{r:5,c:22}, e:{r:6,c:22}},  // Col 23: Kode aset Tanah (r5-r6)
+            {s:{r:5,c:23}, e:{r:6,c:23}},  // Col 24: Baru (r5-r6)
+            // Col 25-27: Kapitalisasi (Sub banner on r5, c24-c26)
             {s:{r:5,c:24}, e:{r:5,c:26}},
-            // r6: Nilai (c24), Tahun Induk (c25), Nilai Induk (c26)
+            // r6: Nibar (c24), Tahun Induk (c25), Nilai Induk (c26)
+
             // Col 28-35: Riwayat Pembelian (r4 banner c27-c34)
             {s:{r:4,c:27}, e:{r:4,c:34}},
             {s:{r:5,c:27}, e:{r:5,c:28}},  // SPK (r5) -> r6: Nomor (c27), Tanggal (c28)
