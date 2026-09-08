@@ -696,7 +696,27 @@
         }
 
         // HELPER FUNGSI UNTUK MENGAMBIL DATA LANGKAH 4 (REKANAN PENYEDIA & PPK)
-        function getStep4Columns(item) {
+        function getStep4Columns(item, isSpecial = false) {
+            let spec = item.spesifikasi_json;
+            if (typeof spec === 'string') {
+                try { spec = JSON.parse(spec); } catch (e) { spec = {}; }
+            }
+            const noHpWa = item.penyedia_telepon || (spec ? spec.penyedia_telepon : '') || item.penyedia_kontak || (spec ? spec.penyedia_kontak : '') || item.telepon || item.no_hp || '-';
+
+            if (isSpecial) {
+                return [
+                    item.penyedia_nama || '-',
+                    item.penyedia_pemilik || '-',
+                    noHpWa,
+                    item.penyedia_rekening_nama || (item.penyedia_nama || '-'),
+                    item.penyedia_rekening_nomor || '-',
+                    item.penyedia_alamat || '-',
+                    item.ppk_nama || '-',
+                    item.ppk_nip || '-',
+                    item.keterangan_tambahan || item.keterangan || '-'
+                ];
+            }
+
             return [
                 item.penyedia_nama || '-',
                 item.penyedia_pemilik || '-',
@@ -3443,13 +3463,14 @@
         // ------------------------------------------------------------------------
         // 9. EXTRACOM (EKSTRAKOMTABEL) - COMPLETE 4-STEP MASTER SHEET (54 KOLOM)
         // ------------------------------------------------------------------------
-        // 9. EXTRACOM (EKSTRAKOMTABEL) - COMPLETE 4-STEP MASTER SHEET (50 KOLOM)
+        // 9. EXTRACOM (EKSTRAKOMTABEL) - COMPLETE 4-STEP MASTER SHEET (51 KOLOM)
         // Format Khusus Tanpa Kolom Kendaraan (No. Rangka, Mesin, BPKB, Polisi)
+        // Serta Kolom Khusus: No Hp / Wa Yang Aktif pada Pihak Penyedia
         // ------------------------------------------------------------------------
         const extracomTitleRows = getKibTitleRows("BARANG EKSTRAKOMTABEL", yearLabel, filterTw);
         const extracomRows = [
             ...extracomTitleRows,
-            // r3: Main Banner (50 kolom)
+            // r3: Main Banner (51 kolom)
             [
                 "NO",
                 "Program Pengadaan SIPD", "",
@@ -3461,11 +3482,11 @@
                 "", "", "", "", "", "", "", "", "", "", "",
                 "", "", "",
                 "RUANG /\nPEMEGANG",
-                "PIHAK PENYEDIA", "", "", "", "",
+                "PIHAK PENYEDIA", "", "", "", "", "",
                 "Pejabat Pembuat Komitmen", "",
                 "KET."
             ],
-            // r4: Sub-Banner Level 1 (50 kolom)
+            // r4: Sub-Banner Level 1 (51 kolom)
             [
                 "",
                 "", "",
@@ -3490,11 +3511,11 @@
                 "SP2D", "",
                 "BAST pada SPK/Surat Pesanan/Kwitansi/Invoice", "",
                 "",
-                "", "", "", "", "",
+                "Nama Penyedia", "Pemilik Penyedia", "No Hp / wa\nYang Aktif", "Rekening", "", "Alamat\nPenyedia",
                 "", "",
                 ""
             ],
-            // r5: Sub-Banner Level 2 (50 kolom)
+            // r5: Sub-Banner Level 2 (51 kolom)
             [
                 "",
                 "Kode", "Nama Program",
@@ -3512,11 +3533,11 @@
                 "", "",
                 "", "",
                 "",
-                "Nama Penyedia", "Pemilik Penyedia", "Rekening", "", "Alamat Penyedia",
+                "", "", "", "Nama Rek", "Nomor Rek", "",
                 "Nama", "NIP",
                 ""
             ],
-            // r6: Sub-Banner Level 3 / Nomor-Tanggal (50 kolom)
+            // r6: Sub-Banner Level 3 / Nomor-Tanggal (51 kolom)
             [
                 "",
                 "", "", "", "", "", "", "", "", "", "", "", "", "", "",
@@ -3526,17 +3547,17 @@
                 "NOMOR", "TANGGAL",
                 "NOMOR", "TANGGAL",
                 "",
-                "", "", "Nama Rek", "No Rek", "",
+                "", "", "", "", "", "",
                 "", "",
                 ""
             ],
-            // r7: Nomor Kolom (50 kolom)
+            // r7: Nomor Kolom (51 kolom)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
                 "16", "17", "18", "19", "20", "21", "22", "23",
                 "24", "25", "26", "27", "28", "29", "30", "31",
                 "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
-                "42", "43", "44", "45", "46", "47", "48", "49", "50"
+                "42", "43", "44", "45", "46", "47", "48", "49", "50", "51"
             ]
         ];
 
@@ -3647,7 +3668,7 @@
                             item.bast_dokumen_nomor || '-',              // c39: col 40
                             formatAstapDate(item.bast_dokumen_tanggal),  // c40: col 41
                             ruangUnit,                                   // c41: col 42
-                            ...getStep4Columns(item)                     // c42-c49: cols 43-50
+                            ...getStep4Columns(item, true)               // c42-c50: cols 43-51
                         ]);
                     });
                 } else {
@@ -3720,14 +3741,14 @@
                         item.bast_dokumen_nomor || '-',              // c39: col 40
                         formatAstapDate(item.bast_dokumen_tanggal),  // c40: col 41
                         ruangUnit,                                   // c41: col 42
-                        ...getStep4Columns(item)                     // c42-c49: cols 43-50
+                        ...getStep4Columns(item, true)               // c42-c50: cols 43-51
                     ]);
                 }
             });
         });
 
-        // ── Baris Footer Total EXTRACOM (50 Kolom) ───────────────────────────────
-        const extracomFooterRow = Array(50).fill("");
+        // ── Baris Footer Total EXTRACOM (51 Kolom) ───────────────────────────────
+        const extracomFooterRow = Array(51).fill("");
         extracomFooterRow[0] = "JUMLAH";
         extracomFooterRow[13] = extracomTotalAnggaran;
         extracomFooterRow[14] = extracomTotalRealisasi;
@@ -3737,7 +3758,7 @@
         extracomRows.push(extracomFooterRow);
 
         const wsExtracom = XLSX.utils.aoa_to_sheet(extracomRows);
-        wsExtracom['!cols'] = Array(50).fill({wch: 18});
+        wsExtracom['!cols'] = Array(51).fill({wch: 18});
         wsExtracom['!cols'][0] = {wch: 6};
         wsExtracom['!cols'][1] = {wch: 14}; wsExtracom['!cols'][2] = {wch: 32};
         wsExtracom['!cols'][3] = {wch: 14}; wsExtracom['!cols'][4] = {wch: 28};
@@ -3760,12 +3781,12 @@
         wsExtracom['!cols'][37] = {wch: 20}; wsExtracom['!cols'][38] = {wch: 14};
         wsExtracom['!cols'][39] = {wch: 28}; wsExtracom['!cols'][40] = {wch: 14};
         wsExtracom['!cols'][41] = {wch: 28}; wsExtracom['!cols'][42] = {wch: 28};
-        wsExtracom['!cols'][43] = {wch: 24}; wsExtracom['!cols'][44] = {wch: 24};
-        wsExtracom['!cols'][45] = {wch: 22}; wsExtracom['!cols'][46] = {wch: 30};
-        wsExtracom['!cols'][47] = {wch: 24}; wsExtracom['!cols'][48] = {wch: 22};
-        wsExtracom['!cols'][49] = {wch: 26};
+        wsExtracom['!cols'][43] = {wch: 24}; wsExtracom['!cols'][44] = {wch: 20};
+        wsExtracom['!cols'][45] = {wch: 24}; wsExtracom['!cols'][46] = {wch: 22};
+        wsExtracom['!cols'][47] = {wch: 30}; wsExtracom['!cols'][48] = {wch: 24};
+        wsExtracom['!cols'][49] = {wch: 22}; wsExtracom['!cols'][50] = {wch: 26};
 
-        // ── Merge Cells EXTRACOM (50 Kolom Sesuai Format Baku Khusus Ekstrakomtabel) ──
+        // ── Merge Cells EXTRACOM (51 Kolom Sesuai Format Baku Khusus Ekstrakomtabel) ──
         wsExtracom['!merges'] = getKibMerges([
             // Col 1: NO (r3-r6, c0)
             {s:{r:3,c:0}, e:{r:6,c:0}},
@@ -3840,23 +3861,26 @@
             // Col 42: RUANG / PEMEGANG (Berdiri Sendiri r3-r6, c41)
             {s:{r:3,c:41}, e:{r:6,c:41}},
 
-            // Col 43-47: PIHAK PENYEDIA (Top Banner r3-r4, c42-c46)
-            {s:{r:3,c:42}, e:{r:4,c:46}},
-            {s:{r:5,c:42}, e:{r:6,c:42}},  // Nama Penyedia
-            {s:{r:5,c:43}, e:{r:6,c:43}},  // Pemilik Penyedia
-            {s:{r:5,c:44}, e:{r:5,c:45}},  // Rekening -> r6: Nama Rek (c44), Nomor Rek (c45)
-            {s:{r:5,c:46}, e:{r:6,c:46}},  // Alamat Penyedia
+            // Col 43-48: PIHAK PENYEDIA (Top Banner r3, c42-c47)
+            {s:{r:3,c:42}, e:{r:3,c:47}},
+            {s:{r:4,c:42}, e:{r:6,c:42}},  // Nama Penyedia (r4-r6, c42)
+            {s:{r:4,c:43}, e:{r:6,c:43}},  // Pemilik Penyedia (r4-r6, c43)
+            {s:{r:4,c:44}, e:{r:6,c:44}},  // No Hp / wa Yang Aktif (r4-r6, c44)
+            {s:{r:4,c:45}, e:{r:4,c:46}},  // Rekening (r4, c45-c46)
+            {s:{r:5,c:45}, e:{r:6,c:45}},  // Nama Rek (r5-r6, c45)
+            {s:{r:5,c:46}, e:{r:6,c:46}},  // Nomor Rek (r5-r6, c46)
+            {s:{r:4,c:47}, e:{r:6,c:47}},  // Alamat Penyedia (r4-r6, c47)
 
-            // Col 48-49: Pejabat Pembuat Komitmen (r3-r4, c47-c48)
-            {s:{r:3,c:47}, e:{r:4,c:48}},
-            {s:{r:5,c:47}, e:{r:6,c:47}},  // Nama
-            {s:{r:5,c:48}, e:{r:6,c:48}},  // NIP
+            // Col 49-50: Pejabat Pembuat Komitmen (Top Banner r3-r4, c48-c49)
+            {s:{r:3,c:48}, e:{r:4,c:49}},
+            {s:{r:5,c:48}, e:{r:6,c:48}},  // Nama (r5-r6, c48)
+            {s:{r:5,c:49}, e:{r:6,c:49}},  // NIP (r5-r6, c49)
 
-            // Col 50: KET. (berdiri sendiri r3-r6, c49)
-            {s:{r:3,c:49}, e:{r:6,c:49}}
-        ], 50, extracomTitleRows.length, extracomRows.length);
+            // Col 51: KET. (Berdiri Sendiri r3-r6, c50)
+            {s:{r:3,c:50}, e:{r:6,c:50}}
+        ], 51, extracomTitleRows.length, extracomRows.length);
 
-        applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 50, 27, extracomTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 51, 27, extracomTitleRows.length);
         XLSX.utils.book_append_sheet(wb, wsExtracom, "9. Extracom");
 
         // DOWNLOAD FILE EXCEL 4 LANGKAH

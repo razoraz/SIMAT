@@ -393,6 +393,7 @@ Route::middleware('auth')->group(function () {
                     'alamat_barang' => $a->alamat_barang ?: ($spec['alamat_barang'] ?? 'RSUD Dr. H. Koesnandi'),
                     'penyedia_nama' => $a->penyedia_nama ?: ($spec['penyedia_nama'] ?? '-'),
                     'penyedia_pemilik' => $a->penyedia_pemilik ?: ($spec['penyedia_pemilik'] ?? '-'),
+                    'penyedia_telepon' => $a->penyedia_telepon ?: ($spec['penyedia_telepon'] ?? ($spec['penyedia_kontak'] ?? '-')),
                     'penyedia_rekening_nama' => $a->penyedia_rekening_nama ?: ($a->penyedia_nama ?: ($spec['penyedia_rekening_nama'] ?? '-')),
                     'penyedia_rekening_nomor' => $a->penyedia_rekening_nomor ?: ($spec['penyedia_rekening_nomor'] ?? '-'),
                     'penyedia_alamat' => $a->penyedia_alamat ?: ($spec['penyedia_alamat'] ?? '-'),
@@ -846,6 +847,7 @@ Route::middleware('auth')->group(function () {
                     'tgl_mulai' => $data['kdp_tgl_mulai'] ?? null,
                     'tgl_target_selesai' => $data['kdp_tgl_target_selesai'] ?? null,
                     'ruang_pemegang' => $data['ruang_pemegang_mesin'] ?? ($data['ruang_pemegang_lainnya'] ?? ($data['ruang_pemegang_atb'] ?? null)),
+                    'penyedia_telepon' => $data['penyedia_telepon'] ?? null,
                 ];
 
                 $specJson = array_filter($specJson, fn($v) => !is_null($v) && $v !== '');
@@ -1687,6 +1689,7 @@ Route::middleware('auth')->group(function () {
                     'progres_persen' => $d['kdp_progres_persen'] ?? null,
                     'tgl_mulai' => $d['kdp_tgl_mulai'] ?? null,
                     'tgl_target_selesai' => $d['kdp_tgl_target_selesai'] ?? null,
+                    'penyedia_telepon' => $d['penyedia_telepon'] ?? null,
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
 
@@ -1916,6 +1919,7 @@ Route::middleware('auth')->group(function () {
             if (isset($data['alamat_barang'])) $astap->alamat_barang = $data['alamat_barang'];
             if (isset($data['penyedia_nama'])) $astap->penyedia_nama = $data['penyedia_nama'];
             if (isset($data['penyedia_pemilik'])) $astap->penyedia_pemilik = $data['penyedia_pemilik'];
+            if (isset($data['penyedia_telepon']) && \Schema::hasColumn('astaps', 'penyedia_telepon')) $astap->penyedia_telepon = $data['penyedia_telepon'];
             if (isset($data['penyedia_rekening_nama'])) $astap->penyedia_rekening_nama = $data['penyedia_rekening_nama'];
             if (isset($data['penyedia_rekening_nomor'])) $astap->penyedia_rekening_nomor = $data['penyedia_rekening_nomor'];
             if (isset($data['penyedia_alamat'])) $astap->penyedia_alamat = $data['penyedia_alamat'];
