@@ -433,6 +433,11 @@ class DistribusiController extends Controller
                             'message' => "Volume Pengajuan untuk {$namaBrg} harus lebih dari 0."
                         ], 422);
                     }
+                    $regCount = !empty($itemData['register_ids']) ? count($itemData['register_ids']) : 0;
+                    if (!$isSubAdmin && $regCount > 0) {
+                        $itemData['qty_acc'] = $regCount;
+                    }
+
                     if (!$isSubAdmin && (!isset($itemData['qty_acc']) || $itemData['qty_acc'] === null || (int)$itemData['qty_acc'] <= 0)) {
                         return response()->json([
                             'success' => false,
@@ -444,19 +449,6 @@ class DistribusiController extends Controller
                             'success' => false,
                             'message' => "Keterangan / Catatan Peruntukan Barang untuk {$namaBrg} harus diisi."
                         ], 422);
-                    }
-
-                    $regCount = !empty($itemData['register_ids']) ? count($itemData['register_ids']) : 0;
-                    if ($regCount > 0) {
-                        $itemQtyAcc = (isset($itemData['qty_acc']) && $itemData['qty_acc'] !== null && $itemData['qty_acc'] !== '')
-                            ? (int)$itemData['qty_acc']
-                            : null;
-                        if ($itemQtyAcc === null || $itemQtyAcc < $regCount) {
-                            return response()->json([
-                                'success' => false,
-                                'message' => "Volume Di-ACC untuk {$namaBrg} tidak boleh kurang dari jumlah NIBAR yang dipilih ({$regCount} unit)."
-                            ], 422);
-                        }
                     }
                 }
             }
@@ -581,20 +573,24 @@ class DistribusiController extends Controller
                     }
                 }
 
+                // Simpan Relasi Register NIBAR terpilih & kunci statusnya (kosongkan jika Ditolak)
+                $registerIds = ($finalStatus === 'Ditolak') ? [] : ($itemData['register_ids'] ?? []);
+                $regCount = count($registerIds);
+                $finalQtyAcc = ($finalStatus === 'Ditolak')
+                    ? 0
+                    : ($regCount > 0
+                        ? $regCount
+                        : ((isset($itemData['qty_acc']) && $itemData['qty_acc'] !== null && $itemData['qty_acc'] !== '')
+                            ? (int)$itemData['qty_acc']
+                            : null));
+
                 $distribusiItem = DistribusiItem::create([
                     'distribusi_id' => $distribusi->id,
                     'astap_id'      => $astapId,
                     'qty'           => $itemData['qty'] ?? 1,
-                    'qty_acc'       => ($finalStatus === 'Ditolak')
-                        ? 0
-                        : ((isset($itemData['qty_acc']) && $itemData['qty_acc'] !== null && $itemData['qty_acc'] !== '')
-                            ? (int)$itemData['qty_acc']
-                            : null),
+                    'qty_acc'       => $finalQtyAcc,
                     'keterangan'    => $itemData['keterangan'] ?? null,
                 ]);
-
-                // Simpan Relasi Register NIBAR terpilih & kunci statusnya (kosongkan jika Ditolak)
-                $registerIds = ($finalStatus === 'Ditolak') ? [] : ($itemData['register_ids'] ?? []);
 
                 foreach ($registerIds as $regId) {
                     DistribusiItemRegister::create([

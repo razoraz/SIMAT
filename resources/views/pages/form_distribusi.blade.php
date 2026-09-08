@@ -141,7 +141,7 @@
                                     kode_barang: astapObj ? astapObj.kode_108 : (it.kode_barang || ''),
                                     merk_type: it.merk_type || '',
                                     qty: it.qty || 1,
-                                    qty_acc: (it.qty_acc !== undefined && it.qty_acc !== null) ? it.qty_acc : null,
+                                    qty_acc: nibarSelectedObj.length > 0 ? nibarSelectedObj.length : ((it.qty_acc !== undefined && it.qty_acc !== null) ? it.qty_acc : 0),
                                     satuan: astapObj ? (astapObj.satuan || 'Unit') : (it.satuan || 'Unit'),
                                     kondisi: it.kondisi || '-',
                                     keterangan: it.keterangan || '',
@@ -195,7 +195,7 @@
                     }
 
                     if (!this.formData.items || this.formData.items.length === 0) {
-                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] }];
+                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] }];
                     }
                 },
                 updateYearInKode() {
@@ -229,7 +229,7 @@
                 },
                 addItem() {
                     if (this.formData.status === 'Ditolak') return;
-                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: null, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] });
+                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] });
                 },
                 removeItem(index) {
                     if (this.formData.status === 'Ditolak') return;
@@ -268,49 +268,38 @@
                 getItemMaxQty(item) {
                     if (!item) return 1;
                     const qtyPengajuan = parseInt(item.qty) || 0;
-                    const qtyAcc = (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? parseInt(item.qty_acc) : 0;
-                    return Math.max(qtyPengajuan, qtyAcc, 1);
+                    return Math.max(qtyPengajuan, 1);
                 },
                 selectNibar(item, n) {
                     if (this.formData.status === 'Ditolak') return;
                     if (!item || !n || (n.status && n.status !== 'Tersedia')) return;
                     if (!item.nibar_selected) item.nibar_selected = [];
-                    const prevCount = item.nibar_selected.length;
-                    const maxQty = this.getItemMaxQty(item);
-                    if (maxQty <= 0) { alert('⚠️ Volume bernilai 0. Tidak dapat memilih NIBAR.'); return; }
-                    if (item.nibar_selected.length >= maxQty) {
-                        alert('⚠️ Jumlah NIBAR yang dipilih sudah mencapai batas maksimal (' + maxQty + ' ' + (item.satuan || 'Unit') + '). Tambah volume pengajuan / ACC jika ingin memilih lebih banyak NIBAR.');
+                    
+                    // Cek jika sudah dipilih agar tidak duplikat
+                    if (item.nibar_selected.some(sel => sel.nibar === n.nibar || (sel.id && n.id && String(sel.id) === String(n.id)))) {
                         return;
                     }
+
                     item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
-                    const newCount = item.nibar_selected.length;
-                    // Volume Di-ACC otomatis terisi mengikuti NIBAR yang diinput
-                    if (item.qty_acc === null || item.qty_acc === undefined || item.qty_acc === '' || item.qty_acc === prevCount || item.qty_acc < newCount) {
-                        item.qty_acc = newCount;
+                    // Volume Di-ACC otomatis mengikuti jumlah NIBAR yang diinput
+                    item.qty_acc = item.nibar_selected.length;
+                    if (!this.isSubAdmin && (!item.qty || parseInt(item.qty) < item.qty_acc)) {
+                        item.qty = item.qty_acc;
                     }
                     this.activeNibarDropdownIndex = null;
                 },
                 removeNibar(item, nibarStr) {
                     if (this.formData.status === 'Ditolak') return;
-                    const prevCount = (item.nibar_selected || []).length;
                     item.nibar_selected = (item.nibar_selected || []).filter(n => n.nibar !== nibarStr);
-                    const newCount = item.nibar_selected.length;
-                    // Jika qty_acc sebelumnya mengikuti jumlah NIBAR, sesuaikan otomatis
-                    if (item.qty_acc === prevCount) {
-                        item.qty_acc = newCount > 0 ? newCount : null;
-                    } else if (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '' && item.qty_acc < newCount) {
-                        item.qty_acc = newCount;
-                    }
+                    // Volume Di-ACC otomatis mengikuti jumlah NIBAR yang diinput
+                    item.qty_acc = item.nibar_selected.length;
                 },
                 validateItemQtyAcc(item) {
                     if (!item || this.formData.status === 'Ditolak') return;
-                    const nibarCount = (item.nibar_selected || []).length;
-                    if (nibarCount > 0) {
-                        const currentQtyAcc = (item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? parseInt(item.qty_acc) : null;
-                        if (currentQtyAcc === null || currentQtyAcc < nibarCount) {
-                            item.qty_acc = nibarCount;
-                            this.showSimatToast('⚠️ Volume Di-ACC tidak boleh kurang dari jumlah NIBAR yang dipilih (' + nibarCount + ' unit). Otomatis disesuaikan ke ' + nibarCount + '.', 'warning');
-                        }
+                    if (!this.isNibarEmpty(item)) {
+                        item.qty_acc = (item.nibar_selected || []).length;
+                    } else {
+                        item.qty_acc = parseInt(item.qty) || 0;
                     }
                 },
                 getFilteredJenisAstap(query) {
@@ -337,15 +326,19 @@
                 selectAstapItem(item, ast) {
                     if (this.formData.status === 'Ditolak') return;
                     item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null;
+                    item.nibar_selected = [];
+                    item.qty_acc = this.isNibarEmpty(item) ? (parseInt(item.qty) || 1) : 0;
                 },
                 clearItemBarang(item, idx) {
                     if (this.formData.status === 'Ditolak') return;
-                    item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; item.qty_acc = null; if (idx !== undefined) this.activeDropdownIndex = idx;
+                    item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; item.qty_acc = 0; if (idx !== undefined) this.activeDropdownIndex = idx;
                 },
                 onNamaBarangInput(item) {
-                    if (!item.nama_barang || item.nama_barang.trim() === '') { item.kode_barang = ''; return; }
+                    if (!item.nama_barang || item.nama_barang.trim() === '') { item.kode_barang = ''; item.nibar_selected = []; item.qty_acc = 0; return; }
                     const match = (this.katalogAstap || []).find(a => a.nama && a.nama.toLowerCase().trim() === item.nama_barang.toLowerCase().trim());
                     if (match) { item.kode_barang = match.kode; item.merk_type = match.merk || ''; item.satuan = match.satuan || 'Unit'; if (!item.jenis_astap_nama) item.jenis_astap_nama = match.jenis_nama || ''; }
+                    item.nibar_selected = [];
+                    item.qty_acc = this.isNibarEmpty(item) ? (parseInt(item.qty) || 1) : 0;
                 },
                 get filteredUnitList() {
                     if (!this.unitSearch || this.unitSearch.trim().length === 0) return (this.unitList || []).slice(0, 10);
@@ -453,16 +446,14 @@
 
                         // e. Validasi Volume Di-ACC (Khusus Admin jika status bukan Ditolak)
                         if (!this.isSubAdmin && this.formData.status !== 'Ditolak') {
-                            const qtyAcc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : null;
-                            if (qtyAcc === null || isNaN(qtyAcc) || qtyAcc <= 0) {
-                                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nVolume Di-ACC pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi atau bernilai 0.');
-                                return;
-                            }
-
-                            const nibarCount = (it.nibar_selected || []).length;
-                            if (nibarCount > 0 && qtyAcc < nibarCount) {
-                                alert('⚠️ Validasi Gagal pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '"):\n\nVolume Di-ACC (' + qtyAcc + ' unit) tidak boleh kurang dari jumlah NIBAR yang diinput (' + nibarCount + ' unit).\n\nSilakan sesuaikan Volume Di-ACC minimal ' + nibarCount + ' unit.');
-                                return;
+                            if (!this.isNibarEmpty(it)) {
+                                it.qty_acc = (it.nibar_selected || []).length;
+                                if (it.qty_acc <= 0) {
+                                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nVolume Di-ACC pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") masih 0 karena belum ada NIBAR yang dipilih.\n\nSilakan pilih NIBAR terlebih dahulu.');
+                                    return;
+                                }
+                            } else {
+                                it.qty_acc = qtyPengajuan;
                             }
                         }
 
@@ -508,7 +499,7 @@
                                             nama_barang: it.nama_barang,
                                             kode_barang: resolvedKode,
                                             qty: parseInt(it.qty) || 1,
-                                            qty_acc: (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : null,
+                                            qty_acc: this.formData.status === 'Ditolak' ? 0 : (this.isSubAdmin ? null : (registerIds.length > 0 ? registerIds.length : ((it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : (parseInt(it.qty) || 1)))),
                                             keterangan: it.keterangan || '-',
                                             register_ids: registerIds
                                         };
@@ -994,7 +985,7 @@
                                                     <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih nama barang terlebih dahulu</span>
                                                 </template>
                                                 <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline" x-text="'— batas maks. ' + getItemMaxQty(item) + ' ' + (item.satuan || 'Unit')"></span>
+                                                    <span class="text-slate-400 font-normal text-[11px] hidden sm:inline">— pilih NIBAR yang didistribusikan</span>
                                                 </template>
                                             </span>
                                             
@@ -1009,7 +1000,7 @@
                                                     </span>
                                                 </template>
                                                 <template x-if="(item.nama_barang || item.kode_barang) && !isNibarEmpty(item)">
-                                                    <span class="text-amber-400 font-mono text-[10px]" x-text="(item.nibar_selected || []).length + ' / ' + getItemMaxQty(item) + ' dipilih'"></span>
+                                                    <span class="text-amber-400 font-mono text-[10px]" x-text="(item.nibar_selected || []).length + ' NIBAR dipilih'"></span>
                                                 </template>
                                             </div>
                                         </label>
@@ -1022,7 +1013,7 @@
                                                         <span>📋</span>
                                                         <span>Kondisi Fisik Per Unit NIBAR:</span>
                                                     </span>
-                                                    <span class="text-amber-400 font-mono text-[10.5px]" x-text="(item.nibar_selected || []).length + ' / ' + getItemMaxQty(item) + ' Unit'"></span>
+                                                    <span class="text-amber-400 font-mono text-[10.5px]" x-text="(item.nibar_selected || []).length + ' Unit NIBAR'"></span>
                                                 </div>
                                                 
                                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
@@ -1098,13 +1089,13 @@
                                                 <div class="relative flex items-center">
                                                     <input type="text" 
                                                            :value="nibarSearch[item.id] || ''"
-                                                           :disabled="formData.status === 'Ditolak' || (item.nibar_selected || []).length >= getItemMaxQty(item)"
+                                                           :disabled="formData.status === 'Ditolak'"
                                                            :readonly="formData.status === 'Ditolak'"
                                                            @input="if (formData.status !== 'Ditolak') { nibarSearch = {...nibarSearch, [item.id]: $event.target.value}; activeNibarDropdownIndex = idx; }"
                                                            @focus="if (formData.status !== 'Ditolak') activeNibarDropdownIndex = idx"
-                                                           :placeholder="formData.status === 'Ditolak' ? 'NIBAR terkunci' : ((item.nibar_selected || []).length >= getItemMaxQty(item) ? '✅ Sudah memilih ' + getItemMaxQty(item) + ' NIBAR (sesuai volume ACC)' : 'Ketik atau klik untuk pilih NIBAR...')" 
+                                                           :placeholder="formData.status === 'Ditolak' ? 'NIBAR terkunci' : 'Ketik atau klik untuk cari / pilih NIBAR...'" 
                                                            :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-500 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-amber-500/40 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50'"
-                                                           class="w-full h-11 border rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs font-mono placeholder-slate-500 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                                           class="w-full h-11 border rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs font-mono placeholder-slate-500 focus:outline-none transition-all">
                                                     <svg class="w-4 h-4 text-amber-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
 
                                                     <!-- Tombol Silang Reset Input Pencarian NIBAR di Pojok Kanan Dalam Input -->
@@ -1190,52 +1181,51 @@
                                                 let raw = $event.target.value.replace(/\D/g, '');
                                                 item.qty = raw ? parseInt(raw, 10) : '';
                                                 $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                if (isNibarEmpty(item)) {
+                                                    item.qty_acc = item.qty ? parseInt(item.qty, 10) : 0;
+                                                } else {
+                                                    item.qty_acc = (item.nibar_selected || []).length;
+                                                }
                                             "
                                             placeholder="1"
                                             :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-700/90 focus:border-teal-500'"
                                             class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none transition-all">
                                     </div>
 
-                                    <!-- Vol 2: Volume ACC — Hanya tampil & bisa diisi Admin/Master Admin -->
+                                    <!-- Vol 2: Volume ACC — Mengikuti NIBAR yang diinput & tidak dapat diedit -->
                                     <template x-if="!isSubAdmin">
                                         <div>
                                             <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
                                                 <span class="flex items-center space-x-1.5">
                                                     <span class="text-emerald-300">Volume Di-ACC</span>
-                                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">✅ Admin</span>
+                                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">🔒 Sesuai NIBAR</span>
                                                 </span>
-                                                <template x-if="item.qty_acc === null || item.qty_acc === ''">
-                                                    <span class="text-[10px] text-amber-400 font-semibold">⏳ Belum Di-ACC</span>
+                                                <template x-if="!item.qty_acc || item.qty_acc <= 0">
+                                                    <span class="text-[10px] text-amber-400 font-semibold" x-text="isNibarEmpty(item) ? '⏳ Auto Qty' : '⏳ Belum Pilih NIBAR'"></span>
                                                 </template>
-                                                <template x-if="item.qty_acc !== null && item.qty_acc !== '' && (!item.nibar_selected || item.nibar_selected.length <= item.qty_acc)">
+                                                <template x-if="item.qty_acc && item.qty_acc > 0">
                                                     <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
                                                 </template>
-                                                <template x-if="(item.nibar_selected || []).length > 0 && item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length">
-                                                    <span class="text-[10px] text-rose-400 font-bold" x-text="'⚠️ Min. ' + item.nibar_selected.length + ' ' + (item.satuan || 'Unit')"></span>
-                                                </template>
                                             </label>
-                                            <div class="relative">
+                                            <div class="relative flex items-center">
                                                 <input type="text"
-                                                    :value="(item.qty_acc !== null && item.qty_acc !== '') ? Number(item.qty_acc).toLocaleString('id-ID') : ''"
-                                                    :disabled="formData.status === 'Ditolak'"
-                                                    :readonly="formData.status === 'Ditolak'"
-                                                    @input="
-                                                        if (formData.status === 'Ditolak') return;
-                                                        let raw = $event.target.value.replace(/\D/g, '');
-                                                        item.qty_acc = raw !== '' ? parseInt(raw, 10) : null;
-                                                        $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                                    "
-                                                    @change="validateItemQtyAcc(item)"
-                                                    @blur="validateItemQtyAcc(item)"
-                                                    placeholder="Kosong = Belum Di-ACC"
-                                                    :class="formData.status === 'Ditolak' 
-                                                        ? 'bg-slate-950/80 text-slate-500 cursor-not-allowed border-slate-800' 
-                                                        : ((item.nibar_selected || []).length > 0 && item.qty_acc !== null && item.qty_acc !== '' && item.qty_acc < item.nibar_selected.length 
-                                                            ? 'bg-slate-900 text-rose-300 border-rose-500/80 focus:border-rose-400 focus:ring-1 focus:ring-rose-400/40' 
-                                                            : 'bg-slate-900 text-emerald-300 border-emerald-500/40 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/40')"
-                                                    class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none transition-all placeholder-slate-500">
-                                                <svg class="w-3.5 h-3.5 text-emerald-400 pointer-events-none" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    :value="((item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? item.qty_acc : (item.nibar_selected ? item.nibar_selected.length : 0)) + ' ' + (item.satuan || 'Unit')"
+                                                    readonly
+                                                    tabindex="-1"
+                                                    title="Volume Di-ACC terisi otomatis mengikuti jumlah NIBAR yang diinput dan tidak dapat diedit manual"
+                                                    class="w-full h-11 bg-slate-950/80 text-emerald-400 font-mono font-bold border border-slate-800 rounded-xl px-4 py-2.5 text-xs cursor-not-allowed select-none focus:outline-none shadow-inner">
+                                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none text-emerald-400/80">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                </div>
                                             </div>
+                                            <p class="text-[10px] text-slate-400 mt-1 flex items-center space-x-1">
+                                                <template x-if="!isNibarEmpty(item)">
+                                                    <span>ℹ️ Otomatis mengikuti total NIBAR terpilih (<strong class="text-emerald-300 font-mono" x-text="(item.nibar_selected || []).length"></strong> NIBAR)</span>
+                                                </template>
+                                                <template x-if="isNibarEmpty(item)">
+                                                    <span>ℹ️ NIBAR kosong di sistem — Otomatis mengikuti Volume Pengajuan</span>
+                                                </template>
+                                            </p>
                                         </div>
                                     </template>
 
