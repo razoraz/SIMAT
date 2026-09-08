@@ -21,7 +21,7 @@
                 init() {
                     const urlParams = new URLSearchParams(window.location.search);
                     const tabParam = urlParams.get('tab');
-                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id');
+                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id') || urlParams.get('mutasi_id');
                     const returnTo = urlParams.get('returnTo');
 
                     if (returnTo) {
@@ -32,7 +32,16 @@
                         this.activeTab = tabParam;
                     }
 
-                    if (idParam) {
+                    if (idParam && tabParam === 'mutasi') {
+                        // Auto-buka print modal mutasi jika kembali dari halaman mutasi aset
+                        const targetMutasi = this.mutasiList.find(m => String(m.id) === String(idParam) || String(m.kode) === String(idParam));
+                        if (targetMutasi) {
+                            this.$nextTick(() => {
+                                this.openPrintMutasi(targetMutasi);
+                            });
+                        }
+                    } else if (idParam && (tabParam === 'distribusi' || !tabParam)) {
+                        // Auto-buka print modal distribusi (behavior lama)
                         this.activeTab = 'distribusi';
                         const target = this.distribusiList.find(d => String(d.id) === String(idParam) || String(d.kode) === String(idParam));
                         if (target) {
