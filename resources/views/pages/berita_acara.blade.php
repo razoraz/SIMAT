@@ -321,6 +321,13 @@
                     this.showPrintMutasiModal = true;
                 },
 
+                closeMutasiModal() {
+                    this.showPrintMutasiModal = false;
+                    if (this.returnToUrl) {
+                        window.location.href = this.returnToUrl;
+                    }
+                },
+
                 toggleSignMutasi(item) {
                     const target = item || this.selectedMutasi;
                     if (target) {
@@ -1772,8 +1779,8 @@
         <!-- ========================================================================= -->
         <!-- MODAL CETAK 3: LEMBAR DOKUMEN BAST MUTASI ASET (ANTAR RUANGAN)             -->
         <!-- ========================================================================= -->
-        <div x-show="showPrintMutasiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak>
-            <div @click.away="showPrintMutasiModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
+        <div x-show="showPrintMutasiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak @click.self="closeMutasiModal()">
+            <div @click.away="closeMutasiModal()" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
                 
                 <div class="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
                     <div class="flex items-center space-x-2">
@@ -1800,7 +1807,7 @@
                         <button type="button" @click="printCurrent()" class="px-4 py-1.5 rounded-xl bg-purple-500 text-slate-950 font-bold text-xs shadow-lg">
                             🖨️ Cetak Surat
                         </button>
-                        <button type="button" @click="showPrintMutasiModal = false" class="p-1 rounded-lg text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+                        <button type="button" @click="closeMutasiModal()" class="p-1 rounded-lg text-slate-400 hover:text-white font-bold text-lg">&times;</button>
                     </div>
                 </div>
 
