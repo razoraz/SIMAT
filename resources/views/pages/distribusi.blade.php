@@ -172,13 +172,33 @@
                     this.isUnitDropdownOpen = false;
                 },
 
+                get countAll() {
+                    return (this.distribusis || []).length;
+                },
+
+                get countSelesai() {
+                    return (this.distribusis || []).filter(d => d.status === 'Telah Diterima' || d.status === 'Diterima' || d.status === 'Selesai').length;
+                },
+
+                get countMenungguAdmin() {
+                    return (this.distribusis || []).filter(d => d.status === 'Menunggu Konfirmasi' || d.status === 'Pending' || d.status === 'Menunggu Admin').length;
+                },
+
+                get countMenungguPenerima() {
+                    return (this.distribusis || []).filter(d => d.status === 'Dalam Pengiriman' || d.status === 'Dikirim' || d.status === 'Menunggu Penerima').length;
+                },
+
+                get countDitolak() {
+                    return (this.distribusis || []).filter(d => d.status === 'Ditolak').length;
+                },
+
                 get filteredDistribusis() {
                     const query = (this.searchQuery || '').toLowerCase().trim();
                     const role = this.userRole;
                     const myUnit = (this.userUnit || '').toLowerCase().trim();
                     const myName = (this.userName || '').toLowerCase().trim();
 
-                    return this.distribusis.filter(item => {
+                    return (this.distribusis || []).filter(item => {
                         // Jika Sub Admin: hanya tampilkan distribusi yang melibatkan unit atau penerima dirinya
                         if (role === 'sub_admin' && myUnit) {
                             const isUnitMatch = (item.tujuan || '').toLowerCase().includes(myUnit) ||
@@ -192,14 +212,37 @@
                         const matchSearch = !query ||
                                             (item.nama || '').toLowerCase().includes(query) || 
                                             (item.kode || '').toLowerCase().includes(query) || 
+                                            (item.tujuan || '').toLowerCase().includes(query) || 
+                                            (item.pj_ruangan || '').toLowerCase().includes(query) || 
                                             (item.penerima || '').toLowerCase().includes(query) ||
-                                            (item.items || []).some(it => (it.nama_barang || '').toLowerCase().includes(query));
+                                            (item.pj_nama || '').toLowerCase().includes(query) ||
+                                            (item.nomor_bast || '').toLowerCase().includes(query) ||
+                                            (item.bast_nomor || '').toLowerCase().includes(query) ||
+                                            (item.items || []).some(it => 
+                                                (it.nama_barang || '').toLowerCase().includes(query) ||
+                                                (it.kode_barang || '').toLowerCase().includes(query) ||
+                                                ((it.nibar_list || [])).some(nb => String(nb).toLowerCase().includes(query))
+                                            );
 
                         const matchUnit = this.unitFilter === 'all' || 
-                                          item.tujuan.toLowerCase().includes(this.unitFilter.toLowerCase()) ||
-                                          this.unitFilter.toLowerCase().includes(item.tujuan.toLowerCase());
+                                          (item.tujuan || '').toLowerCase().includes(this.unitFilter.toLowerCase()) ||
+                                          this.unitFilter.toLowerCase().includes((item.tujuan || '').toLowerCase());
 
-                        const matchStatus = this.statusFilter === 'all' || item.status === this.statusFilter;
+                        let matchStatus = true;
+                        if (this.statusFilter !== 'all') {
+                            if (this.statusFilter === 'selesai' || this.statusFilter === 'Telah Diterima' || this.statusFilter === 'Diterima') {
+                                matchStatus = item.status === 'Telah Diterima' || item.status === 'Diterima' || item.status === 'Selesai';
+                            } else if (this.statusFilter === 'menunggu_admin' || this.statusFilter === 'Menunggu Konfirmasi' || this.statusFilter === 'Pending') {
+                                matchStatus = item.status === 'Menunggu Konfirmasi' || item.status === 'Pending' || item.status === 'Menunggu Admin';
+                            } else if (this.statusFilter === 'menunggu_penerima' || this.statusFilter === 'Dalam Pengiriman' || this.statusFilter === 'Dikirim') {
+                                matchStatus = item.status === 'Dalam Pengiriman' || item.status === 'Dikirim' || item.status === 'Menunggu Penerima';
+                            } else if (this.statusFilter === 'ditolak' || this.statusFilter === 'Ditolak') {
+                                matchStatus = item.status === 'Ditolak';
+                            } else {
+                                matchStatus = item.status === this.statusFilter;
+                            }
+                        }
+
                         return matchSearch && matchUnit && matchStatus;
                     });
                 },
@@ -523,7 +566,7 @@
                     <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400 text-lg">🚚</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Distribusi</span>
-                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="distribusis.length + ' Transaksi'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="countAll + ' Transaksi'"></span>
                     </div>
                 </div>
 
@@ -531,23 +574,23 @@
                     <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">📦</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Telah Diterima</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-300" x-text="distribusis.filter(d => d.status === 'Telah Diterima' || d.status === 'Diterima').length + ' Transaksi'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-emerald-300" x-text="countSelesai + ' Transaksi'"></span>
                     </div>
                 </div>
 
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">🚛</div>
+                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">⏳</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Dalam Kirim</span>
-                        <span class="text-sm sm:text-base font-extrabold text-cyan-300" x-text="distribusis.filter(d => d.status === 'Dalam Pengiriman' || d.status === 'Dikirim').length + ' Transaksi'"></span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Admin</span>
+                        <span class="text-sm sm:text-base font-extrabold text-cyan-300" x-text="countMenungguAdmin + ' Transaksi'"></span>
                     </div>
                 </div>
 
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 text-lg">⏳</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Konfirmasi</span>
-                        <span class="text-sm sm:text-base font-extrabold text-amber-300" x-text="distribusis.filter(d => d.status === 'Menunggu Konfirmasi' || d.status === 'Pending').length + ' Transaksi'"></span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Penerima</span>
+                        <span class="text-sm sm:text-base font-extrabold text-amber-300" x-text="countMenungguPenerima + ' Transaksi'"></span>
                     </div>
                 </div>
 
@@ -555,143 +598,105 @@
                     <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-lg">🚫</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Ditolak</span>
-                        <span class="text-sm sm:text-base font-extrabold text-rose-300" x-text="distribusis.filter(d => d.status === 'Ditolak').length + ' Transaksi'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-rose-300" x-text="countDitolak + ' Transaksi'"></span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Filter & Search Section (Filter Unit Mengambil Dinamis dari Database Unit) -->
+        <!-- Filter, Quick Tabs & Search Bar Full-Width -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
             <div class="flex flex-col gap-4">
                 
-                <!-- Baris Atas: Input Pencarian & Counter Data -->
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full">
+                <!-- Quick Filter Status Distribusi Tabs -->
+                <div class="flex items-center gap-2 flex-wrap text-xs bg-slate-950/60 p-2 rounded-2xl border border-slate-800/80">
+                    <span class="text-[10.5px] font-extrabold text-slate-400 uppercase tracking-wider px-2.5 shrink-0 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                        STATUS:
+                    </span>
+
+                    {{-- Button Semua Status --}}
+                    <button type="button" @click="statusFilter = 'all'"
+                        :class="statusFilter === 'all' 
+                            ? 'bg-rose-500 text-white font-extrabold shadow-lg shadow-rose-500/25 border-rose-400 ring-2 ring-rose-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>Semua Status</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'"
+                            x-text="countAll"></span>
+                    </button>
+
+                    {{-- Button Selesai --}}
+                    <button type="button" @click="statusFilter = 'selesai'"
+                        :class="statusFilter === 'selesai' || statusFilter === 'Telah Diterima'
+                            ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-lg shadow-emerald-500/25 border-emerald-400 ring-2 ring-emerald-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-emerald-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>✓ Selesai</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'selesai' || statusFilter === 'Telah Diterima' ? 'bg-slate-950/40 text-slate-950' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'"
+                            x-text="countSelesai"></span>
+                    </button>
+
+                    {{-- Button Menunggu Admin --}}
+                    <button type="button" @click="statusFilter = 'menunggu_admin'"
+                        :class="statusFilter === 'menunggu_admin' || statusFilter === 'Menunggu Konfirmasi'
+                            ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-lg shadow-cyan-500/25 border-cyan-400 ring-2 ring-cyan-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>⏳ Menunggu Admin</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'menunggu_admin' || statusFilter === 'Menunggu Konfirmasi' ? 'bg-slate-950/40 text-slate-950' : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'"
+                            x-text="countMenungguAdmin"></span>
+                    </button>
+
+                    {{-- Button Menunggu Penerima --}}
+                    <button type="button" @click="statusFilter = 'menunggu_penerima'"
+                        :class="statusFilter === 'menunggu_penerima' || statusFilter === 'Dalam Pengiriman'
+                            ? 'bg-amber-500 text-slate-950 font-extrabold shadow-lg shadow-amber-500/25 border-amber-400 ring-2 ring-amber-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-amber-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>⏳ Menunggu Penerima</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'menunggu_penerima' || statusFilter === 'Dalam Pengiriman' ? 'bg-slate-950/40 text-slate-950' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
+                            x-text="countMenungguPenerima"></span>
+                    </button>
+
+                    {{-- Button Ditolak --}}
+                    <button type="button" @click="statusFilter = 'ditolak'"
+                        :class="statusFilter === 'ditolak' || statusFilter === 'Ditolak'
+                            ? 'bg-rose-500 text-white font-extrabold shadow-lg shadow-rose-500/25 border-rose-400 ring-2 ring-rose-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-rose-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>✕ Ditolak</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'ditolak' || statusFilter === 'Ditolak' ? 'bg-white/20 text-white' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'"
+                            x-text="countDitolak"></span>
+                    </button>
+                </div>
+
+                <!-- Baris Bawah: Input Pencarian & Counter Data -->
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">
                     <div class="relative flex-1 w-full">
-                        <input type="text" x-model="searchQuery" placeholder="Cari no. distribusi / nama aset barang / pegawai penerima..."
-                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-all">
-                        <svg class="w-4 h-4 text-teal-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input type="text" x-model="searchQuery" placeholder="Cari nomor BAMB / nomor BAST / nama aset / NIBAR / ruangan asal / tujuan..."
+                            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all">
+                        <svg class="w-4 h-4 text-indigo-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
                     </div>
 
                     <div class="flex items-center space-x-2 shrink-0">
-                        <span class="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
-                            Menampilkan <span class="text-teal-400 font-bold" x-text="filteredDistribusis.length"></span> dari <span class="text-white font-bold" x-text="distribusis.length"></span> Data
+                        <span class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-semibold text-slate-300">
+                            Menampilkan <span class="text-indigo-400 font-bold" x-text="filteredDistribusis.length"></span> dari <span class="text-white font-bold" x-text="distribusis.length"></span> Distribusi
                         </span>
                         <button type="button" @click="resetFilters()"
-                            class="px-3 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
-                            🔄 Reset
+                            class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition-all flex items-center space-x-1.5 cursor-pointer active:scale-95">
+                            <span class="text-sky-400 text-xs">🔄</span>
+                            <span>Reset</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Baris Bawah: Filter Dropdown Unit (Searchable Ketik Filter) & Filter Status -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800/80">
-                    
-                    <!-- 1. FILTER UNIT / PAVILIUN (SEARCHABLE INPUT / KETIK FILTER DINAMIS DARI DATABASE) -->
-                    <div class="relative" @click.away="isUnitDropdownOpen = false">
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-                                <span>🏥 Filter Unit / Paviliun Penerima</span>
-                                <span class="text-teal-400 font-mono text-[10px]" x-text="'(' + unitList.length + ' Unit RSUD)'"></span>
-                            </label>
-                            <template x-if="unitFilter !== 'all'">
-                                <button type="button" @click="clearUnitFilter()" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold flex items-center space-x-0.5">
-                                    <span>✕ Reset Filter Unit</span>
-                                </button>
-                            </template>
-                        </div>
-
-                        <div class="relative">
-                            <input type="text" 
-                                   x-model="unitSearchQuery" 
-                                   @focus="isUnitDropdownOpen = true"
-                                   @input="isUnitDropdownOpen = true; if(unitSearchQuery.trim() === '') unitFilter = 'all'"
-                                   placeholder="Ketik nama unit (misal: 'igd', 'melati', 'radiologi', 'graha')..." 
-                                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pl-9 pr-8 text-xs text-white font-semibold placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all">
-                            
-                            <svg class="w-4 h-4 text-teal-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-
-                            <template x-if="unitSearchQuery && unitSearchQuery.length > 0">
-                                <button type="button" @click="clearUnitFilter()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-rose-400 p-0.5 rounded">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
-                            </template>
-                        </div>
-
-                        <!-- Dropdown Floating Hasil Pencarian Unit -->
-                        <div x-show="isUnitDropdownOpen" 
-                             x-transition:enter="transition ease-out duration-150"
-                             x-transition:enter-start="opacity-0 translate-y-1"
-                             x-transition:enter-end="opacity-100 translate-y-0"
-                             class="absolute left-0 right-0 z-40 mt-1 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-slate-800">
-                            
-                            <!-- Opsi Semua Unit -->
-                            <div @click="selectUnitFilter(null)" 
-                                 class="px-4 py-2.5 hover:bg-teal-500/15 cursor-pointer transition-colors flex items-center justify-between font-bold text-xs"
-                                 :class="unitFilter === 'all' ? 'bg-teal-500/10 text-teal-300' : 'text-slate-300'">
-                                <div class="flex items-center space-x-2">
-                                    <span>🏢</span>
-                                    <span>Semua Unit & Paviliun (Seluruh RSUD)</span>
-                                </div>
-                                <template x-if="unitFilter === 'all'">
-                                    <span class="text-teal-400 text-xs">✓ Aktif</span>
-                                </template>
-                            </div>
-
-                            <!-- List Unit Terfilter -->
-                            <template x-for="u in filteredUnitDropdownList" :key="u.id">
-                                <div @click="selectUnitFilter(u)" 
-                                     class="px-4 py-2.5 hover:bg-teal-500/15 cursor-pointer transition-colors group flex items-center justify-between"
-                                     :class="unitFilter === u.nama ? 'bg-teal-500/10 text-teal-300' : 'text-slate-300'">
-                                    <div class="space-y-0.5">
-                                        <div class="font-bold text-xs group-hover:text-teal-300 flex items-center space-x-1.5 text-white">
-                                            <span>🏥</span>
-                                            <span x-text="u.nama"></span>
-                                        </div>
-                                        <div class="text-[10px] text-slate-400" x-text="(u.kode ? u.kode + ' • ' : '') + u.tipe + ' • PJ: ' + u.kepala"></div>
-                                    </div>
-                                    <template x-if="unitFilter === u.nama">
-                                        <span class="text-teal-400 font-bold text-xs">✓ Terpilih</span>
-                                    </template>
-                                </div>
-                            </template>
-
-                            <template x-if="filteredUnitDropdownList.length === 0">
-                                <div class="px-4 py-4 text-center text-xs text-slate-400">
-                                    <p class="font-semibold text-amber-400">Unit "<span x-text="unitSearchQuery"></span>" tidak ditemukan</p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Coba ketik kata kunci nama ruangan lainnya</p>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
-                    <!-- 2. FILTER STATUS PENYERAHAN -->
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                <span>Status Penyerahan Distribusi</span>
-                            </label>
-                            <template x-if="statusFilter !== 'all'">
-                                <button type="button" @click="statusFilter = 'all'" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold">
-                                    <span>✕ Reset Status</span>
-                                </button>
-                            </template>
-                        </div>
-                        <div>
-                            <select x-model="statusFilter" 
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 font-semibold focus:outline-none focus:border-teal-500 transition-all cursor-pointer">
-                                <option value="all">🔍 Semua Status Penyerahan BAST</option>
-                                <option value="Telah Diterima">✅ Telah Diterima & Disahkan</option>
-                                <option value="Ditolak">❌ Ditolak</option>
-                                <option value="Dalam Pengiriman">🚚 Dalam Pengiriman (Siap Kirim)</option>
-                                <option value="Menunggu Konfirmasi">⏳ Menunggu Konfirmasi (Verifikasi)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
