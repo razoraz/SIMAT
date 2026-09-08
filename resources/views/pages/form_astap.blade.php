@@ -2111,10 +2111,11 @@
                 },
 
                 executeConfirmedAction() {
-                    if (typeof this.confirmData.onConfirm === 'function') {
-                        this.confirmData.onConfirm();
-                    }
+                    const callback = this.confirmData.onConfirm;
                     this.showConfirmModal = false;
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
                 },
 
                 async submitForm() {
@@ -2192,6 +2193,63 @@
 
                     const tahun = this.formData.tahun_perolehan || new Date().getFullYear();
 
+                    const performHttpSave = () => {
+                        const url = isEdit ? '/astap/' + astapId : '/astap';
+                        const method = isEdit ? 'PUT' : 'POST';
+
+                        const payload = { ...this.formData };
+                        if (this.isMesin) {
+                            delete payload.tanah_items;
+                            delete payload.gedung_items;
+                            delete payload.jaringan_items;
+                        } else if (this.isTanah) {
+                            delete payload.mesin_items;
+                            delete payload.gedung_items;
+                            delete payload.jaringan_items;
+                        } else if (this.isGedung) {
+                            delete payload.tanah_items;
+                            delete payload.mesin_items;
+                            delete payload.jaringan_items;
+                        } else if (this.isJaringan) {
+                            delete payload.tanah_items;
+                            delete payload.mesin_items;
+                            delete payload.gedung_items;
+                        } else {
+                            delete payload.tanah_items;
+                            delete payload.mesin_items;
+                            delete payload.gedung_items;
+                            delete payload.jaringan_items;
+                        }
+
+                        fetch(url, {
+                            method: method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(async res => {
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok || data.success === false) {
+                                throw new Error(data.message || ('Gagal memproses permintaan (Status: ' + res.status + ')'));
+                            }
+                            return data;
+                        })
+                        .then(data => {
+                            this.toast = { show: true, message: '✅ ' + (data.message || 'Data ASTAP berhasil disimpan!'), type: 'success' };
+                            setTimeout(() => {
+                                window.location.href = '{{ route('astap.index') }}';
+                            }, 1200);
+                        })
+                        .catch(err => {
+                            console.error('Submit error:', err);
+                            this.toast = { show: true, message: '❌ ' + (err.message || 'Gagal menyimpan data ASTAP ke database!'), type: 'error' };
+                            alert('❌ Gagal menyimpan data ASTAP ke database: ' + (err.message || 'Terjadi kesalahan sistem'));
+                        });
+                    };
+
                     const executeSave = () => {
                         this.askConfirmation({
                             title: isEdit ? '✏️ Konfirmasi Simpan Perubahan ASTAP' : '➕ Konfirmasi Register Data ASTAP',
@@ -2200,60 +2258,7 @@
                             type: isEdit ? 'warning' : 'success',
                             btnText: isEdit ? '✏️ Ya, Simpan Perubahan' : '➕ Ya, Simpan Data ASTAP',
                             onConfirm: () => {
-                                const url = isEdit ? '/astap/' + astapId : '/astap';
-                                const method = isEdit ? 'PUT' : 'POST';
-
-                                const payload = { ...this.formData };
-                                if (this.isMesin) {
-                                    delete payload.tanah_items;
-                                    delete payload.gedung_items;
-                                    delete payload.jaringan_items;
-                                } else if (this.isTanah) {
-                                    delete payload.mesin_items;
-                                    delete payload.gedung_items;
-                                    delete payload.jaringan_items;
-                                } else if (this.isGedung) {
-                                    delete payload.tanah_items;
-                                    delete payload.mesin_items;
-                                    delete payload.jaringan_items;
-                                } else if (this.isJaringan) {
-                                    delete payload.tanah_items;
-                                    delete payload.mesin_items;
-                                    delete payload.gedung_items;
-                                } else {
-                                    delete payload.tanah_items;
-                                    delete payload.mesin_items;
-                                    delete payload.gedung_items;
-                                    delete payload.jaringan_items;
-                                }
-
-                                fetch(url, {
-                                    method: method,
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': token,
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify(payload)
-                                })
-                                .then(async res => {
-                                    const data = await res.json().catch(() => ({}));
-                                    if (!res.ok || data.success === false) {
-                                        throw new Error(data.message || ('Gagal memproses permintaan (Status: ' + res.status + ')'));
-                                    }
-                                    return data;
-                                })
-                                .then(data => {
-                                    this.toast = { show: true, message: '✅ ' + (data.message || 'Data ASTAP berhasil disimpan!'), type: 'success' };
-                                    setTimeout(() => {
-                                        window.location.href = '{{ route('astap.index') }}';
-                                    }, 1200);
-                                })
-                                .catch(err => {
-                                    console.error('Submit error:', err);
-                                    this.toast = { show: true, message: '❌ ' + (err.message || 'Gagal menyimpan data ASTAP ke database!'), type: 'error' };
-                                    alert('❌ Gagal menyimpan data ASTAP ke database: ' + (err.message || 'Terjadi kesalahan sistem'));
-                                });
+                                performHttpSave();
                             }
                         });
                     };
@@ -2282,7 +2287,9 @@
                                     itemName: (checkData.nama_barang || namaBarangActive) + ' (' + activeKode108 + ')',
                                     type: 'warning',
                                     btnText: '➕ Ya, Lanjutkan Register',
-                                    onConfirm: executeSave
+                                    onConfirm: () => {
+                                        performHttpSave();
+                                    }
                                 });
                                 return;
                             }
@@ -4525,9 +4532,15 @@
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Bangunan (Spesifik / Custom)</label>
-                                                    <input type="text" x-model="item.gedung_nama_barang" placeholder="Contoh: Gedung Paviliun Melati / Gedung Rawat Inap VIP"
-                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <label class="block text-slate-400 text-[10px] font-semibold">Nama Bangunan (PMDN 108)</label>
+                                                        <span class="text-[9px] text-amber-400/80 flex items-center gap-1 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                            Terkunci (Mengikuti Langkah 2)
+                                                        </span>
+                                                    </div>
+                                                    <input type="text" :value="item.gedung_nama_barang || formData.gedung_nama_barang || formData.sub_rincian_nama || 'Bangunan Gedung'" readonly
+                                                           class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
                                                 </div>
                                                 <div class="grid grid-cols-2 gap-2">
                                                     <div>
