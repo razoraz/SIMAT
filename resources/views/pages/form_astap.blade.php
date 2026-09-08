@@ -317,7 +317,8 @@
                         gedung_nilai_perencanaan: spec.nilai_perencanaan || 0,
                         gedung_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
                         gedung_nilai_pengawasan: spec.nilai_pengawasan || 0,
-                        gedung_nilai_pip: spec.nilai_pip || 0,
+                        gedung_nilai_ap: spec.nilai_ap || spec.nilai_pip || 0,
+                        gedung_nilai_pip: spec.nilai_ap || spec.nilai_pip || 0,
                         gedung_items: (spec && spec.gedung_items && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0)
                             ? spec.gedung_items.map(g => ({
                                 gedung_nama_barang: g.gedung_nama_barang || nama || '',
@@ -336,7 +337,8 @@
                                 gedung_nilai_perencanaan: g.gedung_nilai_perencanaan || 0,
                                 gedung_nilai_fisik: g.gedung_nilai_fisik || 0,
                                 gedung_nilai_pengawasan: g.gedung_nilai_pengawasan || 0,
-                                gedung_nilai_pip: g.gedung_nilai_pip || 0,
+                                gedung_nilai_ap: g.gedung_nilai_ap || g.gedung_nilai_pip || 0,
+                                gedung_nilai_pip: g.gedung_nilai_ap || g.gedung_nilai_pip || 0,
                                 gedung_alamat: g.gedung_alamat || (ea ? (ea.alamat_barang || '') : '')
                             }))
                             : [
@@ -357,7 +359,8 @@
                                     gedung_nilai_perencanaan: spec.nilai_perencanaan || 0,
                                     gedung_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
                                     gedung_nilai_pengawasan: spec.nilai_pengawasan || 0,
-                                    gedung_nilai_pip: spec.nilai_pip || 0,
+                                    gedung_nilai_ap: spec.nilai_ap || spec.nilai_pip || 0,
+                                    gedung_nilai_pip: spec.nilai_ap || spec.nilai_pip || 0,
                                     gedung_alamat: ea ? (ea.alamat_barang || '') : ''
                                 }
                             ],
@@ -595,6 +598,7 @@
                     this.$watch('formData.gedung_nilai_perencanaan', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.gedung_nilai_fisik', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.gedung_nilai_pengawasan', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.gedung_nilai_ap', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.gedung_nilai_pip', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.jaringan_nilai_perencanaan', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.jaringan_nilai_fisik', () => this.syncRealisasiFromStep3());
@@ -1030,7 +1034,7 @@
                     return Number(this.formData.gedung_nilai_perencanaan || 0) + 
                            Number(this.formData.gedung_nilai_fisik || 0) + 
                            Number(this.formData.gedung_nilai_pengawasan || 0) + 
-                           Number(this.formData.gedung_nilai_pip || 0);
+                           Number(this.formData.gedung_nilai_ap || this.formData.gedung_nilai_pip || 0);
                 },
 
                 get totalVolumeGedung() {
@@ -1044,7 +1048,7 @@
                     return Number(item.gedung_nilai_perencanaan || 0) + 
                            Number(item.gedung_nilai_fisik || 0) + 
                            Number(item.gedung_nilai_pengawasan || 0) + 
-                           Number(item.gedung_nilai_pip || 0);
+                           Number(item.gedung_nilai_ap || item.gedung_nilai_pip || 0);
                 },
 
                 addGedungItem() {
@@ -1068,6 +1072,7 @@
                         gedung_nilai_perencanaan: 0,
                         gedung_nilai_fisik: 0,
                         gedung_nilai_pengawasan: 0,
+                        gedung_nilai_ap: 0,
                         gedung_nilai_pip: 0,
                         gedung_alamat: ''
                     });
@@ -1116,7 +1121,8 @@
                         this.formData.gedung_nilai_perencanaan = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_perencanaan) || 0), 0);
                         this.formData.gedung_nilai_fisik = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_fisik) || 0), 0);
                         this.formData.gedung_nilai_pengawasan = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_pengawasan) || 0), 0);
-                        this.formData.gedung_nilai_pip = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_pip) || 0), 0);
+                        this.formData.gedung_nilai_ap = this.formData.gedung_items.reduce((sum, it) => sum + (parseFloat(it.gedung_nilai_ap || it.gedung_nilai_pip) || 0), 0);
+                        this.formData.gedung_nilai_pip = this.formData.gedung_nilai_ap;
 
                         const alamatList = this.formData.gedung_items.map(it => it.gedung_alamat).filter(Boolean);
                         this.formData.alamat_barang = alamatList.length > 0 ? alamatList.join('; ') : (first.gedung_alamat || '');
@@ -4105,7 +4111,7 @@
                                         </h3>
                                     </div>
                                     <p class="text-[11px] text-slate-400">
-                                        Setiap gedung/bangunan memiliki Luas, Kondisi, Status Tanah, Volume, Komponen Nilai (Perencanaan, Fisik, Pengawasan, PIP), dan Alamat Lokasi Fisik masing-masing.
+                                        Setiap gedung/bangunan memiliki Luas, Kondisi, Status Tanah, Volume, Komponen Nilai (Perencanaan, Fisik, Pengawasan, AP), dan Alamat Lokasi Fisik masing-masing.
                                     </p>
                                 </div>
                                 <button type="button" @click="addGedungItem()" 
@@ -4309,12 +4315,13 @@
                                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
                                                 </div>
                                                 <div>
-                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai PIP (Rp)</label>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai AP (Rp)</label>
                                                     <input type="text" 
-                                                           :value="item.gedung_nilai_pip ? Number(item.gedung_nilai_pip).toLocaleString('id-ID') : ''"
+                                                           :value="(item.gedung_nilai_ap || item.gedung_nilai_pip) ? Number(item.gedung_nilai_ap || item.gedung_nilai_pip).toLocaleString('id-ID') : ''"
                                                            @input="
                                                                let raw = $event.target.value.replace(/\D/g, '');
-                                                               item.gedung_nilai_pip = raw ? parseInt(raw, 10) : 0;
+                                                               item.gedung_nilai_ap = raw ? parseInt(raw, 10) : 0;
+                                                               item.gedung_nilai_pip = item.gedung_nilai_ap;
                                                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                                            "
                                                            placeholder="25.000.000"
@@ -4432,7 +4439,7 @@
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Perencanaan (Rp)</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik (Rp)</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Pengawasan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai PIP</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai AP</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -4455,7 +4462,7 @@
                                     <!-- Body Data Live Sesuai Input User (Looping gedung_items) -->
                                     <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
                                         <template x-for="(gItem, gIdx) in formData.gedung_items" :key="gIdx">
-                                            <tr>
+                                             <tr>
                                                 <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="gItem.gedung_nama_barang || formData.gedung_nama_barang"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="gItem.gedung_kode_barang || formData.gedung_kode_barang"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono" x-text="gItem.gedung_luas_m2"></td>
@@ -4480,7 +4487,7 @@
                                                 <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_perencanaan)"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_fisik)"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_pengawasan)"></td>
-                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_pip)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip)"></td>
                                                 <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-emerald-800" x-text="formatRupiah(getGedungSubtotal(gItem))"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
                                                 <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>

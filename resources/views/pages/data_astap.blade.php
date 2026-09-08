@@ -1635,20 +1635,20 @@
         XLSX.utils.book_append_sheet(wb, wsKibB, "3. B");
 
         // ------------------------------------------------------------------------
-        // 4. KIB C (GEDUNG DAN BANGUNAN) - COMPLETE 4-STEP MASTER SHEET (54 KOLOM)
-        // Sesuai Format Baku Gambar: 1-15 (Langkah 1-2), 16-45 (Langkah 3), 46-54 (Langkah 4)
+        // 4. KIB C (GEDUNG DAN BANGUNAN) - COMPLETE 4-STEP MASTER SHEET (55 KOLOM)
+        // Sesuai Format Baku Gambar: 1-15 (Langkah 1-2), 16-46 (Langkah 3), 47-55 (Langkah 4)
         // ------------------------------------------------------------------------
         const kibCTitleRows = getKibTitleRows("GEDUNG DAN BANGUNAN", yearLabel, filterTw);
         const kibCRows = [
             ...kibCTitleRows,
-            // r3: Main Banner (54 kolom)
+            // r3: Main Banner (55 kolom)
             [
                 "NO",
                 "Program Pengadaan SIPD", "",
                 "Kegiatan Pengadaan SIPD", "",
                 "Sub Kegiatan Pengadaan SIPD", "",
                 "BELANJA MODAL", "", "", "", "", "", "", "",
-                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN / KWITANSI / INVOICE / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
                 "Letak/ Alamat",
                 "PIHAK PENYEDIA", "", "", "", "",
                 "Pejabat Pembuat Komitmen", "",
@@ -1672,7 +1672,7 @@
                 "Jenis Bangunan", "", "", "", "", "",
                 "Riwayat Pembelian", "", "", "", "", "", "", "",
                 "VOLUME", "",
-                "Nilai Barang (Rp)", "", "",
+                "Nilai Barang (Rp)", "", "", "",
                 "Total Nilai Barang (Rp)",
                 "SP2D", "",
                 "BAST pada SPK/Surat Pesanan/Kwitansi/Invoice", "",
@@ -1707,7 +1707,7 @@
                 "Kwitansi", "",
                 "Invoice", "",
                 "Jumlah Bangunan", "Nama Satuan Barang",
-                "Nilai Perencanaan (Rp)", "Nilai Fisik (Rp)", "Nilai Pengawasan",
+                "Nilai Perencanaan (Rp)", "Nilai Fisik (Rp)", "Nilai Pengawasan", "Nilai AP",
                 "",
                 "", "",
                 "", "",
@@ -1729,7 +1729,7 @@
                 "Nomor", "Tanggal",
                 "Nomor", "Tanggal",
                 "", "",
-                "", "", "",
+                "", "", "", "",
                 "",
                 "NOMOR", "TANGGAL",
                 "NOMOR", "TANGGAL",
@@ -1738,11 +1738,11 @@
                 "", "",
                 ""
             ],
-            // r7: Column Numbers (1 s/d 54)
+            // r7: Column Numbers (1 s/d 55)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
                 "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45",
-                "46", "47", "48", "49", "50", "51", "52", "53", "54"
+                "46", "47", "48", "49", "50", "51", "52", "53", "54", "55"
             ]
         ];
 
@@ -1756,7 +1756,7 @@
 
         let globalKibCNo = 1;
         let kibCTotalAnggaran = 0, kibCTotalRealisasi = 0, kibCTotalLuas = 0, kibCTotalUnit = 0;
-        let kibCTotalPerencanaan = 0, kibCTotalFisik = 0, kibCTotalPengawasan = 0, kibCTotalNilaiBarang = 0;
+        let kibCTotalPerencanaan = 0, kibCTotalFisik = 0, kibCTotalPengawasan = 0, kibCTotalAp = 0, kibCTotalNilaiBarang = 0;
 
         Object.keys(kibCGroups).forEach(groupKey => {
             const groupItems = kibCGroups[groupKey];
@@ -1784,8 +1784,8 @@
                         const nilaiPerencanaan = parseFloat(gItem.gedung_nilai_perencanaan) || 0;
                         const nilaiFisik = parseFloat(gItem.gedung_nilai_fisik) || 0;
                         const nilaiPengawasan = parseFloat(gItem.gedung_nilai_pengawasan) || 0;
-                        const nilaiPip = parseFloat(gItem.gedung_nilai_pip) || 0;
-                        const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan + nilaiPip) || (parseFloat(item.total_realisasi) || 0);
+                        const nilaiAp = parseFloat(gItem.gedung_nilai_ap) || parseFloat(gItem.gedung_nilai_pip) || 0;
+                        const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan + nilaiAp) || (parseFloat(item.total_realisasi) || 0);
                         const jumlahBangunan = parseInt(gItem.gedung_jumlah_bangunan) || 1;
                         const luasM2 = parseFloat(gItem.gedung_luas_m2) || 0;
 
@@ -1794,6 +1794,7 @@
                         kibCTotalPerencanaan += nilaiPerencanaan;
                         kibCTotalFisik += nilaiFisik;
                         kibCTotalPengawasan += nilaiPengawasan;
+                        kibCTotalAp += nilaiAp;
                         kibCTotalNilaiBarang += totalNilaiBarang;
 
                         const rawKondisi = gItem.gedung_kondisi || item.kondisi || 'B';
@@ -1852,13 +1853,14 @@
                             nilaiPerencanaan,                                            // c37: col 38 (Nilai Perencanaan)
                             nilaiFisik,                                                  // c38: col 39 (Nilai Fisik)
                             nilaiPengawasan,                                             // c39: col 40 (Nilai Pengawasan)
-                            totalNilaiBarang,                                            // c40: col 41 (Total Nilai Barang)
-                            item.sp2d_nomor || '-',                                      // c41: col 42 (SP2D NOMOR)
-                            formatAstapDate(item.sp2d_tanggal),                          // c42: col 43 (SP2D TANGGAL)
-                            item.bast_dokumen_nomor || '-',                              // c43: col 44 (BAST NOMOR)
-                            formatAstapDate(item.bast_dokumen_tanggal),                  // c44: col 45 (BAST TANGGAL)
-                            gItem.gedung_alamat || item.alamat_barang || '-',            // c45: col 46 (Letak/ Alamat)
-                            ...getStep4Columns(item)                                     // c46-c53: cols 47-54
+                            nilaiAp,                                                     // c40: col 41 (Nilai AP)
+                            totalNilaiBarang,                                            // c41: col 42 (Total Nilai Barang)
+                            item.sp2d_nomor || '-',                                      // c42: col 43 (SP2D NOMOR)
+                            formatAstapDate(item.sp2d_tanggal),                          // c43: col 44 (SP2D TANGGAL)
+                            item.bast_dokumen_nomor || '-',                              // c44: col 45 (BAST NOMOR)
+                            formatAstapDate(item.bast_dokumen_tanggal),                  // c45: col 46 (BAST TANGGAL)
+                            gItem.gedung_alamat || item.alamat_barang || '-',            // c46: col 47 (Letak/ Alamat)
+                            ...getStep4Columns(item)                                     // c47-c54: cols 48-55
                         ]);
                     });
                 } else {
@@ -1866,7 +1868,8 @@
                     const nilaiPerencanaan = parseFloat(item.gedung_nilai_perencanaan) || parseFloat(item.nilai_perencanaan) || 0;
                     const nilaiFisik = parseFloat(item.gedung_nilai_fisik) || parseFloat(item.nilai_fisik) || totalVal;
                     const nilaiPengawasan = parseFloat(item.gedung_nilai_pengawasan) || parseFloat(item.nilai_pengawasan) || 0;
-                    const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || totalVal;
+                    const nilaiAp = parseFloat(item.gedung_nilai_ap) || parseFloat(item.gedung_nilai_pip) || parseFloat(item.nilai_ap) || parseFloat(item.nilai_pip) || 0;
+                    const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan + nilaiAp) || totalVal;
                     const jumlahBangunan = parseInt(item.jumlah_volume) || parseInt(item.jumlah_unit) || 1;
                     const luasM2 = parseFloat(item.luas_m2) || 0;
 
@@ -1875,6 +1878,7 @@
                     kibCTotalPerencanaan += nilaiPerencanaan;
                     kibCTotalFisik += nilaiFisik;
                     kibCTotalPengawasan += nilaiPengawasan;
+                    kibCTotalAp += nilaiAp;
                     kibCTotalNilaiBarang += totalNilaiBarang;
 
                     const kondisiLabel = item.kondisi ? (item.kondisi === 'B' ? 'Baik' : (item.kondisi === 'KB' ? 'Kurang Baik' : (item.kondisi === 'RB' ? 'Rusak Berat' : item.kondisi))) : 'Baik';
@@ -1932,20 +1936,21 @@
                         nilaiPerencanaan,                                            // c37: col 38 (Nilai Perencanaan)
                         nilaiFisik,                                                  // c38: col 39 (Nilai Fisik)
                         nilaiPengawasan,                                             // c39: col 40 (Nilai Pengawasan)
-                        totalNilaiBarang,                                            // c40: col 41 (Total Nilai Barang)
-                        item.sp2d_nomor || '-',                                      // c41: col 42 (SP2D NOMOR)
-                        formatAstapDate(item.sp2d_tanggal),                          // c42: col 43 (SP2D TANGGAL)
-                        item.bast_dokumen_nomor || '-',                              // c43: col 44 (BAST NOMOR)
-                        formatAstapDate(item.bast_dokumen_tanggal),                  // c44: col 45 (BAST TANGGAL)
-                        item.alamat_barang || '-',                                   // c45: col 46 (Letak/ Alamat)
-                        ...getStep4Columns(item)                                     // c46-c53: cols 47-54
+                        nilaiAp,                                                     // c40: col 41 (Nilai AP)
+                        totalNilaiBarang,                                            // c41: col 42 (Total Nilai Barang)
+                        item.sp2d_nomor || '-',                                      // c42: col 43 (SP2D NOMOR)
+                        formatAstapDate(item.sp2d_tanggal),                          // c43: col 44 (SP2D TANGGAL)
+                        item.bast_dokumen_nomor || '-',                              // c44: col 45 (BAST NOMOR)
+                        formatAstapDate(item.bast_dokumen_tanggal),                  // c45: col 46 (BAST TANGGAL)
+                        item.alamat_barang || '-',                                   // c46: col 47 (Letak/ Alamat)
+                        ...getStep4Columns(item)                                     // c47-c54: cols 48-55
                     ]);
                 }
             });
         });
 
-        // ── Baris Footer Total KIB C (54 Kolom) ──────────────────────────────────
-        const kibCFooterRow = Array(54).fill("");
+        // ── Baris Footer Total KIB C (55 Kolom) ──────────────────────────────────
+        const kibCFooterRow = Array(55).fill("");
         kibCFooterRow[0] = "JUMLAH";
         kibCFooterRow[13] = kibCTotalAnggaran;
         kibCFooterRow[14] = kibCTotalRealisasi;
@@ -1954,11 +1959,12 @@
         kibCFooterRow[37] = kibCTotalPerencanaan;
         kibCFooterRow[38] = kibCTotalFisik;
         kibCFooterRow[39] = kibCTotalPengawasan;
-        kibCFooterRow[40] = kibCTotalNilaiBarang;
+        kibCFooterRow[40] = kibCTotalAp;
+        kibCFooterRow[41] = kibCTotalNilaiBarang;
         kibCRows.push(kibCFooterRow);
 
         const wsKibC = XLSX.utils.aoa_to_sheet(kibCRows);
-        wsKibC['!cols'] = Array(54).fill({wch: 18});
+        wsKibC['!cols'] = Array(55).fill({wch: 18});
         wsKibC['!cols'][0] = {wch: 6};
         wsKibC['!cols'][1] = {wch: 14}; wsKibC['!cols'][2] = {wch: 32};
         wsKibC['!cols'][3] = {wch: 14}; wsKibC['!cols'][4] = {wch: 28};
@@ -1980,15 +1986,15 @@
         wsKibC['!cols'][35] = {wch: 18}; wsKibC['!cols'][36] = {wch: 20};
         wsKibC['!cols'][37] = {wch: 22}; wsKibC['!cols'][38] = {wch: 22};
         wsKibC['!cols'][39] = {wch: 22}; wsKibC['!cols'][40] = {wch: 22};
-        wsKibC['!cols'][41] = {wch: 20}; wsKibC['!cols'][42] = {wch: 14};
-        wsKibC['!cols'][43] = {wch: 28}; wsKibC['!cols'][44] = {wch: 14};
-        wsKibC['!cols'][45] = {wch: 32}; wsKibC['!cols'][46] = {wch: 28};
-        wsKibC['!cols'][47] = {wch: 24}; wsKibC['!cols'][48] = {wch: 24};
-        wsKibC['!cols'][49] = {wch: 22}; wsKibC['!cols'][50] = {wch: 30};
-        wsKibC['!cols'][51] = {wch: 24}; wsKibC['!cols'][52] = {wch: 22};
-        wsKibC['!cols'][53] = {wch: 26};
+        wsKibC['!cols'][41] = {wch: 22}; wsKibC['!cols'][42] = {wch: 20};
+        wsKibC['!cols'][43] = {wch: 14}; wsKibC['!cols'][44] = {wch: 28};
+        wsKibC['!cols'][45] = {wch: 14}; wsKibC['!cols'][46] = {wch: 32};
+        wsKibC['!cols'][47] = {wch: 28}; wsKibC['!cols'][48] = {wch: 24};
+        wsKibC['!cols'][49] = {wch: 24}; wsKibC['!cols'][50] = {wch: 22};
+        wsKibC['!cols'][51] = {wch: 30}; wsKibC['!cols'][52] = {wch: 24};
+        wsKibC['!cols'][53] = {wch: 22}; wsKibC['!cols'][54] = {wch: 26};
 
-        // ── Merge Cells KIB C (54 Kolom Sesuai Format Baku Gambar) ──────────────
+        // ── Merge Cells KIB C (55 Kolom Sesuai Format Baku Gambar) ──────────────
         wsKibC['!merges'] = getKibMerges([
             // Col 1: NO (r3-r6, c0)
             {s:{r:3,c:0}, e:{r:6,c:0}},
@@ -2027,8 +2033,8 @@
             // Col 15: JUMLAH REALISASI (Rp)
             {s:{r:4,c:14}, e:{r:6,c:14}},
 
-            // Col 16-45: RINCIAN BELANJA MODAL ... (Top Banner r3, c15-c44)
-            {s:{r:3,c:15}, e:{r:3,c:44}},
+            // Col 16-46: RINCIAN BELANJA MODAL ... (Top Banner r3, c15-c45)
+            {s:{r:3,c:15}, e:{r:3,c:45}},
             // Kolom standalone (r4-r6 merged):
             {s:{r:4,c:15}, e:{r:6,c:15}},  // Col 16: NAMA BARANG
             {s:{r:4,c:16}, e:{r:6,c:16}},  // Col 17: Kode Barang
@@ -2058,38 +2064,39 @@
             {s:{r:4,c:35}, e:{r:4,c:36}},
             {s:{r:5,c:35}, e:{r:6,c:35}},  // Jumlah Bangunan
             {s:{r:5,c:36}, e:{r:6,c:36}},  // Nama Satuan Barang
-            // Col 38-40: Nilai Barang (Rp) (r4 banner c37-c39)
-            {s:{r:4,c:37}, e:{r:4,c:39}},
+            // Col 38-41: Nilai Barang (Rp) (r4 banner c37-c40)
+            {s:{r:4,c:37}, e:{r:4,c:40}},
             {s:{r:5,c:37}, e:{r:6,c:37}},  // Nilai Perencanaan (Rp)
             {s:{r:5,c:38}, e:{r:6,c:38}},  // Nilai Fisik (Rp)
             {s:{r:5,c:39}, e:{r:6,c:39}},  // Nilai Pengawasan
-            // Col 41: Total Nilai Barang (Rp) (r4-r6, c40)
-            {s:{r:4,c:40}, e:{r:6,c:40}},
-            // Col 42-43: SP2D (r4-r5 banner, c41-c42) -> r6: NOMOR, TANGGAL
-            {s:{r:4,c:41}, e:{r:5,c:42}},
-            // Col 44-45: BAST pada SPK/... (r4-r5 banner, c43-c44) -> r6: NOMOR, TANGGAL
-            {s:{r:4,c:43}, e:{r:5,c:44}},
+            {s:{r:5,c:40}, e:{r:6,c:40}},  // Nilai AP
+            // Col 42: Total Nilai Barang (Rp) (r4-r6, c41)
+            {s:{r:4,c:41}, e:{r:6,c:41}},
+            // Col 43-44: SP2D (r4-r5 banner, c42-c43) -> r6: NOMOR, TANGGAL
+            {s:{r:4,c:42}, e:{r:5,c:43}},
+            // Col 45-46: BAST pada SPK/... (r4-r5 banner, c44-c45) -> r6: NOMOR, TANGGAL
+            {s:{r:4,c:44}, e:{r:5,c:45}},
 
-            // Col 46: Letak/ Alamat (Berdiri Sendiri r3-r6, c45)
-            {s:{r:3,c:45}, e:{r:6,c:45}},
+            // Col 47: Letak/ Alamat (Berdiri Sendiri r3-r6, c46)
+            {s:{r:3,c:46}, e:{r:6,c:46}},
 
-            // Col 47-51: PIHAK PENYEDIA (Top Banner r3-r4, c46-c50)
-            {s:{r:3,c:46}, e:{r:4,c:50}},
-            {s:{r:5,c:46}, e:{r:6,c:46}},  // Nama Penyedia
-            {s:{r:5,c:47}, e:{r:6,c:47}},  // Pemilik Penyedia
-            {s:{r:5,c:48}, e:{r:5,c:49}},  // Rekening -> r6: Nama Rek (c48), Nomor Rek (c49)
-            {s:{r:5,c:50}, e:{r:6,c:50}},  // Alamat Penyedia
+            // Col 48-52: PIHAK PENYEDIA (Top Banner r3-r4, c47-c51)
+            {s:{r:3,c:47}, e:{r:4,c:51}},
+            {s:{r:5,c:47}, e:{r:6,c:47}},  // Nama Penyedia
+            {s:{r:5,c:48}, e:{r:6,c:48}},  // Pemilik Penyedia
+            {s:{r:5,c:49}, e:{r:5,c:50}},  // Rekening -> r6: Nama Rek (c49), Nomor Rek (c50)
+            {s:{r:5,c:51}, e:{r:6,c:51}},  // Alamat Penyedia
 
-            // Col 52-53: Pejabat Pembuat Komitmen (r3-r4, c51-c52)
-            {s:{r:3,c:51}, e:{r:4,c:52}},
-            {s:{r:5,c:51}, e:{r:6,c:51}},  // Nama
-            {s:{r:5,c:52}, e:{r:6,c:52}},  // NIP
+            // Col 53-54: Pejabat Pembuat Komitmen (r3-r4, c52-c53)
+            {s:{r:3,c:52}, e:{r:4,c:53}},
+            {s:{r:5,c:52}, e:{r:6,c:52}},  // Nama
+            {s:{r:5,c:53}, e:{r:6,c:53}},  // NIP
 
-            // Col 54: KET. (berdiri sendiri r3-r6, c53)
-            {s:{r:3,c:53}, e:{r:6,c:53}}
-        ], 54, kibCTitleRows.length, kibCRows.length);
+            // Col 55: KET. (berdiri sendiri r3-r6, c54)
+            {s:{r:3,c:54}, e:{r:6,c:54}}
+        ], 55, kibCTitleRows.length, kibCRows.length);
 
-        applyUnified4StepMasterSheetStyling(wsKibC, kibCRows.length, 54, 30, kibCTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsKibC, kibCRows.length, 55, 30, kibCTitleRows.length);
         XLSX.utils.book_append_sheet(wb, wsKibC, "4. C");
 
         // ------------------------------------------------------------------------
@@ -2125,7 +2132,7 @@
                 "JUMLAH REALISASI (Rp)",
                 "NAMA BARANG (Uraian Sub Sub Rincian Objek PMDN 108)",
                 "Kode Barang (Kode Sub Sub Rincian Objek PMDN 108)",
-                "Luas (m²)",
+                "Luas  (P X L)",
                 "Kondisi / Spesifikasi", "", "",
                 "Jenis Bangunan", "", "", "", "", "",
                 "Riwayat Pembelian", "", "", "", "", "", "", "",
@@ -2402,7 +2409,7 @@
             // Kolom standalone (r4-r6 merged):
             {s:{r:4,c:15}, e:{r:6,c:15}},  // Col 16: NAMA BARANG
             {s:{r:4,c:16}, e:{r:6,c:16}},  // Col 17: Kode Barang
-            {s:{r:4,c:17}, e:{r:6,c:17}},  // Col 18: Luas (m²)
+            {s:{r:4,c:17}, e:{r:6,c:17}},  // Col 18: Luas  (P X L)
             // Col 19-21: Kondisi / Spesifikasi (r4 banner c18-c20)
             {s:{r:4,c:18}, e:{r:4,c:20}},
             {s:{r:5,c:18}, e:{r:6,c:18}},  // Col 19: (B,KB,RB)
@@ -2561,11 +2568,11 @@
                 "", "",
                 ""
             ],
-            // r7: Column Numbers (Sesuai Format Template: 1-15, 17-45, 46-54)
+            // r7: Column Numbers (53 kolom: 1-15, 16-44, 45-53)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41 = 39+40", "42", "43", "44", "45",
-                "46", "47", "48", "49", "50", "51", "52", "53", "54"
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40 = 38+39", "41", "42", "43", "44",
+                "45", "46", "47", "48", "49", "50", "51", "52", "53"
             ]
         ];
 
@@ -2881,7 +2888,7 @@
                 "",
                 "", "", "", "", "", "", "", "", "", "", "", "", "", "",
                 "", "", "", "", "", "", "", "", "",
-                "Nilai", "Tahun\nInduk", "Nilai Induk s/d\n" + (parseInt(yearLabel) - 1 || '2025'),
+                "Nibar", "Tahun\nInduk", "Nilai Induk s/d\n" + (parseInt(yearLabel) - 1 || '2025'),
                 "Nomor", "Tanggal",
                 "Nomor", "Tanggal",
                 "Nomor", "Tanggal",
@@ -2984,7 +2991,7 @@
                     item.gedung_status_tanah || 'Tanah Hak Pakai RSUD',          // c21: col 22 (Status Tanah)
                     item.gedung_kode_aset_tanah || '-',                          // c22: col 23 (Kode aset Tanah)
                     item.gedung_is_baru || 'Baru',                               // c23: col 24 (Baru)
-                    totalNilaiBarang,                                            // c24: col 25 (Nilai Kapitalisasi/Fisik)
+                    getAstapNibar(item),                                         // c24: col 25 (Nibar diambil dari astaps register)
                     item.gedung_kapitalisasi_tahun_induk || '-',                 // c25: col 26 (Tahun Induk)
                     parseFloat(item.gedung_kapitalisasi_nilai_induk) || 0,       // c26: col 27 (Nilai Induk s/d ...)
                     item.spk_nomor || '-',                                       // c27: col 28 (SPK No)
@@ -5275,7 +5282,7 @@
                                                         <div class="flex items-center space-x-3 text-[10.5px] font-mono">
                                                             <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_m2 || 0) + ' M²'"></strong></span>
                                                             <span class="text-slate-400">Kondisi: <strong class="text-white" x-text="gItem.gedung_kondisi || 'B'"></strong></span>
-                                                            <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_pip || 0)).toLocaleString('id-ID')"></span>
+                                                            <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0)).toLocaleString('id-ID')"></span>
                                                         </div>
                                                     </div>
                                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
@@ -5292,7 +5299,7 @@
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Nilai</span>
                                                             <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik: Rp ' + Number(gItem.gedung_nilai_fisik || 0).toLocaleString('id-ID')"></span>
-                                                            <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(gItem.gedung_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Pws: ' + Number(gItem.gedung_nilai_pengawasan || 0).toLocaleString('id-ID')"></span>
+                                                            <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(gItem.gedung_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Pws: ' + Number(gItem.gedung_nilai_pengawasan || 0).toLocaleString('id-ID') + ' • AP: ' + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0).toLocaleString('id-ID')"></span>
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Letak / Lokasi Fisik</span>

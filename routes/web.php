@@ -371,6 +371,8 @@ Route::middleware('auth')->group(function () {
                     'gedung_nilai_perencanaan' => (float) ($spec['nilai_perencanaan'] ?? ($spec['gedung_nilai_perencanaan'] ?? 0)),
                     'gedung_nilai_fisik' => (float) ($spec['nilai_fisik'] ?? ($spec['gedung_nilai_fisik'] ?? $a->total_realisasi)),
                     'gedung_nilai_pengawasan' => (float) ($spec['nilai_pengawasan'] ?? ($spec['gedung_nilai_pengawasan'] ?? 0)),
+                    'gedung_nilai_ap' => (float) ($spec['nilai_ap'] ?? ($spec['gedung_nilai_ap'] ?? ($spec['nilai_pip'] ?? ($spec['gedung_nilai_pip'] ?? 0)))),
+                    'gedung_nilai_pip' => (float) ($spec['nilai_ap'] ?? ($spec['gedung_nilai_ap'] ?? ($spec['nilai_pip'] ?? ($spec['gedung_nilai_pip'] ?? 0)))),
 
                     // Rincian Jalan, Irigasi & Jaringan (KIB D)
                     'jaringan_konstruksi' => $spec['konstruksi'] ?? ($spec['jaringan_konstruksi'] ?? '-'),
@@ -1658,7 +1660,8 @@ Route::middleware('auth')->group(function () {
                     'penggunaan' => $d['tanah_penggunaan'] ?? null,
                     'nilai_perencanaan' => $d['tanah_nilai_perencanaan'] ?? ($d['gedung_nilai_perencanaan'] ?? ($d['jaringan_nilai_perencanaan'] ?? ($d['kdp_nilai_perencanaan'] ?? 0))),
                     'nilai_pengawasan' => $d['tanah_nilai_pengawasan'] ?? ($d['gedung_nilai_pengawasan'] ?? ($d['jaringan_nilai_pengawasan'] ?? ($d['kdp_nilai_pengawasan'] ?? 0))),
-                    'nilai_pip' => $d['gedung_nilai_pip'] ?? ($d['jaringan_nilai_pip'] ?? ($d['kdp_nilai_pip'] ?? 0)),
+                    'nilai_ap' => $d['gedung_nilai_ap'] ?? ($d['gedung_nilai_pip'] ?? ($d['jaringan_nilai_pip'] ?? ($d['kdp_nilai_pip'] ?? 0))),
+                    'nilai_pip' => $d['gedung_nilai_ap'] ?? ($d['gedung_nilai_pip'] ?? ($d['jaringan_nilai_pip'] ?? ($d['kdp_nilai_pip'] ?? 0))),
                     'merk' => $d['mesin_merk'] ?? null,
                     'type' => $d['mesin_type'] ?? null,
                     'ukuran' => $d['mesin_ukuran'] ?? ($d['lainnya_kesenian_ukuran'] ?? null),
@@ -1825,7 +1828,7 @@ Route::middleware('auth')->group(function () {
                 $totalPerencanaan = 0;
                 $totalFisik = 0;
                 $totalPengawasan = 0;
-                $totalPip = 0;
+                $totalAp = 0;
                 $allAlamat = [];
 
                 foreach ($data['gedung_items'] as $gItem) {
@@ -1835,11 +1838,11 @@ Route::middleware('auth')->group(function () {
                     $totalPerencanaan += (float)($gItem['gedung_nilai_perencanaan'] ?? 0);
                     $totalFisik += (float)($gItem['gedung_nilai_fisik'] ?? 0);
                     $totalPengawasan += (float)($gItem['gedung_nilai_pengawasan'] ?? 0);
-                    $totalPip += (float)($gItem['gedung_nilai_pip'] ?? 0);
+                    $totalAp += (float)($gItem['gedung_nilai_ap'] ?? ($gItem['gedung_nilai_pip'] ?? 0));
                     if (!empty($gItem['gedung_alamat'])) $allAlamat[] = $gItem['gedung_alamat'];
                 }
 
-                $totalRealisasi = $totalPerencanaan + $totalFisik + $totalPengawasan + $totalPip;
+                $totalRealisasi = $totalPerencanaan + $totalFisik + $totalPengawasan + $totalAp;
                 $hargaSatuanRata = $totalBangunan > 0 ? ($totalRealisasi / $totalBangunan) : $totalRealisasi;
                 $firstItem = $data['gedung_items'][0] ?? [];
                 $satuan = $firstItem['gedung_satuan'] ?? 'Gedung';
@@ -1858,7 +1861,8 @@ Route::middleware('auth')->group(function () {
                     'nilai_perencanaan' => $totalPerencanaan,
                     'nilai_fisik' => $totalFisik,
                     'nilai_pengawasan' => $totalPengawasan,
-                    'nilai_pip' => $totalPip,
+                    'nilai_ap' => $totalAp,
+                    'nilai_pip' => $totalAp,
                     'gedung_items' => $data['gedung_items']
                 ];
                 $spec = array_filter($spec, fn($v) => !is_null($v) && $v !== '');
