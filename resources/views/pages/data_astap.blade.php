@@ -5478,6 +5478,15 @@
                                             <span class="text-slate-400">Nama Pimpinan / Pemilik:</span>
                                             <span class="text-slate-200 font-medium truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></span>
                                         </div>
+                                        <template x-if="selectedAstapDetail.category === 'EXTRACOM' || selectedAstapDetail.category === 'ATB' || selectedAstapDetail.penyedia_telepon">
+                                            <div class="flex items-center justify-between pt-1.5">
+                                                <span class="text-slate-400">No. HP / WhatsApp Aktif:</span>
+                                                <span class="text-amber-400 font-mono font-bold truncate max-w-[55%] flex items-center gap-1.5">
+                                                    <span class="text-xs">📱</span>
+                                                    <span x-text="selectedAstapDetail.penyedia_telepon || selectedAstapDetail.spesifikasi_json?.penyedia_telepon || selectedAstapDetail.spesifikasi_json?.penyedia_kontak || '-'"></span>
+                                                </span>
+                                            </div>
+                                        </template>
                                         <div class="flex items-center justify-between pt-1.5">
                                             <span class="text-slate-400">Rekening Bank:</span>
                                             <span class="text-amber-300 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.penyedia_rekening_nomor ? ((selectedAstapDetail.penyedia_rekening_nama ? selectedAstapDetail.penyedia_rekening_nama + ' - ' : '') + selectedAstapDetail.penyedia_rekening_nomor) : (selectedAstapDetail.penyedia_rekening_nama || '-')"></span>
