@@ -1696,7 +1696,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template x-for="(sub, idx) in (selectedDistribusi.items || [])" :key="idx">
+                                        <template x-for="(sub, idx) in (selectedDistribusi.items || []).filter(i => (i.qty_acc === null ? true : i.qty_acc > 0))" :key="idx">
                                             <tr class="border border-black" style="border: 1px solid black;">
                                                 <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="idx + 1"></td>
                                                 <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang"></td>

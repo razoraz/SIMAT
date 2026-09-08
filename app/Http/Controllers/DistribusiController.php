@@ -379,6 +379,16 @@ class DistribusiController extends Controller
             }
         }
 
+        // Normalisasi format tanggal jika dikirim dalam format d/m/Y atau d-m-Y
+        if ($request->filled('tanggal_distribusi')) {
+            $rawTgl = trim((string)$request->tanggal_distribusi);
+            if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $rawTgl, $matches)) {
+                $request->merge([
+                    'tanggal_distribusi' => sprintf('%04d-%02d-%02d', $matches[3], $matches[2], $matches[1])
+                ]);
+            }
+        }
+
         // 2. Validasi Input Distribusi
         $validated = $request->validate([
             'kode'                         => 'required|string',
@@ -425,7 +435,8 @@ class DistribusiController extends Controller
                     ], 422);
                 }
 
-                foreach ($validated['items'] as $itIdx => $itemData) {
+                $totalQtyAcc = 0;
+                foreach ($validated['items'] as $itIdx => &$itemData) {
                     $namaBrg = !empty($itemData['nama_barang']) ? $itemData['nama_barang'] : ('Barang #' . ($itIdx + 1));
                     if (empty($itemData['qty']) || (int)$itemData['qty'] <= 0) {
                         return response()->json([
@@ -434,22 +445,31 @@ class DistribusiController extends Controller
                         ], 422);
                     }
                     $regCount = !empty($itemData['register_ids']) ? count($itemData['register_ids']) : 0;
-                    if (!$isSubAdmin && $regCount > 0) {
+                    if (!$isSubAdmin) {
                         $itemData['qty_acc'] = $regCount;
                     }
+                    $totalQtyAcc += (int)($itemData['qty_acc'] ?? 0);
 
-                    if (!$isSubAdmin && (!isset($itemData['qty_acc']) || $itemData['qty_acc'] === null || (int)$itemData['qty_acc'] <= 0)) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Volume Di-ACC untuk {$namaBrg} harus diisi dan lebih dari 0."
-                        ], 422);
-                    }
                     if (empty($itemData['keterangan']) || trim($itemData['keterangan']) === '-' || trim($itemData['keterangan']) === '') {
                         return response()->json([
                             'success' => false,
                             'message' => "Keterangan / Catatan Peruntukan Barang untuk {$namaBrg} harus diisi."
                         ], 422);
                     }
+                }
+                unset($itemData);
+
+                // Jika Admin menginput minimal 1 NIBAR ($totalQtyAcc > 0), otomatis dianggap di-ACC (status Dalam Pengiriman agar BAST terbit & bisa dicetak)
+                if (!$isSubAdmin && $totalQtyAcc > 0 && in_array($finalStatus, ['Menunggu Konfirmasi', 'Draft', 'Pending'])) {
+                    $finalStatus = 'Dalam Pengiriman';
+                }
+
+                // Khusus Admin jika status pengiriman/diterima, minimal harus ada 1 barang yang disetujui (di-ACC)
+                if (!$isSubAdmin && in_array($finalStatus, ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima']) && $totalQtyAcc <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Minimal harus ada 1 barang yang disetujui (di-ACC) dengan memilih NIBAR, atau ubah status transaksi menjadi "Ditolak".'
+                    ], 422);
                 }
             }
 
@@ -582,7 +602,7 @@ class DistribusiController extends Controller
                         ? $regCount
                         : ((isset($itemData['qty_acc']) && $itemData['qty_acc'] !== null && $itemData['qty_acc'] !== '')
                             ? (int)$itemData['qty_acc']
-                            : null));
+                            : ($isSubAdmin ? null : 0)));
 
                 $distribusiItem = DistribusiItem::create([
                     'distribusi_id' => $distribusi->id,

@@ -270,6 +270,14 @@
                     this.showEditModal = true;
                 },
 
+                hasAccNibar(d) {
+                    if (!d || !d.items) return false;
+                    return d.items.some(it => {
+                        const regCount = (it.registers && it.registers.length > 0) ? it.registers.length : ((it.nibar_selected && it.nibar_selected.length > 0) ? it.nibar_selected.length : (it.qty_acc || 0));
+                        return regCount > 0;
+                    });
+                },
+
                 openPrintBast(item) {
                     if (!item) return;
                     const targetId = typeof item === 'object' ? item.id : item;
@@ -1014,10 +1022,17 @@
                                                     <template x-if="!selectedDistribusi || selectedDistribusi.status !== 'Ditolak'">
                                                         <div>
                                                             <template x-if="item.qty_acc !== null && item.qty_acc !== undefined">
-                                                                <span class="inline-block whitespace-nowrap">
-                                                                    <span class="font-bold text-emerald-400 text-xs font-mono" x-text="item.qty_acc"></span>
-                                                                    <span class="text-slate-400 text-[10px] ml-0.5" x-text="item.satuan"></span>
-                                                                </span>
+                                                                <div>
+                                                                    <template x-if="item.qty_acc > 0">
+                                                                        <span class="inline-block whitespace-nowrap">
+                                                                            <span class="font-bold text-emerald-400 text-xs font-mono" x-text="item.qty_acc"></span>
+                                                                            <span class="text-slate-400 text-[10px] ml-0.5" x-text="item.satuan"></span>
+                                                                        </span>
+                                                                    </template>
+                                                                    <template x-if="item.qty_acc <= 0">
+                                                                        <span class="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/80 whitespace-nowrap">✕ Tidak di-ACC</span>
+                                                                    </template>
+                                                                </div>
                                                             </template>
                                                             <template x-if="item.qty_acc === null || item.qty_acc === undefined">
                                                                 <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 whitespace-nowrap">⏳ Belum ACC</span>
@@ -1052,8 +1067,8 @@
                             </button>
                         </template>
 
-                        <!-- Tombol Tolak (Hanya admin, hilang ketika status Dalam Pengiriman / Telah Diterima / Ditolak) -->
-                        <template x-if="userRole !== 'sub_admin' && selectedDistribusi && !['Dalam Pengiriman', 'Dikirim', 'Telah Diterima', 'Diterima', 'Ditolak'].includes(selectedDistribusi.status)">
+                        <!-- Tombol Tolak (Hanya admin, hilang ketika status Dalam Pengiriman / Telah Diterima / Ditolak atau jika ada minimal 1 NIBAR yang diinput) -->
+                        <template x-if="userRole !== 'sub_admin' && selectedDistribusi && !['Dalam Pengiriman', 'Dikirim', 'Telah Diterima', 'Diterima', 'Ditolak'].includes(selectedDistribusi.status) && !hasAccNibar(selectedDistribusi)">
                             <button type="button"
                                     @click="confirmTolakDistribusi(selectedDistribusi)"
                                     class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5 cursor-pointer">
@@ -1065,7 +1080,7 @@
                         </template>
 
                         <a :href="selectedDistribusi ? ('/berita-acara?tab=distribusi&id=' + selectedDistribusi.id + '&returnTo=' + encodeURIComponent('/distribusi?openDetail=' + selectedDistribusi.id)) : '#'"
-                           x-show="userRole !== 'sub_admin' && selectedDistribusi && ['Dalam Pengiriman', 'Dikirim', 'Telah Diterima', 'Diterima'].includes(selectedDistribusi.status)"
+                           x-show="userRole !== 'sub_admin' && selectedDistribusi && selectedDistribusi.status !== 'Ditolak' && (['Dalam Pengiriman', 'Dikirim', 'Telah Diterima', 'Diterima'].includes(selectedDistribusi.status) || hasAccNibar(selectedDistribusi))"
                            class="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>🖨️ Cetak / Edit BAST</span>
