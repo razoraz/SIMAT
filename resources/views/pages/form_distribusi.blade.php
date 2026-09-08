@@ -299,20 +299,29 @@
                         item.qty = item.qty_acc;
                     }
                     this.activeNibarDropdownIndex = null;
+
+                    // Jika ada minimal 1 NIBAR yang diinput, otomatis dianggap di-ACC (status beralih ke 'Dalam Pengiriman' agar BAST terbit & siap dicetak)
+                    if (!this.isSubAdmin && ['Menunggu Konfirmasi', 'Draft', 'Pending'].includes(this.formData.status)) {
+                        this.formData.status = 'Dalam Pengiriman';
+                        this.onStatusChange();
+                    }
                 },
                 removeNibar(item, nibarStr) {
                     if (this.formData.status === 'Ditolak') return;
                     item.nibar_selected = (item.nibar_selected || []).filter(n => n.nibar !== nibarStr);
                     // Volume Di-ACC otomatis mengikuti jumlah NIBAR yang diinput
                     item.qty_acc = item.nibar_selected.length;
+
+                    // Jika seluruh NIBAR dihapus (0 NIBAR di seluruh item) dan status masih 'Dalam Pengiriman', kembalikan ke 'Menunggu Konfirmasi'
+                    const totalNibarAll = (this.formData.items || []).reduce((sum, it) => sum + (it.nibar_selected ? it.nibar_selected.length : 0), 0);
+                    if (!this.isSubAdmin && totalNibarAll === 0 && this.formData.status === 'Dalam Pengiriman') {
+                        this.formData.status = 'Menunggu Konfirmasi';
+                        this.onStatusChange();
+                    }
                 },
                 validateItemQtyAcc(item) {
                     if (!item || this.formData.status === 'Ditolak') return;
-                    if (!this.isNibarEmpty(item)) {
-                        item.qty_acc = (item.nibar_selected || []).length;
-                    } else {
-                        item.qty_acc = parseInt(item.qty) || 0;
-                    }
+                    item.qty_acc = (item.nibar_selected || []).length;
                 },
                 getFilteredJenisAstap(query) {
                     const validList = (this.jenisAstapList || []).filter(j => j && j.nama);
@@ -339,7 +348,7 @@
                     if (this.formData.status === 'Ditolak') return;
                     item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null;
                     item.nibar_selected = [];
-                    item.qty_acc = this.isNibarEmpty(item) ? (parseInt(item.qty) || 1) : 0;
+                    item.qty_acc = 0;
                 },
                 clearItemBarang(item, idx) {
                     if (this.formData.status === 'Ditolak') return;
@@ -350,7 +359,7 @@
                     const match = (this.katalogAstap || []).find(a => a.nama && a.nama.toLowerCase().trim() === item.nama_barang.toLowerCase().trim());
                     if (match) { item.kode_barang = match.kode; item.merk_type = match.merk || ''; item.satuan = match.satuan || 'Unit'; if (!item.jenis_astap_nama) item.jenis_astap_nama = match.jenis_nama || ''; }
                     item.nibar_selected = [];
-                    item.qty_acc = this.isNibarEmpty(item) ? (parseInt(item.qty) || 1) : 0;
+                    item.qty_acc = 0;
                 },
                 get filteredUnitList() {
                     if (!this.unitSearch || this.unitSearch.trim().length === 0) return (this.unitList || []).slice(0, 10);
@@ -391,34 +400,61 @@
                     setTimeout(() => { this.toast.show = false; }, 4000);
                 },
                 async submitForm() {
+                    console.log('[submitForm] status saat ini:', this.formData.status);
+                    // Jika Admin menginput minimal 1 NIBAR, otomatis dianggap di-ACC (status beralih ke Dalam Pengiriman agar BAST terbit & siap dicetak)
+                    // Catatan: Jika user secara manual memilih 'Ditolak', promosi otomatis ini tidak berjalan
+                    if (!this.isSubAdmin && this.formData.status !== 'Ditolak' && this.getTotalItemVolumeAcc() > 0 && ['Menunggu Konfirmasi', 'Draft', 'Pending'].includes(this.formData.status)) {
+                        this.formData.status = 'Dalam Pengiriman';
+                        this.onStatusChange();
+                    }
+
+                    // Saat status Ditolak, pastikan keterangan tidak kosong agar tidak blocked di backend
+                    if (this.formData.status === 'Ditolak') {
+                        if (!this.formData.keterangan || this.formData.keterangan.trim() === '') {
+                            this.formData.keterangan = '-';
+                        }
+                        (this.formData.items || []).forEach(it => {
+                            if (!it.keterangan || it.keterangan.trim() === '') {
+                                it.keterangan = '-';
+                            }
+                        });
+                    }
+
                     // ── 1. Validasi Header Distribusi ──────────────────────────────────
+                    console.log('[submitForm] step 1: tujuan =', this.formData.tujuan, 'unit_id =', this.formData.unit_id);
                     if (!this.formData.tujuan || this.formData.tujuan.trim() === '' || !this.formData.unit_id) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTujuan Unit / Ruangan / Paviliun belum dipilih.');
                         return;
                     }
 
+                    // Dievaluasi SETELAH kemungkinan promosi status di atas, agar status 'Ditolak' yang dipilih user tidak terblokir oleh validasi BAST
                     const isShippingOrReceived = ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(this.formData.status);
+                    console.log('[submitForm] step 2: isShippingOrReceived =', isShippingOrReceived, 'bast_nomor =', this.formData.bast_nomor);
                     if (!this.isSubAdmin && isShippingOrReceived && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '' || this.formData.bast_nomor === '(tidak diterbitkan)' || this.formData.bast_nomor.includes('Menunggu'))) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNo. BAST Distribusi belum diisi / belum terbit.');
                         return;
                     }
 
+                    console.log('[submitForm] step 3: tgl =', this.formData.tgl);
                     if (!this.formData.tgl || this.formData.tgl.trim() === '') {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nTanggal ' + (this.isSubAdmin ? 'Pengajuan' : 'Penyerahan') + ' belum diisi.');
                         return;
                     }
 
+                    console.log('[submitForm] step 4: penerima =', this.formData.penerima);
                     if (!this.formData.penerima || this.formData.penerima.trim() === '') {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNama Penerima / Penanggung Jawab belum diisi (pilih unit tujuan).');
                         return;
                     }
 
+                    console.log('[submitForm] step 5: penerima_jabatan =', this.formData.penerima_jabatan);
                     if (!this.formData.penerima_jabatan || this.formData.penerima_jabatan.trim() === '') {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nJabatan Penerima belum diisi.');
                         return;
                     }
 
                     // ── 2. Validasi Daftar Barang (Multi-Barang) ───────────────────────
+                    console.log('[submitForm] step 6: items.length =', this.formData.items.length);
                     if (!this.formData.items || this.formData.items.length === 0) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nMinimal harus ada 1 barang dalam transaksi distribusi.');
                         return;
@@ -427,6 +463,7 @@
                     for (let i = 0; i < this.formData.items.length; i++) {
                         const it = this.formData.items[i];
                         const urut = i + 1;
+                        console.log('[submitForm] item #' + urut + ':', JSON.stringify({jenis: it.jenis_astap_nama, nama: it.nama_barang, qty: it.qty, keterangan: it.keterangan, nibar_count: (it.nibar_selected||[]).length}));
 
                         // a. Validasi Kategori Jenis ASTAP
                         if (!it.jenis_astap_nama || it.jenis_astap_nama.trim() === '') {
@@ -440,14 +477,9 @@
                             return;
                         }
 
-                        // c. Validasi Pemilihan NIBAR (Khusus Admin jika NIBAR tersedia & status bukan Ditolak)
-                        if (!this.isSubAdmin && this.formData.status !== 'Ditolak' && !this.isNibarEmpty(it)) {
-                            const nibarSelectedCount = (it.nibar_selected || []).length;
-                            if (nibarSelectedCount === 0) {
-                                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNIBAR untuk Barang #' + urut + ' ("' + it.nama_barang + '") belum dipilih.');
-                                return;
-                            }
-                        }
+                        // c. Sinkronisasi Volume Di-ACC mengikuti jumlah NIBAR yang dipilih
+                        // Jika stok kosong atau belum dipilihkan NIBAR, qty_acc bernilai 0 (barang ini tidak di-ACC)
+                        it.qty_acc = (it.nibar_selected || []).length;
 
                         // d. Validasi Volume Pengajuan (Qty)
                         const qtyPengajuan = parseInt(it.qty);
@@ -456,32 +488,31 @@
                             return;
                         }
 
-                        // e. Validasi Volume Di-ACC (Khusus Admin jika status bukan Ditolak)
-                        if (!this.isSubAdmin && this.formData.status !== 'Ditolak') {
-                            if (!this.isNibarEmpty(it)) {
-                                it.qty_acc = (it.nibar_selected || []).length;
-                                if (it.qty_acc <= 0) {
-                                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nVolume Di-ACC pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") masih 0 karena belum ada NIBAR yang dipilih.\n\nSilakan pilih NIBAR terlebih dahulu.');
-                                    return;
-                                }
-                            } else {
-                                it.qty_acc = qtyPengajuan;
-                            }
-                        }
-
-                        // f. Validasi Keterangan / Catatan Spesifik Item Barang
+                        // e. Validasi Keterangan / Catatan Spesifik Item Barang
                         if (this.formData.status !== 'Ditolak' && (!it.keterangan || it.keterangan.trim() === '' || it.keterangan.trim() === '-')) {
                             alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nKeterangan / Catatan Peruntukan Barang pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi.');
                             return;
                         }
                     }
 
+                    // ── Validasi Akumulasi Volume Di-ACC (Khusus Admin jika status Dalam Pengiriman / Telah Diterima) ──
+                    console.log('[submitForm] step 7: acc check, status =', this.formData.status);
+                    if (!this.isSubAdmin && ['Dalam Pengiriman', 'Telah Diterima'].includes(this.formData.status)) {
+                        const totalAcc = this.getTotalItemVolumeAcc();
+                        if (totalAcc <= 0) {
+                            alert('⚠️ Validasi Persetujuan Distribusi:\n\nBelum ada barang yang disetujui (di-ACC). Minimal harus ada 1 barang yang dipilihkan NIBAR-nya.\n\nJika seluruh permohonan barang tidak disetujui, silakan ubah Status Transaksi menjadi "Ditolak".');
+                            return;
+                        }
+                    }
+
                     // ── 3. Validasi Catatan Umum Distribusi ─────────────────────────────
+                    console.log('[submitForm] step 8: keterangan umum =', this.formData.keterangan);
                     if (this.formData.status !== 'Ditolak' && (!this.formData.keterangan || this.formData.keterangan.trim() === '' || this.formData.keterangan.trim() === '-')) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nCatatan Umum / Keterangan Penempatan belum diisi.');
                         return;
                     }
 
+                    console.log('[submitForm] semua validasi lolos, menampilkan konfirmasi...');
                     this.askConfirmation({
                         title: this.isEdit ? '✏️ Konfirmasi Ubah Distribusi' : '🚚 Konfirmasi Simpan Distribusi',
                         message: this.isEdit ? 'Apakah Anda yakin ingin menyimpan perubahan data distribusi ini?' : 'Apakah Anda yakin ingin menyimpan data distribusi baru ini?',
@@ -491,12 +522,20 @@
                         onConfirm: async () => {
                             this.isSaving = true;
                             try {
+                                let normalizedTgl = this.formData.tgl;
+                                if (normalizedTgl) {
+                                    const parts = normalizedTgl.split(/[\/\-]/);
+                                    if (parts.length === 3 && parts[2].length === 4) {
+                                        normalizedTgl = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                                    }
+                                }
+
                                 const dbPayload = {
                                     kode: this.formData.kode,
-                                    bast_nomor: isShippingOrReceived ? this.formData.bast_nomor : null,
+                                    bast_nomor: (this.formData.status !== 'Ditolak' && isShippingOrReceived) ? this.formData.bast_nomor : null,
                                     tujuan: this.formData.tujuan,
                                     unit_id: this.formData.unit_id,
-                                    tanggal_distribusi: this.formData.tgl,
+                                    tanggal_distribusi: normalizedTgl,
                                     pj_nama: this.formData.penerima,
                                     pj_nip: this.formData.penerima_nip,
                                     pj_jabatan: this.formData.penerima_jabatan,
@@ -511,7 +550,7 @@
                                             nama_barang: it.nama_barang,
                                             kode_barang: resolvedKode,
                                             qty: parseInt(it.qty) || 1,
-                                            qty_acc: this.formData.status === 'Ditolak' ? 0 : (this.isSubAdmin ? null : (registerIds.length > 0 ? registerIds.length : ((it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : (parseInt(it.qty) || 1)))),
+                                            qty_acc: this.formData.status === 'Ditolak' ? 0 : (this.isSubAdmin ? null : registerIds.length),
                                             keterangan: it.keterangan || '-',
                                             register_ids: registerIds
                                         };
@@ -532,6 +571,7 @@
                                 });
 
                                 const result = await response.json();
+                                console.log('[submitForm] server response:', response.status, result);
 
                                 if (response.ok && result.success) {
                                     // Update nomor BAST dari server (ID sudah terbentuk)
@@ -548,7 +588,12 @@
                                         window.location.href = '{{ route("distribusi.index") }}';
                                     }, 1200);
                                 } else {
-                                    this.showSimatToast('❌ Gagal menyimpan distribusi: ' + (result.message || 'Terjadi kesalahan pada server'), 'error');
+                                    let errorMsg = result.message || 'Terjadi kesalahan pada server';
+                                    if (result.errors) {
+                                        const errorDetails = Object.values(result.errors).flat().join('; ');
+                                        if (errorDetails) errorMsg += ' (' + errorDetails + ')';
+                                    }
+                                    this.showSimatToast('❌ Gagal menyimpan distribusi: ' + errorMsg, 'error');
                                 }
                             } catch(e) {
                                 console.error(e);
@@ -1084,12 +1129,12 @@
                                                 <div class="relative flex items-center">
                                                     <input type="text" 
                                                            disabled
-                                                           value="⚠️ Barang Kosong — Data NIBAR belum tersedia di sistem" 
+                                                           value="⚠️ Stok Kosong — Data register NIBAR belum tersedia di sistem" 
                                                            class="w-full h-11 bg-rose-950/20 border border-rose-500/40 rounded-xl px-4 py-2.5 pl-10 pr-4 text-xs text-rose-300 font-semibold cursor-not-allowed">
                                                     <svg class="w-4 h-4 text-rose-400 pointer-events-none" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                                                 </div>
                                                 <p class="text-[11px] text-rose-400/90 flex items-center space-x-1.5 pl-1">
-                                                    <span>ℹ️ Tidak ditemukan register NIBAR aktif untuk barang <span class="font-mono font-bold text-white" x-text="getItemKode(item) || item.nama_barang"></span>. Anda tetap dapat mendistribusikan barang dengan mengisi Volume (Qty).</span>
+                                                    <span>ℹ️ Register NIBAR aktif tidak ditemukan untuk <span class="font-mono font-bold text-white" x-text="getItemKode(item) || item.nama_barang"></span>. Volume Di-ACC tetap 0.</span>
                                                 </p>
                                             </div>
                                         </template>
@@ -1193,11 +1238,7 @@
                                                 let raw = $event.target.value.replace(/\D/g, '');
                                                 item.qty = raw ? parseInt(raw, 10) : '';
                                                 $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                                if (isNibarEmpty(item)) {
-                                                    item.qty_acc = item.qty ? parseInt(item.qty, 10) : 0;
-                                                } else {
-                                                    item.qty_acc = (item.nibar_selected || []).length;
-                                                }
+                                                item.qty_acc = (item.nibar_selected || []).length;
                                             "
                                             placeholder="1"
                                             :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-700/90 focus:border-teal-500'"
@@ -1207,13 +1248,13 @@
                                     <!-- Vol 2: Volume ACC — Mengikuti NIBAR yang diinput & tidak dapat diedit -->
                                     <template x-if="!isSubAdmin">
                                         <div>
-                                            <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                             <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
                                                 <span class="flex items-center space-x-1.5">
                                                     <span class="text-emerald-300">Volume Di-ACC</span>
                                                     <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">🔒 Sesuai NIBAR</span>
                                                 </span>
                                                 <template x-if="!item.qty_acc || item.qty_acc <= 0">
-                                                    <span class="text-[10px] text-amber-400 font-semibold" x-text="isNibarEmpty(item) ? '⏳ Auto Qty' : '⏳ Belum Pilih NIBAR'"></span>
+                                                    <span class="text-[10px] text-amber-400 font-semibold" x-text="isNibarEmpty(item) ? '⚠️ Stok Kosong (Tidak di-ACC)' : '⏳ 0 NIBAR (Tidak di-ACC)'"></span>
                                                 </template>
                                                 <template x-if="item.qty_acc && item.qty_acc > 0">
                                                     <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
@@ -1225,17 +1266,21 @@
                                                     readonly
                                                     tabindex="-1"
                                                     title="Volume Di-ACC terisi otomatis mengikuti jumlah NIBAR yang diinput dan tidak dapat diedit manual"
-                                                    class="w-full h-11 bg-slate-950/80 text-emerald-400 font-mono font-bold border border-slate-800 rounded-xl px-4 py-2.5 text-xs cursor-not-allowed select-none focus:outline-none shadow-inner">
-                                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none text-emerald-400/80">
+                                                    :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-400 border-slate-800' : 'text-emerald-400 border-emerald-500/30'"
+                                                    class="w-full h-11 bg-slate-950/80 font-mono font-bold border rounded-xl px-4 py-2.5 text-xs cursor-not-allowed select-none focus:outline-none shadow-inner">
+                                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none" :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-600' : 'text-emerald-400/80'">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                                 </div>
                                             </div>
                                             <p class="text-[10px] text-slate-400 mt-1 flex items-center space-x-1">
-                                                <template x-if="!isNibarEmpty(item)">
+                                                <template x-if="!isNibarEmpty(item) && (item.nibar_selected || []).length > 0">
                                                     <span>ℹ️ Otomatis mengikuti total NIBAR terpilih (<strong class="text-emerald-300 font-mono" x-text="(item.nibar_selected || []).length"></strong> NIBAR)</span>
                                                 </template>
+                                                <template x-if="!isNibarEmpty(item) && (!item.nibar_selected || item.nibar_selected.length === 0)">
+                                                    <span class="text-amber-400/90">ℹ️ Belum ada NIBAR dipilih (barang ini tidak di-ACC)</span>
+                                                </template>
                                                 <template x-if="isNibarEmpty(item)">
-                                                    <span>ℹ️ NIBAR kosong di sistem — Otomatis mengikuti Volume Pengajuan</span>
+                                                    <span class="text-rose-400">⚠️ Stok kosong — barang ini tidak di-ACC (0 Unit)</span>
                                                 </template>
                                             </p>
                                         </div>

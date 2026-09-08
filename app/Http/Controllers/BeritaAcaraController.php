@@ -205,7 +205,10 @@ class BeritaAcaraController extends Controller
             'unit',
             'items.astap.jenisAstap',
             'items.registers.astapRegister',
-        ])->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima']);
+        ])->where(function($q) {
+            $q->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])
+              ->orWhereHas('items.registers');
+        });
 
         // Jika sub admin, batasi data hanya untuk unit miliknya
         if ($isSubAdmin && $user->unit_id) {
