@@ -26,28 +26,11 @@
                 distribusis: {{ Js::from($distribusis ?? []) }},
 
                 init() {
-                    // Sub admin: SELALU gunakan data dari backend (jangan baca localStorage)
-                    // karena localStorage bisa berisi data sesi admin/user lain
-                    if (this.userRole === 'sub_admin') {
+                    // Selalu gunakan data riil dari backend database
+                    // Bersihkan cache localStorage lama agar tidak membangkitkan data hantu saat tabel di database kosong
+                    try {
                         localStorage.removeItem('simat_distribusis');
-                    } else {
-                        // Admin/Master: prioritaskan data dari DB, fallback ke localStorage
-                        if (this.distribusis && this.distribusis.length > 0) {
-                            localStorage.setItem('simat_distribusis', JSON.stringify(this.distribusis));
-                        } else {
-                            const stored = localStorage.getItem('simat_distribusis');
-                            if (stored) {
-                                try {
-                                    const parsed = JSON.parse(stored);
-                                    if (Array.isArray(parsed) && parsed.length > 0) {
-                                        this.distribusis = parsed;
-                                    }
-                                } catch (e) {
-                                    this.distribusis = [];
-                                }
-                            }
-                        }
-                    }
+                    } catch (e) {}
 
                     // Auto-buka modal detail jika kembali dari BAST
                     const urlParams = new URLSearchParams(window.location.search);
@@ -66,9 +49,7 @@
                 },
 
                 saveToStorage() {
-                    // Sub admin: jangan simpan ke localStorage
-                    if (this.userRole === 'sub_admin') return;
-                    localStorage.setItem('simat_distribusis', JSON.stringify(this.distribusis));
+                    // Data sekarang sepenuhnya tersimpan di backend database MySQL
                 },
 
                 showConfirmModal: false,
