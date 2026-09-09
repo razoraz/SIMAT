@@ -712,7 +712,7 @@
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">No. Distribusi</th>
                             <th class="px-4 py-3.5 text-left min-w-[260px] bg-slate-950">Rincian Barang yang Didistribusikan</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tujuan Unit / Ruangan</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tgl Distribusi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tgl Pengajuan</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Penerima</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Status</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0" :class="userRole === 'sub_admin' ? 'w-24' : 'min-w-[210px]'" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
@@ -839,7 +839,7 @@
                                 <span class="text-[10px] text-slate-400 font-mono" x-text="selectedDistribusi.pj_nip ? ('NIP: ' + selectedDistribusi.pj_nip) : ''"></span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Tanggal Distribusi</span>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Tanggal Pengajuan</span>
                                 <span class="font-mono text-slate-300 text-xs block mt-0.5" x-text="selectedDistribusi.tgl || selectedDistribusi.tanggal_distribusi"></span>
                             </div>
                             <div>
