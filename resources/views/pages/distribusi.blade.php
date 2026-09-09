@@ -107,13 +107,20 @@
                         onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             try {
-                                await fetch('/distribusi/' + targetId, {
+                                const res = await fetch('/distribusi/' + targetId, {
                                     method: 'DELETE',
                                     headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
                                 });
-                                window.location.reload();
+                                if (res.ok) {
+                                    this.distribusis = this.distribusis.filter(d => String(d.id) !== String(targetId));
+                                    this.showDetailModal = false;
+                                    this.showSimatToast('✅ Transaksi distribusi berhasil dihapus.', 'success');
+                                } else {
+                                    const data = await res.json().catch(() => ({}));
+                                    this.showSimatToast('❌ Gagal menghapus: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                                }
                             } catch(err) {
-                                window.location.reload();
+                                this.showSimatToast('❌ Gagal menghapus transaksi distribusi.', 'error');
                             }
                         }
                     });
