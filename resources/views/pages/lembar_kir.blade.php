@@ -26,6 +26,16 @@
             showToast: false,
             toastMessage: '',
 
+            init() {
+                const updateBodyScroll = () => {
+                    const isOpen = this.showEditModal || this.showDetailModal || this.showPrintModal;
+                    document.body.style.overflow = isOpen ? 'hidden' : '';
+                };
+                this.$watch('showEditModal', updateBodyScroll);
+                this.$watch('showDetailModal', updateBodyScroll);
+                this.$watch('showPrintModal', updateBodyScroll);
+            },
+
             // Form Ubah Kondisi
             editForm: {
                 kondisi: 'Baik',
@@ -72,10 +82,7 @@
                 return this.assets.filter(a => a.kondisi === 'Baik').length;
             },
             get countKurangBaik() {
-                return this.assets.filter(a => a.kondisi === 'Kurang Baik').length;
-            },
-            get countRusakRingan() {
-                return this.assets.filter(a => a.kondisi === 'Rusak Ringan').length;
+                return this.assets.filter(a => a.kondisi === 'Kurang Baik' || a.kondisi === 'Rusak Ringan').length;
             },
             get countRusakBerat() {
                 return this.assets.filter(a => a.kondisi === 'Rusak Berat' || a.kondisi === 'Rusak').length;
@@ -303,11 +310,11 @@
                     </div>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <p class="text-2xl sm:text-3xl font-black text-white" x-text="countKurangBaik + countRusakRingan + countRusakBerat">0</p>
+                    <p class="text-2xl sm:text-3xl font-black text-white" x-text="countKurangBaik + countRusakBerat">0</p>
                     <span class="text-xs font-bold text-amber-400">Unit Servis/Rusak</span>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2">
-                    <span x-text="countRusakRingan + ' Rusak Ringan · ' + countRusakBerat + ' Rusak Berat'"></span>
+                    <span x-text="countKurangBaik + ' Kurang Baik · ' + countRusakBerat + ' Rusak Berat'"></span>
                 </p>
             </div>
         </div>
@@ -336,12 +343,6 @@
                         <span>Kurang Baik</span>
                         <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px]" x-text="countKurangBaik"></span>
                     </button>
-                    <button type="button" @click="statusFilter = 'Rusak Ringan'"
-                        :class="statusFilter === 'Rusak Ringan' ? 'bg-orange-500/20 text-orange-300 font-extrabold border border-orange-500/40 shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                        class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1">
-                        <span>Rusak Ringan</span>
-                        <span class="px-1.5 py-0.2 rounded-full bg-orange-500/20 text-orange-300 text-[10px]" x-text="countRusakRingan"></span>
-                    </button>
                     <button type="button" @click="statusFilter = 'Rusak Berat'"
                         :class="statusFilter === 'Rusak Berat' ? 'bg-rose-500/20 text-rose-300 font-extrabold border border-rose-500/40 shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
                         class="px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1">
@@ -360,20 +361,23 @@
                 </div>
             </div>
 
-            <!-- Tabel Data Aset Fisik Ruangan -->
-            <div class="overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/50">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800">
+            <!-- Tabel Data Aset Fisik Ruangan (Scrollable 5-6 rows: max-h-[385px]) -->
+            <div class="overflow-x-auto overflow-y-auto max-h-[385px] rounded-2xl border border-slate-800/80 bg-slate-950/50 relative shadow-inner">
+                <table class="w-full text-left text-xs text-slate-300 border-separate border-spacing-0">
+                    <thead class="sticky top-0 z-20 bg-slate-950 text-slate-400 font-bold uppercase tracking-wider shadow-sm">
                         <tr>
-                            <th class="px-3 py-3 text-center whitespace-nowrap w-10">No</th>
-                            <th class="px-3.5 py-3 text-left min-w-[160px]">Nomor Register NIBAR</th>
-                            <th class="px-3.5 py-3 text-left min-w-[220px]">Nama Barang / ASTAP</th>
-                            <th class="px-3.5 py-3 text-left min-w-[140px]">Merk / Tipe</th>
-                            <th class="px-3.5 py-3 text-center whitespace-nowrap">No. Seri/Pabrik</th>
-                            <th class="px-3.5 py-3 text-center whitespace-nowrap">Tahun</th>
-                            <th class="px-3.5 py-3 text-right whitespace-nowrap">Nilai Buku</th>
-                            <th class="px-3.5 py-3 text-center whitespace-nowrap min-w-[120px]">Kondisi Barang</th>
-                            <th class="px-3.5 py-3 text-center whitespace-nowrap">Aksi</th>
+                            <th class="px-3 py-3 text-center whitespace-nowrap w-10 bg-slate-950 border-b border-slate-800">No</th>
+                            <th class="px-3.5 py-3 text-left min-w-[160px] bg-slate-950 border-b border-slate-800">Nomor Register NIBAR</th>
+                            <th class="px-3.5 py-3 text-left min-w-[220px] bg-slate-950 border-b border-slate-800">Nama Barang / ASTAP</th>
+                            <th class="px-3.5 py-3 text-left min-w-[140px] bg-slate-950 border-b border-slate-800">Merk / Tipe</th>
+                            <th class="px-3.5 py-3 text-center whitespace-nowrap bg-slate-950 border-b border-slate-800">No. Seri/Pabrik</th>
+                            <th class="px-3.5 py-3 text-center whitespace-nowrap bg-slate-950 border-b border-slate-800">Tahun</th>
+                            <th class="px-3.5 py-3 text-right whitespace-nowrap bg-slate-950 border-b border-slate-800">Nilai Buku</th>
+                            <th class="px-3.5 py-3 text-center whitespace-nowrap min-w-[120px] bg-slate-950 border-b border-slate-800">Kondisi Barang</th>
+                            <th class="px-3.5 py-3 text-center whitespace-nowrap border-l border-b border-slate-800 shrink-0 min-w-[170px] w-[170px]" 
+                                style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                Aksi
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
@@ -409,30 +413,30 @@
                                     </button>
                                 </td>
 
-                                <!-- Kolom Aksi -->
-                                <td class="px-3.5 py-3 text-center whitespace-nowrap">
-                                    <div class="inline-flex items-center space-x-1.5">
-                                        <!-- Tombol Ubah Kondisi -->
-                                        <button type="button" @click="openEditKondisi(item)"
-                                            class="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition-all flex items-center space-x-1"
-                                            title="Ubah Kondisi Fisik Barang">
-                                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                            <span class="text-[10px] font-bold">Ubah</span>
-                                        </button>
-
-                                        <!-- Tombol Rincian -->
+                                <!-- Kolom Aksi — FREEZE STICKY RIGHT -->
+                                <td class="px-3.5 py-3 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[170px] w-[170px]" 
+                                    style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <!-- 1. Tombol Detail (Kaya Data ASTAP) -->
                                         <button type="button" @click="openDetail(item)"
-                                            class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
-                                            title="Lihat Rincian Spesifikasi">
-                                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                            title="Lihat Detail ASTAP"
+                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                            <span>Detail</span>
                                         </button>
 
-                                        <!-- Tombol Scan Barcode -->
-                                        <a :href="'/scan/' + (item.nibar || item.kode)" target="_blank"
-                                            class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
-                                            title="Halaman Publik Scan QR Barcode">
-                                            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-                                        </a>
+                                        <!-- 2. Tombol Ubah Kondisi -->
+                                        <button type="button" @click="openEditKondisi(item)"
+                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer leading-none"
+                                            title="Ubah Kondisi Fisik Barang">
+                                            <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                            <span>Ubah</span>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -465,7 +469,9 @@
         </div>
 
         <!-- 4. MODAL UBAH KONDISI BARANG (INTERAKTIF & REALTIME) -->
-        <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+        <div x-show="showEditModal" x-cloak 
+            class="flex items-center justify-center p-4"
+            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
@@ -509,17 +515,17 @@
                                 </div>
                             </div>
 
-                            <!-- Opsi Pilihan Kondisi (4 Radio Cards) -->
+                            <!-- Opsi Pilihan Kondisi (3 Radio Cards) -->
                             <div>
                                 <label class="block text-slate-300 font-bold mb-2">Pilih Kondisi Fisik Baru:</label>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                     <!-- 1. Baik -->
                                     <label class="p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5"
                                         :class="editForm.kondisi === 'Baik' ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'">
                                         <input type="radio" name="pilihan_kondisi" value="Baik" x-model="editForm.kondisi" class="mt-0.5 text-emerald-500 focus:ring-0">
                                         <div>
                                             <span class="font-bold block text-xs" :class="editForm.kondisi === 'Baik' ? 'text-emerald-300' : 'text-white'">🟢 Baik</span>
-                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Berfungsi normal dan siap digunakan</span>
+                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Berfungsi normal &amp; siap digunakan</span>
                                         </div>
                                     </label>
 
@@ -529,21 +535,11 @@
                                         <input type="radio" name="pilihan_kondisi" value="Kurang Baik" x-model="editForm.kondisi" class="mt-0.5 text-amber-500 focus:ring-0">
                                         <div>
                                             <span class="font-bold block text-xs" :class="editForm.kondisi === 'Kurang Baik' ? 'text-amber-300' : 'text-white'">🟡 Kurang Baik</span>
-                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Mengalami kendala minor / aus</span>
+                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Kendala minor / aus / perlu servis</span>
                                         </div>
                                     </label>
 
-                                    <!-- 3. Rusak Ringan -->
-                                    <label class="p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5"
-                                        :class="editForm.kondisi === 'Rusak Ringan' ? 'bg-orange-500/15 border-orange-500 text-white shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'">
-                                        <input type="radio" name="pilihan_kondisi" value="Rusak Ringan" x-model="editForm.kondisi" class="mt-0.5 text-orange-500 focus:ring-0">
-                                        <div>
-                                            <span class="font-bold block text-xs" :class="editForm.kondisi === 'Rusak Ringan' ? 'text-orange-300' : 'text-white'">🟠 Rusak Ringan</span>
-                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Butuh suku cadang / servis ringan</span>
-                                        </div>
-                                    </label>
-
-                                    <!-- 4. Rusak Berat -->
+                                    <!-- 3. Rusak Berat -->
                                     <label class="p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5"
                                         :class="editForm.kondisi === 'Rusak Berat' ? 'bg-rose-500/15 border-rose-500 text-white shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'">
                                         <input type="radio" name="pilihan_kondisi" value="Rusak Berat" x-model="editForm.kondisi" class="mt-0.5 text-rose-500 focus:ring-0">
@@ -581,7 +577,9 @@
         </div>
 
         <!-- 5. MODAL PRATINJAU & CETAK DOKUMEN KIR RESMI (KERTAS PUTIH STANDAR PEMERINTAH) -->
-        <div x-show="showPrintModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
+        <div x-show="showPrintModal" x-cloak
+            class="flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
@@ -800,84 +798,175 @@
             </div>
         </div>
 
-        <!-- 6. MODAL DETAIL SPESIFIKASI ASET (NO-PRINT) -->
-        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-            
-            <div @click.away="showDetailModal = false"
-                class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden"
-                x-transition:enter="transition ease-out duration-300 transform"
-                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                x-transition:leave="transition ease-in duration-200 transform"
-                x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+        <!-- 6. FRONTEND MODAL: DETAIL ASET RUANGAN (SESUAI KATALOG DATA ASTAP) -->
+        <div x-show="showDetailModal" x-cloak @click.self="showDetailModal = false" 
+            class="flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto" 
+            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;">
+            <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto" style="background-color: #0f172a;">
                 
                 <template x-if="selectedAsset">
-                    <div>
-                        <!-- Header Detail Modal -->
-                        <div class="flex items-start justify-between border-b border-slate-800 pb-4 mb-4">
-                            <div>
-                                <span class="px-2.5 py-0.5 rounded font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" x-text="selectedAsset.nibar"></span>
-                                <h3 class="text-lg font-black text-white mt-1.5" x-text="selectedAsset.nama"></h3>
+                    <div class="space-y-5">
+                        <!-- Modal Header -->
+                        <div class="flex items-start justify-between pb-4 border-b border-slate-800 gap-4">
+                            <div class="space-y-1.5 min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
+                                        :class="{
+                                            'bg-amber-500/20 text-amber-300 border-amber-500/30': (selectedAsset.kategori_kib === 'KIB A'),
+                                            'bg-cyan-500/20 text-cyan-300 border-cyan-500/30':     (selectedAsset.kategori_kib === 'KIB B' || !selectedAsset.kategori_kib),
+                                            'bg-purple-500/20 text-purple-300 border-purple-500/30': (selectedAsset.kategori_kib === 'KIB C'),
+                                            'bg-teal-500/20 text-teal-300 border-teal-500/30':     (selectedAsset.kategori_kib === 'KIB D'),
+                                            'bg-orange-500/20 text-orange-300 border-orange-500/30': (selectedAsset.kategori_kib === 'KIB E'),
+                                            'bg-rose-500/20 text-rose-300 border-rose-500/30':     (selectedAsset.kategori_kib === 'KIB F'),
+                                            'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': (selectedAsset.kategori_kib === 'ATB'),
+                                            'bg-amber-400/20 text-amber-300 border-amber-400/30': (selectedAsset.kategori_kib === 'EXTRACOM')
+                                        }"
+                                        x-text="selectedAsset.kategori_kib || selectedAsset.kategori || 'ASTAP'"></span>
+
+                                    <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
+                                        x-text="'Kode: ' + (selectedAsset.kode_barang || selectedAsset.kode_108 || '-')"></span>
+
+                                    <span class="px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-mono font-bold text-[11px] truncate max-w-full"
+                                        x-text="'NIBAR: ' + selectedAsset.nibar"></span>
+
+                                    <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 font-mono text-[11px] flex items-center space-x-1.5 shrink-0">
+                                        <span class="text-slate-400">📅 Tahun:</span>
+                                        <span class="text-cyan-300 font-bold" x-text="selectedAsset.tahun"></span>
+                                    </span>
+                                </div>
+                                <h3 class="text-base sm:text-lg md:text-xl font-extrabold text-white leading-snug break-words mt-1" x-text="selectedAsset.nama"></h3>
                             </div>
-                            <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
+
+                            <!-- Tombol Close -->
+                            <button type="button" @click="showDetailModal = false" class="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg font-bold transition-all shrink-0 cursor-pointer">&times;</button>
                         </div>
 
-                        <!-- Body Detail Modal -->
-                        <div class="space-y-3 text-xs">
-                            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Kode 108</span>
-                                    <span class="font-mono text-slate-200" x-text="selectedAsset.kode_108"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Kondisi Fisik</span>
-                                    <span class="font-bold text-emerald-400" x-text="selectedAsset.kondisi"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Merk / Tipe</span>
-                                    <span class="text-slate-200" x-text="selectedAsset.merk"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">No. Seri / Pabrik</span>
-                                    <span class="font-mono text-slate-200" x-text="selectedAsset.no_seri"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Tahun Perolehan</span>
-                                    <span class="font-mono text-slate-200" x-text="selectedAsset.tahun"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Nilai Perolehan</span>
-                                    <span class="font-mono text-white font-bold" x-text="selectedAsset.harga_fmt"></span>
+                        <!-- Top 4 Metric KPI Cards (Persis Data ASTAP) -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">🏷️ Jenis PMDN 108</span>
+                                <span class="text-white font-bold text-xs sm:text-sm leading-tight block truncate" :title="selectedAsset.kategori" x-text="selectedAsset.kategori"></span>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">📅 Tahun Masuk</span>
+                                <span class="text-cyan-300 font-extrabold font-mono text-xs sm:text-sm block" x-text="selectedAsset.tahun"></span>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">⚡ Kondisi Fisik</span>
+                                <div class="mt-0.5">
+                                    <span class="px-2 py-0.5 rounded-lg text-xs font-bold border inline-block"
+                                        :class="{
+                                            'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedAsset.kondisi === 'Baik',
+                                            'bg-amber-500/20 text-amber-300 border-amber-500/30': (selectedAsset.kondisi === 'Kurang Baik' || selectedAsset.kondisi === 'Rusak Ringan'),
+                                            'bg-rose-500/20 text-rose-300 border-rose-500/30': (selectedAsset.kondisi === 'Rusak Berat' || selectedAsset.kondisi === 'Rusak')
+                                        }"
+                                        x-text="selectedAsset.kondisi"></span>
                                 </div>
                             </div>
+                            <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">💰 Nilai Satuan / Buku</span>
+                                <span class="text-emerald-400 font-extrabold font-mono text-xs sm:text-sm block truncate" x-text="selectedAsset.harga_fmt"></span>
+                            </div>
+                        </div>
 
-                            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Ruangan Terpasang</span>
-                                    <span class="text-white font-semibold" x-text="selectedAsset.ruang"></span>
+                        <!-- 1. SPESIFIKASI TEKNIS RINCI (LANGKAH 3 BELANJA MODAL) -->
+                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 text-xs">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <h4 class="text-xs font-extrabold uppercase tracking-wider text-cyan-400 flex items-center space-x-1.5">
+                                    <span>🔍 Rincian Spesifikasi Teknis Belanja Modal</span>
+                                </h4>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400" x-text="selectedAsset.kategori_kib || 'KIB B'"></span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Merk / Brand</span>
+                                    <span class="text-white font-bold" x-text="selectedAsset.merk || '-'"></span>
                                 </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Type / Model</span>
+                                    <span class="text-white font-bold" x-text="selectedAsset.tipe || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🧪 Bahan / Material</span>
+                                    <span class="text-white font-bold" x-text="selectedAsset.bahan || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🔢 No. Pabrik / Seri</span>
+                                    <span class="text-cyan-300 font-mono font-bold" x-text="selectedAsset.no_pabrik || selectedAsset.no_seri || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🚗 No. Rangka / Mesin</span>
+                                    <span class="text-slate-200 font-mono font-semibold" x-text="(selectedAsset.no_rangka || '-') + ' / ' + (selectedAsset.no_mesin || '-')"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Ukuran / Kapasitas</span>
+                                    <span class="text-slate-200 font-bold" x-text="selectedAsset.ukuran || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 col-span-full">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏥 Ruang / Unit Pemegang Terpasang</span>
+                                    <span class="text-amber-300 font-bold text-sm" x-text="selectedAsset.ruang"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. ADMINISTRASI PENGADAAN & DOKUMEN SPK/SP2D (LANGKAH 4) -->
+                        <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 text-xs">
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                <h4 class="text-xs font-extrabold uppercase tracking-wider text-emerald-400 flex items-center space-x-1.5">
+                                    <span>📋 Dokumen Administrasi & Pengadaan SIPD</span>
+                                </h4>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">Riwayat Pengadaan</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏢 Pihak Rekanan / Penyedia</span>
+                                    <span class="text-teal-300 font-bold block truncate" x-text="selectedAsset.penyedia || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📜 Nomor & Tgl SPK</span>
+                                    <span class="text-slate-200 font-mono font-medium block truncate" x-text="(selectedAsset.spk_nomor || '-') + ' (' + (selectedAsset.spk_tanggal || '-') + ')'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">💳 Nomor & Tgl SP2D</span>
+                                    <span class="text-slate-200 font-mono font-medium block truncate" x-text="(selectedAsset.sp2d_nomor || '-') + ' (' + (selectedAsset.sp2d_tanggal || '-') + ')'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📑 Nomor BAST / Bukti Terima</span>
+                                    <span class="text-slate-200 font-mono font-medium block truncate" x-text="selectedAsset.bast_nomor || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 sm:col-span-2">
+                                    <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Alamat Pengiriman / Lokasi Barang</span>
+                                    <span class="text-slate-200 font-medium block truncate" x-text="selectedAsset.alamat || 'RSUD dr. H. Koesnandi Bondowoso'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer Modal Detail -->
+                        <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                                <!-- Tombol Ubah Kondisi Barang -->
+                                <button type="button" @click="showDetailModal = false; openEditKondisi(selectedAsset)"
+                                    class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center space-x-1.5 cursor-pointer w-full sm:w-auto">
+                                    <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                    <span>Ubah Kondisi Barang</span>
+                                </button>
+
+                                <!-- Tombol Scan QR Publik -->
                                 <a :href="'/scan/' + (selectedAsset.nibar || selectedAsset.kode)" target="_blank"
-                                    class="px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold hover:bg-cyan-500/30 transition-all flex items-center space-x-1">
+                                    class="px-4 py-2.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer w-full sm:w-auto">
+                                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                                    </svg>
                                     <span>Buka QR Scan &rarr;</span>
                                 </a>
                             </div>
-                        </div>
-
-                        <!-- Footer Detail Modal -->
-                        <div class="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between">
-                            <!-- Tombol Shortcut Ubah Kondisi dari Modal Detail -->
-                            <button type="button" @click="showDetailModal = false; openEditKondisi(selectedAsset)"
-                                class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs border border-amber-500/40 transition-all flex items-center space-x-1.5">
-                                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                <span>Ubah Kondisi Barang</span>
-                            </button>
 
                             <button type="button" @click="showDetailModal = false"
-                                class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
+                                class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all cursor-pointer w-full sm:w-auto text-center">
                                 Tutup
                             </button>
                         </div>

@@ -271,10 +271,8 @@ class UnitController extends Controller
                 $kondisi = $reg->kondisi ?: 'Baik';
                 if ($kondisi === 'Baik') {
                     $kondisiBaik++;
-                } elseif ($kondisi === 'Kurang Baik') {
+                } elseif ($kondisi === 'Kurang Baik' || $kondisi === 'Rusak Ringan') {
                     $kondisiKurangBaik++;
-                } elseif ($kondisi === 'Rusak Ringan') {
-                    $kondisiRusakRingan++;
                 } else {
                     $kondisiRusakBerat++;
                 }
@@ -287,32 +285,55 @@ class UnitController extends Controller
                 $noSeri = $reg->no_seri ?: ($spec['no_pabrik'] ?? ($spec['no_rangka'] ?? ($spec['no_mesin'] ?? '-')));
                 $bahan = $spec['bahan'] ?? ($spec['material'] ?? '-');
                 $ukuran = $spec['ukuran'] ?? ($spec['kapasitas'] ?? '-');
+                $kategoriKib = $astap->kategori_kib ?: ($astap->jenisAstap->kategori ?? 'KIB B');
+
+                $spkTanggal = $astap->spk_tanggal ? (\Carbon\Carbon::parse($astap->spk_tanggal)->format('d/m/Y')) : '-';
+                $sp2dTanggal = $astap->sp2d_tanggal ? (\Carbon\Carbon::parse($astap->sp2d_tanggal)->format('d/m/Y')) : '-';
 
                 $assets[] = [
-                    'id'            => $reg->id,
-                    'astap_id'      => $astap->id,
-                    'nama'          => $astap->nama_barang ?? 'Barang Inventaris',
-                    'kode_108'      => $astap->kode_108 ?: '-',
-                    'kode'          => $reg->nibar ?: ($reg->no_register ?: ($astap->kode_108 ?? '-')),
-                    'nibar'         => $reg->nibar ?: ($reg->no_register ?: '-'),
-                    'merk'          => $merk,
-                    'no_seri'       => $noSeri,
-                    'bahan'         => $bahan,
-                    'ukuran'        => $ukuran,
-                    'kondisi'       => $kondisi,
-                    'tahun'         => $astap->tahun_perolehan ?: '-',
-                    'harga'         => $hargaSatuan,
-                    'harga_fmt'     => 'Rp ' . number_format($hargaSatuan, 0, ',', '.'),
-                    'kategori'      => $astap->jenisAstap ? ($astap->jenisAstap->nama_jenis ?: $astap->jenisAstap->kategori) : 'ASTAP',
-                    'ruang'         => $reg->ruang_pemegang ?: $currentUnit->nama,
-                    'tanggal_masuk' => $reg->created_at ? $reg->created_at->format('d/m/Y') : '-'
+                    'id'               => $reg->id,
+                    'astap_id'         => $astap->id,
+                    'nama'             => $astap->nama_barang ?? 'Barang Inventaris',
+                    'kode_108'         => $astap->kode_108 ?: ($astap->kode_barang ?: '-'),
+                    'kode_barang'      => $astap->kode_barang ?: ($astap->kode_108 ?: '-'),
+                    'kode'             => $reg->nibar ?: ($reg->no_register ?: ($astap->kode_108 ?? '-')),
+                    'nibar'            => $reg->nibar ?: ($reg->no_register ?: '-'),
+                    'merk'             => $merk,
+                    'tipe'             => $astap->type ?: ($spec['type'] ?? '-'),
+                    'no_seri'          => $noSeri,
+                    'no_pabrik'        => $spec['no_pabrik'] ?? ($reg->no_seri ?: '-'),
+                    'no_rangka'        => $spec['no_rangka'] ?? '-',
+                    'no_mesin'         => $spec['no_mesin'] ?? '-',
+                    'no_polisi'        => $spec['no_polisi'] ?? '-',
+                    'bahan'            => $bahan,
+                    'ukuran'           => $ukuran,
+                    'satuan'           => $astap->satuan ?: 'Unit',
+                    'volume'           => $astap->jumlah_volume ?: 1,
+                    'kondisi'          => ($kondisi === 'Rusak Ringan') ? 'Kurang Baik' : $kondisi,
+                    'tahun'            => $astap->tahun_perolehan ?: '-',
+                    'harga'            => $hargaSatuan,
+                    'harga_fmt'        => 'Rp ' . number_format($hargaSatuan, 0, ',', '.'),
+                    'total_realisasi'  => (float) ($astap->total_realisasi ?: $hargaSatuan),
+                    'total_realisasi_fmt' => 'Rp ' . number_format((float) ($astap->total_realisasi ?: $hargaSatuan), 0, ',', '.'),
+                    'kategori'         => $astap->jenisAstap ? ($astap->jenisAstap->nama_jenis ?: $astap->jenisAstap->kategori) : 'ASTAP',
+                    'kategori_kib'     => $kategoriKib,
+                    'ruang'            => $reg->ruang_pemegang ?: $currentUnit->nama,
+                    'penyedia'         => $astap->penyedia_nama ?: ($spec['penyedia'] ?? '-'),
+                    'spk_nomor'        => $astap->spk_nomor ?: '-',
+                    'spk_tanggal'      => $spkTanggal,
+                    'sp2d_nomor'       => $astap->sp2d_nomor ?: '-',
+                    'sp2d_tanggal'     => $sp2dTanggal,
+                    'bast_nomor'       => $astap->bast_dokumen_nomor ?: '-',
+                    'alamat'           => $astap->alamat_barang ?: '-',
+                    'tanggal_masuk'    => $reg->created_at ? $reg->created_at->format('d/m/Y') : '-',
+                    'spesifikasi_json' => $spec
                 ];
             }
         }
 
         $totalAsetCount = count($assets);
         $totalNilaiFmt = 'Rp ' . number_format($totalNilaiSum, 0, ',', '.');
-        $totalRusak = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
+        $totalRusak = $kondisiKurangBaik + $kondisiRusakBerat;
 
         return view('pages.lembar_kir', [
             'units'              => $units,
@@ -322,7 +343,7 @@ class UnitController extends Controller
             'totalNilaiFmt'      => $totalNilaiFmt,
             'kondisiBaik'        => $kondisiBaik,
             'kondisiKurangBaik'  => $kondisiKurangBaik,
-            'kondisiRusakRingan' => $kondisiRusakRingan,
+            'kondisiRusakRingan' => 0,
             'kondisiRusakBerat'  => $kondisiRusakBerat,
             'totalRusak'         => $totalRusak,
             'user'               => $user,
@@ -343,7 +364,7 @@ class UnitController extends Controller
         }
 
         $validated = $request->validate([
-            'kondisi' => 'required|in:Baik,Kurang Baik,Rusak Ringan,Rusak Berat',
+            'kondisi' => 'required|in:Baik,Kurang Baik,Rusak Berat',
             'catatan' => 'nullable|string|max:500'
         ]);
 
