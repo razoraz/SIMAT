@@ -443,8 +443,22 @@ class DistribusiController extends Controller
                 }
 
                 $totalQtyAcc = 0;
+                $seenItemNames = [];
+                $seenItemIds = [];
                 foreach ($validated['items'] as $itIdx => &$itemData) {
-                    $namaBrg = !empty($itemData['nama_barang']) ? $itemData['nama_barang'] : ('Barang #' . ($itIdx + 1));
+                    $namaBrg = !empty($itemData['nama_barang']) ? trim($itemData['nama_barang']) : ('Barang #' . ($itIdx + 1));
+                    $namaKey = !empty($itemData['nama_barang']) ? strtolower(trim($itemData['nama_barang'])) : null;
+                    $idKey = !empty($itemData['astap_id']) ? (int)$itemData['astap_id'] : null;
+
+                    if (($namaKey && in_array($namaKey, $seenItemNames)) || ($idKey && in_array($idKey, $seenItemIds))) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Barang \"{$namaBrg}\" duplikat. Dalam satu transaksi distribusi tidak diperbolehkan menginput 2 nama barang yang sama."
+                        ], 422);
+                    }
+                    if ($namaKey) $seenItemNames[] = $namaKey;
+                    if ($idKey) $seenItemIds[] = $idKey;
+
                     if (empty($itemData['qty']) || (int)$itemData['qty'] <= 0) {
                         return response()->json([
                             'success' => false,

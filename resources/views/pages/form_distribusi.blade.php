@@ -352,8 +352,23 @@
                     const q = query.toLowerCase();
                     return list.filter(a => (a.nama||'').toLowerCase().includes(q) || (a.kode||'').toLowerCase().includes(q)).slice(0, 15);
                 },
+                isItemAlreadySelected(ast, currentItem) {
+                    if (!ast) return false;
+                    const astNama = (ast.nama || '').trim().toLowerCase();
+                    const astKode = (ast.kode || '').trim().toLowerCase();
+                    return (this.formData.items || []).some(it => {
+                        if (it === currentItem) return false;
+                        const itNama = (it.nama_barang || '').trim().toLowerCase();
+                        const itKode = (it.kode_barang || '').trim().toLowerCase();
+                        return (astNama && itNama === astNama) || (astKode && itKode && itKode === astKode);
+                    });
+                },
                 selectAstapItem(item, ast) {
                     if (this.formData.status === 'Ditolak') return;
+                    if (this.isItemAlreadySelected(ast, item)) {
+                        alert('⚠️ Barang "' + ast.nama + '" sudah dipilih pada baris lain!\n\nDalam satu transaksi distribusi tidak diperbolehkan memilih 2 nama barang yang sama. Silakan tambahkan Volume (Qty) pada baris yang sudah ada.');
+                        return;
+                    }
                     item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null;
                     item.nibar_selected = [];
                     item.qty_acc = 0;
@@ -365,7 +380,17 @@
                 onNamaBarangInput(item) {
                     if (!item.nama_barang || item.nama_barang.trim() === '') { item.kode_barang = ''; item.nibar_selected = []; item.qty_acc = 0; return; }
                     const match = (this.katalogAstap || []).find(a => a.nama && a.nama.toLowerCase().trim() === item.nama_barang.toLowerCase().trim());
-                    if (match) { item.kode_barang = match.kode; item.merk_type = match.merk || ''; item.satuan = match.satuan || 'Unit'; if (!item.jenis_astap_nama) item.jenis_astap_nama = match.jenis_nama || ''; }
+                    if (match) {
+                        if (this.isItemAlreadySelected(match, item)) {
+                            alert('⚠️ Barang "' + match.nama + '" sudah dipilih pada baris lain!\n\nDalam satu transaksi distribusi tidak diperbolehkan menginput 2 nama barang yang sama.');
+                            item.nama_barang = '';
+                            item.kode_barang = '';
+                            item.nibar_selected = [];
+                            item.qty_acc = 0;
+                            return;
+                        }
+                        item.kode_barang = match.kode; item.merk_type = match.merk || ''; item.satuan = match.satuan || 'Unit'; if (!item.jenis_astap_nama) item.jenis_astap_nama = match.jenis_nama || '';
+                    }
                     item.nibar_selected = [];
                     item.qty_acc = 0;
                 },
@@ -466,6 +491,21 @@
                     if (!this.formData.items || this.formData.items.length === 0) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nMinimal harus ada 1 barang dalam transaksi distribusi.');
                         return;
+                    }
+
+                    // Validasi Duplikasi Nama Barang dalam Satu Transaksi
+                    const seenNames = {};
+                    for (let i = 0; i < this.formData.items.length; i++) {
+                        const it = this.formData.items[i];
+                        const urut = i + 1;
+                        const key = (it.nama_barang || '').trim().toLowerCase();
+                        if (key) {
+                            if (seenNames[key] !== undefined) {
+                                alert('⚠️ Terdapat nama barang yang sama:\n\nBarang #' + urut + ' ("' + it.nama_barang + '") sama dengan Barang #' + (seenNames[key] + 1) + '.\n\nDalam 1 transaksi distribusi tidak diperbolehkan menginput 2 nama barang yang sama. Silakan gabungkan volumenya pada satu baris atau hapus baris yang duplikat.');
+                                return;
+                            }
+                            seenNames[key] = i;
+                        }
                     }
 
                     for (let i = 0; i < this.formData.items.length; i++) {
@@ -1012,9 +1052,15 @@
 
                                             <template x-for="ast in getFilteredAstap(item, item.nama_barang).slice(0, 5)" :key="ast.kode">
                                                 <div @click="selectAstapItem(item, ast)"
-                                                     class="px-4 py-2.5 hover:bg-teal-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3">
+                                                     :class="isItemAlreadySelected(ast, item) ? 'opacity-40 cursor-not-allowed bg-slate-950/40' : 'hover:bg-teal-500/15 cursor-pointer'"
+                                                     class="px-4 py-2.5 transition-colors group flex items-center justify-between gap-3">
                                                     <div class="space-y-0.5">
-                                                        <p class="font-bold text-xs text-white group-hover:text-teal-300" x-text="ast.nama"></p>
+                                                        <div class="flex items-center gap-2">
+                                                            <p class="font-bold text-xs text-white group-hover:text-teal-300" x-text="ast.nama"></p>
+                                                            <template x-if="isItemAlreadySelected(ast, item)">
+                                                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">Sudah Dipilih</span>
+                                                            </template>
+                                                        </div>
                                                         <p class="text-[10px] text-slate-400" x-text="ast.kode + (ast.jenis_nama ? ' • ' + ast.jenis_nama : (ast.kategori ? ' • ' + ast.kategori : '')) + (ast.merk ? ' • ' + ast.merk : '')"></p>
                                                     </div>
                                                     <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-teal-300 font-mono text-[10px] font-bold shrink-0" x-text="ast.satuan || 'Unit'"></span>
@@ -1260,10 +1306,6 @@
                                                 <span class="flex items-center space-x-1.5">
                                                     <span class="text-emerald-300">Volume Di-ACC</span>
                                                     <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">🔒 Sesuai NIBAR</span>
-                                                </span>
-                                                <template x-if="!item.qty_acc || item.qty_acc <= 0">
-                                                    <span class="text-[10px] text-amber-400 font-semibold" x-text="isNibarEmpty(item) ? '⚠️ Stok Kosong (Tidak di-ACC)' : '⏳ 0 NIBAR (Tidak di-ACC)'"></span>
-                                                </template>
                                                 <template x-if="item.qty_acc && item.qty_acc > 0">
                                                     <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
                                                 </template>
