@@ -73,7 +73,10 @@
                     bast_nomor: '',
                     tujuan: '',
                     unit_id: null,
-                    tgl: new Date().toISOString().split('T')[0],
+                    tgl: (() => {
+                        const d = new Date();
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    })(),
                     penerima: '',
                     penerima_nip: '',
                     penerima_jabatan: '',
@@ -110,11 +113,28 @@
                         }
                     }
 
+                    const todayStr = (() => {
+                        const d = new Date();
+                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    })();
+
                     if (loadedData) {
                         const uObj = (this.unitList || []).find(u => u.id === loadedData.unit_id || u.nama === (loadedData.unit ? loadedData.unit.nama : (loadedData.tujuan || ''))) || null;
-                        const tglStr = loadedData.tanggal_distribusi 
-                            ? String(loadedData.tanggal_distribusi).substring(0, 10) 
-                            : (loadedData.tgl_iso || loadedData.tgl || new Date().toISOString().split('T')[0]);
+                        
+                        // Tanggal Penyerahan untuk Admin otomatis hari ini (kecuali transaksi historis yang statusnya sudah Telah Diterima)
+                        // Untuk pengajuan baru yang disetujui / diproses penyerahannya, tanggal penyerahan default otomatis hari ini.
+                        let tglStr;
+                        if (!this.isSubAdmin) {
+                            if (loadedData.status === 'Telah Diterima' && loadedData.tanggal_distribusi) {
+                                tglStr = String(loadedData.tanggal_distribusi).substring(0, 10);
+                            } else {
+                                tglStr = todayStr;
+                            }
+                        } else {
+                            tglStr = loadedData.tanggal_distribusi 
+                                ? String(loadedData.tanggal_distribusi).substring(0, 10) 
+                                : todayStr;
+                        }
 
                         let itemsMapped = [];
                         if (loadedData.items && Array.isArray(loadedData.items) && loadedData.items.length > 0) {
@@ -191,7 +211,7 @@
                         this.formData.bast_nomor = this.isSubAdmin ? '(Menunggu Konfirmasi)' : {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
                         this.formData.tujuan = autoUnit ? autoUnit.nama : '';
                         this.formData.unit_id = autoUnit ? autoUnit.id : null;
-                        this.formData.tgl = new Date().toISOString().split('T')[0];
+                        this.formData.tgl = todayStr;
                         this.formData.penerima = autoUnit ? (autoUnit.kepala || '') : '';
                         this.formData.penerima_nip = autoUnit ? (autoUnit.nip || '') : '';
                         this.formData.penerima_jabatan = autoUnit ? (autoUnit.jabatan || ('Kepala / PJ ' + autoUnit.nama)) : '';
@@ -201,6 +221,7 @@
                             this.selectedUnitObj = autoUnit;
                         }
                     }
+                    this.updateYearInKode();
 
                     if (!this.formData.items || this.formData.items.length === 0) {
                         this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] }];
@@ -729,11 +750,10 @@
                     <div>
                         <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
                             <span x-text="isSubAdmin ? 'Tanggal Pengajuan' : 'Tanggal Penyerahan'"></span>
-                            <template x-if="isSubAdmin">
-                                <span class="text-[10px] text-slate-400 font-normal">Auto Hari Ini</span>
-                            </template>
+                            <span class="text-[10px] text-teal-400 font-normal">Auto Hari Ini</span>
                         </label>
                         <input type="text" x-datepicker x-model="formData.tgl"
+                               :value="formData.tgl"
                                @change="updateYearInKode()"
                                placeholder="dd/mm/yyyy"
                                :readonly="isSubAdmin || formData.status === 'Ditolak'"
