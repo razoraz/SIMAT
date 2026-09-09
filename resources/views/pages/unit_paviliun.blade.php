@@ -33,8 +33,26 @@
                 detailKondisiFilter: 'all',
                 detailCategoryFilter: 'all',
 
+                // Role & Unit ID Pengguna Login
+                currentUserRole: {{ Js::from(Auth::user()->role ?? '') }},
+                currentUserUnitId: {{ Js::from(Auth::user()->unit_id ?? null) }},
+
                 // Data Unit & Paviliun RSUD diambil dinamis langsung dari Database Tabel Users (Role Sub Admin)
                 units: {{ Js::from($units ?? []) }},
+
+                // Helper: Cek apakah tombol KIR boleh ditampilkan untuk unit tertentu
+                canAccessKir(item) {
+                    if (!item) return false;
+                    // Master Admin dan Admin dapat melihat seluruh KIR unit
+                    if (this.currentUserRole === 'master_admin' || this.currentUserRole === 'admin') {
+                        return true;
+                    }
+                    // Sub Admin hanya boleh melihat KIR pada ruangannya sendiri
+                    if (this.currentUserRole === 'sub_admin') {
+                        return this.currentUserUnitId && Number(item.id) === Number(this.currentUserUnitId);
+                    }
+                    return false;
+                },
 
                 get filteredUnits() {
                     const query = (this.searchQuery || '').toLowerCase();
@@ -288,7 +306,7 @@
                     </div>
 
                     <div class="pt-4 flex items-center justify-end space-x-1">
-                        <button type="button" @click="openPrintKIR(item)"
+                        <button type="button" @click="openPrintKIR(item)" x-show="canAccessKir(item)"
                             class="px-2.5 py-1.5 rounded-xl bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>KIR</span>
@@ -344,7 +362,7 @@
                                 <td class="px-4 py-4 text-center font-bold text-cyan-400 font-mono whitespace-nowrap" x-text="item.total_aset + ' Item'"></td>
                                 <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.total_nilai"></td>
                                 <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
-                                    <button type="button" @click="openPrintKIR(item)"
+                                    <button type="button" @click="openPrintKIR(item)" x-show="canAccessKir(item)"
                                         class="px-2.5 py-1.5 rounded-xl bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                         <span>KIR</span>
@@ -394,7 +412,7 @@
                     </div>
                     
                     <div class="flex items-center space-x-2">
-                        <button type="button" @click="printKIR()"
+                        <button type="button" @click="printKIR()" x-show="canAccessKir(selectedUnit)"
                             class="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-xs font-bold transition-all active:scale-95">
                             <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>Cetak KIR</span>
@@ -519,7 +537,7 @@
                         </a>
                         @endif
 
-                        <button type="button" @click="openPrintKIR(selectedUnit)"
+                        <button type="button" @click="openPrintKIR(selectedUnit)" x-show="canAccessKir(selectedUnit)"
                             class="px-3.5 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs shadow-lg shadow-blue-500/20 transition-all flex items-center space-x-1.5 active:scale-95">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>🖨️ Cetak KIR</span>

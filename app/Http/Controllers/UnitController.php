@@ -364,8 +364,7 @@ class UnitController extends Controller
         }
 
         $validated = $request->validate([
-            'kondisi' => 'required|in:Baik,Kurang Baik,Rusak Berat',
-            'catatan' => 'nullable|string|max:500'
+            'kondisi' => 'required|in:Baik,Kurang Baik,Rusak Berat'
         ]);
 
         $kondisiLama = $reg->kondisi;

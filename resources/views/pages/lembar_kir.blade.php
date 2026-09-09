@@ -38,8 +38,7 @@
 
             // Form Ubah Kondisi
             editForm: {
-                kondisi: 'Baik',
-                catatan: ''
+                kondisi: 'Baik'
             },
 
             // Data Aset Ruangan
@@ -100,7 +99,6 @@
             openEditKondisi(ast) {
                 this.editAsset = ast;
                 this.editForm.kondisi = ast.kondisi || 'Baik';
-                this.editForm.catatan = '';
                 this.showEditModal = true;
             },
 
@@ -117,8 +115,7 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({
-                            kondisi: this.editForm.kondisi,
-                            catatan: this.editForm.catatan
+                            kondisi: this.editForm.kondisi
                         })
                     });
                     const data = await res.json();
@@ -361,8 +358,9 @@
                 </div>
             </div>
 
-            <!-- Tabel Data Aset Fisik Ruangan (Scrollable 5-6 rows: max-h-[385px]) -->
-            <div class="overflow-x-auto overflow-y-auto max-h-[385px] rounded-2xl border border-slate-800/80 bg-slate-950/50 relative shadow-inner">
+            <!-- Tabel Data Aset Fisik Ruangan (Scrollable 5-6 rows: max-h-[380px]) -->
+            <div class="overflow-x-auto overflow-y-auto rounded-2xl border border-slate-800/80 bg-slate-950/50 relative shadow-inner"
+                 style="max-height: 380px !important; overflow-y: auto !important; overflow-x: auto !important;">
                 <table class="w-full text-left text-xs text-slate-300 border-separate border-spacing-0">
                     <thead class="sticky top-0 z-20 bg-slate-950 text-slate-400 font-bold uppercase tracking-wider shadow-sm">
                         <tr>
@@ -549,13 +547,6 @@
                                         </div>
                                     </label>
                                 </div>
-                            </div>
-
-                            <!-- Catatan Kondisi -->
-                            <div>
-                                <label class="block text-slate-300 font-bold mb-1">Catatan Kendala / Keterangan Fisik (Opsional):</label>
-                                <textarea x-model="editForm.catatan" rows="2" placeholder="Contoh: Layar berkedip, tombol power macet, perlu servis IPSRS..."
-                                    class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-all"></textarea>
                             </div>
                         </div>
 
