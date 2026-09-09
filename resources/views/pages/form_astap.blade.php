@@ -526,26 +526,73 @@
                         atb_satuan: ea ? (ea.satuan || 'Lisensi') : 'Lisensi',
                         atb_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
                         atb_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
-                        // KIB F KDP
+                        // KIB F KDP (Multi-Item Repeater)
                         kdp_nama_barang: nama || '',
                         kdp_kode_barang: kode108Val || '',
                         kdp_bangunan: spec.bertingkat || 'Bertingkat',
                         kdp_beton: spec.beton || 'Beton',
                         kdp_luas_m2: spec.luas_m2 || 0,
-                        kdp_kondisi: reg0 ? (reg0.kondisi || 'Baik') : 'Baik',
+                        kdp_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
                         kdp_progres_persen: spec.progres_persen || 0,
                         kdp_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
-                        kdp_sertifikat_no: spec.sertifikat_no || '',
-                        kdp_sertifikat_tgl: spec.sertifikat_tgl || '',
                         kdp_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
-                        kdp_tgl_mulai: spec.tgl_mulai || '',
-                        kdp_tgl_target_selesai: spec.tgl_target_selesai || '',
+                        kdp_is_baru: spec.is_baru || 'Baru',
+                        kdp_kapitalisasi_tahun_induk: spec.kapitalisasi_tahun_induk || '',
+                        kdp_kapitalisasi_nilai_induk: spec.kapitalisasi_nilai_induk || 0,
                         kdp_jumlah_bangunan: ea ? (ea.jumlah_volume || 1) : 1,
                         kdp_satuan: ea ? (ea.satuan || 'Gedung') : 'Gedung',
                         kdp_nilai_perencanaan: spec.nilai_perencanaan || 0,
                         kdp_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
                         kdp_nilai_pengawasan: spec.nilai_pengawasan || 0,
-                        kdp_nilai_pip: spec.nilai_pip || 0,
+                        kdp_nilai_ap: spec.nilai_ap || spec.nilai_pip || 0,
+                        kdp_nilai_pip: spec.nilai_ap || spec.nilai_pip || 0,
+                        kdp_items: (spec && spec.kdp_items && Array.isArray(spec.kdp_items) && spec.kdp_items.length > 0)
+                            ? spec.kdp_items.map(k => ({
+                                kdp_nama_barang: k.kdp_nama_barang || nama || '',
+                                kdp_kode_barang: k.kdp_kode_barang || kode108Val || '',
+                                kdp_luas_m2: k.kdp_luas_m2 || 0,
+                                kdp_kondisi: k.kdp_kondisi || 'B',
+                                kdp_progres_persen: k.kdp_progres_persen || 0,
+                                kdp_bertingkat: k.kdp_bertingkat || k.kdp_bangunan || 'Bertingkat',
+                                kdp_beton: k.kdp_beton || 'Beton',
+                                kdp_status_tanah: k.kdp_status_tanah || 'Tanah Hak Pakai RSUD',
+                                kdp_kode_aset_tanah: k.kdp_kode_aset_tanah || '1.3.1.01.01.02.013',
+                                kdp_is_baru: k.kdp_is_baru || 'Baru',
+                                kdp_kapitalisasi_tahun_induk: k.kdp_kapitalisasi_tahun_induk || '',
+                                kdp_kapitalisasi_nilai_induk: k.kdp_kapitalisasi_nilai_induk || 0,
+                                kdp_jumlah_bangunan: k.kdp_jumlah_bangunan || 1,
+                                kdp_satuan: k.kdp_satuan || 'Gedung',
+                                kdp_nilai_perencanaan: k.kdp_nilai_perencanaan || 0,
+                                kdp_nilai_fisik: k.kdp_nilai_fisik || 0,
+                                kdp_nilai_pengawasan: k.kdp_nilai_pengawasan || 0,
+                                kdp_nilai_ap: k.kdp_nilai_ap || k.kdp_nilai_pip || 0,
+                                kdp_nilai_pip: k.kdp_nilai_ap || k.kdp_nilai_pip || 0,
+                                kdp_alamat: k.kdp_alamat || (ea ? (ea.alamat_barang || '') : '')
+                            }))
+                            : [
+                                {
+                                    kdp_nama_barang: nama || '',
+                                    kdp_kode_barang: kode108Val || '',
+                                    kdp_luas_m2: spec.luas_m2 || 0,
+                                    kdp_kondisi: reg0 ? (reg0.kondisi || 'B') : 'B',
+                                    kdp_progres_persen: spec.progres_persen || 0,
+                                    kdp_bertingkat: spec.bertingkat || 'Bertingkat',
+                                    kdp_beton: spec.beton || 'Beton',
+                                    kdp_status_tanah: spec.status_tanah || 'Tanah Hak Pakai RSUD',
+                                    kdp_kode_aset_tanah: spec.kode_aset_tanah || '1.3.1.01.01.02.013',
+                                    kdp_is_baru: spec.is_baru || 'Baru',
+                                    kdp_kapitalisasi_tahun_induk: spec.kapitalisasi_tahun_induk || '',
+                                    kdp_kapitalisasi_nilai_induk: spec.kapitalisasi_nilai_induk || 0,
+                                    kdp_jumlah_bangunan: ea ? (ea.jumlah_volume || 1) : 1,
+                                    kdp_satuan: ea ? (ea.satuan || 'Gedung') : 'Gedung',
+                                    kdp_nilai_perencanaan: spec.nilai_perencanaan || 0,
+                                    kdp_nilai_fisik: ea ? (ea.total_realisasi || 0) : 0,
+                                    kdp_nilai_pengawasan: spec.nilai_pengawasan || 0,
+                                    kdp_nilai_ap: spec.nilai_ap || spec.nilai_pip || 0,
+                                    kdp_nilai_pip: spec.nilai_ap || spec.nilai_pip || 0,
+                                    kdp_alamat: ea ? (ea.alamat_barang || '') : ''
+                                }
+                            ],
                         // Dokumen Pengadaan
                         spk_nomor: ea ? (ea.spk_nomor || '') : '',
                         spk_tanggal: ea ? fmtDate(ea.spk_tanggal) : '',
@@ -705,6 +752,10 @@
                     }, { deep: true });
                     this.$watch('formData.lainnya_items', () => {
                         this.syncLainnyaFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }, { deep: true });
+                    this.$watch('formData.kdp_items', () => {
+                        this.syncKdpFieldsToMain();
                         this.syncRealisasiFromStep3();
                     }, { deep: true });
                     this.$watch('formData.tanah_nilai_perencanaan', () => this.syncRealisasiFromStep3());
@@ -1495,10 +1546,108 @@
                 },
 
                 get totalNilaiKdp() {
+                    if (this.formData.kdp_items && this.formData.kdp_items.length > 0) {
+                        return this.formData.kdp_items.reduce((sum, item) => sum + this.getKdpSubtotal(item), 0);
+                    }
                     return Number(this.formData.kdp_nilai_perencanaan || 0) + 
                            Number(this.formData.kdp_nilai_fisik || 0) + 
                            Number(this.formData.kdp_nilai_pengawasan || 0) + 
-                           Number(this.formData.kdp_nilai_pip || 0);
+                           Number(this.formData.kdp_nilai_ap || this.formData.kdp_nilai_pip || 0);
+                },
+
+                get totalVolumeKdp() {
+                    if (this.formData.kdp_items && this.formData.kdp_items.length > 0) {
+                        return this.formData.kdp_items.reduce((sum, item) => sum + (parseInt(item.kdp_jumlah_bangunan) || 1), 0);
+                    }
+                    return parseInt(this.formData.kdp_jumlah_bangunan) || 1;
+                },
+
+                getKdpSubtotal(item) {
+                    return Number(item.kdp_nilai_perencanaan || 0) + 
+                           Number(item.kdp_nilai_fisik || 0) + 
+                           Number(item.kdp_nilai_pengawasan || 0) + 
+                           Number(item.kdp_nilai_ap || item.kdp_nilai_pip || 0);
+                },
+
+                addKdpItem() {
+                    if (!this.formData.kdp_items) {
+                        this.formData.kdp_items = [];
+                    }
+                    this.formData.kdp_items.push({
+                        kdp_nama_barang: this.formData.kdp_nama_barang || this.formData.sub_rincian_nama || '',
+                        kdp_kode_barang: this.formData.kdp_kode_barang || this.formData.sub_rincian_kode || '',
+                        kdp_luas_m2: 0,
+                        kdp_kondisi: 'B',
+                        kdp_progres_persen: 0,
+                        kdp_bertingkat: 'Bertingkat',
+                        kdp_beton: 'Beton',
+                        kdp_status_tanah: 'Tanah Hak Pakai RSUD',
+                        kdp_kode_aset_tanah: '1.3.1.01.01.02.013',
+                        kdp_is_baru: 'Baru',
+                        kdp_kapitalisasi_tahun_induk: '',
+                        kdp_kapitalisasi_nilai_induk: 0,
+                        kdp_jumlah_bangunan: 1,
+                        kdp_satuan: 'Gedung',
+                        kdp_nilai_perencanaan: 0,
+                        kdp_nilai_fisik: 0,
+                        kdp_nilai_pengawasan: 0,
+                        kdp_nilai_ap: 0,
+                        kdp_nilai_pip: 0,
+                        kdp_alamat: ''
+                    });
+                    this.syncKdpFieldsToMain();
+                    this.syncRealisasiFromStep3();
+                },
+
+                removeKdpItem(index) {
+                    if (this.formData.kdp_items && this.formData.kdp_items.length > 1) {
+                        this.formData.kdp_items.splice(index, 1);
+                        this.syncKdpFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }
+                },
+
+                syncKdpFieldsToMain() {
+                    if (this.formData.kdp_items && this.formData.kdp_items.length > 0) {
+                        const first = this.formData.kdp_items[0];
+                        if (first.kdp_nama_barang && first.kdp_nama_barang.trim() !== '') {
+                            this.formData.kdp_nama_barang = first.kdp_nama_barang;
+                        } else if (this.formData.kdp_nama_barang) {
+                            first.kdp_nama_barang = this.formData.kdp_nama_barang;
+                        }
+                        if (first.kdp_kode_barang && first.kdp_kode_barang.trim() !== '') {
+                            this.formData.kdp_kode_barang = first.kdp_kode_barang;
+                        } else if (this.formData.kdp_kode_barang) {
+                            first.kdp_kode_barang = this.formData.kdp_kode_barang;
+                        }
+                        this.formData.kdp_kondisi = first.kdp_kondisi;
+                        this.formData.kdp_progres_persen = first.kdp_progres_persen;
+                        this.formData.kdp_bertingkat = first.kdp_bertingkat;
+                        this.formData.kdp_bangunan = first.kdp_bertingkat;
+                        this.formData.kdp_beton = first.kdp_beton;
+                        this.formData.kdp_status_tanah = first.kdp_status_tanah;
+                        this.formData.kdp_kode_aset_tanah = first.kdp_kode_aset_tanah;
+                        this.formData.kdp_is_baru = first.kdp_is_baru;
+                        this.formData.kdp_kapitalisasi_tahun_induk = first.kdp_kapitalisasi_tahun_induk;
+                        this.formData.kdp_kapitalisasi_nilai_induk = first.kdp_kapitalisasi_nilai_induk;
+                        this.formData.kdp_satuan = first.kdp_satuan;
+
+                        const totalLuas = this.formData.kdp_items.reduce((sum, it) => sum + (parseFloat(it.kdp_luas_m2) || 0), 0);
+                        this.formData.kdp_luas_m2 = totalLuas;
+
+                        const totalBangunan = this.formData.kdp_items.reduce((sum, it) => sum + (parseInt(it.kdp_jumlah_bangunan) || 1), 0);
+                        this.formData.kdp_jumlah_bangunan = totalBangunan;
+                        this.formData.jumlah_volume = totalBangunan;
+
+                        this.formData.kdp_nilai_perencanaan = this.formData.kdp_items.reduce((sum, it) => sum + (parseFloat(it.kdp_nilai_perencanaan) || 0), 0);
+                        this.formData.kdp_nilai_fisik = this.formData.kdp_items.reduce((sum, it) => sum + (parseFloat(it.kdp_nilai_fisik) || 0), 0);
+                        this.formData.kdp_nilai_pengawasan = this.formData.kdp_items.reduce((sum, it) => sum + (parseFloat(it.kdp_nilai_pengawasan) || 0), 0);
+                        this.formData.kdp_nilai_ap = this.formData.kdp_items.reduce((sum, it) => sum + (parseFloat(it.kdp_nilai_ap || it.kdp_nilai_pip) || 0), 0);
+                        this.formData.kdp_nilai_pip = this.formData.kdp_nilai_ap;
+
+                        const alamatList = this.formData.kdp_items.map(it => it.kdp_alamat).filter(Boolean);
+                        this.formData.alamat_barang = alamatList.length > 0 ? alamatList.join('; ') : (first.kdp_alamat || '');
+                    }
                 },
 
                 get currentProgram() {
@@ -4646,12 +4795,8 @@
                                                 </div>
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
-                                                    <select x-model="item.gedung_satuan" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-emerald-500">
-                                                        <option value="Gedung">Gedung</option>
-                                                        <option value="Unit">Unit</option>
-                                                        <option value="Paket">Paket</option>
-                                                        <option value="M²">M²</option>
-                                                    </select>
+                                                    <input type="text" x-model="item.gedung_satuan" placeholder="Gedung / Unit / Paket / M²"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-emerald-500">
                                                 </div>
                                             </div>
                                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -5241,14 +5386,8 @@
                                                 </div>
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
-                                                    <select x-model="item.jaringan_satuan" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-teal-500">
-                                                        <option value="Paket">Paket</option>
-                                                        <option value="Ruas">Ruas</option>
-                                                        <option value="Meter">Meter</option>
-                                                        <option value="Titik">Titik</option>
-                                                        <option value="Unit">Unit</option>
-                                                        <option value="Jaringan">Jaringan</option>
-                                                    </select>
+                                                    <input type="text" x-model="item.jaringan_satuan" placeholder="Paket / Ruas / Meter / Titik / Unit"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-teal-500">
                                                 </div>
                                             </div>
                                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -6764,160 +6903,327 @@
                             </div>
                         </div>
 
-
-
-                        <!-- Grid Form Pengisian Rincian KDP (Sisa Kolom) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <!-- 3. Spesifikasi Konstruksi & Progres Fisik -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider">📊 3. Konstruksi & Progres Fisik:</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Luas Rencana (M²)</label>
-                                        <input type="number" min="0" step="any" x-model.number="formData.kdp_luas_m2" 
-                                               @input="if (formData.kdp_luas_m2 < 0) formData.kdp_luas_m2 = 0;"
-                                               placeholder="1200"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold">
+                        <!-- ============================================================= -->
+                        <!-- MULTI-ITEM REPEATER KHUSUS KIB F (KDP / KONSTRUKSI)             -->
+                        <!-- ============================================================= -->
+                        <div class="space-y-4">
+                            
+                            <!-- Header Pembungkus KDP -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-rose-950/30 border border-rose-500/40 shadow-md">
+                                <div class="space-y-0.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 text-sm">🏗️</span>
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
+                                            RINCIAN KONSTRUKSI DALAM PENGERJAAN (<span class="text-rose-400" x-text="formData.kdp_items.length"></span> Proyek KDP Terdaftar)
+                                        </h3>
                                     </div>
-                                    <div>
-                                        <label class="block text-amber-400 text-[10px] mb-1 font-bold">Progres Fisik (%)</label>
-                                        <div class="relative">
-                                            <input type="number" min="0" max="100" x-model.number="formData.kdp_progres_persen" placeholder="65"
-                                                   class="w-full bg-slate-900 border border-amber-500/60 rounded-xl px-2.5 py-2 text-xs text-amber-300 font-mono font-black focus:outline-none focus:border-amber-400">
-                                            <span class="absolute right-2.5 top-2 text-amber-400 text-xs font-bold">%</span>
+                                    <p class="text-[11px] text-slate-400">
+                                        Setiap proyek KDP memiliki Luas Rencana, Progres Fisik (%), Kondisi, Status Tanah, Volume, Komponen Nilai (Perencanaan, Fisik, Pengawasan, AP), dan Alamat Lokasi Fisik masing-masing.
+                                    </p>
+                                </div>
+                                <button type="button" @click="addKdpItem()" 
+                                        class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-rose-500/20 shrink-0 cursor-pointer">
+                                    <span>➕ Tambah Proyek KDP Baru</span>
+                                </button>
+                            </div>
+
+                            <!-- List Kartu KDP (Repeater) -->
+                            <div class="space-y-5">
+                                <template x-for="(item, idx) in formData.kdp_items" :key="idx">
+                                    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-rose-500/30 hover:border-rose-500/60 transition-all space-y-4 shadow-xl relative group">
+                                        
+                                        <!-- Header Kartu Tiap KDP -->
+                                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="px-3 py-1 rounded-xl bg-rose-500/20 text-rose-300 font-mono font-extrabold text-xs border border-rose-500/40 flex items-center space-x-1.5">
+                                                    <span>🏗️ Proyek KDP #<span x-text="idx + 1"></span></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-300 font-semibold" x-show="item.kdp_nama_barang">
+                                                    • <span x-text="item.kdp_nama_barang"></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Luas: <strong class="text-cyan-300" x-text="(item.kdp_luas_m2 || 0) + ' M²'"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Progres: <strong class="text-rose-400 font-bold" x-text="(item.kdp_progres_persen || 0) + '%'"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Qty: <strong class="text-amber-300" x-text="(item.kdp_jumlah_bangunan || 1) + ' ' + (item.kdp_satuan || 'Gedung')"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getKdpSubtotal(item))"></strong>
+                                                </span>
+                                            </div>
+
+                                            <!-- Tombol Hapus KDP (Muncul jika > 1 item) -->
+                                            <button type="button" 
+                                                    x-show="formData.kdp_items.length > 1" 
+                                                    @click="removeKdpItem(idx)" 
+                                                    class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer">
+                                                <span>🗑️ Hapus KDP Ini</span>
+                                            </button>
                                         </div>
+
+                                        <!-- Grid Form Pengisian Spesifikasi KDP -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                            <!-- Kondisi & Spesifikasi Bangunan KDP -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>🏗️ Kondisi, Spesifikasi & Progres Fisik:</span>
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <label class="block text-slate-400 text-[10px] font-semibold">Nama Bangunan (PMDN 108)</label>
+                                                        <span class="text-[9px] text-amber-400/80 flex items-center gap-1 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                            Terkunci (Mengikuti Langkah 2)
+                                                        </span>
+                                                    </div>
+                                                    <input type="text" :value="item.kdp_nama_barang || formData.kdp_nama_barang || formData.sub_rincian_nama || 'Konstruksi Dalam Pengerjaan'" readonly
+                                                           class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas Rencana (M2/Lt)</label>
+                                                        <input type="number" min="0" step="any" x-model.number="item.kdp_luas_m2" 
+                                                               @input="if (item.kdp_luas_m2 < 0) item.kdp_luas_m2 = 0;"
+                                                               placeholder="850"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-amber-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi (B/KB/RB)</label>
+                                                        <select x-model="item.kdp_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-amber-500">
+                                                            <option value="B">B (Baik)</option>
+                                                            <option value="KB">KB (Kurang Baik)</option>
+                                                            <option value="RB">RB (Rusak Berat)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bertingkat / Tidak</label>
+                                                        <select x-model="item.kdp_bertingkat" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                            <option value="Bertingkat">Bertingkat</option>
+                                                            <option value="Tidak">Tidak Bertingkat</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Beton / Tidak</label>
+                                                        <select x-model="item.kdp_beton" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                                            <option value="Beton">Beton</option>
+                                                            <option value="Tidak">Bukan Beton</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Field Khusus KIB F: Progres Fisik (%) -->
+                                                <div class="p-3 rounded-xl bg-slate-950 border border-rose-500/30 space-y-2">
+                                                    <div class="flex items-center justify-between">
+                                                        <label class="block text-rose-300 text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1">
+                                                            <span>📊 Progres Fisik Pengerjaan (%):</span>
+                                                        </label>
+                                                        <span class="text-rose-400 font-mono font-black text-xs" x-text="(item.kdp_progres_persen || 0) + '%'"></span>
+                                                    </div>
+                                                    <div class="relative">
+                                                        <input type="number" min="0" max="100" x-model.number="item.kdp_progres_persen" 
+                                                               @input="if (item.kdp_progres_persen < 0) item.kdp_progres_persen = 0; if (item.kdp_progres_persen > 100) item.kdp_progres_persen = 100;"
+                                                               placeholder="65"
+                                                               class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 text-xs text-rose-300 font-mono font-black focus:outline-none focus:border-rose-400">
+                                                        <span class="absolute right-3 top-2 text-rose-400 text-xs font-bold">%</span>
+                                                    </div>
+                                                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                                                        <div class="bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 h-2 rounded-full transition-all duration-300" :style="'width: ' + (item.kdp_progres_persen || 0) + '%'"></div>
+                                                    </div>
+                                                    <span class="text-[9px] text-slate-400 italic block">* Catatan: Progres fisik hanya masuk di form & detail data, tidak masuk live preview tabel.</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Jenis Bangunan & Status Tanah (KIB A) -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>📜 Status Tanah & Kapitalisasi:</span>
+                                                    </span>
+                                                </div>
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Tanah</label>
+                                                        <input type="text" x-model="item.kdp_status_tanah" placeholder="Hak Pakai RSUD"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-cyan-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kode Aset Tanah</label>
+                                                        <input type="text" x-model="item.kdp_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono focus:border-cyan-500">
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-1.5">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Bangunan Baru</label>
+                                                        <select x-model="item.kdp_is_baru" 
+                                                                @change="if (item.kdp_is_baru === 'Baru') { item.kdp_kapitalisasi_tahun_induk = ''; item.kdp_kapitalisasi_nilai_induk = 0; }"
+                                                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500">
+                                                            <option value="Baru">Baru</option>
+                                                            <option value="Lama">Lama</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Tahun Induk</label>
+                                                        <input type="text" x-model="item.kdp_kapitalisasi_tahun_induk" 
+                                                               :disabled="item.kdp_is_baru === 'Baru'"
+                                                               :class="item.kdp_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700 focus:border-cyan-500 text-white'"
+                                                               placeholder="2020"
+                                                               class="w-full border rounded-xl px-2 py-2 text-xs font-mono transition-all">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Induk</label>
+                                                        <input type="text" 
+                                                               :disabled="item.kdp_is_baru === 'Baru'"
+                                                               :class="item.kdp_is_baru === 'Baru' ? 'opacity-40 cursor-not-allowed bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-950 border-slate-700 focus:border-cyan-500 text-amber-300'"
+                                                               :value="item.kdp_is_baru === 'Baru' ? '' : (item.kdp_kapitalisasi_nilai_induk ? Number(item.kdp_kapitalisasi_nilai_induk).toLocaleString('id-ID') : '')"
+                                                               @input="
+                                                                   let raw = $event.target.value.replace(/\D/g, '');
+                                                                   item.kdp_kapitalisasi_nilai_induk = raw ? parseInt(raw, 10) : 0;
+                                                                   $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                               "
+                                                               placeholder="3.500.000.000"
+                                                               class="w-full border rounded-xl px-1.5 py-2 text-[10px] font-mono transition-all">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- Volume & Nilai Satuan KDP (Rp) -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5">
+                                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">💰 Volume & Rincian Nilai KDP (Rp):</span>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Bangunan</label>
+                                                    <input type="number" min="1" x-model.number="item.kdp_jumlah_bangunan" 
+                                                           @input="if (item.kdp_jumlah_bangunan < 1) item.kdp_jumlah_bangunan = 1;"
+                                                           placeholder="1"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan Barang</label>
+                                                    <input type="text" x-model="item.kdp_satuan" placeholder="Gedung / Unit / Paket / M²"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-emerald-500">
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Perencanaan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.kdp_nilai_perencanaan ? Number(item.kdp_nilai_perencanaan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.kdp_nilai_perencanaan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="75.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Fisik (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.kdp_nilai_fisik ? Number(item.kdp_nilai_fisik).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.kdp_nilai_fisik = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="1.850.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai Pengawasan (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="item.kdp_nilai_pengawasan ? Number(item.kdp_nilai_pengawasan).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.kdp_nilai_pengawasan = raw ? parseInt(raw, 10) : 0;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="50.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-slate-400 text-[9px] mb-1 font-semibold">Nilai AP (Rp)</label>
+                                                    <input type="text" 
+                                                           :value="(item.kdp_nilai_ap || item.kdp_nilai_pip) ? Number(item.kdp_nilai_ap || item.kdp_nilai_pip).toLocaleString('id-ID') : ''"
+                                                           @input="
+                                                               let raw = $event.target.value.replace(/\D/g, '');
+                                                               item.kdp_nilai_ap = raw ? parseInt(raw, 10) : 0;
+                                                               item.kdp_nilai_pip = item.kdp_nilai_ap;
+                                                               $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                           "
+                                                           placeholder="25.000.000"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono focus:border-emerald-500">
+                                                </div>
+                                            </div>
+
+                                            <div class="pt-1 flex items-center justify-between border-t border-slate-800">
+                                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Subtotal Nilai KDP Ini:</span>
+                                                <span class="text-xs font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(getKdpSubtotal(item))"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Letak / Alamat Lokasi Fisik Proyek KDP -->
+                                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-rose-500/40 space-y-1.5">
+                                            <div class="flex items-center justify-between border-b border-rose-500/30 pb-1.5">
+                                                <label class="block text-rose-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                                    <span>📍 Letak / Alamat Lokasi Fisik Proyek KDP:</span>
+                                                </label>
+                                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold">Lokasi Fisik KDP</span>
+                                            </div>
+                                            <input type="text" x-model="item.kdp_alamat" placeholder="Contoh: Kompleks Paviliun Melati & Gedung Rawat Inap Baru RSUD Dr. H. Koesnandi"
+                                                   class="w-full bg-slate-950 border border-slate-700 hover:border-rose-500 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-rose-500 transition-all">
+                                        </div>
+
                                     </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Bangunan</label>
-                                        <select x-model="formData.kdp_bangunan" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold">
-                                            <option value="Bertingkat">Bertingkat</option>
-                                            <option value="Tidak">Tidak Bertingkat</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Konstruksi Beton</label>
-                                        <select x-model="formData.kdp_beton" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-semibold">
-                                            <option value="Beton">Beton</option>
-                                            <option value="Tidak">Bukan Beton</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <!-- Visual Progres Bar -->
-                                <div class="pt-1">
-                                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-                                        <span>Realisasi Kemajuan Fisik:</span>
-                                        <span class="text-amber-400 font-bold" x-text="(formData.kdp_progres_persen || 0) + '%'"></span>
-                                    </div>
-                                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
-                                        <div class="bg-gradient-to-r from-amber-500 to-emerald-400 h-2 rounded-full transition-all" :style="'width: ' + (formData.kdp_progres_persen || 0) + '%'"></div>
-                                    </div>
-                                </div>
+                                </template>
                             </div>
 
-                            <!-- 4. Status Tanah, Sertifikat & Waktu Pengerjaan -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider">📜 4. Status Tanah & Waktu:</span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Status Tanah</label>
-                                        <input type="text" x-model="formData.kdp_status_tanah" placeholder="Tanah Hak Pakai RSUD"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Kode Aset Tanah (KIB A)</label>
-                                        <input type="text" x-model="formData.kdp_kode_aset_tanah" placeholder="1.3.1.01.01.02.013"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-emerald-400 font-mono">
-                                    </div>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Tgl Mulai Pengerjaan</label>
-                                        <input type="text" x-datepicker x-model="formData.kdp_tgl_mulai" placeholder="dd/mm/yyyy"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[10px] mb-1">Target Selesai</label>
-                                        <input type="text" x-datepicker x-model="formData.kdp_tgl_target_selesai" placeholder="dd/mm/yyyy"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Tombol Tambah Proyek KDP Baru (Besar & Jelas) -->
+                            <button type="button" @click="addKdpItem()" 
+                                    class="w-full py-3.5 border-2 border-dashed border-rose-500/50 hover:border-rose-400 bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 hover:text-rose-200 font-bold rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-md group cursor-pointer">
+                                <span class="text-base group-hover:scale-125 transition-transform">➕</span>
+                                <span class="text-xs sm:text-sm">Klik Disini untuk Menambah Proyek KDP Lainnya</span>
+                            </button>
 
-                        </div>
-
-                        <!-- 5. Akumulasi Nilai Realisasi Biaya KDP (Rp) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3 shadow-lg">
-                            <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">5. Akumulasi Nilai Realisasi Biaya KDP (Rp):</span>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Perencanaan</label>
-                                    <input type="number" x-model.number="formData.kdp_nilai_perencanaan" placeholder="125000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Fisik Termin (Rp)</label>
-                                    <input type="number" x-model.number="formData.kdp_nilai_fisik" placeholder="2450000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai Pengawasan</label>
-                                    <input type="number" x-model.number="formData.kdp_nilai_pengawasan" placeholder="85000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[9px] mb-1">Nilai PIP (Rp)</label>
-                                    <input type="number" x-model.number="formData.kdp_nilai_pip" placeholder="40000000"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white font-mono">
-                                </div>
-                            </div>
-                            <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
-                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                            <!-- Ringkasan Anggaran & Akumulasi Realisasi KIB F -->
+                            <div class="p-4 rounded-2xl bg-slate-950/90 border border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
                                 <div class="flex flex-wrap items-center gap-4 sm:gap-6">
                                     <div>
-                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran (Pagu):</span>
                                         <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
                                     </div>
-                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
                                     <div>
-                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">📊 Akumulasi Realisasi:</span>
                                         <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
                                     </div>
                                 </div>
                                 <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
-                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
+                                    <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Realisasi Pengadaan KDP:</span>
                                     <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiKdp)"></span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- 5. Letak / Alamat Lokasi Proyek Konstruksi (Ditampilkan tepat diatas Live Preview Excel) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-amber-500/40 space-y-2 shadow-lg">
-                            <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
-                                <label class="block text-amber-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 LETAK / LOKASI PROYEK KONSTRUKSI (KDP):</span>
-                                </label>
-                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">Lokasi Fisik KDP</span>
-                            </div>
-                            <input type="text" x-model="formData.alamat_barang" placeholder="Contoh: Kompleks Paviliun Melati & Gedung Rawat Inap Baru RSUD Dr. H. Koesnandi"
-                                   class="w-full bg-slate-900 border border-slate-700 hover:border-amber-500 rounded-xl px-4 py-3 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 transition-all">
                         </div>
 
                         <!-- ============================================================= -->
-                        <!-- LIVE PREVIEW TABEL EXCEL RESMI KHUSUS KIB F (KDP)              -->
+                        <!-- LIVE PREVIEW TABEL EXCEL KHUSUS KIB F (PERSIS SEPERTI KIB C)   -->
                         <!-- ============================================================= -->
                         <div class="space-y-2 pt-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                                    <span>📄 Live Preview Tabel Rincian Konstruksi Dalam Pengerjaan (Format Excel):</span>
+                                    <span>📄 Live Preview Tabel Rincian Belanja Modal Konstruksi Dalam Pengerjaan (Sesuai SPK/Invoice):</span>
                                 </span>
-                                <span class="text-[10px] text-amber-400 font-mono">Format Excel KIB F RSUD (28 Kolom)</span>
+                                <span class="text-[10px] text-rose-400 font-mono" x-text="formData.kdp_items.length + ' Proyek KDP Terdaftar'">Format Excel KIB F RSUD (31 Kolom)</span>
                             </div>
 
                             <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-2xl">
@@ -6925,45 +7231,46 @@
                                     <!-- Header Utama Pastel Senada -->
                                     <thead>
                                         <tr class="bg-[#fde9d9] text-slate-950 font-black border-b border-slate-600">
-                                            <th colspan="27" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
-                                                RINCIAN BELANJA MODAL KONSTRUKSI DALAM PENGERJAAN (KIB F) SESUAI KONTRAK/SPK/INVOICE/2026
+                                            <th colspan="30" class="py-2 text-xs uppercase tracking-wider border border-slate-500 bg-[#fde9d9]">
+                                                RINCIAN BELANJA MODAL SESUAI SPK / SURAT PESANAN/KWITANSI /INVOICE/2026
                                             </th>
                                             <th rowspan="4" class="px-3 py-2 border border-slate-500 w-44 align-middle bg-[#fde9d9] font-bold text-slate-950 text-[10.5px]">
-                                                Letak / Lokasi<br>Proyek KDP
+                                                Letak / Alamat
                                             </th>
                                         </tr>
                                         <!-- Header Tingkat 1 -->
                                         <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500">
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-36 align-middle bg-[#fde9d9]">NAMA BARANG<br><span class="font-normal text-[9px]">(Uraian Sub Sub Rincian Objek PMDN 108)</span></th>
                                             <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Kode Barang<br><span class="font-normal text-[9px]">(Kode Sub Sub Rincian Objek PMDN 108)</span></th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Luas Rencana<br>(M²)</th>
-                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-16 align-middle bg-[#fde9d9]">Progres<br>(%)</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Konstruksi</th>
-                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Status Tanah KIB A</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Waktu Pengerjaan</th>
-                                            <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Kontrak & Pembelian</th>
-                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Nilai Realisasi Biaya KDP (Rp)</th>
-                                            <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Akumulasi Biaya KDP (Rp)</th>
+                                            <th rowspan="3" class="px-2 py-1.5 border border-slate-500 w-20 align-middle bg-[#fde9d9]">Luas (M2/Lt)</th>
+                                            <th colspan="3" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Kondisi / Spesifikasi</th>
+                                            <th colspan="5" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Jenis Bangunan</th>
+                                            <th colspan="8" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Riwayat Pembelian</th>
+                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">VOLUME</th>
+                                            <th colspan="4" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">Nilai Satuan Barang (Rp)</th>
+                                            <th rowspan="3" class="px-3 py-1.5 border border-slate-500 w-28 align-middle bg-[#fde9d9]">Total Nilai Barang (Rp)</th>
                                             <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">SP2D</th>
-                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST Kemajuan Fisik / MC</th>
+                                            <th colspan="2" class="px-2 py-1 border border-slate-500 bg-[#fde9d9]">BAST pada SPK/Surat Pesanan/Kwitansi/Invoice</th>
                                         </tr>
                                         <!-- Header Tingkat 2 -->
                                         <tr class="bg-[#fde9d9] text-slate-950 font-bold border-b border-slate-500 text-[9.5px]">
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">(B,KB,RB)</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Bertingkat/<br>Tidak</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Beton/<br>Tidak</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Status Tanah</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Kode Aset Tanah</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">No. Sertifikat</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Tgl Mulai</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Target Selesai</th>
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">SPK / Kontrak</th>
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan / BAP</th>
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi Termin</th>
-                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice Kontraktor</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Kode Aset<br>Tanah</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">Baru</th>
+                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kapitalisasi</th>
+                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">SPK</th>
+                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Surat Pesanan</th>
+                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Kwitansi</th>
+                                            <th colspan="2" class="px-2 py-0.5 border border-slate-500">Invoice</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Jumlah Bangunan</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nama Satuan Barang</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Perencanaan (Rp)</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik Termin (Rp)</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Fisik (Rp)</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai Pengawasan</th>
-                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai PIP</th>
+                                            <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle bg-[#fde9d9]">Nilai AP</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">TANGGAL</th>
                                             <th rowspan="2" class="px-2 py-1 border border-slate-500 align-middle">NOMOR</th>
@@ -6971,6 +7278,8 @@
                                         </tr>
                                         <!-- Header Tingkat 3 -->
                                         <tr class="bg-[#fde9d9] text-slate-900 font-semibold border-b border-slate-600 text-[9px]">
+                                            <th class="px-1.5 py-0.5 border border-slate-500">Tahun Induk</th>
+                                            <th class="px-1.5 py-0.5 border border-slate-500">Nilai Induk s/d 2026</th>
                                             <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
                                             <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
                                             <th class="px-1.5 py-0.5 border border-slate-500">Nomor</th>
@@ -6981,39 +7290,43 @@
                                             <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
                                         </tr>
                                     </thead>
-                                    <!-- Body Data Live Sesuai Input User -->
+                                    <!-- Body Data Live Sesuai Input User (Looping kdp_items) -->
                                     <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
-                                        <tr>
-                                            <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="formData.kdp_nama_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.kdp_kode_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.kdp_luas_m2"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-bold font-mono text-amber-700" x-text="(formData.kdp_progres_persen || 0) + '%'"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.kdp_bangunan"></td>
-                                            <td class="px-2 py-2 border border-slate-400" x-text="formData.kdp_beton"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.kdp_status_tanah"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.kdp_kode_aset_tanah"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kdp_sertifikat_no"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kdp_tgl_mulai)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kdp_tgl_target_selesai)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_perencanaan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_fisik)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_pengawasan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.kdp_nilai_pip)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-amber-800" x-text="formatRupiah(totalNilaiKdp)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
-                                            <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.alamat_barang"></td>
-                                        </tr>
+                                        <template x-for="(kItem, kIdx) in formData.kdp_items" :key="kIdx">
+                                             <tr>
+                                                <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="kItem.kdp_nama_barang || formData.kdp_nama_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="kItem.kdp_kode_barang || formData.kdp_kode_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono" x-text="kItem.kdp_luas_m2"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="kItem.kdp_kondisi"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="kItem.kdp_bertingkat"></td>
+                                                <td class="px-2 py-2 border border-slate-400" x-text="kItem.kdp_beton"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="kItem.kdp_status_tanah"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="kItem.kdp_kode_aset_tanah"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-bold" x-text="kItem.kdp_is_baru === 'Baru' ? '1' : '-'"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="kItem.kdp_is_baru === 'Baru' ? '-' : (kItem.kdp_kapitalisasi_tahun_induk || '-')"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="kItem.kdp_is_baru === 'Baru' ? '-' : (kItem.kdp_kapitalisasi_nilai_induk ? formatRupiah(kItem.kdp_kapitalisasi_nilai_induk) : '-')"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="kItem.kdp_jumlah_bangunan"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="kItem.kdp_satuan"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(kItem.kdp_nilai_perencanaan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(kItem.kdp_nilai_fisik)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(kItem.kdp_nilai_pengawasan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(kItem.kdp_nilai_ap || kItem.kdp_nilai_pip)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-rose-800" x-text="formatRupiah(getKdpSubtotal(kItem))"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
+                                                <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="kItem.kdp_alamat || formData.alamat_barang"></td>
+                                            </tr>
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>

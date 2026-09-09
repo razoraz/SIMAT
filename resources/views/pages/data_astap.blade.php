@@ -4554,6 +4554,73 @@
                     this.showDetailModal = true;
                 },
 
+                getJaringanItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    if (spec && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
+                        return spec.jaringan_items;
+                    }
+                    // Fallback jika single item / legacy
+                    return [{
+                        jaringan_nama_barang: (spec && spec.jaringan_nama_barang) || astap.nama_barang || 'Jalan, Irigasi dan Jaringan',
+                        jaringan_kode_barang: (spec && spec.jaringan_kode_barang) || astap.kode_barang || '',
+                        jaringan_konstruksi: (spec && spec.konstruksi) || (spec && spec.jaringan_konstruksi) || '',
+                        jaringan_panjang_m: (spec && spec.panjang_m) || 0,
+                        jaringan_lebar_m: (spec && spec.lebar_m) || 0,
+                        jaringan_luas_m2: (spec && spec.luas_m2) || astap.luas_m2 || 0,
+                        jaringan_kondisi: astap.kondisi || (spec && spec.jaringan_kondisi) || 'B',
+                        jaringan_bertingkat: (spec && (spec.jaringan_bertingkat || spec.bertingkat)) || 'Bertingkat',
+                        jaringan_beton: (spec && (spec.jaringan_beton || spec.beton)) || 'Beton',
+                        jaringan_status_tanah: (spec && (spec.jaringan_status_tanah || spec.status_tanah)) || 'Tanah Hak Pakai RSUD',
+                        jaringan_kode_aset_tanah: (spec && (spec.jaringan_kode_aset_tanah || spec.kode_aset_tanah)) || '1.3.1.01.01.02.013',
+                        jaringan_is_baru: (spec && (spec.jaringan_is_baru || spec.is_baru)) || 'Baru',
+                        jaringan_kapitalisasi_tahun_induk: (spec && (spec.jaringan_kapitalisasi_tahun_induk || spec.kapitalisasi_tahun_induk)) || '',
+                        jaringan_kapitalisasi_nilai_induk: (spec && (spec.jaringan_kapitalisasi_nilai_induk || spec.kapitalisasi_nilai_induk)) || 0,
+                        jaringan_jumlah: astap.jumlah_volume || (spec && spec.jaringan_jumlah) || 1,
+                        jaringan_satuan: astap.satuan || (spec && spec.jaringan_satuan) || 'Ruas',
+                        jaringan_nilai_perencanaan: (spec && (spec.jaringan_nilai_perencanaan || spec.nilai_perencanaan)) || 0,
+                        jaringan_nilai_fisik: (spec && (spec.jaringan_nilai_fisik || spec.nilai_fisik)) || astap.nilai_realisasi || 0,
+                        jaringan_nilai_pengawasan: (spec && (spec.jaringan_nilai_pengawasan || spec.nilai_pengawasan)) || 0,
+                        jaringan_nilai_ap: (spec && (spec.jaringan_nilai_ap || spec.nilai_ap || spec.nilai_pip)) || 0,
+                        jaringan_alamat: (spec && spec.jaringan_alamat) || astap.alamat_barang || '-'
+                    }];
+                },
+
+                getKdpItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    if (spec && Array.isArray(spec.kdp_items) && spec.kdp_items.length > 0) {
+                        return spec.kdp_items;
+                    }
+                    return [{
+                        kdp_nama_barang: (spec && spec.kdp_nama_barang) || astap.nama_barang || 'Konstruksi Dalam Pengerjaan',
+                        kdp_kode_barang: (spec && spec.kdp_kode_barang) || astap.kode_barang || '',
+                        kdp_luas_m2: (spec && (spec.kdp_luas_m2 || spec.luas_m2)) || astap.luas_m2 || 0,
+                        kdp_kondisi: astap.kondisi || (spec && spec.kdp_kondisi) || 'B',
+                        kdp_progres_persen: (spec && (spec.kdp_progres_persen ?? spec.progres_persen)) || 0,
+                        kdp_bertingkat: (spec && (spec.kdp_bertingkat || spec.bertingkat)) || 'Bertingkat',
+                        kdp_beton: (spec && (spec.kdp_beton || spec.beton)) || 'Beton',
+                        kdp_status_tanah: (spec && (spec.kdp_status_tanah || spec.status_tanah)) || 'Tanah Hak Pakai RSUD',
+                        kdp_kode_aset_tanah: (spec && (spec.kdp_kode_aset_tanah || spec.kode_aset_tanah)) || '1.3.1.01.01.02.013',
+                        kdp_is_baru: (spec && (spec.kdp_is_baru || spec.is_baru)) || 'Baru',
+                        kdp_kapitalisasi_tahun_induk: (spec && (spec.kdp_kapitalisasi_tahun_induk || spec.kapitalisasi_tahun_induk)) || '',
+                        kdp_kapitalisasi_nilai_induk: (spec && (spec.kdp_kapitalisasi_nilai_induk || spec.kapitalisasi_nilai_induk)) || 0,
+                        kdp_jumlah_bangunan: astap.jumlah_volume || (spec && spec.kdp_jumlah_bangunan) || 1,
+                        kdp_satuan: astap.satuan || (spec && spec.kdp_satuan) || 'Gedung',
+                        kdp_nilai_perencanaan: (spec && (spec.kdp_nilai_perencanaan || spec.nilai_perencanaan)) || 0,
+                        kdp_nilai_fisik: (spec && (spec.kdp_nilai_fisik || spec.nilai_fisik)) || astap.nilai_realisasi || 0,
+                        kdp_nilai_pengawasan: (spec && (spec.kdp_nilai_pengawasan || spec.nilai_pengawasan)) || 0,
+                        kdp_nilai_ap: (spec && (spec.kdp_nilai_ap || spec.nilai_ap || spec.nilai_pip)) || 0,
+                        kdp_alamat: (spec && spec.kdp_alamat) || astap.alamat_barang || '-'
+                    }];
+                },
+
                 getLainnyaItemsForDetail(astap) {
                     if (!astap) return [];
                     let spec = astap.spesifikasi_json;
@@ -5494,6 +5561,81 @@
                                 </div>
                             </template>
 
+                            <!-- 4. KIB D (JALAN, IRIGASI DAN JARINGAN) -->
+                            <template x-if="selectedAstapDetail.category === 'KIB D'">
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-300 px-1">
+                                        <span class="flex items-center gap-1.5 text-teal-400 font-bold uppercase tracking-wider text-[11px]">
+                                            🛣️ Rincian Jaringan / Ruas Terdaftar (<span x-text="getJaringanItemsForDetail(selectedAstapDetail).length"></span> Item)
+                                        </span>
+                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getJaringanItemsForDetail(selectedAstapDetail).reduce((acc, it) => acc + (parseFloat(it.jaringan_jumlah) || 1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Ruas')"></span>
+                                    </div>
+
+                                    <!-- Loop Semua Item KIB D -->
+                                    <div class="space-y-2.5">
+                                        <template x-for="(jItem, jIdx) in getJaringanItemsForDetail(selectedAstapDetail)" :key="jIdx">
+                                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-teal-500/30 space-y-2.5 shadow-sm hover:border-teal-400/50 transition-all">
+                                                <!-- Header Card Item -->
+                                                <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="px-2.5 py-0.5 rounded-lg bg-teal-500/20 text-teal-300 font-mono font-bold text-[11px] border border-teal-500/30"
+                                                              x-text="'Ruas #' + (jIdx + 1)"></span>
+                                                        <span class="text-white font-bold text-xs" x-text="jItem.jaringan_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
+                                                              x-text="(jItem.jaringan_jumlah || 1) + ' ' + (jItem.jaringan_satuan || selectedAstapDetail.satuan || 'Ruas')"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border"
+                                                              :class="{
+                                                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': (jItem.jaringan_kondisi === 'Baik' || jItem.jaringan_kondisi === 'B'),
+                                                                  'bg-amber-500/20 text-amber-300 border-amber-500/30': (jItem.jaringan_kondisi === 'Kurang Baik' || jItem.jaringan_kondisi === 'KB'),
+                                                                  'bg-rose-500/20 text-rose-300 border-rose-500/30': (jItem.jaringan_kondisi === 'Rusak Berat' || jItem.jaringan_kondisi === 'RB')
+                                                              }"
+                                                              x-text="'Kondisi: ' + (jItem.jaringan_kondisi === 'B' ? 'Baik (B)' : (jItem.jaringan_kondisi === 'KB' ? 'Kurang Baik (KB)' : (jItem.jaringan_kondisi === 'RB' ? 'Rusak Berat (RB)' : (jItem.jaringan_kondisi || 'Baik'))))"></span>
+                                                        <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[jIdx]">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[jIdx].nibar || selectedAstapDetail.registers[jIdx].no_register)"></span>
+                                                        </template>
+                                                    </div>
+                                                    <div class="text-[11px] font-mono">
+                                                        <span class="text-slate-400">Total Realisasi: </span>
+                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(jItem.jaringan_nilai_perencanaan || 0) + Number(jItem.jaringan_nilai_fisik || 0) + Number(jItem.jaringan_nilai_pengawasan || 0) + Number(jItem.jaringan_nilai_ap || jItem.jaringan_nilai_pip || 0)).toLocaleString('id-ID')"></strong>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Grid Informasi 4 Kolom -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                    <!-- Kolom 1: Konstruksi & Spesifikasi -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🛣️ Konstruksi &amp; Tipe</span>
+                                                        <span class="text-teal-300 font-bold block" x-text="(jItem.jaringan_bertingkat || 'Bertingkat') + ' • ' + (jItem.jaringan_beton || 'Beton')"></span>
+                                                        <span class="text-slate-300 text-[9.5px]" x-text="'Status: ' + (jItem.jaringan_is_baru === 'Baru' ? 'Baru (1)' : 'Lama (-)')"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 2: Dimensi & Luas -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Dimensi &amp; Luas</span>
+                                                        <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(jItem.jaringan_luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
+                                                        <span class="text-slate-400 text-[9.5px]" x-text="'P: ' + (jItem.jaringan_panjang_m || 0) + ' m • L: ' + (jItem.jaringan_lebar_m || 0) + ' m'"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 3: Status Hak Tanah & Kode -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌱 Status &amp; Kode Tanah</span>
+                                                        <span class="text-amber-300 font-semibold block truncate" x-text="jItem.jaringan_status_tanah || 'Tanah Hak Pakai RSUD'"></span>
+                                                        <span class="text-cyan-400 font-mono text-[9px] block truncate" x-text="jItem.jaringan_kode_aset_tanah || '1.3.1.01.01.02.013'"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 4: Komponen Nilai & Lokasi -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Fisik &amp; Lokasi</span>
+                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Fisik: Rp ' + Number(jItem.jaringan_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-teal-300 font-medium block truncate text-[9.5px]" :title="jItem.jaringan_alamat" x-text="jItem.jaringan_alamat || selectedAstapDetail.alamat_barang || '-'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
                             <!-- 5. KIB E (ASET TETAP LAINNYA) -->
                             <template x-if="selectedAstapDetail.category === 'KIB E'">
                                 <div class="space-y-3">
@@ -5601,30 +5743,97 @@
 
                             <!-- 6. KIB F (KONSTRUKSI DALAM PENGERJAAN / KDP) -->
                             <template x-if="selectedAstapDetail.category === 'KIB F'">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏗️ Tipe KDP Bangunan</span>
-                                        <span class="text-rose-300 font-bold" x-text="(selectedAstapDetail.spesifikasi_json?.bertingkat || 'Bertingkat') + ' • ' + (selectedAstapDetail.spesifikasi_json?.beton || 'Beton')"></span>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-300 px-1">
+                                        <span class="flex items-center gap-1.5 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
+                                            🏗️ Rincian Pengerjaan KDP Terdaftar (<span x-text="getKdpItemsForDetail(selectedAstapDetail).length"></span> Bangunan/Proyek)
+                                        </span>
+                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getKdpItemsForDetail(selectedAstapDetail).reduce((acc, it) => acc + (parseFloat(it.kdp_jumlah_bangunan) || 1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Bangunan')"></span>
                                     </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📊 Progres Fisik Kontrak</span>
-                                        <span class="text-rose-400 font-extrabold font-mono text-sm" x-text="(selectedAstapDetail.spesifikasi_json?.progres_persen || 0) + '% Finished'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📐 Luas Bangunan (m²)</span>
-                                        <span class="text-white font-bold font-mono" x-text="(selectedAstapDetail.spesifikasi_json?.luas_m2 || '-') + ' m²'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📅 Target Kontrak Pengerjaan</span>
-                                        <span class="text-cyan-300 font-mono font-bold" x-text="(selectedAstapDetail.spesifikasi_json?.tgl_mulai || '-') + ' s/d ' + (selectedAstapDetail.spesifikasi_json?.tgl_target_selesai || '-')"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🌱 Status Lahan KDP</span>
-                                        <span class="text-teal-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.status_tanah || 'Tanah Hak Pakai RSUD'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📍 Lokasi Pengerjaan KDP</span>
-                                        <span class="text-white font-bold truncate block" x-text="selectedAstapDetail.alamat_barang || 'Kompleks RSUD Dr. H. Koesnandi'"></span>
+
+                                    <!-- Loop Semua Item KIB F (KDP #1, KDP #2, dst) -->
+                                    <div class="space-y-2.5">
+                                        <template x-for="(kItem, kIdx) in getKdpItemsForDetail(selectedAstapDetail)" :key="kIdx">
+                                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-rose-500/30 space-y-2.5 shadow-sm hover:border-rose-400/50 transition-all">
+                                                <!-- Header Card Item -->
+                                                <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="px-2.5 py-0.5 rounded-lg bg-rose-500/20 text-rose-300 font-mono font-bold text-[11px] border border-rose-500/30"
+                                                              x-text="'KDP #' + (kIdx + 1)"></span>
+                                                        <span class="text-white font-bold text-xs" x-text="kItem.kdp_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
+                                                              x-text="(kItem.kdp_jumlah_bangunan || 1) + ' ' + (kItem.kdp_satuan || 'Gedung')"></span>
+                                                        
+                                                        <!-- Badge Progres Fisik -->
+                                                        <span class="px-2.5 py-0.5 rounded-lg bg-rose-500/20 text-rose-300 font-mono font-extrabold text-[10.5px] border border-rose-500/40 flex items-center gap-1">
+                                                            <span>📊</span>
+                                                            <span x-text="(kItem.kdp_progres_persen || 0) + '% Fisik'"></span>
+                                                        </span>
+
+                                                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border"
+                                                              :class="{
+                                                                  'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': (kItem.kdp_kondisi === 'Baik' || kItem.kdp_kondisi === 'B'),
+                                                                  'bg-amber-500/20 text-amber-300 border-amber-500/30': (kItem.kdp_kondisi === 'Kurang Baik' || kItem.kdp_kondisi === 'KB'),
+                                                                  'bg-rose-500/20 text-rose-300 border-rose-500/30': (kItem.kdp_kondisi === 'Rusak Berat' || kItem.kdp_kondisi === 'RB')
+                                                              }"
+                                                              x-text="'Kondisi: ' + (kItem.kdp_kondisi === 'B' ? 'Baik (B)' : (kItem.kdp_kondisi === 'KB' ? 'Kurang Baik (KB)' : (kItem.kdp_kondisi === 'RB' ? 'Rusak Berat (RB)' : (kItem.kdp_kondisi || 'Baik'))))"></span>
+                                                        
+                                                        <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[kIdx]">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[kIdx].nibar || selectedAstapDetail.registers[kIdx].no_register)"></span>
+                                                        </template>
+                                                    </div>
+                                                    <div class="text-[11px] font-mono">
+                                                        <span class="text-slate-400">Subtotal Nilai: </span>
+                                                        <strong class="text-rose-400 font-bold" x-text="'Rp ' + Number((parseFloat(kItem.kdp_nilai_perencanaan) || 0) + (parseFloat(kItem.kdp_nilai_fisik) || 0) + (parseFloat(kItem.kdp_nilai_pengawasan) || 0) + (parseFloat(kItem.kdp_nilai_ap) || 0)).toLocaleString('id-ID')"></strong>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Visual Progress Bar KDP -->
+                                                <div class="bg-slate-950/80 p-2 rounded-xl border border-slate-800/80 space-y-1">
+                                                    <div class="flex justify-between items-center text-[10px]">
+                                                        <span class="text-slate-400 font-semibold flex items-center gap-1">
+                                                            <span>🚀 Progres Pengerjaan Fisik Lapangan</span>
+                                                        </span>
+                                                        <span class="font-mono font-extrabold text-rose-400 text-[11px]" x-text="(kItem.kdp_progres_persen || 0) + '% Selesai'"></span>
+                                                    </div>
+                                                    <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700/50">
+                                                        <div class="bg-gradient-to-r from-amber-500 via-rose-500 to-emerald-400 h-full rounded-full transition-all duration-500"
+                                                             :style="'width: ' + Math.min(100, Math.max(0, parseFloat(kItem.kdp_progres_persen) || 0)) + '%'"></div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Grid Informasi 4 Kolom KDP -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                    <!-- Kolom 1: Konstruksi & Luas -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏢 Tipe Konstruksi</span>
+                                                        <span class="text-purple-300 font-bold block" x-text="(kItem.kdp_bertingkat || 'Bertingkat') + ' • ' + (kItem.kdp_beton || 'Beton')"></span>
+                                                        <span class="text-cyan-300 font-mono text-[10px] block mt-0.5" x-text="'Luas: ' + (Number(kItem.kdp_luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 2: Status Hak Tanah & Kode -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🌱 Status &amp; Kode Tanah</span>
+                                                        <span class="text-teal-300 font-semibold block truncate" x-text="kItem.kdp_status_tanah || 'Tanah Hak Pakai RSUD'"></span>
+                                                        <span class="text-cyan-400 font-mono text-[9px] block truncate" x-text="kItem.kdp_kode_aset_tanah || '1.3.1.01.01.02.013'"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 3: Komponen Nilai Rinci -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Komponen Biaya</span>
+                                                        <span class="text-slate-300 block text-[9.5px]" x-text="'Fisik: Rp ' + Number(kItem.kdp_nilai_fisik || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-slate-400 text-[9px]" x-text="'Pln: ' + Number(kItem.kdp_nilai_perencanaan || 0).toLocaleString('id-ID') + ' • Pws: ' + Number(kItem.kdp_nilai_pengawasan || 0).toLocaleString('id-ID') + ' • AP: ' + Number(kItem.kdp_nilai_ap || 0).toLocaleString('id-ID')"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 4: Lokasi Proyek Fisik -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Lokasi Pengerjaan KDP</span>
+                                                        <span class="text-rose-300 font-medium block truncate" :title="kItem.kdp_alamat" x-text="kItem.kdp_alamat || selectedAstapDetail.alamat_barang || '-'"></span>
+                                                        <span class="text-slate-400 text-[9px] block mt-0.5" x-text="kItem.kdp_is_baru || 'Baru'"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </template>
