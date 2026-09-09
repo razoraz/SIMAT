@@ -55,17 +55,25 @@
                     <span>Dashboard</span>
                 </a>
 
-                <!-- Data ASTAP -->
+                <!-- Data ASTAP / Katalog ASTAP -->
                 <a href="{{ route('astap.index') }}" @click="if (isMobile) sidebarOpen = false"
                     class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('astap.index') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                     </svg>
-                    <span>Data ASTAP</span>
+                    <span>{{ $role === 'sub_admin' ? 'Katalog ASTAP' : 'Data ASTAP' }}</span>
                 </a>
 
-
+                <!-- Lembar KIR Ruangan (Diletakkan tepat di bawah Katalog) -->
+                <a href="{{ route('kir.index') }}" @click="if (isMobile) sidebarOpen = false"
+                    class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('kir.index') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Lembar KIR Ruangan</span>
+                </a>
 
                 <!-- Distribusi ASTAP -->
                 <a href="{{ route('distribusi.index') }}" @click="if (isMobile) sidebarOpen = false"
@@ -105,7 +113,7 @@
                     <span>Mutasi Aset</span>
                 </a>
 
-                <!-- Unit & Paviliun -->
+                <!-- Unit & Paviliun (Katalog Unit & Ruangan RSUD) -->
                 <a href="{{ route('unit.index') }}" @click="if (isMobile) sidebarOpen = false"
                     class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('unit.index') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

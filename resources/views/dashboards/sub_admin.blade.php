@@ -13,48 +13,8 @@
     @endphp
 
     <div x-data="{
-        searchQuery: '',
-        statusFilter: 'all',
-        showDetailModal: false,
-        selectedDistribusi: null,
-
-        // Data Distribusi Khusus Unit Sub Admin Ini dari Database Backend
-        distribusis: {{ Js::from($distribusisList ?? []) }},
-
         // Daftar Aset Ruangan yang Perlu Perhatian / Pemeliharaan dari Database Backend
         attentionAssets: {{ Js::from($attentionAssets ?? []) }},
-
-        get filteredDistribusis() {
-            const q = (this.searchQuery || '').toLowerCase();
-            return this.distribusis.filter(d => {
-                const matchSearch = (d.nama || '').toLowerCase().includes(q) || 
-                                    (d.kode || '').toLowerCase().includes(q) || 
-                                    (d.keterangan || '').toLowerCase().includes(q);
-                const matchStatus = this.statusFilter === 'all' || d.status === this.statusFilter;
-                return matchSearch && matchStatus;
-            });
-        },
-
-        get countDraft() {
-            return this.distribusis.filter(d => d.status === 'Draft').length;
-        },
-
-        get countMenunggu() {
-            return this.distribusis.filter(d => d.status === 'Menunggu Konfirmasi' || d.status === 'Pending').length;
-        },
-
-        get countDalamPengiriman() {
-            return this.distribusis.filter(d => d.status === 'Dalam Pengiriman' || d.status === 'Dikirim').length;
-        },
-
-        get countDiterima() {
-            return this.distribusis.filter(d => d.status === 'Telah Diterima' || d.status === 'Diterima').length;
-        },
-
-        openDetail(item) {
-            this.selectedDistribusi = item;
-            this.showDetailModal = true;
-        }
     }" x-cloak>
 
         <!-- 1. HEADER & IDENTITAS UNIT TERDAFTAR -->
@@ -87,15 +47,23 @@
                     </div>
 
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Kelola barang inventaris ruangan Anda, pantau riwayat penerimaan barang baru, ajukan mutasi/pemeliharaan aset, dan cetak Lembar Kartu Inventaris Ruangan (KIR) resmi.
+                        Pantau inventaris fisik ruangan Anda, visualisasi grafik nilai dan kondisi aset, telusuri katalog barang ASTAP, serta cetak Lembar Kartu Inventaris Ruangan (KIR) resmi.
                     </p>
                 </div>
 
                 <!-- Action Buttons Khusus Sub Admin -->
                 <div class="flex flex-wrap sm:flex-nowrap gap-2.5 shrink-0 w-full sm:w-auto">
-                    <a href="{{ route('unit.index') }}" 
+                    <a href="{{ route('astap.index') }}" 
                         class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center space-x-2">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                        <span>Katalog ASTAP</span>
+                    </a>
+
+                    <a href="{{ route('kir.index') }}" 
+                        class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/20">
+                        <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <span>Lembar KIR Ruangan</span>
@@ -121,30 +89,11 @@
                     <span class="text-xs font-bold text-emerald-400">Unit Barang</span>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
-                    <span>Tercatat di Dokumen KIR</span>
+                    <span>Tercatat Resmi Dokumen KIR</span>
                 </p>
             </div>
 
-            <!-- 2. Kondisi Aset Ruangan -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden group hover:border-teal-500/40 transition-all">
-                <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider">Kondisi Aset Ruangan</span>
-                    <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
-                </div>
-                <div class="flex items-baseline justify-between">
-                    <p class="text-2xl sm:text-3xl font-black text-white">{{ $kondisiBaik ?? 0 }} <span class="text-xs font-bold text-emerald-400">Baik</span></p>
-                    <span class="text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">{{ $totalRusak ?? 0 }} Rusak/Servis</span>
-                </div>
-                <p class="text-[11px] text-slate-400 mt-2">
-                    {{ $kondisiKurangBaik ?? 0 }} Kurang Baik · {{ $kondisiRusakRingan ?? 0 }} Rusak Ringan · {{ $kondisiRusakBerat ?? 0 }} Rusak Berat
-                </p>
-            </div>
-
-            <!-- 3. Valuasi Nilai Aset Ruangan -->
+            <!-- 2. Valuasi Nilai Aset Ruangan -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden group hover:border-cyan-500/40 transition-all">
                 <div class="flex items-center justify-between text-slate-400 mb-2">
                     <span class="text-xs font-bold uppercase tracking-wider">Nilai Aset Ruangan</span>
@@ -162,217 +111,245 @@
                 </p>
             </div>
 
-            <!-- 4. Pengajuan Distribusi Aktif -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+            <!-- 3. Kondisi Aset Siap Pakai (Baik) -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden group hover:border-teal-500/40 transition-all">
                 <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider">Distribusi Diajukan</span>
-                    <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+                    <span class="text-xs font-bold uppercase tracking-wider">Kondisi Siap Pakai</span>
+                    <div class="p-2.5 rounded-xl bg-teal-500/10 text-teal-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                     </div>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <p class="text-2xl sm:text-3xl font-black text-white" x-text="distribusis.length">0</p>
-                    <span class="text-xs font-bold text-amber-400">Permohonan</span>
+                    <p class="text-2xl sm:text-3xl font-black text-white">{{ $kondisiBaik ?? 0 }}</p>
+                    <span class="text-xs font-bold text-emerald-400">Unit Baik</span>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-2 flex items-center justify-between">
-                    <span><strong class="text-slate-400" x-text="countDraft">0</strong> Draft · <strong class="text-amber-400" x-text="countMenunggu">0</strong> Menunggu · <strong class="text-emerald-400" x-text="countDiterima">0</strong> Diterima</span>
+                <p class="text-[11px] text-slate-400 mt-2">
+                    {{ $unitTotalAset > 0 ? round((($kondisiBaik ?? 0) / $unitTotalAset) * 100, 1) : 0 }}% dari total aset ruangan
+                </p>
+            </div>
+
+            <!-- 4. Aset Perlu Perhatian / Servis -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+                <div class="flex items-center justify-between text-slate-400 mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider">Perlu Perhatian</span>
+                    <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline space-x-2">
+                    <p class="text-2xl sm:text-3xl font-black text-white">{{ $totalRusak ?? 0 }}</p>
+                    <span class="text-xs font-bold text-amber-400">Unit Servis/Rusak</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-2">
+                    {{ $kondisiRusakRingan ?? 0 }} Rusak Ringan · {{ $kondisiRusakBerat ?? 0 }} Rusak Berat
                 </p>
             </div>
         </div>
 
-        <!-- 3. KONTEN UTAMA: DUA KOLOM (KIRI: TABEL DISTRIBUSI, KANAN: STATUS RUANGAN & KIR) -->
+        <!-- 3. GRAFIK NILAI ASET RUANGAN & GRAFIK KONDISI ASET RUANGAN -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             
-            <!-- KOLOM KIRI (2/3): DAFTAR PENGAJUAN DISTRIBUSI BARANG RUANGAN SAYA -->
+            <!-- GRAFIK 1 (2 Kolom): GRAFIK NILAI ASET RUANGAN (VALUASI & KUANTITAS) -->
             <div class="lg:col-span-2 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
-                <div class="flex-1 flex flex-col">
-                    <!-- Header Section & Filter -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                         <div>
-                            <div class="flex items-center space-x-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                                <h3 class="text-base sm:text-lg font-extrabold text-white">Permohonan Distribusi Barang Saya</h3>
+                            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs font-bold mb-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>GRAFIK NILAI ASET RUANGAN</span>
                             </div>
-                            <p class="text-xs text-slate-400 mt-0.5">
-                                Riwayat pengajuan alokasi barang aset baru yang diajukan oleh unit <span class="text-slate-200 font-semibold">{{ $unitNama }}</span>
-                            </p>
+                            <h3 class="text-base sm:text-lg font-extrabold text-white">Pertumbuhan Nilai & Kuantitas Aset {{ $unitNama }}</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Visualisasi akumulasi valuasi harga dan jumlah unit barang per tahun pengadaan di ruangan ini</p>
                         </div>
 
-                        <a href="{{ route('distribusi.create') }}" 
-                            class="whitespace-nowrap px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all flex items-center space-x-1.5 w-fit">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                            <span>Pengajuan Baru</span>
-                        </a>
-                    </div>
-
-                    <!-- Filter Status Bar & Search Input -->
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
-                        <!-- Filter Badge Buttons -->
-                        <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                            <button type="button" @click="statusFilter = 'all'"
-                                :class="statusFilter === 'all' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                                class="px-2.5 py-1 rounded-lg transition-all">
-                                Semua (<span x-text="distribusis.length"></span>)
+                        <!-- Mode Selector Toggle Pills -->
+                        <div class="inline-flex p-1 bg-slate-950 border border-slate-800 rounded-2xl shrink-0 text-xs font-semibold">
+                            <button id="btnKumulatifSub" onclick="switchSubAdminChartMode('kumulatif')" class="px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold transition-all shadow-md">
+                                📈 Akumulasi
                             </button>
-                            <button type="button" @click="statusFilter = 'Draft'"
-                                :class="statusFilter === 'Draft' ? 'bg-slate-700 text-white font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                                class="px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1">
-                                <span>Draft</span>
-                                <span class="px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 text-[10px]" x-show="countDraft > 0" x-text="countDraft"></span>
+                            <button id="btnPerTahunSub" onclick="switchSubAdminChartMode('pertahun')" class="px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all">
+                                📊 Per Tahun
                             </button>
-                            <button type="button" @click="statusFilter = 'Menunggu Konfirmasi'"
-                                :class="statusFilter === 'Menunggu Konfirmasi' ? 'bg-cyan-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                                class="px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1">
-                                <span>Menunggu</span>
-                                <span class="px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px]" x-show="countMenunggu > 0" x-text="countMenunggu"></span>
-                            </button>
-                            <button type="button" @click="statusFilter = 'Dalam Pengiriman'"
-                                :class="statusFilter === 'Dalam Pengiriman' ? 'bg-amber-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                                class="px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1">
-                                <span>Dikirim</span>
-                                <span class="px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 text-[10px]" x-show="countDalamPengiriman > 0" x-text="countDalamPengiriman"></span>
-                            </button>
-                            <button type="button" @click="statusFilter = 'Telah Diterima'"
-                                :class="statusFilter === 'Telah Diterima' ? 'bg-emerald-500 text-slate-950 font-extrabold shadow-sm' : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'"
-                                class="px-2.5 py-1 rounded-lg transition-all">
-                                Diterima
-                            </button>
-                        </div>
-
-                        <!-- Search Box -->
-                        <div class="flex items-center space-x-0.5 min-w-[220px]">
-                            <!-- Ikon di luar text box -->
-                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-
-                            <!-- Text box (padding kembali normal) -->
-                            <input type="text" x-model="searchQuery" placeholder="Cari nama barang / no. usulan..."
-                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
                         </div>
                     </div>
 
-                    <!-- Tabel Permohonan Distribusi -->
-                    <div class="flex-1 flex flex-col min-h-[300px] overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-950/40">
-                        <table class="w-full text-left text-xs text-slate-300">
-                            <thead class="bg-slate-950 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shrink-0">
-                                <tr>
-                                    <th class="px-3.5 py-3 text-center whitespace-nowrap w-10">No</th>
-                                    <th class="px-3.5 py-3 text-center whitespace-nowrap">No. Pengajuan</th>
-                                    <th class="px-3.5 py-3 text-left min-w-[200px]">Nama Barang / ASTAP</th>
-                                    <th class="px-3.5 py-3 text-center whitespace-nowrap">Qty</th>
-                                    <th class="px-3.5 py-3 text-center whitespace-nowrap">Tanggal</th>
-                                    <th class="px-3.5 py-3 text-center whitespace-nowrap">Status</th>
-                                    <th class="px-3.5 py-3 text-center whitespace-nowrap">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/80">
-                                <template x-for="(item, index) in filteredDistribusis" :key="item.id">
-                                    <tr class="hover:bg-slate-800/30 transition-colors">
-                                        <td class="px-3.5 py-3.5 text-center font-bold text-slate-500" x-text="index + 1"></td>
-                                        <td class="px-3.5 py-3.5 text-center font-mono font-semibold text-emerald-400 whitespace-nowrap" x-text="item.kode"></td>
-                                        <td class="px-3.5 py-3.5">
-                                            <p class="font-bold text-white text-xs" x-text="item.nama"></p>
-                                            <p class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5" x-text="item.keterangan"></p>
-                                        </td>
-                                        <td class="px-3.5 py-3.5 text-center font-semibold text-slate-200 whitespace-nowrap" x-text="item.qty"></td>
-                                        <td class="px-3.5 py-3.5 text-center font-mono text-slate-400 whitespace-nowrap text-[11px]" x-text="item.tgl"></td>
-                                        <td class="px-3.5 py-3.5 text-center whitespace-nowrap">
-                                            <template x-if="item.status === 'Draft'">
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                                                    📝 Draft Permohonan
-                                                </span>
-                                            </template>
-                                            <template x-if="item.status === 'Menunggu Konfirmasi' || item.status === 'Pending' || item.status === 'Menunggu Verifikasi'">
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
-                                                    ⏳ Menunggu Verifikasi
-                                                </span>
-                                            </template>
-                                            <template x-if="item.status === 'Dalam Pengiriman' || item.status === 'Dikirim' || item.status === 'Disetujui Admin'">
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                                    🚚 Dalam Pengiriman
-                                                </span>
-                                            </template>
-                                            <template x-if="item.status === 'Telah Diterima' || item.status === 'Diterima'">
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                                                    🟢 Telah Diterima (KIR)
-                                                </span>
-                                            </template>
-                                        </td>
-                                        <td class="px-3.5 py-3.5 text-center space-x-1 whitespace-nowrap">
-                                            <button type="button" @click="openDetail(item)"
-                                                class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-slate-700 transition-all inline-flex items-center space-x-1 shadow-sm">
-                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                                <span>Detail</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-
-                        <!-- Empty state jika kosong, mengisi sisa ruang secara fleksibel tepat di tengah -->
-                        <div x-show="filteredDistribusis.length === 0" class="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
-                            <p class="text-sm font-semibold">Tidak ada data permohonan distribusi yang cocok.</p>
-                            <p class="text-xs text-slate-500 mt-1">Coba ubah kata kunci pencarian atau filter status Anda.</p>
-                        </div>
+                    <!-- Canvas Chart Nilai Aset -->
+                    <div class="relative w-full h-[280px] sm:h-[310px] p-3 bg-slate-950/50 rounded-2xl border border-slate-800/80">
+                        <canvas id="roomAstapGrowthChart"></canvas>
                     </div>
                 </div>
 
+                <!-- Footer Keterangan Chart Nilai -->
                 <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                    <span>Menampilkan <strong class="text-white" x-text="filteredDistribusis.length"></strong> dari <strong class="text-white" x-text="distribusis.length"></strong> usulan distribusi</span>
-                    <a href="{{ route('distribusi.index') }}" class="text-emerald-400 hover:underline font-semibold">Buka Seluruh Riwayat Distribusi &rarr;</a>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>Total Valuasi: <strong class="text-white">{{ $unitTotalNilai }}</strong></span>
+                    </div>
+                    <span class="text-[11px] text-slate-500">Unit: {{ $unitNama }}</span>
                 </div>
             </div>
 
-            <!-- KOLOM KANAN (1/3): KONDISI RUANGAN & LEMBAR KIR -->
-            <div class="space-y-6">
-                <!-- 1. Card Lembar Kartu Inventaris Ruangan (KIR) -->
-                <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-lg">📋</span>
-                            <h4 class="text-sm font-extrabold text-white">Lembar KIR Ruangan</h4>
+            <!-- GRAFIK 2 (1 Kolom): GRAFIK KONDISI ASET RUANGAN -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/30 text-xs font-bold">
+                            <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                            <span>KONDISI FISIK ASET</span>
                         </div>
-                        <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">Tersinkronisasi</span>
+                        <span class="text-xs font-mono font-bold text-slate-400">{{ $unitTotalAset }} Unit Total</span>
                     </div>
+                    <h3 class="text-base font-extrabold text-white">Kondisi Aset Ruangan</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Proporsi fisik kesiapan inventaris ruangan</p>
 
-                    <p class="text-xs text-slate-400 leading-relaxed mb-4">
-                        Daftar lengkap inventaris fisik yang ditempatkan di <strong class="text-slate-200">{{ $unitNama }}</strong>. Anda dapat mencetak lembar resmi KIR ber-barcode untuk ditempel pada pintu ruangan.
-                    </p>
-
-                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 mb-4 space-y-2 text-xs">
-                        <div class="flex justify-between text-slate-300">
-                            <span class="text-slate-500">Unit Ruangan:</span>
-                            <span class="font-bold text-white">{{ $unitNama }}</span>
-                        </div>
-                        <div class="flex justify-between text-slate-300">
-                            <span class="text-slate-500">Total Item Terpasang:</span>
-                            <span class="font-bold text-emerald-400">{{ $unitTotalAset }} Unit Barang</span>
-                        </div>
-                        <div class="flex justify-between text-slate-300">
-                            <span class="text-slate-500">Penanggung Jawab:</span>
-                            <span class="font-semibold text-slate-200">{{ $unitKepala }}</span>
-                        </div>
+                    <!-- Chart Canvas Container -->
+                    <div class="relative w-full h-[200px] sm:h-[220px] my-3 flex items-center justify-center">
+                        <canvas id="roomKondisiChart"></canvas>
                     </div>
-
-                    <a href="{{ route('unit.index') }}" 
-                        class="w-full py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all flex items-center justify-center space-x-2 shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        <span>Buka & Cetak Dokumen KIR</span>
-                    </a>
                 </div>
 
-                <!-- 2. Card Aset Butuh Perhatian / Dalam Servis IPSRS -->
-                <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl">
+                <!-- Summary Chips Kondisi -->
+                <div class="grid grid-cols-4 gap-1.5 pt-3 border-t border-slate-800/80 text-center">
+                    <div class="p-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <div class="text-[9px] text-emerald-400 font-bold uppercase">Baik</div>
+                        <div class="text-xs sm:text-sm font-black text-white font-mono">{{ $kondisiBaik ?? 0 }}</div>
+                    </div>
+                    <div class="p-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <div class="text-[9px] text-amber-400 font-bold uppercase">K. Baik</div>
+                        <div class="text-xs sm:text-sm font-black text-white font-mono">{{ $kondisiKurangBaik ?? 0 }}</div>
+                    </div>
+                    <div class="p-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                        <div class="text-[9px] text-orange-400 font-bold uppercase">R. Ringan</div>
+                        <div class="text-xs sm:text-sm font-black text-white font-mono">{{ $kondisiRusakRingan ?? 0 }}</div>
+                    </div>
+                    <div class="p-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                        <div class="text-[9px] text-rose-400 font-bold uppercase">R. Berat</div>
+                        <div class="text-xs sm:text-sm font-black text-white font-mono">{{ $kondisiRusakBerat ?? 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 4. MODUL UTAMA: KATALOG & LEMBAR KIR (LEMBAR KIR DITARUH DI BAWAH KATALOG) + ASET PERLU PERHATIAN -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <!-- KOLOM KIRI (2/3): KATALOG DATA ASTAP & LEMBAR KIR RUANGAN DI BAWAHNYA -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- CARD 1: KATALOG DATA ASTAP -->
+                <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-teal-500/30 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xl">
+                                📦
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-mono font-bold text-teal-400 uppercase tracking-wider">Katalog Inventaris Induk</span>
+                                </div>
+                                <h3 class="text-lg font-extrabold text-white">Katalog Data ASTAP</h3>
+                            </div>
+                        </div>
+
+                        <a href="{{ route('astap.index') }}" 
+                            class="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-teal-500/20 transition-all flex items-center justify-center space-x-2 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span>Buka Katalog ASTAP &rarr;</span>
+                        </a>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                        Telusuri seluruh katalog master inventaris aset tetap RSUD Dr. H. Koesnandi. Cari spesifikasi barang, nomor inventaris 108, kode register NIBAR, riwayat pengadaan, dan status ketersediaan barang inventaris.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 flex items-center space-x-2.5">
+                            <span class="text-emerald-400 font-bold text-sm">🔍</span>
+                            <div>
+                                <span class="text-slate-400 text-[11px] block">Pencarian Cepat</span>
+                                <span class="text-white font-semibold text-xs">Nama & Kode Barang</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 flex items-center space-x-2.5">
+                            <span class="text-teal-400 font-bold text-sm">🏷️</span>
+                            <div>
+                                <span class="text-slate-400 text-[11px] block">Standar Kode 108</span>
+                                <span class="text-white font-semibold text-xs">Permendagri No. 108</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 flex items-center space-x-2.5">
+                            <span class="text-cyan-400 font-bold text-sm">📱</span>
+                            <div>
+                                <span class="text-slate-400 text-[11px] block">Label Barcode QR</span>
+                                <span class="text-white font-semibold text-xs">Scan Fisik Terintegrasi</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2: LEMBAR KIR RUANGAN (DITARUH TEPAT DI BAWAH KATALOG) -->
+                <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-emerald-500/30 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xl">
+                                📋
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">Kartu Inventaris Ruangan</span>
+                                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">Tersinkronisasi</span>
+                                </div>
+                                <h3 class="text-lg font-extrabold text-white">Lembar KIR Ruangan {{ $unitNama }}</h3>
+                            </div>
+                        </div>
+
+                        <a href="{{ route('kir.index') }}" 
+                            class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2 shrink-0">
+                            <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                            </svg>
+                            <span>Buka & Cetak Dokumen KIR</span>
+                        </a>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                        Daftar lengkap inventaris fisik yang ditempatkan resmi di <strong class="text-white">{{ $unitNama }}</strong>. Anda dapat mencetak lembar resmi KIR ber-barcode standar rumah sakit untuk ditempel pada pintu ruangan atau dinding inventaris.
+                    </p>
+
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-slate-300">
+                            <span class="text-slate-500">Unit Ruangan:</span>
+                            <span class="font-bold text-white">{{ $unitNama }} ({{ $unitKode }})</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-slate-300 border-t border-slate-800/80 pt-2">
+                            <span class="text-slate-500">Total Item Terpasang:</span>
+                            <span class="font-bold text-emerald-400">{{ $unitTotalAset }} Unit Barang (Valuasi: {{ $unitTotalNilai }})</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-slate-300 border-t border-slate-800/80 pt-2">
+                            <span class="text-slate-500">Penanggung Jawab Ruangan:</span>
+                            <span class="font-semibold text-slate-200">{{ $unitKepala }} <span class="text-slate-400 font-mono">(NIP. {{ $unitNip }})</span></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- KOLOM KANAN (1/3): CARD ASET PERLU PERHATIAN (DENGAN TAMPILAN YANG SUDAH DIPERBAIKI) -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+                <div>
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center space-x-2">
                             <span class="text-lg">🛠️</span>
                             <h4 class="text-sm font-extrabold text-white">Aset Perlu Perhatian</h4>
                         </div>
-                        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-full"
+                        <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-0.5 rounded-full"
                               x-text="attentionAssets.length + ' Item'"></span>
                     </div>
 
@@ -380,129 +357,270 @@
                         Barang di ruangan Anda yang mengalami kendala atau membutuhkan servis berkala:
                     </p>
 
-                    <div class="space-y-2.5">
-                        <template x-for="item in attentionAssets.slice(0, 4)" :key="item.id">
-                            <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs hover:border-slate-700 transition-all">
+                    <!-- List Aset Rusak / Servis dengan perbaikan tampilan nomor NIBAR panjang & lokasi -->
+                    <div class="space-y-3">
+                        <template x-for="item in attentionAssets.slice(0, 5)" :key="item.id">
+                            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs hover:border-slate-700 transition-all">
                                 <div class="flex items-start justify-between gap-2">
-                                    <p class="font-bold text-white text-xs" x-text="item.nama"></p>
+                                    <p class="font-bold text-white text-xs leading-snug" x-text="item.nama"></p>
                                     <span class="px-2 py-0.5 rounded text-[10px] font-bold shrink-0"
                                         :class="item.status === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : (item.status === 'Rusak Berat' || item.status === 'Rusak' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')"
                                         x-text="item.status">
                                     </span>
                                 </div>
-                                <p class="text-[11px] text-slate-400 mt-1" x-text="item.catatan"></p>
-                                <div class="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-                                    <span class="font-mono text-emerald-400" x-text="item.kode"></span>
-                                    <span x-text="'Lokasi: ' + item.lokasi"></span>
+                                
+                                <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed" x-text="item.catatan"></p>
+                                
+                                <!-- Container Bawah: NIBAR dan Lokasi Dipisah Secara Rapi & Bebas Tabrakan -->
+                                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px]">
+                                    <!-- NIBAR dengan tooltip & truncate -->
+                                    <div class="flex items-center space-x-1.5 min-w-0 max-w-full">
+                                        <span class="text-slate-500 shrink-0 font-medium">NIBAR:</span>
+                                        <span class="font-mono text-emerald-400 font-semibold truncate block" 
+                                              :title="item.kode" 
+                                              x-text="item.kode"></span>
+                                    </div>
+
+                                    <!-- Lokasi Ruangan -->
+                                    <div class="flex items-center space-x-1 shrink-0 text-slate-400">
+                                        <svg class="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                        <span class="truncate max-w-[140px]" :title="item.lokasi" x-text="item.lokasi"></span>
+                                    </div>
                                 </div>
                             </div>
                         </template>
 
                         <template x-if="attentionAssets.length === 0">
-                            <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
-                                <p class="text-emerald-400 font-bold">✅ Seluruh Aset Baik</p>
+                            <div class="p-6 rounded-2xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
+                                <span class="text-2xl block mb-1.5">✅</span>
+                                <p class="text-emerald-400 font-bold">Seluruh Aset Berstatus Baik</p>
                                 <p class="text-[11px] text-slate-500 mt-1">Tidak ada aset rusak yang tercatat di ruangan ini.</p>
                             </div>
                         </template>
                     </div>
-
-                    <a href="{{ route('pemeliharaan.index') }}" 
-                        class="mt-4 block text-center w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
-                        Lihat Seluruh Log Pemeliharaan &rarr;
-                    </a>
                 </div>
+
+                <a href="{{ route('pemeliharaan.index') }}" 
+                    class="mt-4 block text-center w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all shadow-sm">
+                    Lihat Seluruh Log Pemeliharaan &rarr;
+                </a>
             </div>
-        </div>
 
-
-        <!-- 5. MODAL DETAIL DISTRIBUSI -->
-        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-            
-            <div @click.away="showDetailModal = false"
-                class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl relative overflow-hidden"
-                x-transition:enter="transition ease-out duration-300 transform"
-                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
-                x-transition:leave="transition ease-in duration-200 transform"
-                x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
-                
-                <template x-if="selectedDistribusi">
-                    <div>
-                        <!-- Modal Header -->
-                        <div class="flex items-start justify-between border-b border-slate-800 pb-4 mb-4">
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="px-2.5 py-0.5 rounded font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" x-text="selectedDistribusi.kode"></span>
-                                    <span class="text-xs text-slate-400 font-mono" x-text="selectedDistribusi.tgl"></span>
-                                </div>
-                                <h3 class="text-lg font-black text-white mt-1" x-text="selectedDistribusi.nama"></h3>
-                            </div>
-                            <button type="button" @click="showDetailModal = false" class="text-slate-400 hover:text-white p-1 rounded-lg">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-
-                        <!-- Modal Body -->
-                        <div class="space-y-4 text-xs">
-                            <!-- Info Ruangan & Status -->
-                            <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Ruangan Pemohon</span>
-                                    <span class="text-white font-bold" x-text="selectedDistribusi.ruangan"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Status Verifikasi</span>
-                                    <span class="font-bold text-emerald-400" x-text="selectedDistribusi.status"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Pengaju / PJ</span>
-                                    <span class="text-slate-200" x-text="selectedDistribusi.pengaju"></span>
-                                </div>
-                                <div>
-                                    <span class="text-slate-500 block text-[10px] uppercase font-bold">Total Volume</span>
-                                    <span class="text-slate-200 font-bold" x-text="selectedDistribusi.qty"></span>
-                                </div>
-                            </div>
-
-                            <!-- Catatan Keperluan -->
-                            <div>
-                                <span class="text-slate-400 font-bold block mb-1">Catatan / Alasan Permohonan:</span>
-                                <p class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-slate-300 italic" x-text="selectedDistribusi.keterangan"></p>
-                            </div>
-
-                            <!-- Rincian Item Barang -->
-                            <div>
-                                <span class="text-slate-400 font-bold block mb-1.5">Rincian Barang yang Diminta:</span>
-                                <div class="space-y-1.5">
-                                    <template x-for="(item, idx) in selectedDistribusi.items" :key="idx">
-                                        <div class="p-2.5 bg-slate-950 rounded-xl border border-slate-800/80 flex items-center justify-between">
-                                            <div>
-                                                <p class="font-bold text-white" x-text="item.nama"></p>
-                                                <p class="text-[11px] text-slate-400 font-mono" x-text="'Merk: ' + item.merk"></p>
-                                            </div>
-                                            <div class="text-right">
-                                                <span class="font-bold text-emerald-400" x-text="item.qty"></span>
-                                                <span class="block text-[10px] text-slate-400" x-text="item.kondisi"></span>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modal Footer -->
-                        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-end space-x-2">
-                            <button type="button" @click="showDetailModal = false"
-                                class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
-                                Tutup
-                            </button>
-                        </div>
-                    </div>
-                </template>
-            </div>
         </div>
 
     </div>
+
+    <!-- Script Inisialisasi Chart.js untuk Dashboard Sub Admin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+    function initSubAdminCharts() {
+        if (typeof Chart === 'undefined') {
+            setTimeout(initSubAdminCharts, 100);
+            return;
+        }
+
+        // 1. Data Grafik Nilai Aset Ruangan
+        const chartYears = {{ Js::from($chartYears ?? []) }};
+        const hargaKumulatif = {{ Js::from($chartRoomKumulatifHargaJuta ?? []) }};
+        const volKumulatif = {{ Js::from($chartRoomKumulatifVolume ?? []) }};
+        const hargaPerTahun = {{ Js::from($chartRoomHargaJuta ?? []) }};
+        const volPerTahun = {{ Js::from($chartRoomVolume ?? []) }};
+        const rawHargaKumulatif = {{ Js::from(array_map(fn($v) => (float)$v, $chartRoomHarga ?? [])) }};
+
+        const growthCtx = document.getElementById('roomAstapGrowthChart');
+        if (growthCtx) {
+            window.roomAstapChart = new Chart(growthCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: chartYears,
+                    datasets: [
+                        {
+                            label: 'Akumulasi Valuasi (Rp Juta)',
+                            data: hargaKumulatif,
+                            borderColor: '#10b981', // Emerald
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            fill: true,
+                            tension: 0.35,
+                            borderWidth: 2.5,
+                            pointBackgroundColor: '#10b981',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Akumulasi Kuantitas (Unit)',
+                            data: volKumulatif,
+                            backgroundColor: 'rgba(20, 184, 166, 0.35)', // Teal
+                            borderColor: '#14b8a6',
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                            maxBarThickness: 32,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8',
+                                font: { size: 11, weight: '600' },
+                                usePointStyle: true,
+                                padding: 12
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    if (context.dataset.yAxisID === 'y') {
+                                        return ` Valuasi: Rp ${val.toLocaleString('id-ID')} Juta`;
+                                    }
+                                    return ` Kuantitas: ${val} Unit Barang`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                            ticks: {
+                                color: '#10b981',
+                                font: { size: 10 },
+                                callback: function(value) {
+                                    return 'Rp ' + value.toLocaleString('id-ID') + ' Jt';
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: '#14b8a6',
+                                font: { size: 10 },
+                                callback: function(value) {
+                                    return value + ' Unit';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Inisialisasi Grafik Kondisi Aset Ruangan (Doughnut Chart)
+        const kondisiCtx = document.getElementById('roomKondisiChart');
+        if (kondisiCtx) {
+            const kondisiBaik = {{ (int)($kondisiBaik ?? 0) }};
+            const kondisiKurangBaik = {{ (int)($kondisiKurangBaik ?? 0) }};
+            const kondisiRusakRingan = {{ (int)($kondisiRusakRingan ?? 0) }};
+            const kondisiRusakBerat = {{ (int)($kondisiRusakBerat ?? 0) }};
+
+            new Chart(kondisiCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'],
+                    datasets: [{
+                        data: [kondisiBaik, kondisiKurangBaik, kondisiRusakRingan, kondisiRusakBerat],
+                        backgroundColor: [
+                            '#10b981', // Emerald - Baik
+                            '#f59e0b', // Amber - Kurang Baik
+                            '#f97316', // Orange - Rusak Ringan
+                            '#ef4444', // Rose - Rusak Berat
+                        ],
+                        borderColor: '#020617',
+                        borderWidth: 3,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                font: { size: 10, weight: 'bold' },
+                                usePointStyle: true,
+                                padding: 8
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const val = context.raw || 0;
+                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${val} Unit (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        window.switchSubAdminChartMode = function (mode) {
+            const btnKumulatif = document.getElementById('btnKumulatifSub');
+            const btnPerTahun = document.getElementById('btnPerTahunSub');
+            if (!btnKumulatif || !btnPerTahun || !window.roomAstapChart) return;
+
+            if (mode === 'kumulatif') {
+                btnKumulatif.className = "px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold transition-all shadow-md";
+                btnPerTahun.className = "px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all";
+
+                window.roomAstapChart.data.datasets[0].label = 'Akumulasi Valuasi (Rp Juta)';
+                window.roomAstapChart.data.datasets[0].data = hargaKumulatif;
+                window.roomAstapChart.data.datasets[1].label = 'Akumulasi Kuantitas (Unit)';
+                window.roomAstapChart.data.datasets[1].data = volKumulatif;
+            } else {
+                btnPerTahun.className = "px-3 py-1.5 rounded-xl bg-teal-500 text-slate-950 font-bold transition-all shadow-md";
+                btnKumulatif.className = "px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition-all";
+
+                window.roomAstapChart.data.datasets[0].label = 'Pengadaan Valuasi (Rp Juta/Thn)';
+                window.roomAstapChart.data.datasets[0].data = hargaPerTahun;
+                window.roomAstapChart.data.datasets[1].label = 'Pengadaan Kuantitas (Unit/Thn)';
+                window.roomAstapChart.data.datasets[1].data = volPerTahun;
+            }
+            window.roomAstapChart.update();
+        };
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSubAdminCharts);
+    } else {
+        initSubAdminCharts();
+    }
+    </script>
 </x-layout>

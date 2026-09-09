@@ -153,18 +153,25 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
         // Jika tidak ada unit, kembalikan view dengan data kosong
         if (!$unitId) {
             return view('dashboards.sub_admin', [
-                'unit'                => null,
-                'user'                => $user,
-                'distribusisList'     => [],
-                'totalAsetCount'      => 0,
-                'totalNilaiFormatted' => 'Rp 0',
-                'kondisiBaik'         => 0,
-                'kondisiKurangBaik'   => 0,
-                'kondisiRusakRingan'  => 0,
-                'kondisiRusakBerat'   => 0,
-                'totalRusak'          => 0,
-                'attentionAssets'     => [],
-                'unitNama'            => '',
+                'unit'                        => null,
+                'user'                        => $user,
+                'distribusisList'             => [],
+                'totalAsetCount'              => 0,
+                'totalNilaiNum'               => 0,
+                'totalNilaiFormatted'         => 'Rp 0',
+                'kondisiBaik'                 => 0,
+                'kondisiKurangBaik'           => 0,
+                'kondisiRusakRingan'          => 0,
+                'kondisiRusakBerat'           => 0,
+                'totalRusak'                  => 0,
+                'attentionAssets'             => [],
+                'unitNama'                    => '',
+                'chartYears'                  => ['Thn ' . date('Y')],
+                'chartRoomVolume'             => [0],
+                'chartRoomHarga'              => [0],
+                'chartRoomHargaJuta'          => [0],
+                'chartRoomKumulatifVolume'    => [0],
+                'chartRoomKumulatifHargaJuta' => [0],
             ]);
         }
 
@@ -283,19 +290,87 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
             ];
         })->values()->all();
 
+        // 4. Data Agregasi Grafik Nilai Aset Ruangan (Berdasarkan Tahun Perolehan)
+        $yearlyMap = [];
+        $categoryMap = [];
+
+        foreach ($allRegisters as $r) {
+            $astap = $r->astap;
+            $year = (int) ($astap?->tahun_perolehan ?: ($astap?->created_at ? $astap->created_at->year : date('Y')));
+            if ($year < 1970 || $year > ((int)date('Y') + 1)) {
+                $year = (int) date('Y');
+            }
+
+            $hargaSatuan = $astap ? (float) ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume))) : 0;
+
+            if (!isset($yearlyMap[$year])) {
+                $yearlyMap[$year] = ['volume' => 0, 'harga' => 0];
+            }
+            $yearlyMap[$year]['volume'] += 1;
+            $yearlyMap[$year]['harga'] += $hargaSatuan;
+
+            $catName = $astap?->jenisAstap?->nama_jenis ?: ($astap?->category ?: 'Peralatan & Mesin');
+            if (!isset($categoryMap[$catName])) {
+                $categoryMap[$catName] = ['volume' => 0, 'harga' => 0];
+            }
+            $categoryMap[$catName]['volume'] += 1;
+            $categoryMap[$catName]['harga'] += $hargaSatuan;
+        }
+
+        ksort($yearlyMap);
+
+        $chartYears = [];
+        $chartRoomVolume = [];
+        $chartRoomHarga = [];
+        $chartRoomHargaJuta = [];
+        $chartRoomKumulatifVolume = [];
+        $chartRoomKumulatifHargaJuta = [];
+
+        $runVol = 0;
+        $runHarga = 0;
+
+        foreach ($yearlyMap as $yr => $stat) {
+            $runVol += $stat['volume'];
+            $runHarga += $stat['harga'];
+
+            $chartYears[] = 'Thn ' . $yr;
+            $chartRoomVolume[] = $stat['volume'];
+            $chartRoomHarga[] = round($stat['harga'], 2);
+            $chartRoomHargaJuta[] = round($stat['harga'] / 1000000, 2);
+            $chartRoomKumulatifVolume[] = $runVol;
+            $chartRoomKumulatifHargaJuta[] = round($runHarga / 1000000, 2);
+        }
+
+        if (empty($chartYears)) {
+            $chartYears = ['Thn ' . date('Y')];
+            $chartRoomVolume = [0];
+            $chartRoomHarga = [0];
+            $chartRoomHargaJuta = [0];
+            $chartRoomKumulatifVolume = [0];
+            $chartRoomKumulatifHargaJuta = [0];
+        }
+
         return view('dashboards.sub_admin', [
-            'unit'                => $unit,
-            'user'                => $user,
-            'distribusisList'     => $distribusisList,
-            'totalAsetCount'      => $totalAsetCount,
-            'totalNilaiFormatted' => $totalNilaiFormatted,
-            'kondisiBaik'         => $kondisiBaik,
-            'kondisiKurangBaik'   => $kondisiKurangBaik,
-            'kondisiRusakRingan'  => $kondisiRusakRingan,
-            'kondisiRusakBerat'   => $kondisiRusakBerat,
-            'totalRusak'          => $totalRusak,
-            'attentionAssets'     => $attentionAssets,
-            'unitNama'            => $unitNama,
+            'unit'                        => $unit,
+            'user'                        => $user,
+            'distribusisList'             => $distribusisList,
+            'totalAsetCount'              => $totalAsetCount,
+            'totalNilaiNum'               => $totalNilaiNum,
+            'totalNilaiFormatted'         => $totalNilaiFormatted,
+            'kondisiBaik'                 => $kondisiBaik,
+            'kondisiKurangBaik'           => $kondisiKurangBaik,
+            'kondisiRusakRingan'          => $kondisiRusakRingan,
+            'kondisiRusakBerat'           => $kondisiRusakBerat,
+            'totalRusak'                  => $totalRusak,
+            'attentionAssets'             => $attentionAssets,
+            'unitNama'                    => $unitNama,
+            // Chart Data
+            'chartYears'                  => $chartYears,
+            'chartRoomVolume'             => $chartRoomVolume,
+            'chartRoomHarga'              => $chartRoomHarga,
+            'chartRoomHargaJuta'          => $chartRoomHargaJuta,
+            'chartRoomKumulatifVolume'    => $chartRoomKumulatifVolume,
+            'chartRoomKumulatifHargaJuta' => $chartRoomKumulatifHargaJuta,
         ]);
     })->name('subadmin.dashboard');
 });
@@ -687,8 +762,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');
     Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
 
-    // 5. Unit & Paviliun Index (Read-only for Sub Admin, full for Admin)
+    // 5. Unit & Paviliun Index
     Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index');
+
+    // 5b. Halaman Khusus Lembar Kartu Inventaris Ruangan (KIR)
+    Route::get('/lembar-kir-ruangan', [UnitController::class, 'kir'])->name('kir.index');
+    Route::patch('/lembar-kir-ruangan/kondisi/{id}', [UnitController::class, 'updateKondisi'])->name('kir.update_kondisi');
 
     // 6. Pemeliharaan Index (Read-only for Sub Admin, full for Admin)
     Route::get('/pemeliharaan', function () {
