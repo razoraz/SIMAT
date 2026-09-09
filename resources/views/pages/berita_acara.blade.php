@@ -1831,7 +1831,7 @@
                                 <input type="text" x-model="selectedMutasi.tgl_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-800/60">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/60">
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1">Nama PJ Asal</label>
                                 <input type="text" x-model="selectedMutasi.pj_asal_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
@@ -1840,13 +1840,21 @@
                                 <label class="block text-slate-400 text-[10px] mb-1">NIP PJ Asal</label>
                                 <input type="text" x-model="selectedMutasi.pj_asal_nip" placeholder="NIP..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-mono text-xs">
                             </div>
-                            <div>
+                            <div x-show="!((selectedMutasi.jenis_mutasi && selectedMutasi.jenis_mutasi.toLowerCase().includes('pengembalian')) || (selectedMutasi.keterangan && selectedMutasi.keterangan.toLowerCase().includes('pengembalian')))">
                                 <label class="block text-slate-400 text-[10px] mb-1">Nama PJ Tujuan</label>
                                 <input type="text" x-model="selectedMutasi.pj_tujuan_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
                             </div>
-                            <div>
+                            <div x-show="!((selectedMutasi.jenis_mutasi && selectedMutasi.jenis_mutasi.toLowerCase().includes('pengembalian')) || (selectedMutasi.keterangan && selectedMutasi.keterangan.toLowerCase().includes('pengembalian')))">
                                 <label class="block text-slate-400 text-[10px] mb-1">NIP PJ Tujuan</label>
                                 <input type="text" x-model="selectedMutasi.pj_tujuan_nip" placeholder="NIP..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-mono text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Nama Pengurus Barang (BSrE)</label>
+                                <input type="text" x-model="selectedMutasi.pengurus_nama" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-teal-300 font-bold text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">NIP Pengurus Barang</label>
+                                <input type="text" x-model="selectedMutasi.pengurus_nip" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 font-mono text-xs">
                             </div>
                         </div>
                     </template>
@@ -1854,8 +1862,8 @@
 
                 <!-- LEMBAR CETAK BAST MUTASI -->
                 <template x-if="selectedMutasi">
-                    <div class="bg-slate-950/80 p-2 sm:p-6 rounded-2xl border border-slate-800 flex justify-center overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
-                        <div id="print-area-mutasi" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000;" class="w-full max-w-[760px] bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
+                    <div class="bg-slate-950/80 p-2 sm:p-6 rounded-2xl border border-slate-800 flex justify-center items-start overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
+                        <div id="print-area-mutasi" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000 !important; background-color: #ffffff !important; min-height: 100%; box-sizing: border-box;" class="w-full max-w-[760px] shrink-0 bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
                             
                             <div class="border-b-[2.5px] border-black pb-2 mb-3" style="border-bottom: 2.5px solid #000000;">
                                 <div class="flex items-center justify-between gap-3">
@@ -1906,89 +1914,151 @@
 
                             <!-- TABEL RESMI BARANG MUTASI -->
                             <div class="my-2.5 overflow-x-auto">
-                                <table class="w-full text-center border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black;">
+                                <table class="w-full text-center border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
                                     <thead>
-                                        <tr class="bg-gray-100 font-bold border border-black" style="border: 1px solid black;">
-                                            <th class="border border-black px-2 py-1.5 w-10 text-center" style="border: 1px solid black;">No</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black;">Nama Barang / Aset</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black;">Kode Barang / NIBAR</th>
-                                            <th class="border border-black px-2 py-1.5 w-14 text-center" style="border: 1px solid black;">Vol</th>
-                                            <th class="border border-black px-2 py-1.5 w-16 text-center" style="border: 1px solid black;">Satuan</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black;">Keterangan</th>
+                                        <tr class="bg-gray-100 font-bold border border-black" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">
+                                            <th class="border border-black px-2 py-1.5 w-10 text-center" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">No</th>
+                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Nama Barang / Aset</th>
+                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Kode Barang / NIBAR</th>
+                                            <th class="border border-black px-2 py-1.5 w-14 text-center" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Vol</th>
+                                            <th class="border border-black px-2 py-1.5 w-16 text-center" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Satuan</th>
+                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Keterangan</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody style="background-color: #ffffff !important; color: #000000 !important;">
                                         <template x-for="(sub, idx) in (selectedMutasi.items || [])" :key="idx">
-                                            <tr class="border border-black" style="border: 1px solid black;">
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="idx + 1"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang"></td>
-                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px] text-left" style="border: 1px solid black;" x-text="sub.nibar"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;" x-text="sub.qty"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="sub.satuan"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" style="border: 1px solid black;" x-text="sub.keterangan"></td>
+                                            <tr class="border border-black" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
+                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="idx + 1"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.nama_barang"></td>
+                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px] text-left" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.nibar"></td>
+                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.qty"></td>
+                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.satuan"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.keterangan"></td>
                                             </tr>
                                         </template>
                                         <template x-if="!selectedMutasi.items || selectedMutasi.items.length === 0">
-                                            <tr class="border border-black" style="border: 1px solid black;">
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;">1</td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="selectedMutasi.nama_barang"></td>
-                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px] text-left" style="border: 1px solid black;" x-text="selectedMutasi.nibar"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;" x-text="selectedMutasi.qty"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="selectedMutasi.satuan"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" style="border: 1px solid black;" x-text="selectedMutasi.keterangan || '-'"></td>
+                                            <tr class="border border-black" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
+                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">1</td>
+                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.nama_barang"></td>
+                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px] text-left" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.nibar"></td>
+                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.qty"></td>
+                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.satuan"></td>
+                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                     </tbody>
                                 </table>
                             </div>
 
-                            <p class="text-justify my-3 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black">
+                            <p class="text-justify my-3 text-[9.5pt] sm:text-[10pt] leading-[1.5] text-black" style="color: #000000 !important;">
                                 Demikian Berita Acara Mutasi Barang ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya.
                             </p>
 
-                            <!-- TTD DUAL BSR-E MUTASI -->
-                            <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt] mt-6 pt-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                                <div>
-                                    <p class="m-0">Yang Menyerahkan,</p>
-                                    <p class="font-bold m-0">PJ Ruangan Asal</p>
-                                    <div class="h-20 flex items-center justify-center my-1">
-                                        <div class="p-1 border border-purple-600 bg-purple-50 rounded flex items-center space-x-1.5 text-left">
-                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-ASAL'))" class="w-10 h-10 shrink-0">
-                                            <div class="text-[7.5px] leading-tight text-slate-800">
-                                                <div class="font-bold text-purple-900">DITANDATANGANI ELEKTRONIK</div>
-                                                <div>Penanggung Jawab Asal</div>
-                                                <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
-                                            </div>
+                            <!-- TANDA TANGAN BAST MUTASI -->
+                            <!-- KONDISI 1: JIKA TIPE MUTASI PENGEMBALIAN (2 TTD: Kiri Yang Menyerahkan TTD Basah, Kanan Yang Menerima Pengurus Barang Pak Budi TTD BSrE) -->
+                            <template x-if="(selectedMutasi.jenis_mutasi && selectedMutasi.jenis_mutasi.toLowerCase().includes('pengembalian')) || (selectedMutasi.keterangan && selectedMutasi.keterangan.toLowerCase().includes('pengembalian'))">
+                                <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt] mt-6 pt-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; color: #000000 !important;">
+                                    <!-- Kolom Kiri: Yang Menyerahkan (PJ Ruangan yang mengembalikan - TTD Basah) -->
+                                    <div>
+                                        <p class="m-0" style="color: #000000 !important;">Yang Menyerahkan,</p>
+                                        <p class="font-bold m-0" style="color: #000000 !important;" x-text="'PJ Ruangan ' + (selectedMutasi.asal || 'Asal')"></p>
+                                        
+                                        <!-- Ruang Tanda Tangan Basah Manual (Tinggi 55px) -->
+                                        <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;"></div>
+                                        
+                                        <p class="font-bold underline uppercase m-0" style="color: #000000 !important;" x-text="selectedMutasi.pj_asal_nama"></p>
+                                        <p class="m-0" style="color: #000000 !important;" x-text="selectedMutasi.pj_asal_nip ? 'NIP. ' + selectedMutasi.pj_asal_nip : ''"></p>
+                                    </div>
+
+                                    <!-- Kolom Kanan: Yang Menerima (Pengurus Barang Aset - Pak Budi Hartono - TTD Digital BSrE) -->
+                                    <div>
+                                        <p class="m-0" style="color: #000000 !important;">Yang Menerima,</p>
+                                        <p class="font-bold m-0" style="color: #000000 !important;">Pengurus Barang Aset</p>
+                                        
+                                        <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi) -->
+                                        <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
+                                            <template x-if="selectedMutasi.signed !== false">
+                                                <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
+                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" class="w-9 h-9 shrink-0">
+                                                    <div class="text-[7.5px] leading-tight text-slate-800">
+                                                        <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
+                                                        <div>Pengurus Barang Aset</div>
+                                                        <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <template x-if="selectedMutasi.signed === false">
+                                                <div class="p-1 border border-dashed border-amber-500 bg-amber-50 rounded text-center text-amber-800">
+                                                    <span class="text-[8px] font-bold italic">( Menunggu Pengesahan TTD BSrE )</span>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <p class="font-bold underline uppercase m-0" style="color: #000000 !important;" x-text="selectedMutasi.pengurus_nama || 'BUDI HARTONO, S.Sos'"></p>
+                                        <p class="m-0" style="color: #000000 !important;" x-text="'NIP. ' + (selectedMutasi.pengurus_nip || '19760229 200801 1 010')"></p>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- KONDISI 2: JIKA TIPE MUTASI BIASA / BUKAN PENGEMBALIAN (3 TTD: 2 TTD BASAH OLEH PJ ASAL & PJ TUJUAN, BAWAH TENGAH MENGETAHUI PENGURUS BARANG PAK BUDI TTD DIGITAL BSrE) -->
+                            <template x-if="!((selectedMutasi.jenis_mutasi && selectedMutasi.jenis_mutasi.toLowerCase().includes('pengembalian')) || (selectedMutasi.keterangan && selectedMutasi.keterangan.toLowerCase().includes('pengembalian')))">
+                                <div class="mt-6 pt-2 space-y-4" style="color: #000000 !important;">
+                                    <!-- Baris Atas: 2 TTD Basah (Yang Menyerahkan & Yang Menerima) -->
+                                    <div class="grid grid-cols-2 gap-8 text-center text-black text-[9.5pt] sm:text-[10pt]" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; color: #000000 !important;">
+                                        <!-- Kiri: Yang Menyerahkan (PJ Ruangan Asal - TTD Basah) -->
+                                        <div>
+                                            <p class="m-0" style="color: #000000 !important;">Yang Menyerahkan,</p>
+                                            <p class="font-bold m-0" style="color: #000000 !important;">PJ Ruangan Asal</p>
+                                            
+                                            <!-- Ruang TTD Basah (Tinggi 55px) -->
+                                            <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;"></div>
+
+                                            <p class="font-bold underline uppercase m-0" style="color: #000000 !important;" x-text="selectedMutasi.pj_asal_nama"></p>
+                                            <p class="m-0" style="color: #000000 !important;" x-text="selectedMutasi.pj_asal_nip ? 'NIP. ' + selectedMutasi.pj_asal_nip : ''"></p>
+                                        </div>
+
+                                        <!-- Kanan: Yang Menerima (PJ Ruangan Tujuan - TTD Basah) -->
+                                        <div>
+                                            <p class="m-0" style="color: #000000 !important;">Yang Menerima,</p>
+                                            <p class="font-bold m-0" style="color: #000000 !important;">PJ Ruangan Tujuan</p>
+                                            
+                                            <!-- Ruang TTD Basah (Tinggi 55px) -->
+                                            <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;"></div>
+
+                                            <p class="font-bold underline uppercase m-0" style="color: #000000 !important;" x-text="selectedMutasi.pj_tujuan_nama"></p>
+                                            <p class="m-0" style="color: #000000 !important;" x-text="selectedMutasi.pj_tujuan_nip ? 'NIP. ' + selectedMutasi.pj_tujuan_nip : ''"></p>
                                         </div>
                                     </div>
-                                    <p class="font-bold underline uppercase m-0" x-text="selectedMutasi.pj_asal_nama"></p>
-                                    <p class="m-0" x-text="selectedMutasi.pj_asal_nip ? 'NIP. ' + selectedMutasi.pj_asal_nip : ''"></p>
-                                </div>
 
-                                <div>
-                                    <p class="m-0">Yang Menerima,</p>
-                                    <p class="font-bold m-0">PJ Ruangan Tujuan</p>
-                                    <div class="h-20 flex items-center justify-center my-1">
-                                        <template x-if="selectedMutasi.signed">
-                                            <div class="p-1 border border-rose-600 bg-rose-50 rounded flex items-center space-x-1.5 text-left">
-                                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-TUJUAN'))" class="w-10 h-10 shrink-0">
-                                                <div class="text-[7.5px] leading-tight text-slate-800">
-                                                    <div class="font-bold text-rose-900">DITANDATANGANI ELEKTRONIK</div>
-                                                    <div>Penanggung Jawab Tujuan</div>
-                                                    <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                    <!-- Baris Bawah: Mengetahui Pengurus Barang Aset (Pak Budi Hartono - TTD Digital BSrE) -->
+                                    <div class="text-center text-black text-[9.5pt] sm:text-[10pt] pt-2" style="color: #000000 !important;">
+                                        <p class="m-0" style="color: #000000 !important;">Mengetahui,</p>
+                                        <p class="font-bold m-0" style="color: #000000 !important;">Pengurus Barang Aset</p>
+                                        
+                                        <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi) -->
+                                        <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
+                                            <template x-if="selectedMutasi.signed !== false">
+                                                <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left inline-flex">
+                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" class="w-9 h-9 shrink-0">
+                                                    <div class="text-[7.5px] leading-tight text-slate-800">
+                                                        <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
+                                                        <div>Pengurus Barang Aset</div>
+                                                        <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </template>
-                                        <template x-if="!selectedMutasi.signed">
-                                            <div class="p-1 border border-dashed border-amber-500 bg-amber-50 rounded text-center text-amber-800">
-                                                <span class="text-[8px] font-bold italic">( Menunggu Pengesahan TTD BSrE )</span>
-                                            </div>
-                                        </template>
+                                            </template>
+                                            <template x-if="selectedMutasi.signed === false">
+                                                <div class="p-1 border border-dashed border-amber-500 bg-amber-50 rounded text-center text-amber-800 inline-block px-3">
+                                                    <span class="text-[8px] font-bold italic">( Menunggu Pengesahan TTD BSrE )</span>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <p class="font-bold underline uppercase m-0" style="color: #000000 !important;" x-text="selectedMutasi.pengurus_nama || 'BUDI HARTONO, S.Sos'"></p>
+                                        <p class="m-0" style="color: #000000 !important;" x-text="'NIP. ' + (selectedMutasi.pengurus_nip || '19760229 200801 1 010')"></p>
                                     </div>
-                                    <p class="font-bold underline uppercase m-0" x-text="selectedMutasi.pj_tujuan_nama"></p>
-                                    <p class="m-0" x-text="selectedMutasi.pj_tujuan_nip ? 'NIP. ' + selectedMutasi.pj_tujuan_nip : ''"></p>
                                 </div>
-                            </div>
+                            </template>
 
                         </div>
                     </div>
