@@ -206,4 +206,126 @@ class UnitController extends Controller
 
         return redirect()->route('unit.index')->with('success', "Unit {$nama} berhasil dihapus.");
     }
+
+    /**
+     * Halaman Khusus Lembar Kartu Inventaris Ruangan (KIR)
+     */
+    public function kir(Request $request)
+    {
+        $user = Auth::user();
+        $units = Unit::orderBy('nama', 'asc')->get();
+
+        // Tentukan unit yang ditampilkan:
+        // Jika sub_admin, utamakan unit yang ditugaskan kepada sub_admin tersebut
+        $selectedUnitId = $request->get('unit_id');
+        if ($user->role === 'sub_admin' && $user->unit_id) {
+            $selectedUnitId = $user->unit_id;
+        } elseif (!$selectedUnitId) {
+            $selectedUnitId = $user->unit_id ?: ($units->first()?->id ?? null);
+        }
+
+        $currentUnit = $selectedUnitId ? Unit::with('user')->find($selectedUnitId) : null;
+
+        $assets = [];
+        $totalNilaiSum = 0;
+        $kondisiBaik = 0;
+        $kondisiKurangBaik = 0;
+        $kondisiRusakRingan = 0;
+        $kondisiRusakBerat = 0;
+
+        if ($currentUnit) {
+            $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                ->where(function($q) use ($currentUnit) {
+                    $q->where('unit_id', $currentUnit->id)
+                      ->orWhere(function($q2) use ($currentUnit) {
+                          $q2->whereNotNull('ruang_pemegang')
+                             ->where('ruang_pemegang', '!=', '')
+                             ->where(function($q3) use ($currentUnit) {
+                                 $q3->where('ruang_pemegang', $currentUnit->nama)
+                                    ->orWhere('ruang_pemegang', 'LIKE', '%' . $currentUnit->nama . '%');
+                             });
+                      });
+                })
+                ->get();
+
+            $astapDirectIds = \App\Models\Astap::where('unit_id', $currentUnit->id)
+                ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
+                ->pluck('id');
+
+            $directRegisters = collect();
+            if ($astapDirectIds->isNotEmpty()) {
+                $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                    ->whereIn('astap_id', $astapDirectIds)
+                    ->get();
+            }
+
+            $allRegisters = $registers->concat($directRegisters)->unique('id');
+
+            foreach ($allRegisters as $reg) {
+                $astap = $reg->astap;
+                if (!$astap) continue;
+
+                $hargaSatuan = (float) ($astap->harga_satuan ?: ($astap->jumlah_volume > 0 ? ($astap->total_realisasi / $astap->jumlah_volume) : 0));
+                $totalNilaiSum += $hargaSatuan;
+
+                $kondisi = $reg->kondisi ?: 'Baik';
+                if ($kondisi === 'Baik') {
+                    $kondisiBaik++;
+                } elseif ($kondisi === 'Kurang Baik') {
+                    $kondisiKurangBaik++;
+                } elseif ($kondisi === 'Rusak Ringan') {
+                    $kondisiRusakRingan++;
+                } else {
+                    $kondisiRusakBerat++;
+                }
+
+                $spec = is_array($astap->spesifikasi_json)
+                    ? $astap->spesifikasi_json
+                    : (json_decode($astap->spesifikasi_json ?? '', true) ?? []);
+
+                $merk = $astap->merk_type ?: ($spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? '-')));
+                $noSeri = $reg->no_seri ?: ($spec['no_pabrik'] ?? ($spec['no_rangka'] ?? ($spec['no_mesin'] ?? '-')));
+                $bahan = $spec['bahan'] ?? ($spec['material'] ?? '-');
+                $ukuran = $spec['ukuran'] ?? ($spec['kapasitas'] ?? '-');
+
+                $assets[] = [
+                    'id'            => $reg->id,
+                    'astap_id'      => $astap->id,
+                    'nama'          => $astap->nama_barang ?? 'Barang Inventaris',
+                    'kode_108'      => $astap->kode_108 ?: '-',
+                    'kode'          => $reg->nibar ?: ($reg->no_register ?: ($astap->kode_108 ?? '-')),
+                    'nibar'         => $reg->nibar ?: ($reg->no_register ?: '-'),
+                    'merk'          => $merk,
+                    'no_seri'       => $noSeri,
+                    'bahan'         => $bahan,
+                    'ukuran'        => $ukuran,
+                    'kondisi'       => $kondisi,
+                    'tahun'         => $astap->tahun_perolehan ?: '-',
+                    'harga'         => $hargaSatuan,
+                    'harga_fmt'     => 'Rp ' . number_format($hargaSatuan, 0, ',', '.'),
+                    'kategori'      => $astap->jenisAstap ? ($astap->jenisAstap->nama_jenis ?: $astap->jenisAstap->kategori) : 'ASTAP',
+                    'ruang'         => $reg->ruang_pemegang ?: $currentUnit->nama,
+                    'tanggal_masuk' => $reg->created_at ? $reg->created_at->format('d/m/Y') : '-'
+                ];
+            }
+        }
+
+        $totalAsetCount = count($assets);
+        $totalNilaiFmt = 'Rp ' . number_format($totalNilaiSum, 0, ',', '.');
+        $totalRusak = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
+
+        return view('pages.lembar_kir', [
+            'units'              => $units,
+            'currentUnit'        => $currentUnit,
+            'assets'             => $assets,
+            'totalAsetCount'     => $totalAsetCount,
+            'totalNilaiFmt'      => $totalNilaiFmt,
+            'kondisiBaik'        => $kondisiBaik,
+            'kondisiKurangBaik'  => $kondisiKurangBaik,
+            'kondisiRusakRingan' => $kondisiRusakRingan,
+            'kondisiRusakBerat'  => $kondisiRusakBerat,
+            'totalRusak'         => $totalRusak,
+            'user'               => $user,
+        ]);
+    }
 }
