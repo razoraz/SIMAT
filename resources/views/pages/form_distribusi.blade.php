@@ -1323,9 +1323,7 @@
                                     <template x-if="!isSubAdmin">
                                         <div>
                                              <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
-                                                <span class="flex items-center space-x-1.5">
-                                                    <span class="text-emerald-300">Volume Di-ACC</span>
-                                                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">🔒 Sesuai NIBAR</span>
+                                                <span class="text-emerald-300">Volume Di-ACC</span>
                                                 <template x-if="item.qty_acc && item.qty_acc > 0">
                                                     <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
                                                 </template>
