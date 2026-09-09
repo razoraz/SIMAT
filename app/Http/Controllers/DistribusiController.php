@@ -80,6 +80,9 @@ class DistribusiController extends Controller
         $distribusis = $distribusiQuery->orderBy('id', 'desc')
             ->get()
             ->map(function($d) use ($unitPerbekalan) {
+                // Otomatis sinkronkan status: jika minimal 1 NIBAR di-ACC, status otomatis 'Dalam Pengiriman'
+                $d->syncStatusWithNibar();
+
                 $itemsMapped = $d->items->map(function($it) {
                     $spec = is_array($it->astap?->spesifikasi_json)
                         ? $it->astap->spesifikasi_json
@@ -271,6 +274,10 @@ class DistribusiController extends Controller
             'items.astap.jenisAstap',
             'items.registers.astapRegister',
         ])->find($id);
+
+        if ($distribusiData) {
+            $distribusiData->syncStatusWithNibar();
+        }
 
         // Ambil register_id yang sudah dipakai di distribusi ini agar status Tersedia saat edit
         $currentRegisterIds = [];

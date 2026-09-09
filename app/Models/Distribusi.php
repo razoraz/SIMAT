@@ -95,4 +95,32 @@ class Distribusi extends Model
     {
         return $this->items->sum('qty');
     }
+
+    /**
+     * Otomatis sinkronisasi status: Jika ada minimal 1 NIBAR yang diinputkan/di-ACC,
+     * status otomatis berubah menjadi 'Dalam Pengiriman' dan nomor BAST resmi diterbitkan.
+     */
+    public function syncStatusWithNibar(): bool
+    {
+        if (in_array($this->status, ['Ditolak', 'Telah Diterima', 'Diterima'])) {
+            return false;
+        }
+
+        $hasNibar = $this->items->contains(function ($it) {
+            return ($it->registers && $it->registers->isNotEmpty()) || ((int)($it->qty_acc ?? 0) > 0);
+        });
+
+        if ($hasNibar && in_array($this->status, ['Menunggu Konfirmasi', 'Draft', 'Pending'])) {
+            $this->status = 'Dalam Pengiriman';
+            $tahunDist = $this->tanggal_distribusi ? date('Y', strtotime($this->tanggal_distribusi)) : date('Y');
+            if (empty($this->bast_nomor) || str_contains($this->bast_nomor, 'Menunggu') || str_contains($this->bast_nomor, 'tidak')) {
+                $this->bast_nomor = \App\Http\Controllers\DistribusiController::generateNextBastNomor((int)$tahunDist, $this->id);
+            }
+            $this->save();
+            return true;
+        }
+
+        return false;
+    }
 }
+
