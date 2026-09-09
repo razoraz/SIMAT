@@ -712,7 +712,7 @@
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">No. Distribusi</th>
                             <th class="px-4 py-3.5 text-left min-w-[260px] bg-slate-950">Rincian Barang yang Didistribusikan</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tujuan Unit / Ruangan</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tgl Distribusi</th>
+                            <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tgl Pengajuan</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Penerima</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Status</th>
                             <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0" :class="userRole === 'sub_admin' ? 'w-24' : 'min-w-[210px]'" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
@@ -839,7 +839,7 @@
                                 <span class="text-[10px] text-slate-400 font-mono" x-text="selectedDistribusi.pj_nip ? ('NIP: ' + selectedDistribusi.pj_nip) : ''"></span>
                             </div>
                             <div>
-                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Tanggal Distribusi</span>
+                                <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">Tanggal Pengajuan</span>
                                 <span class="font-mono text-slate-300 text-xs block mt-0.5" x-text="selectedDistribusi.tgl || selectedDistribusi.tanggal_distribusi"></span>
                             </div>
                             <div>
@@ -1090,9 +1090,6 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                             <span>🖨️ Cetak / Edit BAST</span>
                         </a>
-                        <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all shadow-md active:scale-95">
-                            Tutup
-                        </button>
                     </div>
                 </div>
             </div>
