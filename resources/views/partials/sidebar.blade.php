@@ -65,15 +65,17 @@
                     <span>{{ $role === 'sub_admin' ? 'Katalog ASTAP' : 'Data ASTAP' }}</span>
                 </a>
 
-                <!-- Lembar KIR Ruangan (Diletakkan tepat di bawah Katalog) -->
-                <a href="{{ route('kir.index') }}" @click="if (isMobile) sidebarOpen = false"
-                    class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('kir.index') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Lembar KIR Ruangan</span>
-                </a>
+                <!-- Lembar KIR Ruangan (Khusus Sub Admin Ruangan, disembunyikan dari Master Admin & Admin) -->
+                @if ($role === 'sub_admin')
+                    <a href="{{ route('kir.index') }}" @click="if (isMobile) sidebarOpen = false"
+                        class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('kir.index') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>Lembar KIR Ruangan</span>
+                    </a>
+                @endif
 
                 <!-- Distribusi ASTAP -->
                 <a href="{{ route('distribusi.index') }}" @click="if (isMobile) sidebarOpen = false"
@@ -190,15 +192,36 @@
 
     <!-- Sidebar Footer / Account Info -->
     <div class="p-4 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between shrink-0">
-        <div class="flex items-center space-x-2.5 overflow-hidden">
-            <div
-                class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0">
-                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
+        @if(($role ?? '') === 'sub_admin')
+            <a href="{{ route('subadmin.profile') }}" 
+                class="flex items-center space-x-2.5 overflow-hidden w-full text-left p-2 rounded-xl hover:bg-slate-900/80 transition-all cursor-pointer group focus:outline-none focus:ring-0 focus-visible:outline-none outline-none border-none shadow-none {{ request()->routeIs('subadmin.profile') ? 'bg-slate-900/80' : '' }}"
+                title="Buka halaman ubah email dan password akun ruangan Anda">
+                <div
+                    class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 group-hover:border-emerald-400/60 group-hover:bg-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0 transition-all">
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
+                </div>
+                <div class="truncate flex-1 min-w-0">
+                    <p class="text-xs font-bold text-white truncate group-hover:text-emerald-300 transition-colors flex items-center justify-between">
+                        <span class="truncate">{{ Auth::user()->name ?? 'Pengguna' }}</span>
+                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 ml-1 shrink-0 opacity-70 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </p>
+                    <p class="text-[10px] text-emerald-400 font-medium capitalize flex items-center space-x-1">
+                        <span>{{ str_replace('_', ' ', $role) }}</span>
+                        <span class="text-[9px] text-slate-400 font-normal">• Ubah Email & Password &rarr;</span>
+                    </p>
+                </div>
+            </a>
+        @else
+            <div class="flex items-center space-x-2.5 overflow-hidden">
+                <div
+                    class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0">
+                    {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
+                </div>
+                <div class="truncate">
+                    <p class="text-xs font-bold text-white truncate">{{ Auth::user()->name ?? 'Pengguna' }}</p>
+                    <p class="text-[10px] text-emerald-400 font-medium capitalize">{{ str_replace('_', ' ', $role) }}</p>
+                </div>
             </div>
-            <div class="truncate">
-                <p class="text-xs font-bold text-white truncate">{{ Auth::user()->name ?? 'Pengguna' }}</p>
-                <p class="text-[10px] text-emerald-400 font-medium capitalize">{{ str_replace('_', ' ', $role) }}</p>
-            </div>
-        </div>
+        @endif
     </div>
 </aside>

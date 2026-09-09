@@ -30,6 +30,19 @@
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
+        /* Override Browser Autofill Style (Chrome/Edge/Safari Dark Theme) */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active,
+        select:-webkit-autofill,
+        textarea:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+            -webkit-text-fill-color: #f8fafc !important;
+            caret-color: #f8fafc !important;
+            transition: background-color 5000s ease-in-out 0s !important;
+        }
+
         /* SIMAT Dark Theme for Flatpickr */
         .flatpickr-calendar {
             background: #0f172a !important;

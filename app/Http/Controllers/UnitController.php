@@ -213,6 +213,12 @@ class UnitController extends Controller
     public function kir(Request $request)
     {
         $user = Auth::user();
+
+        // Lembar KIR Ruangan khusus untuk akun Sub Admin (unit ruangan)
+        if (in_array($user->role, ['master_admin', 'admin'])) {
+            return redirect()->route('unit.index')->with('info', 'Lembar KIR Ruangan khusus diperuntukkan bagi akun Sub Admin Ruangan.');
+        }
+
         $units = Unit::orderBy('nama', 'asc')->get();
 
         // Tentukan unit yang ditampilkan:

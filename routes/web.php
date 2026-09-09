@@ -373,6 +373,82 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
             'chartRoomKumulatifHargaJuta' => $chartRoomKumulatifHargaJuta,
         ]);
     })->name('subadmin.dashboard');
+
+    // Halaman Ubah Email & Password Akun Sub Admin
+    Route::get('/sub-admin/profile', function () {
+        return view('pages.subadmin_profile');
+    })->name('subadmin.profile');
+
+    // Update Profil Akun Sub Admin (Email & Password - tersinkronisasi ke tabel units & users)
+    Route::post('/sub-admin/profile/update', function (\Illuminate\Http\Request $request) {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $changeType = $request->input('change_type', 'both');
+        
+        $rules = [];
+        $customMessages = [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email ini sudah digunakan oleh akun lain.',
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password minimal terdiri dari 4 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+        ];
+
+        if ($changeType === 'email' || $changeType === 'both') {
+            $rules['email'] = [
+                'required', 
+                'email', 
+                'max:255', 
+                \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id)
+            ];
+        }
+
+        if ($changeType === 'password') {
+            $rules['password'] = 'required|string|min:4|confirmed';
+        } elseif ($changeType === 'both') {
+            $rules['password'] = 'nullable|string|min:4|confirmed';
+        }
+
+        $validated = $request->validate($rules, $customMessages);
+
+        // 1. Update Akun Pengguna di tabel `users`
+        if (isset($validated['email'])) {
+            $user->email = $validated['email'];
+        }
+        if (!empty($validated['password'])) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        }
+        $user->save();
+
+        // 2. Sinkronkan email ke tabel `units` pada ruangan milik Sub Admin ini jika email diubah
+        if (isset($validated['email']) && $user->unit_id) {
+            $unit = \App\Models\Unit::find($user->unit_id);
+            if ($unit) {
+                // Update langsung tanpa trigger loop event
+                $unit->withoutEvents(function () use ($unit, $validated) {
+                    $unit->update([
+                        'email' => $validated['email']
+                    ]);
+                });
+            }
+        }
+
+        $msg = match($changeType) {
+            'email' => 'Alamat email berhasil diperbarui dan tersinkronisasi ke data unit ruangan!',
+            'password' => 'Password akun ruangan berhasil diperbarui!',
+            default => 'Perubahan kredensial akun ruangan berhasil disimpan!',
+        };
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+                'email' => $user->email,
+            ]);
+        }
+
+        return redirect()->back()->with('success', $msg);
+    })->name('subadmin.profile.update');
 });
 
 // Frontend Menu & Form Pages (Auth Protected)
