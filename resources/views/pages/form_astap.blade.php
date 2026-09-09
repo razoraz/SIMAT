@@ -1,4 +1,4 @@
-﻿<x-layout :title="request()->routeIs('astap.edit') ? 'Ubah Data ASTAP - SIMAT-RK' : 'Tambah Data ASTAP Baru - SIMAT-RK'">
+<x-layout :title="request()->routeIs('astap.edit') ? 'Ubah Data ASTAP - SIMAT-RK' : 'Tambah Data ASTAP Baru - SIMAT-RK'">
     @section('page-title', request()->routeIs('astap.edit') ? 'Ubah Data ASTAP' : 'Tambah Data ASTAP Baru')
     @section('breadcrumb', request()->routeIs('astap.edit') ? 'Master Utama / Data ASTAP / Ubah Data' : 'Master Utama / Data ASTAP / Tambah Baru')
 
@@ -6615,9 +6615,10 @@
                                         Setiap item ATB memiliki Judul/Nama, Pencipta/Vendor, Spesifikasi, Jumlah, Satuan, Kondisi, Nilai Satuan, Administrasi Proyek, dan Ruang/Pemegang masing-masing.
                                     </p>
                                 </div>
-                                <button type="button" @click="addAtbItem()" 
-                                        class="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-violet-500/20 shrink-0 cursor-pointer">
-                                    <span>➕ Tambah Item ATB Baru</span>
+                                <button type="button" @click="addAtbItem()"
+                                        class="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-all flex items-center justify-center space-x-2 shadow-lg shadow-violet-600/30 border border-violet-400/40 shrink-0 cursor-pointer active:scale-95">
+                                    <span>➕</span>
+                                    <span>Tambah Item ATB Baru</span>
                                 </button>
                             </div>
 
@@ -6756,37 +6757,75 @@
                                                     <span class="text-[10px] text-violet-400 font-semibold uppercase tracking-wider">Subtotal Item Ini:</span>
                                                     <span class="text-sm font-black text-violet-300 font-mono" x-text="'Rp ' + formatRupiah(getAtbSubtotal(item))"></span>
                                                 </div>
-
-                                                <!-- Ruang / Pemegang per Item -->
-                                                <div class="relative" @click.away="item.isRuangOpen = false">
-                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">📍 Ruang / Pemegang Item Ini</label>
-                                                    <div class="relative">
-                                                        <input type="text" 
-                                                               :value="!item.isRuangOpen ? item.atb_ruang_pemegang : item.searchRuang"
-                                                               @input="item.atb_ruang_pemegang = $event.target.value; item.searchRuang = $event.target.value; item.isRuangOpen = true"
-                                                               @focus="item.isRuangOpen = true"
-                                                               placeholder="Ketik nama Ruang/Unit/Paviliun..."
-                                                               class="w-full bg-slate-950 border border-slate-700 hover:border-violet-500 focus:border-violet-500 rounded-xl px-3 py-2 pl-8 text-xs text-white font-semibold focus:outline-none transition-all">
-                                                        <svg class="w-3.5 h-3.5 text-violet-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                                    </div>
-                                                    <div x-show="item.isRuangOpen" x-transition x-cloak style="max-height:180px;" class="absolute left-0 right-0 z-40 mt-1 bg-slate-900 border border-violet-500/50 rounded-xl shadow-2xl overflow-y-auto p-1.5 space-y-1">
-                                                        <template x-for="u in (masterUnits || []).filter(u => !item.searchRuang || u.nama.toLowerCase().includes(item.searchRuang.toLowerCase()))" :key="u.id">
-                                                            <div @click="item.atb_ruang_pemegang = u.nama; item.isRuangOpen = false; item.searchRuang = ''"
-                                                                 class="px-3 py-2 rounded-lg hover:bg-violet-500/20 cursor-pointer text-xs text-white hover:text-violet-300 transition-all flex items-center justify-between">
-                                                                <div>
-                                                                    <span class="font-semibold" x-text="u.nama"></span>
-                                                                    <span class="text-[9px] text-slate-400 ml-1" x-text="'• ' + (u.tipe || 'Unit')"></span>
-                                                                </div>
-                                                                <span class="text-violet-400 text-[10px] font-bold">Pilih →</span>
-                                                            </div>
-                                                        </template>
-                                                    </div>
-                                                </div>
                                             </div>
                                         </div>
+
+                                        <!-- Ruang / Pemegang — Full Width (di bawah grid, terpisah) -->
+                                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-2" @click.away="item.isRuangOpen = false">
+                                            <div class="flex items-center justify-between border-b border-violet-500/20 pb-2">
+                                                <label class="block text-violet-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
+                                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI ITEM INI):</span>
+                                                </label>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                                        <span>🏥</span>
+                                                        <span>Tersinkron Unit & Paviliun</span>
+                                                    </span>
+                                                    <button type="button"
+                                                            x-show="item.atb_ruang_pemegang"
+                                                            @click="item.atb_ruang_pemegang = ''; item.searchRuang = ''; item.isRuangOpen = true"
+                                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                                        ✕ Reset
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="relative">
+                                                <input type="text"
+                                                       :value="!item.isRuangOpen ? item.atb_ruang_pemegang : item.searchRuang"
+                                                       @input="item.atb_ruang_pemegang = $event.target.value; item.searchRuang = $event.target.value; item.isRuangOpen = true"
+                                                       @focus="item.isRuangOpen = true"
+                                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                                       class="w-full bg-slate-900 border border-slate-700 hover:border-violet-500 focus:border-violet-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
+                                                <svg class="w-4 h-4 text-violet-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                            </div>
+                                            <!-- Dropdown List Pilihan Unit & Paviliun -->
+                                            <div x-show="item.isRuangOpen" x-transition x-cloak style="max-height: 210px;"
+                                                 class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-violet-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center justify-between">
+                                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
+                                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="(masterUnits || []).filter(u => !item.searchRuang || u.nama.toLowerCase().includes(item.searchRuang.toLowerCase())).length + ' Unit/Ruangan'"></span>
+                                                </div>
+                                                <template x-for="u in (masterUnits || []).filter(u => !item.searchRuang || u.nama.toLowerCase().includes(item.searchRuang.toLowerCase()))" :key="u.id">
+                                                    <div @click="item.atb_ruang_pemegang = u.nama; item.isRuangOpen = false; item.searchRuang = ''"
+                                                         class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-violet-500/15 border border-slate-800/60 hover:border-violet-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                                        <div class="min-w-0 pr-2">
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="text-xs font-bold text-white group-hover:text-violet-300 truncate" x-text="u.nama"></span>
+                                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                                            </div>
+                                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                                        </div>
+                                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-violet-300 border border-violet-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+                                                    </div>
+                                                </template>
+                                                <template x-if="(masterUnits || []).filter(u => !item.searchRuang || u.nama.toLowerCase().includes(item.searchRuang.toLowerCase())).length === 0">
+                                                    <div class="p-3 text-center text-xs text-slate-400">
+                                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </template>
                             </div>
+
+                            <!-- Tombol Tambah ATB Lainnya (Violet-Style, Dashed Border) -->
+                            <button type="button" @click="addAtbItem()"
+                                    class="w-full py-3.5 border-2 border-dashed border-violet-500/50 hover:border-violet-400 bg-violet-950/20 hover:bg-violet-950/40 text-violet-300 hover:text-violet-200 font-bold rounded-2xl flex items-center justify-center space-x-2 transition-all shadow-md group cursor-pointer">
+                                <span class="text-base group-hover:scale-125 transition-transform">➕</span>
+                                <span class="text-xs sm:text-sm">Klik Disini untuk Menambah Aset Tidak Berwujud Lainnya</span>
+                            </button>
 
                             <!-- Ringkasan Total ATB -->
                             <div class="p-4 rounded-2xl bg-slate-900/80 border border-violet-500/30 flex flex-wrap items-center justify-between gap-3">
