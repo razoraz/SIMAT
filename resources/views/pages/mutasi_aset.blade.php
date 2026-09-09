@@ -119,8 +119,16 @@
 
                 canPrint(item) {
                     if (!item) return false;
+                    // Tombol Cetak / Edit BAMB hanya untuk akun Admin & Master Admin (Sub Admin dibatasi)
+                    if (this.userRole === 'sub_admin') return false;
                     return (item.persetujuan_pengirim && item.persetujuan_penerima && item.persetujuan_admin) || 
                            item.status === 'Disetujui Admin (Selesai)';
+                },
+
+                isMutasiSelesai(item) {
+                    if (!item) return false;
+                    return item.status === 'Disetujui Admin (Selesai)' || 
+                           (item.persetujuan_pengirim && item.persetujuan_penerima && item.persetujuan_admin);
                 },
 
                 askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
@@ -771,18 +779,43 @@
                             <span class="text-rose-400 block mb-1 font-bold text-[10px]">Alasan Penolakan:</span>
                             <p class="text-rose-200 leading-relaxed" x-text="selectedMutasi.alasan_penolakan"></p>
                         </div>
+
+                        {{-- Notifikasi Khusus Sub Admin: Wajib TTD Basah di Ruang Instalasi Perbekalan --}}
+                        <div class="p-3.5 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-slate-950 border border-amber-500/40 rounded-2xl flex items-start space-x-3 text-amber-200 shadow-lg"
+                             x-show="userRole === 'sub_admin' && isMutasiSelesai(selectedMutasi)">
+                            <div class="p-2 rounded-xl bg-amber-500/20 text-amber-300 text-lg shrink-0 flex items-center justify-center">
+                                ✍️
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-extrabold text-xs text-amber-300 uppercase tracking-wide">Pemberitahuan Tanda Tangan Basah</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-black uppercase">Penting</span>
+                                </div>
+                                <p class="text-[11.5px] text-amber-100/90 leading-relaxed">
+                                    Pengajuan mutasi aset ini telah <strong>disetujui lengkap oleh semua pihak</strong>. Dokumen fisik Berita Acara Mutasi Barang (BAMB) telah diterbitkan oleh Admin.
+                                    Dimohon Kepala Ruangan / Penanggung Jawab terkait untuk <strong>segera melakukan tanda tangan basah</strong> di <strong>Ruang Instalasi Perbekalan</strong>.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </template>
 
                 <div class="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2">
                     <div class="flex items-center gap-2 flex-wrap">
-                        {{-- 1. Tombol Cetak BAMB → Link ke Halaman Berita Acara (BAMB Mutasi) --}}
+                        {{-- 1. Tombol Cetak BAMB → HANYA TAMPIL PADA AKUN ADMIN & MASTER ADMIN --}}
                         <template x-if="selectedMutasi && canPrint(selectedMutasi)">
                             <a :href="selectedMutasi ? ('/berita-acara?tab=mutasi&id=' + selectedMutasi.id + '&returnTo=' + encodeURIComponent('/mutasi-aset?openDetail=' + selectedMutasi.id)) : '#'"
                                 class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95 bg-purple-500 hover:bg-purple-400 text-slate-950 shadow-purple-500/20 no-underline">
                                 <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h6z"/></svg>
                                 <span>🖨️ Cetak / Edit BAMB</span>
                             </a>
+                        </template>
+
+                        {{-- Info Badge untuk Sub Admin di Baris Tombol Aksi --}}
+                        <template x-if="userRole === 'sub_admin' && isMutasiSelesai(selectedMutasi)">
+                            <div class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm">
+                                <span>✍️ Segera Lakukan TTD Basah di Ruang Instalasi Perbekalan</span>
+                            </div>
                         </template>
 
                         {{-- 2. Tombol Setujui Pengirim (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN ASAL) --}}

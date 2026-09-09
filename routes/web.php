@@ -220,23 +220,59 @@ Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(functio
             ];
         })->values()->all();
 
-        // 2. Data Register Aset di Ruangan Ini — HANYA berdasarkan unit_id (ketat, tidak pakai OR)
+        // 2. Data Register Aset di Ruangan Ini — Mendukung unit_id dan ruang_pemegang (sesuai katalog Unit)
         $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-            ->where('unit_id', $unitId)
+            ->where(function($q) use ($unitId, $unitNama) {
+                if ($unitId) {
+                    $q->where('unit_id', $unitId);
+                }
+                if ($unitNama && $unitNama !== 'Ruangan Saya') {
+                    $q->orWhere(function($q2) use ($unitId, $unitNama) {
+                        // Jangan sertakan jika aset sudah tercatat milik unit lain
+                        if ($unitId) {
+                            $q2->where(function($q3) use ($unitId) {
+                                $q3->whereNull('unit_id')->orWhere('unit_id', $unitId);
+                            });
+                        }
+                        $q2->whereNotNull('ruang_pemegang')
+                           ->where('ruang_pemegang', '!=', '')
+                           ->where(function($q4) use ($unitNama) {
+                               $q4->where('ruang_pemegang', $unitNama)
+                                  ->orWhere('ruang_pemegang', 'LIKE', '%' . $unitNama . '%');
+                           });
+                    });
+                }
+            })
             ->get();
 
-        $totalAsetCount = $registers->count();
-        $totalNilaiNum = $registers->sum(fn($r) => $r->astap ? (float) ($r->astap->harga_satuan ?: ($r->astap->total_realisasi / max(1, $r->astap->jumlah_volume))) : 0);
+        // Ambil ASTAP yang terhubung langsung via unit_id jika belum masuk dalam register
+        $directRegisters = collect();
+        if ($unitId) {
+            $astapDirectIds = \App\Models\Astap::where('unit_id', $unitId)
+                ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
+                ->pluck('id');
+
+            if ($astapDirectIds->isNotEmpty()) {
+                $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
+                    ->whereIn('astap_id', $astapDirectIds)
+                    ->get();
+            }
+        }
+
+        $allRegisters = $registers->concat($directRegisters)->unique('id');
+
+        $totalAsetCount = $allRegisters->count();
+        $totalNilaiNum = $allRegisters->sum(fn($r) => $r->astap ? (float) ($r->astap->harga_satuan ?: ($r->astap->total_realisasi / max(1, $r->astap->jumlah_volume))) : 0);
         $totalNilaiFormatted = 'Rp ' . number_format($totalNilaiNum, 0, ',', '.');
 
-        $kondisiBaik = $registers->where('kondisi', 'Baik')->count();
-        $kondisiKurangBaik = $registers->where('kondisi', 'Kurang Baik')->count();
-        $kondisiRusakRingan = $registers->where('kondisi', 'Rusak Ringan')->count();
-        $kondisiRusakBerat = $registers->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
+        $kondisiBaik = $allRegisters->where('kondisi', 'Baik')->count();
+        $kondisiKurangBaik = $allRegisters->where('kondisi', 'Kurang Baik')->count();
+        $kondisiRusakRingan = $allRegisters->where('kondisi', 'Rusak Ringan')->count();
+        $kondisiRusakBerat = $allRegisters->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
         $totalRusak = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
 
         // 3. Aset yang perlu perhatian / rusak di ruangan ini
-        $attentionAssets = $registers->filter(fn($r) => $r->kondisi !== 'Baik')->map(function($r) {
+        $attentionAssets = $allRegisters->filter(fn($r) => $r->kondisi !== 'Baik')->map(function($r) {
             return [
                 'id'      => $r->id,
                 'kode'    => $r->nibar ?: $r->no_register,
