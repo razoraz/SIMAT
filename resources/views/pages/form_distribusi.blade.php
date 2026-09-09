@@ -155,13 +155,21 @@
                         const isValidLoadedBast = loadedData.bast_nomor && !loadedData.bast_nomor.includes('Diterbitkan') && loadedData.bast_nomor !== '-' && !loadedData.bast_nomor.includes('Menunggu') && !loadedData.bast_nomor.includes('tidak');
                         
                         this.formData.status = loadedData.status || (this.isSubAdmin ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman');
+                        
+                        // Otomatis: Jika sudah ada minimal 1 NIBAR yang diinputkan/di-ACC, status otomatis beralih ke 'Dalam Pengiriman'
+                        const hasAnyNibar = itemsMapped.some(it => (it.nibar_selected && it.nibar_selected.length > 0) || (it.qty_acc && it.qty_acc > 0));
+                        if (!this.isSubAdmin && hasAnyNibar && ['Menunggu Konfirmasi', 'Draft', 'Pending'].includes(this.formData.status)) {
+                            this.formData.status = 'Dalam Pengiriman';
+                        }
+
+                        const isShippingOrReceivedNow = ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(this.formData.status);
                         if (this.formData.status === 'Ditolak') {
                             this.formData.bast_nomor = '(tidak diterbitkan)';
                         } else if (this.formData.status === 'Menunggu Konfirmasi' || this.formData.status === 'Draft') {
                             this.formData.bast_nomor = '(Menunggu Konfirmasi)';
-                        } else if (isShippingOrReceived && isValidLoadedBast) {
+                        } else if (isShippingOrReceivedNow && isValidLoadedBast) {
                             this.formData.bast_nomor = loadedData.bast_nomor;
-                        } else if (isShippingOrReceived) {
+                        } else if (isShippingOrReceivedNow) {
                             this.formData.bast_nomor = {{ Js::from($nextBastNomor ?? '') }};
                         } else {
                             this.formData.bast_nomor = '(Menunggu Konfirmasi)';
