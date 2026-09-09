@@ -4089,7 +4089,7 @@
                         const data = await res.json();
                         if (data.success) {
                             this.showResequenceModal = false;
-                            this.showToast('✅ ' + data.message, 'success');
+                            this.showToast(data.message, 'success');
                             setTimeout(() => { window.location.reload(); }, 1200);
                         } else {
                             this.showToast('⚠️ Gagal: ' + (data.message || 'Terjadi kesalahan'), 'error');
@@ -4126,7 +4126,7 @@
                                 const data = await res.json();
                                 if (data.success) {
                                     this.showDetailModal = false;
-                                    this.showToast('✅ ' + data.message, 'success');
+                                    this.showToast(data.message, 'success');
                                     setTimeout(() => { window.location.reload(); }, 1200);
                                 } else {
                                     this.showToast('⚠️ Gagal: ' + (data.message || 'Terjadi kesalahan'), 'error');
@@ -4190,7 +4190,7 @@
                     setTimeout(() => {
                         this.isSubmittingExport = false;
                         this.showExportModal = false;
-                        this.showToast('✅ Berhasil mengekspor Laporan ASTAP ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
+                        this.showToast('Berhasil mengekspor Laporan ASTAP ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
                     }, 800);
                 },
 
@@ -4443,14 +4443,14 @@
                                 if (data.success) {
                                     reg.kondisi = this.newKondisiValue;
                                     this.showEditKondisiModal = false;
-                                    this.showToast('✅ Kondisi unit berhasil diperbarui menjadi ' + this.newKondisiValue + '!', 'success');
+                                    this.showToast('Kondisi unit berhasil diperbarui menjadi ' + this.newKondisiValue + '!', 'success');
                                 } else {
                                     this.showToast('⚠️ Gagal memperbarui: ' + (data.message || 'Terjadi kesalahan'), 'error');
                                 }
                             } catch(err) {
                                 reg.kondisi = this.newKondisiValue;
                                 this.showEditKondisiModal = false;
-                                this.showToast('✅ Kondisi unit berhasil diperbarui!', 'success');
+                                this.showToast('Kondisi unit berhasil diperbarui!', 'success');
                             } finally {
                                 this.isSavingKondisi = false;
                             }
