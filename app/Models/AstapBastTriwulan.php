@@ -33,7 +33,7 @@ class AstapBastTriwulan extends Model
     ];
 
     protected $casts = [
-        'tanggal_bast' => 'date:d/m/Y',
+        'tanggal_bast' => 'date',
         'signed'       => 'boolean',
     ];
 

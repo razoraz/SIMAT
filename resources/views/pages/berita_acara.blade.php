@@ -1267,8 +1267,8 @@
                 </div>
 
                 <!-- LEMBAR CETAK DOKUMEN TRIWULAN (PREVIEW PERSIS LEMBAR KERTAS FISIK A4/F4) -->
-                <div class="bg-slate-950/80 p-2 sm:p-6 rounded-2xl border border-slate-800 flex justify-center overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
-                    <div id="print-area-triwulan" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000;" class="w-full max-w-[760px] bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
+                <div class="bg-gray-200 p-3 sm:p-6 rounded-2xl border border-slate-700 flex justify-center items-start overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
+                    <div id="print-area-triwulan" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000 !important; background-color: #ffffff !important; min-height: 100%; box-sizing: border-box;" class="w-full max-w-[760px] shrink-0 bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
                         
                         <!-- KOP SURAT RESMI DENGAN DUA LOGO RESMI (KABUPATEN & RSUD) -->
                         <div class="border-b-[2.5px] border-black pb-2 mb-3" style="border-bottom: 2.5px solid #000000;">
@@ -1373,27 +1373,27 @@
                         <div class="my-2.5 overflow-x-auto">
                             <table class="w-full text-black border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black;">
                                 <thead>
-                                    <tr class="font-bold text-black border border-black bg-white" style="border: 1px solid black;">
-                                        <th class="border border-black px-2 py-1.5 text-center font-bold" style="width: 7%; border: 1px solid black;">NO</th>
-                                        <th class="border border-black px-3 py-1.5 text-center font-bold" style="border: 1px solid black;">NAMA GOLONGAN BARANG</th>
-                                        <th class="border border-black px-3 py-1.5 text-center font-bold" style="width: 22%; border: 1px solid black;">JUMLAH BARANG</th>
-                                        <th class="border border-black px-3 py-1.5 text-center font-bold" style="width: 34%; border: 1px solid black;">NILAI PEROLEHAN (Rp)</th>
+                                    <tr style="font-weight:700; color:#000000; border:1px solid black; background-color:#ffffff;">
+                                        <th style="border:1px solid black; padding:6px 8px; text-align:center; width:7%; background-color:#ffffff; font-weight:700;">NO</th>
+                                        <th style="border:1px solid black; padding:6px 12px; text-align:center; background-color:#ffffff; font-weight:700;">NAMA GOLONGAN BARANG</th>
+                                        <th style="border:1px solid black; padding:6px 12px; text-align:center; width:22%; background-color:#ffffff; font-weight:700;">JUMLAH BARANG</th>
+                                        <th style="border:1px solid black; padding:6px 12px; text-align:center; width:34%; background-color:#ffffff; font-weight:700;">NILAI PEROLEHAN (Rp)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <template x-for="item in currentTriwulanDoc.rekapItems" :key="item.no">
-                                        <tr class="border border-black" style="border: 1px solid black;">
-                                            <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="item.no"></td>
-                                            <td class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black;" x-text="item.nama"></td>
-                                            <td class="border border-black px-3 py-1.5 text-center" style="border: 1px solid black;" x-text="item.qty.toLocaleString('id-ID')"></td>
-                                            <td class="border border-black px-3 py-1.5 text-right font-bold" style="border: 1px solid black;" x-text="item.nilai.toLocaleString('id-ID')"></td>
+                                        <tr style="border:1px solid black; background-color:#ffffff; color:#000000;">
+                                            <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="item.no"></td>
+                                            <td style="border:1px solid black; padding:6px 12px; text-align:left;" x-text="item.nama"></td>
+                                            <td style="border:1px solid black; padding:6px 12px; text-align:center;" x-text="item.qty.toLocaleString('id-ID')"></td>
+                                            <td style="border:1px solid black; padding:6px 12px; text-align:right; font-weight:700;" x-text="item.nilai.toLocaleString('id-ID')"></td>
                                         </tr>
                                     </template>
                                     <!-- BARIS TOTAL JUMLAH -->
-                                    <tr class="border border-black font-bold bg-white" style="border: 1px solid black;">
-                                        <td colspan="2" class="border border-black px-3 py-1.5 text-center font-bold" style="border: 1px solid black;">JUMLAH</td>
-                                        <td class="border border-black px-3 py-1.5 text-center font-bold" style="border: 1px solid black;" x-text="currentTriwulanTotalQty.toLocaleString('id-ID')"></td>
-                                        <td class="border border-black px-3 py-1.5 text-right font-bold" style="border: 1px solid black;" x-text="currentTriwulanTotalNilai.toLocaleString('id-ID')"></td>
+                                    <tr style="border:1px solid black; font-weight:700; background-color:#ffffff; color:#000000;">
+                                        <td colspan="2" style="border:1px solid black; padding:6px 12px; text-align:center; font-weight:700;">JUMLAH</td>
+                                        <td style="border:1px solid black; padding:6px 12px; text-align:center; font-weight:700;" x-text="currentTriwulanTotalQty.toLocaleString('id-ID')"></td>
+                                        <td style="border:1px solid black; padding:6px 12px; text-align:right; font-weight:700;" x-text="currentTriwulanTotalNilai.toLocaleString('id-ID')"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1413,18 +1413,18 @@
                                 <!-- TTD Digital BSrE / Space Pihak II -->
                                 <div class="h-20 flex items-center justify-center my-1">
                                     <template x-if="currentTriwulanDoc.pihak2_signed">
-                                        <div class="p-1 border border-emerald-600 bg-emerald-50 rounded flex items-center space-x-1.5 text-left">
-                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.pihak2_qr_hash || encodeURIComponent(currentTriwulanDoc.nomor_surat) || 'PENGURUS-KOESNANDI'))" class="w-10 h-10 shrink-0">
-                                            <div class="text-[7.5px] leading-tight text-slate-800">
-                                                <div class="font-bold text-emerald-900">DITANDATANGANI ELEKTRONIK</div>
-                                                <div>Pengurus Barang Aset</div>
-                                                <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                        <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
+                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.pihak2_qr_hash || encodeURIComponent(currentTriwulanDoc.nomor_surat) || 'PENGURUS-KOESNANDI'))" style="width:40px; height:40px; flex-shrink:0;">
+                                            <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                                <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
+                                                <div style="color:#374151;">Pengurus Barang Aset</div>
+                                                <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                             </div>
                                         </div>
                                     </template>
                                     <template x-if="!currentTriwulanDoc.pihak2_signed">
-                                        <div class="p-1 border border-dashed border-amber-500 bg-amber-50 rounded text-center text-amber-800">
-                                            <span class="text-[8px] font-bold italic">( Menunggu Pengesahan TTD BSrE )</span>
+                                        <div style="padding:4px 8px; border:1.5px dashed #d97706; background:#fffbeb; border-radius:5px; text-align:center; color:#92400e;">
+                                            <span style="font-size:8px; font-weight:700; font-style:italic;">( Menunggu Pengesahan TTD BSrE )</span>
                                         </div>
                                     </template>
                                 </div>
@@ -1438,13 +1438,13 @@
                                 <p class="font-bold m-0">PIHAK KESATU</p>
                                 
                                 <!-- TTD Digital BSrE Pihak I (PPK) -->
-                                <div class="h-20 flex items-center justify-center my-1">
-                                    <div class="p-1 border border-purple-600 bg-purple-50 rounded flex items-center space-x-1.5 text-left">
-                                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.nomor_surat ? encodeURIComponent(currentTriwulanDoc.nomor_surat) : 'PPK-KOESNANDI'))" class="w-10 h-10 shrink-0">
-                                        <div class="text-[7.5px] leading-tight text-slate-800">
-                                            <div class="font-bold text-purple-900">DITANDATANGANI ELEKTRONIK</div>
-                                            <div>PPK RSUD dr. H. Koesnandi</div>
-                                            <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                <div style="height:80px; display:flex; align-items:center; justify-content:center; margin:4px 0;">
+                                    <div style="padding:4px; border:1.5px solid #7c3aed; background:#faf5ff; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
+                                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.nomor_surat ? encodeURIComponent(currentTriwulanDoc.nomor_surat) : 'PPK-KOESNANDI'))" style="width:40px; height:40px; flex-shrink:0;">
+                                        <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                            <div style="font-weight:700; color:#4c1d95;">DITANDATANGANI ELEKTRONIK</div>
+                                            <div style="color:#374151;">PPK RSUD dr. H. Koesnandi</div>
+                                            <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1580,8 +1580,8 @@
 
                 <!-- LEMBAR CETAK BAST DISTRIBUSI (BERITA ACARA PENYERAHAN BARANG SESUAI DOKUMEN RESMI) -->
                 <template x-if="selectedDistribusi">
-                    <div class="bg-slate-950/80 p-2 sm:p-6 rounded-2xl border border-slate-800 flex justify-center overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
-                        <div id="print-area-distribusi" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000;" class="w-full max-w-[760px] bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
+                    <div class="bg-gray-200 p-3 sm:p-6 rounded-2xl border border-slate-700 flex justify-center items-start overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
+                        <div id="print-area-distribusi" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000 !important; background-color: #ffffff !important; min-height: 100%; box-sizing: border-box;" class="w-full max-w-[760px] shrink-0 bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
                             
                             <!-- KOP SURAT RESMI -->
                             <div class="border-b-[2.5px] border-black pb-2 mb-1" style="border-bottom: 2.5px solid #000000;">
@@ -1680,48 +1680,48 @@
                             <div class="my-2.5 overflow-x-auto">
                                 <table class="w-full text-black border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black;">
                                     <thead>
-                                        <tr class="bg-gray-100 font-bold border border-black" style="border: 1px solid black;">
-                                            <th rowspan="2" class="border border-black px-2 py-1.5 text-center font-bold" style="width: 5%; border: 1px solid black;">No</th>
-                                            <th rowspan="2" class="border border-black px-3 py-1.5 text-left font-bold" style="width: 25%; border: 1px solid black;">Uraian Barang</th>
-                                            <th rowspan="2" class="border border-black px-3 py-1.5 text-left font-bold" style="width: 27%; border: 1px solid black;">Merk /Type</th>
-                                            <th rowspan="2" class="border border-black px-2 py-1.5 text-center font-bold" style="width: 6%; border: 1px solid black;">Vol</th>
-                                            <th rowspan="2" class="border border-black px-2 py-1.5 text-center font-bold" style="width: 8%; border: 1px solid black;">Satuan</th>
-                                            <th colspan="3" class="border border-black px-1 py-1 text-center font-bold" style="width: 14%; border: 1px solid black;">Kondisi</th>
-                                            <th rowspan="2" class="border border-black px-3 py-1.5 text-left font-bold" style="width: 15%; border: 1px solid black;">Keterangan</th>
+                                        <tr style="background-color:#ffffff; font-weight:700; border:1px solid black; color:#000000;">
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 8px; text-align:center; width:5%; background-color:#ffffff; font-weight:700;">No</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 12px; text-align:left; width:25%; background-color:#ffffff; font-weight:700;">Uraian Barang</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 12px; text-align:left; width:27%; background-color:#ffffff; font-weight:700;">Merk / Type</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:4px 8px; text-align:center; width:6%; background-color:#ffffff; font-weight:700;">Vol</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:4px 8px; text-align:center; width:8%; background-color:#ffffff; font-weight:700;">Satuan</th>
+                                            <th colspan="3" style="border:1px solid black; padding:4px; text-align:center; width:14%; background-color:#ffffff; font-weight:700;">Kondisi</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 12px; text-align:left; width:15%; background-color:#ffffff; font-weight:700;">Keterangan</th>
                                         </tr>
-                                        <tr class="bg-gray-100 font-bold border border-black" style="border: 1px solid black;">
-                                            <th class="border border-black px-1 py-0.5 text-center font-bold text-[8.5pt]" style="border: 1px solid black;">Baik</th>
-                                            <th class="border border-black px-1 py-0.5 text-center font-bold text-[8.5pt]" style="border: 1px solid black;">KB</th>
-                                            <th class="border border-black px-1 py-0.5 text-center font-bold text-[8.5pt]" style="border: 1px solid black;">Rusak</th>
+                                        <tr style="background-color:#ffffff; font-weight:700; border:1px solid black; color:#000000;">
+                                            <th style="border:1px solid black; padding:2px 4px; text-align:center; font-size:8.5pt; background-color:#ffffff; font-weight:700;">Baik</th>
+                                            <th style="border:1px solid black; padding:2px 4px; text-align:center; font-size:8.5pt; background-color:#ffffff; font-weight:700;">KB</th>
+                                            <th style="border:1px solid black; padding:2px 4px; text-align:center; font-size:8.5pt; background-color:#ffffff; font-weight:700;">Rusak</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <template x-for="(sub, idx) in (selectedDistribusi.items || []).filter(i => (i.qty_acc === null ? true : i.qty_acc > 0))" :key="idx">
-                                            <tr class="border border-black" style="border: 1px solid black;">
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="idx + 1"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-mono text-[9px]" style="border: 1px solid black;" x-text="sub.spesifikasi || sub.merk_type || '-'"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;"
+                                            <tr style="border:1px solid black; background-color:#ffffff; color:#000000;">
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="idx + 1"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-weight:700;" x-text="sub.nama_barang"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-family:monospace; font-size:9pt;" x-text="sub.spesifikasi || sub.merk_type || '-'"></td>
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center; font-weight:700;"
                                                     :title="sub.qty_acc !== null ? ('Volume Di-ACC: ' + sub.qty_acc + ' | Volume Diajukan: ' + sub.qty) : ('Volume Diajukan: ' + sub.qty + ' | Belum Di-ACC Admin')"
                                                     x-text="(sub.qty_acc !== null && sub.qty_acc !== undefined) ? sub.qty_acc : (sub.vol_bast !== undefined ? sub.vol_bast : '-')"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="sub.satuan"></td>
-                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Baik' || !sub.kondisi) ? 'Baik' : ''"></td>
-                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB') ? 'KB' : ''"></td>
-                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Rusak') ? 'Rusak' : ''"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left text-[8.5pt]" style="border: 1px solid black;" x-text="sub.keterangan || selectedDistribusi.keterangan || '-'"></td>
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="sub.satuan"></td>
+                                                <td style="border:1px solid black; padding:6px 4px; text-align:center; font-size:8.5pt;" x-text="(sub.kondisi === 'Baik' || !sub.kondisi) ? '✓' : ''"></td>
+                                                <td style="border:1px solid black; padding:6px 4px; text-align:center; font-size:8.5pt;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB') ? '✓' : ''"></td>
+                                                <td style="border:1px solid black; padding:6px 4px; text-align:center; font-size:8.5pt;" x-text="(sub.kondisi === 'Rusak Ringan' || sub.kondisi === 'Rusak Berat' || sub.kondisi === 'Rusak') ? '✓' : ''"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-size:8.5pt;" x-text="sub.keterangan || selectedDistribusi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                         <template x-if="!selectedDistribusi.items || selectedDistribusi.items.length === 0">
-                                            <tr class="border border-black" style="border: 1px solid black;">
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;">1</td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black;" x-text="selectedDistribusi.barang_nama"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-mono text-[9px]" style="border: 1px solid black;" x-text="(selectedDistribusi.merk ? (selectedDistribusi.merk + ' ' + (selectedDistribusi.type || '')) : '-')"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black;" x-text="selectedDistribusi.volume"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black;" x-text="selectedDistribusi.satuan"></td>
-                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;">Baik</td>
-                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;"></td>
-                                                <td class="border border-black px-1 py-1.5 text-center text-[8.5pt]" style="border: 1px solid black;"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left text-[8.5pt]" style="border: 1px solid black;" x-text="selectedDistribusi.keterangan || '-'"></td>
+                                            <tr style="border:1px solid black; background-color:#ffffff; color:#000000;">
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center;">1</td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-weight:700;" x-text="selectedDistribusi.barang_nama"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-family:monospace; font-size:9pt;" x-text="(selectedDistribusi.merk ? (selectedDistribusi.merk + ' ' + (selectedDistribusi.type || '')) : '-')"></td>
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center; font-weight:700;" x-text="selectedDistribusi.volume"></td>
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="selectedDistribusi.satuan"></td>
+                                                <td style="border:1px solid black; padding:6px 4px; text-align:center; font-size:8.5pt;">✓</td>
+                                                <td style="border:1px solid black; padding:6px 4px; text-align:center; font-size:8.5pt;"></td>
+                                                <td style="border:1px solid black; padding:6px 4px; text-align:center; font-size:8.5pt;"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-size:8.5pt;" x-text="selectedDistribusi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -1742,12 +1742,12 @@
                                     <!-- TTD Elektronik BSrE Pengurus Barang (Hanya Tampil Jika Status Sudah Ditandatangani) -->
                                     <div class="my-1 flex items-center justify-center" style="height: 52px; min-height: 52px;">
                                         <template x-if="selectedDistribusi.signed">
-                                            <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
-                                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" class="w-9 h-9 shrink-0">
-                                                <div class="text-[7.5px] leading-tight text-slate-800">
-                                                    <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
-                                                    <div>Pengurus Barang Aset</div>
-                                                    <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                            <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
+                                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" style="width:36px; height:36px; flex-shrink:0;">
+                                                <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                                    <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
+                                                    <div style="color:#374151;">Pengurus Barang Aset</div>
+                                                    <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                                 </div>
                                             </div>
                                         </template>
@@ -1862,7 +1862,7 @@
 
                 <!-- LEMBAR CETAK BAST MUTASI -->
                 <template x-if="selectedMutasi">
-                    <div class="bg-slate-950/80 p-2 sm:p-6 rounded-2xl border border-slate-800 flex justify-center items-start overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
+                    <div class="bg-gray-200 p-3 sm:p-6 rounded-2xl border border-slate-700 flex justify-center items-start overflow-y-auto max-h-[75vh] custom-scrollbar shadow-inner">
                         <div id="print-area-mutasi" style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; color: #000000 !important; background-color: #ffffff !important; min-height: 100%; box-sizing: border-box;" class="w-full max-w-[760px] shrink-0 bg-white text-black p-8 sm:p-12 md:p-14 shadow-2xl rounded-sm space-y-3.5 select-text print:p-0 print:m-0 print:shadow-none print:max-w-none">
                             
                             <div class="border-b-[2.5px] border-black pb-2 mb-3" style="border-bottom: 2.5px solid #000000;">
@@ -1916,13 +1916,13 @@
                             <div class="my-2.5 overflow-x-auto">
                                 <table class="w-full text-center border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
                                     <thead>
-                                        <tr class="bg-gray-100 font-bold border border-black" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">
-                                            <th class="border border-black px-2 py-1.5 w-10 text-center" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">No</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Nama Barang / Aset</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Kode Barang / NIBAR</th>
-                                            <th class="border border-black px-2 py-1.5 w-14 text-center" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Vol</th>
-                                            <th class="border border-black px-2 py-1.5 w-16 text-center" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Satuan</th>
-                                            <th class="border border-black px-3 py-1.5 text-left" style="border: 1px solid black; background-color: #f3f4f6 !important; color: #000000 !important;">Keterangan</th>
+                                        <tr style="font-weight:700; border:1px solid black; background-color:#ffffff; color:#000000 !important;">
+                                            <th style="border:1px solid black; padding:6px 8px; text-align:center; width:10%; background-color:#ffffff; font-weight:700; color:#000000;">No</th>
+                                            <th style="border:1px solid black; padding:6px 12px; text-align:left; background-color:#ffffff; font-weight:700; color:#000000;">Nama Barang / Aset</th>
+                                            <th style="border:1px solid black; padding:6px 12px; text-align:left; background-color:#ffffff; font-weight:700; color:#000000;">Kode Barang / NIBAR</th>
+                                            <th style="border:1px solid black; padding:4px 8px; text-align:center; width:14%; background-color:#ffffff; font-weight:700; color:#000000;">Vol</th>
+                                            <th style="border:1px solid black; padding:4px 8px; text-align:center; width:16%; background-color:#ffffff; font-weight:700; color:#000000;">Satuan</th>
+                                            <th style="border:1px solid black; padding:6px 12px; text-align:left; background-color:#ffffff; font-weight:700; color:#000000;">Keterangan</th>
                                         </tr>
                                     </thead>
                                     <tbody style="background-color: #ffffff !important; color: #000000 !important;">
@@ -1978,18 +1978,18 @@
                                         <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi) -->
                                         <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
                                             <template x-if="selectedMutasi.signed !== false">
-                                                <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left">
-                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" class="w-9 h-9 shrink-0">
-                                                    <div class="text-[7.5px] leading-tight text-slate-800">
-                                                        <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
-                                                        <div>Pengurus Barang Aset</div>
-                                                        <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                                <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
+                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" style="width:36px; height:36px; flex-shrink:0;">
+                                                    <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                                        <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
+                                                        <div style="color:#374151;">Pengurus Barang Aset</div>
+                                                        <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                                     </div>
                                                 </div>
                                             </template>
                                             <template x-if="selectedMutasi.signed === false">
-                                                <div class="p-1 border border-dashed border-amber-500 bg-amber-50 rounded text-center text-amber-800">
-                                                    <span class="text-[8px] font-bold italic">( Menunggu Pengesahan TTD BSrE )</span>
+                                                <div style="padding:4px 8px; border:1.5px dashed #d97706; background:#fffbeb; border-radius:5px; text-align:center; color:#92400e;">
+                                                    <span style="font-size:8px; font-weight:700; font-style:italic;">( Menunggu Pengesahan TTD BSrE )</span>
                                                 </div>
                                             </template>
                                         </div>
@@ -2038,18 +2038,18 @@
                                         <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi) -->
                                         <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
                                             <template x-if="selectedMutasi.signed !== false">
-                                                <div class="p-1 border border-teal-600 bg-teal-50 rounded flex items-center space-x-1.5 text-left inline-flex">
-                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" class="w-9 h-9 shrink-0">
-                                                    <div class="text-[7.5px] leading-tight text-slate-800">
-                                                        <div class="font-bold text-teal-900">DITANDATANGANI ELEKTRONIK</div>
-                                                        <div>Pengurus Barang Aset</div>
-                                                        <div class="text-[6.5px] text-slate-500 font-mono">Sertifikat BSrE - BSSN</div>
+                                                <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
+                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" style="width:36px; height:36px; flex-shrink:0;">
+                                                    <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                                                        <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
+                                                        <div style="color:#374151;">Pengurus Barang Aset</div>
+                                                        <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                                     </div>
                                                 </div>
                                             </template>
                                             <template x-if="selectedMutasi.signed === false">
-                                                <div class="p-1 border border-dashed border-amber-500 bg-amber-50 rounded text-center text-amber-800 inline-block px-3">
-                                                    <span class="text-[8px] font-bold italic">( Menunggu Pengesahan TTD BSrE )</span>
+                                                <div style="padding:4px 12px; border:1.5px dashed #d97706; background:#fffbeb; border-radius:5px; text-align:center; color:#92400e; display:inline-block;">
+                                                    <span style="font-size:8px; font-weight:700; font-style:italic;">( Menunggu Pengesahan TTD BSrE )</span>
                                                 </div>
                                             </template>
                                         </div>

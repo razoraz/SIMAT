@@ -69,27 +69,46 @@ class BeritaAcaraController extends Controller
             );
 
             // Query barang ASTAP yang masuk di triwulan ini
+            // Prioritas 1: kolom `triwulan` yang sudah tersedia di tabel astaps (migration 2026_09_03)
+            // Prioritas 2: Fallback via bulan dari sp2d_tanggal atau bast_dokumen_tanggal
             $months = $triwulanMonths[$key];
+
+            // Map key ke semua format nilai kolom `triwulan` yang mungkin tersimpan di DB
+            $triwulanValues = [
+                'TW1' => ['TW1', 'TW I', 'Triwulan I', 'Triwulan 1', 'Q1', 'I'],
+                'TW2' => ['TW2', 'TW II', 'Triwulan II', 'Triwulan 2', 'Q2', 'II'],
+                'TW3' => ['TW3', 'TW III', 'Triwulan III', 'Triwulan 3', 'Q3', 'III'],
+                'TW4' => ['TW4', 'TW IV', 'Triwulan IV', 'Triwulan 4', 'Q4', 'IV'],
+            ];
+            $twValues = $triwulanValues[$key] ?? [];
+
             $astaps = Astap::with(['jenisAstap', 'rekeningBelanja', 'registers'])
                 ->where('tahun_perolehan', $tahun)
-                ->where(function ($q) use ($months, $tahun, $key) {
-                    $q->where(function ($sub) use ($months, $tahun) {
-                        $sub->whereYear('sp2d_tanggal', $tahun)
-                            ->whereIn(DB::raw("CAST(strftime('%m', sp2d_tanggal) AS INTEGER)"), $months);
-                    })->orWhere(function ($sub) use ($months, $tahun) {
-                        $sub->whereNull('sp2d_tanggal')
-                            ->whereYear('bast_dokumen_tanggal', $tahun)
-                            ->whereIn(DB::raw("CAST(strftime('%m', bast_dokumen_tanggal) AS INTEGER)"), $months);
+                ->where(function ($q) use ($months, $tahun, $key, $twValues) {
+                    // Prioritas 1: kolom triwulan sudah diisi dan sesuai
+                    $q->where(function ($sub) use ($twValues) {
+                        $sub->whereNotNull('triwulan')
+                            ->where('triwulan', '!=', '')
+                            ->whereIn('triwulan', $twValues);
                     });
 
-                    // Khusus TW2 jika tidak ada SP2D spesifik, sertakan barang perolehan tahun ini yang belum bertanggal
-                    if ($key === 'TW2') {
-                        $q->orWhere(function ($sub) use ($tahun) {
-                            $sub->whereNull('sp2d_tanggal')
-                                ->whereNull('bast_dokumen_tanggal')
-                                ->where('tahun_perolehan', $tahun);
+                    // Fallback: kolom triwulan kosong/null — filter via bulan SP2D atau BAST dokumen
+                    $q->orWhere(function ($sub) use ($months, $tahun, $twValues) {
+                        $sub->where(function ($noTw) use ($twValues) {
+                            $noTw->whereNull('triwulan')
+                                 ->orWhere('triwulan', '')
+                                 ->orWhereNotIn('triwulan', $twValues);
+                        })->where(function ($byDate) use ($months, $tahun) {
+                            $byDate->where(function ($sp2d) use ($months, $tahun) {
+                                $sp2d->whereYear('sp2d_tanggal', $tahun)
+                                     ->whereIn(DB::raw("CAST(strftime('%m', sp2d_tanggal) AS INTEGER)"), $months);
+                            })->orWhere(function ($bast) use ($months, $tahun) {
+                                $bast->whereNull('sp2d_tanggal')
+                                     ->whereYear('bast_dokumen_tanggal', $tahun)
+                                     ->whereIn(DB::raw("CAST(strftime('%m', bast_dokumen_tanggal) AS INTEGER)"), $months);
+                            });
                         });
-                    }
+                    });
                 })
                 ->orderBy('sp2d_tanggal')
                 ->get();
@@ -141,17 +160,23 @@ class BeritaAcaraController extends Controller
                 }
 
                 $detailBarang[] = [
-                    'no'              => $no++,
-                    'tanggal_sp2d'    => $ast->sp2d_tanggal ? date('d/m/Y', strtotime($ast->sp2d_tanggal)) : ($ast->bast_dokumen_tanggal ? date('d/m/Y', strtotime($ast->bast_dokumen_tanggal)) : '-'),
-                    'nomor_spk'       => $ast->spk_nomor ?: ($ast->sp2d_nomor ?: '-'),
-                    'rekening'        => $ast->rekeningBelanja?->kode_rek ?: '5.2.02.01.01.0004',
-                    'kode_108'        => $kode108,
-                    'nama_barang'     => $ast->nama_barang,
-                    'spesifikasi'     => $ast->keterangan_tambahan ?: ($ast->satuan . ' Pengadaan ' . $tahun),
-                    'penyedia'        => $ast->penyedia_nama ?: 'Penyedia Rekanan RSUD',
-                    'volume'          => $qty,
-                    'satuan'          => $ast->satuan ?: 'Unit',
-                    'nilai_realisasi' => $totalNilai,
+                    'no'                 => $no++,
+                    'tanggal_sp2d'       => $ast->sp2d_tanggal
+                                              ? $ast->sp2d_tanggal->format('d/m/Y')
+                                              : ($ast->bast_dokumen_tanggal ? $ast->bast_dokumen_tanggal->format('d/m/Y') : '-'),
+                    'nomor_spk'          => $ast->spk_nomor ?: ($ast->sp2d_nomor ?: '-'),
+                    'nomor_sp2d'         => $ast->sp2d_nomor ?: '-',
+                    'nomor_bast_dokumen' => $ast->bast_dokumen_nomor ?: '-',
+                    'rekening'           => $ast->rekeningBelanja?->kode_rek ?: '5.2.02.01.01.0004',
+                    'kode_108'           => $kode108,
+                    'nama_barang'        => $ast->nama_barang,
+                    'spesifikasi'        => $ast->keterangan_tambahan ?: ($ast->satuan . ' Pengadaan ' . $tahun),
+                    'penyedia'           => $ast->penyedia_nama ?: 'Penyedia Rekanan RSUD',
+                    'volume'             => $qty,
+                    'satuan'             => $ast->satuan ?: 'Unit',
+                    'harga_satuan'       => (float) ($ast->harga_satuan ?: ($qty > 0 ? $totalNilai / $qty : $totalNilai)),
+                    'nilai_realisasi'    => $totalNilai,
+                    'triwulan'           => $ast->triwulan ?: $key,
                 ];
             }
 
