@@ -328,4 +328,35 @@ class UnitController extends Controller
             'user'               => $user,
         ]);
     }
+
+    /**
+     * Update kondisi fisik aset register dari Lembar KIR Ruangan
+     */
+    public function updateKondisi(Request $request, $id)
+    {
+        $reg = \App\Models\AstapRegister::find($id);
+        if (!$reg) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Register aset tidak ditemukan.'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'kondisi' => 'required|in:Baik,Kurang Baik,Rusak Ringan,Rusak Berat',
+            'catatan' => 'nullable|string|max:500'
+        ]);
+
+        $kondisiLama = $reg->kondisi;
+        $reg->kondisi = $validated['kondisi'];
+        $reg->save();
+
+        return response()->json([
+            'success'      => true,
+            'message'      => "Kondisi aset berhasil diubah dari '{$kondisiLama}' menjadi '{$reg->kondisi}'.",
+            'kondisi'      => $reg->kondisi,
+            'id'           => $reg->id,
+            'updated_at'   => $reg->updated_at ? $reg->updated_at->format('d/m/Y H:i') : date('d/m/Y H:i')
+        ]);
+    }
 }

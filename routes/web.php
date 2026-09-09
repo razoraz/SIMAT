@@ -767,6 +767,7 @@ Route::middleware('auth')->group(function () {
 
     // 5b. Halaman Khusus Lembar Kartu Inventaris Ruangan (KIR)
     Route::get('/lembar-kir-ruangan', [UnitController::class, 'kir'])->name('kir.index');
+    Route::patch('/lembar-kir-ruangan/kondisi/{id}', [UnitController::class, 'updateKondisi'])->name('kir.update_kondisi');
 
     // 6. Pemeliharaan Index (Read-only for Sub Admin, full for Admin)
     Route::get('/pemeliharaan', function () {

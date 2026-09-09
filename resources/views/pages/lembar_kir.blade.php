@@ -11,76 +11,168 @@
         $isSubAdmin = (Auth::user()->role ?? '') === 'sub_admin';
     @endphp
 
-    <div x-data="{
-        searchQuery: '',
-        statusFilter: 'all',
-        tahunFilter: 'all',
-        showPrintModal: false,
-        showDetailModal: false,
-        selectedAsset: null,
+    <script>
+    function kirRuanganData() {
+        return {
+            searchQuery: '',
+            statusFilter: 'all',
+            tahunFilter: 'all',
+            showPrintModal: false,
+            showDetailModal: false,
+            showEditModal: false,
+            selectedAsset: null,
+            editAsset: null,
+            isSavingKondisi: false,
+            showToast: false,
+            toastMessage: '',
 
-        // Data Aset Ruangan
-        assets: {{ Js::from($assets ?? []) }},
+            // Form Ubah Kondisi
+            editForm: {
+                kondisi: 'Baik',
+                catatan: ''
+            },
 
-        // Dokumen Pengesahan KIR
-        kirDoc: {
-            nomor_surat: '000.2.3.2/KIR/{{ $currentUnit->id ?? 1 }}/430.10.7/2026',
-            pj_nama: '{{ addslashes($unitKepala) }}',
-            pj_nip: '{{ addslashes($unitNip) }}',
-            pj_jabatan: 'Penanggung Jawab {{ addslashes($unitNama) }}',
-            pengurus_nama: 'BUDI HARTONO, S.Sos',
-            pengurus_nip: '19760229 200801 1 010',
-            pengurus_jabatan: 'Pengurus Barang Pengguna RSUD',
-            direktur_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
-            direktur_nip: '19771002 200604 1 006',
-            direktur_jabatan: 'Direktur RSUD dr. H. Koesnandi Bondowoso',
-            kota_tanggal: 'Bondowoso, {{ date('d F Y') }}'
-        },
+            // Data Aset Ruangan
+            assets: {!! json_encode($assets ?? []) !!},
 
-        get filteredAssets() {
-            const q = (this.searchQuery || '').toLowerCase();
-            return this.assets.filter(a => {
-                const matchSearch = !q || 
-                    (a.nama || '').toLowerCase().includes(q) || 
-                    (a.kode || '').toLowerCase().includes(q) || 
-                    (a.kode_108 || '').toLowerCase().includes(q) || 
-                    (a.nibar || '').toLowerCase().includes(q) || 
-                    (a.merk || '').toLowerCase().includes(q) ||
-                    (a.no_seri || '').toLowerCase().includes(q);
+            // Dokumen Pengesahan KIR
+            kirDoc: {
+                nomor_surat: '000.2.3.2/KIR/{{ $currentUnit->id ?? 1 }}/430.10.7/2026',
+                pj_nama: {!! json_encode($unitKepala) !!},
+                pj_nip: {!! json_encode($unitNip) !!},
+                pj_jabatan: {!! json_encode('Penanggung Jawab ' . $unitNama) !!},
+                pengurus_nama: 'BUDI HARTONO, S.Sos',
+                pengurus_nip: '19760229 200801 1 010',
+                pengurus_jabatan: 'Pengurus Barang Pengguna RSUD',
+                direktur_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
+                direktur_nip: '19771002 200604 1 006',
+                direktur_jabatan: 'Direktur RSUD dr. H. Koesnandi Bondowoso',
+                kota_tanggal: 'Bondowoso, {{ date('d F Y') }}'
+            },
 
-                const matchStatus = this.statusFilter === 'all' || a.kondisi === this.statusFilter;
-                const matchTahun = this.tahunFilter === 'all' || String(a.tahun) === String(this.tahunFilter);
+            get filteredAssets() {
+                const q = (this.searchQuery || '').toLowerCase();
+                return this.assets.filter(a => {
+                    const matchSearch = !q || 
+                        (a.nama || '').toLowerCase().includes(q) || 
+                        (a.kode || '').toLowerCase().includes(q) || 
+                        (a.kode_108 || '').toLowerCase().includes(q) || 
+                        (a.nibar || '').toLowerCase().includes(q) || 
+                        (a.merk || '').toLowerCase().includes(q) ||
+                        (a.no_seri || '').toLowerCase().includes(q);
 
-                return matchSearch && matchStatus && matchTahun;
-            });
-        },
+                    const matchStatus = this.statusFilter === 'all' || a.kondisi === this.statusFilter;
+                    const matchTahun = this.tahunFilter === 'all' || String(a.tahun) === String(this.tahunFilter);
 
-        get countBaik() {
-            return this.assets.filter(a => a.kondisi === 'Baik').length;
-        },
-        get countKurangBaik() {
-            return this.assets.filter(a => a.kondisi === 'Kurang Baik').length;
-        },
-        get countRusakRingan() {
-            return this.assets.filter(a => a.kondisi === 'Rusak Ringan').length;
-        },
-        get countRusakBerat() {
-            return this.assets.filter(a => a.kondisi === 'Rusak Berat' || a.kondisi === 'Rusak').length;
-        },
+                    return matchSearch && matchStatus && matchTahun;
+                });
+            },
 
-        openDetail(ast) {
-            this.selectedAsset = ast;
-            this.showDetailModal = true;
-        },
+            get countBaik() {
+                return this.assets.filter(a => a.kondisi === 'Baik').length;
+            },
+            get countKurangBaik() {
+                return this.assets.filter(a => a.kondisi === 'Kurang Baik').length;
+            },
+            get countRusakRingan() {
+                return this.assets.filter(a => a.kondisi === 'Rusak Ringan').length;
+            },
+            get countRusakBerat() {
+                return this.assets.filter(a => a.kondisi === 'Rusak Berat' || a.kondisi === 'Rusak').length;
+            },
 
-        printKir() {
-            window.print();
-        },
+            get persentaseBaik() {
+                return this.assets.length ? ((this.countBaik / this.assets.length) * 100).toFixed(1) + '% Siap Digunakan' : '0%';
+            },
 
-        formatRupiah(num) {
-            return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
-        }
-    }" x-cloak class="space-y-6">
+            openDetail(ast) {
+                this.selectedAsset = ast;
+                this.showDetailModal = true;
+            },
+
+            openEditKondisi(ast) {
+                this.editAsset = ast;
+                this.editForm.kondisi = ast.kondisi || 'Baik';
+                this.editForm.catatan = '';
+                this.showEditModal = true;
+            },
+
+            async saveKondisi() {
+                if (!this.editAsset) return;
+                this.isSavingKondisi = true;
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                try {
+                    const res = await fetch(`/lembar-kir-ruangan/kondisi/${this.editAsset.id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            kondisi: this.editForm.kondisi,
+                            catatan: this.editForm.catatan
+                        })
+                    });
+                    const data = await res.json();
+                    this.isSavingKondisi = false;
+
+                    if (data.success) {
+                        // Update state di array assets
+                        const target = this.assets.find(a => a.id === this.editAsset.id);
+                        if (target) {
+                            target.kondisi = data.kondisi;
+                        }
+                        if (this.selectedAsset && this.selectedAsset.id === this.editAsset.id) {
+                            this.selectedAsset.kondisi = data.kondisi;
+                        }
+                        this.showEditModal = false;
+                        this.triggerToast(data.message || 'Kondisi barang berhasil diperbarui!');
+                    } else {
+                        alert('⚠️ ' + (data.message || 'Gagal mengubah kondisi barang.'));
+                    }
+                } catch(err) {
+                    this.isSavingKondisi = false;
+                    alert('⚠️ Terjadi kendala saat menyimpan perubahan kondisi.');
+                }
+            },
+
+            triggerToast(msg) {
+                this.toastMessage = msg;
+                this.showToast = true;
+                setTimeout(() => { this.showToast = false; }, 3500);
+            },
+
+            printKir() {
+                window.print();
+            },
+
+            formatRupiah(num) {
+                return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+            }
+        };
+    }
+    </script>
+
+    <div x-data="kirRuanganData()" x-cloak class="space-y-6">
+
+        <!-- FLOATING TOAST NOTIFICATION -->
+        <div x-show="showToast" 
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:translate-x-4"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:translate-x-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed top-5 right-5 z-50 max-w-md bg-slate-900 border border-emerald-500/40 rounded-2xl p-4 shadow-2xl flex items-center space-x-3 text-xs text-white">
+            <div class="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold text-base shrink-0">
+                ✓
+            </div>
+            <div class="flex-1">
+                <p class="font-bold text-emerald-300">Pembaruan Kondisi Berhasil</p>
+                <p class="text-slate-300 text-[11px] mt-0.5" x-text="toastMessage"></p>
+            </div>
+        </div>
 
         <!-- 1. HEADER BANNER KARTU INVENTARIS RUANGAN (KIR) (NO-PRINT) -->
         <div class="no-print bg-gradient-to-r from-emerald-600/15 via-teal-950/40 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
@@ -115,7 +207,7 @@
                     </div>
 
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        Dokumen Kartu Inventaris Ruangan (KIR) memuat seluruh daftar fisik barang aset tetap yang ditempatkan resmi pada ruangan ini. Anda dapat mencetak lembar dokumen KIR ber-barcode standar untuk ditempel pada pintu atau dinding ruangan.
+                        Dokumen Kartu Inventaris Ruangan (KIR) memuat seluruh daftar fisik barang aset tetap yang ditempatkan resmi pada ruangan ini. Anda dapat memperbarui kondisi fisik barang secara langsung serta mencetak lembar KIR ber-barcode resmi.
                     </p>
                 </div>
 
@@ -196,7 +288,7 @@
                     <span class="text-xs font-bold text-emerald-400">Unit Baik</span>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-2">
-                    <span x-text="assets.length > 0 ? ((countBaik / assets.length) * 100).toFixed(1) + '% Siap Digunakan' : '0%'"></span>
+                    <span x-text="persentaseBaik"></span>
                 </p>
             </div>
 
@@ -276,11 +368,11 @@
                             <th class="px-3 py-3 text-center whitespace-nowrap w-10">No</th>
                             <th class="px-3.5 py-3 text-left min-w-[160px]">Nomor Register NIBAR</th>
                             <th class="px-3.5 py-3 text-left min-w-[220px]">Nama Barang / ASTAP</th>
-                            <th class="px-3.5 py-3 text-left min-w-[150px]">Merk / Tipe</th>
+                            <th class="px-3.5 py-3 text-left min-w-[140px]">Merk / Tipe</th>
                             <th class="px-3.5 py-3 text-center whitespace-nowrap">No. Seri/Pabrik</th>
                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Tahun</th>
                             <th class="px-3.5 py-3 text-right whitespace-nowrap">Nilai Buku</th>
-                            <th class="px-3.5 py-3 text-center whitespace-nowrap">Kondisi</th>
+                            <th class="px-3.5 py-3 text-center whitespace-nowrap min-w-[120px]">Kondisi Barang</th>
                             <th class="px-3.5 py-3 text-center whitespace-nowrap">Aksi</th>
                         </tr>
                     </thead>
@@ -303,21 +395,39 @@
                                 <td class="px-3.5 py-3 text-center font-mono text-[11px] text-slate-400" x-text="item.no_seri || '-'"></td>
                                 <td class="px-3.5 py-3 text-center font-mono text-slate-300 font-semibold" x-text="item.tahun || '-'"></td>
                                 <td class="px-3.5 py-3 text-right font-mono font-semibold text-white whitespace-nowrap" x-text="item.harga_fmt"></td>
+                                
+                                <!-- Kolom Kondisi dengan Tombol Cepat Ubah -->
                                 <td class="px-3.5 py-3 text-center whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold"
+                                    <button type="button" @click="openEditKondisi(item)"
+                                        class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer hover:ring-2 hover:ring-amber-400/50 transition-all group"
                                         :class="item.kondisi === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 
                                                (item.kondisi === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 
                                                (item.kondisi === 'Rusak Ringan' ? 'bg-orange-500/15 text-orange-300 border border-orange-500/30' : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'))"
-                                        x-text="item.kondisi">
-                                    </span>
+                                        title="Klik untuk ubah kondisi barang">
+                                        <span x-text="item.kondisi"></span>
+                                        <svg class="w-3 h-3 opacity-60 group-hover:opacity-100 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
                                 </td>
+
+                                <!-- Kolom Aksi -->
                                 <td class="px-3.5 py-3 text-center whitespace-nowrap">
-                                    <div class="inline-flex items-center space-x-1">
+                                    <div class="inline-flex items-center space-x-1.5">
+                                        <!-- Tombol Ubah Kondisi -->
+                                        <button type="button" @click="openEditKondisi(item)"
+                                            class="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 transition-all flex items-center space-x-1"
+                                            title="Ubah Kondisi Fisik Barang">
+                                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            <span class="text-[10px] font-bold">Ubah</span>
+                                        </button>
+
+                                        <!-- Tombol Rincian -->
                                         <button type="button" @click="openDetail(item)"
                                             class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
                                             title="Lihat Rincian Spesifikasi">
                                             <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </button>
+
+                                        <!-- Tombol Scan Barcode -->
                                         <a :href="'/scan/' + (item.nibar || item.kode)" target="_blank"
                                             class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
                                             title="Halaman Publik Scan QR Barcode">
@@ -354,7 +464,123 @@
             </div>
         </div>
 
-        <!-- 4. MODAL PRATINJAU & CETAK DOKUMEN KIR RESMI (KERTAS PUTIH STANDAR PEMERINTAH) -->
+        <!-- 4. MODAL UBAH KONDISI BARANG (INTERAKTIF & REALTIME) -->
+        <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            
+            <div @click.away="if (!isSavingKondisi) showEditModal = false"
+                class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden"
+                x-transition:enter="transition ease-out duration-300 transform"
+                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-200 transform"
+                x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                
+                <template x-if="editAsset">
+                    <div>
+                        <!-- Header Modal Ubah -->
+                        <div class="flex items-start justify-between border-b border-slate-800 pb-4 mb-4">
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2.5 py-0.5 rounded font-mono text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                        🛠️ UBAH KONDISI FISIK
+                                    </span>
+                                    <span class="font-mono text-xs text-slate-400" x-text="editAsset.nibar"></span>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-black text-white mt-1.5" x-text="editAsset.nama"></h3>
+                            </div>
+                            <button type="button" @click="showEditModal = false" :disabled="isSavingKondisi" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <!-- Body Modal Ubah -->
+                        <div class="space-y-4 text-xs">
+                            <!-- Info Singkat Aset -->
+                            <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="text-slate-500 text-[10px] block uppercase font-bold">Ruangan Terpasang</span>
+                                    <span class="text-white font-semibold">{{ $unitNama }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-slate-500 text-[10px] block uppercase font-bold">Kondisi Saat Ini</span>
+                                    <span class="font-bold text-amber-400" x-text="editAsset.kondisi"></span>
+                                </div>
+                            </div>
+
+                            <!-- Opsi Pilihan Kondisi (4 Radio Cards) -->
+                            <div>
+                                <label class="block text-slate-300 font-bold mb-2">Pilih Kondisi Fisik Baru:</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <!-- 1. Baik -->
+                                    <label class="p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5"
+                                        :class="editForm.kondisi === 'Baik' ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'">
+                                        <input type="radio" name="pilihan_kondisi" value="Baik" x-model="editForm.kondisi" class="mt-0.5 text-emerald-500 focus:ring-0">
+                                        <div>
+                                            <span class="font-bold block text-xs" :class="editForm.kondisi === 'Baik' ? 'text-emerald-300' : 'text-white'">🟢 Baik</span>
+                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Berfungsi normal dan siap digunakan</span>
+                                        </div>
+                                    </label>
+
+                                    <!-- 2. Kurang Baik -->
+                                    <label class="p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5"
+                                        :class="editForm.kondisi === 'Kurang Baik' ? 'bg-amber-500/15 border-amber-500 text-white shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'">
+                                        <input type="radio" name="pilihan_kondisi" value="Kurang Baik" x-model="editForm.kondisi" class="mt-0.5 text-amber-500 focus:ring-0">
+                                        <div>
+                                            <span class="font-bold block text-xs" :class="editForm.kondisi === 'Kurang Baik' ? 'text-amber-300' : 'text-white'">🟡 Kurang Baik</span>
+                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Mengalami kendala minor / aus</span>
+                                        </div>
+                                    </label>
+
+                                    <!-- 3. Rusak Ringan -->
+                                    <label class="p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5"
+                                        :class="editForm.kondisi === 'Rusak Ringan' ? 'bg-orange-500/15 border-orange-500 text-white shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'">
+                                        <input type="radio" name="pilihan_kondisi" value="Rusak Ringan" x-model="editForm.kondisi" class="mt-0.5 text-orange-500 focus:ring-0">
+                                        <div>
+                                            <span class="font-bold block text-xs" :class="editForm.kondisi === 'Rusak Ringan' ? 'text-orange-300' : 'text-white'">🟠 Rusak Ringan</span>
+                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Butuh suku cadang / servis ringan</span>
+                                        </div>
+                                    </label>
+
+                                    <!-- 4. Rusak Berat -->
+                                    <label class="p-3 rounded-xl border cursor-pointer transition-all flex items-start space-x-2.5"
+                                        :class="editForm.kondisi === 'Rusak Berat' ? 'bg-rose-500/15 border-rose-500 text-white shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'">
+                                        <input type="radio" name="pilihan_kondisi" value="Rusak Berat" x-model="editForm.kondisi" class="mt-0.5 text-rose-500 focus:ring-0">
+                                        <div>
+                                            <span class="font-bold block text-xs" :class="editForm.kondisi === 'Rusak Berat' ? 'text-rose-300' : 'text-white'">🔴 Rusak Berat</span>
+                                            <span class="text-[10px] text-slate-400 leading-tight block mt-0.5">Mati total / tidak dapat digunakan</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Catatan Kondisi -->
+                            <div>
+                                <label class="block text-slate-300 font-bold mb-1">Catatan Kendala / Keterangan Fisik (Opsional):</label>
+                                <textarea x-model="editForm.catatan" rows="2" placeholder="Contoh: Layar berkedip, tombol power macet, perlu servis IPSRS..."
+                                    class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-all"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Footer Modal Ubah -->
+                        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                            <button type="button" @click="showEditModal = false" :disabled="isSavingKondisi"
+                                class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
+                                Batal
+                            </button>
+                            <button type="button" @click="saveKondisi()" :disabled="isSavingKondisi"
+                                class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center space-x-1.5 disabled:opacity-50">
+                                <span x-show="isSavingKondisi" class="animate-spin text-sm leading-none">⚙️</span>
+                                <span x-text="isSavingKondisi ? 'Menyimpan...' : 'Simpan Perubahan Kondisi'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- 5. MODAL PRATINJAU & CETAK DOKUMEN KIR RESMI (KERTAS PUTIH STANDAR PEMERINTAH) -->
         <div x-show="showPrintModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
@@ -574,7 +800,7 @@
             </div>
         </div>
 
-        <!-- 5. MODAL DETAIL SPESIFIKASI ASET (NO-PRINT) -->
+        <!-- 6. MODAL DETAIL SPESIFIKASI ASET (NO-PRINT) -->
         <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
@@ -642,7 +868,14 @@
                         </div>
 
                         <!-- Footer Detail Modal -->
-                        <div class="mt-5 pt-3 border-t border-slate-800 flex items-center justify-end">
+                        <div class="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between">
+                            <!-- Tombol Shortcut Ubah Kondisi dari Modal Detail -->
+                            <button type="button" @click="showDetailModal = false; openEditKondisi(selectedAsset)"
+                                class="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs border border-amber-500/40 transition-all flex items-center space-x-1.5">
+                                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span>Ubah Kondisi Barang</span>
+                            </button>
+
                             <button type="button" @click="showDetailModal = false"
                                 class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all">
                                 Tutup
