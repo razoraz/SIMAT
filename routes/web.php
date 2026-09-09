@@ -881,6 +881,28 @@ Route::middleware('auth')->group(function () {
                     $specJson['kdp_items'] = array_values($cleanedKdp);
                 }
 
+                // ATB: Simpan seluruh atb_items (multi-item repeater)
+                if (!empty($data['atb_items']) && is_array($data['atb_items']) && count($data['atb_items']) > 0) {
+                    $cleanedAtb = array_map(function($item) {
+                        return array_filter($item, fn($v) => !is_null($v) && $v !== '' && $v !== false);
+                    }, $data['atb_items']);
+                    $specJson['atb_items'] = array_values($cleanedAtb);
+                    // Sync legacy fields dari item pertama
+                    $firstAtb = $data['atb_items'][0] ?? [];
+                    if (!isset($specJson['atb_judul']) && !empty($firstAtb['atb_judul_nama'])) {
+                        $specJson['atb_judul'] = $firstAtb['atb_judul_nama'];
+                    }
+                    if (!isset($specJson['atb_pencipta']) && !empty($firstAtb['atb_pencipta'])) {
+                        $specJson['atb_pencipta'] = $firstAtb['atb_pencipta'];
+                    }
+                    if (!isset($specJson['atb_spesifikasi']) && !empty($firstAtb['atb_spesifikasi'])) {
+                        $specJson['atb_spesifikasi'] = $firstAtb['atb_spesifikasi'];
+                    }
+                    if (!isset($specJson['ruang_pemegang']) && !empty($firstAtb['atb_ruang_pemegang'])) {
+                        $specJson['ruang_pemegang'] = $firstAtb['atb_ruang_pemegang'];
+                    }
+                }
+
                 return [
                     'volume' => max(1, $volume),
                     'satuan' => $satuan,
@@ -2054,7 +2076,9 @@ Route::middleware('auth')->group(function () {
                     'hewan_judul' => $d['lainnya_hewan_judul'] ?? ($d['lainnya_hewan_jenis'] ?? null),
                     'hewan_jenis' => $d['lainnya_hewan_jenis'] ?? null,
                     'hewan_spesifikasi' => $d['lainnya_hewan_spesifikasi'] ?? null,
-                    'atb_judul' => $d['atb_judul'] ?? null,
+                    'atb_judul' => $d['atb_judul_nama'] ?? ($d['atb_judul'] ?? null),
+                    'atb_nama_barang' => $d['atb_nama_barang'] ?? null,
+                    'atb_kode_barang' => $d['atb_kode_barang'] ?? null,
                     'atb_pencipta' => $d['atb_pencipta'] ?? null,
                     'atb_jenis_lisensi' => $d['atb_jenis_lisensi'] ?? null,
                     'atb_spesifikasi' => $d['atb_spesifikasi'] ?? null,
@@ -2073,7 +2097,30 @@ Route::middleware('auth')->group(function () {
                     $spec['lainnya_items'] = array_values($cleanedItems);
                 }
 
+                // ATB: Simpan seluruh atb_items (multi-item repeater) saat update
+                if (!empty($d['atb_items']) && is_array($d['atb_items']) && count($d['atb_items']) > 0) {
+                    $cleanedAtb = array_map(function($item) {
+                        return array_filter($item, fn($v) => !is_null($v) && $v !== '' && $v !== false);
+                    }, $d['atb_items']);
+                    $spec['atb_items'] = array_values($cleanedAtb);
+                    // Sync legacy fields dari item pertama
+                    $firstAtb = $d['atb_items'][0] ?? [];
+                    if (!isset($spec['atb_judul']) && !empty($firstAtb['atb_judul_nama'])) {
+                        $spec['atb_judul'] = $firstAtb['atb_judul_nama'];
+                    }
+                    if (!isset($spec['atb_pencipta']) && !empty($firstAtb['atb_pencipta'])) {
+                        $spec['atb_pencipta'] = $firstAtb['atb_pencipta'];
+                    }
+                    if (!isset($spec['atb_spesifikasi']) && !empty($firstAtb['atb_spesifikasi'])) {
+                        $spec['atb_spesifikasi'] = $firstAtb['atb_spesifikasi'];
+                    }
+                    if (!isset($spec['ruang_pemegang']) && !empty($firstAtb['atb_ruang_pemegang'])) {
+                        $spec['ruang_pemegang'] = $firstAtb['atb_ruang_pemegang'];
+                    }
+                }
+
                 return [
+
                     'vol' => max(1, $vol),
                     'sat' => $sat,
                     'hrgSat' => $hrgSat,

@@ -4621,6 +4621,31 @@
                     }];
                 },
 
+                getAtbItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    if (spec && Array.isArray(spec.atb_items) && spec.atb_items.length > 0) {
+                        return spec.atb_items;
+                    }
+                    // Fallback: legacy single-item data
+                    return [{
+                        atb_nama_barang: (spec && spec.atb_nama_barang) || astap.nama_barang || 'Aset Tidak Berwujud',
+                        atb_kode_barang: (spec && spec.atb_kode_barang) || astap.kode_barang || '',
+                        atb_judul_nama: (spec && (spec.atb_judul_nama || spec.atb_judul)) || '',
+                        atb_pencipta: (spec && spec.atb_pencipta) || astap.penyedia_nama || '',
+                        atb_spesifikasi: (spec && spec.atb_spesifikasi) || '',
+                        atb_jumlah: astap.jumlah_volume || (spec && spec.atb_jumlah) || 1,
+                        atb_satuan: astap.satuan || (spec && spec.atb_satuan) || 'Lisensi',
+                        atb_kondisi: astap.kondisi || (spec && spec.atb_kondisi) || 'Baik',
+                        atb_nilai_satuan: astap.harga_satuan || (spec && spec.atb_nilai_satuan) || 0,
+                        atb_administrasi_proyek: astap.biaya_administrasi_proyek || (spec && spec.atb_administrasi_proyek) || 0,
+                        atb_ruang_pemegang: (spec && (spec.atb_ruang_pemegang || spec.ruang_pemegang)) || astap.ruang_pemegang || ''
+                    }];
+                },
+
                 getLainnyaItemsForDetail(astap) {
                     if (!astap) return [];
                     let spec = astap.spesifikasi_json;
@@ -5838,35 +5863,83 @@
                                 </div>
                             </template>
 
-                            <!-- 7. ATB (ASET TIDAK BERWUJUD) -->
+                            <!-- 7. ATB (ASET TIDAK BERWUJUD) - Multi-Item Cards -->
                             <template x-if="selectedAstapDetail.category === 'ATB'">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">💻 Judul Software / Kajian</span>
-                                        <span class="text-indigo-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.atb_judul || selectedAstapDetail.nama_barang"></span>
+                                <div class="space-y-3">
+                                    <!-- Header ATB Multi-Item -->
+                                    <div class="flex items-center justify-between px-1">
+                                        <span class="text-[11px] font-bold text-violet-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                            <span>💻 Rincian Item ATB Terdaftar (<span x-text="getAtbItemsForDetail(selectedAstapDetail).length"></span> Item)</span>
+                                        </span>
+                                        <span class="text-[10px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getAtbItemsForDetail(selectedAstapDetail).reduce((s,a) => s + (a.atb_jumlah||1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Lisensi')"></span>
                                     </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏢 Vendor / Developer</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.spesifikasi_json?.atb_pencipta || selectedAstapDetail.penyedia_nama || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">📜 Jenis Lisensi ATB</span>
-                                        <span class="text-cyan-300 font-bold" x-text="selectedAstapDetail.spesifikasi_json?.atb_jenis_lisensi || 'Lisensi Sistem RSUD'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🛠️ Spesifikasi Software</span>
-                                        <span class="text-slate-200 font-medium" x-text="selectedAstapDetail.spesifikasi_json?.atb_spesifikasi || '-'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏛️ Asal Perolehan</span>
-                                        <span class="text-white font-bold" x-text="selectedAstapDetail.asal_usul || 'APBD'"></span>
-                                    </div>
-                                    <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                                        <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">⚙️ Masa Manfaat</span>
-                                        <span class="text-emerald-300 font-bold">Permanen / Berkelanjutan</span>
-                                    </div>
+                                    <!-- Cards per Item ATB -->
+                                    <template x-for="(aItem, aIdx) in getAtbItemsForDetail(selectedAstapDetail)" :key="aIdx">
+                                        <div class="p-3 rounded-2xl bg-slate-900/80 border border-violet-500/30 space-y-2.5">
+                                            <!-- Header kartu item -->
+                                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="px-2.5 py-0.5 rounded-lg bg-violet-500/20 text-violet-300 font-mono font-extrabold text-[10px] border border-violet-500/30">
+                                                        💻 ATB #<span x-text="aIdx + 1"></span>
+                                                    </span>
+                                                    <span class="text-[11px] text-white font-semibold" x-text="aItem.atb_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                </div>
+                                                <span class="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg"
+                                                      x-text="'Rp ' + Number((aItem.atb_jumlah||1) * (aItem.atb_nilai_satuan||0) + (aItem.atb_administrasi_proyek||0)).toLocaleString('id-ID')">
+                                                </span>
+                                            </div>
+
+                                            <!-- Detail 4-kolom grid -->
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <!-- Judul / Nama Software -->
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💻 Judul / Nama</span>
+                                                    <span class="text-indigo-300 font-bold block text-[10.5px]" x-text="aItem.atb_judul_nama || '-'"></span>
+                                                </div>
+                                                <!-- Pencipta / Vendor -->
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏢 Pencipta / Vendor</span>
+                                                    <span class="text-white font-bold block text-[10.5px]" x-text="aItem.atb_pencipta || '-'"></span>
+                                                </div>
+                                                <!-- Spesifikasi -->
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🛠️ Spesifikasi</span>
+                                                    <span class="text-cyan-300 font-medium block text-[10.5px]" x-text="aItem.atb_spesifikasi || '-'"></span>
+                                                </div>
+                                                <!-- Ruang / Pemegang -->
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Ruang / Pemegang</span>
+                                                    <span class="text-violet-300 font-medium block text-[10.5px]" x-text="aItem.atb_ruang_pemegang || selectedAstapDetail.ruang_pemegang || '-'"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Volume & Nilai -->
+                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📦 Volume</span>
+                                                    <span class="text-cyan-300 font-bold block text-[10.5px]" x-text="(aItem.atb_jumlah || 1) + ' ' + (aItem.atb_satuan || 'Lisensi')"></span>
+                                                </div>
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">✅ Kondisi</span>
+                                                    <span class="font-bold block text-[10.5px]"
+                                                          :class="aItem.atb_kondisi === 'Baik' ? 'text-emerald-400' : (aItem.atb_kondisi === 'Kurang Baik' ? 'text-amber-400' : 'text-rose-400')"
+                                                          x-text="aItem.atb_kondisi || 'Baik'">
+                                                    </span>
+                                                </div>
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💵 Nilai Satuan</span>
+                                                    <span class="text-violet-300 font-mono font-bold block text-[10.5px]" x-text="'Rp ' + Number(aItem.atb_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                </div>
+                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🔖 Administrasi</span>
+                                                    <span class="text-amber-300 font-mono font-bold block text-[10.5px]" x-text="'Rp ' + Number(aItem.atb_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
+
                         </div>
 
                         <!-- Dokumen Legalisasi & Pengadaan (Responsive Grid) -->

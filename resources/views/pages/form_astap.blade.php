@@ -1,4 +1,4 @@
-<x-layout :title="request()->routeIs('astap.edit') ? 'Ubah Data ASTAP - SIMAT-RK' : 'Tambah Data ASTAP Baru - SIMAT-RK'">
+﻿<x-layout :title="request()->routeIs('astap.edit') ? 'Ubah Data ASTAP - SIMAT-RK' : 'Tambah Data ASTAP Baru - SIMAT-RK'">
     @section('page-title', request()->routeIs('astap.edit') ? 'Ubah Data ASTAP' : 'Tambah Data ASTAP Baru')
     @section('breadcrumb', request()->routeIs('astap.edit') ? 'Master Utama / Data ASTAP / Ubah Data' : 'Master Utama / Data ASTAP / Tambah Baru')
 
@@ -512,7 +512,7 @@
                                     searchRuang: ''
                                 }
                             ],
-                        // ATB
+                        // ATB (Multi-Item Repeater - sama seperti KIB F)
                         atb_nama_barang: nama || '',
                         atb_kode_barang: kode108Val || '',
                         atb_judul_nama: spec.atb_judul || '',
@@ -526,7 +526,38 @@
                         atb_satuan: ea ? (ea.satuan || 'Lisensi') : 'Lisensi',
                         atb_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
                         atb_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
-                        // KIB F KDP (Multi-Item Repeater)
+                        atb_items: (spec && spec.atb_items && Array.isArray(spec.atb_items) && spec.atb_items.length > 0)
+                            ? spec.atb_items.map(a => ({
+                                atb_nama_barang: a.atb_nama_barang || nama || '',
+                                atb_kode_barang: a.atb_kode_barang || kode108Val || '',
+                                atb_judul_nama: a.atb_judul_nama || a.atb_judul || '',
+                                atb_pencipta: a.atb_pencipta || '',
+                                atb_spesifikasi: a.atb_spesifikasi || '',
+                                atb_jumlah: a.atb_jumlah || 1,
+                                atb_satuan: a.atb_satuan || 'Lisensi',
+                                atb_kondisi: a.atb_kondisi || 'Baik',
+                                atb_nilai_satuan: a.atb_nilai_satuan || 0,
+                                atb_administrasi_proyek: a.atb_administrasi_proyek || 0,
+                                atb_ruang_pemegang: a.atb_ruang_pemegang || spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                isRuangOpen: false,
+                                searchRuang: ''
+                            }))
+                            : [{
+                                atb_nama_barang: nama || '',
+                                atb_kode_barang: kode108Val || '',
+                                atb_judul_nama: spec.atb_judul || '',
+                                atb_pencipta: spec.atb_pencipta || '',
+                                atb_spesifikasi: spec.atb_spesifikasi || '',
+                                atb_jumlah: ea ? (ea.jumlah_volume || 1) : 1,
+                                atb_satuan: ea ? (ea.satuan || 'Lisensi') : 'Lisensi',
+                                atb_kondisi: reg0 ? (reg0.kondisi || 'Baik') : 'Baik',
+                                atb_nilai_satuan: ea ? (ea.harga_satuan || 0) : 0,
+                                atb_administrasi_proyek: ea ? (ea.biaya_administrasi_proyek || 0) : 0,
+                                atb_ruang_pemegang: spec.ruang_pemegang || (reg0 ? (reg0.ruang_pemegang || '') : ''),
+                                isRuangOpen: false,
+                                searchRuang: ''
+                            }],
+
                         kdp_nama_barang: nama || '',
                         kdp_kode_barang: kode108Val || '',
                         kdp_bangunan: spec.bertingkat || 'Bertingkat',
@@ -779,6 +810,8 @@
                     this.$watch('formData.atb_nilai_satuan', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.atb_jumlah', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.atb_administrasi_proyek', () => this.syncRealisasiFromStep3());
+                    this.$watch('formData.atb_items', () => { this.syncAtbFieldsToMain(); this.syncRealisasiFromStep3(); }, { deep: true });
+
                     this.$watch('formData.kdp_nilai_perencanaan', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.kdp_nilai_fisik', () => this.syncRealisasiFromStep3());
                     this.$watch('formData.kdp_nilai_pengawasan', () => this.syncRealisasiFromStep3());
@@ -1541,8 +1574,84 @@
                 },
 
                 get totalNilaiAtb() {
-                    return (Number(this.formData.atb_jumlah || 1) * Number(this.formData.atb_nilai_satuan || 0)) + 
+                    if (this.formData.atb_items && this.formData.atb_items.length > 0) {
+                        return this.formData.atb_items.reduce((sum, item) => sum + this.getAtbSubtotal(item), 0);
+                    }
+                    return (Number(this.formData.atb_jumlah || 1) * Number(this.formData.atb_nilai_satuan || 0)) +
                            Number(this.formData.atb_administrasi_proyek || 0);
+                },
+
+                get totalVolumeAtb() {
+                    if (this.formData.atb_items && this.formData.atb_items.length > 0) {
+                        return this.formData.atb_items.reduce((sum, item) => sum + (parseInt(item.atb_jumlah) || 1), 0);
+                    }
+                    return parseInt(this.formData.atb_jumlah) || 1;
+                },
+
+                getAtbSubtotal(item) {
+                    return (Number(item.atb_jumlah || 1) * Number(item.atb_nilai_satuan || 0)) +
+                           Number(item.atb_administrasi_proyek || 0);
+                },
+
+                addAtbItem() {
+                    if (!this.formData.atb_items) {
+                        this.formData.atb_items = [];
+                    }
+                    this.formData.atb_items.push({
+                        atb_nama_barang: this.formData.atb_nama_barang || this.formData.sub_rincian_nama || '',
+                        atb_kode_barang: this.formData.atb_kode_barang || this.formData.sub_rincian_kode || '',
+                        atb_judul_nama: '',
+                        atb_pencipta: '',
+                        atb_spesifikasi: '',
+                        atb_jumlah: 1,
+                        atb_satuan: 'Lisensi',
+                        atb_kondisi: 'Baik',
+                        atb_nilai_satuan: 0,
+                        atb_administrasi_proyek: 0,
+                        atb_ruang_pemegang: '',
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    });
+                    this.syncAtbFieldsToMain();
+                    this.syncRealisasiFromStep3();
+                },
+
+                removeAtbItem(index) {
+                    if (this.formData.atb_items && this.formData.atb_items.length > 1) {
+                        this.formData.atb_items.splice(index, 1);
+                        this.syncAtbFieldsToMain();
+                        this.syncRealisasiFromStep3();
+                    }
+                },
+
+                syncAtbFieldsToMain() {
+                    if (this.formData.atb_items && this.formData.atb_items.length > 0) {
+                        const first = this.formData.atb_items[0];
+                        if (first.atb_nama_barang && first.atb_nama_barang.trim() !== '') {
+                            this.formData.atb_nama_barang = first.atb_nama_barang;
+                        } else if (this.formData.atb_nama_barang) {
+                            first.atb_nama_barang = this.formData.atb_nama_barang;
+                        }
+                        if (first.atb_kode_barang && first.atb_kode_barang.trim() !== '') {
+                            this.formData.atb_kode_barang = first.atb_kode_barang;
+                        } else if (this.formData.atb_kode_barang) {
+                            first.atb_kode_barang = this.formData.atb_kode_barang;
+                        }
+                        this.formData.atb_judul_nama = first.atb_judul_nama;
+                        this.formData.atb_judul = first.atb_judul_nama;
+                        this.formData.atb_pencipta = first.atb_pencipta;
+                        this.formData.atb_spesifikasi = first.atb_spesifikasi;
+                        this.formData.atb_kondisi = first.atb_kondisi;
+                        this.formData.atb_satuan = first.atb_satuan;
+                        this.formData.ruang_pemegang_atb = first.atb_ruang_pemegang;
+
+                        const totalJumlah = this.formData.atb_items.reduce((sum, it) => sum + (parseInt(it.atb_jumlah) || 1), 0);
+                        this.formData.atb_jumlah = totalJumlah;
+                        this.formData.jumlah_volume = totalJumlah;
+
+                        this.formData.atb_nilai_satuan = first.atb_nilai_satuan;
+                        this.formData.atb_administrasi_proyek = this.formData.atb_items.reduce((sum, it) => sum + (parseFloat(it.atb_administrasi_proyek) || 0), 0);
+                    }
                 },
 
                 get totalNilaiKdp() {
@@ -6488,170 +6597,219 @@
                             </div>
                         </div>
 
+                        <!-- ============================================================= -->
+                        <!-- MULTI-ITEM REPEATER KHUSUS ATB (ASET TIDAK BERWUJUD)           -->
+                        <!-- ============================================================= -->
+                        <div class="space-y-4">
 
-
-                        <!-- Grid Form Pengisian Rincian Aset Tidak Berwujud (Sisa Kolom) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                            <!-- 3. JUDUL / NAMA, PENCIPTA & SPESIFIKASI ATB -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <!-- Header Pembungkus ATB -->
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-violet-950/30 border border-violet-500/40 shadow-md">
+                                <div class="space-y-0.5">
                                     <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">3. Judul, Pencipta & Spesifikasi</span>
+                                        <span class="p-1.5 rounded-lg bg-violet-500/20 text-violet-400 text-sm">💻</span>
+                                        <h3 class="text-xs sm:text-sm font-extrabold text-white tracking-wide uppercase">
+                                            RINCIAN ASET TIDAK BERWUJUD (<span class="text-violet-400" x-text="formData.atb_items.length"></span> Item ATB Terdaftar)
+                                        </h3>
                                     </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">Kolom Excel</span>
+                                    <p class="text-[11px] text-slate-400">
+                                        Setiap item ATB memiliki Judul/Nama, Pencipta/Vendor, Spesifikasi, Jumlah, Satuan, Kondisi, Nilai Satuan, Administrasi Proyek, dan Ruang/Pemegang masing-masing.
+                                    </p>
                                 </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Judul / Nama Software & Lisensi</label>
-                                    <input type="text" x-model="formData.atb_judul_nama" placeholder="Aplikasi SIMAT-RK (Sistem Informasi Manajemen Aset)..."
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Pencipta / Vendor / Pengembang</label>
-                                    <input type="text" x-model="formData.atb_pencipta" placeholder="Tim IT SIMRS RSUD & Pengembang Sistem"
-                                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Spesifikasi Software / Hak Cipta</label>
-                                    <textarea rows="2" x-model="formData.atb_spesifikasi" placeholder="Web-Based, Multi-Role Access, Integrasi SatuSehat & RME..."
-                                              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 focus:outline-none focus:border-cyan-500 resize-none"></textarea>
-                                </div>
+                                <button type="button" @click="addAtbItem()" 
+                                        class="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-lg shadow-violet-500/20 shrink-0 cursor-pointer">
+                                    <span>➕ Tambah Item ATB Baru</span>
+                                </button>
                             </div>
 
-                            <!-- 4. VOLUME, ADMINISTRASI PROYEK & TOTAL NILAI -->
-                            <div class="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-lg">
-                                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-violet-400"></span>
-                                        <span class="text-xs font-bold text-white uppercase tracking-wider">4. Volume & Nilai ATB</span>
-                                    </div>
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 font-bold">Kalkulasi Otomatis</span>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                    <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Jumlah</label>
-                                        <input type="number" x-model.number="formData.atb_jumlah" placeholder="1"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Nama Satuan</label>
-                                        <select x-model="formData.atb_satuan"
-                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white">
-                                            <option value="Paket">Paket</option>
-                                            <option value="Lisensi">Lisensi</option>
-                                            <option value="Modul">Modul</option>
-                                            <option value="Sistem">Sistem</option>
-                                            <option value="Unit">Unit</option>
-                                            <option value="Aplikasi">Aplikasi</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-400 text-[11px] mb-1">Kondisi</label>
-                                        <select x-model="formData.atb_kondisi"
-                                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold">
-                                            <option value="Baik">Baik (B)</option>
-                                            <option value="Kurang Baik">Kurang Baik (KB)</option>
-                                            <option value="Rusak Berat">Rusak Berat (RB)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Nilai Satuan Barang (Rp)</label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold">Rp</span>
-                                        <input type="number" x-model.number="formData.atb_nilai_satuan" placeholder="145000000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-violet-300 font-mono font-bold">
-                                    </div>
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="block text-slate-400 text-[11px]">Administrasi Proyek (Rp)</label>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold">Rp</span>
-                                        <input type="number" x-model.number="formData.atb_administrasi_proyek" placeholder="5000000"
-                                               class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-amber-300 font-mono font-bold">
-                                    </div>
-                                </div>
-                                <!-- Info Nilai Anggaran & Realisasi (Langkah 2) -->
-                                <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-                                    <div class="flex flex-wrap items-center gap-4 sm:gap-6">
-                                        <div>
-                                            <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
-                                            <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
-                                        </div>
-                                        <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
-                                        <div>
-                                            <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
-                                            <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
-                                        </div>
-                                    </div>
-                                    <div class="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
-                                        <span class="text-[10px] text-cyan-400 font-semibold block uppercase tracking-wider">Total Nilai Barang Ini:</span>
-                                        <span class="text-base font-extrabold text-cyan-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAtb)"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- 6. Ruang / Pemegang (Ditampilkan tepat diatas Live Preview Excel ATB) -->
-                        <div class="p-5 rounded-2xl bg-slate-950/80 border border-violet-500/40 space-y-2 shadow-lg relative" @click.away="isRuangPemegangAtbOpen = false">
-                            <div class="flex items-center justify-between border-b border-violet-500/30 pb-2">
-                                <label class="block text-violet-400 font-bold text-xs uppercase tracking-wider flex items-center space-x-2">
-                                    <span>📍 RUANG / PEMEGANG (PENANGGUNG JAWAB & LOKASI):</span>
-                                </label>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
-                                        <span>🏥</span>
-                                        <span>Tersinkron Unit & Paviliun</span>
-                                    </span>
-                                    <button type="button" 
-                                            x-show="formData.ruang_pemegang_atb" 
-                                            @click="formData.ruang_pemegang_atb = ''; searchRuangPemegangAtb = ''; isRuangPemegangAtbOpen = true" 
-                                            class="text-[10.5px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
-                                        ✕ Reset
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="relative">
-                                <input type="text" 
-                                       :value="!isRuangPemegangAtbOpen ? formData.ruang_pemegang_atb : searchRuangPemegangAtb"
-                                       @input="formData.ruang_pemegang_atb = $event.target.value; searchRuangPemegangAtb = $event.target.value; isRuangPemegangAtbOpen = true"
-                                       @focus="isRuangPemegangAtbOpen = true"
-                                       placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
-                                       class="w-full bg-slate-900 border border-slate-700 hover:border-violet-500 focus:border-violet-500 rounded-xl px-4 py-3 pl-10 text-xs text-white font-semibold focus:outline-none transition-all">
-                                <svg class="w-4 h-4 text-violet-400 absolute left-3.5 top-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                            </div>
-
-                            <!-- Dropdown List Pilihan Unit & Paviliun -->
-                            <div x-show="isRuangPemegangAtbOpen" x-transition x-cloak style="max-height: 210px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-violet-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
-                                <div class="px-3 py-1.5 bg-slate-950/80 rounded-xl text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center justify-between">
-                                    <span>PILIH DARI DATA UNIT & PAVILIUN RSUD:</span>
-                                    <span class="text-slate-400 font-mono text-[9.5px]" x-text="filteredUnitsAtb.length + ' Unit/Ruangan'"></span>
-                                </div>
-                                <template x-for="u in filteredUnitsAtb" :key="u.id">
-                                    <div @click="selectUnitAtb(u)" class="p-2.5 rounded-xl bg-slate-950/50 hover:bg-violet-500/15 border border-slate-800/60 hover:border-violet-500/40 cursor-pointer transition-all flex items-center justify-between group">
-                                        <div class="min-w-0 pr-2">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-xs font-bold text-white group-hover:text-violet-300 truncate" x-text="u.nama"></span>
-                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                            <!-- List Kartu ATB (Repeater) -->
+                            <div class="space-y-5">
+                                <template x-for="(item, idx) in formData.atb_items" :key="idx">
+                                    <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-violet-500/30 hover:border-violet-500/60 transition-all space-y-4 shadow-xl relative group">
+                                        
+                                        <!-- Header Kartu Tiap ATB -->
+                                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="px-3 py-1 rounded-xl bg-violet-500/20 text-violet-300 font-mono font-extrabold text-xs border border-violet-500/40 flex items-center space-x-1.5">
+                                                    <span>💻 Item ATB #<span x-text="idx + 1"></span></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-300 font-semibold" x-show="item.atb_nama_barang">
+                                                    • <span x-text="item.atb_nama_barang"></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono" x-show="item.atb_judul_nama">
+                                                    • <span x-text="item.atb_judul_nama"></span>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Qty: <strong class="text-cyan-300" x-text="(item.atb_jumlah || 1) + ' ' + (item.atb_satuan || 'Lisensi')"></strong>
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 font-mono">
+                                                    • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getAtbSubtotal(item))"></strong>
+                                                </span>
                                             </div>
-                                            <p class="text-[10px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+
+                                            <!-- Tombol Hapus ATB (Muncul jika > 1 item) -->
+                                            <button type="button" 
+                                                    x-show="formData.atb_items.length > 1" 
+                                                    @click="removeAtbItem(idx)" 
+                                                    class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 cursor-pointer">
+                                                <span>🗑️ Hapus Item Ini</span>
+                                            </button>
                                         </div>
-                                        <span class="px-2 py-1 rounded-lg bg-slate-900 text-violet-300 border border-violet-500/30 text-[10px] font-bold shrink-0">Pilih →</span>
+
+                                        <!-- Grid Form Pengisian Spesifikasi ATB -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                            <!-- Kolom Kiri: Identitas ATB -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>💻 Identitas &amp; Spesifikasi ATB:</span>
+                                                    </span>
+                                                </div>
+
+                                                <!-- Nama Barang (Terkunci) -->
+                                                <div>
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <label class="block text-slate-400 text-[10px] font-semibold">Nama Barang (PMDN 108)</label>
+                                                        <span class="text-[9px] text-amber-400/80 flex items-center gap-1 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                            Terkunci (Mengikuti Langkah 2)
+                                                        </span>
+                                                    </div>
+                                                    <input type="text" :value="item.atb_nama_barang || formData.atb_nama_barang || formData.sub_rincian_nama || 'Aset Tidak Berwujud'" readonly
+                                                           class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                                </div>
+
+                                                <!-- Judul / Nama Software -->
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Judul / Nama Software &amp; Lisensi</label>
+                                                    <input type="text" x-model="item.atb_judul_nama" placeholder="Aplikasi SIMAT-RK (Sistem Informasi Manajemen Aset)..."
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                                                </div>
+
+                                                <!-- Pencipta / Vendor -->
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Pencipta / Vendor / Pengembang</label>
+                                                    <input type="text" x-model="item.atb_pencipta" placeholder="Tim IT SIMRS RSUD & Pengembang Sistem"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                                                </div>
+
+                                                <!-- Spesifikasi -->
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Spesifikasi Software / Hak Cipta</label>
+                                                    <textarea rows="2" x-model="item.atb_spesifikasi" placeholder="Web-Based, Multi-Role Access, Integrasi SatuSehat & RME..."
+                                                              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-cyan-300 focus:outline-none focus:border-cyan-500 resize-none"></textarea>
+                                                </div>
+                                            </div>
+
+                                            <!-- Kolom Kanan: Volume & Nilai -->
+                                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                                    <span class="text-xs font-bold text-violet-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                                        <span>📦 Volume, Nilai &amp; Ruang Pemegang:</span>
+                                                    </span>
+                                                </div>
+
+                                                <!-- Jumlah, Satuan, Kondisi -->
+                                                <div class="grid grid-cols-3 gap-2">
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah</label>
+                                                        <input type="number" min="1" x-model.number="item.atb_jumlah" placeholder="1"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono font-bold focus:border-violet-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Satuan</label>
+                                                        <input type="text" x-model="item.atb_satuan" placeholder="Lisensi"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-violet-500">
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi</label>
+                                                        <select x-model="item.atb_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-violet-500">
+                                                            <option value="Baik">Baik (B)</option>
+                                                            <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                                            <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Nilai Satuan -->
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan Barang (Rp)</label>
+                                                    <div class="relative">
+                                                        <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold">Rp</span>
+                                                        <input type="number" x-model.number="item.atb_nilai_satuan" placeholder="145000000"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-violet-300 font-mono font-bold focus:border-violet-500">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Administrasi Proyek -->
+                                                <div>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Administrasi Proyek (Rp)</label>
+                                                    <div class="relative">
+                                                        <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold">Rp</span>
+                                                        <input type="number" x-model.number="item.atb_administrasi_proyek" placeholder="5000000"
+                                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-amber-300 font-mono font-bold focus:border-violet-500">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Subtotal Item -->
+                                                <div class="p-3 rounded-xl bg-violet-950/40 border border-violet-500/30 flex items-center justify-between">
+                                                    <span class="text-[10px] text-violet-400 font-semibold uppercase tracking-wider">Subtotal Item Ini:</span>
+                                                    <span class="text-sm font-black text-violet-300 font-mono" x-text="'Rp ' + formatRupiah(getAtbSubtotal(item))"></span>
+                                                </div>
+
+                                                <!-- Ruang / Pemegang per Item -->
+                                                <div class="relative" @click.away="item.isRuangOpen = false">
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">📍 Ruang / Pemegang Item Ini</label>
+                                                    <div class="relative">
+                                                        <input type="text" 
+                                                               :value="!item.isRuangOpen ? item.atb_ruang_pemegang : item.searchRuang"
+                                                               @input="item.atb_ruang_pemegang = $event.target.value; item.searchRuang = $event.target.value; item.isRuangOpen = true"
+                                                               @focus="item.isRuangOpen = true"
+                                                               placeholder="Ketik nama Ruang/Unit/Paviliun..."
+                                                               class="w-full bg-slate-950 border border-slate-700 hover:border-violet-500 focus:border-violet-500 rounded-xl px-3 py-2 pl-8 text-xs text-white font-semibold focus:outline-none transition-all">
+                                                        <svg class="w-3.5 h-3.5 text-violet-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                                    </div>
+                                                    <div x-show="item.isRuangOpen" x-transition x-cloak style="max-height:180px;" class="absolute left-0 right-0 z-40 mt-1 bg-slate-900 border border-violet-500/50 rounded-xl shadow-2xl overflow-y-auto p-1.5 space-y-1">
+                                                        <template x-for="u in (masterUnits || []).filter(u => !item.searchRuang || u.nama.toLowerCase().includes(item.searchRuang.toLowerCase()))" :key="u.id">
+                                                            <div @click="item.atb_ruang_pemegang = u.nama; item.isRuangOpen = false; item.searchRuang = ''"
+                                                                 class="px-3 py-2 rounded-lg hover:bg-violet-500/20 cursor-pointer text-xs text-white hover:text-violet-300 transition-all flex items-center justify-between">
+                                                                <div>
+                                                                    <span class="font-semibold" x-text="u.nama"></span>
+                                                                    <span class="text-[9px] text-slate-400 ml-1" x-text="'• ' + (u.tipe || 'Unit')"></span>
+                                                                </div>
+                                                                <span class="text-violet-400 text-[10px] font-bold">Pilih →</span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </template>
-                                <template x-if="filteredUnitsAtb.length === 0">
-                                    <div class="p-3 text-center text-xs text-slate-400">
-                                        <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                            </div>
+
+                            <!-- Ringkasan Total ATB -->
+                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-violet-500/30 flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex flex-wrap items-center gap-4">
+                                    <div>
+                                        <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">💰 Jumlah Anggaran:</span>
+                                        <span class="text-sm font-black text-white font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_anggaran)"></span>
                                     </div>
-                                </template>
+                                    <div class="h-7 w-px bg-slate-700 hidden sm:block"></div>
+                                    <div>
+                                        <span class="text-[10px] text-emerald-400 font-semibold block uppercase tracking-wider">📈 Jumlah Realisasi (Kolom 15):</span>
+                                        <span class="text-sm font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(formData.jumlah_realisasi)"></span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] text-violet-400 font-semibold block uppercase tracking-wider">Total Nilai Semua ATB:</span>
+                                    <span class="text-base font-extrabold text-violet-300 font-mono" x-text="'Rp ' + formatRupiah(totalNilaiAtb)"></span>
+                                </div>
                             </div>
                         </div>
 
                         <!-- ========================================================================= -->
-                        <!-- LIVE PREVIEW TABEL PERSIS SEPERTI GAMBAR SCREENSHOT USER (ATB / 1.5.3)    -->
+                        <!-- LIVE PREVIEW TABEL ATB (Format Excel Resmi ATB 23 Kolom)               -->
                         <!-- ========================================================================= -->
                         <div class="space-y-2 pt-4">
                             <div class="flex items-center justify-between">
@@ -6713,33 +6871,35 @@
                                             <th class="px-1.5 py-0.5 border border-slate-500">Tanggal</th>
                                         </tr>
                                     </thead>
-                                    <!-- Body Data Live Sesuai Input User -->
+                                    <!-- Body Data Live - Multi-Row per item ATB -->
                                     <tbody class="bg-white text-slate-950 font-medium text-[9.5px]">
-                                        <tr>
-                                            <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="formData.atb_nama_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="formData.atb_kode_barang"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.atb_judul_nama"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.atb_pencipta"></td>
-                                            <td class="px-2 py-2 border border-slate-400 text-left" x-text="formData.atb_spesifikasi"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="formData.atb_jumlah"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="formData.atb_satuan"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.atb_nilai_satuan)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(formData.atb_administrasi_proyek)"></td>
-                                            <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-violet-800" x-text="formatRupiah(totalNilaiAtb)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
-                                            <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
-                                            <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="formData.ruang_pemegang_atb"></td>
-                                        </tr>
+                                        <template x-for="(item, idx) in formData.atb_items" :key="idx">
+                                            <tr>
+                                                <td class="px-2 py-2 border border-slate-400 text-left font-semibold" x-text="item.atb_nama_barang || formData.atb_nama_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold" x-text="item.atb_kode_barang || formData.atb_kode_barang"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="item.atb_judul_nama"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="item.atb_pencipta"></td>
+                                                <td class="px-2 py-2 border border-slate-400 text-left" x-text="item.atb_spesifikasi"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.spk_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.spk_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.surat_pesanan_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.surat_pesanan_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.kwitansi_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.kwitansi_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.faktur_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.faktur_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono font-bold" x-text="item.atb_jumlah || 1"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-semibold" x-text="item.atb_satuan || 'Lisensi'"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(item.atb_nilai_satuan)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono text-right" x-text="formatRupiah(item.atb_administrasi_proyek)"></td>
+                                                <td class="px-2 py-2 border border-slate-400 font-mono font-bold text-right text-violet-800" x-text="formatRupiah(getAtbSubtotal(item))"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.sp2d_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.sp2d_tanggal)"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400 font-mono" x-text="formData.bast_dokumen_nomor"></td>
+                                                <td class="px-1.5 py-2 border border-slate-400" x-text="formatDateDisplay(formData.bast_dokumen_tanggal)"></td>
+                                                <td class="px-2.5 py-2 border border-slate-400 text-left font-medium" x-text="item.atb_ruang_pemegang || formData.ruang_pemegang_atb"></td>
+                                            </tr>
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>
