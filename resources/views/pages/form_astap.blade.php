@@ -2195,7 +2195,15 @@
                         if (found) this.formData.lainnya_nama_barang = found.nama;
                     } else if (this.isAtb) {
                         this.formData.atb_kode_barang = kodeSubSub;
-                        if (found) this.formData.atb_nama_barang = found.nama;
+                        if (found) {
+                            this.formData.atb_nama_barang = found.nama;
+                            if (this.formData.atb_items && this.formData.atb_items.length > 0) {
+                                this.formData.atb_items.forEach(it => {
+                                    it.atb_kode_barang = kodeSubSub;
+                                    it.atb_nama_barang = found.nama;
+                                });
+                            }
+                        }
                     } else if (this.isKdp) {
                         this.formData.kdp_kode_barang = kodeSubSub;
                         if (found) this.formData.kdp_nama_barang = found.nama;
@@ -2400,6 +2408,9 @@
                     if (this.isTanah) this.syncTanahFieldsToMain();
                     if (this.isMesin) this.syncMesinFieldsToMain();
                     if (this.isGedung) this.syncGedungFieldsToMain();
+                    if (this.isAsetLainnya) this.syncLainnyaFieldsToMain();
+                    if (this.isAtb) this.syncAtbFieldsToMain();
+                    if (this.isKdp) this.syncKdpFieldsToMain();
                     this.syncRealisasiFromStep3();
 
                     if (!this.formData.jumlah_realisasi || Number(this.formData.jumlah_realisasi) <= 0) {
@@ -2456,28 +2467,21 @@
                         const method = isEdit ? 'PUT' : 'POST';
 
                         const payload = { ...this.formData };
-                        if (this.isMesin) {
-                            delete payload.tanah_items;
-                            delete payload.gedung_items;
-                            delete payload.jaringan_items;
-                        } else if (this.isTanah) {
-                            delete payload.mesin_items;
-                            delete payload.gedung_items;
-                            delete payload.jaringan_items;
-                        } else if (this.isGedung) {
-                            delete payload.tanah_items;
-                            delete payload.mesin_items;
-                            delete payload.jaringan_items;
-                        } else if (this.isJaringan) {
-                            delete payload.tanah_items;
-                            delete payload.mesin_items;
-                            delete payload.gedung_items;
-                        } else {
-                            delete payload.tanah_items;
-                            delete payload.mesin_items;
-                            delete payload.gedung_items;
-                            delete payload.jaringan_items;
-                        }
+                        const allItemArrays = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items'];
+                        let activeArray = null;
+                        if (this.isTanah) activeArray = 'tanah_items';
+                        else if (this.isMesin) activeArray = 'mesin_items';
+                        else if (this.isGedung) activeArray = 'gedung_items';
+                        else if (this.isJaringan) activeArray = 'jaringan_items';
+                        else if (this.isAsetLainnya) activeArray = 'lainnya_items';
+                        else if (this.isAtb) activeArray = 'atb_items';
+                        else if (this.isKdp) activeArray = 'kdp_items';
+
+                        allItemArrays.forEach(arrKey => {
+                            if (arrKey !== activeArray) {
+                                delete payload[arrKey];
+                            }
+                        });
 
                         fetch(url, {
                             method: method,
