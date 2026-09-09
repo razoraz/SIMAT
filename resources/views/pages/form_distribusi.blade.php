@@ -321,12 +321,16 @@
                         return;
                     }
 
+                    // Validasi: Jumlah NIBAR tidak boleh melebihi Volume Pengajuan (item.qty)
+                    const maxQty = parseInt(item.qty) || 1;
+                    if (item.nibar_selected.length >= maxQty) {
+                        alert('⚠️ Jumlah NIBAR yang dipilih (' + (item.nibar_selected.length + 1) + ') tidak boleh melebihi Volume Pengajuan (' + maxQty + ' ' + (item.satuan || 'Unit') + ').\n\nVolume Pengajuan tidak boleh berubah otomatis. Jika ingin menambah NIBAR, silakan ubah Volume Pengajuan terlebih dahulu.');
+                        return;
+                    }
+
                     item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
                     // Volume Di-ACC otomatis mengikuti jumlah NIBAR yang diinput
                     item.qty_acc = item.nibar_selected.length;
-                    if (!this.isSubAdmin && (!item.qty || parseInt(item.qty) < item.qty_acc)) {
-                        item.qty = item.qty_acc;
-                    }
                     this.activeNibarDropdownIndex = null;
 
                     // Jika ada minimal 1 NIBAR yang diinput, otomatis dianggap di-ACC (status beralih ke 'Dalam Pengiriman' agar BAST terbit & siap dicetak)
@@ -554,6 +558,11 @@
                         const qtyPengajuan = parseInt(it.qty);
                         if (!it.qty || isNaN(qtyPengajuan) || qtyPengajuan <= 0) {
                             alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nVolume Pengajuan pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi atau bernilai 0.');
+                            return;
+                        }
+
+                        if ((it.nibar_selected || []).length > qtyPengajuan) {
+                            alert('⚠️ Volume Di-ACC / NIBAR terpilih (' + it.nibar_selected.length + ') pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") melebihi Volume Pengajuan (' + qtyPengajuan + ').\n\nSilakan kurangi pilihan NIBAR atau sesuaikan Volume Pengajuan.');
                             return;
                         }
 
