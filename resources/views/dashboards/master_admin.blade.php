@@ -36,7 +36,7 @@
                     </svg></div>
             </div>
             <p class="text-2xl font-black text-white">{{ number_format($totalAsetVolumeCount ?? 0, 0, ',', '.') }} <span
-                    class="text-xs font-normal text-emerald-400">Unit</span></p>
+                    class="text-xs font-normal text-emerald-400">Aset</span></p>
             <p class="text-[11px] text-slate-400 mt-1">Valuasi: <span class="text-emerald-400 font-bold">{{ $hargaAsetFormatted ?? 'Rp 0' }} {{ $hargaAsetUnit ?? '' }}</span> ({{ number_format($totalAstapMasterCount ?? 0, 0, ',', '.') }} Master)</p>
         </div>
 
