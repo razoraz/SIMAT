@@ -19,7 +19,6 @@
                 unitFilter: 'all',
                 statusFilter: 'all',
                 showDetailModal: false,
-                showEditModal: false,
                 selectedDistribusi: null,
 
                 unitList: {{ Js::from($units ?? []) }},
@@ -263,11 +262,6 @@
                 openDetail(item) {
                     this.selectedDistribusi = item;
                     this.showDetailModal = true;
-                },
-
-                openEdit(item) {
-                    this.selectedDistribusi = { ...item };
-                    this.showEditModal = true;
                 },
 
                 hasAccNibar(d) {
@@ -1079,6 +1073,17 @@
                             </button>
                         </template>
 
+                        <!-- Tombol Setuju (Hanya admin, langsung arahkan ke halaman edit distribusi) -->
+                        <template x-if="userRole !== 'sub_admin' && selectedDistribusi && !['Dalam Pengiriman', 'Dikirim', 'Telah Diterima', 'Diterima', 'Ditolak'].includes(selectedDistribusi.status)">
+                            <a :href="selectedDistribusi ? ('/distribusi/' + selectedDistribusi.id + '/edit') : '#'"
+                               class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5 cursor-pointer">
+                                <svg class="w-4 h-4 text-slate-950 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                <span>Setuju</span>
+                            </a>
+                        </template>
+
                         <a :href="selectedDistribusi ? ('/berita-acara?tab=distribusi&id=' + selectedDistribusi.id + '&returnTo=' + encodeURIComponent('/distribusi?openDetail=' + selectedDistribusi.id)) : '#'"
                            x-show="userRole !== 'sub_admin' && selectedDistribusi && selectedDistribusi.status !== 'Ditolak' && (['Dalam Pengiriman', 'Dikirim', 'Telah Diterima', 'Diterima'].includes(selectedDistribusi.status) || hasAccNibar(selectedDistribusi))"
                            class="px-4 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-extrabold text-xs transition-all shadow-md active:scale-95 inline-flex items-center space-x-1.5">
@@ -1090,47 +1095,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- MODAL UBAH STATUS DISTRIBUSI -->
-        <div x-show="showEditModal" class="no-print fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4" x-cloak>
-            <div @click.away="showEditModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                    <h3 class="text-base font-bold text-white">✏️ Ubah Status Distribusi</h3>
-                    <button type="button" @click="showEditModal = false" class="text-slate-500 hover:text-white">&times;</button>
-                </div>
-                <form @submit.prevent="showEditModal = false" class="space-y-4 text-xs">
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Judul / Ringkasan Barang</label>
-                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.nama : ''" 
-                               :disabled="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
-                               :readonly="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
-                               :class="(selectedDistribusi && selectedDistribusi.status === 'Ditolak') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-950 text-white border-slate-800'"
-                               class="w-full border rounded-xl px-3.5 py-2.5">
-                    </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Penerima Barang</label>
-                        <input type="text" x-model="selectedDistribusi ? selectedDistribusi.penerima : ''" 
-                               :disabled="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
-                               :readonly="selectedDistribusi && selectedDistribusi.status === 'Ditolak'"
-                               :class="(selectedDistribusi && selectedDistribusi.status === 'Ditolak') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-950 text-white border-slate-800'"
-                               class="w-full border rounded-xl px-3.5 py-2.5">
-                    </div>
-                    <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Status Distribusi</label>
-                        <select x-model="selectedDistribusi ? selectedDistribusi.status : 'Telah Diterima'" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                            <option value="Telah Diterima">Telah Diterima</option>
-                            <option value="Dalam Pengiriman">Dalam Pengiriman</option>
-                            <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
-                            <option value="Ditolak">Ditolak</option>
-                        </select>
-                    </div>
-                    <div class="pt-4 flex items-center justify-end space-x-2">
-                        <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Batal</button>
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-bold">Simpan Perubahan</button>
-                    </div>
-                </form>
             </div>
         </div>
 
