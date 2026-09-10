@@ -236,8 +236,13 @@ class DistribusiController extends Controller
                 ];
             });
 
-        // Kirim register list dengan id (bukan nibar string) sebagai referensi FK
+        // Kirim register list dengan id (bukan nibar string) sebagai referensi FK (hanya kondisi Baik yang dapat didistribusikan)
         $nibarList = AstapRegister::with('astap')
+            ->where(function($q) {
+                $q->whereNull('kondisi')
+                  ->orWhere('kondisi', 'Baik')
+                  ->orWhere('kondisi', '');
+            })
             ->orderBy('astap_id')
             ->orderBy('no_register_int')
             ->get()
@@ -250,7 +255,7 @@ class DistribusiController extends Controller
                     'kode'        => $r->astap ? $r->astap->kode_108 : '',
                     'nama_barang' => $r->astap ? $r->astap->nama_barang : '',
                     'ruang'       => $r->ruang_pemegang ?: 'Belum Ditempatkan / Di Gudang',
-                'kondisi'     => $r->kondisi ?: 'Baik',
+                    'kondisi'     => $r->kondisi ?: 'Baik',
                     'status'      => $isTersedia ? 'Tersedia' : 'Tidak Tersedia',
                 ];
             });
@@ -334,6 +339,14 @@ class DistribusiController extends Controller
             });
 
         $nibarList = AstapRegister::with('astap')
+            ->where(function($q) use ($currentRegisterIds) {
+                $q->whereIn('id', $currentRegisterIds)
+                  ->orWhere(function($sub) {
+                      $sub->whereNull('kondisi')
+                          ->orWhere('kondisi', 'Baik')
+                          ->orWhere('kondisi', '');
+                  });
+            })
             ->orderBy('astap_id')
             ->orderBy('no_register_int')
             ->get()

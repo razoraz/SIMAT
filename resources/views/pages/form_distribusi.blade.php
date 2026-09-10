@@ -273,14 +273,27 @@
                         item.nama_barang.trim().toLowerCase() === n.nama_barang.trim().toLowerCase()) return true;
                     return false;
                 },
-                getMatchingNibarCount(item) { return (this.nibarList || []).filter(n => this.isNibarMatch(n, item) && (n.status === 'Tersedia' || !n.status)).length; },
-                isNibarEmpty(item) { if (!item || (!item.nama_barang && !item.kode_barang)) return false; return this.getMatchingNibarCount(item) === 0; },
+                isNibarKondisiBaik(n) {
+                    if (!n) return false;
+                    const k = (n.kondisi || '').trim().toLowerCase();
+                    return k === 'baik' || k === '' || !n.kondisi;
+                },
+                getMatchingNibarCount(item) { 
+                    return (this.nibarList || []).filter(n => this.isNibarMatch(n, item) && (n.status === 'Tersedia' || !n.status) && this.isNibarKondisiBaik(n)).length; 
+                },
+                isNibarEmpty(item) { 
+                    if (!item || (!item.nama_barang && !item.kode_barang)) return false; 
+                    return this.getMatchingNibarCount(item) === 0; 
+                },
                 getFilteredNibar(item, query) {
                     if (!item) return [];
-                    let list = (this.nibarList || []).filter(n => this.isNibarMatch(n, item) && (n.status === 'Tersedia' || !n.status));
+                    let list = (this.nibarList || []).filter(n => this.isNibarMatch(n, item) && (n.status === 'Tersedia' || !n.status) && this.isNibarKondisiBaik(n));
                     const chosen = (item.nibar_selected || []).map(n => n.nibar);
                     list = list.filter(n => !chosen.includes(n.nibar));
-                    if (query && query.trim() !== '') { const q = query.toLowerCase(); list = list.filter(n => (n.nibar||'').toLowerCase().includes(q) || (n.ruang||'').toLowerCase().includes(q)); }
+                    if (query && query.trim() !== '') { 
+                        const q = query.toLowerCase(); 
+                        list = list.filter(n => (n.nibar||'').toLowerCase().includes(q) || (n.ruang||'').toLowerCase().includes(q)); 
+                    }
                     return list;
                 },
                 getItemMaxQty(item) {
@@ -290,7 +303,7 @@
                 },
                 selectNibar(item, n) {
                     if (this.formData.status === 'Ditolak') return;
-                    if (!item || !n || (n.status && n.status !== 'Tersedia')) return;
+                    if (!item || !n || (n.status && n.status !== 'Tersedia') || !this.isNibarKondisiBaik(n)) return;
                     if (!item.nibar_selected) item.nibar_selected = [];
                     
                     // Cek jika sudah dipilih agar tidak duplikat
@@ -305,7 +318,7 @@
                         return;
                     }
 
-                    item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi });
+                    item.nibar_selected.push({ id: n.id, nibar: n.nibar, ruang: n.ruang, kondisi: n.kondisi || 'Baik' });
                     // Volume Di-ACC otomatis mengikuti jumlah NIBAR yang diinput
                     item.qty_acc = item.nibar_selected.length;
                     this.activeNibarDropdownIndex = null;
@@ -1235,16 +1248,10 @@
                                                                 <p class="text-[9.5px] text-slate-400 truncate mt-0.5 pl-5" x-text="'Ruang: ' + (n.ruang || 'Gudang Aset')"></p>
                                                             </div>
 
-                                                            <!-- Badge Kondisi Per Unit NIBAR (Read-Only / Tidak Bisa Diubah) -->
+                                                            <!-- Badge Kondisi Per Unit NIBAR (Read-Only / Selalu Kondisi Baik) -->
                                                             <div class="shrink-0 flex items-center space-x-1.5">
-                                                                <span class="text-[10px] font-bold rounded-lg border px-2 py-1 select-none flex items-center space-x-1"
-                                                                      :class="{
-                                                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/40': n.kondisi === 'Baik' || !n.kondisi,
-                                                                          'bg-amber-500/15 text-amber-300 border-amber-500/40': n.kondisi === 'Kurang Baik',
-                                                                          'bg-orange-500/15 text-orange-300 border-orange-500/40': n.kondisi === 'Rusak Ringan',
-                                                                          'bg-rose-500/15 text-rose-300 border-rose-500/40': n.kondisi === 'Rusak Berat' || n.kondisi === 'Rusak'
-                                                                      }">
-                                                                    <span x-text="n.kondisi === 'Baik' || !n.kondisi ? '🟢 Baik' : (n.kondisi === 'Kurang Baik' ? '🟡 Kurang Baik' : (n.kondisi === 'Rusak Ringan' ? '🟠 Rusak Ringan' : '🔴 Rusak Berat'))"></span>
+                                                                <span class="text-[10px] font-bold rounded-lg border px-2 py-1 select-none flex items-center space-x-1 bg-emerald-500/15 text-emerald-300 border-emerald-500/40">
+                                                                    <span>🟢 Baik</span>
                                                                 </span>
 
                                                                 <!-- Tombol Hapus NIBAR -->
