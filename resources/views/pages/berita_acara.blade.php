@@ -638,9 +638,15 @@
                             <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Realisasi Triwulan Ini</span>
                             <span class="text-base sm:text-lg font-black text-emerald-400 font-mono" x-text="'Rp ' + formatRupiah(currentTriwulanTotalNilai)"></span>
                         </div>
-                        <span class="px-3 py-1.5 rounded-xl text-xs font-bold border"
-                              :class="currentTriwulanDoc.pihak2_signed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'">
-                            <span x-text="currentTriwulanDoc.pihak2_signed ? '✍️ Ditandatangani BSrE' : '⏳ Belum TTD'"></span>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-sm"
+                              :class="currentTriwulanDoc.pihak2_signed ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+                            <template x-if="currentTriwulanDoc.pihak2_signed">
+                                <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                            </template>
+                            <template x-if="!currentTriwulanDoc.pihak2_signed">
+                                <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </template>
+                            <span x-text="currentTriwulanDoc.pihak2_signed ? 'Sudah TTD BSrE' : 'Belum TTD'"></span>
                         </span>
                     </div>
                 </div>
@@ -815,16 +821,17 @@
                                         <span x-text="(item.items && item.items.length > 0 ? item.items.reduce((s, i) => s + ((i.qty_acc !== null && i.qty_acc !== undefined && i.qty_acc !== '') ? (parseInt(i.qty_acc, 10) || 0) : (i.vol_bast !== undefined ? parseInt(i.vol_bast, 10) : (parseInt(i.qty, 10) || 0))), 0) : (item.volume_acc || item.volume || 0)) + ' Unit'"></span>
                                     </span>
                                 </td>
-                                <td class="px-4 py-4 text-center">
-                                    <div class="flex flex-col items-center justify-center space-y-1">
-                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center space-x-1"
-                                              :class="item.signed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'">
-                                            <span x-text="item.signed ? '✍️ Ditandatangani BSrE' : '⏳ Belum TTD'"></span>
-                                        </span>
-                                        <template x-if="item.signed && item.tgl_signed && item.tgl_signed !== '-'">
-                                            <span class="text-[9.5px] text-emerald-400 font-mono font-medium block" x-text="'📅 ' + item.tgl_signed"></span>
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap border shadow-sm"
+                                          :class="item.signed ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+                                        <template x-if="item.signed">
+                                            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                         </template>
-                                    </div>
+                                        <template x-if="!item.signed">
+                                            <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        </template>
+                                        <span x-text="item.signed ? 'Sudah TTD BSrE' : 'Belum TTD'"></span>
+                                    </span>
                                 </td>
                                 <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
                                     
@@ -926,10 +933,16 @@
                                 </td>
                                 <td class="px-4 py-4 text-center font-semibold text-slate-300" x-text="item.asal"></td>
                                 <td class="px-4 py-4 text-center font-semibold text-rose-300" x-text="item.tujuan"></td>
-                                <td class="px-4 py-4 text-center">
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border inline-flex items-center space-x-1"
-                                          :class="item.signed ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'">
-                                        <span x-text="item.signed ? '✍️ Ditandatangani BSrE' : '⏳ Belum TTD'"></span>
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap border shadow-sm"
+                                          :class="item.signed ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
+                                        <template x-if="item.signed">
+                                            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                        </template>
+                                        <template x-if="!item.signed">
+                                            <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        </template>
+                                        <span x-text="item.signed ? 'Sudah TTD BSrE' : 'Belum TTD'"></span>
                                     </span>
                                 </td>
                                 <td class="px-4 py-4 text-center space-x-1.5 whitespace-nowrap">
@@ -1711,24 +1724,24 @@
                                             <tr style="border:1px solid black; background-color:#ffffff; color:#000000;">
                                                 <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="idx + 1"></td>
                                                 <td style="border:1px solid black; padding:6px 12px; text-align:left; font-weight:700;" x-text="sub.nama_barang"></td>
-                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-family:monospace; font-size:9pt;" x-text="sub.spesifikasi || sub.merk_type || '-'"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left;" x-text="sub.spesifikasi || sub.merk_type || '-'"></td>
                                                 <td style="border:1px solid black; padding:6px 8px; text-align:center; font-weight:700;"
                                                     :title="sub.qty_acc !== null ? ('Volume Di-ACC: ' + sub.qty_acc + ' | Volume Diajukan: ' + sub.qty) : ('Volume Diajukan: ' + sub.qty + ' | Belum Di-ACC Admin')"
                                                     x-text="(sub.qty_acc !== null && sub.qty_acc !== undefined) ? sub.qty_acc : (sub.vol_bast !== undefined ? sub.vol_bast : '-')"></td>
                                                 <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="sub.satuan"></td>
-                                                <td style="border:1px solid black; padding:6px 8px; text-align:center; font-size:8.5pt;" x-text="sub.kondisi || 'Baik'"></td>
-                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-size:8.5pt;" x-text="sub.keterangan || selectedDistribusi.keterangan || '-'"></td>
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="sub.kondisi || 'Baik'"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left;" x-text="sub.keterangan || selectedDistribusi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                         <template x-if="!selectedDistribusi.items || selectedDistribusi.items.length === 0">
                                             <tr style="border:1px solid black; background-color:#ffffff; color:#000000;">
                                                 <td style="border:1px solid black; padding:6px 8px; text-align:center;">1</td>
                                                 <td style="border:1px solid black; padding:6px 12px; text-align:left; font-weight:700;" x-text="selectedDistribusi.barang_nama"></td>
-                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-family:monospace; font-size:9pt;" x-text="(selectedDistribusi.merk ? (selectedDistribusi.merk + ' ' + (selectedDistribusi.type || '')) : '-')"></td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left;" x-text="(selectedDistribusi.merk ? (selectedDistribusi.merk + ' ' + (selectedDistribusi.type || '')) : '-')"></td>
                                                 <td style="border:1px solid black; padding:6px 8px; text-align:center; font-weight:700;" x-text="selectedDistribusi.volume"></td>
                                                 <td style="border:1px solid black; padding:6px 8px; text-align:center;" x-text="selectedDistribusi.satuan"></td>
-                                                <td style="border:1px solid black; padding:6px 8px; text-align:center; font-size:8.5pt;">Baik</td>
-                                                <td style="border:1px solid black; padding:6px 12px; text-align:left; font-size:8.5pt;" x-text="selectedDistribusi.keterangan || '-'"></td>
+                                                <td style="border:1px solid black; padding:6px 8px; text-align:center;">Baik</td>
+                                                <td style="border:1px solid black; padding:6px 12px; text-align:left;" x-text="selectedDistribusi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -1945,7 +1958,7 @@
                                             <tr class="border border-black" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
                                                 <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="idx + 1"></td>
                                                 <td class="border border-black px-2 py-1 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang"></td>
-                                                <td class="border border-black px-2 py-1 text-left font-mono text-[9pt]" style="border: 1px solid black;" x-text="sub.spesifikasi || sub.merk_type || sub.merk || '-'"></td>
+                                                <td class="border border-black px-2 py-1 text-left text-[9pt]" style="border: 1px solid black;" x-text="sub.spesifikasi || sub.merk_type || sub.merk || '-'"></td>
                                                 <td class="border border-black px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;" x-text="sub.nibar || sub.kode_barang || '-'"></td>
                                                 <td class="border border-black px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="sub.qty || sub.vol || 1"></td>
                                                 <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="sub.satuan || 'Unit'"></td>
@@ -1959,7 +1972,7 @@
                                             <tr class="border border-black" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
                                                 <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;">1</td>
                                                 <td class="border border-black px-2 py-1 text-left font-bold" style="border: 1px solid black;" x-text="selectedMutasi.nama_barang || selectedMutasi.nama"></td>
-                                                <td class="border border-black px-2 py-1 text-left font-mono text-[9pt]" style="border: 1px solid black;" x-text="selectedMutasi.spesifikasi || selectedMutasi.merk || '-'"></td>
+                                                <td class="border border-black px-2 py-1 text-left text-[9pt]" style="border: 1px solid black;" x-text="selectedMutasi.spesifikasi || selectedMutasi.merk || '-'"></td>
                                                 <td class="border border-black px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;" x-text="selectedMutasi.nibar || selectedMutasi.kode_barang || '-'"></td>
                                                 <td class="border border-black px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="selectedMutasi.qty || 1"></td>
                                                 <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="selectedMutasi.satuan || 'Unit'"></td>
