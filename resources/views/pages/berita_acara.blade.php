@@ -1925,33 +1925,48 @@
                                 <table class="w-full text-center border-collapse border border-black text-[9pt] sm:text-[9.5pt]" style="border-collapse: collapse; width: 100%; border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
                                     <thead>
                                         <tr style="font-weight:700; border:1px solid black; background-color:#ffffff; color:#000000 !important;">
-                                            <th style="border:1px solid black; padding:6px 8px; text-align:center; width:10%; background-color:#ffffff; font-weight:700; color:#000000;">No</th>
-                                            <th style="border:1px solid black; padding:6px 12px; text-align:left; background-color:#ffffff; font-weight:700; color:#000000;">Nama Barang / Aset</th>
-                                            <th style="border:1px solid black; padding:6px 12px; text-align:left; background-color:#ffffff; font-weight:700; color:#000000;">Kode Barang / NIBAR</th>
-                                            <th style="border:1px solid black; padding:4px 8px; text-align:center; width:14%; background-color:#ffffff; font-weight:700; color:#000000;">Vol</th>
-                                            <th style="border:1px solid black; padding:4px 8px; text-align:center; width:16%; background-color:#ffffff; font-weight:700; color:#000000;">Satuan</th>
-                                            <th style="border:1px solid black; padding:6px 12px; text-align:left; background-color:#ffffff; font-weight:700; color:#000000;">Keterangan</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 6px; text-align:center; width:4%; background-color:#ffffff; font-weight:700; color:#000000;">No</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 8px; text-align:left; width:22%; background-color:#ffffff; font-weight:700; color:#000000;">Nama Barang / Aset</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 8px; text-align:left; width:18%; background-color:#ffffff; font-weight:700; color:#000000;">Merk / Spesifikasi</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 8px; text-align:left; width:20%; background-color:#ffffff; font-weight:700; color:#000000;">Kode Barang / NIBAR</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:4px 6px; text-align:center; width:5%; background-color:#ffffff; font-weight:700; color:#000000;">Vol</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:4px 6px; text-align:center; width:7%; background-color:#ffffff; font-weight:700; color:#000000;">Satuan</th>
+                                            <th colspan="3" style="border:1px solid black; padding:4px; text-align:center; width:10%; background-color:#ffffff; font-weight:700; color:#000000;">Kondisi</th>
+                                            <th rowspan="2" style="border:1px solid black; padding:6px 8px; text-align:left; width:14%; background-color:#ffffff; font-weight:700; color:#000000;">Keterangan</th>
+                                        </tr>
+                                        <tr style="font-weight:700; border:1px solid black; background-color:#ffffff; color:#000000 !important;">
+                                            <th style="border:1px solid black; padding:2px 4px; text-align:center; font-size:8pt; background-color:#ffffff; font-weight:700; color:#000000;">Baik</th>
+                                            <th style="border:1px solid black; padding:2px 4px; text-align:center; font-size:8pt; background-color:#ffffff; font-weight:700; color:#000000;">KB</th>
+                                            <th style="border:1px solid black; padding:2px 4px; text-align:center; font-size:8pt; background-color:#ffffff; font-weight:700; color:#000000;">RB</th>
                                         </tr>
                                     </thead>
                                     <tbody style="background-color: #ffffff !important; color: #000000 !important;">
                                         <template x-for="(sub, idx) in (selectedMutasi.items || [])" :key="idx">
                                             <tr class="border border-black" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="idx + 1"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.nama_barang"></td>
-                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px] text-left" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.nibar"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.qty"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.satuan"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="sub.keterangan"></td>
+                                                <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="idx + 1"></td>
+                                                <td class="border border-black px-2 py-1 text-left font-bold" style="border: 1px solid black;" x-text="sub.nama_barang"></td>
+                                                <td class="border border-black px-2 py-1 text-left font-mono text-[9pt]" style="border: 1px solid black;" x-text="sub.spesifikasi || sub.merk_type || sub.merk || '-'"></td>
+                                                <td class="border border-black px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;" x-text="sub.nibar || sub.kode_barang || '-'"></td>
+                                                <td class="border border-black px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="sub.qty || sub.vol || 1"></td>
+                                                <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="sub.satuan || 'Unit'"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Baik' || !sub.kondisi) ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB') ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Rusak Berat' || sub.kondisi === 'RB' || sub.kondisi === 'Rusak Ringan' || sub.kondisi === 'Rusak') ? '✓' : ''"></td>
+                                                <td class="border border-black px-2 py-1 text-left text-[9pt]" style="border: 1px solid black;" x-text="sub.keterangan || selectedMutasi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                         <template x-if="!selectedMutasi.items || selectedMutasi.items.length === 0">
                                             <tr class="border border-black" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;">1</td>
-                                                <td class="border border-black px-3 py-1.5 text-left font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.nama_barang"></td>
-                                                <td class="border border-black px-3 py-1.5 font-mono text-[9px] text-left" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.nibar"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center font-bold" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.qty"></td>
-                                                <td class="border border-black px-2 py-1.5 text-center" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.satuan"></td>
-                                                <td class="border border-black px-3 py-1.5 text-left text-[9.5px]" style="border: 1px solid black; background-color: #ffffff !important; color: #000000 !important;" x-text="selectedMutasi.keterangan || '-'"></td>
+                                                <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;">1</td>
+                                                <td class="border border-black px-2 py-1 text-left font-bold" style="border: 1px solid black;" x-text="selectedMutasi.nama_barang || selectedMutasi.nama"></td>
+                                                <td class="border border-black px-2 py-1 text-left font-mono text-[9pt]" style="border: 1px solid black;" x-text="selectedMutasi.spesifikasi || selectedMutasi.merk || '-'"></td>
+                                                <td class="border border-black px-2 py-1 font-mono text-[8.5pt] text-left break-all" style="border: 1px solid black;" x-text="selectedMutasi.nibar || selectedMutasi.kode_barang || '-'"></td>
+                                                <td class="border border-black px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="selectedMutasi.qty || 1"></td>
+                                                <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="selectedMutasi.satuan || 'Unit'"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Baik' || !selectedMutasi.kondisi) ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Kurang Baik' || selectedMutasi.kondisi === 'KB') ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Rusak Berat' || selectedMutasi.kondisi === 'RB' || selectedMutasi.kondisi === 'Rusak Ringan' || selectedMutasi.kondisi === 'Rusak') ? '✓' : ''"></td>
+                                                <td class="border border-black px-2 py-1 text-left text-[9pt]" style="border: 1px solid black;" x-text="selectedMutasi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
                                     </tbody>

@@ -356,7 +356,7 @@ class BeritaAcaraController extends Controller
         // =========================================================================
         // 3. DATA TAB 3: BAMB MUTASI BARANG ANTAR RUANGAN
         // =========================================================================
-        $mutasis = AstapMutasi::with(['items.register.astap'])
+        $mutasis = AstapMutasi::with(['items.register.astap.jenisAstap', 'register.astap.jenisAstap'])
             ->where(function ($q) {
                 $q->where('status', 'Disetujui Admin (Selesai)')
                   ->orWhere(function ($sub) {
@@ -378,18 +378,32 @@ class BeritaAcaraController extends Controller
             $noIt = 1;
             $firstItemNama = 'Barang Aset';
             $firstItemKode = '1.3.2.02.01.01.001';
+            $firstItemMerk = '-';
+            $firstItemNibar = '-';
+            $firstItemSatuan = 'Unit';
             $totalQty = 0;
 
             foreach ($mts->items as $mit) {
                 $reg = $mit->register;
                 $astap = $reg?->astap;
                 $nama = $astap?->nama_barang ?: 'Barang Aset';
-                $kode = $astap?->jenisAstap?->sub_rincian_objek ?: '1.3.2.02.01.01.001';
+                $kode = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_rincian_objek ?: '1.3.2.02.01.01.001');
                 $nibar = $reg?->nibar ?: ($reg?->no_register ?: '-');
+
+                $spec = is_array($astap?->spesifikasi_json)
+                    ? $astap->spesifikasi_json
+                    : (json_decode($astap?->spesifikasi_json ?? '', true) ?? []);
+                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ($astap?->keterangan_tambahan ?? '-')));
+                $kondisi = $mit->kondisi ?: ($reg?->kondisi ?: ($mts->kondisi ?: 'Baik'));
+                $keterangan = $mit->keterangan ?: ($mts->alasan_mutasi ?: ($mts->keterangan ?: 'Pemindahan / Mutasi'));
+                $satuan = $astap?->satuan ?: 'Unit';
 
                 if ($noIt === 1) {
                     $firstItemNama = $nama;
                     $firstItemKode = $kode;
+                    $firstItemMerk = $merk;
+                    $firstItemNibar = $nibar;
+                    $firstItemSatuan = $satuan;
                 }
                 $totalQty++;
 
@@ -398,11 +412,56 @@ class BeritaAcaraController extends Controller
                     'nama_barang' => $nama,
                     'nibar'       => $nibar,
                     'kode_barang' => $kode,
-                    'kondisi'     => $mit->kondisi ?: ($mts->kondisi ?: 'Baik'),
-                    'satuan'      => $astap?->satuan ?: 'Unit',
+                    'merk'        => $merk,
+                    'spesifikasi' => $merk,
+                    'merk_type'   => $merk,
+                    'qty'         => 1,
+                    'vol'         => 1,
+                    'kondisi'     => $kondisi,
+                    'satuan'      => $satuan,
+                    'keterangan'  => $keterangan,
                     'ruang_asal'  => $mts->ruangan_asal,
                     'ruang_tujuan'=> $mts->ruangan_tujuan,
                 ];
+            }
+
+            // Fallback backward-compatibility jika item di tabel relasi belum ada
+            if (empty($itemsData) && $mts->register) {
+                $reg = $mts->register;
+                $astap = $reg->astap;
+                $nama = $astap?->nama_barang ?: 'Barang Aset';
+                $kode = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_rincian_objek ?: '1.3.2.02.01.01.001');
+                $nibar = $reg->nibar ?: ($reg->no_register ?: '-');
+                $spec = is_array($astap?->spesifikasi_json)
+                    ? $astap->spesifikasi_json
+                    : (json_decode($astap?->spesifikasi_json ?? '', true) ?? []);
+                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ($astap?->keterangan_tambahan ?? '-')));
+                $kondisi = $mts->kondisi ?: ($reg->kondisi ?: 'Baik');
+                $keterangan = $mts->alasan_mutasi ?: ($mts->keterangan ?: 'Pemindahan / Mutasi');
+                $satuan = $astap?->satuan ?: 'Unit';
+
+                $itemsData[] = [
+                    'no'          => 1,
+                    'nama_barang' => $nama,
+                    'nibar'       => $nibar,
+                    'kode_barang' => $kode,
+                    'merk'        => $merk,
+                    'spesifikasi' => $merk,
+                    'merk_type'   => $merk,
+                    'qty'         => 1,
+                    'vol'         => 1,
+                    'satuan'      => $satuan,
+                    'kondisi'     => $kondisi,
+                    'keterangan'  => $keterangan,
+                    'ruang_asal'  => $mts->ruangan_asal,
+                    'ruang_tujuan'=> $mts->ruangan_tujuan,
+                ];
+                $totalQty = 1;
+                $firstItemNama = $nama;
+                $firstItemKode = $kode;
+                $firstItemMerk = $merk;
+                $firstItemNibar = $nibar;
+                $firstItemSatuan = $satuan;
             }
 
             $seq = str_replace('MTS-', '', $mts->nomor_bamb);
@@ -424,9 +483,16 @@ class BeritaAcaraController extends Controller
                 'sk_bupati_nomor'   => '188.45/969/430.4.2/2024',
                 'sk_bupati_tanggal' => '02 Januari ' . $tgl->format('Y'),
                 'nama'              => $firstItemNama . ($totalQty > 1 ? ' (' . $totalQty . ' Unit)' : ''),
+                'nama_barang'       => $firstItemNama,
                 'kode_barang'       => $firstItemKode,
+                'nibar'             => $firstItemNibar,
+                'merk'              => $firstItemMerk,
+                'spesifikasi'       => $firstItemMerk,
+                'merk_type'         => $firstItemMerk,
                 'qty'               => $totalQty ?: 1,
-                'satuan'            => 'Unit',
+                'vol'               => $totalQty ?: 1,
+                'satuan'            => $firstItemSatuan,
+                'kondisi'           => $mts->kondisi ?: 'Baik',
                 'jenis_mutasi'      => $mts->jenis_mutasi ?: 'Pemindahan',
                 'asal'              => $mts->ruangan_asal,
                 'tujuan'            => $mts->ruangan_tujuan,
@@ -441,7 +507,7 @@ class BeritaAcaraController extends Controller
                 'pengurus_nip'      => '19760229 200801 1 010',
                 'pengurus_jabatan'  => 'Pengurus Barang Aset RSUD',
                 'status'            => $isDone ? 'Telah Ditandatangani BSrE' : $mts->status,
-                'keterangan'        => $mts->alasan_mutasi ?: 'Mutasi Aset Antar Ruangan',
+                'keterangan'        => $mts->alasan_mutasi ?: ($mts->keterangan ?: 'Mutasi Aset Antar Ruangan'),
                 'signed'            => $isDone,
                 'tgl_signed'        => $isDone ? ($mts->tgl_persetujuan_admin ? Carbon::parse($mts->tgl_persetujuan_admin)->format('d/m/Y H:i') . ' WIB' : $tgl->format('d/m/Y H:i') . ' WIB') : '-',
                 'qr_hash'           => 'BSRE-KOESNANDI-' . $mts->nomor_bamb,
