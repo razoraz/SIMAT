@@ -42,8 +42,17 @@
                 nibarSearch: {},
                 toast: { show: false, message: '', type: 'success' },
                 confirmData: { show: false, title: '', message: '', itemName: '', btnText: '', type: 'danger', onConfirm: null },
-                // katalogAstap langsung dari database — terisi saat Alpine init, tidak ada timing issue
-                katalogAstap: ({{ Js::from($astapList ?? []) }}).filter(a => a && a.kode && a.nama),
+                // katalogAstap langsung dari database — deduplikasi by nama agar item nama sama tampil 1x
+                katalogAstap: (() => {
+                    const all = ({{ Js::from($astapList ?? []) }}).filter(a => a && a.nama);
+                    const seen = new Set();
+                    return all.filter(a => {
+                        const key = a.nama.trim().toLowerCase();
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                })(),
                 formData: {
                     kode: '',
                     bast_nomor: '',
@@ -259,6 +268,9 @@
                     if (item.astap_id && n.astap_id && String(item.astap_id) === String(n.astap_id)) return true;
                     const itemKode = this.getItemKode(item);
                     if (itemKode && n.kode && itemKode.trim() === n.kode.trim()) return true;
+                    // Gabungkan NIBAR dari semua astap yang punya nama_barang sama (untuk barang diinput >1x)
+                    if (item.nama_barang && n.nama_barang &&
+                        item.nama_barang.trim().toLowerCase() === n.nama_barang.trim().toLowerCase()) return true;
                     return false;
                 },
                 getMatchingNibarCount(item) { return (this.nibarList || []).filter(n => this.isNibarMatch(n, item) && (n.status === 'Tersedia' || !n.status)).length; },
@@ -1044,7 +1056,7 @@
                                                 <span class="text-teal-400 font-mono" x-text="getFilteredAstap(item, item.nama_barang).length + ' barang tersedia'"></span>
                                             </div>
 
-                                            <template x-for="ast in getFilteredAstap(item, item.nama_barang)" :key="ast.kode">
+                                            <template x-for="ast in getFilteredAstap(item, item.nama_barang)" :key="ast.id">
                                                 <div @click="selectAstapItem(item, ast)"
                                                      :class="isItemAlreadySelected(ast, item) ? 'opacity-40 cursor-not-allowed bg-slate-950/40' : 'hover:bg-teal-500/15 cursor-pointer'"
                                                      class="px-4 py-2.5 transition-colors group flex items-center justify-between gap-3">
@@ -1079,8 +1091,98 @@
                                     </div>
                                 </div>
 
+                                <!-- Baris 2: Volume Pengajuan, Volume ACC (Admin) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                                    <!-- Vol 1: Volume Pengajuan (Qty) — Sub Admin & Admin bisa isi -->
+                                    <div>
+                                        <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                            <span class="flex items-center space-x-1.5">
+                                                <span class="text-slate-300">Volume Pengajuan</span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 font-bold" x-text="isSubAdmin ? '📋 Diisi Anda' : '📋 Qty Diajukan'"></span>
+                                            </span>
+                                        </label>
+                                        <div class="relative flex items-center">
+                                            <input type="text"
+                                                :value="item.qty ? Number(item.qty).toLocaleString('id-ID') : ''"
+                                                :disabled="formData.status === 'Ditolak'"
+                                                :readonly="formData.status === 'Ditolak'"
+                                                @input="
+                                                    if (formData.status === 'Ditolak') return;
+                                                    let raw = $event.target.value.replace(/\D/g, '');
+                                                    item.qty = raw ? parseInt(raw, 10) : '';
+                                                    $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                                    item.qty_acc = (item.nibar_selected || []).length;
+                                                "
+                                                placeholder="1"
+                                                :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-700/90 focus:border-teal-500'"
+                                                class="w-full h-11 border rounded-xl px-4 py-2.5 pr-20 text-xs font-mono font-bold focus:outline-none transition-all">
+                                            <!-- Suffix Satuan otomatis -->
+                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-teal-300 font-bold text-xs pointer-events-none px-2 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/20"
+                                                  x-text="item.satuan || 'Unit'"></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Vol 2: Volume ACC — Mengikuti NIBAR yang diinput & tidak dapat diedit -->
+                                    <template x-if="!isSubAdmin">
+                                        <div>
+                                             <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                                <span class="text-emerald-300">Volume Di-ACC</span>
+                                                <template x-if="item.qty_acc && item.qty_acc > 0">
+                                                    <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
+                                                </template>
+                                            </label>
+                                            <div class="relative flex items-center">
+                                                <input type="text"
+                                                    :value="((item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? item.qty_acc : (item.nibar_selected ? item.nibar_selected.length : 0)) + ' ' + (item.satuan || 'Unit')"
+                                                    readonly
+                                                    tabindex="-1"
+                                                    title="Volume Di-ACC terisi otomatis mengikuti jumlah NIBAR yang diinput dan tidak dapat diedit manual"
+                                                    :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-400 border-slate-800' : 'text-emerald-400 border-emerald-500/30'"
+                                                    class="w-full h-11 bg-slate-950/80 font-mono font-bold border rounded-xl px-4 py-2.5 text-xs cursor-not-allowed select-none focus:outline-none shadow-inner">
+                                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none" :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-600' : 'text-emerald-400/80'">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                </div>
+                                            </div>
+                                            <p class="text-[10px] text-slate-400 mt-1 flex items-center space-x-1">
+                                                <template x-if="!isNibarEmpty(item) && (item.nibar_selected || []).length > 0">
+                                                    <span>ℹ️ Otomatis mengikuti total NIBAR terpilih (<strong class="text-emerald-300 font-mono" x-text="(item.nibar_selected || []).length"></strong> NIBAR)</span>
+                                                </template>
+                                                <template x-if="!isNibarEmpty(item) && (!item.nibar_selected || item.nibar_selected.length === 0)">
+                                                    <span class="text-amber-400/90">ℹ️ Belum ada NIBAR dipilih (barang ini tidak di-ACC)</span>
+                                                </template>
+                                                <template x-if="isNibarEmpty(item)">
+                                                    <span class="text-rose-400">⚠️ Stok kosong — barang ini tidak di-ACC (0 Unit)</span>
+                                                </template>
+                                            </p>
+                                        </div>
+                                    </template>
+
+                                    <!-- Info Box Volume ACC untuk Sub Admin (readonly, tidak bisa isi) -->
+                                    <template x-if="isSubAdmin">
+                                        <div>
+                                            <label class="block text-slate-400 font-semibold text-xs mb-1.5 flex items-center space-x-1.5">
+                                                <span>Volume Di-ACC</span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 border border-slate-700 text-slate-400 font-bold">🔒 Admin Only</span>
+                                            </label>
+                                            <div class="w-full h-11 bg-slate-950/80 border border-slate-800 rounded-xl px-4 flex items-center text-xs cursor-not-allowed"
+                                                 :class="(item.qty_acc !== null && item.qty_acc !== '') ? 'text-emerald-400 font-bold border-emerald-500/30' : 'text-slate-500'">
+                                                <span x-text="(item.qty_acc !== null && item.qty_acc !== '') ? ('✅ ' + Number(item.qty_acc).toLocaleString('id-ID') + ' ' + (item.satuan || 'Unit')) : '⏳ Menunggu Keputusan Admin'"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+
                                 <!-- Baris 1b: NIBAR Multi-Select (Admin & Master Admin bisa isi saat input baru maupun ubah) -->
-                                <template x-if="!isSubAdmin">
+
+                                <!-- Petunjuk: isi Volume Pengajuan dulu sebelum input NIBAR -->
+                                <template x-if="!isSubAdmin && item.nama_barang && (!item.qty || item.qty <= 0)">
+                                    <div class="flex items-center space-x-2 px-4 py-3 rounded-xl bg-amber-500/8 border border-amber-500/25 text-amber-300">
+                                        <span class="text-base shrink-0">📋</span>
+                                        <span class="text-xs font-semibold">Isi <strong>Volume Pengajuan</strong> terlebih dahulu sebelum memilih NIBAR.</span>
+                                    </div>
+                                </template>
+
+                                <template x-if="!isSubAdmin && item.qty > 0">
                                     <div class="relative" @click.away="if(activeNibarDropdownIndex === idx) activeNibarDropdownIndex = null">
                                         <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
                                             <span class="flex items-center space-x-1.5">
@@ -1266,93 +1368,6 @@
                                         </div>
                                     </div>
                                 </template>
-
-                                <!-- Baris 2: Volume Pengajuan, Volume ACC (Admin), & Satuan -->
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
-                                    <!-- Vol 1: Volume Pengajuan (Qty) — Sub Admin & Admin bisa isi -->
-                                    <div>
-                                        <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
-                                            <span class="flex items-center space-x-1.5">
-                                                <span class="text-slate-300">Volume Pengajuan</span>
-                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 font-bold" x-text="isSubAdmin ? '📋 Diisi Anda' : '📋 Qty Diajukan'"></span>
-                                            </span>
-                                        </label>
-                                        <input type="text"
-                                            :value="item.qty ? Number(item.qty).toLocaleString('id-ID') : ''"
-                                            :disabled="formData.status === 'Ditolak'"
-                                            :readonly="formData.status === 'Ditolak'"
-                                            @input="
-                                                if (formData.status === 'Ditolak') return;
-                                                let raw = $event.target.value.replace(/\D/g, '');
-                                                item.qty = raw ? parseInt(raw, 10) : '';
-                                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                                item.qty_acc = (item.nibar_selected || []).length;
-                                            "
-                                            placeholder="1"
-                                            :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-700/90 focus:border-teal-500'"
-                                            class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none transition-all">
-                                    </div>
-
-                                    <!-- Vol 2: Volume ACC — Mengikuti NIBAR yang diinput & tidak dapat diedit -->
-                                    <template x-if="!isSubAdmin">
-                                        <div>
-                                             <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
-                                                <span class="text-emerald-300">Volume Di-ACC</span>
-                                                <template x-if="item.qty_acc && item.qty_acc > 0">
-                                                    <span class="text-[10px] text-emerald-400 font-semibold" x-text="'✅ ACC: ' + item.qty_acc + ' ' + (item.satuan || 'Unit')"></span>
-                                                </template>
-                                            </label>
-                                            <div class="relative flex items-center">
-                                                <input type="text"
-                                                    :value="((item.qty_acc !== null && item.qty_acc !== undefined && item.qty_acc !== '') ? item.qty_acc : (item.nibar_selected ? item.nibar_selected.length : 0)) + ' ' + (item.satuan || 'Unit')"
-                                                    readonly
-                                                    tabindex="-1"
-                                                    title="Volume Di-ACC terisi otomatis mengikuti jumlah NIBAR yang diinput dan tidak dapat diedit manual"
-                                                    :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-400 border-slate-800' : 'text-emerald-400 border-emerald-500/30'"
-                                                    class="w-full h-11 bg-slate-950/80 font-mono font-bold border rounded-xl px-4 py-2.5 text-xs cursor-not-allowed select-none focus:outline-none shadow-inner">
-                                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none" :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-600' : 'text-emerald-400/80'">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                                </div>
-                                            </div>
-                                            <p class="text-[10px] text-slate-400 mt-1 flex items-center space-x-1">
-                                                <template x-if="!isNibarEmpty(item) && (item.nibar_selected || []).length > 0">
-                                                    <span>ℹ️ Otomatis mengikuti total NIBAR terpilih (<strong class="text-emerald-300 font-mono" x-text="(item.nibar_selected || []).length"></strong> NIBAR)</span>
-                                                </template>
-                                                <template x-if="!isNibarEmpty(item) && (!item.nibar_selected || item.nibar_selected.length === 0)">
-                                                    <span class="text-amber-400/90">ℹ️ Belum ada NIBAR dipilih (barang ini tidak di-ACC)</span>
-                                                </template>
-                                                <template x-if="isNibarEmpty(item)">
-                                                    <span class="text-rose-400">⚠️ Stok kosong — barang ini tidak di-ACC (0 Unit)</span>
-                                                </template>
-                                            </p>
-                                        </div>
-                                    </template>
-
-                                    <!-- Info Box Volume ACC untuk Sub Admin (readonly, tidak bisa isi) -->
-                                    <template x-if="isSubAdmin">
-                                        <div>
-                                            <label class="block text-slate-400 font-semibold text-xs mb-1.5 flex items-center space-x-1.5">
-                                                <span>Volume Di-ACC</span>
-                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/60 border border-slate-700 text-slate-400 font-bold">🔒 Admin Only</span>
-                                            </label>
-                                            <div class="w-full h-11 bg-slate-950/80 border border-slate-800 rounded-xl px-4 flex items-center text-xs cursor-not-allowed"
-                                                 :class="(item.qty_acc !== null && item.qty_acc !== '') ? 'text-emerald-400 font-bold border-emerald-500/30' : 'text-slate-500'">
-                                                <span x-text="(item.qty_acc !== null && item.qty_acc !== '') ? ('✅ ' + Number(item.qty_acc).toLocaleString('id-ID') + ' ' + (item.satuan || 'Unit')) : '⏳ Menunggu Keputusan Admin'"></span>
-                                            </div>
-                                        </div>
-                                    </template>
-
-                                    <!-- Satuan (⚡ Auto) -->
-                                    <div>
-                                        <label class="block text-teal-300 font-semibold text-xs mb-1.5">Nama Satuan Barang</label>
-                                        <input type="text"
-                                               x-model="item.satuan"
-                                               placeholder="satuan"
-                                               readonly
-                                               :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-500 border-slate-800' : 'bg-slate-900 border-teal-500/50 text-teal-300 focus:border-teal-500'"
-                                               class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none transition-all cursor-not-allowed">
-                                    </div>
-                                </div>
 
                                 <!-- Baris 3: Keterangan / Catatan Spesifik Item (Sendiri / Full-Width) -->
                                 <div>
