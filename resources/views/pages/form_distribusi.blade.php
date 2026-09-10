@@ -200,10 +200,17 @@
                     if (!this.formData.items || this.formData.items.length === 0) {
                         this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] }];
                     }
+
+                    this.$watch('formData.tgl', () => {
+                        this.updateYearInKode();
+                    });
                 },
-                updateYearInKode() {
+                async updateYearInKode() {
                     if (!this.formData.tgl) return;
-                    const tahun = this.formData.tgl.split('-')[0];
+                    let tahun = '';
+                    const match = String(this.formData.tgl).match(/(\d{4})/);
+                    tahun = match ? match[1] : (new Date().getFullYear().toString());
+
                     if (tahun && this.formData.kode && this.formData.kode.startsWith('DST-')) {
                         const parts = this.formData.kode.split('-');
                         if (parts.length === 3) {
@@ -211,23 +218,57 @@
                         }
                     }
                     if (['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(this.formData.status)) {
-                        if (this.formData.bast_nomor && this.formData.bast_nomor.includes('430.10.7')) {
-                            const bParts = this.formData.bast_nomor.split('/');
-                            if (bParts.length === 4) {
-                                this.formData.bast_nomor = bParts[0].trim() + ' / ' + bParts[1].trim() + ' / ' + bParts[2].trim() + ' / ' + tahun;
-                            }
-                        }
+                        await this.fetchNextBast(tahun);
                     }
                 },
-                onStatusChange() {
+                async fetchNextBast(tahun) {
+                    if (!tahun) {
+                        const match = String(this.formData.tgl || '').match(/(\d{4})/);
+                        tahun = match ? match[1] : (new Date().getFullYear().toString());
+                    }
+
+                    // Jika ini mode Edit dan tahun tanggal distribusi sama dengan data aslinya yang sudah memiliki nomor BAST resmi
+                    if (this.isEdit && window.editingDistribusi && window.editingDistribusi.bast_nomor) {
+                        const origBast = window.editingDistribusi.bast_nomor;
+                        if (origBast.includes('/ ' + tahun) || origBast.endsWith('/' + tahun)) {
+                            this.formData.bast_nomor = origBast;
+                            return;
+                        }
+                    }
+
+                    try {
+                        const excludeParam = this.editId ? `&exclude_id=${this.editId}` : '';
+                        const res = await fetch(`{{ route('distribusi.next-bast') }}?tahun=${tahun}${excludeParam}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.success && data.bast_nomor) {
+                                this.formData.bast_nomor = data.bast_nomor;
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Gagal mengambil nomor BAST otomatis:', e);
+                    }
+
+                    // Fallback jika fetch offline
+                    if (this.formData.bast_nomor && this.formData.bast_nomor.includes('430.10.7')) {
+                        const bParts = this.formData.bast_nomor.split('/');
+                        if (bParts.length === 4) {
+                            this.formData.bast_nomor = bParts[0].trim() + ' / ' + bParts[1].trim() + ' / ' + bParts[2].trim() + ' / ' + tahun;
+                        }
+                    } else {
+                        this.formData.bast_nomor = '032 / 001 / 430.10.7 / ' + tahun;
+                    }
+                },
+                async onStatusChange() {
                     if (this.formData.status === 'Ditolak') {
                         this.formData.bast_nomor = '(tidak diterbitkan)';
                     } else if (this.formData.status === 'Menunggu Konfirmasi' || this.formData.status === 'Draft') {
                         this.formData.bast_nomor = '(Menunggu Konfirmasi)';
                     } else if (this.formData.status === 'Dalam Pengiriman' || this.formData.status === 'Telah Diterima') {
-                        if (!this.formData.bast_nomor || this.formData.bast_nomor === '-' || this.formData.bast_nomor === '(tidak diterbitkan)' || this.formData.bast_nomor.includes('Menunggu') || this.formData.bast_nomor.includes('Diterbitkan')) {
-                            this.formData.bast_nomor = {{ Js::from($nextBastNomor ?? ('032 / 001 / 430.10.7 / '.date('Y'))) }};
-                        }
+                        const match = String(this.formData.tgl || '').match(/(\d{4})/);
+                        const tahun = match ? match[1] : (new Date().getFullYear().toString());
+                        await this.fetchNextBast(tahun);
                     }
                 },
                 addItem() {
@@ -449,11 +490,14 @@
                 },
                 async submitForm() {
                     console.log('[submitForm] status saat ini:', this.formData.status);
-                    // Jika Admin menginput minimal 1 NIBAR, otomatis dianggap di-ACC (status beralih ke Dalam Pengiriman agar BAST terbit & siap dicetak)
-                    // Catatan: Jika user secara manual memilih 'Ditolak', promosi otomatis ini tidak berjalan
-                    if (!this.isSubAdmin && this.formData.status !== 'Ditolak' && this.getTotalItemVolumeAcc() > 0 && ['Menunggu Konfirmasi', 'Draft', 'Pending'].includes(this.formData.status)) {
+                    // Otomatis: Jika ada minimal 1 NIBAR yang di-ACC / dipilih oleh Admin, status otomatis 'Dalam Pengiriman'
+                    const hasAnyAccNibar = (this.formData.items || []).some(it => {
+                        const acc = (it.qty_acc !== null && it.qty_acc !== undefined && it.qty_acc !== '') ? parseInt(it.qty_acc) : ((it.nibar_selected || []).length);
+                        return acc > 0;
+                    });
+                    if (!this.isSubAdmin && ['Menunggu Konfirmasi', 'Draft', 'Pending'].includes(this.formData.status) && hasAnyAccNibar) {
                         this.formData.status = 'Dalam Pengiriman';
-                        this.onStatusChange();
+                        await this.onStatusChange();
                     }
 
                     // Saat status Ditolak, pastikan keterangan tidak kosong agar tidak blocked di backend
@@ -478,6 +522,9 @@
                     // Dievaluasi SETELAH kemungkinan promosi status di atas, agar status 'Ditolak' yang dipilih user tidak terblokir oleh validasi BAST
                     const isShippingOrReceived = ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'].includes(this.formData.status);
                     console.log('[submitForm] step 2: isShippingOrReceived =', isShippingOrReceived, 'bast_nomor =', this.formData.bast_nomor);
+                    if (!this.isSubAdmin && isShippingOrReceived && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '' || this.formData.bast_nomor === '(tidak diterbitkan)' || this.formData.bast_nomor.includes('Menunggu'))) {
+                        await this.fetchNextBast();
+                    }
                     if (!this.isSubAdmin && isShippingOrReceived && (!this.formData.bast_nomor || this.formData.bast_nomor.trim() === '' || this.formData.bast_nomor === '(tidak diterbitkan)' || this.formData.bast_nomor.includes('Menunggu'))) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nNo. BAST Distribusi belum diisi / belum terbit.');
                         return;
@@ -732,17 +779,16 @@
                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-teal-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                     </div>
 
-                    <!-- Nomor BAST Rujukan -->
+                    <!-- Nomor BAST Rujukan (Otomatis & Terkunci) -->
                     <div>
-                        <label class="block text-slate-300 font-semibold text-xs mb-1.5">
-                            No. BAST Distribusi
+                        <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center justify-between">
+                            <span>No. BAST Distribusi</span>
+                            <span class="text-[10px] text-teal-400 font-normal">Otomatis Sistem</span>
                         </label>
-                        <input type="text" x-model="formData.bast_nomor"
-                               :readonly="isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi'"
+                        <input type="text" x-model="formData.bast_nomor" readonly
                                :disabled="formData.status === 'Ditolak'"
                                :placeholder="formData.status === 'Ditolak' ? '(tidak diterbitkan)' : (formData.status === 'Menunggu Konfirmasi' ? '(Menunggu Konfirmasi)' : '032 / ... / 430.10.7 / 2026')"
-                               :class="(isSubAdmin || formData.status === 'Ditolak' || formData.status === 'Menunggu Konfirmasi') ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed' : 'bg-slate-950 text-white'"
-                               class="w-full border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono focus:outline-none focus:border-teal-500">
+                               class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-teal-400 font-mono font-bold focus:outline-none cursor-not-allowed">
                     </div>
 
                     <!-- Tanggal Distribusi / Pengajuan -->

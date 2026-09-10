@@ -21,7 +21,10 @@ class DistribusiController extends Controller
      */
     public static function generateNextBastNomor(int $tahun, ?int $excludeId = null): string
     {
-        $existingBastNumbers = Distribusi::whereYear('tanggal_distribusi', $tahun)
+        $existingBastNumbers = Distribusi::where(function($q) use ($tahun) {
+                $q->whereYear('tanggal_distribusi', $tahun)
+                  ->orWhere('bast_nomor', 'LIKE', '% / ' . $tahun);
+            })
             ->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])
             ->whereNotNull('bast_nomor')
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
@@ -39,6 +42,22 @@ class DistribusiController extends Controller
 
         $nextSeq = $maxSeq + 1;
         return '032 / ' . str_pad($nextSeq, 3, '0', STR_PAD_LEFT) . ' / 430.10.7 / ' . $tahun;
+    }
+
+    /**
+     * API: Ambil Nomor Urut BAST Resmi Sekuensial berikutnya berdasarkan tahun
+     */
+    public function getNextBast(Request $request)
+    {
+        $tahun = (int)($request->query('tahun') ?: date('Y'));
+        $excludeId = $request->query('exclude_id') ? (int)$request->query('exclude_id') : null;
+        $bastNomor = self::generateNextBastNomor($tahun, $excludeId);
+
+        return response()->json([
+            'success'    => true,
+            'bast_nomor' => $bastNomor,
+            'tahun'      => $tahun,
+        ]);
     }
 
     /**
@@ -541,10 +560,16 @@ class DistribusiController extends Controller
             if ($isShippingOrReceived) {
                 $existingBast = $distribusi?->bast_nomor;
                 $isValidExistingBast = !empty($existingBast) 
-                    && preg_match('/^032\s*\/\s*\d+\s*\/\s*430\.10\.7\s*\/\s*\d{4}$/', trim($existingBast));
+                    && preg_match('/^032\s*\/\s*(\d+)\s*\/\s*430\.10\.7\s*\/\s*(\d{4})$/', trim($existingBast), $matches);
 
                 if ($isValidExistingBast) {
-                    $finalBastNomor = trim($existingBast);
+                    $existingYear = (int)$matches[2];
+                    if ($existingYear === (int)$tahunDistribusi) {
+                        $finalBastNomor = trim($existingBast);
+                    } else {
+                        // Tahun tanggal distribusi berubah, generate nomor BAST baru sesuai tahun dan urutan berikutnya
+                        $finalBastNomor = self::generateNextBastNomor((int)$tahunDistribusi, $distribusi?->id);
+                    }
                 } else {
                     $finalBastNomor = self::generateNextBastNomor((int)$tahunDistribusi, $distribusi?->id);
                 }

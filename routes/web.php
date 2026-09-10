@@ -671,6 +671,7 @@ Route::middleware('auth')->group(function () {
     // 2. Distribusi Pages & Forms
     Route::get('/distribusi', [DistribusiController::class, 'index'])->name('distribusi.index');
     Route::get('/distribusi/create', [DistribusiController::class, 'create'])->name('distribusi.create');
+    Route::get('/distribusi/next-bast', [DistribusiController::class, 'getNextBast'])->name('distribusi.next-bast');
     Route::get('/distribusi/{id}/edit', [DistribusiController::class, 'edit'])->name('distribusi.edit');
     Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
     Route::post('/distribusi', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.store');

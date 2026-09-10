@@ -4945,7 +4945,7 @@
                     <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">📦</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Aset</span>
-                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="totalVolumeUnit + ' Aset (' + astaps.length + ' Master)'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="totalVolumeUnit + ' Aset (' + astaps.length + ' Item)'"></span>
                     </div>
                 </div>
 
