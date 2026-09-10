@@ -42,32 +42,8 @@
                 nibarSearch: {},
                 toast: { show: false, message: '', type: 'success' },
                 confirmData: { show: false, title: '', message: '', itemName: '', btnText: '', type: 'danger', onConfirm: null },
-                katalogAstap: [
-                    { kode: '1.3.2.05.01.04.008', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kasur Matras spoon (Mattress Foam Adult 200x90x10)', kategori: 'Perlengkapan Kamar Pasien', merk: 'Mattres Cover Spon FO R.Inap', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.08.001', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Bed Patient Electric 3 Crank Acare', kategori: 'Perlengkapan Kamar Rawat Inap', merk: 'Acare Electric Medical Bed with Side Rail', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.08.002', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Bed Patient Manual 2 Crank Paramount', kategori: 'Perlengkapan Kamar Rawat Inap', merk: 'Paramount Bed Standard with Side Rail', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.01.025', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Emergency Crash Cart Trolley Kit Lengkap', kategori: 'Alat Kedokteran Gawat Darurat', merk: 'Paramount Emergency 5 Laci + Tiang Infus', satuan: 'Set' },
-                    { kode: '1.3.2.02.01.01.008', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Patient Monitor 6 Parameter Mindray', kategori: 'Alat Monitoring Medis', merk: 'Mindray ePM 12 / Display 12.1 Inch Multi-Lead', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.01.012', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Infusion Pump Digital Otomatis Terumo', kategori: 'Alat Kedokteran Tindakan Medis', merk: 'Terumo TE-LM700 / TE-112', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.01.015', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Syringe Pump Terumo TE-331', kategori: 'Alat Kedokteran Tindakan Medis', merk: 'Terumo TE-331 Digital Infusion System', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.02.007', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Suction Pump Portable Medis Thomas', kategori: 'Alat Penghisap Lendir Medis', merk: 'Thomas 1632 Aspirator Heavy Duty', satuan: 'Unit' },
-                    { kode: '1.3.2.01.03.05.005', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Submersible Pump 7.5 HP Franklin Electric', kategori: 'Peralatan Mesin & Sanitasi', merk: 'Franklin Electric 4 Inch 3-Phase', satuan: 'Unit' },
-                    { kode: '1.3.2.10.01.02.003', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Laptop Operasional ASUS ExpertBook Core i7', kategori: 'Peralatan Komputer & IT', merk: 'ASUS ExpertBook B1402CBA / 16GB / 512GB SSD', satuan: 'Unit' },
-                    { kode: '1.3.2.10.02.01.005', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Printer Thermal Resep & Label Rekam Medis', kategori: 'Peralatan IT & Farmasi', merk: 'Epson TM-T82X Thermal Auto-Cutter USB', satuan: 'Unit' },
-                    { kode: '1.3.2.05.01.01.012', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kursi Tunggu Stainless 4 Dudukan Ruang Poli', kategori: 'Mebelair & Sarana Pasien', merk: 'Indachi Stainless Steel 4-Seater', satuan: 'Unit' },
-                    { kode: '1.3.2.05.01.02.006', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Lemari Obat Kaca 2 Pintu Farmasi Rawat Inap', kategori: 'Mebelair Medis & Farmasi', merk: 'Baja Coating Glass Door Cabinet', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.04.005', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Meja Tindakan Stainless Steel IGD', kategori: 'Alat Medis & Tindakan', merk: 'Stainless 304 Examination Table', satuan: 'Unit' },
-                    { kode: '1.3.2.02.01.01.018', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Tensimeter Digital Stand Mobile Riester', kategori: 'Alat Diagnostik & TTV', merk: 'Riester Ri-Champion Mobile Stand', satuan: 'Set' },
-                    { kode: '1.3.2.02.01.06.004', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Tabung Oksigen Medis 6m3 + Regulator Flowmeter', kategori: 'Gas Medis & Resusitasi', merk: 'Samator Medical Gas Cylinder 6m3', satuan: 'Tabung' },
-                    { kode: '1.3.2.05.02.01.004', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Ember Plastik Tertutup Medis / Non-Medis (50 Liter)', kategori: 'Peralatan Sanitasi & Kebersihan', merk: 'Clio Plastik / Lion Star 50L', satuan: 'Buah' },
-                    { kode: '1.3.2.03.01.02.001', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kabel Listrik NYMHY 3x2.5mm', kategori: 'Perlengkapan Elektrikal & Sarpras', merk: 'Supreme Kabel Standar PLN', satuan: 'Meter' },
-                    { kode: '1.3.2.05.02.02.009', jenis_kode: '1.3.2', jenis_nama: 'PERALATAN DAN MESIN', nama: 'Kain Sprei Kamar Rawat Inap Katun Polos', kategori: 'Linen & Perlengkapan Kamar', merk: 'Linen RS Putih Anti Noda', satuan: 'Lembar' },
-                    { kode: '1.3.1.01.01.02.013', jenis_kode: '1.3.1', jenis_nama: 'TANAH', nama: 'Lahan Bangunan RSUD Dr. H. Koesnandi', kategori: 'Tanah Bangunan', merk: 'Sertifikat Hak Pakai HP-108/1984', satuan: 'Bidang' },
-                    { kode: '1.3.3.01.01.01.008', jenis_kode: '1.3.3', jenis_nama: 'GEDUNG DAN BANGUNAN', nama: 'Gedung Paviliun Graha Amukti VIP', kategori: 'Bangunan Gedung', merk: 'Beton Bertulang 2 Lt', satuan: 'Gedung' },
-                    { kode: '1.3.4.01.01.01.002', jenis_kode: '1.3.4', jenis_nama: 'JALAN, IRIGASI DAN JARINGAN', nama: 'Jaringan Pipa Distribusi Air Bersih Sentral', kategori: 'Jaringan Distribusi', merk: 'Pipa HDPE Medis', satuan: 'Meter' },
-                    { kode: '1.3.5.01.01.01.005', jenis_kode: '1.3.5', jenis_nama: 'ASET TETAP LAINNYA', nama: 'Buku Pedoman Tata Kelola Rumah Sakit', kategori: 'Buku Perpustakaan', merk: 'Kemenkes RI', satuan: 'Buku' },
-                    { kode: '1.5.3.01.01.01.001', jenis_kode: '1.5.3', jenis_nama: 'ASET TIDAK BERWUJUD', nama: 'Lisensi Sistem Informasi Rekam Medis Elektronik (RME)', kategori: 'Software Aplikasi', merk: 'SIMAT-RME Cloud Enterprise', satuan: 'Lisensi' }
-                ],
+                // katalogAstap langsung dari database — terisi saat Alpine init, tidak ada timing issue
+                katalogAstap: ({{ Js::from($astapList ?? []) }}).filter(a => a && a.kode && a.nama),
                 formData: {
                     kode: '',
                     bast_nomor: '',
@@ -85,17 +61,6 @@
                     items: []
                 },
                 init() {
-                    try {
-                        if (Array.isArray(this.dbAstapList) && this.dbAstapList.length > 0) {
-                            const existingCodes = new Set((this.katalogAstap || []).map(k => k.kode));
-                            this.dbAstapList.forEach(dbItem => {
-                                if (dbItem && dbItem.kode && !existingCodes.has(dbItem.kode)) {
-                                    this.katalogAstap.unshift(dbItem);
-                                }
-                            });
-                        }
-                    } catch(e) {}
-
                     let loadedData = null;
                     if (this.isEdit) {
                         if (window.editingDistribusi && typeof window.editingDistribusi === 'object') {
@@ -373,9 +338,9 @@
                 getFilteredAstap(item, query) {
                     let list = this.katalogAstap || [];
                     if (item && item.jenis_astap_kode) { list = list.filter(a => a.jenis_kode === item.jenis_astap_kode || (a.kode && a.kode.startsWith(item.jenis_astap_kode))); }
-                    if (!query || query.trim() === '') return list.slice(0, 10);
+                    if (!query || query.trim() === '') return list;
                     const q = query.toLowerCase();
-                    return list.filter(a => (a.nama||'').toLowerCase().includes(q) || (a.kode||'').toLowerCase().includes(q)).slice(0, 15);
+                    return list.filter(a => (a.nama||'').toLowerCase().includes(q) || (a.kode||'').toLowerCase().includes(q));
                 },
                 isItemAlreadySelected(ast, currentItem) {
                     if (!ast) return false;
@@ -1079,7 +1044,7 @@
                                                 <span class="text-teal-400 font-mono" x-text="getFilteredAstap(item, item.nama_barang).length + ' barang tersedia'"></span>
                                             </div>
 
-                                            <template x-for="ast in getFilteredAstap(item, item.nama_barang).slice(0, 5)" :key="ast.kode">
+                                            <template x-for="ast in getFilteredAstap(item, item.nama_barang)" :key="ast.kode">
                                                 <div @click="selectAstapItem(item, ast)"
                                                      :class="isItemAlreadySelected(ast, item) ? 'opacity-40 cursor-not-allowed bg-slate-950/40' : 'hover:bg-teal-500/15 cursor-pointer'"
                                                      class="px-4 py-2.5 transition-colors group flex items-center justify-between gap-3">
