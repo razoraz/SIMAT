@@ -21,6 +21,24 @@ class BeritaAcaraController extends Controller
     {
         $tahun = $request->query('tahun', '2026');
 
+        $dbYears = Astap::select('tahun_perolehan')
+            ->distinct()
+            ->whereNotNull('tahun_perolehan')
+            ->where('tahun_perolehan', '!=', '')
+            ->pluck('tahun_perolehan')
+            ->map(fn($y) => (int) $y)
+            ->filter(fn($y) => $y >= 1990)
+            ->all();
+
+        $currentYear = (int) date('Y');
+        $defaultRange = range(max($currentYear + 1, 2027), 2020);
+
+        $availableYears = collect(array_merge($defaultRange, $dbYears, [(int) $tahun]))
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->all();
+
         // =========================================================================
         // 1. DATA TAB 1: BAST PENAMBAHAN ASET TETAP TRIWULAN (ASTAP)
         // =========================================================================
@@ -527,6 +545,7 @@ class BeritaAcaraController extends Controller
 
         return view('pages.berita_acara', [
             'tahun'              => $tahun,
+            'availableYears'     => $availableYears,
             'triwulanDataJson'   => json_encode($triwulanData),
             'distribusiListJson' => json_encode($distribusiList),
             'mutasiListJson'     => json_encode($mutasiList),

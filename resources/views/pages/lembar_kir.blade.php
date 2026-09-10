@@ -683,20 +683,6 @@
                                     <th class="border border-black px-1 py-0.5 w-7">KB</th>
                                     <th class="border border-black px-1 py-0.5 w-7">RB</th>
                                 </tr>
-                                <tr class="bg-gray-50 text-[8px] font-mono">
-                                    <th class="border border-black">1</th>
-                                    <th class="border border-black">2</th>
-                                    <th class="border border-black">3</th>
-                                    <th class="border border-black">4</th>
-                                    <th class="border border-black">5</th>
-                                    <th class="border border-black">6</th>
-                                    <th class="border border-black">7</th>
-                                    <th class="border border-black">8</th>
-                                    <th class="border border-black">9</th>
-                                    <th class="border border-black">10</th>
-                                    <th class="border border-black">11</th>
-                                    <th class="border border-black">12</th>
-                                </tr>
                             </thead>
                             <tbody>
                                 <template x-for="(ast, idx) in assets" :key="idx">
@@ -740,46 +726,48 @@
 
                     <!-- TANDA TANGAN PENGESAHAN DOKUMEN KIR -->
                     <div class="grid grid-cols-3 gap-4 text-center font-sans text-[10px] mt-6 pt-3 border-t border-gray-300">
-                        <!-- Kolom 1: Pengurus Barang Aset -->
+                        <!-- Kolom 1: Direktur RSUD (TTD Basah Manual) -->
                         <div class="space-y-1">
-                            <p>Mengetahui,</p>
-                            <p class="font-bold">PENGURUS BARANG ASET RSUD</p>
-                            <div class="h-16 flex items-center justify-center">
-                                <!-- QR TTE Otentikasi BSrE -->
-                                <div class="border border-gray-300 p-1 rounded bg-gray-50 flex items-center space-x-1">
-                                    <span class="text-xs">🛡️</span>
-                                    <span class="text-[8px] font-mono text-gray-600">TTE Terverifikasi BSrE</span>
-                                </div>
-                            </div>
-                            <p class="font-bold underline" x-text="kirDoc.pengurus_nama"></p>
-                            <p class="font-mono text-[9px]" x-text="'NIP. ' + kirDoc.pengurus_nip"></p>
-                        </div>
+                            <p class="font-bold">Mengetahui / Menyetujui,</p>
+                            <p class="font-black uppercase text-[9.5px]">DIREKTUR RSUD dr.H.KOESNANDI</p>
+                            
+                            <!-- Ruang Tanda Tangan Basah Manual -->
+                            <div class="h-14 my-1"></div>
 
-                        <!-- Kolom 2: Direktur RSUD -->
-                        <div class="space-y-1">
-                            <p>Disetujui,</p>
-                            <p class="font-bold">DIREKTUR RSUD dr. H. KOESNANDI</p>
-                            <div class="h-16 flex items-center justify-center">
-                                <div class="border border-gray-300 p-1 rounded bg-gray-50 flex items-center space-x-1">
-                                    <span class="text-xs">📜</span>
-                                    <span class="text-[8px] font-mono text-gray-600">Sertifikat BSrE Sah</span>
-                                </div>
-                            </div>
-                            <p class="font-bold underline" x-text="kirDoc.direktur_nama"></p>
+                            <p class="font-bold underline text-[10.5px]" x-text="kirDoc.direktur_nama"></p>
                             <p class="font-mono text-[9px]" x-text="'NIP. ' + kirDoc.direktur_nip"></p>
                         </div>
 
-                        <!-- Kolom 3: Penanggung Jawab Ruangan -->
+                        <!-- Kolom 2: Pengurus Barang Aset (TTD Digital BSrE) -->
                         <div class="space-y-1">
-                            <p x-text="kirDoc.kota_tanggal"></p>
-                            <p class="font-bold">PENANGGUNG JAWAB RUANGAN</p>
-                            <div class="h-16 flex items-center justify-center">
-                                <div class="border border-gray-300 p-1 rounded bg-gray-50 flex items-center space-x-1">
-                                    <span class="text-xs">✍️</span>
-                                    <span class="text-[8px] font-mono text-gray-600">Paraf / TTE Fisik</span>
+                            <p class="font-bold">Pengurus Barang Pengelola Aset,</p>
+                            <p class="font-black uppercase text-[9.5px]">RSUD dr.H.KOESNANDI</p>
+                            
+                            <div class="h-14 flex items-center justify-center my-1">
+                                <div class="flex items-center space-x-1.5 p-1 border border-black bg-gray-50 rounded">
+                                    <div class="w-8 h-8 bg-white border border-black p-0.5">
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-KIR-PENGURUS-BARANG" class="w-full h-full object-contain">
+                                    </div>
+                                    <div class="text-left text-[6.5px] leading-tight text-black">
+                                        <div class="font-bold">PENGURUS BARANG</div>
+                                        <div>Tervalidasi BSrE</div>
+                                    </div>
                                 </div>
                             </div>
-                            <p class="font-bold underline" x-text="kirDoc.pj_nama"></p>
+
+                            <p class="font-bold underline text-[10.5px]" x-text="kirDoc.pengurus_nama"></p>
+                            <p class="font-mono text-[9px]" x-text="'NIP. ' + kirDoc.pengurus_nip"></p>
+                        </div>
+
+                        <!-- Kolom 3: Penanggung Jawab Ruangan (TTD Basah Manual) -->
+                        <div class="space-y-1">
+                            <p class="font-semibold text-[9.5px]" x-text="kirDoc.kota_tanggal"></p>
+                            <p class="font-bold uppercase text-[9.5px]">PENANGGUNG JAWAB RUANGAN,</p>
+                            
+                            <!-- Ruang Tanda Tangan Basah Manual -->
+                            <div class="h-14 my-1"></div>
+
+                            <p class="font-bold underline text-[10.5px]" x-text="kirDoc.pj_nama"></p>
                             <p class="font-mono text-[9px]" x-text="'NIP. ' + kirDoc.pj_nip"></p>
                         </div>
                     </div>

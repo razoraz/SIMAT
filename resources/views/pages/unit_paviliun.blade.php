@@ -21,8 +21,8 @@
                     pj_nama: '',
                     pj_nip: '19880512 201201 2 004',
                     pj_jabatan: 'Kepala / Penanggung Jawab Ruangan',
-                    pengurus_nama: 'BAMBANG HERMANTO, S.Sos',
-                    pengurus_nip: '19790315 200801 1 012',
+                    pengurus_nama: 'BUDI HARTONO, S.Sos',
+                    pengurus_nip: '19760229 200801 1 010',
                     pengurus_jabatan: 'Pengurus Barang Pengelola Aset',
                     direktur_nama: 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.',
                     direktur_nip: '19771002 200604 1 006'
@@ -735,20 +735,6 @@
                                         <th class="border border-black px-1 py-1 w-8">RR</th>
                                         <th class="border border-black px-1 py-1 w-8">RB</th>
                                     </tr>
-                                    <tr class="bg-gray-50 text-[8px] font-mono">
-                                        <th class="border border-black">1</th>
-                                        <th class="border border-black">2</th>
-                                        <th class="border border-black">3</th>
-                                        <th class="border border-black">4</th>
-                                        <th class="border border-black">5</th>
-                                        <th class="border border-black">6</th>
-                                        <th class="border border-black">7</th>
-                                        <th class="border border-black">8</th>
-                                        <th class="border border-black">9</th>
-                                        <th class="border border-black">10</th>
-                                        <th class="border border-black">11</th>
-                                        <th class="border border-black">12</th>
-                                    </tr>
                                 </thead>
                                 <tbody>
                                     <template x-for="(ast, idx) in (selectedUnit.assets || [])" :key="idx">
@@ -807,28 +793,19 @@
                         <!-- 3 KOLOM TANDA TANGAN PENGESAHAN -->
                         <div class="grid grid-cols-3 gap-3 text-center font-sans text-[10px] pt-1">
                             
-                            <!-- Kolom 1: Direktur RSUD -->
+                            <!-- Kolom 1: Direktur RSUD (TTD Basah Manual) -->
                             <div>
                                 <p class="font-bold">Mengetahui / Menyetujui,</p>
                                 <p class="font-black uppercase text-[9.5px]">DIREKTUR RSUD dr.H.KOESNANDI</p>
                                 
-                                <div class="h-14 flex items-center justify-center my-1">
-                                    <div class="flex items-center space-x-1.5 p-1 border border-black bg-gray-50 rounded">
-                                        <div class="w-8 h-8 bg-white border border-black p-0.5">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-KIR-DIREKTUR-KOESNANDI" class="w-full h-full object-contain">
-                                        </div>
-                                        <div class="text-left text-[6.5px] leading-tight text-black">
-                                            <div class="font-bold">PENGGUNA BARANG</div>
-                                            <div>Tervalidasi BSrE</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- Ruang Tanda Tangan Basah Manual -->
+                                <div class="h-14 my-1"></div>
 
                                 <p class="font-bold underline text-[10.5px]" x-text="kirDoc.direktur_nama"></p>
                                 <p class="font-mono text-[9px]" x-text="'NIP. ' + kirDoc.direktur_nip"></p>
                             </div>
 
-                            <!-- Kolom 2: Pengurus Barang Aset -->
+                            <!-- Kolom 2: Pengurus Barang Aset (TTD Digital BSrE) -->
                             <div>
                                 <p class="font-bold">Pengurus Barang Pengelola Aset,</p>
                                 <p class="font-black uppercase text-[9.5px]">RSUD dr.H.KOESNANDI</p>
@@ -849,22 +826,13 @@
                                 <p class="font-mono text-[9px]" x-text="'NIP. ' + kirDoc.pengurus_nip"></p>
                             </div>
 
-                            <!-- Kolom 3: Penanggung Jawab Ruangan -->
+                            <!-- Kolom 3: Penanggung Jawab Ruangan (TTD Basah Manual) -->
                             <div>
                                 <p class="font-semibold text-[9.5px]" x-text="kirDoc.tanggal_pengesahan"></p>
                                 <p class="font-bold uppercase text-[9.5px]">PENANGGUNG JAWAB RUANGAN,</p>
                                 
-                                <div class="h-14 flex items-center justify-center my-1">
-                                    <div class="flex items-center space-x-1.5 p-1 border border-black bg-gray-50 rounded">
-                                        <div class="w-8 h-8 bg-white border border-black p-0.5">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=BSRE-KIR-PJ-RUANGAN" class="w-full h-full object-contain">
-                                        </div>
-                                        <div class="text-left text-[6.5px] leading-tight text-black">
-                                            <div class="font-bold">PJ RUANGAN</div>
-                                            <div>Tervalidasi BSrE</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- Ruang Tanda Tangan Basah Manual -->
+                                <div class="h-14 my-1"></div>
 
                                 <p class="font-bold underline text-[10.5px]" x-text="kirDoc.pj_nama"></p>
                                 <p class="font-mono text-[9px]" x-text="'NIP. ' + kirDoc.pj_nip"></p>

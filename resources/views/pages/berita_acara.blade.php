@@ -599,9 +599,12 @@
 
                     <!-- Tahun Dropdown & Tombol Aksi TTD / Cetak -->
                     <div class="flex flex-wrap items-center gap-2 shrink-0">
-                        <select x-model="selectedTahun" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500">
-                            <option value="2026">Tahun Anggaran 2026</option>
-                            <option value="2025">Tahun Anggaran 2025</option>
+                        <select x-model="selectedTahun" 
+                                @change="window.location.href = '/berita-acara?tab=triwulan&tahun=' + $event.target.value"
+                                class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-purple-500 cursor-pointer">
+                            @foreach($availableYears ?? [2027, 2026, 2025, 2024, 2023, 2022, 2021, 2020] as $yr)
+                                <option value="{{ $yr }}" {{ (string)$yr === (string)($tahun ?? '2026') ? 'selected' : '' }}>Tahun Anggaran {{ $yr }}</option>
+                            @endforeach
                         </select>
 
                         <!-- Button Toggle TTD BSrE / Batalkan TTD -->
@@ -1466,17 +1469,8 @@
                                 <p class="m-0">Yang Menyerahkan,</p>
                                 <p class="font-bold m-0">PIHAK KESATU</p>
                                 
-                                <!-- TTD Digital BSrE Pihak I (PPK) -->
-                                <div style="height:80px; display:flex; align-items:center; justify-content:center; margin:4px 0;">
-                                    <div style="padding:4px; border:1.5px solid #7c3aed; background:#faf5ff; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
-                                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.nomor_surat ? encodeURIComponent(currentTriwulanDoc.nomor_surat) : 'PPK-KOESNANDI'))" style="width:40px; height:40px; flex-shrink:0;">
-                                        <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
-                                            <div style="font-weight:700; color:#4c1d95;">DITANDATANGANI ELEKTRONIK</div>
-                                            <div style="color:#374151;">PPK RSUD dr. H. Koesnandi</div>
-                                            <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- Ruang Tanda Tangan Basah Manual Pihak I (Direktur / PPK) -->
+                                <div class="h-20 my-1" style="height:80px; margin:4px 0;"></div>
 
                                 <p class="font-bold underline uppercase m-0" x-text="currentTriwulanDoc.pihak1_nama">dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR.</p>
                                 <p class="m-0" x-text="'NIP. ' + currentTriwulanDoc.pihak1_nip">NIP. 19771002 200604 1 006</p>
