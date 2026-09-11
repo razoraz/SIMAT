@@ -3544,7 +3544,7 @@ Route::middleware('auth')->group(function () {
 
         // Route Update & Delete Register ASTAP (NIBAR Per-Unit)
         Route::put('/astap-register/{id}', function (\Illuminate\Http\Request $request, $id) {
-            $reg = \App\Models\AstapRegister::with('astap')->find($id);
+            $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
             if (!$reg) {
                 return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
             }
@@ -3556,15 +3556,93 @@ Route::middleware('auth')->group(function () {
             if (isset($data['unit_id'])) $reg->unit_id = $data['unit_id'];
             $reg->save();
 
-            return response()->json(['success' => true, 'message' => 'Data register NIBAR berhasil diperbarui!']);
+            // Sinkronisasi kondisi ke parent ASTAP dan spesifikasi_json
+            $astap = $reg->astap;
+            $stats = [];
+            if ($astap) {
+                $allRegs = $astap->registers()->get();
+                $totalRegs = $allRegs->count();
+                $baikCount = $allRegs->where('kondisi', 'Baik')->count();
+                $kbCount = $allRegs->where('kondisi', 'Kurang Baik')->count();
+                $rrCount = $allRegs->where('kondisi', 'Rusak Ringan')->count();
+                $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
+
+                $dominan = ($baikCount >= $kbCount && $baikCount >= $rrCount && $baikCount >= $rbCount) ? 'Baik'
+                    : (($kbCount >= $rrCount && $kbCount >= $rbCount) ? 'Kurang Baik'
+                    : (($rrCount >= $rbCount) ? 'Rusak Ringan' : 'Rusak Berat'));
+
+                $stats = [
+                    'total' => $totalRegs,
+                    'baik' => $baikCount,
+                    'kurang_baik' => $kbCount,
+                    'rusak_ringan' => $rrCount,
+                    'rusak_berat' => $rbCount,
+                    'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
+                    'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
+                    'pct_rr' => $totalRegs > 0 ? round($rrCount / $totalRegs * 100) : 0,
+                    'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
+                    'kondisi_dominan' => $dominan,
+                ];
+
+                $spec = $astap->spesifikasi_json ?? [];
+                if (is_array($spec)) {
+                    $spec['kondisi'] = $dominan;
+                    $spec['kondisi_stats'] = $stats;
+                    $astap->spesifikasi_json = $spec;
+                }
+                $astap->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data register NIBAR berhasil diperbarui!',
+                'kondisi' => $reg->kondisi,
+                'stats' => $stats
+            ]);
         })->name('astap_register.update');
 
         Route::delete('/astap-register/{id}', function ($id) {
-            $reg = \App\Models\AstapRegister::with('astap')->find($id);
+            $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
             if ($reg) {
+                $astap = $reg->astap;
                 $nibar = $reg->nibar ?: $reg->no_register;
-                $nama = $reg->astap?->nama_barang ?? 'Aset ASTAP';
+                $nama = $astap?->nama_barang ?? 'Aset ASTAP';
                 $reg->delete();
+
+                // Sinkronisasi volume & kondisi ke parent ASTAP di database
+                if ($astap) {
+                    $newCount = $astap->registers()->count();
+                    $astap->jumlah_volume = max(1, $newCount);
+
+                    $allRegs = $astap->registers()->get();
+                    $totalRegs = $allRegs->count();
+                    $baikCount = $allRegs->where('kondisi', 'Baik')->count();
+                    $kbCount = $allRegs->where('kondisi', 'Kurang Baik')->count();
+                    $rrCount = $allRegs->where('kondisi', 'Rusak Ringan')->count();
+                    $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
+                    $dominan = ($baikCount >= $kbCount && $baikCount >= $rrCount && $baikCount >= $rbCount) ? 'Baik'
+                        : (($kbCount >= $rrCount && $kbCount >= $rbCount) ? 'Kurang Baik'
+                        : (($rrCount >= $rbCount) ? 'Rusak Ringan' : 'Rusak Berat'));
+
+                    $spec = $astap->spesifikasi_json ?? [];
+                    if (is_array($spec)) {
+                        $spec['kondisi'] = $dominan;
+                        $spec['kondisi_stats'] = [
+                            'total' => $totalRegs,
+                            'baik' => $baikCount,
+                            'kurang_baik' => $kbCount,
+                            'rusak_ringan' => $rrCount,
+                            'rusak_berat' => $rbCount,
+                            'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
+                            'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
+                            'pct_rr' => $totalRegs > 0 ? round($rrCount / $totalRegs * 100) : 0,
+                            'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
+                            'kondisi_dominan' => $dominan,
+                        ];
+                        $astap->spesifikasi_json = $spec;
+                    }
+                    $astap->save();
+                }
 
                 // Kirim Notifikasi Sistem saat Unit NIBAR Dihapus
                 try {
@@ -3579,7 +3657,11 @@ Route::middleware('auth')->group(function () {
                 }
             }
             session()->flash('success', 'Unit register NIBAR berhasil dihapus.');
-            return response()->json(['success' => true, 'message' => 'Unit register berhasil dihapus.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Unit register berhasil dihapus.',
+                'stats' => isset($spec) && isset($spec['kondisi_stats']) ? $spec['kondisi_stats'] : null
+            ]);
         })->name('astap_register.destroy');
 
         // Route Khusus: Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
