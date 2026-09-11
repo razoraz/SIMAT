@@ -71,7 +71,7 @@
             <span class="text-xs font-bold text-amber-400">Unit Servis/Rusak</span>
         </div>
         <p class="text-[11px] text-slate-400 mt-2">
-            {{ $kondisiRusakRingan ?? 0 }} Rusak Ringan · {{ $kondisiRusakBerat ?? 0 }} Rusak Berat
+            {{ $kondisiKurangBaik ?? 0 }} Kurang Baik · {{ $kondisiRusakBerat ?? 0 }} Rusak Berat
         </p>
     </div>
 </div>

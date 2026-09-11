@@ -157,8 +157,8 @@ function initAstapMasterChart() {
     // 2. Inisialisasi Grafik Kondisi Keseluruhan Barang (Doughnut Chart)
     const kondisiCtx = document.getElementById('kondisiChart');
     if (kondisiCtx) {
-        const kondisiLabels = {{ Js::from($chartKondisiLabels ?? ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat']) }};
-        const kondisiData = {{ Js::from($chartKondisiData ?? [0, 0, 0, 0]) }};
+        const kondisiLabels = {{ Js::from($chartKondisiLabels ?? ['Baik', 'Kurang Baik', 'Rusak Berat']) }};
+        const kondisiData = {{ Js::from($chartKondisiData ?? [0, 0, 0]) }};
 
         new Chart(kondisiCtx.getContext('2d'), {
             type: 'doughnut',
@@ -169,7 +169,6 @@ function initAstapMasterChart() {
                     backgroundColor: [
                         '#10b981', // Emerald - Baik
                         '#f59e0b', // Amber - Kurang Baik
-                        '#f97316', // Orange - Rusak Ringan
                         '#ef4444', // Rose - Rusak Berat
                     ],
                     borderColor: '#020617',

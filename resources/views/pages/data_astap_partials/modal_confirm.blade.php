@@ -1,4 +1,4 @@
-﻿        <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
+        <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
         <div x-show="showConfirmModal" x-cloak @click.self="showConfirmModal = false" class="fixed inset-0 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000;">
             <div x-show="showConfirmModal"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
@@ -29,7 +29,7 @@
                     </div>
                     <div class="space-y-1 min-w-0 flex-1">
                         <h3 class="text-base font-extrabold text-white leading-snug" x-text="confirmData.title"></h3>
-                        <p class="text-slate-300 text-xs leading-relaxed" x-text="confirmData.message"></p>
+                        <p class="text-slate-300 text-xs leading-relaxed whitespace-pre-line" x-text="confirmData.message"></p>
                     </div>
                 </div>
 

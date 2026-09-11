@@ -25,6 +25,17 @@
                         x-text="availableRegistersForAsal.length + ' Barang Tersedia'"></span>
                 </div>
 
+                {{-- Banner Keterangan Jika Ada Aset Terkunci Mutasi Lain --}}
+                <div x-show="lockedCountForAsal > 0" x-cloak class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2 text-xs text-amber-200">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">🔒</span>
+                        <span>
+                            Ada <strong class="text-amber-300 font-mono font-bold" x-text="lockedCountForAsal"></strong> aset dari unit ini yang disembunyikan karena sedang dalam proses persetujuan mutasi lain (Batas Persetujuan 24 Jam).
+                        </span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold shrink-0 uppercase tracking-wider">Terkunci Sementara</span>
+                </div>
+
                 {{-- Filter & Batch Action Buttons --}}
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     <div class="relative flex-1 flex items-center space-x-2">

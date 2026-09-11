@@ -21,7 +21,7 @@
         </div>
 
         <!-- Summary Chips -->
-        <div class="grid grid-cols-4 gap-2 pt-4 border-t border-slate-800/80 text-center">
+        <div class="grid grid-cols-3 gap-2 pt-4 border-t border-slate-800/80 text-center">
             <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <div class="text-[10px] text-emerald-400 font-bold uppercase">Baik</div>
                 <div class="text-sm font-black text-white font-mono">{{ $kondisiBaik ?? 0 }}</div>
@@ -29,10 +29,6 @@
             <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <div class="text-[10px] text-amber-400 font-bold uppercase">Kurang Baik</div>
                 <div class="text-sm font-black text-white font-mono">{{ $kondisiKurangBaik ?? 0 }}</div>
-            </div>
-            <div class="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                <div class="text-[10px] text-orange-400 font-bold uppercase">Rusak Ringan</div>
-                <div class="text-sm font-black text-white font-mono">{{ $kondisiRusakRingan ?? 0 }}</div>
             </div>
             <div class="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
                 <div class="text-[10px] text-rose-400 font-bold uppercase">Rusak Berat</div>

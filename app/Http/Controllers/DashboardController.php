@@ -77,10 +77,10 @@ class DashboardController extends Controller
 
         // 4. Card 4: Kondisi Aset
         $kondisiBaik         = AstapRegister::where('kondisi', 'Baik')->count();
-        $kondisiKurangBaik   = AstapRegister::where('kondisi', 'Kurang Baik')->count();
-        $kondisiRusakRingan  = AstapRegister::where('kondisi', 'Rusak Ringan')->count();
-        $kondisiRusakBerat   = AstapRegister::whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
-        $totalRusak          = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
+        $kondisiKurangBaik   = AstapRegister::whereIn('kondisi', ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR'])->count();
+        $kondisiRusakRingan  = 0;
+        $kondisiRusakBerat   = AstapRegister::whereIn('kondisi', ['Rusak Berat', 'Rusak', 'RB'])->count();
+        $totalRusak          = $kondisiKurangBaik + $kondisiRusakBerat;
 
         // 5. Data Grafik Peningkatan Aset (Harga & Kuantitas per Tahun)
         $yearlyStats = Astap::selectRaw('tahun_perolehan, SUM(jumlah_volume) as total_volume, SUM(total_realisasi) as total_harga')
@@ -197,8 +197,8 @@ class DashboardController extends Controller
             'chartHargaDataJuta'       => $chartHargaDataJuta,
             'chartKumulatifVolume'     => $chartKumulatifVolume,
             'chartKumulatifHargaJuta'  => $chartKumulatifHargaJuta,
-            'chartKondisiLabels'       => ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'],
-            'chartKondisiData'         => [$kondisiBaik, $kondisiKurangBaik, $kondisiRusakRingan, $kondisiRusakBerat],
+            'chartKondisiLabels'       => ['Baik', 'Kurang Baik', 'Rusak Berat'],
+            'chartKondisiData'         => [$kondisiBaik, $kondisiKurangBaik, $kondisiRusakBerat],
             'chartDistribusiStatusLabels' => ['Terdistribusi ke Ruangan', 'Belum Didistribusi (Gudang)'],
             'chartDistribusiStatusData'   => [$totalTerdistribusiUnit, $belumTerdistribusi],
             'chartTopUnitLabels'       => $chartTopUnitLabels,
@@ -345,10 +345,10 @@ class DashboardController extends Controller
         $totalNilaiFormatted = 'Rp ' . number_format($totalNilaiNum, 0, ',', '.');
 
         $kondisiBaik = $allRegisters->where('kondisi', 'Baik')->count();
-        $kondisiKurangBaik = $allRegisters->where('kondisi', 'Kurang Baik')->count();
-        $kondisiRusakRingan = $allRegisters->where('kondisi', 'Rusak Ringan')->count();
-        $kondisiRusakBerat = $allRegisters->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
-        $totalRusak = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
+        $kondisiKurangBaik = $allRegisters->filter(fn($r) => in_array($r->kondisi, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']))->count();
+        $kondisiRusakRingan = 0;
+        $kondisiRusakBerat = $allRegisters->filter(fn($r) => in_array($r->kondisi, ['Rusak Berat', 'Rusak', 'RB']))->count();
+        $totalRusak = $kondisiKurangBaik + $kondisiRusakBerat;
 
         // 3. Aset yang perlu perhatian / rusak di ruangan ini
         $attentionAssets = $allRegisters->filter(fn($r) => $r->kondisi !== 'Baik')->map(function($r) {

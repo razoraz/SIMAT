@@ -39,6 +39,13 @@
 
         registers: {{ Js::from($registers) }},
         units: {{ Js::from($units) }},
+        lockedCountByUnit: {{ Js::from($lockedCountByUnit ?? []) }},
+
+        get lockedCountForAsal() {
+            if (!this.ruangan_asal) return 0;
+            const norm = this.ruangan_asal.toLowerCase().trim();
+            return this.lockedCountByUnit[norm] || 0;
+        },
 
         init() {
             // Jika role sub_admin dan bukan edit, kunci unit sesuai jenis mutasi

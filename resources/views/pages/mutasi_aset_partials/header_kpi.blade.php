@@ -19,37 +19,45 @@
                 </a>
             </div>
 
-            <!-- Mini Summary KPI Cards Strip -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+            <!-- Mini Summary KPI Cards Strip (5 Kartu Selaras dengan Distribusi) -->
+            <div class="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-800/80" style="grid-template-columns: repeat(5, minmax(0, 1fr))">
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-lg">🔄</div>
                     <div>
                         <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Mutasi</span>
-                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="mutasis.length + ' Pengajuan'"></span>
+                        <span class="text-sm sm:text-base font-extrabold text-white" x-text="countAll + ' Transaksi'"></span>
                     </div>
                 </div>
 
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">✅</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Disetujui / Selesai</span>
-                        <span class="text-sm sm:text-base font-extrabold text-emerald-300" x-text="countSelesai + ' Pengajuan'"></span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Telah Disetujui</span>
+                        <span class="text-sm sm:text-base font-extrabold text-emerald-300" x-text="countSelesai + ' Transaksi'"></span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
+                    <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">⏳</div>
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Admin</span>
+                        <span class="text-sm sm:text-base font-extrabold text-cyan-300" x-text="countMenungguAdmin + ' Transaksi'"></span>
                     </div>
                 </div>
 
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
                     <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 text-lg">⏳</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Persetujuan</span>
-                        <span class="text-sm sm:text-base font-extrabold text-amber-300" x-text="countMenunggu + ' Pengajuan'"></span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Penerima</span>
+                        <span class="text-sm sm:text-base font-extrabold text-amber-300" x-text="countMenungguPenerima + ' Transaksi'"></span>
                     </div>
                 </div>
 
                 <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-                    <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">🏥</div>
+                    <div class="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 text-lg">🚫</div>
                     <div>
-                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Unit Terlibat</span>
-                        <span class="text-sm sm:text-base font-extrabold text-purple-300" x-text="countUnits + ' Ruangan'"></span>
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Ditolak</span>
+                        <span class="text-sm sm:text-base font-extrabold text-rose-300" x-text="countDitolak + ' Transaksi'"></span>
                     </div>
                 </div>
             </div>

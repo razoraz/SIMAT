@@ -1,4 +1,4 @@
-﻿        <!-- ========================================================================= -->
+        <!-- ========================================================================= -->
         <!-- TABEL KATALOG DATA ASTAP                                                  -->
         <!-- ========================================================================= -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
@@ -49,7 +49,7 @@
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-950 border border-slate-800 text-teal-300 font-semibold font-mono text-xs whitespace-nowrap">
                                         <span>📏</span>
-                                        <span x-text="item.volume_satuan"></span>
+                                        <span x-text="(item.jumlah_volume || parseInt(item.volume_satuan) || 1) + ' Aset'"></span>
                                     </div>
                                 </td>
 
@@ -58,50 +58,43 @@
 
                                 <!-- Kondisi Aset Terkini -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <template x-data="{}" x-if="true">
-                                        <div x-data="{ st: getKondisiStats(item) }">
-                                            <!-- Jika hanya 1 unit / semua kondisi sama: tampilkan badge tunggal -->
-                                            <template x-if="st.total <= 1 || (st.pct_baik === 100 || st.pct_kb === 100 || st.pct_rb === 100)">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-bold border shadow-sm select-none"
-                                                      :class="{
-                                                          'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': st.kondisi_dominan === 'Baik',
-                                                          'bg-amber-500/15 text-amber-300 border-amber-500/30': st.kondisi_dominan === 'Kurang Baik',
-                                                          'bg-rose-500/15 text-rose-300 border-rose-500/30': st.kondisi_dominan === 'Rusak Berat'
-                                                      }">
-                                                    <span class="w-1.5 h-1.5 rounded-full mr-1.5"
-                                                          :class="{
-                                                              'bg-emerald-400': st.kondisi_dominan === 'Baik',
-                                                              'bg-amber-400': st.kondisi_dominan === 'Kurang Baik',
-                                                              'bg-rose-400': st.kondisi_dominan === 'Rusak Berat'
-                                                          }"></span>
-                                                    <span x-text="st.kondisi_dominan + (st.total > 1 ? ' 100%' : '')"></span>
-                                                </span>
-                                            </template>
-                                            <!-- Jika multi kondisi: tampilkan progress bar breakdown -->
-                                            <template x-if="st.total > 1 && !(st.pct_baik === 100 || st.pct_kb === 100 || st.pct_rb === 100)">
-                                                <div class="min-w-[130px]">
-                                                    <!-- Mini progress bar gabungan -->
-                                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1.5">
-                                                        <div x-show="st.pct_baik > 0" class="bg-emerald-400 transition-all" :style="'width:' + st.pct_baik + '%'"></div>
-                                                        <div x-show="st.pct_kb > 0"   class="bg-amber-400 transition-all"   :style="'width:' + st.pct_kb + '%'"></div>
-                                                        <div x-show="st.pct_rb > 0"   class="bg-rose-400 transition-all"    :style="'width:' + st.pct_rb + '%'"></div>
-                                                    </div>
-                                                    <!-- Label persentase per kondisi -->
-                                                    <div class="flex flex-wrap gap-x-2 gap-y-0.5 justify-center">
-                                                        <template x-if="st.baik > 0">
-                                                            <span class="text-[9.5px] font-bold text-emerald-400" x-text="st.pct_baik + '% Baik'"></span>
-                                                        </template>
-                                                        <template x-if="st.kurang_baik > 0">
-                                                            <span class="text-[9.5px] font-bold text-amber-400" x-text="st.pct_kb + '% K.Baik'"></span>
-                                                        </template>
-                                                        <template x-if="st.rusak_berat > 0">
-                                                            <span class="text-[9.5px] font-bold text-rose-400" x-text="st.pct_rb + '% R.Berat'"></span>
-                                                        </template>
-                                                    </div>
+                                    <div x-data="{ get st() { return getKondisiStats(item); } }">
+                                        <!-- Jika hanya 1 unit / semua kondisi sama: tampilkan badge tunggal -->
+                                        <template x-if="st.total <= 1 || (st.pct_baik === 100 || st.pct_kb === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-xl text-[11px] font-bold border shadow-sm select-none"
+                                                  :class="st.badge_class">
+                                                <span class="w-1.5 h-1.5 rounded-full mr-1.5" :class="st.dot_class"></span>
+                                                <span x-text="st.kondisi_dominan"></span>
+                                            </span>
+                                        </template>
+                                        <!-- Jika multi kondisi: tampilkan progress bar breakdown -->
+                                        <template x-if="st.total > 1 && !(st.pct_baik === 100 || st.pct_kb === 100 || st.pct_rr === 100 || st.pct_rb === 100)">
+                                            <div class="min-w-[130px]">
+                                                <!-- Mini progress bar gabungan -->
+                                                <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1.5">
+                                                    <div x-show="st.pct_baik > 0" class="bg-emerald-400 transition-all" :style="'width:' + st.pct_baik + '%'"></div>
+                                                    <div x-show="st.pct_kb > 0"   class="bg-amber-400 transition-all"   :style="'width:' + st.pct_kb + '%'"></div>
+                                                    <div x-show="st.pct_rr > 0"   class="bg-orange-400 transition-all"  :style="'width:' + st.pct_rr + '%'"></div>
+                                                    <div x-show="st.pct_rb > 0"   class="bg-rose-400 transition-all"    :style="'width:' + st.pct_rb + '%'"></div>
                                                 </div>
-                                            </template>
-                                        </div>
-                                    </template>
+                                                <!-- Label persentase per kondisi -->
+                                                <div class="flex flex-wrap gap-x-2 gap-y-0.5 justify-center">
+                                                    <template x-if="st.baik > 0">
+                                                        <span class="text-[9.5px] font-bold text-emerald-400" x-text="st.pct_baik + '% Baik'"></span>
+                                                    </template>
+                                                    <template x-if="st.kurang_baik > 0">
+                                                        <span class="text-[9.5px] font-bold text-amber-400" x-text="st.pct_kb + '% K.Baik'"></span>
+                                                    </template>
+                                                    <template x-if="st.rusak_ringan > 0">
+                                                        <span class="text-[9.5px] font-bold text-orange-400" x-text="st.pct_rr + '% R.Ringan'"></span>
+                                                    </template>
+                                                    <template x-if="st.rusak_berat > 0">
+                                                        <span class="text-[9.5px] font-bold text-rose-400" x-text="st.pct_rb + '% R.Berat'"></span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </td>
 
                                 <!-- Aksi (Detail, Ubah, Hapus) — FREEZE STICKY RIGHT -->

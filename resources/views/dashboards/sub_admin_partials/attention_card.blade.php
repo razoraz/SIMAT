@@ -21,7 +21,7 @@
                     <div class="flex items-start justify-between gap-2">
                         <p class="font-bold text-white text-xs leading-snug" x-text="item.nama"></p>
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold shrink-0"
-                            :class="item.status === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : (item.status === 'Rusak Berat' || item.status === 'Rusak' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')"
+                            :class="item.status === 'Kurang Baik' || item.status === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : (item.status === 'Rusak Berat' || item.status === 'Rusak' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30')"
                             x-text="item.status">
                         </span>
                     </div>

@@ -27,11 +27,11 @@
                                 <span class="text-cyan-300 font-bold" x-text="formatTanggalIndo(selectedAstapDetail?.created_at || selectedAstapDetail?.spk_tanggal || (selectedAstapDetail?.tahun_perolehan ? selectedAstapDetail.tahun_perolehan + '-01-01' : null))"></span>
                             </span>
 
-                            <template x-data="{ st: getKondisiStats(selectedAstapDetail) }" x-if="selectedAstapDetail">
+                            <template x-if="selectedAstapDetail">
                                 <span class="px-2.5 py-0.5 rounded-lg border text-[11px] font-semibold flex items-center space-x-1.5 shrink-0"
-                                      :class="st.pct_baik === 100 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (st.pct_rb > 0 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' : (st.pct_rr > 0 ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'))">
-                                    <span class="w-1.5 h-1.5 rounded-full" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                    <span x-text="'Kondisi: ' + st.text"></span>
+                                      :class="getKondisiStats(selectedAstapDetail).badge_class">
+                                    <span class="w-1.5 h-1.5 rounded-full" :class="getKondisiStats(selectedAstapDetail).dot_class"></span>
+                                    <span x-text="'Kondisi: ' + getKondisiStats(selectedAstapDetail).text"></span>
                                 </span>
                             </template>
                         </div>
@@ -88,9 +88,9 @@
                             <template x-if="selectedAstapDetail.category === 'KIB A'">
                                 <div class="space-y-2.5">
                                     <!-- Rincian Masing-Masing Bidang Tanah -->
-                                    <template x-if="selectedAstapDetail.spesifikasi_json?.tanah_items && selectedAstapDetail.spesifikasi_json.tanah_items.length > 0">
+                                    <template x-if="getTanahItemsForDetail(selectedAstapDetail).length > 0">
                                         <div class="space-y-2.5">
-                                            <template x-for="(tItem, tIdx) in selectedAstapDetail.spesifikasi_json.tanah_items" :key="tIdx">
+                                            <template x-for="(tItem, tIdx) in getTanahItemsForDetail(selectedAstapDetail)" :key="tIdx">
                                                 <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-2.5 shadow-sm">
                                                     <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
                                                         <div class="flex flex-wrap items-center gap-2">
@@ -99,8 +99,10 @@
                                                             </span>
                                                             <span class="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-300 font-mono font-bold text-[10.5px] border border-cyan-500/30"
                                                                   x-text="(tItem.tanah_jumlah_bidang || 1) + ' ' + (selectedAstapDetail.satuan || 'Bidang')"></span>
-                                                            <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[tIdx]">
-                                                                <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[tIdx].nibar || selectedAstapDetail.registers[tIdx].no_register)"></span>
+                                                            <template x-if="getRincianNibar(selectedAstapDetail, tIdx, 'tanah_items')">
+                                                                <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                      :title="getRincianNibar(selectedAstapDetail, tIdx, 'tanah_items').tooltip"
+                                                                      x-text="getRincianNibar(selectedAstapDetail, tIdx, 'tanah_items').label"></span>
                                                             </template>
                                                         </div>
                                                         <div class="text-[11px] font-mono">
@@ -117,12 +119,10 @@
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Luas &amp; Kondisi</span>
                                                             <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(tItem.tanah_luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
-                                                            <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, tIdx, 'tanah_items') }" x-if="true">
-                                                                <span class="font-semibold text-[10px] inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md border" :class="st.badge_class">
-                                                                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                                                    <span x-text="'Kondisi: ' + st.text"></span>
-                                                                </span>
-                                                            </template>
+                                                            <span class="font-semibold text-[10px] inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md border" :class="getRincianKondisiStats(selectedAstapDetail, tIdx, 'tanah_items').badge_class">
+                                                                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, tIdx, 'tanah_items').dot_class"></span>
+                                                                <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, tIdx, 'tanah_items').text"></span>
+                                                            </span>
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Rincian Komponen Nilai</span>
@@ -140,7 +140,7 @@
                                     </template>
 
                                     <!-- Fallback jika data tanah tunggal / legacy -->
-                                    <template x-if="!selectedAstapDetail.spesifikasi_json?.tanah_items || selectedAstapDetail.spesifikasi_json.tanah_items.length === 0">
+                                    <template x-if="getTanahItemsForDetail(selectedAstapDetail).length === 0">
                                         <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-2.5 shadow-sm">
                                             <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
                                                 <div class="flex flex-wrap items-center gap-2">
@@ -149,8 +149,10 @@
                                                     </span>
                                                     <span class="px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-300 font-mono font-bold text-[10.5px] border border-cyan-500/30"
                                                           x-text="(selectedAstapDetail.jumlah_volume || 1) + ' ' + (selectedAstapDetail.satuan || 'Bidang')"></span>
-                                                    <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[0]">
-                                                        <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[0].nibar || selectedAstapDetail.registers[0].no_register)"></span>
+                                                    <template x-if="getRincianNibar(selectedAstapDetail, 0)">
+                                                        <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                              :title="getRincianNibar(selectedAstapDetail, 0).tooltip"
+                                                              x-text="getRincianNibar(selectedAstapDetail, 0).label"></span>
                                                     </template>
                                                 </div>
                                                 <div class="text-[11px] font-mono">
@@ -167,12 +169,10 @@
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📐 Luas &amp; Kondisi</span>
                                                     <span class="text-cyan-300 font-mono font-bold block" x-text="(Number(selectedAstapDetail.spesifikasi_json?.luas_m2 || selectedAstapDetail.luas_m2 || 0)).toLocaleString('id-ID') + ' m²'"></span>
-                                                    <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, 0) }" x-if="true">
-                                                        <span class="font-semibold text-[10px] inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md border" :class="st.badge_class">
-                                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                                            <span x-text="'Kondisi: ' + st.text"></span>
-                                                        </span>
-                                                    </template>
+                                                    <span class="font-semibold text-[10px] inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-md border" :class="getRincianKondisiStats(selectedAstapDetail, 0).badge_class">
+                                                        <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, 0).dot_class"></span>
+                                                        <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, 0).text"></span>
+                                                    </span>
                                                 </div>
                                                 <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                     <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Rincian Komponen Nilai</span>
@@ -193,15 +193,15 @@
                             <template x-if="selectedAstapDetail.category === 'KIB B' || selectedAstapDetail.category === 'EXTRACOM'">
                                 <div class="space-y-3">
                                     <!-- Multi-Item Repeater List jika ada mesin_items -->
-                                    <template x-if="selectedAstapDetail.spesifikasi_json?.mesin_items && selectedAstapDetail.spesifikasi_json.mesin_items.length > 0">
+                                    <template x-if="getMesinItemsForDetail(selectedAstapDetail).length > 0">
                                         <div class="space-y-2.5">
                                             <div class="flex items-center justify-between text-xs font-semibold text-slate-300 px-1">
                                                 <span class="flex items-center gap-1.5 text-cyan-400">
-                                                    📦 Rincian Barang Terdaftar (<span x-text="selectedAstapDetail.spesifikasi_json.mesin_items.length"></span> Item)
+                                                    📦 Rincian Barang Terdaftar (<span x-text="getMesinItemsForDetail(selectedAstapDetail).length"></span> Item)
                                                 </span>
-                                                <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || selectedAstapDetail.spesifikasi_json.mesin_items.length) + ' ' + (selectedAstapDetail.satuan || 'Unit')"></span>
+                                                <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getMesinItemsForDetail(selectedAstapDetail).reduce((s, m) => s + (parseFloat(m.mesin_jumlah_barang) || 1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Aset')"></span>
                                             </div>
-                                            <template x-for="(mItem, mIdx) in selectedAstapDetail.spesifikasi_json.mesin_items" :key="mIdx">
+                                            <template x-for="(mItem, mIdx) in getMesinItemsForDetail(selectedAstapDetail)" :key="mIdx">
                                                 <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-2.5 shadow-sm hover:border-cyan-400/50 transition-all">
                                                     <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
                                                         <div class="flex flex-wrap items-center gap-2">
@@ -220,12 +220,15 @@
                                                             <span class="text-white font-bold text-xs" x-text="(mItem.mesin_merk || '-') + ' ' + (mItem.mesin_type || '')"></span>
                                                             <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
                                                                   x-text="(mItem.mesin_jumlah_barang || 1) + ' ' + (mItem.mesin_satuan || 'Unit')"></span>
-                                                            <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items') }" x-if="true">
-                                                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
-                                                                      :class="st.badge_class">
-                                                                    <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                                                    <span x-text="'Kondisi: ' + st.text"></span>
-                                                                </span>
+                                                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                                  :class="getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items').badge_class">
+                                                                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items').dot_class"></span>
+                                                                <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items').text"></span>
+                                                            </span>
+                                                            <template x-if="getRincianNibar(selectedAstapDetail, mIdx, 'mesin_items')">
+                                                                <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                      :title="getRincianNibar(selectedAstapDetail, mIdx, 'mesin_items').tooltip"
+                                                                      x-text="getRincianNibar(selectedAstapDetail, mIdx, 'mesin_items').label"></span>
                                                             </template>
                                                         </div>
                                                         <div class="text-[11px] font-mono">
@@ -246,7 +249,7 @@
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                             <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Satuan &amp; Adm</span>
-                                                            <span class="text-emerald-300 font-medium block text-[10px]" x-text="'@ Rp ' + Number(mItem.mesin_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                            <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(mItem.mesin_nilai_satuan || 0).toLocaleString('id-ID')"></span>
                                                             <span class="text-slate-400 text-[9px]" x-text="'Adm: Rp ' + Number(mItem.mesin_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
                                                         </div>
                                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
@@ -299,30 +302,35 @@
                             <template x-if="selectedAstapDetail.category === 'KIB C'">
                                 <div class="space-y-3">
                                     <!-- Jika Multi-Item Gedung -->
-                                    <template x-if="selectedAstapDetail.spesifikasi_json?.gedung_items && selectedAstapDetail.spesifikasi_json.gedung_items.length > 0">
+                                    <template x-if="getGedungItemsForDetail(selectedAstapDetail).length > 0">
                                         <div class="space-y-2.5">
                                             <div class="flex items-center justify-between px-1">
                                                 <span class="text-[11px] font-bold text-purple-300 uppercase tracking-wider flex items-center space-x-1.5">
                                                     <span>🏢 Rincian Gedung & Bangunan:</span>
                                                 </span>
                                                 <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold border border-purple-500/30" 
-                                                      x-text="selectedAstapDetail.spesifikasi_json.gedung_items.length + ' Gedung/Bangunan Terdaftar'"></span>
+                                                      x-text="getGedungItemsForDetail(selectedAstapDetail).length + ' Gedung/Bangunan Terdaftar'"></span>
                                             </div>
-                                            <template x-for="(gItem, gIdx) in selectedAstapDetail.spesifikasi_json.gedung_items" :key="gIdx">
+                                            <template x-for="(gItem, gIdx) in getGedungItemsForDetail(selectedAstapDetail)" :key="gIdx">
                                                 <div class="p-3 rounded-2xl bg-slate-900/90 border border-purple-500/30 hover:border-purple-500/60 transition-all space-y-2.5">
                                                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
                                                         <div class="flex items-center space-x-2">
                                                             <span class="px-2 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px] border border-purple-500/40" x-text="'Gedung #' + (gIdx + 1)"></span>
                                                             <span class="text-xs font-bold text-white" x-text="gItem.gedung_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                            <template x-if="getRincianNibar(selectedAstapDetail, gIdx, 'gedung_items')">
+                                                                <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                      :title="getRincianNibar(selectedAstapDetail, gIdx, 'gedung_items').tooltip"
+                                                                      x-text="getRincianNibar(selectedAstapDetail, gIdx, 'gedung_items').label"></span>
+                                                            </template>
                                                         </div>
                                                         <div class="flex items-center space-x-3 text-[10.5px] font-mono">
                                                             <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_m2 || 0) + ' M²'"></strong></span>
-                                                            <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items') }" x-if="true">
-                                                                <span class="text-slate-400 flex items-center gap-1">
-                                                                    <span>Kondisi:</span>
-                                                                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border" :class="st.badge_class" x-text="st.text"></span>
-                                                                </span>
-                                                            </template>
+                                                            <span class="text-slate-400 flex items-center gap-1">
+                                                                <span>Kondisi:</span>
+                                                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border"
+                                                                      :class="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').badge_class"
+                                                                      x-text="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').text"></span>
+                                                            </span>
                                                             <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0)).toLocaleString('id-ID')"></span>
                                                         </div>
                                                     </div>
@@ -353,7 +361,7 @@
                                     </template>
 
                                     <!-- Fallback jika data single item / legacy -->
-                                    <template x-if="!selectedAstapDetail.spesifikasi_json?.gedung_items || selectedAstapDetail.spesifikasi_json.gedung_items.length === 0">
+                                    <template x-if="getGedungItemsForDetail(selectedAstapDetail).length === 0">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                                             <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                                 <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏢 Tipe Konstruksi</span>
@@ -406,15 +414,15 @@
                                                         <span class="text-white font-bold text-xs" x-text="jItem.jaringan_nama_barang || selectedAstapDetail.nama_barang"></span>
                                                         <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
                                                               x-text="(jItem.jaringan_jumlah || 1) + ' ' + (jItem.jaringan_satuan || selectedAstapDetail.satuan || 'Ruas')"></span>
-                                                        <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, jIdx, 'jaringan_items') }" x-if="true">
-                                                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
-                                                                  :class="st.badge_class">
-                                                                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                                                <span x-text="'Kondisi: ' + st.text"></span>
-                                                            </span>
-                                                        </template>
-                                                        <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[jIdx]">
-                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[jIdx].nibar || selectedAstapDetail.registers[jIdx].no_register)"></span>
+                                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                              :class="getRincianKondisiStats(selectedAstapDetail, jIdx, 'jaringan_items').badge_class">
+                                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, jIdx, 'jaringan_items').dot_class"></span>
+                                                            <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, jIdx, 'jaringan_items').text"></span>
+                                                        </span>
+                                                        <template x-if="getRincianNibar(selectedAstapDetail, jIdx, 'jaringan_items')">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                  :title="getRincianNibar(selectedAstapDetail, jIdx, 'jaringan_items').tooltip"
+                                                                  x-text="getRincianNibar(selectedAstapDetail, jIdx, 'jaringan_items').label"></span>
                                                         </template>
                                                     </div>
                                                     <div class="text-[11px] font-mono">
@@ -466,7 +474,7 @@
                                         <span class="flex items-center gap-1.5 text-orange-400 font-bold uppercase tracking-wider text-[11px]">
                                             📚 Rincian Barang Terdaftar (<span x-text="getLainnyaItemsForDetail(selectedAstapDetail).length"></span> Item)
                                         </span>
-                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getLainnyaItemsForDetail(selectedAstapDetail).reduce((acc, it) => acc + (parseFloat(it.lainnya_jumlah_barang) || 1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Eksemplar/Unit')"></span>
+                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getLainnyaItemsForDetail(selectedAstapDetail).reduce((acc, it) => acc + (parseFloat(it.lainnya_jumlah_barang) || 1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Eksemplar')"></span>
                                     </div>
 
                                     <!-- Loop Semua Item KIB E (Item #1, Item #2, dst) -->
@@ -488,15 +496,15 @@
                                                         <span class="text-white font-bold text-xs" x-text="lItem.lainnya_nama_barang || selectedAstapDetail.nama_barang"></span>
                                                         <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
                                                               x-text="(lItem.lainnya_jumlah_barang || 1) + ' ' + (lItem.lainnya_satuan || 'Eksemplar')"></span>
-                                                        <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, lIdx, 'lainnya_items') }" x-if="true">
-                                                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
-                                                                  :class="st.badge_class">
-                                                                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                                                <span x-text="'Kondisi: ' + st.text"></span>
-                                                            </span>
-                                                        </template>
-                                                        <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[lIdx]">
-                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[lIdx].nibar || selectedAstapDetail.registers[lIdx].no_register)"></span>
+                                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                              :class="getRincianKondisiStats(selectedAstapDetail, lIdx, 'lainnya_items').badge_class">
+                                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, lIdx, 'lainnya_items').dot_class"></span>
+                                                            <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, lIdx, 'lainnya_items').text"></span>
+                                                        </span>
+                                                        <template x-if="getRincianNibar(selectedAstapDetail, lIdx, 'lainnya_items')">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                  :title="getRincianNibar(selectedAstapDetail, lIdx, 'lainnya_items').tooltip"
+                                                                  x-text="getRincianNibar(selectedAstapDetail, lIdx, 'lainnya_items').label"></span>
                                                         </template>
                                                     </div>
                                                     <div class="text-[11px] font-mono">
@@ -546,7 +554,7 @@
                                                     <!-- Kolom 3: Nilai Satuan & Adm -->
                                                     <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
                                                         <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Satuan &amp; Adm</span>
-                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'@ Rp ' + Number(lItem.lainnya_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(lItem.lainnya_nilai_satuan || 0).toLocaleString('id-ID')"></span>
                                                         <span class="text-slate-400 text-[9px]" x-text="'Adm: Rp ' + Number(lItem.lainnya_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
                                                     </div>
 
@@ -593,16 +601,16 @@
                                                             <span x-text="(kItem.kdp_progres_persen || 0) + '% Fisik'"></span>
                                                         </span>
 
-                                                        <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, kIdx, 'kdp_items') }" x-if="true">
-                                                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
-                                                                  :class="st.badge_class">
-                                                                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                                                <span x-text="'Kondisi: ' + st.text"></span>
-                                                            </span>
-                                                        </template>
+                                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                              :class="getRincianKondisiStats(selectedAstapDetail, kIdx, 'kdp_items').badge_class">
+                                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, kIdx, 'kdp_items').dot_class"></span>
+                                                            <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, kIdx, 'kdp_items').text"></span>
+                                                        </span>
                                                         
-                                                        <template x-if="selectedAstapDetail.registers && selectedAstapDetail.registers[kIdx]">
-                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold" x-text="'NIBAR: ' + (selectedAstapDetail.registers[kIdx].nibar || selectedAstapDetail.registers[kIdx].no_register)"></span>
+                                                        <template x-if="getRincianNibar(selectedAstapDetail, kIdx, 'kdp_items')">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                  :title="getRincianNibar(selectedAstapDetail, kIdx, 'kdp_items').tooltip"
+                                                                  x-text="getRincianNibar(selectedAstapDetail, kIdx, 'kdp_items').label"></span>
                                                         </template>
                                                     </div>
                                                     <div class="text-[11px] font-mono">
@@ -665,83 +673,78 @@
                             <template x-if="selectedAstapDetail.category === 'ATB'">
                                 <div class="space-y-3">
                                     <!-- Header ATB Multi-Item -->
-                                    <div class="flex items-center justify-between px-1">
-                                        <span class="text-[11px] font-bold text-violet-400 uppercase tracking-wider flex items-center space-x-1.5">
-                                            <span>💻 Rincian Item ATB Terdaftar (<span x-text="getAtbItemsForDetail(selectedAstapDetail).length"></span> Item)</span>
+                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-300 px-1">
+                                        <span class="flex items-center gap-1.5 text-violet-400 font-bold uppercase tracking-wider text-[11px]">
+                                            💻 Rincian Item ATB Terdaftar (<span x-text="getAtbItemsForDetail(selectedAstapDetail).length"></span> Item)
                                         </span>
-                                        <span class="text-[10px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getAtbItemsForDetail(selectedAstapDetail).reduce((s,a) => s + (a.atb_jumlah||1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Lisensi')"></span>
+                                        <span class="text-[11px] text-slate-400 font-mono" x-text="'Total Vol: ' + (selectedAstapDetail.jumlah_volume || getAtbItemsForDetail(selectedAstapDetail).reduce((s,a) => s + (a.atb_jumlah||1), 0)) + ' ' + (selectedAstapDetail.satuan || 'Lisensi')"></span>
                                     </div>
+
                                     <!-- Cards per Item ATB -->
-                                    <template x-for="(aItem, aIdx) in getAtbItemsForDetail(selectedAstapDetail)" :key="aIdx">
-                                        <div class="p-3 rounded-2xl bg-slate-900/80 border border-violet-500/30 space-y-2.5">
-                                            <!-- Header kartu item -->
-                                            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="px-2.5 py-0.5 rounded-lg bg-violet-500/20 text-violet-300 font-mono font-extrabold text-[10px] border border-violet-500/30">
-                                                        💻 ATB #<span x-text="aIdx + 1"></span>
-                                                    </span>
-                                                    <span class="text-[11px] text-white font-semibold" x-text="aItem.atb_nama_barang || selectedAstapDetail.nama_barang"></span>
-                                                    <template x-data="{ st: getRincianKondisiStats(selectedAstapDetail, aIdx, 'atb_items') }" x-if="true">
-                                                        <span class="px-2 py-0.5 rounded-lg text-[9.5px] font-semibold border inline-flex items-center gap-1"
-                                                              :class="st.badge_class">
-                                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="st.pct_baik === 100 ? 'bg-emerald-400' : (st.pct_rb > 0 ? 'bg-rose-400' : (st.pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'))"></span>
-                                                            <span x-text="st.text"></span>
+                                    <div class="space-y-2.5">
+                                        <template x-for="(aItem, aIdx) in getAtbItemsForDetail(selectedAstapDetail)" :key="aIdx">
+                                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-violet-500/30 space-y-2.5 shadow-sm hover:border-violet-400/50 transition-all">
+                                                <!-- Header Card Item -->
+                                                <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="px-2.5 py-0.5 rounded-lg bg-violet-500/20 text-violet-300 font-mono font-bold text-[11px] border border-violet-500/30"
+                                                              x-text="'ATB #' + (aIdx + 1)"></span>
+                                                        <span class="text-white font-bold text-xs" x-text="aItem.atb_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                                        <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
+                                                              x-text="(aItem.atb_jumlah || 1) + ' ' + (aItem.atb_satuan || selectedAstapDetail.satuan || 'Lisensi')"></span>
+                                                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                              :class="getRincianKondisiStats(selectedAstapDetail, aIdx, 'atb_items').badge_class">
+                                                            <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, aIdx, 'atb_items').dot_class"></span>
+                                                            <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, aIdx, 'atb_items').text"></span>
                                                         </span>
-                                                    </template>
+                                                        <template x-if="getRincianNibar(selectedAstapDetail, aIdx, 'atb_items')">
+                                                            <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                                  :title="getRincianNibar(selectedAstapDetail, aIdx, 'atb_items').tooltip"
+                                                                  x-text="getRincianNibar(selectedAstapDetail, aIdx, 'atb_items').label"></span>
+                                                        </template>
+                                                    </div>
+                                                    <div class="text-[11px] font-mono">
+                                                        <span class="text-slate-400">Subtotal: </span>
+                                                        <strong class="text-emerald-400 font-bold" x-text="'Rp ' + Number(((parseFloat(aItem.atb_jumlah) || 1) * (parseFloat(aItem.atb_nilai_satuan) || 0)) + (parseFloat(aItem.atb_administrasi_proyek) || 0)).toLocaleString('id-ID')"></strong>
+                                                    </div>
                                                 </div>
-                                                <span class="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg"
-                                                      x-text="'Rp ' + Number((aItem.atb_jumlah||1) * (aItem.atb_nilai_satuan||0) + (aItem.atb_administrasi_proyek||0)).toLocaleString('id-ID')">
-                                                </span>
-                                            </div>
 
-                                            <!-- Detail 4-kolom grid -->
-                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                                <!-- Judul / Nama Software -->
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💻 Judul / Nama</span>
-                                                    <span class="text-indigo-300 font-bold block text-[10.5px]" x-text="aItem.atb_judul_nama || '-'"></span>
-                                                </div>
-                                                <!-- Pencipta / Vendor -->
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏢 Pencipta / Vendor</span>
-                                                    <span class="text-white font-bold block text-[10.5px]" x-text="aItem.atb_pencipta || '-'"></span>
-                                                </div>
-                                                <!-- Spesifikasi -->
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🛠️ Spesifikasi</span>
-                                                    <span class="text-cyan-300 font-medium block text-[10.5px]" x-text="aItem.atb_spesifikasi || '-'"></span>
-                                                </div>
-                                                <!-- Ruang / Pemegang -->
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📍 Ruang / Pemegang</span>
-                                                    <span class="text-violet-300 font-medium block text-[10.5px]" x-text="aItem.atb_ruang_pemegang || selectedAstapDetail.ruang_pemegang || '-'"></span>
-                                                </div>
-                                            </div>
+                                                <!-- Grid Informasi 4 Kolom -->
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
+                                                    <!-- Kolom 1: Judul & Vendor -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💻 Judul &amp; Vendor</span>
+                                                        <span class="text-indigo-300 font-bold block truncate" :title="aItem.atb_judul_nama" x-text="aItem.atb_judul_nama || aItem.atb_nama_barang || selectedAstapDetail.nama_barang || '-'"></span>
+                                                        <span class="text-slate-300 text-[9.5px] block truncate" x-text="'Vendor: ' + (aItem.atb_pencipta || '-')"></span>
+                                                    </div>
 
-                                            <!-- Volume & Nilai -->
-                                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📦 Volume</span>
-                                                    <span class="text-cyan-300 font-bold block text-[10.5px]" x-text="(aItem.atb_jumlah || 1) + ' ' + (aItem.atb_satuan || 'Lisensi')"></span>
-                                                </div>
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">✅ Kondisi</span>
-                                                    <span class="font-bold block text-[10.5px]"
-                                                          :class="aItem.atb_kondisi === 'Baik' ? 'text-emerald-400' : (aItem.atb_kondisi === 'Kurang Baik' ? 'text-amber-400' : 'text-rose-400')"
-                                                          x-text="aItem.atb_kondisi || 'Baik'">
-                                                    </span>
-                                                </div>
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💵 Nilai Satuan</span>
-                                                    <span class="text-violet-300 font-mono font-bold block text-[10.5px]" x-text="'Rp ' + Number(aItem.atb_nilai_satuan || 0).toLocaleString('id-ID')"></span>
-                                                </div>
-                                                <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🔖 Administrasi</span>
-                                                    <span class="text-amber-300 font-mono font-bold block text-[10.5px]" x-text="'Rp ' + Number(aItem.atb_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
+                                                    <!-- Kolom 2: Detail & Spesifikasi -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🔍 Detail &amp; Spesifikasi</span>
+                                                        <span class="text-cyan-300 font-medium block truncate"
+                                                              :title="aItem.atb_spesifikasi"
+                                                              x-text="aItem.atb_spesifikasi || '-'"></span>
+                                                        <span class="text-slate-400 text-[9.5px] block truncate" x-text="'Bentuk: ' + (aItem.atb_satuan || 'Lisensi')"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 3: Nilai Satuan & Adm -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Satuan &amp; Adm</span>
+                                                        <span class="text-emerald-300 font-medium block text-[10px]" x-text="'Rp ' + Number(aItem.atb_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                                        <span class="text-slate-400 text-[9px]" x-text="'Adm: Rp ' + Number(aItem.atb_administrasi_proyek || 0).toLocaleString('id-ID')"></span>
+                                                    </div>
+
+                                                    <!-- Kolom 4: Ruang / Unit Pemegang -->
+                                                    <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                                        <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Pemegang</span>
+                                                        <span class="text-violet-300 font-medium block truncate"
+                                                              :title="aItem.atb_ruang_pemegang || selectedAstapDetail.ruang_pemegang || selectedAstapDetail.ruang_unit"
+                                                              x-text="aItem.atb_ruang_pemegang || selectedAstapDetail.ruang_pemegang || selectedAstapDetail.ruang_unit || '-'"></span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </template>
+                                        </template>
+                                    </div>
                                 </div>
                             </template>
 
@@ -854,7 +857,7 @@
                                     <div class="flex items-center space-x-2">
                                         <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider">🏷️ RINCIAN NIBAR &amp; PENEMPATAN RUANGAN (REGISTER):</span>
                                     </div>
-                                    <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-unit barang beserta lokasi penempatannya.</p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-aset beserta lokasi penempatannya.</p>
                                 </div>
                                 <div class="flex items-center space-x-2 shrink-0">
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
@@ -862,11 +865,11 @@
                                         class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
                                         title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
                                         <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        <span>🔄 Rapikan NIBAR Barang Ini</span>
+                                        <span>Rapikan NIBAR Barang Ini</span>
                                     </button>
                                     @endif
                                     <span class="text-[10px] font-extrabold px-3 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono shadow-sm"
-                                          x-text="filteredRegisters.length + ' / ' + (selectedAstapDetail.registers ? selectedAstapDetail.registers.length : 0) + ' Unit'"></span>
+                                          x-text="filteredRegisters.length + ' / ' + (selectedAstapDetail.registers ? selectedAstapDetail.registers.length : 0) + ' Aset'"></span>
                                 </div>
                             </div>
 
@@ -876,17 +879,18 @@
                                     <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Penempatan</label>
                                     <select x-model="detailPenempatanFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
                                         <option value="all">Semua Penempatan</option>
-                                        <option value="sudah">📍 Sudah Ditempatkan (Ada Ruangan)</option>
-                                        <option value="belum">⚠️ Belum Ditempatkan (Gudang)</option>
+                                        <option value="sudah">📍 Sudah Ditempatkan</option>
+                                        <option value="belum">⚠️ Belum Ditempatkan</option>
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi Unit</label>
+                                    <label class="block text-[9.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kondisi Aset</label>
                                     <select x-model="detailKondisiFilter" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-500">
                                         <option value="all">Semua Kondisi</option>
                                         <option value="Baik">Baik (B)</option>
                                         <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                        <option value="Rusak Ringan">Rusak Ringan (RR)</option>
                                         <option value="Rusak Berat">Rusak Berat (RB)</option>
                                     </select>
                                 </div>
@@ -898,10 +902,10 @@
                                 </div>
                             </div>
 
-                            <!-- Responsive Scroll Container -->
-                            <div class="overflow-x-auto rounded-xl border border-slate-800/80 custom-scrollbar">
+                            <!-- Responsive Scroll Container (Max 5 Rows Scrollable) -->
+                            <div class="rounded-xl border border-slate-800/80 custom-scrollbar" style="max-height: 285px; overflow-y: auto; overflow-x: auto;">
                                 <table class="w-full text-left text-[11px] text-slate-300 min-w-[640px]">
-                                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px]">
+                                    <thead class="bg-slate-950 text-slate-400 font-bold uppercase text-[9.5px] border-b border-slate-800 shadow-sm" style="position: sticky; top: 0; z-index: 10; background-color: #020617;">
                                         <tr>
                                             <th class="px-3.5 py-2.5 text-center">NIBAR &amp; No. Register Resmi</th>
                                             <th class="px-3.5 py-2.5 text-center">Penempatan Ruangan</th>
@@ -924,21 +928,22 @@
                                                     <template x-if="!reg.ruang_pemegang">
                                                         <span class="inline-flex items-center space-x-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 text-[10px] justify-center">
                                                             <span>⚠️</span>
-                                                            <span>Belum Ditempatkan / Di Gudang Aset</span>
+                                                            <span>Belum Ditempatkan</span>
                                                         </span>
                                                     </template>
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
-                                                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm"
+                                                    <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
                                                           :class="{
                                                               'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik',
                                                               'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik',
-                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat'
+                                                              'bg-orange-500/20 text-orange-300 border-orange-500/30': reg.kondisi === 'Rusak Ringan',
+                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'Rusak'
                                                           }" x-text="reg.kondisi"></span>
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedAstapDetail)"
-                                                        title="Pratinjau & Download QR NIBAR Unit Ini"
+                                                        title="Pratinjau & Download QR NIBAR Aset Ini"
                                                         class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400 text-emerald-400 hover:text-emerald-300 font-bold text-[10.5px] transition-all shadow-sm active:scale-95 group cursor-pointer leading-none">
                                                         <svg class="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -948,20 +953,20 @@
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <div class="flex items-center justify-center space-x-1.5">
-                                                        <!-- 1. Tombol Cek Riwayat Unit -->
-                                                        <button type="button" @click.stop="openRiwayatModal(reg)" title="Cek Riwayat Mutasi Unit Ini"
+                                                        <!-- 1. Tombol Cek Riwayat Aset -->
+                                                        <button type="button" @click.stop="openRiwayatModal(reg)" title="Cek Riwayat Mutasi Aset Ini"
                                                                 class="p-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:text-purple-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                         </button>
 
                                                         <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) -->
-                                                        <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Barang Unit Ini"
+                                                        <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Aset Ini"
                                                                 class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
                                                         </button>
 
                                                         <!-- 3. Tombol Hapus Register -->
-                                                        <button type="button" @click.stop="deleteRegister(reg)" title="Hapus Unit Register Ini"
+                                                        <button type="button" @click.stop="deleteRegister(reg)" title="Hapus Aset Register Ini"
                                                                 class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                         </button>

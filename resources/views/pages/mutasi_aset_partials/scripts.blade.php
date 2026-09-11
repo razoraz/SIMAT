@@ -305,6 +305,54 @@
                     }).catch(() => window.location.reload());
                 },
 
+                canCancelReject(item) {
+                    if (!item || item.status !== 'Ditolak') return false;
+                    if (this.userRole === 'admin' || this.userRole === 'master_admin') return true;
+                    if (this.userRole === 'sub_admin') {
+                        if (!this.userUnit) return true;
+                        const myUnit = (this.userUnit || '').toLowerCase().trim();
+                        const asal = (item.asal || '').toLowerCase().trim();
+                        const tujuan = (item.tujuan || '').toLowerCase().trim();
+                        return asal.includes(myUnit) || myUnit.includes(asal) || tujuan.includes(myUnit) || myUnit.includes(tujuan);
+                    }
+                    return false;
+                },
+
+                cancelRejectMutasi(item) {
+                    if (!item) return;
+                    this.askConfirmation({
+                        title: 'Batalkan Penolakan Mutasi?',
+                        message: 'Status penolakan akan dibatalkan, pengajuan mutasi akan aktif kembali, dan batas waktu 24 jam akan di-reset dari awal.',
+                        itemName: (item.kode || 'Mutasi') + ' (' + (item.nama || '') + ')',
+                        type: 'warning',
+                        btnText: 'Ya, Batalkan Penolakan',
+                        onConfirm: () => {
+                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            fetch('/mutasi-aset/' + item.id + '/cancel-reject', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': token,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            })
+                            .then(res => res.json())
+                            .then(d => {
+                                if (d.success) {
+                                    this.showSimatToast(d.message || '✅ Penolakan mutasi berhasil dibatalkan!', 'success');
+                                    setTimeout(() => window.location.reload(), 700);
+                                } else {
+                                    this.showSimatToast(d.message || '⚠️ Gagal membatalkan penolakan.', 'error');
+                                }
+                            })
+                            .catch(err => {
+                                console.error('cancelReject error:', err);
+                                window.location.reload();
+                            });
+                        }
+                    });
+                },
+
                 deleteMutasi(item) {
                     if (!item) return;
                     const bNomor = item.kode || 'BAMB';

@@ -1,4 +1,4 @@
-﻿        <!-- ========================================================================= -->
+        <!-- ========================================================================= -->
         <!-- AREA PEMFILTERAN & PENCARIAN (FULL WIDTH, RAPID & BERSIH)                 -->
         <!-- ========================================================================= -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl mb-6">
@@ -24,8 +24,8 @@
                     </div>
                 </div>
 
-                <!-- Advanced Filter Collapsible Bar (3 Kolom: KIB, Tahun, Triwulan) -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-800/60">
+                <!-- Advanced Filter Collapsible Bar (4 Kolom: KIB, Tahun, Triwulan, Kondisi) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-slate-800/60">
                     
                     <!-- Filter KIB -->
                     <div>
@@ -83,6 +83,24 @@
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                                 <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Kondisi Barang -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">Kondisi Barang</label>
+                        <div class="relative">
+                            <select x-model="kondisiFilter"
+                                style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
+                                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
+                                <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Kondisi</option>
+                                <option value="Baik" class="bg-slate-900 text-emerald-400 py-2 font-medium">🟢 Baik</option>
+                                <option value="Kurang Baik" class="bg-slate-900 text-amber-400 py-2 font-medium">🟡 Kurang Baik</option>
+                                <option value="Rusak Berat" class="bg-slate-900 text-rose-400 py-2 font-medium">🔴 Rusak Berat</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </div>
                         </div>
                     </div>

@@ -85,6 +85,23 @@
                                             </span>
                                         </span>
 
+                                        {{-- Indikator Batas Waktu 24 Jam (Jika Pending) --}}
+                                        <template x-if="item.is_pending && item.sisa_waktu">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9.5px] font-bold border"
+                                                :class="item.sisa_menit < 180 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30 animate-pulse' : 'bg-amber-500/10 text-amber-300/90 border-amber-500/20'"
+                                                :title="'Batas Waktu Persetujuan 24 Jam: berakhir pada ' + (item.expires_at_formatted || '')">
+                                                <span>⏱️</span>
+                                                <span x-text="'Batas: ' + item.sisa_waktu"></span>
+                                            </span>
+                                        </template>
+
+                                        {{-- Badge Jika Ditolak Karena Batas 24 Jam --}}
+                                        <template x-if="item.status === 'Ditolak' && (item.alasan_penolakan || '').includes('24 jam')">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9px] font-extrabold bg-rose-950/40 text-rose-400 border border-rose-800/40">
+                                                <span>⚠️ Batas 24 Jam Lewat</span>
+                                            </span>
+                                        </template>
+
                                         {{-- Step Track --}}
                                         <div class="flex items-center gap-0">
                                             <div class="flex flex-col items-center gap-0.5">
@@ -125,12 +142,21 @@
                                             <span>Detail</span>
                                         </button>
 
-                                        {{-- 2. Tombol Ubah --}}
-                                        <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan Mutasi"
-                                            class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                            <span>Ubah</span>
-                                        </a>
+                                        {{-- 2. Tombol Ubah (Terkunci jika status Ditolak) --}}
+                                        <template x-if="item.status !== 'Ditolak'">
+                                            <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan Mutasi"
+                                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                <span>Ubah</span>
+                                            </a>
+                                        </template>
+                                        <template x-if="item.status === 'Ditolak'">
+                                            <button type="button" disabled title="Terkunci: Pengajuan berstatus Ditolak. Batalkan penolakan terlebih dahulu di menu Detail."
+                                                class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/60 font-bold text-xs inline-flex items-center space-x-1 cursor-not-allowed opacity-60 select-none">
+                                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                <span>Ubah</span>
+                                            </button>
+                                        </template>
 
                                         {{-- 3. Tombol Hapus --}}
                                         <button type="button" @click="deleteMutasi(item)" title="Hapus Data Mutasi"

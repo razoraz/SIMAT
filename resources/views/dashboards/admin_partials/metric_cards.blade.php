@@ -52,6 +52,6 @@
             <p class="text-2xl font-black text-white">{{ number_format($kondisiBaik ?? 0, 0, ',', '.') }} <span class="text-xs font-bold text-emerald-400">Baik</span></p>
             <span class="text-xs font-extrabold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">{{ number_format($totalRusak ?? 0, 0, ',', '.') }} Rusak</span>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">{{ number_format($kondisiRusakRingan ?? 0, 0, ',', '.') }} Rusak Ringan · {{ number_format($kondisiRusakBerat ?? 0, 0, ',', '.') }} Rusak Berat</p>
+        <p class="text-[11px] text-slate-400 mt-1">{{ number_format($kondisiKurangBaik ?? 0, 0, ',', '.') }} Kurang Baik · {{ number_format($kondisiRusakBerat ?? 0, 0, ',', '.') }} Rusak Berat</p>
     </div>
 </div>

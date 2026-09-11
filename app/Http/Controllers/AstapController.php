@@ -35,6 +35,62 @@ class AstapController extends Controller
             ->get()
             ->map(function($a) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
+
+                // Sinkronisasi otomatis repeater items spesifikasi dengan sisa unit register
+                $regCount = $a->registers ? $a->registers->count() : ($a->jumlah_volume ?: 1);
+                $repeatersConfig = [
+                    'tanah_items' => ['tanah_jumlah_bidang'],
+                    'mesin_items' => ['mesin_jumlah_barang'],
+                    'gedung_items' => ['gedung_jumlah_bangunan'],
+                    'jaringan_items' => ['jaringan_jumlah', 'jaringan_jumlah_barang'],
+                    'lainnya_items' => ['lainnya_jumlah_barang'],
+                    'atb_items' => ['atb_jumlah'],
+                    'kdp_items' => ['kdp_jumlah_bangunan'],
+                ];
+                $needsDbUpdate = false;
+                foreach ($repeatersConfig as $itemsKey => $qtyKeys) {
+                    if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
+                        $quota = $regCount;
+                        $syncedItems = [];
+                        foreach ($spec[$itemsKey] as $it) {
+                            if ($quota <= 0) break;
+                            $activeQtyKey = null;
+                            $curQty = 1;
+                            foreach ($qtyKeys as $k) {
+                                if (isset($it[$k]) && is_numeric($it[$k])) {
+                                    $activeQtyKey = $k;
+                                    $curQty = floatval($it[$k]);
+                                    break;
+                                }
+                            }
+                            if ($curQty <= 0) $curQty = 1;
+
+                            if ($curQty <= $quota) {
+                                if ($activeQtyKey) $it[$activeQtyKey] = $curQty;
+                                $syncedItems[] = $it;
+                                $quota -= $curQty;
+                            } else {
+                                if ($activeQtyKey) $it[$activeQtyKey] = $quota;
+                                $syncedItems[] = $it;
+                                $quota = 0;
+                                break;
+                            }
+                        }
+                        if (count($syncedItems) !== count($spec[$itemsKey])) {
+                            $needsDbUpdate = true;
+                        }
+                        $spec[$itemsKey] = $syncedItems;
+                    }
+                }
+
+                if ($needsDbUpdate || ($a->registers && $a->registers->count() > 0 && $a->jumlah_volume != $a->registers->count())) {
+                    $a->spesifikasi_json = $spec;
+                    if ($a->registers && $a->registers->count() > 0) {
+                        $a->jumlah_volume = $a->registers->count();
+                    }
+                    $a->save();
+                }
+
                 $firstReg = $a->registers ? $a->registers->first() : null;
                 $ja = $a->jenisAstap;
                 $jp = $a->jenisPengadaan;
@@ -49,7 +105,7 @@ class AstapController extends Controller
                     'nama_barang' => $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
                     'triwulan' => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
-                    'volume_satuan' => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
+                    'volume_satuan' => ($a->jumlah_volume ?: 1) . ' Aset',
                     
                     // LANGKAH 1
                     'program_kode' => $jp ? ($jp->program_kode ?: '0.00.01') : '0.00.01',
@@ -164,9 +220,12 @@ class AstapController extends Controller
                     'keterangan' => $a->keterangan_tambahan ?: ($a->keterangan ?: '-'),
                     'keterangan_tambahan' => $a->keterangan_tambahan ?: ($a->keterangan ?: '-'),
 
-                    'registers' => $a->registers ? $a->registers->map(function($r) {
+                    'registers' => $a->registers ? $a->registers->sortBy(function($r) {
+                        return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
+                    })->values()->map(function($r) {
                         return [
                             'id' => $r->id,
+                            'no_register_int' => $r->no_register_int ?: intval(substr($r->nibar ?? '', -7)),
                             'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
                             'ruang_pemegang' => $r->ruang_pemegang,
@@ -3011,7 +3070,7 @@ class AstapController extends Controller
             $category = $request->input('category', 'all');
             $astapId = $request->input('astap_id');
 
-            $query = \App\Models\Astap::with(['registers' => fn($q) => $q->orderBy('id', 'asc'), 'jenisAstap']);
+            $query = \App\Models\Astap::with(['registers' => fn($q) => $q->orderBy('no_register_int', 'asc')->orderBy('id', 'asc'), 'jenisAstap']);
 
             if ($astapId) {
                 $target = \App\Models\Astap::find($astapId);
@@ -3081,22 +3140,77 @@ class AstapController extends Controller
                         return $a->id <=> $b->id;
                     });
 
-                    // 1. Berikan prefix temporer unik untuk menghindari tabrakan unique constraint
-                    $allRegs = [];
+                    // Pisahkan register yang SUDAH DITEMPATKAN (di unit/ruangan) dan BELUM DITEMPATKAN (di gudang)
+                    // Aturan Bisnis:
+                    // 1. Aset yang SUDAH DITEMPATKAN nomornya DIKUNCI (tidak boleh berubah karena label fisik QR di ruangan sudah terpasang).
+                    // 2. Aset yang BELUM DITEMPATKAN akan disusun mengisi celah nomor register yang kosong dari nomor 1 secara berurutan.
+                    // 3. Jika tidak ada aset gudang di atasnya untuk mengisi celah, nomor urut yang sudah ditempatkan tetap dipertahankan.
+                    $placedRegs = [];
+                    $unplacedRegs = [];
+                    $lockedSlots = [];
+
                     foreach ($sortedAstaps as $astap) {
-                        foreach ($astap->registers as $reg) {
-                            $allRegs[] = ['reg' => $reg, 'astap' => $astap];
-                            $reg->nibar = 'TEMP_' . $reg->id . '_' . uniqid();
-                            $reg->no_register = $reg->nibar;
-                            $reg->save();
+                        // Pastikan registers terurut berdasarkan no_register_int atau id
+                        $orderedRegs = $astap->registers->sortBy(function($r) {
+                            return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
+                        });
+
+                        foreach ($orderedRegs as $reg) {
+                            $isPlaced = !empty($reg->ruang_pemegang) || !empty($reg->unit_id);
+                            $curSlot = $reg->no_register_int ?: intval(substr($reg->nibar ?? '', -7));
+
+                            if ($isPlaced) {
+                                $placedRegs[] = ['reg' => $reg, 'astap' => $astap, 'slot' => $curSlot];
+                                if ($curSlot > 0) {
+                                    $lockedSlots[$curSlot] = $reg;
+                                }
+                            } else {
+                                $unplacedRegs[] = ['reg' => $reg, 'astap' => $astap, 'oldSlot' => $curSlot];
+                            }
                         }
                     }
 
-                    // 2. Berikan nomor urut register murni berurutan tanpa celah dari 1
-                    $runningNum = 0;
-                    foreach ($allRegs as $item) {
+                    // Susun alokasi slot untuk aset yang BELUM DITEMPATKAN
+                    $assignments = [];
+                    $candidateSlot = 1;
+
+                    foreach ($unplacedRegs as $item) {
+                        // Lewati slot yang sudah ditempati/dikunci oleh aset yang sudah ditempatkan
+                        while (isset($lockedSlots[$candidateSlot])) {
+                            $candidateSlot++;
+                        }
+
+                        $assignments[] = [
+                            'reg' => $item['reg'],
+                            'astap' => $item['astap'],
+                            'oldSlot' => $item['oldSlot'],
+                            'newSlot' => $candidateSlot
+                        ];
+                        $candidateSlot++;
+                    }
+
+                    // Saring hanya aset yang nomor urutnya memang mengalami perubahan
+                    $toUpdate = array_filter($assignments, function($a) {
+                        return $a['newSlot'] !== $a['oldSlot'];
+                    });
+
+                    if (empty($toUpdate)) {
+                        continue;
+                    }
+
+                    // Langkah 1: Berikan prefix temporer unik untuk menghindari benturan unique constraint pada field `nibar`
+                    foreach ($toUpdate as $item) {
+                        $reg = $item['reg'];
+                        $reg->nibar = 'TEMP_' . $reg->id . '_' . uniqid();
+                        $reg->no_register = $reg->nibar;
+                        $reg->save();
+                    }
+
+                    // Langkah 2: Terapkan NIBAR resmi baru pada slot yang telah dialokasikan
+                    foreach ($toUpdate as $item) {
                         $reg = $item['reg'];
                         $astap = $item['astap'];
+                        $newSlot = $item['newSlot'];
                         $tahun = $astap->tahun_perolehan ?? '2026';
 
                         $kode108Clean = '132000000000';
@@ -3106,12 +3220,11 @@ class AstapController extends Controller
                             $kode108Clean = str_replace('.', '', $astap->kode_barang);
                         }
 
-                        $runningNum++;
-                        $noRegStr = str_pad($runningNum, 7, '0', STR_PAD_LEFT);
+                        $noRegStr = str_pad($newSlot, 7, '0', STR_PAD_LEFT);
                         $finalNibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
 
                         $reg->tahun_perolehan = $tahun;
-                        $reg->no_register_int = $runningNum;
+                        $reg->no_register_int = $newSlot;
                         $reg->no_register = $finalNibar;
                         $reg->nibar = $finalNibar;
                         $reg->qr_code_path = "/scan/{$finalNibar}";
@@ -3121,9 +3234,13 @@ class AstapController extends Controller
                 }
             });
 
+            $message = $totalUpdated > 0
+                ? "Berhasil merapikan {$totalUpdated} unit register NIBAR (hanya aset belum ditempatkan yang dirapatkan; aset di ruangan tetap dikunci)."
+                : "Nomor register NIBAR sudah berurutan rapi. Aset yang sudah ditempatkan di ruangan tetap dikunci.";
+
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil menyusun dan merapikan {$totalUpdated} unit register NIBAR secara berurutan tanpa celah.",
+                'message' => $message,
                 'count' => $totalUpdated
             ]);
     }

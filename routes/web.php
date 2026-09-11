@@ -138,241 +138,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function ()
 
 // Dashboard Sub Admin
 Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(function () {
-    Route::get('/sub-admin/dashboard', function () {
-        $user = Auth::user();
-        $unit = null;
-        if ($user->unit_id) {
-            $unit = \App\Models\Unit::find($user->unit_id);
-        }
-        
-        // Jika sub_admin belum memiliki unit_id, tampilkan dashboard kosong
-        // (JANGAN fallback ke unit lain — berbahaya untuk keamanan data)
-        $unitId   = $unit ? $unit->id   : null;
-        $unitNama = $unit ? $unit->nama  : '';
-
-        // Jika tidak ada unit, kembalikan view dengan data kosong
-        if (!$unitId) {
-            return view('dashboards.sub_admin', [
-                'unit'                        => null,
-                'user'                        => $user,
-                'distribusisList'             => [],
-                'totalAsetCount'              => 0,
-                'totalNilaiNum'               => 0,
-                'totalNilaiFormatted'         => 'Rp 0',
-                'kondisiBaik'                 => 0,
-                'kondisiKurangBaik'           => 0,
-                'kondisiRusakRingan'          => 0,
-                'kondisiRusakBerat'           => 0,
-                'totalRusak'                  => 0,
-                'attentionAssets'             => [],
-                'unitNama'                    => '',
-                'chartYears'                  => ['Thn ' . date('Y')],
-                'chartRoomVolume'             => [0],
-                'chartRoomHarga'              => [0],
-                'chartRoomHargaJuta'          => [0],
-                'chartRoomKumulatifVolume'    => [0],
-                'chartRoomKumulatifHargaJuta' => [0],
-            ]);
-        }
-
-        // 1. Distribusi data riil khusus unit ini
-        $dbDistribusis = \App\Models\Distribusi::with([
-                'unit',
-                'items.astap.jenisAstap',
-                'items.registers.astapRegister'
-            ])
-            ->where('unit_id', $unitId)
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $distribusisList = $dbDistribusis->map(function($d) use ($unit, $user) {
-            $itemsMapped = $d->items->map(function($it) {
-                $spec = is_array($it->astap?->spesifikasi_json)
-                    ? $it->astap->spesifikasi_json
-                    : (json_decode($it->astap?->spesifikasi_json ?? '', true) ?? []);
-                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? '-'));
-                
-                $nibarList = $it->registers->map(fn($r) => $r->astapRegister?->nibar)->filter()->values()->all();
-                $firstKondisi = $it->registers->first()?->astapRegister?->kondisi ?? 'Baik';
-
-                return [
-                    'nama'       => $it->astap?->nama_barang ?? 'Barang ASTAP',
-                    'merk'       => $merk,
-                    'qty'        => $it->qty . ' ' . ($it->astap?->satuan ?: 'Unit'),
-                    'kondisi'    => $firstKondisi,
-                    'nibar_list' => $nibarList
-                ];
-            });
-
-            $firstItemName = $itemsMapped->first()['nama'] ?? 'Barang ASTAP';
-            $moreCount = $itemsMapped->count() > 1 ? ' + ' . ($itemsMapped->count() - 1) . ' item lainnya' : '';
-            $totalVol = $d->items->sum('qty');
-
-            $tglCarbon = $d->tanggal_distribusi;
-            $bulanIndo = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-            $tglStr = $tglCarbon ? ($tglCarbon->day . ' ' . ($bulanIndo[$tglCarbon->month] ?? '') . ' ' . $tglCarbon->year) : '-';
-
-            return [
-                'id'         => $d->id,
-                'kode'       => $d->kode,
-                'bast_nomor' => $d->bast_nomor ?: '-',
-                'nama'       => $firstItemName . $moreCount,
-                'qty'        => $totalVol . ' Item',
-                'tgl'        => $tglStr,
-                'status'     => $d->status,
-                'keterangan' => $d->keterangan ?: 'Permohonan kebutuhan inventaris ruangan',
-                'pengaju'    => $unit?->kepala ?? $user->name,
-                'ruangan'    => $unit?->nama ?? 'Ruangan',
-                'items'      => $itemsMapped->values()->all()
-            ];
-        })->values()->all();
-
-        // 2. Data Register Aset di Ruangan Ini — Mendukung unit_id dan ruang_pemegang (sesuai katalog Unit)
-        $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-            ->where(function($q) use ($unitId, $unitNama) {
-                if ($unitId) {
-                    $q->where('unit_id', $unitId);
-                }
-                if ($unitNama && $unitNama !== 'Ruangan Saya') {
-                    $q->orWhere(function($q2) use ($unitId, $unitNama) {
-                        // Jangan sertakan jika aset sudah tercatat milik unit lain
-                        if ($unitId) {
-                            $q2->where(function($q3) use ($unitId) {
-                                $q3->whereNull('unit_id')->orWhere('unit_id', $unitId);
-                            });
-                        }
-                        $q2->whereNotNull('ruang_pemegang')
-                           ->where('ruang_pemegang', '!=', '')
-                           ->where(function($q4) use ($unitNama) {
-                               $q4->where('ruang_pemegang', $unitNama)
-                                  ->orWhere('ruang_pemegang', 'LIKE', '%' . $unitNama . '%');
-                           });
-                    });
-                }
-            })
-            ->get();
-
-        // Ambil ASTAP yang terhubung langsung via unit_id jika belum masuk dalam register
-        $directRegisters = collect();
-        if ($unitId) {
-            $astapDirectIds = \App\Models\Astap::where('unit_id', $unitId)
-                ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
-                ->pluck('id');
-
-            if ($astapDirectIds->isNotEmpty()) {
-                $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-                    ->whereIn('astap_id', $astapDirectIds)
-                    ->get();
-            }
-        }
-
-        $allRegisters = $registers->concat($directRegisters)->unique('id');
-
-        $totalAsetCount = $allRegisters->count();
-        $totalNilaiNum = $allRegisters->sum(fn($r) => $r->astap ? (float) ($r->astap->harga_satuan ?: ($r->astap->total_realisasi / max(1, $r->astap->jumlah_volume))) : 0);
-        $totalNilaiFormatted = 'Rp ' . number_format($totalNilaiNum, 0, ',', '.');
-
-        $kondisiBaik = $allRegisters->where('kondisi', 'Baik')->count();
-        $kondisiKurangBaik = $allRegisters->where('kondisi', 'Kurang Baik')->count();
-        $kondisiRusakRingan = $allRegisters->where('kondisi', 'Rusak Ringan')->count();
-        $kondisiRusakBerat = $allRegisters->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
-        $totalRusak = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
-
-        // 3. Aset yang perlu perhatian / rusak di ruangan ini
-        $attentionAssets = $allRegisters->filter(fn($r) => $r->kondisi !== 'Baik')->map(function($r) {
-            return [
-                'id'      => $r->id,
-                'kode'    => $r->nibar ?: $r->no_register,
-                'nama'    => $r->astap?->nama_barang ?? 'Barang Inventaris',
-                'status'  => $r->kondisi,
-                'lokasi'  => $r->ruang_pemegang ?: 'Ruangan',
-                'catatan' => 'Kondisi fisik unit tercatat: ' . $r->kondisi . ' (Perlu pengecekan berkala / servis)'
-            ];
-        })->values()->all();
-
-        // 4. Data Agregasi Grafik Nilai Aset Ruangan (Berdasarkan Tahun Perolehan)
-        $yearlyMap = [];
-        $categoryMap = [];
-
-        foreach ($allRegisters as $r) {
-            $astap = $r->astap;
-            $year = (int) ($astap?->tahun_perolehan ?: ($astap?->created_at ? $astap->created_at->year : date('Y')));
-            if ($year < 1970 || $year > ((int)date('Y') + 1)) {
-                $year = (int) date('Y');
-            }
-
-            $hargaSatuan = $astap ? (float) ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume))) : 0;
-
-            if (!isset($yearlyMap[$year])) {
-                $yearlyMap[$year] = ['volume' => 0, 'harga' => 0];
-            }
-            $yearlyMap[$year]['volume'] += 1;
-            $yearlyMap[$year]['harga'] += $hargaSatuan;
-
-            $catName = $astap?->jenisAstap?->nama_jenis ?: ($astap?->category ?: 'Peralatan & Mesin');
-            if (!isset($categoryMap[$catName])) {
-                $categoryMap[$catName] = ['volume' => 0, 'harga' => 0];
-            }
-            $categoryMap[$catName]['volume'] += 1;
-            $categoryMap[$catName]['harga'] += $hargaSatuan;
-        }
-
-        ksort($yearlyMap);
-
-        $chartYears = [];
-        $chartRoomVolume = [];
-        $chartRoomHarga = [];
-        $chartRoomHargaJuta = [];
-        $chartRoomKumulatifVolume = [];
-        $chartRoomKumulatifHargaJuta = [];
-
-        $runVol = 0;
-        $runHarga = 0;
-
-        foreach ($yearlyMap as $yr => $stat) {
-            $runVol += $stat['volume'];
-            $runHarga += $stat['harga'];
-
-            $chartYears[] = 'Thn ' . $yr;
-            $chartRoomVolume[] = $stat['volume'];
-            $chartRoomHarga[] = round($stat['harga'], 2);
-            $chartRoomHargaJuta[] = round($stat['harga'] / 1000000, 2);
-            $chartRoomKumulatifVolume[] = $runVol;
-            $chartRoomKumulatifHargaJuta[] = round($runHarga / 1000000, 2);
-        }
-
-        if (empty($chartYears)) {
-            $chartYears = ['Thn ' . date('Y')];
-            $chartRoomVolume = [0];
-            $chartRoomHarga = [0];
-            $chartRoomHargaJuta = [0];
-            $chartRoomKumulatifVolume = [0];
-            $chartRoomKumulatifHargaJuta = [0];
-        }
-
-        return view('dashboards.sub_admin', [
-            'unit'                        => $unit,
-            'user'                        => $user,
-            'distribusisList'             => $distribusisList,
-            'totalAsetCount'              => $totalAsetCount,
-            'totalNilaiNum'               => $totalNilaiNum,
-            'totalNilaiFormatted'         => $totalNilaiFormatted,
-            'kondisiBaik'                 => $kondisiBaik,
-            'kondisiKurangBaik'           => $kondisiKurangBaik,
-            'kondisiRusakRingan'          => $kondisiRusakRingan,
-            'kondisiRusakBerat'           => $kondisiRusakBerat,
-            'totalRusak'                  => $totalRusak,
-            'attentionAssets'             => $attentionAssets,
-            'unitNama'                    => $unitNama,
-            // Chart Data
-            'chartYears'                  => $chartYears,
-            'chartRoomVolume'             => $chartRoomVolume,
-            'chartRoomHarga'              => $chartRoomHarga,
-            'chartRoomHargaJuta'          => $chartRoomHargaJuta,
-            'chartRoomKumulatifVolume'    => $chartRoomKumulatifVolume,
-            'chartRoomKumulatifHargaJuta' => $chartRoomKumulatifHargaJuta,
-        ]);
-    })->name('subadmin.dashboard');
+    Route::get('/sub-admin/dashboard', [DashboardController::class, 'subAdmin'])->name('subadmin.dashboard');
 
     // Halaman Ubah Email & Password Akun Sub Admin
     Route::get('/sub-admin/profile', function () {
@@ -469,6 +235,62 @@ Route::middleware('auth')->group(function () {
             ->get()
             ->map(function($a) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
+
+                // Sinkronisasi otomatis repeater items spesifikasi dengan sisa unit register
+                $regCount = $a->registers ? $a->registers->count() : ($a->jumlah_volume ?: 1);
+                $repeatersConfig = [
+                    'tanah_items' => ['tanah_jumlah_bidang'],
+                    'mesin_items' => ['mesin_jumlah_barang'],
+                    'gedung_items' => ['gedung_jumlah_bangunan'],
+                    'jaringan_items' => ['jaringan_jumlah', 'jaringan_jumlah_barang'],
+                    'lainnya_items' => ['lainnya_jumlah_barang'],
+                    'atb_items' => ['atb_jumlah'],
+                    'kdp_items' => ['kdp_jumlah_bangunan'],
+                ];
+                $needsDbUpdate = false;
+                foreach ($repeatersConfig as $itemsKey => $qtyKeys) {
+                    if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
+                        $quota = $regCount;
+                        $syncedItems = [];
+                        foreach ($spec[$itemsKey] as $it) {
+                            if ($quota <= 0) break;
+                            $activeQtyKey = null;
+                            $curQty = 1;
+                            foreach ($qtyKeys as $k) {
+                                if (isset($it[$k]) && is_numeric($it[$k])) {
+                                    $activeQtyKey = $k;
+                                    $curQty = floatval($it[$k]);
+                                    break;
+                                }
+                            }
+                            if ($curQty <= 0) $curQty = 1;
+
+                            if ($curQty <= $quota) {
+                                if ($activeQtyKey) $it[$activeQtyKey] = $curQty;
+                                $syncedItems[] = $it;
+                                $quota -= $curQty;
+                            } else {
+                                if ($activeQtyKey) $it[$activeQtyKey] = $quota;
+                                $syncedItems[] = $it;
+                                $quota = 0;
+                                break;
+                            }
+                        }
+                        if (count($syncedItems) !== count($spec[$itemsKey])) {
+                            $needsDbUpdate = true;
+                        }
+                        $spec[$itemsKey] = $syncedItems;
+                    }
+                }
+
+                if ($needsDbUpdate || ($a->registers && $a->registers->count() > 0 && $a->jumlah_volume != $a->registers->count())) {
+                    $a->spesifikasi_json = $spec;
+                    if ($a->registers && $a->registers->count() > 0) {
+                        $a->jumlah_volume = $a->registers->count();
+                    }
+                    $a->save();
+                }
+
                 $firstReg = $a->registers ? $a->registers->first() : null;
                 $ja = $a->jenisAstap;
                 $jp = $a->jenisPengadaan;
@@ -483,7 +305,7 @@ Route::middleware('auth')->group(function () {
                     'nama_barang' => $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
                     'triwulan' => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
-                    'volume_satuan' => $a->jumlah_volume . ' ' . ($a->satuan ?: 'Unit'),
+                    'volume_satuan' => ($a->jumlah_volume ?: 1) . ' Aset',
                     
                     // LANGKAH 1
                     'program_kode' => $jp ? ($jp->program_kode ?: '0.00.01') : '0.00.01',
@@ -598,9 +420,12 @@ Route::middleware('auth')->group(function () {
                     'keterangan' => $a->keterangan_tambahan ?: ($a->keterangan ?: '-'),
                     'keterangan_tambahan' => $a->keterangan_tambahan ?: ($a->keterangan ?: '-'),
 
-                    'registers' => $a->registers ? $a->registers->map(function($r) {
+                    'registers' => $a->registers ? $a->registers->sortBy(function($r) {
+                        return $r->no_register_int ?: intval(substr($r->nibar ?? '', -7));
+                    })->values()->map(function($r) {
                         return [
                             'id' => $r->id,
+                            'no_register_int' => $r->no_register_int ?: intval(substr($r->nibar ?? '', -7)),
                             'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
                             'ruang_pemegang' => $r->ruang_pemegang,
@@ -837,6 +662,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
     Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');
     Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');
+    Route::post('/mutasi-aset/{id}/cancel-reject',    [MutasiController::class, 'cancelReject'])->name('mutasi.cancel.reject');
     Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
 
     // 5. Unit & Paviliun Index
@@ -3639,6 +3465,50 @@ Route::middleware('auth')->group(function () {
                             'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
                             'kondisi_dominan' => $dominan,
                         ];
+
+                        // Sinkronisasi volume pada repeater items agar selalu seimbang dengan total register
+                        $repeatersConfig = [
+                            'tanah_items' => ['tanah_jumlah_bidang'],
+                            'mesin_items' => ['mesin_jumlah_barang'],
+                            'gedung_items' => ['gedung_jumlah_bangunan'],
+                            'jaringan_items' => ['jaringan_jumlah', 'jaringan_jumlah_barang'],
+                            'lainnya_items' => ['lainnya_jumlah_barang'],
+                            'atb_items' => ['atb_jumlah'],
+                            'kdp_items' => ['kdp_jumlah_bangunan'],
+                        ];
+
+                        foreach ($repeatersConfig as $itemsKey => $qtyKeys) {
+                            if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
+                                $quota = $astap->jumlah_volume;
+                                $syncedItems = [];
+                                foreach ($spec[$itemsKey] as $it) {
+                                    if ($quota <= 0) break;
+                                    $activeQtyKey = null;
+                                    $curQty = 1;
+                                    foreach ($qtyKeys as $k) {
+                                        if (isset($it[$k]) && is_numeric($it[$k])) {
+                                            $activeQtyKey = $k;
+                                            $curQty = floatval($it[$k]);
+                                            break;
+                                        }
+                                    }
+                                    if ($curQty <= 0) $curQty = 1;
+
+                                    if ($curQty <= $quota) {
+                                        if ($activeQtyKey) $it[$activeQtyKey] = $curQty;
+                                        $syncedItems[] = $it;
+                                        $quota -= $curQty;
+                                    } else {
+                                        if ($activeQtyKey) $it[$activeQtyKey] = $quota;
+                                        $syncedItems[] = $it;
+                                        $quota = 0;
+                                        break;
+                                    }
+                                }
+                                $spec[$itemsKey] = $syncedItems;
+                            }
+                        }
+
                         $astap->spesifikasi_json = $spec;
                     }
                     $astap->save();
@@ -3660,132 +3530,13 @@ Route::middleware('auth')->group(function () {
             return response()->json([
                 'success' => true,
                 'message' => 'Unit register berhasil dihapus.',
-                'stats' => isset($spec) && isset($spec['kondisi_stats']) ? $spec['kondisi_stats'] : null
+                'stats' => isset($spec) && isset($spec['kondisi_stats']) ? $spec['kondisi_stats'] : null,
+                'spesifikasi_json' => $spec ?? null
             ]);
         })->name('astap_register.destroy');
 
         // Route Khusus: Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
-        Route::post('/astap/resequence-nibar', function (\Illuminate\Http\Request $request) {
-            $tahun = $request->input('tahun', 'all');
-            $category = $request->input('category', 'all');
-            $astapId = $request->input('astap_id');
-
-            $query = \App\Models\Astap::with(['registers' => fn($q) => $q->orderBy('id', 'asc'), 'jenisAstap']);
-
-            if ($astapId) {
-                $target = \App\Models\Astap::find($astapId);
-                if (!$target) {
-                    return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
-                }
-                $query->where('tahun_perolehan', $target->tahun_perolehan);
-                if ($target->jenis_astap_id) {
-                    $query->where('jenis_astap_id', $target->jenis_astap_id);
-                } else {
-                    $query->where('id', $target->id);
-                }
-            } else {
-                if ($tahun !== 'all' && !empty($tahun)) {
-                    $query->where('tahun_perolehan', $tahun);
-                }
-                if ($category !== 'all' && !empty($category)) {
-                    $prefix = match($category) {
-                        'KIB A' => '1.3.1',
-                        'KIB B' => '1.3.2',
-                        'KIB C' => '1.3.3',
-                        'KIB D' => '1.3.4',
-                        'KIB E' => '1.3.5',
-                        'KIB F' => '1.3.6',
-                        'ATB'   => '1.5.3',
-                        default => null
-                    };
-                    if ($prefix) {
-                        $query->whereHas('jenisAstap', function($q) use ($prefix) {
-                            $q->where('kode_kelompok', 'like', $prefix . '%')
-                              ->orWhere('kode', 'like', $prefix . '%')
-                              ->orWhere('sub_sub_rincian_objek', 'like', $prefix . '%');
-                        });
-                    }
-                }
-            }
-
-            $allAstaps = $query->get();
-            if ($allAstaps->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Tidak ada data register pada filter yang dipilih.',
-                    'count' => 0
-                ]);
-            }
-
-            // Group ASTAPs by (tahun_perolehan, jenis_astap_id)
-            $grouped = $allAstaps->groupBy(function($item) {
-                return ($item->tahun_perolehan ?? '2026') . '_' . ($item->jenis_astap_id ?? 0);
-            });
-
-            $twOrder = ['TW I' => 1, 'TW 1' => 1, 'TW II' => 2, 'TW 2' => 2, 'TW III' => 3, 'TW 3' => 3, 'TW IV' => 4, 'TW 4' => 4];
-            $totalUpdated = 0;
-
-            \Illuminate\Support\Facades\DB::transaction(function() use ($grouped, $twOrder, &$totalUpdated) {
-                foreach ($grouped as $key => $astapsInGroup) {
-                    // Urutkan ASTAP berdasarkan Triwulan (TW I -> TW IV), lalu created_at, lalu id
-                    $sortedAstaps = $astapsInGroup->sort(function($a, $b) use ($twOrder) {
-                        $twA = $twOrder[$a->triwulan ?? 'TW I'] ?? 1;
-                        $twB = $twOrder[$b->triwulan ?? 'TW I'] ?? 1;
-                        if ($twA !== $twB) return $twA <=> $twB;
-                        
-                        $tA = $a->created_at ? $a->created_at->timestamp : $a->id;
-                        $tB = $b->created_at ? $b->created_at->timestamp : $b->id;
-                        if ($tA !== $tB) return $tA <=> $tB;
-
-                        return $a->id <=> $b->id;
-                    });
-
-                    // 1. Berikan prefix temporer unik untuk menghindari tabrakan unique constraint
-                    $allRegs = [];
-                    foreach ($sortedAstaps as $astap) {
-                        foreach ($astap->registers as $reg) {
-                            $allRegs[] = ['reg' => $reg, 'astap' => $astap];
-                            $reg->nibar = 'TEMP_' . $reg->id . '_' . uniqid();
-                            $reg->no_register = $reg->nibar;
-                            $reg->save();
-                        }
-                    }
-
-                    // 2. Berikan nomor urut register murni berurutan tanpa celah dari 1
-                    $runningNum = 0;
-                    foreach ($allRegs as $item) {
-                        $reg = $item['reg'];
-                        $astap = $item['astap'];
-                        $tahun = $astap->tahun_perolehan ?? '2026';
-
-                        $kode108Clean = '132000000000';
-                        if ($astap->jenisAstap && !empty($astap->jenisAstap->sub_sub_rincian_objek)) {
-                            $kode108Clean = str_replace('.', '', $astap->jenisAstap->sub_sub_rincian_objek);
-                        } elseif (!empty($astap->kode_barang)) {
-                            $kode108Clean = str_replace('.', '', $astap->kode_barang);
-                        }
-
-                        $runningNum++;
-                        $noRegStr = str_pad($runningNum, 7, '0', STR_PAD_LEFT);
-                        $finalNibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-
-                        $reg->tahun_perolehan = $tahun;
-                        $reg->no_register_int = $runningNum;
-                        $reg->no_register = $finalNibar;
-                        $reg->nibar = $finalNibar;
-                        $reg->qr_code_path = "/scan/{$finalNibar}";
-                        $reg->save();
-                        $totalUpdated++;
-                    }
-                }
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => "Berhasil menyusun dan merapikan {$totalUpdated} unit register NIBAR secara berurutan tanpa celah.",
-                'count' => $totalUpdated
-            ]);
-        })->name('astap.resequence_nibar');
+        Route::post('/astap/resequence-nibar', [\App\Http\Controllers\AstapController::class, 'resequenceNibar'])->name('astap.resequence_nibar');
 
         // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
         Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');

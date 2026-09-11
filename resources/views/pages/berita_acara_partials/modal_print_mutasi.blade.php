@@ -126,11 +126,6 @@
                                         <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
                                         <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase text-purple-900" x-text="selectedMutasi.tujuan"></td>
                                     </tr>
-                                    <tr style="border: none !important;">
-                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Jenis / Alasan Mutasi</td>
-                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
-                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="italic" x-text="selectedMutasi.keterangan || 'Pemindahan Aset'"></td>
-                                    </tr>
                                 </table>
                             </div>
 

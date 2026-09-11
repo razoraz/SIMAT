@@ -113,7 +113,7 @@ class Astap extends Model
 
     public function registers()
     {
-        return $this->hasMany(AstapRegister::class);
+        return $this->hasMany(AstapRegister::class)->orderBy('no_register_int', 'asc')->orderBy('id', 'asc');
     }
 
     public function getKode108Attribute(): string

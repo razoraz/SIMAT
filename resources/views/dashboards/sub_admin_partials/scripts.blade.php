@@ -127,13 +127,12 @@ function initSubAdminCharts() {
         new Chart(kondisiCtx.getContext('2d'), {
             type: 'doughnut',
             data: {
-                labels: ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'],
+                labels: ['Baik', 'Kurang Baik', 'Rusak Berat'],
                 datasets: [{
-                    data: [kondisiBaik, kondisiKurangBaik, kondisiRusakRingan, kondisiRusakBerat],
+                    data: [kondisiBaik, kondisiKurangBaik, kondisiRusakBerat],
                     backgroundColor: [
                         '#10b981', // Emerald - Baik
                         '#f59e0b', // Amber - Kurang Baik
-                        '#f97316', // Orange - Rusak Ringan
                         '#ef4444', // Rose - Rusak Berat
                     ],
                     borderColor: '#020617',

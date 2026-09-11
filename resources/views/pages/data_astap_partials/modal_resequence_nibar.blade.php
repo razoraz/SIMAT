@@ -1,4 +1,4 @@
-﻿        <!-- ========================================================================= -->
+        <!-- ========================================================================= -->
         <!-- MODAL DIALOG: RAPIKAN & URUTKAN ULANG NIBAR (AUTO-RESEQUENCE)             -->
         <!-- ========================================================================= -->
         <div x-show="showResequenceModal" x-cloak
@@ -38,9 +38,13 @@
                             <span>Bagaimana Fitur Ini Bekerja?</span>
                         </div>
                         <p class="text-[11px] text-slate-300 leading-relaxed">
-                            Ketika ada data barang yang <strong>dihapus</strong> atau <strong>diubah namanya</strong>, nomor register unit setelahnya bisa menjadi tidak berurutan (misal: unit 1-5 dihapus, sehingga unit selanjutnya tetap bernomor 0000006). 
-                            Fitur ini akan memindai seluruh aset dan <strong>merapatkan kembali urutan NIBAR</strong> dari nomor <strong class="text-cyan-300 font-mono">0000001</strong> secara berurutan berdasarkan urutan Triwulan (TW I ➔ TW IV) dan tanggal pendaftaran.
+                            Ketika ada unit register yang <strong>dihapus</strong>, nomor register setelahnya bisa meninggalkan celah/nomor kosong. 
+                            Sistem akan <strong>merapatkan kembali urutan NIBAR khusus untuk aset yang BELUM DITEMPATKAN (di gudang)</strong> agar berurutan rapi.
                         </p>
+                        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10.5px] text-emerald-300 space-y-1">
+                            <span class="font-bold block">🔒 Perlindungan Aset yang Sudah Ditempatkan:</span>
+                            <span class="text-slate-300 block leading-normal">Aset yang <strong>sudah ditempatkan di ruangan/unit (ada lokasi paviliun/ruang) DIKUNCI</strong> dan tidak akan berubah nomor registernya agar stiker label QR fisik yang telah ditempel di ruangan tetap aman dan valid.</span>
+                        </div>
                     </div>
 
                     <div class="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/50 space-y-2">
@@ -49,8 +53,8 @@
                             <span>Peringatan Penting Sebelum Melanjutkan:</span>
                         </div>
                         <ul class="text-[11px] text-amber-200/90 list-disc list-inside space-y-1 leading-relaxed">
-                            <li>Kode 45-digit NIBAR dan URL QR Code pada database akan disesuaikan ke nomor urut baru.</li>
-                            <li>Jika stiker QR Code fisik pada unit barang <strong>sudah pernah dicetak/ditempel</strong>, pastikan untuk <strong>mencetak ulang label QR Code</strong> yang baru agar sinkron dengan sistem.</li>
+                            <li>Hanya aset berstatus <strong>Belum Ditempatkan (Gudang)</strong> yang disesuaikan nomor urutnya jika ada celah kosong di bawahnya.</li>
+                            <li>Jika tidak ada aset gudang di atasnya untuk mengisi celah, posisi nomor urut yang sudah ditempatkan tetap dipertahankan hingga ada pengadaan baru atau aset dikembalikan ke gudang.</li>
                         </ul>
                     </div>
                 </div>

@@ -4101,7 +4101,7 @@
                     if (!astap || !astap.id) return;
                     this.askConfirmation({
                         title: '🔄 Konfirmasi Rapikan NIBAR Barang Ini',
-                        message: 'Sistem akan menyusun ulang dan merapatkan nomor urut register (NIBAR) untuk seluruh unit pada barang ini beserta barang sejenis di tahun yang sama dari nomor 1 secara berurutan tanpa celah.\n\n⚠️ Pastikan mencetak ulang stiker QR Code jika sudah pernah dicetak sebelumnya.',
+                        message: 'Sistem akan merapatkan nomor urut register (NIBAR) yang kosong khusus untuk aset yang BELUM DITEMPATKAN (di gudang).\n\n🔒 Aset yang SUDAH DITEMPATKAN di unit/ruangan TIDAK AKAN BERUBAH agar label stiker QR fisik di ruangan tidak tertukar.\n\n📦 Aset gudang setelahnya akan dimajukan untuk mengisi nomor yang kosong. Jika tidak ada aset gudang setelahnya, celah nomor dibiarkan dulu menunggu ada inputan baru dengan jenis & tahun yang sama atau sampai aset ruangan dikembalikan ke gudang.',
                         itemName: (astap.nama_barang || 'Barang') + ' (Tahun ' + (astap.tahun_perolehan || '2026') + ')',
                         type: 'warning',
                         btnText: '⚡ Ya, Rapikan NIBAR',
@@ -4439,21 +4439,42 @@
                                 if (data.success) {
                                     reg.kondisi = this.newKondisiValue;
                                     if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
-                                        this.selectedAstapDetail.registers = [...this.selectedAstapDetail.registers];
+                                        this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.map(r => 
+                                            r.id === reg.id ? { ...r, kondisi: this.newKondisiValue } : { ...r }
+                                        );
+                                        if (data.spesifikasi_json) {
+                                            this.selectedAstapDetail.spesifikasi_json = data.spesifikasi_json;
+                                        }
                                         if (data.stats) {
                                             if (!this.selectedAstapDetail.spesifikasi_json) this.selectedAstapDetail.spesifikasi_json = {};
                                             this.selectedAstapDetail.spesifikasi_json.kondisi_stats = data.stats;
                                             this.selectedAstapDetail.spesifikasi_json.kondisi = data.stats.kondisi_dominan;
+                                            this.selectedAstapDetail.kondisi_barang = data.stats.kondisi_dominan;
                                         }
-                                        const masterAstap = this.astaps.find(a => a.id === this.selectedAstapDetail.id);
-                                        if (masterAstap) {
-                                            masterAstap.registers = [...this.selectedAstapDetail.registers];
-                                            if (data.stats) {
-                                                if (!masterAstap.spesifikasi_json) masterAstap.spesifikasi_json = {};
-                                                masterAstap.spesifikasi_json.kondisi_stats = data.stats;
-                                                masterAstap.spesifikasi_json.kondisi = data.stats.kondisi_dominan;
+                                        this.selectedAstapDetail = { ...this.selectedAstapDetail };
+
+                                        this.astaps = this.astaps.map(a => {
+                                            if (a.id === this.selectedAstapDetail.id) {
+                                                const updatedRegs = (a.registers || []).map(r => 
+                                                    r.id === reg.id ? { ...r, kondisi: this.newKondisiValue } : { ...r }
+                                                );
+                                                let spec = a.spesifikasi_json || {};
+                                                if (typeof spec === 'string') {
+                                                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                                                }
+                                                if (data.stats) {
+                                                    spec.kondisi_stats = data.stats;
+                                                    spec.kondisi = data.stats.kondisi_dominan;
+                                                }
+                                                return {
+                                                    ...a,
+                                                    kondisi_barang: data.stats ? data.stats.kondisi_dominan : a.kondisi_barang,
+                                                    spesifikasi_json: spec,
+                                                    registers: updatedRegs
+                                                };
                                             }
-                                        }
+                                            return a;
+                                        });
                                     }
                                     this.showEditKondisiModal = false;
                                     this.showToast('Kondisi unit berhasil diperbarui menjadi ' + this.newKondisiValue + '!', 'success');
@@ -4463,7 +4484,10 @@
                             } catch(err) {
                                 reg.kondisi = this.newKondisiValue;
                                 if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
-                                    this.selectedAstapDetail.registers = [...this.selectedAstapDetail.registers];
+                                    this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.map(r => 
+                                        r.id === reg.id ? { ...r, kondisi: this.newKondisiValue } : { ...r }
+                                    );
+                                    this.selectedAstapDetail = { ...this.selectedAstapDetail };
                                 }
                                 this.showEditKondisiModal = false;
                                 this.showToast('Kondisi unit berhasil diperbarui!', 'success');
@@ -4526,23 +4550,40 @@
                                     if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
                                         this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
                                         this.selectedAstapDetail.jumlah_volume = this.selectedAstapDetail.registers.length;
-                                        this.selectedAstapDetail.volume_satuan = this.selectedAstapDetail.jumlah_volume + ' ' + (this.selectedAstapDetail.satuan || 'Unit');
+                                        this.selectedAstapDetail.volume_satuan = this.selectedAstapDetail.jumlah_volume + ' Aset';
+                                        if (data.spesifikasi_json) {
+                                            this.selectedAstapDetail.spesifikasi_json = data.spesifikasi_json;
+                                        }
                                         if (data.stats) {
                                             if (!this.selectedAstapDetail.spesifikasi_json) this.selectedAstapDetail.spesifikasi_json = {};
                                             this.selectedAstapDetail.spesifikasi_json.kondisi_stats = data.stats;
                                             this.selectedAstapDetail.spesifikasi_json.kondisi = data.stats.kondisi_dominan;
+                                            this.selectedAstapDetail.kondisi_barang = data.stats.kondisi_dominan;
                                         }
-                                        const masterAstap = this.astaps.find(a => a.id === this.selectedAstapDetail.id);
-                                        if (masterAstap) {
-                                            masterAstap.registers = [...this.selectedAstapDetail.registers];
-                                            masterAstap.jumlah_volume = this.selectedAstapDetail.jumlah_volume;
-                                            masterAstap.volume_satuan = this.selectedAstapDetail.volume_satuan;
-                                            if (data.stats) {
-                                                if (!masterAstap.spesifikasi_json) masterAstap.spesifikasi_json = {};
-                                                masterAstap.spesifikasi_json.kondisi_stats = data.stats;
-                                                masterAstap.spesifikasi_json.kondisi = data.stats.kondisi_dominan;
+                                        this.selectedAstapDetail = { ...this.selectedAstapDetail };
+
+                                        this.astaps = this.astaps.map(a => {
+                                            if (a.id === this.selectedAstapDetail.id) {
+                                                const updatedRegs = (a.registers || []).filter(r => r.id !== reg.id);
+                                                let spec = (data && data.spesifikasi_json) ? data.spesifikasi_json : (a.spesifikasi_json || {});
+                                                if (typeof spec === 'string') {
+                                                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                                                }
+                                                if (data.stats) {
+                                                    spec.kondisi_stats = data.stats;
+                                                    spec.kondisi = data.stats.kondisi_dominan;
+                                                }
+                                                return {
+                                                    ...a,
+                                                    jumlah_volume: updatedRegs.length,
+                                                    volume_satuan: updatedRegs.length + ' Aset',
+                                                    kondisi_barang: data.stats ? data.stats.kondisi_dominan : a.kondisi_barang,
+                                                    spesifikasi_json: spec,
+                                                    registers: updatedRegs
+                                                };
                                             }
-                                        }
+                                            return a;
+                                        });
                                     }
                                     this.showToast('Unit register NIBAR berhasil dihapus!', 'success');
                                 } else {
@@ -4590,10 +4631,93 @@
                             this.selectedAstapDetail.spesifikasi_json = JSON.parse(this.selectedAstapDetail.spesifikasi_json);
                         } catch(e) {}
                     }
+                    if (this.selectedAstapDetail && Array.isArray(this.selectedAstapDetail.registers)) {
+                        this.selectedAstapDetail.registers.sort((a, b) => {
+                            const numA = a.no_register_int || parseInt((a.nibar || a.no_register || '').slice(-7)) || 0;
+                            const numB = b.no_register_int || parseInt((b.nibar || b.no_register || '').slice(-7)) || 0;
+                            if (numA !== numB) return numA - numB;
+                            return (a.nibar || a.no_register || '').localeCompare(b.nibar || b.no_register || '');
+                        });
+                    }
                     this.detailKondisiFilter = 'all';
                     this.detailPenempatanFilter = 'all';
                     this.detailSearchQuery = '';
                     this.showDetailModal = true;
+                },
+
+                syncRepeaterItemsWithVolume(items, targetTotal, qtyKeys = []) {
+                    if (!Array.isArray(items) || items.length === 0) return [];
+                    if (targetTotal <= 0) return [];
+
+                    let remainingQuota = targetTotal;
+                    let result = [];
+
+                    for (let i = 0; i < items.length; i++) {
+                        if (remainingQuota <= 0) break;
+                        let item = JSON.parse(JSON.stringify(items[i]));
+
+                        let activeQtyKey = null;
+                        let curQty = 1;
+                        for (let k of qtyKeys) {
+                            if (item[k] !== undefined && item[k] !== null && item[k] !== '') {
+                                activeQtyKey = k;
+                                curQty = parseFloat(item[k]) || 1;
+                                break;
+                            }
+                        }
+
+                        if (curQty <= remainingQuota) {
+                            if (activeQtyKey) item[activeQtyKey] = curQty;
+                            result.push(item);
+                            remainingQuota -= curQty;
+                        } else {
+                            if (activeQtyKey) item[activeQtyKey] = remainingQuota;
+                            result.push(item);
+                            remainingQuota = 0;
+                            break;
+                        }
+                    }
+
+                    return result;
+                },
+
+                getTanahItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    if (spec && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                        return this.syncRepeaterItemsWithVolume(spec.tanah_items, targetTotal, ['tanah_jumlah_bidang']);
+                    }
+                    return [];
+                },
+
+                getMesinItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    if (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
+                        return this.syncRepeaterItemsWithVolume(spec.mesin_items, targetTotal, ['mesin_jumlah_barang']);
+                    }
+                    return [];
+                },
+
+                getGedungItemsForDetail(astap) {
+                    if (!astap) return [];
+                    let spec = astap.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                    if (spec && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                        return this.syncRepeaterItemsWithVolume(spec.gedung_items, targetTotal, ['gedung_jumlah_bangunan']);
+                    }
+                    return [];
                 },
 
                 getJaringanItemsForDetail(astap) {
@@ -4602,8 +4726,9 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
+                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
-                        return spec.jaringan_items;
+                        return this.syncRepeaterItemsWithVolume(spec.jaringan_items, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
                     }
                     // Fallback jika single item / legacy
                     return [{
@@ -4621,7 +4746,7 @@
                         jaringan_is_baru: (spec && (spec.jaringan_is_baru || spec.is_baru)) || 'Baru',
                         jaringan_kapitalisasi_tahun_induk: (spec && (spec.jaringan_kapitalisasi_tahun_induk || spec.kapitalisasi_tahun_induk)) || '',
                         jaringan_kapitalisasi_nilai_induk: (spec && (spec.jaringan_kapitalisasi_nilai_induk || spec.kapitalisasi_nilai_induk)) || 0,
-                        jaringan_jumlah: astap.jumlah_volume || (spec && spec.jaringan_jumlah) || 1,
+                        jaringan_jumlah: targetTotal,
                         jaringan_satuan: astap.satuan || (spec && spec.jaringan_satuan) || 'Ruas',
                         jaringan_nilai_perencanaan: (spec && (spec.jaringan_nilai_perencanaan || spec.nilai_perencanaan)) || 0,
                         jaringan_nilai_fisik: (spec && (spec.jaringan_nilai_fisik || spec.nilai_fisik)) || astap.nilai_realisasi || 0,
@@ -4637,8 +4762,9 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
+                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.kdp_items) && spec.kdp_items.length > 0) {
-                        return spec.kdp_items;
+                        return this.syncRepeaterItemsWithVolume(spec.kdp_items, targetTotal, ['kdp_jumlah_bangunan']);
                     }
                     return [{
                         kdp_nama_barang: (spec && spec.kdp_nama_barang) || astap.nama_barang || 'Konstruksi Dalam Pengerjaan',
@@ -4653,7 +4779,7 @@
                         kdp_is_baru: (spec && (spec.kdp_is_baru || spec.is_baru)) || 'Baru',
                         kdp_kapitalisasi_tahun_induk: (spec && (spec.kdp_kapitalisasi_tahun_induk || spec.kapitalisasi_tahun_induk)) || '',
                         kdp_kapitalisasi_nilai_induk: (spec && (spec.kdp_kapitalisasi_nilai_induk || spec.kapitalisasi_nilai_induk)) || 0,
-                        kdp_jumlah_bangunan: astap.jumlah_volume || (spec && spec.kdp_jumlah_bangunan) || 1,
+                        kdp_jumlah_bangunan: targetTotal,
                         kdp_satuan: astap.satuan || (spec && spec.kdp_satuan) || 'Gedung',
                         kdp_nilai_perencanaan: (spec && (spec.kdp_nilai_perencanaan || spec.nilai_perencanaan)) || 0,
                         kdp_nilai_fisik: (spec && (spec.kdp_nilai_fisik || spec.nilai_fisik)) || astap.nilai_realisasi || 0,
@@ -4669,8 +4795,9 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
+                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.atb_items) && spec.atb_items.length > 0) {
-                        return spec.atb_items;
+                        return this.syncRepeaterItemsWithVolume(spec.atb_items, targetTotal, ['atb_jumlah']);
                     }
                     // Fallback: legacy single-item data
                     return [{
@@ -4679,7 +4806,7 @@
                         atb_judul_nama: (spec && (spec.atb_judul_nama || spec.atb_judul)) || '',
                         atb_pencipta: (spec && spec.atb_pencipta) || astap.penyedia_nama || '',
                         atb_spesifikasi: (spec && spec.atb_spesifikasi) || '',
-                        atb_jumlah: astap.jumlah_volume || (spec && spec.atb_jumlah) || 1,
+                        atb_jumlah: targetTotal,
                         atb_satuan: astap.satuan || (spec && spec.atb_satuan) || 'Lisensi',
                         atb_kondisi: astap.kondisi || (spec && spec.atb_kondisi) || 'Baik',
                         atb_nilai_satuan: astap.harga_satuan || (spec && spec.atb_nilai_satuan) || 0,
@@ -4694,9 +4821,9 @@
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
                     }
-                    // Jika ada lainnya_items tersimpan (multi-item modern), langsung gunakan
+                    const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                     if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
-                        return spec.lainnya_items;
+                        return this.syncRepeaterItemsWithVolume(spec.lainnya_items, targetTotal, ['lainnya_jumlah_barang']);
                     }
                     // Fallback legacy: bangun 1 item dari field level atas di spesifikasi_json
                     const subType = (spec && spec.kib_e_sub_type) || (spec && spec.buku_judul ? 'buku' : (spec && (spec.kesenian_asal || spec.kesenian_pencipta) ? 'kesenian' : (spec && (spec.hewan_jenis || spec.hewan_judul) ? 'hewan_tumbuhan' : 'buku')));
@@ -4772,27 +4899,32 @@
 
                 // Hitung statistik kondisi dari registers suatu aset (Baik, Kurang Baik, Rusak Ringan, Rusak Berat)
                 getKondisiStats(item) {
-                    if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_ringan: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik' };
+                    if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_ringan: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
                     const regs = item.registers || [];
                     const total = regs.length;
                     if (total === 0) {
-                        const k = item.kondisi || 'Baik';
-                        const isKb = k === 'Kurang Baik';
-                        const isRr = k === 'Rusak Ringan';
-                        const isRb = k === 'Rusak Berat' || k === 'Rusak';
+                        const k = item.kondisi || item.kondisi_barang || 'Baik';
+                        const isKb = k === 'Kurang Baik' || k === 'KB';
+                        const isRr = k === 'Rusak Ringan' || k === 'RR';
+                        const isRb = k === 'Rusak Berat' || k === 'RB' || k === 'Rusak';
+                        const dominan = isKb ? 'Kurang Baik' : (isRr ? 'Rusak Ringan' : (isRb ? 'Rusak Berat' : 'Baik'));
+                        const badgeClass = dominan === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (dominan === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : (dominan === 'Rusak Ringan' ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'));
+                        const dotClass = dominan === 'Baik' ? 'bg-emerald-400' : (dominan === 'Kurang Baik' ? 'bg-amber-400' : (dominan === 'Rusak Ringan' ? 'bg-orange-400' : 'bg-rose-400'));
                         return {
                             total: 1,
-                            baik: k === 'Baik' ? 1 : 0,
+                            baik: dominan === 'Baik' ? 1 : 0,
                             kurang_baik: isKb ? 1 : 0,
                             rusak_ringan: isRr ? 1 : 0,
                             rusak_berat: isRb ? 1 : 0,
-                            pct_baik: k === 'Baik' ? 100 : 0,
+                            pct_baik: dominan === 'Baik' ? 100 : 0,
                             pct_kb: isKb ? 100 : 0,
                             pct_rr: isRr ? 100 : 0,
                             pct_rb: isRb ? 100 : 0,
-                            kondisi_dominan: isKb ? 'Kurang Baik' : (isRr ? 'Rusak Ringan' : (isRb ? 'Rusak Berat' : k)),
+                            kondisi_dominan: dominan,
                             is_multi: false,
-                            text: k
+                            text: dominan + ' (100%)',
+                            badge_class: badgeClass,
+                            dot_class: dotClass
                         };
                     }
                     const baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
@@ -4815,11 +4947,24 @@
 
                     let text = parts.join(' • ');
                     if (isSingle) {
-                        if (baik === total) text = `Baik (${total > 1 ? '100%' : '1 Unit'})`;
-                        else if (kb === total) text = `Kurang Baik (${total > 1 ? '100%' : '1 Unit'})`;
-                        else if (rr === total) text = `Rusak Ringan (${total > 1 ? '100%' : '1 Unit'})`;
-                        else if (rb === total) text = `Rusak Berat (${total > 1 ? '100%' : '1 Unit'})`;
+                        if (baik === total) text = total > 1 ? `Baik (${total} Aset)` : 'Baik';
+                        else if (kb === total) text = total > 1 ? `Kurang Baik (${total} Aset)` : 'Kurang Baik';
+                        else if (rr === total) text = total > 1 ? `Rusak Ringan (${total} Aset)` : 'Rusak Ringan';
+                        else if (rb === total) text = total > 1 ? `Rusak Berat (${total} Aset)` : 'Rusak Berat';
                     }
+
+                    let badgeClass = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+                    if (rb > 0 && rb >= baik && rb >= kb) {
+                        badgeClass = 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+                    } else if (kb > 0 && kb >= baik) {
+                        badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+                    } else if (rr > 0 && rr >= baik) {
+                        badgeClass = 'bg-orange-500/15 text-orange-300 border-orange-500/30';
+                    } else if (!isSingle) {
+                        badgeClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+                    }
+
+                    let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : (pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'));
 
                     return {
                         total,
@@ -4828,7 +4973,9 @@
                         kondisi_dominan: dominan,
                         is_multi: !isSingle,
                         parts,
-                        text
+                        text,
+                        badge_class: badgeClass,
+                        dot_class: dotClass
                     };
                 },
 
@@ -4839,25 +4986,35 @@
                     let regs = astap.registers || [];
 
                     // Jika ada multi-item dalam spesifikasi_json dan type diberikan
-                    if (type && astap.spesifikasi_json && Array.isArray(astap.spesifikasi_json[type]) && astap.spesifikasi_json[type].length > 1) {
-                        const items = astap.spesifikasi_json[type];
-                        const qtyKeyMap = {
-                            'tanah_items': 'tanah_jumlah_bidang',
-                            'mesin_items': 'mesin_jumlah_barang',
-                            'gedung_items': 'gedung_jumlah_unit',
-                            'jaringan_items': 'jaringan_jumlah_unit',
-                            'lainnya_items': 'lainnya_jumlah_unit',
-                            'kdp_items': 'kdp_jumlah_unit',
-                            'atb_items': 'atb_jumlah'
-                        };
-                        const qtyKey = qtyKeyMap[type] || 'jumlah';
-                        
-                        let start = 0;
-                        for (let i = 0; i < idx && i < items.length; i++) {
-                            start += Math.max(1, parseInt(items[i][qtyKey] || 1));
+                    if (type) {
+                        let items = [];
+                        if (type === 'tanah_items') items = this.getTanahItemsForDetail(astap);
+                        else if (type === 'mesin_items') items = this.getMesinItemsForDetail(astap);
+                        else if (type === 'gedung_items') items = this.getGedungItemsForDetail(astap);
+                        else if (type === 'jaringan_items') items = this.getJaringanItemsForDetail(astap);
+                        else if (type === 'lainnya_items') items = this.getLainnyaItemsForDetail(astap);
+                        else if (type === 'kdp_items') items = this.getKdpItemsForDetail(astap);
+                        else if (type === 'atb_items') items = this.getAtbItemsForDetail(astap);
+
+                        if (items.length > 1) {
+                            const qtyKeyMap = {
+                                'tanah_items': 'tanah_jumlah_bidang',
+                                'mesin_items': 'mesin_jumlah_barang',
+                                'gedung_items': 'gedung_jumlah_bangunan',
+                                'jaringan_items': 'jaringan_jumlah',
+                                'lainnya_items': 'lainnya_jumlah_barang',
+                                'kdp_items': 'kdp_jumlah_bangunan',
+                                'atb_items': 'atb_jumlah'
+                            };
+                            const qtyKey = qtyKeyMap[type] || 'jumlah';
+                            
+                            let start = 0;
+                            for (let i = 0; i < idx && i < items.length; i++) {
+                                start += Math.max(1, parseInt(items[i][qtyKey] || items[i].jumlah || 1));
+                            }
+                            const count = Math.max(1, parseInt(items[idx]?.[qtyKey] || items[idx]?.jumlah || 1));
+                            regs = regs.slice(start, start + count);
                         }
-                        const count = Math.max(1, parseInt(items[idx]?.[qtyKey] || 1));
-                        regs = regs.slice(start, start + count);
                     }
 
                     const total = regs.length;
@@ -4865,7 +5022,7 @@
                         let fallbackKondisi = 'Baik';
                         if (type && astap.spesifikasi_json?.[type]?.[idx]) {
                             const it = astap.spesifikasi_json[type][idx];
-                            fallbackKondisi = it.mesin_kondisi || it.tanah_kondisi || it.gedung_kondisi || it.jaringan_kondisi || it.lainnya_kondisi || it.kdp_kondisi || astap.kondisi_barang || 'Baik';
+                            fallbackKondisi = it.mesin_kondisi || it.tanah_kondisi || it.gedung_kondisi || it.jaringan_kondisi || it.lainnya_kondisi || it.kdp_kondisi || it.atb_kondisi || astap.kondisi_barang || 'Baik';
                         } else {
                             fallbackKondisi = astap.kondisi_barang || 'Baik';
                         }
@@ -4889,7 +5046,10 @@
                             badge_class: fallbackKondisi === 'Baik' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
                                         (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
                                         (fallbackKondisi === 'Rusak Ringan' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
-                                        'bg-rose-500/20 text-rose-300 border-rose-500/30'))
+                                        'bg-rose-500/20 text-rose-300 border-rose-500/30')),
+                            dot_class: fallbackKondisi === 'Baik' ? 'bg-emerald-400' :
+                                      (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-400' :
+                                      (fallbackKondisi === 'Rusak Ringan' ? 'bg-orange-400' : 'bg-rose-400'))
                         };
                     }
 
@@ -4930,6 +5090,8 @@
                         badgeClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
                     }
 
+                    let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : (pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'));
+
                     return {
                         total,
                         baik, kurang_baik: kb, rusak_ringan: rr, rusak_berat: rb,
@@ -4937,7 +5099,79 @@
                         is_multi: !isSingle,
                         parts,
                         text,
-                        badge_class: badgeClass
+                        badge_class: badgeClass,
+                        dot_class: dotClass
+                    };
+                },
+
+                // Ambil info NIBAR terdaftar untuk kartu rincian spesifikasi (mendukung unit tunggal maupun rentang banyak unit)
+                getRincianNibar(astap, idx = 0, type = null) {
+                    if (!astap || !astap.registers || astap.registers.length === 0) return null;
+
+                    let regs = astap.registers;
+
+                    if (type) {
+                        let items = [];
+                        if (type === 'tanah_items') items = this.getTanahItemsForDetail(astap);
+                        else if (type === 'mesin_items') items = this.getMesinItemsForDetail(astap);
+                        else if (type === 'gedung_items') items = this.getGedungItemsForDetail(astap);
+                        else if (type === 'jaringan_items') items = this.getJaringanItemsForDetail(astap);
+                        else if (type === 'lainnya_items') items = this.getLainnyaItemsForDetail(astap);
+                        else if (type === 'kdp_items') items = this.getKdpItemsForDetail(astap);
+                        else if (type === 'atb_items') items = this.getAtbItemsForDetail(astap);
+
+                        if (items && items.length > 0) {
+                            const qtyKeyMap = {
+                                'tanah_items': 'tanah_jumlah_bidang',
+                                'mesin_items': 'mesin_jumlah_barang',
+                                'gedung_items': 'gedung_jumlah_bangunan',
+                                'jaringan_items': 'jaringan_jumlah',
+                                'lainnya_items': 'lainnya_jumlah_barang',
+                                'kdp_items': 'kdp_jumlah_bangunan',
+                                'atb_items': 'atb_jumlah'
+                            };
+                            const qtyKey = qtyKeyMap[type] || 'jumlah';
+
+                            let start = 0;
+                            for (let i = 0; i < idx && i < items.length; i++) {
+                                start += Math.max(1, parseInt(items[i][qtyKey] || items[i].jumlah || 1));
+                            }
+                            const count = Math.max(1, parseInt(items[idx]?.[qtyKey] || items[idx]?.jumlah || 1));
+                            regs = regs.slice(start, start + count);
+                        }
+                    }
+
+                    if (!regs || regs.length === 0) return null;
+
+                    const firstNibar = regs[0].nibar || regs[0].no_register || '';
+                    if (!firstNibar) return null;
+
+                    if (regs.length === 1) {
+                        return {
+                            label: 'NIBAR: ' + firstNibar,
+                            tooltip: 'Unit Register NIBAR: ' + firstNibar,
+                            is_range: false,
+                            count: 1
+                        };
+                    }
+
+                    const lastNibar = regs[regs.length - 1].nibar || regs[regs.length - 1].no_register || '';
+                    if (!lastNibar || lastNibar === firstNibar) {
+                        return {
+                            label: 'NIBAR: ' + firstNibar,
+                            tooltip: 'Unit Register NIBAR: ' + firstNibar,
+                            is_range: false,
+                            count: 1
+                        };
+                    }
+
+                    // Ambil 7 digit terakhir sebagai nomor urut register penutup rentang
+                    const lastSuffix = lastNibar.slice(-7);
+                    return {
+                        label: 'NIBAR: ' + firstNibar + ' - ' + lastSuffix,
+                        tooltip: 'Rentang NIBAR: ' + firstNibar + ' s/d ' + lastNibar + ' (' + regs.length + ' Unit Aset)',
+                        is_range: true,
+                        count: regs.length
                     };
                 },
 
@@ -4951,9 +5185,20 @@
                                             (item.merk || '').toLowerCase().includes(query);
                                             
                         const matchCategory = this.categoryFilter === 'all' || item.category === this.categoryFilter;
-                        // Filter kondisi berdasarkan kondisi dominan dari registers
+                        // Filter kondisi: mencakup jika ada unit dengan kondisi tsb
                         const stats = this.getKondisiStats(item);
-                        const matchKondisi = this.kondisiFilter === 'all' || stats.kondisi_dominan === this.kondisiFilter;
+                        let matchKondisi = true;
+                        if (this.kondisiFilter !== 'all') {
+                            if (this.kondisiFilter === 'Baik') {
+                                matchKondisi = stats.baik > 0 || stats.kondisi_dominan === 'Baik';
+                            } else if (this.kondisiFilter === 'Kurang Baik') {
+                                matchKondisi = stats.kurang_baik > 0 || stats.kondisi_dominan === 'Kurang Baik';
+                            } else if (this.kondisiFilter === 'Rusak Berat') {
+                                matchKondisi = stats.rusak_berat > 0 || stats.kondisi_dominan === 'Rusak Berat';
+                            } else {
+                                matchKondisi = stats.kondisi_dominan === this.kondisiFilter;
+                            }
+                        }
                         const matchAsalUsul = this.asalUsulFilter === 'all' || item.asal_usul === this.asalUsulFilter;
                         const matchTahun = this.tahunFilter === 'all' || String(item.tahun_perolehan) === String(this.tahunFilter);
                         
@@ -4975,7 +5220,7 @@
                 get filteredRegisters() {
                     if (!this.selectedAstapDetail || !this.selectedAstapDetail.registers) return [];
                     const query = (this.detailSearchQuery || '').toLowerCase().trim();
-                    return this.selectedAstapDetail.registers.filter(reg => {
+                    const filtered = this.selectedAstapDetail.registers.filter(reg => {
                         const matchKondisi = this.detailKondisiFilter === 'all' || reg.kondisi === this.detailKondisiFilter;
                         
                         let matchPenempatan = true;
@@ -4991,6 +5236,14 @@
                             (reg.ruang_pemegang || '').toLowerCase().includes(query);
 
                         return matchKondisi && matchPenempatan && matchQuery;
+                    });
+
+                    // Pastikan selalu terurut berdasarkan nomor urut NIBAR ascending (0001 di paling atas)
+                    return filtered.sort((a, b) => {
+                        const numA = a.no_register_int || parseInt((a.nibar || a.no_register || '').slice(-7)) || 0;
+                        const numB = b.no_register_int || parseInt((b.nibar || b.no_register || '').slice(-7)) || 0;
+                        if (numA !== numB) return numA - numB;
+                        return (a.nibar || a.no_register || '').localeCompare(b.nibar || b.no_register || '');
                     });
                 },
 
