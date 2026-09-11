@@ -846,12 +846,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/lembar-kir-ruangan', [UnitController::class, 'kir'])->name('kir.index');
     Route::patch('/lembar-kir-ruangan/kondisi/{id}', [UnitController::class, 'updateKondisi'])->name('kir.update_kondisi');
 
-    // 6. Pemeliharaan Index (Read-only for Sub Admin, full for Admin)
-    Route::get('/pemeliharaan', function () {
-        return view('pages.pemeliharaan');
-    })->name('pemeliharaan.index');
-
-    // 7. API Notifikasi Sistem
+    // 6. API Notifikasi Sistem
     Route::post('/api/notifications/mark-all-read', function () {
         \App\Services\NotificationService::markAllAsReadForUser(auth()->user());
         return response()->json(['success' => true, 'message' => 'Semua notifikasi telah ditandai sebagai dibaca.']);
@@ -872,14 +867,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/berita-acara', [\App\Http\Controllers\BeritaAcaraController::class, 'index'])->name('bast.index');
         Route::post('/berita-acara/triwulan/{key}', [\App\Http\Controllers\BeritaAcaraController::class, 'saveTriwulan'])->name('bast.save_triwulan');
         Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan');
-
-        Route::get('/berita-acara/create', function () {
-            return view('pages.form_berita_acara');
-        })->name('bast.create');
-
-        Route::get('/berita-acara/{id}/edit', function ($id) {
-            return view('pages.form_berita_acara', ['id' => $id]);
-        })->name('bast.edit');
 
         // Form Tambah & Edit ASTAP
         Route::get('/astap/create', function () {
@@ -3719,15 +3706,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit');
         Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update');
         Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy');
-
-        // Form Tambah & Edit Pemeliharaan
-        Route::get('/pemeliharaan/create', function () {
-            return view('pages.form_pemeliharaan');
-        })->name('pemeliharaan.create');
-
-        Route::get('/pemeliharaan/{id}/edit', function ($id) {
-            return view('pages.form_pemeliharaan', ['id' => $id]);
-        })->name('pemeliharaan.edit');
     });
 
     // Master Data Users CRUD Routes

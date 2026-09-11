@@ -250,7 +250,6 @@
                     (BAST)</h4>
                 <p class="text-xs text-slate-400 mt-1">Cetak & buat dokumen BAST penyerahan aset, update penanggung jawab, & hapus dokumen.</p>
                 <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold">
-                    <a href="{{ route('bast.create') }}" class="text-purple-400 hover:text-purple-300">+ Buat Dokumen BAST</a>
                     <a href="{{ route('bast.index') }}" class="text-slate-400 hover:text-white">Kelola Data &rarr;</a>
                 </div>
             </div>
