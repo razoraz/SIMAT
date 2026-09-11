@@ -1,461 +1,27 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\JenisAstapController;
-use App\Http\Controllers\JenisPengadaanController;
-use App\Http\Controllers\RekeningBelanjaController;
-use App\Http\Controllers\UnitController;
-use App\Http\Controllers\DistribusiController;
-use App\Http\Controllers\MutasiController;
-use App\Http\Middleware\RoleMiddleware;
+namespace App\Http\Controllers;
 
-// Auth Routes (Guest)
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
-});
+use App\Models\Astap;
+use App\Models\AstapRegister;
+use App\Models\JenisAstap;
+use App\Models\JenisPengadaan;
+use App\Models\RekeningBelanja;
+use App\Models\Unit;
+use App\Services\NotificationService;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
-// Halaman Publik Scan QR Code Aset (Tanpa Perlu Login)
-Route::get('/scan/{nibar}', function ($nibar) {
-    $register = \App\Models\AstapRegister::where('nibar', $nibar)
-        ->orWhere('no_register', $nibar)
-        ->first();
-
-    $astap = null;
-    if ($register) {
-        $astap = \App\Models\Astap::with('jenisAstap', 'jenisPengadaan', 'rekeningBelanja', 'registers')->find($register->astap_id);
-    } else {
-        $astap = \App\Models\Astap::with('jenisAstap', 'jenisPengadaan', 'rekeningBelanja', 'registers')
-            ->where('kode_barang', $nibar)
-            ->first();
-    }
-
-    return view('pages.public_scan', [
-        'found' => ($astap !== null || $register !== null),
-        'nibar' => $nibar,
-        'register' => $register,
-        'astap' => $astap
-    ]);
-})->name('scan.nibar');
-
-// Halaman Publik Validasi Sertifikat TTE BSrE (Tanpa Perlu Login)
-Route::get('/validasi-tte/{hash}', function ($hash) {
-    $judul = 'Berita Acara Serah Terima Barang';
-    $nomor = '000.2.3.2/224/430.10.7/2026';
-    $nama = 'BUDI HARTONO, S.Sos';
-    $nip = '19760229 200801 1 010';
-    $jabatan = 'Pengurus Barang Aset Pada RSUD dr. H. Koesnandi Kabupaten Bondowoso';
-    $tgl = date('d/m/Y H:i') . ' WIB';
-
-    // 1. Cek tabel BAST Triwulan
-    $tw = \App\Models\AstapBastTriwulan::where('qr_hash', $hash)->orWhere('nomor_surat', $hash)->first();
-    if ($tw) {
-        $judul = 'Berita Acara Serah Terima Barang (' . $tw->triwulan . ')';
-        $nomor = $tw->nomor_surat;
-        $nama = $tw->pihak2_nama ?: 'BUDI HARTONO, S.Sos';
-        $nip = $tw->pihak2_nip ?: '19760229 200801 1 010';
-        $jabatan = $tw->pihak2_jabatan ?: 'Pengurus Barang Aset Pada RSUD dr. H. Koesnandi';
-        $tgl = $tw->tgl_signed ?: ($tw->tanggal_bast ? date('d/m/Y', strtotime($tw->tanggal_bast)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
-    }
-
-    // 2. Cek tabel Distribusi
-    $dst = \App\Models\Distribusi::where('kode', $hash)->orWhere('bast_nomor', $hash)->first();
-    if ($dst) {
-        $judul = 'Berita Acara Serah Terima Distribusi Aset';
-        $nomor = $dst->bast_nomor ?: ($dst->kode . ' / BAST / 430.10.7 / 2026');
-        $nama = 'BUDI HARTONO, S.Sos';
-        $nip = '19760229 200801 1 010';
-        $jabatan = 'Pengurus Barang Aset (Instalasi Perbekalan) RSUD dr. H. Koesnandi';
-        $tgl = $dst->tgl_signed ?: ($dst->tanggal_distribusi ? date('d/m/Y', strtotime($dst->tanggal_distribusi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
-    }
-
-    // 3. Cek tabel Mutasi
-    $mts = \App\Models\AstapMutasi::where('nomor_bamb', $hash)->first();
-    if ($mts) {
-        $judul = 'Berita Acara Mutasi Barang (BAMB)';
-        $nomor = $mts->nomor_bamb;
-        $nama = $mts->penanggung_jawab_asal ?: 'Kepala Ruangan Pengirim';
-        $nip = '-';
-        $jabatan = 'Penanggung Jawab Ruangan ' . ($mts->ruangan_asal ?? '');
-        $tgl = $mts->tgl_persetujuan_admin ?: ($mts->tanggal_mutasi ? date('d/m/Y', strtotime($mts->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
-    }
-
-    // Fallback parser jika hash mengandung kata kunci PPK
-    if (str_contains($hash, 'PPK')) {
-        $nama = 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR';
-        $nip = '19771002 200604 1 006';
-        $jabatan = 'Pejabat Pembuat Komitmen (PPK) RSUD dr. H. Koesnandi';
-    }
-
-    return view('pages.public_tte_verify', [
-        'qrHash'       => $hash,
-        'judulDokumen' => $judul,
-        'nomorSurat'   => $nomor,
-        'signerNama'   => $nama,
-        'signerNip'    => $nip,
-        'signerJabatan'=> $jabatan,
-        'tglSigned'    => $tgl,
-    ]);
-})->where('hash', '.*')->name('tte.validate');
-
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
-
-// Redirect / or /dashboard to specific role dashboard
-Route::middleware('auth')->get('/', function () {
-    $role = Auth::user()->role;
-    return match ($role) {
-        'master_admin' => redirect()->route('masteradmin.dashboard'),
-        'admin' => redirect()->route('admin.dashboard'),
-        'sub_admin' => redirect()->route('subadmin.dashboard'),
-        default => redirect()->route('login'),
-    };
-});
-
-Route::middleware('auth')->get('/dashboard', function () {
-    $role = Auth::user()->role;
-    return match ($role) {
-        'master_admin' => redirect()->route('masteradmin.dashboard'),
-        'admin' => redirect()->route('admin.dashboard'),
-        'sub_admin' => redirect()->route('subadmin.dashboard'),
-        default => redirect()->route('login'),
-    };
-});
-
-use App\Http\Controllers\DashboardController;
-
-// Dashboard Master Admin
-Route::middleware(['auth', RoleMiddleware::class . ':master_admin'])->group(function () {
-    Route::get('/master-admin/dashboard', [DashboardController::class, 'masterAdmin'])->name('masteradmin.dashboard');
-});
-
-// Dashboard Admin
-Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
-    Route::get('/admin/dashboard', [DashboardController::class, 'admin'])->name('admin.dashboard');
-});
-
-// Dashboard Sub Admin
-Route::middleware(['auth', RoleMiddleware::class . ':sub_admin'])->group(function () {
-    Route::get('/sub-admin/dashboard', function () {
-        $user = Auth::user();
-        $unit = null;
-        if ($user->unit_id) {
-            $unit = \App\Models\Unit::find($user->unit_id);
-        }
-        
-        // Jika sub_admin belum memiliki unit_id, tampilkan dashboard kosong
-        // (JANGAN fallback ke unit lain — berbahaya untuk keamanan data)
-        $unitId   = $unit ? $unit->id   : null;
-        $unitNama = $unit ? $unit->nama  : '';
-
-        // Jika tidak ada unit, kembalikan view dengan data kosong
-        if (!$unitId) {
-            return view('dashboards.sub_admin', [
-                'unit'                        => null,
-                'user'                        => $user,
-                'distribusisList'             => [],
-                'totalAsetCount'              => 0,
-                'totalNilaiNum'               => 0,
-                'totalNilaiFormatted'         => 'Rp 0',
-                'kondisiBaik'                 => 0,
-                'kondisiKurangBaik'           => 0,
-                'kondisiRusakRingan'          => 0,
-                'kondisiRusakBerat'           => 0,
-                'totalRusak'                  => 0,
-                'attentionAssets'             => [],
-                'unitNama'                    => '',
-                'chartYears'                  => ['Thn ' . date('Y')],
-                'chartRoomVolume'             => [0],
-                'chartRoomHarga'              => [0],
-                'chartRoomHargaJuta'          => [0],
-                'chartRoomKumulatifVolume'    => [0],
-                'chartRoomKumulatifHargaJuta' => [0],
-            ]);
-        }
-
-        // 1. Distribusi data riil khusus unit ini
-        $dbDistribusis = \App\Models\Distribusi::with([
-                'unit',
-                'items.astap.jenisAstap',
-                'items.registers.astapRegister'
-            ])
-            ->where('unit_id', $unitId)
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $distribusisList = $dbDistribusis->map(function($d) use ($unit, $user) {
-            $itemsMapped = $d->items->map(function($it) {
-                $spec = is_array($it->astap?->spesifikasi_json)
-                    ? $it->astap->spesifikasi_json
-                    : (json_decode($it->astap?->spesifikasi_json ?? '', true) ?? []);
-                $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? '-'));
-                
-                $nibarList = $it->registers->map(fn($r) => $r->astapRegister?->nibar)->filter()->values()->all();
-                $firstKondisi = $it->registers->first()?->astapRegister?->kondisi ?? 'Baik';
-
-                return [
-                    'nama'       => $it->astap?->nama_barang ?? 'Barang ASTAP',
-                    'merk'       => $merk,
-                    'qty'        => $it->qty . ' ' . ($it->astap?->satuan ?: 'Unit'),
-                    'kondisi'    => $firstKondisi,
-                    'nibar_list' => $nibarList
-                ];
-            });
-
-            $firstItemName = $itemsMapped->first()['nama'] ?? 'Barang ASTAP';
-            $moreCount = $itemsMapped->count() > 1 ? ' + ' . ($itemsMapped->count() - 1) . ' item lainnya' : '';
-            $totalVol = $d->items->sum('qty');
-
-            $tglCarbon = $d->tanggal_distribusi;
-            $bulanIndo = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-            $tglStr = $tglCarbon ? ($tglCarbon->day . ' ' . ($bulanIndo[$tglCarbon->month] ?? '') . ' ' . $tglCarbon->year) : '-';
-
-            return [
-                'id'         => $d->id,
-                'kode'       => $d->kode,
-                'bast_nomor' => $d->bast_nomor ?: '-',
-                'nama'       => $firstItemName . $moreCount,
-                'qty'        => $totalVol . ' Item',
-                'tgl'        => $tglStr,
-                'status'     => $d->status,
-                'keterangan' => $d->keterangan ?: 'Permohonan kebutuhan inventaris ruangan',
-                'pengaju'    => $unit?->kepala ?? $user->name,
-                'ruangan'    => $unit?->nama ?? 'Ruangan',
-                'items'      => $itemsMapped->values()->all()
-            ];
-        })->values()->all();
-
-        // 2. Data Register Aset di Ruangan Ini — Mendukung unit_id dan ruang_pemegang (sesuai katalog Unit)
-        $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-            ->where(function($q) use ($unitId, $unitNama) {
-                if ($unitId) {
-                    $q->where('unit_id', $unitId);
-                }
-                if ($unitNama && $unitNama !== 'Ruangan Saya') {
-                    $q->orWhere(function($q2) use ($unitId, $unitNama) {
-                        // Jangan sertakan jika aset sudah tercatat milik unit lain
-                        if ($unitId) {
-                            $q2->where(function($q3) use ($unitId) {
-                                $q3->whereNull('unit_id')->orWhere('unit_id', $unitId);
-                            });
-                        }
-                        $q2->whereNotNull('ruang_pemegang')
-                           ->where('ruang_pemegang', '!=', '')
-                           ->where(function($q4) use ($unitNama) {
-                               $q4->where('ruang_pemegang', $unitNama)
-                                  ->orWhere('ruang_pemegang', 'LIKE', '%' . $unitNama . '%');
-                           });
-                    });
-                }
-            })
-            ->get();
-
-        // Ambil ASTAP yang terhubung langsung via unit_id jika belum masuk dalam register
-        $directRegisters = collect();
-        if ($unitId) {
-            $astapDirectIds = \App\Models\Astap::where('unit_id', $unitId)
-                ->whereNotIn('id', $registers->pluck('astap_id')->filter()->unique())
-                ->pluck('id');
-
-            if ($astapDirectIds->isNotEmpty()) {
-                $directRegisters = \App\Models\AstapRegister::with(['astap.jenisAstap'])
-                    ->whereIn('astap_id', $astapDirectIds)
-                    ->get();
-            }
-        }
-
-        $allRegisters = $registers->concat($directRegisters)->unique('id');
-
-        $totalAsetCount = $allRegisters->count();
-        $totalNilaiNum = $allRegisters->sum(fn($r) => $r->astap ? (float) ($r->astap->harga_satuan ?: ($r->astap->total_realisasi / max(1, $r->astap->jumlah_volume))) : 0);
-        $totalNilaiFormatted = 'Rp ' . number_format($totalNilaiNum, 0, ',', '.');
-
-        $kondisiBaik = $allRegisters->where('kondisi', 'Baik')->count();
-        $kondisiKurangBaik = $allRegisters->where('kondisi', 'Kurang Baik')->count();
-        $kondisiRusakRingan = $allRegisters->where('kondisi', 'Rusak Ringan')->count();
-        $kondisiRusakBerat = $allRegisters->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
-        $totalRusak = $kondisiKurangBaik + $kondisiRusakRingan + $kondisiRusakBerat;
-
-        // 3. Aset yang perlu perhatian / rusak di ruangan ini
-        $attentionAssets = $allRegisters->filter(fn($r) => $r->kondisi !== 'Baik')->map(function($r) {
-            return [
-                'id'      => $r->id,
-                'kode'    => $r->nibar ?: $r->no_register,
-                'nama'    => $r->astap?->nama_barang ?? 'Barang Inventaris',
-                'status'  => $r->kondisi,
-                'lokasi'  => $r->ruang_pemegang ?: 'Ruangan',
-                'catatan' => 'Kondisi fisik unit tercatat: ' . $r->kondisi . ' (Perlu pengecekan berkala / servis)'
-            ];
-        })->values()->all();
-
-        // 4. Data Agregasi Grafik Nilai Aset Ruangan (Berdasarkan Tahun Perolehan)
-        $yearlyMap = [];
-        $categoryMap = [];
-
-        foreach ($allRegisters as $r) {
-            $astap = $r->astap;
-            $year = (int) ($astap?->tahun_perolehan ?: ($astap?->created_at ? $astap->created_at->year : date('Y')));
-            if ($year < 1970 || $year > ((int)date('Y') + 1)) {
-                $year = (int) date('Y');
-            }
-
-            $hargaSatuan = $astap ? (float) ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume))) : 0;
-
-            if (!isset($yearlyMap[$year])) {
-                $yearlyMap[$year] = ['volume' => 0, 'harga' => 0];
-            }
-            $yearlyMap[$year]['volume'] += 1;
-            $yearlyMap[$year]['harga'] += $hargaSatuan;
-
-            $catName = $astap?->jenisAstap?->nama_jenis ?: ($astap?->category ?: 'Peralatan & Mesin');
-            if (!isset($categoryMap[$catName])) {
-                $categoryMap[$catName] = ['volume' => 0, 'harga' => 0];
-            }
-            $categoryMap[$catName]['volume'] += 1;
-            $categoryMap[$catName]['harga'] += $hargaSatuan;
-        }
-
-        ksort($yearlyMap);
-
-        $chartYears = [];
-        $chartRoomVolume = [];
-        $chartRoomHarga = [];
-        $chartRoomHargaJuta = [];
-        $chartRoomKumulatifVolume = [];
-        $chartRoomKumulatifHargaJuta = [];
-
-        $runVol = 0;
-        $runHarga = 0;
-
-        foreach ($yearlyMap as $yr => $stat) {
-            $runVol += $stat['volume'];
-            $runHarga += $stat['harga'];
-
-            $chartYears[] = 'Thn ' . $yr;
-            $chartRoomVolume[] = $stat['volume'];
-            $chartRoomHarga[] = round($stat['harga'], 2);
-            $chartRoomHargaJuta[] = round($stat['harga'] / 1000000, 2);
-            $chartRoomKumulatifVolume[] = $runVol;
-            $chartRoomKumulatifHargaJuta[] = round($runHarga / 1000000, 2);
-        }
-
-        if (empty($chartYears)) {
-            $chartYears = ['Thn ' . date('Y')];
-            $chartRoomVolume = [0];
-            $chartRoomHarga = [0];
-            $chartRoomHargaJuta = [0];
-            $chartRoomKumulatifVolume = [0];
-            $chartRoomKumulatifHargaJuta = [0];
-        }
-
-        return view('dashboards.sub_admin', [
-            'unit'                        => $unit,
-            'user'                        => $user,
-            'distribusisList'             => $distribusisList,
-            'totalAsetCount'              => $totalAsetCount,
-            'totalNilaiNum'               => $totalNilaiNum,
-            'totalNilaiFormatted'         => $totalNilaiFormatted,
-            'kondisiBaik'                 => $kondisiBaik,
-            'kondisiKurangBaik'           => $kondisiKurangBaik,
-            'kondisiRusakRingan'          => $kondisiRusakRingan,
-            'kondisiRusakBerat'           => $kondisiRusakBerat,
-            'totalRusak'                  => $totalRusak,
-            'attentionAssets'             => $attentionAssets,
-            'unitNama'                    => $unitNama,
-            // Chart Data
-            'chartYears'                  => $chartYears,
-            'chartRoomVolume'             => $chartRoomVolume,
-            'chartRoomHarga'              => $chartRoomHarga,
-            'chartRoomHargaJuta'          => $chartRoomHargaJuta,
-            'chartRoomKumulatifVolume'    => $chartRoomKumulatifVolume,
-            'chartRoomKumulatifHargaJuta' => $chartRoomKumulatifHargaJuta,
-        ]);
-    })->name('subadmin.dashboard');
-
-    // Halaman Ubah Email & Password Akun Sub Admin
-    Route::get('/sub-admin/profile', function () {
-        return view('pages.subadmin_profile');
-    })->name('subadmin.profile');
-
-    // Update Profil Akun Sub Admin (Email & Password - tersinkronisasi ke tabel units & users)
-    Route::post('/sub-admin/profile/update', function (\Illuminate\Http\Request $request) {
-        $user = \Illuminate\Support\Facades\Auth::user();
-        $changeType = $request->input('change_type', 'both');
-        
-        $rules = [];
-        $customMessages = [
-            'email.required' => 'Email wajib diisi.',
-            'email.email' => 'Format email tidak valid.',
-            'email.unique' => 'Email ini sudah digunakan oleh akun lain.',
-            'password.required' => 'Password baru wajib diisi.',
-            'password.min' => 'Password minimal terdiri dari 4 karakter.',
-            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
-        ];
-
-        if ($changeType === 'email' || $changeType === 'both') {
-            $rules['email'] = [
-                'required', 
-                'email', 
-                'max:255', 
-                \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id)
-            ];
-        }
-
-        if ($changeType === 'password') {
-            $rules['password'] = 'required|string|min:4|confirmed';
-        } elseif ($changeType === 'both') {
-            $rules['password'] = 'nullable|string|min:4|confirmed';
-        }
-
-        $validated = $request->validate($rules, $customMessages);
-
-        // 1. Update Akun Pengguna di tabel `users`
-        if (isset($validated['email'])) {
-            $user->email = $validated['email'];
-        }
-        if (!empty($validated['password'])) {
-            $user->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
-        }
-        $user->save();
-
-        // 2. Sinkronkan email ke tabel `units` pada ruangan milik Sub Admin ini jika email diubah
-        if (isset($validated['email']) && $user->unit_id) {
-            $unit = \App\Models\Unit::find($user->unit_id);
-            if ($unit) {
-                // Update langsung tanpa trigger loop event
-                $unit->withoutEvents(function () use ($unit, $validated) {
-                    $unit->update([
-                        'email' => $validated['email']
-                    ]);
-                });
-            }
-        }
-
-        $msg = match($changeType) {
-            'email' => 'Alamat email berhasil diperbarui dan tersinkronisasi ke data unit ruangan!',
-            'password' => 'Password akun ruangan berhasil diperbarui!',
-            default => 'Perubahan kredensial akun ruangan berhasil disimpan!',
-        };
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $msg,
-                'email' => $user->email,
-            ]);
-        }
-
-        return redirect()->back()->with('success', $msg);
-    })->name('subadmin.profile.update');
-});
-
-// Frontend Menu & Form Pages (Auth Protected)
-Route::middleware('auth')->group(function () {
-    
-    // 1. Data ASTAP Pages
-    Route::get('/astap', function () {
+class AstapController extends Controller
+{
+    /**
+     * Tampilkan data tabel ASTAP
+     */
+    public function index()
+    {
         $astaps = \App\Models\Astap::with([
                 'registers.mutasis' => function($q) {
                     $q->where('status', 'Disetujui Admin (Selesai)');
@@ -630,170 +196,39 @@ Route::middleware('auth')->group(function () {
                 ];
             });
         return view('pages.data_astap', compact('astaps'));
-    })->name('astap.index');
+    }
 
-    // API: Ambil riwayat mutasi spesifik unit register NIBAR
-    Route::get('/astap/register-mutasi/{id}', function ($id) {
-        $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
-            $q->where('status', 'Disetujui Admin (Selesai)')->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
-        }])->find($id);
+    /**
+     * Halaman Publik Scan QR Code NIBAR
+     */
+    public function scan($nibar)
+    {
+        $register = AstapRegister::where('nibar', $nibar)
+            ->orWhere('no_register', $nibar)
+            ->first();
 
-        if (!$reg) {
-            return response()->json(['success' => false, 'mutasis' => []]);
-        }
-
-        $mutasis = $reg->mutasis->map(function($m) use ($reg) {
-            return [
-                'id'                      => $m->id,
-                'nomor_bamb'              => $m->nomor_bamb,
-                'tanggal_mutasi'          => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('d M Y') : '-',
-                'tanggal_mutasi_raw'      => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('Y-m-d') : '',
-                'ruangan_asal'            => $m->ruangan_asal,
-                'ruangan_tujuan'          => $m->ruangan_tujuan,
-                'jenis_mutasi'            => $m->jenis_mutasi ?? 'Mutasi',
-                'kondisi'                 => $m->pivot?->kondisi ?: ($m->kondisi ?: ($reg->kondisi ?: 'Baik')),
-                'alasan_mutasi'           => $m->alasan_mutasi ?: '-',
-                'status'                  => $m->status,
-                'penanggung_jawab_asal'   => $m->penanggung_jawab_asal ?: '-',
-                'penanggung_jawab_tujuan' => $m->penanggung_jawab_tujuan ?: '-',
-                'catatan_penerima'        => $m->catatan_penerima,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'kondisi' => $reg->kondisi,
-            'ruang'   => $reg->ruang_pemegang,
-            'mutasis' => $mutasis
-        ]);
-    });
-
-    // 2. Distribusi Pages & Forms
-    Route::get('/distribusi', [DistribusiController::class, 'index'])->name('distribusi.index');
-    Route::get('/distribusi/create', [DistribusiController::class, 'create'])->name('distribusi.create');
-    Route::get('/distribusi/next-bast', [DistribusiController::class, 'getNextBast'])->name('distribusi.next-bast');
-    Route::get('/distribusi/{id}/edit', [DistribusiController::class, 'edit'])->name('distribusi.edit');
-    Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
-    Route::post('/distribusi', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.store');
-    Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
-    Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
-
-    // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima / Admin menolak)
-    Route::patch('/distribusi/{id}/status', function (\Illuminate\Http\Request $request, $id) {
-        $dst = \App\Models\Distribusi::with('items.registers')->find($id);
-        if (!$dst) {
-            return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
-        }
-        $newStatus   = $request->input('status', 'Telah Diterima');
-        $alasanTolak = $request->input('alasan_tolak', null);
-
-        $dst->status = $newStatus;
-
-        if (in_array($newStatus, ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])) {
-            if ($newStatus === 'Telah Diterima') {
-                $dst->signed = true;
-                if (!$dst->tgl_signed) {
-                    $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
-                }
-            }
-
-            // Terbitkan nomor BAST resmi jika belum ada
-            $tahun = date('Y', strtotime($dst->tanggal_distribusi ?: now()));
-            $isValidExistingBast = !empty($dst->bast_nomor) 
-                && preg_match('/^032\s*\/\s*\d+\s*\/\s*430\.10\.7\s*\/\s*\d{4}$/', trim($dst->bast_nomor));
-
-            if (!$isValidExistingBast) {
-                $dst->bast_nomor = \App\Http\Controllers\DistribusiController::generateNextBastNomor((int)$tahun, $dst->id);
-            }
-        }
-
-        if ($newStatus === 'Ditolak') {
-            // Otomatis tidak memiliki nomor BAST
-            $dst->bast_nomor = null;
-            $dst->signed     = false;
-            $dst->tgl_signed = null;
-
-            if ($alasanTolak && \Schema::hasColumn('distribusis', 'alasan_tolak')) {
-                $dst->alasan_tolak = $alasanTolak;
-            }
-
-            // Kembalikan semua register NIBAR ke status Tersedia & reset Vol ACC ke 0
-            foreach ($dst->items as $item) {
-                $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
-                if (!empty($regIds)) {
-                    \App\Models\AstapRegister::whereIn('id', $regIds)->update([
-                        'unit_id'        => null,
-                        'ruang_pemegang' => null,
-                        'status'         => 'Tersedia',
-                    ]);
-                }
-                // Lepaskan relasi register NIBAR dari transaksi yang ditolak
-                $item->registers()->delete();
-                // Reset Vol ACC menjadi 0
-                $item->update(['qty_acc' => 0]);
-            }
-        }
-
-        $dst->save();
-
-        return response()->json([
-            'success'    => true,
-            'status'     => $dst->status,
-            'bast_nomor' => $dst->bast_nomor,
-            'message'    => "Status distribusi {$dst->kode} berhasil diperbarui menjadi '{$dst->status}'."
-        ]);
-    })->name('distribusi.status.update');
-
-    // API: Toggle Status TTD BSrE Distribusi (simpan ke database agar persist setelah reload)
-    Route::patch('/distribusi/{id}/sign', function (\Illuminate\Http\Request $request, $id) {
-        $dst = \App\Models\Distribusi::find($id);
-        if (!$dst) {
-            return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
-        }
-        $newSigned = !$dst->signed;
-        $dst->signed = $newSigned;
-        if ($newSigned) {
-            $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+        $astap = null;
+        if ($register) {
+            $astap = Astap::with('jenisAstap', 'jenisPengadaan', 'rekeningBelanja', 'registers')->find($register->astap_id);
         } else {
-            $dst->tgl_signed = null;
+            $astap = Astap::with('jenisAstap', 'jenisPengadaan', 'rekeningBelanja', 'registers')
+                ->where('kode_barang', $nibar)
+                ->first();
         }
-        $dst->save();
-        return response()->json([
-            'success'    => true,
-            'signed'     => $dst->signed,
-            'tgl_signed' => $dst->tgl_signed ?? '-',
-            'qr_hash'    => $dst->signed ? ('BSRE-KOESNANDI-' . $dst->kode) : '',
-            'message'    => $dst->signed
-                ? 'BAST berhasil ditandatangani secara digital (BSrE).'
-                : 'Tanda tangan digital BSrE berhasil dibatalkan.',
+
+        return view('pages.public_scan', [
+            'found' => ($astap !== null || $register !== null),
+            'nibar' => $nibar,
+            'register' => $register,
+            'astap' => $astap
         ]);
-    })->name('distribusi.sign');
+    }
 
-    // API: Update kondisi per Register NIBAR (dari halaman distribusi — semua role terautentikasi)
-    Route::patch('/distribusi/register-kondisi/{id}', function (\Illuminate\Http\Request $request, $id) {
-        $reg = \App\Models\AstapRegister::find($id);
-        if (!$reg) {
-            return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
-        }
-        $kondisi = $request->input('kondisi');
-        $allowed = ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'];
-        if (!in_array($kondisi, $allowed)) {
-            return response()->json(['success' => false, 'message' => 'Kondisi tidak valid.'], 422);
-        }
-        $reg->kondisi = $kondisi;
-        $reg->save();
-        return response()->json(['success' => true, 'kondisi' => $reg->kondisi, 'updated_at' => $reg->updated_at->toISOString()]);
-    })->name('distribusi.register_kondisi.update');
-
-    // API: Ambil kondisi terkini satu astap_register dari DB (untuk refresh realtime)
-    Route::get('/distribusi/register-kondisi/{id}', function ($id) {
-        $reg = \App\Models\AstapRegister::select('id','nibar','kondisi','ruang_pemegang','updated_at')->find($id);
-        if (!$reg) return response()->json(['success' => false], 404);
-        return response()->json(['success' => true, 'kondisi' => $reg->kondisi, 'ruang' => $reg->ruang_pemegang, 'updated_at' => $reg->updated_at]);
-    })->name('distribusi.register_kondisi.show');
-
-    // API: Ambil riwayat mutasi satu register NIBAR lengkap (tanggal, kondisi saat itu, alasan)
-    Route::get('/astap/register-mutasi/{id}', function ($id) {
+    /**
+     * Ambil riwayat mutasi satu register NIBAR
+     */
+    public function getRegisterMutasi($id)
+    {
         $reg = \App\Models\AstapRegister::with(['mutasis' => function($q) {
             $q->where('status', 'Disetujui Admin (Selesai)')->orderBy('tanggal_mutasi', 'desc')->orderBy('id', 'desc');
         }])->find($id);
@@ -824,65 +259,25 @@ Route::middleware('auth')->group(function () {
             'ruang'   => $reg->ruang_pemegang,
             'mutasis' => $mutasis,
         ]);
-    })->name('astap.register_mutasi');
+    }
 
-    // 4. Mutasi Aset Pages & Forms
-    Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');
-    Route::get('/mutasi-aset/create',          [MutasiController::class, 'create'])->name('mutasi.create');
-    Route::post('/mutasi-aset',                [MutasiController::class, 'store'])->name('mutasi.store');
-    Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
-    Route::put('/mutasi-aset/{id}',            [MutasiController::class, 'update'])->name('mutasi.update');
-    Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy');
-    Route::post('/mutasi-aset/{id}/approve-pengirim', [MutasiController::class, 'approvePengirim'])->name('mutasi.approve.pengirim');
-    Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
-    Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');
-    Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');
-    Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
-
-    // 5. Unit & Paviliun Index
-    Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index');
-
-    // 5b. Halaman Khusus Lembar Kartu Inventaris Ruangan (KIR)
-    Route::get('/lembar-kir-ruangan', [UnitController::class, 'kir'])->name('kir.index');
-    Route::patch('/lembar-kir-ruangan/kondisi/{id}', [UnitController::class, 'updateKondisi'])->name('kir.update_kondisi');
-
-    // 6. Pemeliharaan Index (Read-only for Sub Admin, full for Admin)
-    Route::get('/pemeliharaan', function () {
-        return view('pages.pemeliharaan');
-    })->name('pemeliharaan.index');
-
-    // 7. API Notifikasi Sistem
-    Route::post('/api/notifications/mark-all-read', function () {
-        \App\Services\NotificationService::markAllAsReadForUser(auth()->user());
-        return response()->json(['success' => true, 'message' => 'Semua notifikasi telah ditandai sebagai dibaca.']);
-    })->name('notifications.mark_all_read');
-
-    Route::get('/api/notifications/list', function () {
-        $res = \App\Services\NotificationService::getForUser(auth()->user());
-        return response()->json([
-            'success'       => true,
-            'unread_count'  => $res['unread_count'],
-            'notifications' => $res['notifications'],
-        ]);
-    })->name('notifications.list');
-
-    // Rute Khusus Master Admin & Admin Operasional (Sub Admin Dibatasi)
-    Route::middleware([RoleMiddleware::class . ':master_admin,admin'])->group(function () {
-        // Berita Acara (BAST)
-        Route::get('/berita-acara', [\App\Http\Controllers\BeritaAcaraController::class, 'index'])->name('bast.index');
-        Route::post('/berita-acara/triwulan/{key}', [\App\Http\Controllers\BeritaAcaraController::class, 'saveTriwulan'])->name('bast.save_triwulan');
-        Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan');
-
-        // Form Tambah & Edit ASTAP
-        Route::get('/astap/create', function () {
+    /**
+     * Form Tambah ASTAP Baru
+     */
+    public function create()
+    {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
             $dbUnits = \App\Models\Unit::orderBy('nama')->get();
             return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits'));
-        })->name('astap.create');
+    }
 
-        Route::get('/astap/{id}/edit', function ($id) {
+    /**
+     * Form Edit Data ASTAP
+     */
+    public function edit($id)
+    {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
@@ -896,9 +291,13 @@ Route::middleware('auth')->group(function () {
                 'dbRekeningBelanjas' => $dbRekeningBelanjas,
                 'dbUnits' => $dbUnits
             ]);
-        })->name('astap.edit');
+    }
 
-        Route::post('/astap', function (\Illuminate\Http\Request $request) {
+    /**
+     * Simpan Data ASTAP Baru
+     */
+    public function store(Request $request)
+    {
             $data = $request->all();
             
             $jenisPengadaanId = $data['jenis_pengadaan_id'] ?? null;
@@ -2218,10 +1617,13 @@ Route::middleware('auth')->group(function () {
 
             session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil ditambahkan.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil disimpan ke database SIMAT-RK!']);
-        })->name('astap.store');
+    }
 
-        // API: Cek atau ambil pagu anggaran yang sudah ada berdasarkan Sub Rincian Objek + Tahun + Triwulan
-        Route::post('/astap/check-subrincian-anggaran', function (\Illuminate\Http\Request $request) {
+    /**
+     * API: Cek atau ambil pagu anggaran sub rincian objek
+     */
+    public function checkSubRincianAnggaran(Request $request)
+    {
             $subRincianKode = $request->input('sub_rincian_kode');
             $tahun = (int) $request->input('tahun', date('Y'));
             $triwulan = $request->input('triwulan', 'TW I');
@@ -2286,10 +1688,13 @@ Route::middleware('auth')->group(function () {
             }
 
             return response()->json(['found' => false]);
-        })->name('astap.checkSubRincianAnggaran');
+    }
 
-        // API: Cek duplikat kode 108 + tahun untuk konfirmasi sebelum submit
-        Route::post('/astap/check-duplicate', function (\Illuminate\Http\Request $request) {
+    /**
+     * API: Cek duplikat kode 108 + tahun
+     */
+    public function checkDuplicate(Request $request)
+    {
             $kode108 = $request->input('kode_108');
             $tahun = $request->input('tahun');
 
@@ -2324,9 +1729,13 @@ Route::middleware('auth')->group(function () {
                 'nibar_selanjutnya' => $maxReg + 1,
                 'jumlah_astap' => $existingAstaps->count()
             ]);
-        })->name('astap.checkDuplicate');
+    }
 
-        Route::put('/astap/{id}', function (\Illuminate\Http\Request $request, $id) {
+    /**
+     * Update Data ASTAP
+     */
+    public function update(Request $request, $id)
+    {
             $astap = \App\Models\Astap::find($id);
             if (!$astap) {
                 return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
@@ -3514,9 +2923,13 @@ Route::middleware('auth')->group(function () {
 
             session()->flash('success', 'Data ASTAP "' . ($astap->nama_barang ?? 'Aset Tetap') . '" berhasil diperbarui.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil diperbarui!']);
-        })->name('astap.update');
+    }
 
-        Route::delete('/astap/{id}', function ($id) {
+    /**
+     * Hapus Data ASTAP beserta registers miliknya
+     */
+    public function destroy($id)
+    {
             $astap = \App\Models\Astap::find($id);
             if ($astap) {
                 $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
@@ -3540,10 +2953,13 @@ Route::middleware('auth')->group(function () {
             }
             session()->flash('success', 'Data ASTAP berhasil dihapus.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dihapus.']);
-        })->name('astap.destroy');
+    }
 
-        // Route Update & Delete Register ASTAP (NIBAR Per-Unit)
-        Route::put('/astap-register/{id}', function (\Illuminate\Http\Request $request, $id) {
+    /**
+     * Update data register NIBAR per-unit
+     */
+    public function updateRegister(Request $request, $id)
+    {
             $reg = \App\Models\AstapRegister::with('astap')->find($id);
             if (!$reg) {
                 return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
@@ -3557,9 +2973,13 @@ Route::middleware('auth')->group(function () {
             $reg->save();
 
             return response()->json(['success' => true, 'message' => 'Data register NIBAR berhasil diperbarui!']);
-        })->name('astap_register.update');
+    }
 
-        Route::delete('/astap-register/{id}', function ($id) {
+    /**
+     * Hapus satu unit register NIBAR
+     */
+    public function destroyRegister($id)
+    {
             $reg = \App\Models\AstapRegister::with('astap')->find($id);
             if ($reg) {
                 $nibar = $reg->nibar ?: $reg->no_register;
@@ -3580,10 +3000,13 @@ Route::middleware('auth')->group(function () {
             }
             session()->flash('success', 'Unit register NIBAR berhasil dihapus.');
             return response()->json(['success' => true, 'message' => 'Unit register berhasil dihapus.']);
-        })->name('astap_register.destroy');
+    }
 
-        // Route Khusus: Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
-        Route::post('/astap/resequence-nibar', function (\Illuminate\Http\Request $request) {
+    /**
+     * Urutkan dan susun ulang NIBAR (Resequence)
+     */
+    public function resequenceNibar(Request $request)
+    {
             $tahun = $request->input('tahun', 'all');
             $category = $request->input('category', 'all');
             $astapId = $request->input('astap_id');
@@ -3703,40 +3126,5 @@ Route::middleware('auth')->group(function () {
                 'message' => "Berhasil menyusun dan merapikan {$totalUpdated} unit register NIBAR secara berurutan tanpa celah.",
                 'count' => $totalUpdated
             ]);
-        })->name('astap.resequence_nibar');
-
-        // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
-        Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');
-        Route::post('/unit-paviliun', [UnitController::class, 'store'])->name('unit.store');
-        Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit');
-        Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update');
-        Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy');
-    });
-
-    // Master Data Users CRUD Routes
-    Route::get('/master-data/users', [UserController::class, 'index'])->name('master.users');
-    Route::post('/master-data/users', [UserController::class, 'store'])->name('master.users.store');
-    Route::put('/master-data/users/{id}', [UserController::class, 'update'])->name('master.users.update');
-    Route::delete('/master-data/users/{id}', [UserController::class, 'destroy'])->name('master.users.destroy');
-    Route::post('/master-data/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('master.users.reset_password');
-
-    Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
-    Route::post('/master-data/jenis-astap', [JenisAstapController::class, 'store'])->name('master.jenis_astap.store');
-    Route::post('/master-data/jenis-astap/import', [JenisAstapController::class, 'import'])->name('master.jenis_astap.import');
-    Route::get('/master-data/jenis-astap/download-template', [JenisAstapController::class, 'downloadTemplate'])->name('master.jenis_astap.template');
-    Route::put('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'update'])->name('master.jenis_astap.update');
-    Route::delete('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'destroy'])->name('master.jenis_astap.destroy');
-
-    // Master Data Jenis Pengadaan (SIPD)
-    Route::get('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'index'])->name('master.jenis_pengadaan');
-    Route::post('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'store'])->name('master.jenis_pengadaan.store');
-    Route::put('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'update'])->name('master.jenis_pengadaan.update');
-    Route::delete('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'destroy'])->name('master.jenis_pengadaan.destroy');
-
-    // Master Data Rekening Belanja (SIPD)
-    Route::get('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'index'])->name('master.rekening_belanja');
-    Route::post('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'store'])->name('master.rekening_belanja.store');
-    Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
-    Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
-});
-
+    }
+}

@@ -756,6 +756,130 @@ class DistribusiController extends Controller
         session()->flash('success', "Transaksi Distribusi {$kode} berhasil dihapus.");
         return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dihapus."]);
     }
+
+    /**
+     * API: Update Status Distribusi
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $dst = \App\Models\Distribusi::with('items.registers')->find($id);
+        if (!$dst) {
+            return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
+        }
+        $newStatus   = $request->input('status', 'Telah Diterima');
+        $alasanTolak = $request->input('alasan_tolak', null);
+
+        $dst->status = $newStatus;
+
+        if (in_array($newStatus, ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima'])) {
+            if ($newStatus === 'Telah Diterima') {
+                $dst->signed = true;
+                if (!$dst->tgl_signed) {
+                    $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+                }
+            }
+
+            // Terbitkan nomor BAST resmi jika belum ada
+            $tahun = date('Y', strtotime($dst->tanggal_distribusi ?: now()));
+            $isValidExistingBast = !empty($dst->bast_nomor) 
+                && preg_match('/^032\s*\/\s*\d+\s*\/\s*430\.10\.7\s*\/\s*\d{4}$/', trim($dst->bast_nomor));
+
+            if (!$isValidExistingBast) {
+                $dst->bast_nomor = \App\Http\Controllers\DistribusiController::generateNextBastNomor((int)$tahun, $dst->id);
+            }
+        }
+
+        if ($newStatus === 'Ditolak') {
+            // Otomatis tidak memiliki nomor BAST
+            $dst->bast_nomor = null;
+            $dst->signed     = false;
+            $dst->tgl_signed = null;
+
+            if ($alasanTolak && \Schema::hasColumn('distribusis', 'alasan_tolak')) {
+                $dst->alasan_tolak = $alasanTolak;
+            }
+
+            // Kembalikan semua register NIBAR ke status Tersedia & reset Vol ACC ke 0
+            foreach ($dst->items as $item) {
+                $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
+                if (!empty($regIds)) {
+                    \App\Models\AstapRegister::whereIn('id', $regIds)->update([
+                        'unit_id'        => null,
+                        'ruang_pemegang' => null,
+                        'status'         => 'Tersedia',
+                    ]);
+                }
+                // Lepaskan relasi register NIBAR dari transaksi yang ditolak
+                $item->registers()->delete();
+                // Reset Vol ACC menjadi 0
+                $item->update(['qty_acc' => 0]);
+            }
+        }
+
+        $dst->save();
+
+        return response()->json([
+            'success'    => true,
+            'status'     => $dst->status,
+            'bast_nomor' => $dst->bast_nomor,
+            'message'    => "Status distribusi {$dst->kode} berhasil diperbarui menjadi '{$dst->status}'."
+        ]);
+    }
+
+    /**
+     * API: Toggle Status TTD BSrE Distribusi
+     */
+    public function sign(Request $request, $id)
+    {
+        $dst = \App\Models\Distribusi::find($id);
+        if (!$dst) {
+            return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
+        }
+        $newSigned = !$dst->signed;
+        $dst->signed = $newSigned;
+        if ($newSigned) {
+            $dst->tgl_signed = now()->format('d/m/Y H:i') . ' WIB';
+        } else {
+            $dst->tgl_signed = null;
+        }
+        $dst->save();
+        return response()->json([
+            'success'    => true,
+            'signed'     => $dst->signed,
+            'tgl_signed' => $dst->tgl_signed ?? '-',
+            'qr_hash'    => $dst->signed ? ('BSRE-KOESNANDI-' . $dst->kode) : '',
+            'message'    => $dst->signed
+                ? 'BAST berhasil ditandatangani secara digital (BSrE).'
+                : 'Tanda tangan digital BSrE berhasil dibatalkan.',
+        ]);
+    }
+
+    /**
+     * API: Update kondisi per Register NIBAR
+     */
+    public function updateRegisterKondisi(Request $request, $id)
+    {
+        $reg = \App\Models\AstapRegister::find($id);
+        if (!$reg) {
+            return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
+        }
+        $kondisi = $request->input('kondisi');
+        $allowed = ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'];
+        if (!in_array($kondisi, $allowed)) {
+            return response()->json(['success' => false, 'message' => 'Kondisi tidak valid.'], 422);
+        }
+        $reg->kondisi = $kondisi;
+        $reg->save();
+        return response()->json(['success' => true, 'kondisi' => $reg->kondisi, 'updated_at' => $reg->updated_at->toISOString()]);
+    }
+
+    /**
+     * API: Ambil kondisi terkini satu astap_register
+     */
+    public function showRegisterKondisi($id)
+    {
+        $reg = \App\Models\AstapRegister::select('id','nibar','kondisi','ruang_pemegang','updated_at')->find($id);
+        if (!$reg) return response()->json(['success' => false], 404);
+        return response()->json(['success' => true, 'kondisi' => $reg->kondisi, 'ruang' => $reg->ruang_pemegang, 'updated_at' => $reg->updated_at]);
+    }
 }
-
-
