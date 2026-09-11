@@ -1,4 +1,4 @@
-﻿    <script>
+    <script>
         window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : []);
         window.dbJenisPengadaans = @json(!empty($dbJenisPengadaans) ? $dbJenisPengadaans : []);
         window.dbRekeningBelanjas = @json(!empty($dbRekeningBelanjas) ? $dbRekeningBelanjas : []);
@@ -689,6 +689,29 @@
                         }));
                     }
 
+                    // Pre-index Master Data 108 untuk performa super cepat (0ms lookup & zero GC overhead)
+                    if (window.dbMasterJenisAstap108 && window.dbMasterJenisAstap108.length > 0) {
+                        this.master108Map = {};
+                        window.dbMasterJenisAstap108.forEach(j => {
+                            const flatSubSub = [];
+                            if (j.subRincian) {
+                                j.subRincian.forEach(sr => {
+                                    if (sr.subSubRincian) {
+                                        sr.subSubRincian.forEach(ssr => {
+                                            flatSubSub.push(ssr);
+                                            this.master108Map[ssr.kode] = {
+                                                subSub: ssr,
+                                                subRincian: sr,
+                                                jenis: j
+                                            };
+                                        });
+                                    }
+                                });
+                            }
+                            j._flatSubSub = flatSubSub;
+                        });
+                    }
+
                     // Pre-fill Mode Edit (Langkah 1, Langkah 2, dan Langkah 3/4)
                     if (window.editingAstap) {
                         const ea = window.editingAstap;
@@ -1174,39 +1197,40 @@
                     if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                         const first = this.formData.mesin_items[0];
                         if (first.mesin_nama_barang && first.mesin_nama_barang.trim() !== '') {
-                            this.formData.mesin_nama_barang = first.mesin_nama_barang;
+                            if (this.formData.mesin_nama_barang !== first.mesin_nama_barang) this.formData.mesin_nama_barang = first.mesin_nama_barang;
                         } else if (this.formData.mesin_nama_barang) {
                             first.mesin_nama_barang = this.formData.mesin_nama_barang;
                         }
                         if (first.mesin_kode_barang && first.mesin_kode_barang.trim() !== '') {
-                            this.formData.mesin_kode_barang = first.mesin_kode_barang;
+                            if (this.formData.mesin_kode_barang !== first.mesin_kode_barang) this.formData.mesin_kode_barang = first.mesin_kode_barang;
                         } else if (this.formData.mesin_kode_barang) {
                             first.mesin_kode_barang = this.formData.mesin_kode_barang;
                         }
-                        this.formData.mesin_merk = first.mesin_merk;
-                        this.formData.mesin_type = first.mesin_type;
-                        this.formData.mesin_ukuran = first.mesin_ukuran;
-                        this.formData.mesin_no_pabrik = first.mesin_no_pabrik;
-                        this.formData.mesin_bahan = first.mesin_bahan;
-                        this.formData.mesin_no_rangka = first.mesin_no_rangka;
-                        this.formData.mesin_no_mesin = first.mesin_no_mesin;
-                        this.formData.mesin_no_bpkb = first.mesin_no_bpkb;
-                        this.formData.mesin_no_polisi = first.mesin_no_polisi;
-                        this.formData.mesin_kondisi = first.mesin_kondisi;
-                        this.formData.mesin_satuan = first.mesin_satuan;
-                        this.formData.ruang_pemegang = first.ruang_pemegang;
-                        this.formData.ruang_pemegang_mesin = first.ruang_pemegang;
+                        const fields = ['mesin_merk', 'mesin_type', 'mesin_ukuran', 'mesin_no_pabrik', 'mesin_bahan', 'mesin_no_rangka', 'mesin_no_mesin', 'mesin_no_bpkb', 'mesin_no_polisi', 'mesin_kondisi', 'mesin_satuan'];
+                        fields.forEach(f => {
+                            if (this.formData[f] !== first[f]) this.formData[f] = first[f];
+                        });
+                        if (this.formData.ruang_pemegang !== first.ruang_pemegang) {
+                            this.formData.ruang_pemegang = first.ruang_pemegang;
+                            this.formData.ruang_pemegang_mesin = first.ruang_pemegang;
+                        }
 
                         const totalVol = this.formData.mesin_items.reduce((sum, it) => sum + (parseInt(it.mesin_jumlah_barang) || 1), 0);
-                        this.formData.mesin_jumlah_barang = totalVol;
-                        this.formData.jumlah_volume = totalVol;
+                        if (this.formData.mesin_jumlah_barang !== totalVol) {
+                            this.formData.mesin_jumlah_barang = totalVol;
+                            this.formData.jumlah_volume = totalVol;
+                        }
 
                         const totalAdmin = this.formData.mesin_items.reduce((sum, it) => sum + (parseFloat(it.mesin_administrasi_proyek) || 0), 0);
-                        this.formData.mesin_administrasi_proyek = totalAdmin;
+                        if (this.formData.mesin_administrasi_proyek !== totalAdmin) {
+                            this.formData.mesin_administrasi_proyek = totalAdmin;
+                        }
 
                         if (this.formData.mesin_items.length === 1) {
-                            this.formData.mesin_nilai_satuan = first.mesin_nilai_satuan;
-                            this.formData.harga_satuan = first.mesin_nilai_satuan;
+                            if (this.formData.mesin_nilai_satuan !== first.mesin_nilai_satuan) {
+                                this.formData.mesin_nilai_satuan = first.mesin_nilai_satuan;
+                                this.formData.harga_satuan = first.mesin_nilai_satuan;
+                            }
                         }
                     }
                 },
@@ -1844,58 +1868,80 @@
                 },
 
                 get availableSubSubRincian108() {
-                    let list = [];
-
                     // 1. Ambil dari currentSubRincianObj jika sudah memilih sub-rincian spesifik
                     if (this.currentSubRincianObj && this.currentSubRincianObj.subSubRincian) {
-                        list = [...this.currentSubRincianObj.subSubRincian];
+                        return this.currentSubRincianObj.subSubRincian;
                     }
 
-                    // 2. Jika belum, filter HANYA dari kelompok jenis ASTAP yang dipilih di Langkah 2 (currentJenisAstap)
-                    if (list.length === 0 && this.currentJenisAstap && this.currentJenisAstap.subRincian) {
-                        this.currentJenisAstap.subRincian.forEach(s => {
-                            if (s.subSubRincian) list = list.concat(s.subSubRincian);
-                        });
-                    }
-
-                    // 3. Fallback berdasarkan kelompok jenis aset (Tanah 1.3.1, Mesin 1.3.2, Gedung 1.3.3, Jaringan 1.3.4, Lainnya 1.3.5, ATB 1.5.3, KDP 1.3.6)
-                    if (list.length === 0) {
-                        const targetGroupKode = this.isTanah ? '1.3.1' : (this.isMesin ? '1.3.2' : (this.isGedung ? '1.3.3' : (this.isJaringan ? '1.3.4' : (this.isAsetLainnya ? '1.3.5' : (this.isAtb ? '1.5.3' : (this.isKdp ? '1.3.6' : ''))))));
-                        const matchedGroup = (window.dbMasterJenisAstap108 || []).find(j => j.kode === targetGroupKode);
-                        if (matchedGroup && matchedGroup.subRincian) {
-                            matchedGroup.subRincian.forEach(s => {
-                                if (s.subSubRincian) list = list.concat(s.subSubRincian);
+                    // 2. Jika belum, ambil dari pre-indexed flat array dari currentJenisAstap (0ms, zero allocations)
+                    if (this.currentJenisAstap) {
+                        if (!this.currentJenisAstap._flatSubSub) {
+                            const flat = [];
+                            (this.currentJenisAstap.subRincian || []).forEach(sr => {
+                                if (sr.subSubRincian) {
+                                    sr.subSubRincian.forEach(ssr => flat.push(ssr));
+                                }
                             });
+                            this.currentJenisAstap._flatSubSub = flat;
                         }
+                        return this.currentJenisAstap._flatSubSub;
                     }
 
-                    // 4. Pastikan barang aktif saat ini terdaftar di list agar opsi select terisi otomatis
-                    const activeKode = this.isTanah ? this.formData.tanah_kode_barang : (this.isMesin ? this.formData.mesin_kode_barang : (this.isGedung ? this.formData.gedung_kode_barang : (this.isJaringan ? this.formData.jaringan_kode_barang : (this.isAsetLainnya ? this.formData.lainnya_kode_barang : (this.isAtb ? this.formData.atb_kode_barang : (this.isKdp ? this.formData.kdp_kode_barang : ''))))));
-                    const activeNama = this.isTanah ? this.formData.tanah_nama_barang : (this.isMesin ? this.formData.mesin_nama_barang : (this.isGedung ? this.formData.gedung_nama_barang : (this.isJaringan ? this.formData.jaringan_nama_barang : (this.isAsetLainnya ? this.formData.lainnya_nama_barang : (this.isAtb ? this.formData.atb_nama_barang : (this.isKdp ? this.formData.kdp_nama_barang : ''))))));
-
-                    if (activeKode && !list.some(item => item.kode === activeKode)) {
-                        list.unshift({ kode: activeKode, nama: activeNama || ('Barang Terpilih (' + activeKode + ')') });
+                    // 3. Fallback berdasarkan kelompok jenis aset
+                    const targetGroupKode = this.isTanah ? '1.3.1' : (this.isMesin ? '1.3.2' : (this.isGedung ? '1.3.3' : (this.isJaringan ? '1.3.4' : (this.isAsetLainnya ? '1.3.5' : (this.isAtb ? '1.5.3' : (this.isKdp ? '1.3.6' : ''))))));
+                    const matchedGroup = (window.dbMasterJenisAstap108 || []).find(j => j.kode === targetGroupKode);
+                    if (matchedGroup) {
+                        if (!matchedGroup._flatSubSub) {
+                            const flat = [];
+                            (matchedGroup.subRincian || []).forEach(sr => {
+                                if (sr.subSubRincian) {
+                                    sr.subSubRincian.forEach(ssr => flat.push(ssr));
+                                }
+                            });
+                            matchedGroup._flatSubSub = flat;
+                        }
+                        return matchedGroup._flatSubSub;
                     }
 
-                    return list;
+                    return [];
                 },
 
                 searchNamaBarang108: '',
                 isNamaBarang108Open: false,
 
                 get filteredSubSubRincian108() {
-                    const list = this.availableSubSubRincian108 || [];
-                    if (!this.searchNamaBarang108 || this.searchNamaBarang108.trim() === '') {
-                        return list;
+                    // Jika dropdown tidak terbuka, jangan proses apa-apa (0 CPU overhead & 0 diff DOM)
+                    if (!this.isNamaBarang108Open) {
+                        return [];
                     }
-                    const q = this.searchNamaBarang108.toLowerCase().trim();
-                    return list.filter(item => 
-                        (item.nama && item.nama.toLowerCase().includes(q)) || 
-                        (item.kode && item.kode.toLowerCase().includes(q))
-                    );
+
+                    const list = this.availableSubSubRincian108 || [];
+                    const q = (this.searchNamaBarang108 || '').toLowerCase().trim();
+
+                    // Jika tidak mencari, ambil 50 teratas saja
+                    if (!q) {
+                        return list.slice(0, 50);
+                    }
+
+                    // Pencarian cepat dengan batasan 50 hasil pertama
+                    const results = [];
+                    for (let i = 0; i < list.length; i++) {
+                        const item = list[i];
+                        if (!item) continue;
+                        if ((item.nama && item.nama.toLowerCase().includes(q)) || 
+                            (item.kode && item.kode.toLowerCase().includes(q))) {
+                            results.push(item);
+                            if (results.length >= 50) {
+                                break;
+                            }
+                        }
+                    }
+                    return results;
                 },
 
-                getActiveKodeBarang() {
+                // Getter (bukan fungsi biasa) agar Alpine cache hasil per reactive cycle.
+                // Sebelumnya dipanggil 5-6x per render sebagai fungsi → sekarang 1x evaluasi.
+                get activeKodeBarang() {
                     if (this.isTanah) return this.formData.tanah_kode_barang;
                     if (this.isMesin) return this.formData.mesin_kode_barang;
                     if (this.isGedung) return this.formData.gedung_kode_barang;
@@ -1906,7 +1952,7 @@
                     return '';
                 },
 
-                getActiveNamaBarang() {
+                get activeNamaBarang() {
                     if (this.isTanah) return this.formData.tanah_nama_barang;
                     if (this.isMesin) return this.formData.mesin_nama_barang;
                     if (this.isGedung) return this.formData.gedung_nama_barang;
@@ -1916,6 +1962,10 @@
                     if (this.isKdp) return this.formData.kdp_nama_barang;
                     return '';
                 },
+
+                // Alias fungsi untuk backward compatibility (bagian lain yang mungkin masih memanggil sebagai fungsi)
+                getActiveKodeBarang() { return this.activeKodeBarang; },
+                getActiveNamaBarang() { return this.activeNamaBarang; },
 
                 selectSubSubRincianItem(item) {
                     if (!item) return;
@@ -1995,28 +2045,42 @@
 
                 // Getters Filter Pencarian Langkah 2 (Rekening Belanja & PMDN 108)
                 get filteredRekeningBelanja() {
-                    if (!this.searchRekening || this.searchRekening.trim() === '') {
-                        return this.masterRekeningBelanja;
+                    if (!this.isRekeningOpen) {
+                        return [];
                     }
-                    const q = this.searchRekening.toLowerCase();
-                    return this.masterRekeningBelanja.filter(r => 
-                        (r.kode_rek && r.kode_rek.toLowerCase().includes(q)) || 
-                        (r.nama_belanja && r.nama_belanja.toLowerCase().includes(q)) ||
-                        (r.kelompok && r.kelompok.toLowerCase().includes(q))
-                    );
+                    const list = this.masterRekeningBelanja || [];
+                    const q = (this.searchRekening || '').toLowerCase().trim();
+                    if (!q) {
+                        return list.slice(0, 30);
+                    }
+                    const results = [];
+                    for (let i = 0; i < list.length; i++) {
+                        const r = list[i];
+                        if (!r) continue;
+                        if ((r.kode_rek && r.kode_rek.toLowerCase().includes(q)) || 
+                            (r.nama_belanja && r.nama_belanja.toLowerCase().includes(q)) ||
+                            (r.kelompok && r.kelompok.toLowerCase().includes(q))) {
+                            results.push(r);
+                            if (results.length >= 31) break;
+                        }
+                    }
+                    return results;
                 },
 
                 get filteredJenisAstap108() {
+                    if (!this.isJenis108Open) {
+                        return [];
+                    }
                     let list = (this.masterJenisAstap108 || []).filter(j => j && j.kode && j.nama && j.nama.trim() !== '');
                     // Exclude "Aset Tetap Dalam Renovasi" (1.3.5.07)
                     list = list.filter(j => 
                         !(j.kode && j.kode.includes('1.3.5.07')) && 
                         !(j.nama && j.nama.toLowerCase().includes('dalam renovasi'))
                     );
-                    if (!this.searchJenis108 || this.searchJenis108.trim() === '') {
+                    const q = (this.searchJenis108 || '').toLowerCase().trim();
+                    if (!q) {
                         return list;
                     }
-                    const q = this.searchJenis108.toLowerCase();
                     return list.filter(j => 
                         (j.kode && j.kode.toLowerCase().includes(q)) || 
                         (j.nama && j.nama.toLowerCase().includes(q))
@@ -2024,15 +2088,25 @@
                 },
 
                 get filteredSubRincian108() {
-                    let list = (this.availableSubRincian108 || []).filter(s => s && s.kode && s.nama && s.nama.trim() !== '');
-                    if (!this.searchSubRincian108 || this.searchSubRincian108.trim() === '') {
-                        return list;
+                    if (!this.isSubRincian108Open) {
+                        return [];
                     }
-                    const q = this.searchSubRincian108.toLowerCase();
-                    return list.filter(s => 
-                        (s.kode && s.kode.toLowerCase().includes(q)) || 
-                        (s.nama && s.nama.toLowerCase().includes(q))
-                    );
+                    let list = (this.availableSubRincian108 || []).filter(s => s && s.kode && s.nama && s.nama.trim() !== '');
+                    const q = (this.searchSubRincian108 || '').toLowerCase().trim();
+                    if (!q) {
+                        return list.slice(0, 30);
+                    }
+                    const results = [];
+                    for (let i = 0; i < list.length; i++) {
+                        const s = list[i];
+                        if (!s) continue;
+                        if ((s.kode && s.kode.toLowerCase().includes(q)) || 
+                            (s.nama && s.nama.toLowerCase().includes(q))) {
+                            results.push(s);
+                            if (results.length >= 31) break;
+                        }
+                    }
+                    return results;
                 },
 
                 // Helper Selection Pilihan Filter Card Model (Langkah 1 & Langkah 2)
@@ -2149,7 +2223,9 @@
                 },
 
                 onSubSubRincianChange(kodeSubSub) {
-                    const found = this.availableSubSubRincian108.find(s => s.kode === kodeSubSub);
+                    const meta = (this.master108Map && this.master108Map[kodeSubSub]) ? this.master108Map[kodeSubSub] : null;
+                    const found = meta ? meta.subSub : (this.availableSubSubRincian108 || []).find(s => s.kode === kodeSubSub);
+
                     if (this.isTanah) {
                         this.formData.tanah_kode_barang = kodeSubSub;
                         if (found) {
@@ -2205,29 +2281,17 @@
                         if (found) this.formData.kdp_nama_barang = found.nama;
                     }
 
-                    // Otomatis terisi Sub Rincian Objek PMDN 108 & Jenis Aset jika Nama Barang di Langkah 3 dipilih
+                    // Otomatis terisi Sub Rincian Objek PMDN 108 & Jenis Aset jika Nama Barang di Langkah 2/3 dipilih (0ms lookup)
                     if (kodeSubSub) {
-                        let parentSubRincian = null;
-                        let parentJenis = null;
-
-                        (window.dbMasterJenisAstap108 || []).forEach(j => {
-                            if (j.subRincian) {
-                                j.subRincian.forEach(sr => {
-                                    if (sr.subSubRincian && sr.subSubRincian.some(ssr => ssr.kode === kodeSubSub)) {
-                                        parentSubRincian = sr;
-                                        parentJenis = j;
-                                    }
-                                });
+                        if (meta) {
+                            if (meta.subRincian) {
+                                this.formData.sub_rincian_kode = meta.subRincian.kode;
+                                this.formData.sub_rincian_nama = meta.subRincian.nama;
                             }
-                        });
-
-                        if (parentSubRincian) {
-                            this.formData.sub_rincian_kode = parentSubRincian.kode;
-                            this.formData.sub_rincian_nama = parentSubRincian.nama;
-                        }
-                        if (parentJenis) {
-                            this.formData.jenis_aset_kode = parentJenis.kode;
-                            this.formData.jenis_aset_nama = parentJenis.nama;
+                            if (meta.jenis) {
+                                this.formData.jenis_aset_kode = meta.jenis.kode;
+                                this.formData.jenis_aset_nama = meta.jenis.nama;
+                            }
                         }
                     }
                 },

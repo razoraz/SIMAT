@@ -1,4 +1,4 @@
-﻿            <!-- ========================================================================= -->
+            <!-- ========================================================================= -->
             <!-- LANGKAH 2: FILTERING BERTINGKAT REKENING BELANJA & JENIS ASTAP 108        -->
             <!-- ========================================================================= -->
             <div x-show="currentStep === 2" class="space-y-6">
@@ -47,7 +47,7 @@
 
                         <!-- Cards List (HANYA MUNCUL JIKA SEDANG DIFOKUSKAN / DIKETIK) -->
                         <div x-show="isRekeningOpen" x-transition x-cloak style="max-height: 195px !important; overflow-y: auto !important;" class="absolute z-30 mt-2 w-full space-y-1.5 custom-scrollbar p-2 bg-slate-900 border border-blue-500/50 rounded-2xl shadow-2xl backdrop-blur-xl">
-                            <template x-for="r in filteredRekeningBelanja" :key="r.kode_rek">
+                            <template x-for="r in filteredRekeningBelanja.slice(0, 30)" :key="r.kode_rek">
                                 <div @click="selectRekening(r)"
                                      class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="r.kode_rek === formData.kode_rek ? 'border-blue-500 bg-blue-950/40 shadow-lg' : 'border-slate-800 hover:border-blue-500/50'">
@@ -61,6 +61,14 @@
                                             :class="r.kode_rek === formData.kode_rek ? 'bg-blue-500 text-slate-950 shadow-lg shadow-blue-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40 hover:bg-blue-500 hover:text-slate-950'">
                                         <span x-text="r.kode_rek === formData.kode_rek ? '✓ Terpilih' : 'Pilih →'"></span>
                                     </button>
+                                </div>
+                            </template>
+                            <template x-if="isRekeningOpen && filteredRekeningBelanja.length > 30">
+                                <p class="text-[10px] text-center text-slate-500 italic pt-1">...dan <span x-text="filteredRekeningBelanja.length - 30"></span> rekening lainnya. Ketik lebih spesifik untuk mempersempit.</p>
+                            </template>
+                            <template x-if="isRekeningOpen && filteredRekeningBelanja.length === 0">
+                                <div class="p-3 text-center text-xs text-slate-400 italic">
+                                    Tidak ada rekening belanja yang cocok.
                                 </div>
                             </template>
                         </div>
@@ -113,6 +121,11 @@
                                     </button>
                                 </div>
                             </template>
+                            <template x-if="isJenis108Open && filteredJenisAstap108.length === 0">
+                                <div class="p-3 text-center text-xs text-slate-400 italic">
+                                    Tidak ada jenis aset yang cocok.
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -148,7 +161,7 @@
                         <div class="relative">
                             <input type="text" 
                                    :value="(!isSubRincian108Open && formData.sub_rincian_kode) ? (formData.sub_rincian_kode + ' - ' + formData.sub_rincian_nama) : searchSubRincian108"
-                                   @input="searchSubRincian108 = $event.target.value; isSubRincian108Open = true"
+                                   @input.debounce.200ms="searchSubRincian108 = $event.target.value; isSubRincian108Open = true"
                                    @focus="isSubRincian108Open = true"
                                    :placeholder="formData.sub_rincian_kode ? (formData.sub_rincian_kode + ' - ' + formData.sub_rincian_nama) : 'Ketik untuk memfilter sub rincian PMDN 108 (opsional, terisi otomatis saat memilih Nama Barang)...'" 
                                    class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
@@ -176,7 +189,7 @@
                                 <span class="shrink-0 px-3 py-1 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">Kosongkan →</span>
                             </div>
 
-                            <template x-for="s in filteredSubRincian108" :key="s.kode">
+                            <template x-for="s in filteredSubRincian108.slice(0, 30)" :key="s.kode">
                                 <div @click="selectSubRincian(s)"
                                      class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
                                      :class="s.kode === formData.sub_rincian_kode ? 'border-emerald-500 bg-emerald-950/40 shadow-lg' : 'border-slate-800 hover:border-emerald-500/50'">
@@ -192,6 +205,14 @@
                                     </button>
                                 </div>
                             </template>
+                            <template x-if="isSubRincian108Open && filteredSubRincian108.length > 30">
+                                <p class="text-[10px] text-center text-slate-500 italic pt-1">...dan <span x-text="filteredSubRincian108.length - 30"></span> sub rincian lainnya. Ketik untuk mempersempit.</p>
+                            </template>
+                            <template x-if="isSubRincian108Open && filteredSubRincian108.length === 0">
+                                <div class="p-3 text-center text-xs text-slate-400 italic">
+                                    Tidak ada sub rincian 108 yang cocok.
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -205,7 +226,7 @@
                             </label>
                             
                             <button type="button" 
-                                    x-show="getActiveKodeBarang() && !isNamaBarang108Open" 
+                                    x-show="activeKodeBarang && !isNamaBarang108Open" 
                                     @click="isNamaBarang108Open = true; searchNamaBarang108 = ''" 
                                     class="text-xs font-bold text-rose-500 hover:text-rose-400 transition-colors flex items-center space-x-1 cursor-pointer">
                                 <span>✕ Ganti Barang</span>
@@ -215,12 +236,12 @@
                         <!-- Input Search Box -->
                         <div class="relative">
                             <input type="text" 
-                                   :value="(!isNamaBarang108Open && getActiveNamaBarang()) ? (getActiveKodeBarang() + ' - ' + getActiveNamaBarang()) : searchNamaBarang108"
-                                   @input="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
+                                   :value="(!isNamaBarang108Open && activeNamaBarang) ? (activeKodeBarang + ' - ' + activeNamaBarang) : searchNamaBarang108"
+                                   @input.debounce.150ms="searchNamaBarang108 = $event.target.value; isNamaBarang108Open = true"
                                    @focus="isNamaBarang108Open = true"
-                                   :placeholder="getActiveKodeBarang() ? (getActiveKodeBarang() + ' - ' + getActiveNamaBarang()) : 'Ketik untuk memfilter nama / kode barang 108...'" 
+                                   :placeholder="activeKodeBarang ? (activeKodeBarang + ' - ' + activeNamaBarang) : 'Ketik nama / kode barang untuk mencari...'" 
                                    class="w-full bg-slate-950/90 border rounded-2xl px-4 py-3 pl-10 text-xs font-bold transition-all shadow-inner"
-                                   :class="getActiveKodeBarang() && !isNamaBarang108Open ? 'border-purple-500/60 text-purple-200' : 'border-purple-500/40 text-white focus:border-purple-400'">
+                                   :class="activeKodeBarang && !isNamaBarang108Open ? 'border-purple-500/60 text-purple-200' : 'border-purple-500/40 text-white focus:border-purple-400'">
                             <svg class="w-4 h-4 text-purple-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         </div>
 
@@ -229,7 +250,7 @@
                             <template x-for="item in filteredSubSubRincian108" :key="item.kode">
                                 <div @click="selectSubSubRincianItem(item)"
                                      class="p-3 rounded-2xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
-                                     :class="item.kode === getActiveKodeBarang() ? 'border-purple-500 bg-purple-950/40 shadow-lg' : 'border-slate-800 hover:border-purple-500/50'">
+                                     :class="item.kode === activeKodeBarang ? 'border-purple-500 bg-purple-950/40 shadow-lg' : 'border-slate-800 hover:border-purple-500/50'">
                                     <div class="min-w-0 pr-3">
                                         <h4 class="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate" x-text="item.kode + ' - ' + item.nama"></h4>
                                         <p class="text-[10px] text-slate-400 truncate" x-text="'SUB-SUB RINCIAN 108 • Kode Barang PMDN 108'"></p>
@@ -237,12 +258,12 @@
                                     <button type="button" 
                                             @click.stop="selectSubSubRincianItem(item)" 
                                             class="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1"
-                                            :class="item.kode === getActiveKodeBarang() ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500 hover:text-slate-950'">
-                                        <span x-text="item.kode === getActiveKodeBarang() ? '✓ Terpilih' : 'Pilih →'"></span>
+                                            :class="item.kode === activeKodeBarang ? 'bg-purple-500 text-slate-950 shadow-lg shadow-purple-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500 hover:text-slate-950'">
+                                        <span x-text="item.kode === activeKodeBarang ? '✓ Terpilih' : 'Pilih →'"></span>
                                     </button>
                                 </div>
                             </template>
-                            <template x-if="filteredSubSubRincian108.length === 0">
+                            <template x-if="isNamaBarang108Open && filteredSubSubRincian108.length === 0">
                                 <div class="p-3 text-center text-xs text-slate-400 italic">
                                     Tidak ada nama barang 108 yang cocok.
                                 </div>
