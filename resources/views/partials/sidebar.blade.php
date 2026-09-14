@@ -26,7 +26,9 @@
             <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD"
                 class="w-9 h-9 object-contain drop-shadow transition-transform duration-200 group-hover:scale-105">
             <div>
-                <h2 class="font-extrabold text-white text-base tracking-tight transition-colors duration-200 group-hover:text-emerald-400">SIMAT-RK</h2>
+                <h2
+                    class="font-extrabold text-white text-base tracking-tight transition-colors duration-200 group-hover:text-emerald-400">
+                    SIMAT-RK</h2>
                 <p class="text-[10px] text-emerald-400 font-semibold leading-tight">RSUD Dr. H. Koesnandi</p>
             </div>
         </a>
@@ -126,6 +128,7 @@
                     </svg>
                     <span>Unit & Paviliun</span>
                 </a>
+
             </div>
         </div>
 
@@ -182,8 +185,8 @@
 
     <!-- Sidebar Footer / Account Info -->
     <div class="p-4 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between shrink-0">
-        @if(($role ?? '') === 'sub_admin')
-            <a href="{{ route('subadmin.profile') }}" 
+        @if (($role ?? '') === 'sub_admin')
+            <a href="{{ route('subadmin.profile') }}"
                 class="flex items-center space-x-2.5 overflow-hidden w-full text-left p-2 rounded-xl hover:bg-slate-900/80 transition-all cursor-pointer group focus:outline-none focus:ring-0 focus-visible:outline-none outline-none border-none shadow-none {{ request()->routeIs('subadmin.profile') ? 'bg-slate-900/80' : '' }}"
                 title="Buka halaman ubah email dan password akun ruangan Anda">
                 <div
@@ -191,9 +194,14 @@
                     {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
                 </div>
                 <div class="truncate flex-1 min-w-0">
-                    <p class="text-xs font-bold text-white truncate group-hover:text-emerald-300 transition-colors flex items-center justify-between">
+                    <p
+                        class="text-xs font-bold text-white truncate group-hover:text-emerald-300 transition-colors flex items-center justify-between">
                         <span class="truncate">{{ Auth::user()->name ?? 'Pengguna' }}</span>
-                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 ml-1 shrink-0 opacity-70 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                        <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400 ml-1 shrink-0 opacity-70 group-hover:opacity-100"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
                     </p>
                     <p class="text-[10px] text-emerald-400 font-medium capitalize flex items-center space-x-1">
                         <span>{{ str_replace('_', ' ', $role) }}</span>
@@ -209,7 +217,8 @@
                 </div>
                 <div class="truncate">
                     <p class="text-xs font-bold text-white truncate">{{ Auth::user()->name ?? 'Pengguna' }}</p>
-                    <p class="text-[10px] text-emerald-400 font-medium capitalize">{{ str_replace('_', ' ', $role) }}</p>
+                    <p class="text-[10px] text-emerald-400 font-medium capitalize">{{ str_replace('_', ' ', $role) }}
+                    </p>
                 </div>
             </div>
         @endif
