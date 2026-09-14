@@ -37,6 +37,12 @@ class AstapBastTriwulan extends Model
         'signed'       => 'boolean',
     ];
 
+    protected $attributes = [
+        'lokasi' => 'Rumah Sakit Umum Daerah dr. H. Koesnandi Kabupaten Bondowoso',
+        'status' => 'draft',
+        'signed' => false,
+    ];
+
     public function setTanggalBastAttribute($value)
     {
         $this->attributes['tanggal_bast'] = Astap::parseDateInput($value);

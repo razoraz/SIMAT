@@ -60,8 +60,9 @@
         </div>
     </div>
 
-    <a href="{{ route('pemeliharaan.index') }}" 
-        class="mt-4 block text-center w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all shadow-sm">
+    <button type="button" 
+        onclick="alert('Fitur Riwayat & Log Pemeliharaan sedang dalam tahap pengembangan.')"
+        class="mt-4 block text-center w-full py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-slate-300 font-bold text-xs border border-slate-700/60 transition-all shadow-sm cursor-pointer">
         Lihat Seluruh Log Pemeliharaan &rarr;
-    </a>
+    </button>
 </div>

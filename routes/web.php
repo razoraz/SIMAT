@@ -672,10 +672,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/lembar-kir-ruangan', [UnitController::class, 'kir'])->name('kir.index');
     Route::patch('/lembar-kir-ruangan/kondisi/{id}', [UnitController::class, 'updateKondisi'])->name('kir.update_kondisi');
 
-    // 6. Pemeliharaan Index (Read-only for Sub Admin, full for Admin)
-    Route::get('/pemeliharaan', function () {
-        return view('pages.pemeliharaan');
-    })->name('pemeliharaan.index');
+    // 6. Pemeliharaan Index (Dinonaktifkan sementara karena masih dalam pengembangan)
+    // Route::get('/pemeliharaan', function () {
+    //     return view('pages.pemeliharaan');
+    // })->name('pemeliharaan.index');
 
     // 7. API Notifikasi Sistem
     Route::post('/api/notifications/mark-all-read', function () {
@@ -3550,32 +3550,32 @@ Route::middleware('auth')->group(function () {
         Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit');
         Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update');
         Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy');
+
+        // Master Data Users CRUD Routes (Hanya Master Admin & Admin Operasional)
+        Route::get('/master-data/users', [UserController::class, 'index'])->name('master.users');
+        Route::post('/master-data/users', [UserController::class, 'store'])->name('master.users.store');
+        Route::put('/master-data/users/{id}', [UserController::class, 'update'])->name('master.users.update');
+        Route::delete('/master-data/users/{id}', [UserController::class, 'destroy'])->name('master.users.destroy');
+        Route::post('/master-data/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('master.users.reset_password');
+
+        Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
+        Route::post('/master-data/jenis-astap', [JenisAstapController::class, 'store'])->name('master.jenis_astap.store');
+        Route::post('/master-data/jenis-astap/import', [JenisAstapController::class, 'import'])->name('master.jenis_astap.import');
+        Route::get('/master-data/jenis-astap/download-template', [JenisAstapController::class, 'downloadTemplate'])->name('master.jenis_astap.template');
+        Route::put('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'update'])->name('master.jenis_astap.update');
+        Route::delete('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'destroy'])->name('master.jenis_astap.destroy');
+
+        // Master Data Jenis Pengadaan (SIPD)
+        Route::get('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'index'])->name('master.jenis_pengadaan');
+        Route::post('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'store'])->name('master.jenis_pengadaan.store');
+        Route::put('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'update'])->name('master.jenis_pengadaan.update');
+        Route::delete('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'destroy'])->name('master.jenis_pengadaan.destroy');
+
+        // Master Data Rekening Belanja (SIPD)
+        Route::get('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'index'])->name('master.rekening_belanja');
+        Route::post('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'store'])->name('master.rekening_belanja.store');
+        Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
+        Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
     });
-
-    // Master Data Users CRUD Routes
-    Route::get('/master-data/users', [UserController::class, 'index'])->name('master.users');
-    Route::post('/master-data/users', [UserController::class, 'store'])->name('master.users.store');
-    Route::put('/master-data/users/{id}', [UserController::class, 'update'])->name('master.users.update');
-    Route::delete('/master-data/users/{id}', [UserController::class, 'destroy'])->name('master.users.destroy');
-    Route::post('/master-data/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('master.users.reset_password');
-
-    Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
-    Route::post('/master-data/jenis-astap', [JenisAstapController::class, 'store'])->name('master.jenis_astap.store');
-    Route::post('/master-data/jenis-astap/import', [JenisAstapController::class, 'import'])->name('master.jenis_astap.import');
-    Route::get('/master-data/jenis-astap/download-template', [JenisAstapController::class, 'downloadTemplate'])->name('master.jenis_astap.template');
-    Route::put('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'update'])->name('master.jenis_astap.update');
-    Route::delete('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'destroy'])->name('master.jenis_astap.destroy');
-
-    // Master Data Jenis Pengadaan (SIPD)
-    Route::get('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'index'])->name('master.jenis_pengadaan');
-    Route::post('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'store'])->name('master.jenis_pengadaan.store');
-    Route::put('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'update'])->name('master.jenis_pengadaan.update');
-    Route::delete('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'destroy'])->name('master.jenis_pengadaan.destroy');
-
-    // Master Data Rekening Belanja (SIPD)
-    Route::get('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'index'])->name('master.rekening_belanja');
-    Route::post('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'store'])->name('master.rekening_belanja.store');
-    Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
-    Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
 });
 
