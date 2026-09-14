@@ -371,6 +371,31 @@
         }
     }
 
+    function resolveItemCategory(item) {
+        if (!item) return 'KIB B';
+        const isExtracom = !!item.is_extracomtable || (item.category && item.category.toUpperCase() === 'EXTRACOM');
+        if (isExtracom) return 'EXTRACOM';
+        if (item.category) {
+            const cUpper = item.category.toUpperCase().trim();
+            if (cUpper === 'KIB A' || cUpper === 'A') return 'KIB A';
+            if (cUpper === 'KIB B' || cUpper === 'B') return 'KIB B';
+            if (cUpper === 'KIB C' || cUpper === 'C') return 'KIB C';
+            if (cUpper === 'KIB D' || cUpper === 'D') return 'KIB D';
+            if (cUpper === 'KIB E' || cUpper === 'E') return 'KIB E';
+            if (cUpper === 'KIB F' || cUpper === 'F') return 'KIB F';
+            if (cUpper === 'ATB') return 'ATB';
+            if (cUpper === 'EXTRACOM') return 'EXTRACOM';
+        }
+        const kode = item.jenis_aset_kode || item.kode_barang || '';
+        if (kode.startsWith('1.3.1')) return 'KIB A';
+        if (kode.startsWith('1.3.3')) return 'KIB C';
+        if (kode.startsWith('1.3.4')) return 'KIB D';
+        if (kode.startsWith('1.3.5')) return 'KIB E';
+        if (kode.startsWith('1.3.6')) return 'KIB F';
+        if (kode.startsWith('1.5.3')) return 'ATB';
+        return 'KIB B';
+    }
+
     let isExportingAstap = false;
     function exportAstapToExcel(params = {}) {
         if (isExportingAstap) return;
@@ -389,7 +414,7 @@
         const filterTw = params.triwulan || 'all';
         const filterCat = params.category || 'all';
 
-        // Filter data berdasarkan Tahun dan Triwulan yang dipilih
+        // Filter data berdasarkan Tahun, Triwulan, dan Klasifikasi KIB
         let filteredAstaps = rawAstaps.filter(item => {
             const matchYear = filterYear === 'all' || String(item.tahun_perolehan) === String(filterYear);
             
@@ -404,7 +429,8 @@
                           (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
             }
 
-            const matchCategory = filterCat === 'all' || item.category === filterCat;
+            const itemCat = resolveItemCategory(item);
+            const matchCategory = (filterCat === 'all' || filterCat === 'REKAP') || (itemCat === filterCat);
             return matchYear && matchTw && matchCategory;
         });
 
@@ -421,9 +447,7 @@
         };
 
         filteredAstaps.forEach(item => {
-            const isExtracom = !!item.is_extracomtable || (item.category === 'EXTRACOM');
-            const cat = isExtracom ? 'EXTRACOM' : (item.category || (item.jenis_aset_kode === '1.3.1' ? 'KIB A' : (item.jenis_aset_kode === '1.3.3' ? 'KIB C' : (item.jenis_aset_kode === '1.3.4' ? 'KIB D' : (item.jenis_aset_kode === '1.3.5' ? 'KIB E' : (item.jenis_aset_kode === '1.3.6' ? 'KIB F' : (item.jenis_aset_kode === '1.5.3' ? 'ATB' : 'KIB B')))))));
-
+            const cat = resolveItemCategory(item);
             if (categories[cat]) {
                 categories[cat].push(item);
             } else {
@@ -666,7 +690,9 @@
         ];
 
         applyRekapSheetStyling(wsRekap, rekapData.length, 9, 5, 14, 16);
-        XLSX.utils.book_append_sheet(wb, wsRekap, "1. Rekapitulasi");
+        if (filterCat === 'all' || filterCat === 'REKAP') {
+            XLSX.utils.book_append_sheet(wb, wsRekap, filterCat === 'all' ? "1. Rekapitulasi" : "Rekapitulasi Realisasi");
+        }
 
         // HELPER FUNGSI UNTUK MENGAMBIL DATA LANGKAH 1 & LANGKAH 2 (KOLOM 1-15)
         function getCommonColumns(item, idx) {
@@ -1195,7 +1221,9 @@
         ], 49, kibATitleRows.length, kibARows.length);
         // ─────────────────────────────────────────────────────────────────────────
         applyUnified4StepMasterSheetStyling(wsKibA, kibARows.length, 49, 25, kibATitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsKibA, "2. A");
+        if (filterCat === 'all' || filterCat === 'KIB A') {
+            XLSX.utils.book_append_sheet(wb, wsKibA, filterCat === 'all' ? "2. A" : "KIB A - Tanah");
+        }
 
         // ------------------------------------------------------------------------
         // ------------------------------------------------------------------------
@@ -1628,7 +1656,9 @@
         ], 54, kibBTitleRows.length, kibBRows.length);
 
         applyUnified4StepMasterSheetStyling(wsKibB, kibBRows.length, 54, 31, kibBTitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsKibB, "3. B");
+        if (filterCat === 'all' || filterCat === 'KIB B') {
+            XLSX.utils.book_append_sheet(wb, wsKibB, filterCat === 'all' ? "3. B" : "KIB B - Peralatan & Mesin");
+        }
 
         // ------------------------------------------------------------------------
         // 4. KIB C (GEDUNG DAN BANGUNAN) - COMPLETE 4-STEP MASTER SHEET (55 KOLOM)
@@ -2093,7 +2123,9 @@
         ], 55, kibCTitleRows.length, kibCRows.length);
 
         applyUnified4StepMasterSheetStyling(wsKibC, kibCRows.length, 55, 30, kibCTitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsKibC, "4. C");
+        if (filterCat === 'all' || filterCat === 'KIB C') {
+            XLSX.utils.book_append_sheet(wb, wsKibC, filterCat === 'all' ? "4. C" : "KIB C - Gedung & Bangunan");
+        }
 
         // ------------------------------------------------------------------------
         // 5. KIB D (JALAN, IRIGASI DAN JARINGAN) - COMPLETE 4-STEP MASTER SHEET (54 KOLOM)
@@ -2463,7 +2495,9 @@
         ], 54, kibDTitleRows.length, kibDRows.length);
 
         applyUnified4StepMasterSheetStyling(wsKibD, kibDRows.length, 54, 30, kibDTitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsKibD, "5. D");
+        if (filterCat === 'all' || filterCat === 'KIB D') {
+            XLSX.utils.book_append_sheet(wb, wsKibD, filterCat === 'all' ? "5. D" : "KIB D - Jalan & Jaringan");
+        }
 
         // ------------------------------------------------------------------------
         // 6. KIB E (ASET TETAP LAINNYA) - COMPLETE 4-STEP MASTER SHEET
@@ -2910,7 +2944,9 @@
         ], 53, kibETitleRows.length, kibERows.length);
 
         applyUnified4StepMasterSheetStyling(wsKibE, kibERows.length, 53, 29, kibETitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsKibE, "6. E");
+        if (filterCat === 'all' || filterCat === 'KIB E') {
+            XLSX.utils.book_append_sheet(wb, wsKibE, filterCat === 'all' ? "6. E" : "KIB E - Aset Tetap Lainnya");
+        }
 
         // ------------------------------------------------------------------------
         // 7. KIB F (KONSTRUKSI DALAM PENGERJAAN) - COMPLETE 4-STEP MASTER SHEET (55 KOLOM)
@@ -3271,7 +3307,9 @@
         ], 55, kibFTitleRows.length, kibFRows.length);
 
         applyUnified4StepMasterSheetStyling(wsKibF, kibFRows.length, 55, 31, kibFTitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsKibF, "7. F");
+        if (filterCat === 'all' || filterCat === 'KIB F') {
+            XLSX.utils.book_append_sheet(wb, wsKibF, filterCat === 'all' ? "7. F" : "KIB F - Konstruksi KDP");
+        }
 
         // ------------------------------------------------------------------------
         // 8. ATB (ASET TIDAK BERWUJUD) - COMPLETE 4-STEP MASTER SHEET (47 KOLOM)
@@ -3607,7 +3645,9 @@
         ], 47, atbTitleRows.length, atbRows.length);
 
         applyUnified4StepMasterSheetStyling(wsAtb, atbRows.length, 47, 22, atbTitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsAtb, "8. ATB");
+        if (filterCat === 'all' || filterCat === 'ATB') {
+            XLSX.utils.book_append_sheet(wb, wsAtb, filterCat === 'all' ? "8. ATB" : "ATB - Aset Tidak Berwujud");
+        }
 
         // ------------------------------------------------------------------------
         // 9. EXTRACOM (EKSTRAKOMTABEL) - COMPLETE 4-STEP MASTER SHEET (54 KOLOM)
@@ -4030,11 +4070,31 @@
         ], 51, extracomTitleRows.length, extracomRows.length);
 
         applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 51, 27, extracomTitleRows.length);
-        XLSX.utils.book_append_sheet(wb, wsExtracom, "9. Extracom");
+        if (filterCat === 'all' || filterCat === 'EXTRACOM') {
+            XLSX.utils.book_append_sheet(wb, wsExtracom, filterCat === 'all' ? "9. Extracom" : "Extracom");
+        }
 
-        // DOWNLOAD FILE EXCEL 4 LANGKAH
+        // Pastikan ada lembar sheet yang dimasukkan ke workbook
+        if (!wb.SheetNames || wb.SheetNames.length === 0) {
+            alert('⚠️ Tidak ada lembar sheet yang dipilih atau data tidak ditemukan.');
+            isExportingAstap = false;
+            return;
+        }
+
+        // DOWNLOAD FILE EXCEL SESUAI PILIHAN KLASIFIKASI SHEET
+        let sheetSlug = 'SEMUA_KIB_9_SHEET';
+        if (filterCat === 'REKAP') sheetSlug = 'REKAPITULASI';
+        else if (filterCat === 'KIB A') sheetSlug = 'KIB_A_TANAH';
+        else if (filterCat === 'KIB B') sheetSlug = 'KIB_B_PERALATAN_MESIN';
+        else if (filterCat === 'KIB C') sheetSlug = 'KIB_C_GEDUNG_BANGUNAN';
+        else if (filterCat === 'KIB D') sheetSlug = 'KIB_D_JALAN_JARINGAN';
+        else if (filterCat === 'KIB E') sheetSlug = 'KIB_E_ASET_TETAP_LAINNYA';
+        else if (filterCat === 'KIB F') sheetSlug = 'KIB_F_KONSTRUKSI_KDP';
+        else if (filterCat === 'ATB') sheetSlug = 'ATB_ASET_TIDAK_BERWUJUD';
+        else if (filterCat === 'EXTRACOM') sheetSlug = 'EXTRACOM';
+
         const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
-        const fileName = "LAPORAN_ASTAP_RSUD_KOESNANDI_" + yearLabel + "_" + twSlug + ".xlsx";
+        const fileName = "LAPORAN_ASTAP_" + sheetSlug + "_RSUD_KOESNANDI_" + yearLabel + "_" + twSlug + ".xlsx";
         XLSX.writeFile(wb, fileName);
         setTimeout(() => { isExportingAstap = false; }, 1500);
     }
@@ -4171,7 +4231,8 @@
                                       (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
                                       (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
                         }
-                        const matchCat = fCat === 'all' || item.category === fCat;
+                        const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                        const matchCat = (fCat === 'all' || fCat === 'REKAP') || (itemCat === fCat);
                         return matchYear && matchTw && matchCat;
                     }).length;
                 },
@@ -4186,7 +4247,10 @@
                     setTimeout(() => {
                         this.isSubmittingExport = false;
                         this.showExportModal = false;
-                        this.showToast('Berhasil mengekspor Laporan ASTAP ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
+                        const catLabel = this.exportCategory === 'all'
+                            ? 'Lengkap (9 Sheet)'
+                            : (this.exportCategory === 'REKAP' ? 'Rekapitulasi Realisasi' : this.exportCategory);
+                        this.showToast('Berhasil mengekspor Laporan ASTAP ' + catLabel + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
                     }, 800);
                 },
 
@@ -5327,7 +5391,7 @@
                 },
 
                 downloadExcel() {
-                    exportAstapToExcel();
+                    this.openExportModal();
                 },
 
                 openEdit(item) {

@@ -1,4 +1,4 @@
-﻿        <!-- ========================================================================= -->
+        <!-- ========================================================================= -->
         <!-- MODAL PILIH TAHUN & TRIWULAN UNTUK EKSPOR EXCEL                           -->
         <!-- ========================================================================= -->
         <div x-show="showExportModal" x-cloak
@@ -95,6 +95,7 @@
                         <select x-model="exportCategory"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500">
                             <option value="all">Semua KIB (Buku Aset Lengkap 9 Sheet)</option>
+                            <option value="REKAP">Lembar Rekapitulasi Realisasi Saja (Sheet 1)</option>
                             <option value="KIB A">KIB A - Tanah</option>
                             <option value="KIB B">KIB B - Peralatan &amp; Mesin</option>
                             <option value="KIB C">KIB C - Gedung &amp; Bangunan</option>
