@@ -6,16 +6,30 @@
     class="fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-72 lg:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 shadow-2xl transition-all duration-300 h-screen"
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
 
+    @php
+        $user = Auth::user();
+        $role = $user->role ?? 'sub_admin';
+
+        $dashboardUrl = match ($role) {
+            'master_admin' => route('masteradmin.dashboard'),
+            'admin' => route('admin.dashboard'),
+            'sub_admin' => route('subadmin.dashboard'),
+            default => '/',
+        };
+    @endphp
+
     <!-- Sidebar Header with Mobile Close Button -->
     <div class="h-16 px-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/40 shrink-0">
-        <div class="flex items-center space-x-3">
+        <a href="{{ $dashboardUrl }}" @click="if (isMobile) sidebarOpen = false"
+            class="flex items-center space-x-3 group focus:outline-none transition-all cursor-pointer"
+            title="Kembali ke Dashboard">
             <img src="{{ asset('img/Logo-rsud/logo-rsud.png') }}" alt="Logo RSUD"
-                class="w-9 h-9 object-contain drop-shadow">
+                class="w-9 h-9 object-contain drop-shadow transition-transform duration-200 group-hover:scale-105">
             <div>
-                <h2 class="font-extrabold text-white text-base tracking-tight">SIMAT-RK</h2>
+                <h2 class="font-extrabold text-white text-base tracking-tight transition-colors duration-200 group-hover:text-emerald-400">SIMAT-RK</h2>
                 <p class="text-[10px] text-emerald-400 font-semibold leading-tight">RSUD Dr. H. Koesnandi</p>
             </div>
-        </div>
+        </a>
 
         <!-- Mobile Close Button (Hidden on Desktop) -->
         <button type="button" @click="sidebarOpen = false"
@@ -28,18 +42,6 @@
 
     <!-- Sidebar Nav -->
     <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-800">
-
-        @php
-            $user = Auth::user();
-            $role = $user->role ?? 'sub_admin';
-
-            $dashboardUrl = match ($role) {
-                'master_admin' => route('masteradmin.dashboard'),
-                'admin' => route('admin.dashboard'),
-                'sub_admin' => route('subadmin.dashboard'),
-                default => '/',
-            };
-        @endphp
 
         <!-- Section 1: Master Utama -->
         <div>
