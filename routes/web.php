@@ -3370,6 +3370,9 @@ Route::middleware('auth')->group(function () {
 
         // Route Update & Delete Register ASTAP (NIBAR Per-Unit)
         Route::put('/astap-register/{id}', function (\Illuminate\Http\Request $request, $id) {
+            if (!in_array(auth()->user()->role ?? '', ['master_admin', 'admin'])) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk mengubah register ASTAP.'], 403);
+            }
             $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
             if (!$reg) {
                 return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
@@ -3428,6 +3431,9 @@ Route::middleware('auth')->group(function () {
         })->name('astap_register.update');
 
         Route::delete('/astap-register/{id}', function ($id) {
+            if (!in_array(auth()->user()->role ?? '', ['master_admin', 'admin'])) {
+                return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk menghapus register ASTAP.'], 403);
+            }
             $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
             if ($reg) {
                 $astap = $reg->astap;

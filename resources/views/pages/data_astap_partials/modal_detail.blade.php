@@ -953,12 +953,13 @@
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <div class="flex items-center justify-center space-x-1.5">
-                                                        <!-- 1. Tombol Cek Riwayat Aset -->
+                                                        <!-- 1. Tombol Cek Riwayat Aset (Mutasi) -->
                                                         <button type="button" @click.stop="openRiwayatModal(reg)" title="Cek Riwayat Mutasi Aset Ini"
                                                                 class="p-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:text-purple-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                         </button>
 
+                                                        @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                                         <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) -->
                                                         <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Aset Ini"
                                                                 class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer">
@@ -970,6 +971,7 @@
                                                                 class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer">
                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                         </button>
+                                                        @endif
                                                     </div>
                                                 </td>
                                             </tr>
