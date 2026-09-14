@@ -39,7 +39,7 @@
                         ✏️ Live Edit Surat BAST Mutasi (Otomatis Berubah Pada Lembar Cetak):
                     </div>
                     <template x-if="selectedMutasi">
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1">Nomor BAST Mutasi</label>
                                 <input type="text" x-model="selectedMutasi.nomor_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-purple-300 font-mono font-bold text-xs">
@@ -51,6 +51,10 @@
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1">Tanggal Surat</label>
                                 <input type="text" x-model="selectedMutasi.tgl_bast" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1">Jenis Mutasi</label>
+                                <input type="text" x-model="selectedMutasi.jenis_mutasi" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white text-xs">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800/60">
@@ -125,6 +129,11 @@
                                         <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Ruangan Tujuan</td>
                                         <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
                                         <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase text-purple-900" x-text="selectedMutasi.tujuan"></td>
+                                    </tr>
+                                    <tr style="border: none !important;">
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">Jenis Mutasi</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;">:</td>
+                                        <td style="border: none !important; vertical-align: top; padding: 1.5px 0;" class="font-bold uppercase" x-text="selectedMutasi.jenis_mutasi || selectedMutasi.jenis || 'Mutasi Antar Ruangan'"></td>
                                     </tr>
                                 </table>
                             </div>

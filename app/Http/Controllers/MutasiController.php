@@ -161,6 +161,7 @@ class MutasiController extends Controller
                 'kode'                    => $m->nomor_bamb,
                 'bast_nomor'              => $m->nomor_bamb,
                 'jenis'                   => $m->jenis_mutasi,
+                'jenis_mutasi'            => $m->jenis_mutasi,
                 'nama'                    => $itemSummary,
                 'item_count'              => $itemCount,
                 'items'                   => $itemsMapped,

@@ -38,7 +38,7 @@
                         </div>
 
                         <!-- Data Informasi Mutasi Ruangan -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1">
                                 <span class="text-[10px] text-slate-400 font-bold uppercase block">Ruangan Asal</span>
                                 <div class="font-extrabold text-white text-sm" x-text="selectedDetailMutasi.asal"></div>
@@ -49,6 +49,12 @@
                                 <span class="text-[10px] text-rose-400 font-bold uppercase block">Ruangan Tujuan</span>
                                 <div class="font-extrabold text-rose-300 text-sm" x-text="selectedDetailMutasi.tujuan"></div>
                                 <div class="text-[11px] text-emerald-300" x-text="'PJ: ' + selectedDetailMutasi.pj_tujuan_nama"></div>
+                            </div>
+
+                            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1">
+                                <span class="text-[10px] text-cyan-400 font-bold uppercase block">Jenis Mutasi</span>
+                                <div class="font-extrabold text-cyan-300 text-sm" x-text="selectedDetailMutasi.jenis_mutasi || selectedDetailMutasi.jenis || 'Mutasi'"></div>
+                                <div class="text-[11px] text-slate-400" x-text="'Alasan: ' + (selectedDetailMutasi.keterangan || '-')"></div>
                             </div>
                         </div>
 
