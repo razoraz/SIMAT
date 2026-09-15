@@ -23,6 +23,7 @@
                         <!-- Toggle Button TTD / Batalkan TTD -->
                         <button type="button" @click="toggleSignTriwulan(selectedTriwulanKey)"
                             :class="currentTriwulanDoc.pihak2_signed ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30' : 'bg-emerald-500 text-slate-950 font-extrabold shadow-md'"
+                            :title="currentTriwulanDoc.pihak2_signed ? 'Batalkan Tanda Tangan Digital BSrE' : 'Tanda Tangan Digital BSrE'"
                             class="px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all active:scale-95">
                             <span x-text="currentTriwulanDoc.pihak2_signed ? '↩️ Batalkan TTD BSrE' : '✍️ TTD BSrE'"></span>
                         </button>

@@ -588,29 +588,44 @@ class BeritaAcaraController extends Controller
     }
 
     /**
-     * Tanda Tangan Digital BSrE Dokumen BAST Triwulan
+     * Tanda Tangan Digital BSrE Dokumen BAST Triwulan (Toggle TTD & Batalkan TTD)
      */
     public function signTriwulan(Request $request, $key)
     {
         $tahun = $request->input('tahun', '2026');
         $doc = AstapBastTriwulan::firstOrCreate(['tahun' => $tahun, 'triwulan' => $key]);
 
-        $timeStr = date('d/m/Y H:i') . ' WIB';
-        $qrHash = 'BSRE-KOESNANDI-BAST-' . $key . '-' . $tahun . '-' . rand(1000, 9999);
+        // Tentukan status tanda tangan: jika dikirim di request gunakan itu, jika tidak toggle nilai saat ini
+        $newSigned = $request->has('signed')
+            ? filter_var($request->input('signed'), FILTER_VALIDATE_BOOLEAN)
+            : !$doc->signed;
+
+        if ($newSigned) {
+            $timeStr = date('d/m/Y H:i') . ' WIB';
+            $qrHash = 'BSRE-KOESNANDI-BAST-' . $key . '-' . $tahun . '-' . rand(1000, 9999);
+            $status = 'Telah Ditandatangani BSrE';
+            $message = 'Dokumen BAST ' . $key . ' Tahun ' . $tahun . ' berhasil ditandatangani secara elektronik (BSrE)!';
+        } else {
+            $timeStr = '-';
+            $qrHash = '';
+            $status = 'Draft';
+            $message = 'Tanda tangan digital BSrE Dokumen BAST ' . $key . ' Tahun ' . $tahun . ' berhasil dibatalkan.';
+        }
 
         $doc->update([
-            'signed'     => true,
-            'status'     => 'Telah Ditandatangani BSrE',
-            'tgl_signed' => $timeStr,
-            'qr_hash'    => $qrHash,
+            'signed'     => $newSigned,
+            'status'     => $status,
+            'tgl_signed' => $newSigned ? $timeStr : null,
+            'qr_hash'    => $newSigned ? $qrHash : null,
         ]);
 
         return response()->json([
             'success'    => true,
-            'message'    => 'Dokumen BAST ' . $key . ' berhasil ditandatangani secara elektronik (BSrE)!',
+            'signed'     => $newSigned,
             'tgl_signed' => $timeStr,
             'qr_hash'    => $qrHash,
-            'status'     => 'Telah Ditandatangani BSrE'
+            'status'     => $status,
+            'message'    => $message
         ]);
     }
 

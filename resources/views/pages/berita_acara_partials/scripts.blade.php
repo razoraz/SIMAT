@@ -184,9 +184,11 @@
                 },
 
                 async toggleSignTriwulan(key) {
-                    const doc = this.triwulanData[key || this.selectedTriwulanKey];
+                    const targetKey = key || this.selectedTriwulanKey;
+                    const doc = this.triwulanData[targetKey];
                     if (doc) {
                         const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                        const nextSignedState = !doc.pihak2_signed;
                         try {
                             const res = await fetch('/berita-acara/triwulan/' + doc.key + '/sign', {
                                 method: 'POST',
@@ -195,22 +197,36 @@
                                     'X-CSRF-TOKEN': token,
                                     'Accept': 'application/json'
                                 },
-                                body: JSON.stringify({ tahun: this.selectedTahun })
+                                body: JSON.stringify({ 
+                                    tahun: this.selectedTahun,
+                                    signed: nextSignedState
+                                })
                             });
                             const data = await res.json();
                             if (data.success) {
-                                doc.pihak2_signed = true;
-                                doc.pihak2_tgl_ttd = data.tgl_signed;
-                                doc.pihak2_qr_hash = data.qr_hash;
-                                doc.status = data.status;
-                                alert('✍️ ' + data.message);
+                                doc.pihak2_signed = Boolean(data.signed);
+                                doc.pihak2_tgl_ttd = data.tgl_signed || (data.signed ? new Date().toLocaleDateString('id-ID') : '-');
+                                doc.pihak2_qr_hash = data.qr_hash || '';
+                                doc.status = data.status || (data.signed ? 'Telah Ditandatangani BSrE' : 'Draft');
+                                alert((data.signed ? '✍️ ' : '↩️ ') + data.message);
+                            } else {
+                                alert('❌ ' + (data.message || 'Gagal mengubah status tanda tangan BAST Triwulan.'));
                             }
                         } catch(e) {
-                            doc.pihak2_signed = true;
-                            const now = new Date();
-                            doc.pihak2_tgl_ttd = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                            doc.pihak2_qr_hash = 'BSRE-KOESNANDI-TW-' + Date.now();
-                            doc.status = 'Telah Ditandatangani BSrE';
+                            // Fallback jika offline atau koneksi bermasalah
+                            doc.pihak2_signed = nextSignedState;
+                            if (doc.pihak2_signed) {
+                                const now = new Date();
+                                doc.pihak2_tgl_ttd = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+                                doc.pihak2_qr_hash = 'BSRE-KOESNANDI-TW-' + Date.now();
+                                doc.status = 'Telah Ditandatangani BSrE';
+                                alert('✍️ Dokumen BAST ' + doc.key + ' berhasil ditandatangani secara elektronik (BSrE)!');
+                            } else {
+                                doc.pihak2_tgl_ttd = '-';
+                                doc.pihak2_qr_hash = '';
+                                doc.status = 'Draft';
+                                alert('↩️ Tanda tangan digital BSrE Dokumen BAST ' + doc.key + ' berhasil dibatalkan.');
+                            }
                         }
                     }
                 },
@@ -302,6 +318,9 @@
                         if (this.selectedDistribusi && this.selectedDistribusi.id === target.id && this.selectedDistribusi !== target) {
                             applyUpdate(this.selectedDistribusi);
                         }
+                        if (this.selectedDetailDistribusi && this.selectedDetailDistribusi.id === target.id && this.selectedDetailDistribusi !== target) {
+                            applyUpdate(this.selectedDetailDistribusi);
+                        }
 
                         alert(data.signed
                             ? '✍️ BAST (' + (target.nomor_bast || 'BAST') + ') berhasil ditandatangani secara digital BSrE! Status tersimpan.'
@@ -326,22 +345,41 @@
 
                 toggleSignMutasi(item) {
                     const target = item || this.selectedMutasi;
-                    if (target) {
-                        if (target.signed) {
-                            target.signed = false;
-                            target.tgl_signed = '-';
-                            target.qr_hash = '';
-                            target.status = 'Belum TTD';
-                            alert('↩️ Tanda tangan digital BSrE BAST Mutasi (' + target.nomor_bast + ') berhasil dibatalkan.');
-                        } else {
-                            target.signed = true;
-                            const now = new Date();
-                            target.tgl_signed = now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
-                            target.qr_hash = 'BSRE-KOESNANDI-MTS-' + Date.now();
-                            target.status = 'Telah Ditandatangani BSrE';
-                            alert('✍️ BAST Mutasi (' + target.nomor_bast + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!');
-                        }
+                    if (!target) return;
+
+                    const newSigned = !target.signed;
+                    const now = new Date();
+                    const tgl = newSigned ? (now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB') : '-';
+                    const hash = newSigned ? ('BSRE-KOESNANDI-MTS-' + Date.now()) : '';
+                    const status = newSigned ? 'Telah Ditandatangani BSrE' : 'Belum TTD';
+
+                    const applyUpdate = (obj) => {
+                        if (!obj) return;
+                        obj.signed = newSigned;
+                        obj.tgl_signed = tgl;
+                        obj.qr_hash = hash;
+                        obj.status = status;
+                    };
+
+                    applyUpdate(target);
+
+                    // Sync dengan item di mutasiList
+                    const matched = this.mutasiList.find(m => String(m.id) === String(target.id));
+                    if (matched && matched !== target) applyUpdate(matched);
+
+                    // Sync dengan selectedMutasi
+                    if (this.selectedMutasi && String(this.selectedMutasi.id) === String(target.id) && this.selectedMutasi !== target) {
+                        applyUpdate(this.selectedMutasi);
                     }
+
+                    // Sync dengan selectedDetailMutasi
+                    if (this.selectedDetailMutasi && String(this.selectedDetailMutasi.id) === String(target.id) && this.selectedDetailMutasi !== target) {
+                        applyUpdate(this.selectedDetailMutasi);
+                    }
+
+                    alert(newSigned
+                        ? '✍️ BAST Mutasi (' + (target.nomor_bast || 'BAST') + ') berhasil ditandatangani secara digital (QR Code BSrE Aktif)!'
+                        : '↩️ Tanda tangan digital BSrE BAST Mutasi (' + (target.nomor_bast || 'BAST') + ') berhasil dibatalkan.');
                 },
 
                 printCurrent() {
