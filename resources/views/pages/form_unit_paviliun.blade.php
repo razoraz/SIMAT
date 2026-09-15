@@ -11,7 +11,6 @@
         formData: {
             kode_unit: '{{ $unit->kode_unit ?? ($nextKode ?? "UNIT-056") }}',
             nama: '{{ $unit->nama ?? "" }}',
-            tipe: '{{ $unit->tipe ?? "Rawat Inap & Paviliun" }}',
             kepala: '{{ $unit->kepala ?? "" }}',
             nip: '{{ $unit->nip ?? "" }}',
             email: '{{ $unit->email ?? "" }}'
@@ -22,7 +21,6 @@
                 this.formData = {
                     kode_unit: '{{ $nextKode ?? "UNIT-056" }}',
                     nama: '',
-                    tipe: 'Rawat Inap & Paviliun',
                     kepala: '',
                     nip: '',
                     email: ''
@@ -157,29 +155,17 @@
         <!-- Form Card Utama -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl w-full space-y-5">
             
-            <!-- Baris 1: Kode Unit & Tipe Klasifikasi -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-slate-300 font-semibold text-xs">Kode Identitas Unit / Paviliun</label>
-                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30">Otomatis UNIT-XXX</span>
-                    </div>
-                    <div class="relative">
-                        <input type="text" x-model="formData.kode_unit" readonly class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-xs text-blue-400 font-mono font-extrabold focus:outline-none cursor-not-allowed select-all" placeholder="UNIT-001">
-                        <span class="absolute right-3.5 top-3 text-[10px] text-slate-500 font-medium">3 Digit Nomor Urut</span>
-                    </div>
-                    <p class="text-[10px] text-slate-500 mt-1">Dibuat otomatis dengan format <code class="text-blue-400 font-mono">UNIT-(3 digit angka)</code> sesuai urutan database.</p>
+            <!-- Baris 1: Kode Unit -->
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-slate-300 font-semibold text-xs">Kode Identitas Unit / Paviliun</label>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30">Otomatis UNIT-XXX</span>
                 </div>
-                <div>
-                    <label class="block text-slate-300 font-semibold text-xs mb-1.5">Tipe Klasifikasi Ruangan</label>
-                    <select x-model="formData.tipe" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white font-bold focus:outline-none focus:border-blue-500">
-                        <option value="Rawat Inap & Paviliun">Rawat Inap & Paviliun</option>
-                        <option value="Pelayanan Kritis & Tindakan Medis">Pelayanan Kritis & Tindakan Medis</option>
-                        <option value="Penunjang Medis & Fasilitas">Penunjang Medis & Fasilitas</option>
-                        <option value="Pelayanan Umum & Operasional">Pelayanan Umum & Operasional</option>
-                        <option value="Manajemen & Struktural">Manajemen & Struktural</option>
-                    </select>
+                <div class="relative">
+                    <input type="text" x-model="formData.kode_unit" readonly class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-3 text-xs text-blue-400 font-mono font-extrabold focus:outline-none cursor-not-allowed select-all" placeholder="UNIT-001">
+                    <span class="absolute right-3.5 top-3 text-[10px] text-slate-500 font-medium">3 Digit Nomor Urut</span>
                 </div>
+                <p class="text-[10px] text-slate-500 mt-1">Dibuat otomatis dengan format <code class="text-blue-400 font-mono">UNIT-(3 digit angka)</code> sesuai urutan database.</p>
             </div>
 
             <!-- Baris 2: Nama Unit -->

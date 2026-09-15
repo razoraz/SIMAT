@@ -455,7 +455,7 @@ Route::middleware('auth')->group(function () {
                 ];
             });
         return view('pages.data_astap', compact('astaps'));
-    })->name('astap.index');
+    })->name('astap.index')->middleware('module:astap');
 
     // API: Ambil riwayat mutasi spesifik unit register NIBAR
     Route::get('/astap/register-mutasi/{id}', function ($id) {
@@ -494,14 +494,16 @@ Route::middleware('auth')->group(function () {
     });
 
     // 2. Distribusi Pages & Forms
-    Route::get('/distribusi', [DistribusiController::class, 'index'])->name('distribusi.index');
-    Route::get('/distribusi/create', [DistribusiController::class, 'create'])->name('distribusi.create');
-    Route::get('/distribusi/next-bast', [DistribusiController::class, 'getNextBast'])->name('distribusi.next-bast');
-    Route::get('/distribusi/{id}/edit', [DistribusiController::class, 'edit'])->name('distribusi.edit');
-    Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
-    Route::post('/distribusi', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.store');
-    Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
-    Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
+    Route::middleware('module:distribusi')->group(function () {
+        Route::get('/distribusi', [DistribusiController::class, 'index'])->name('distribusi.index');
+        Route::get('/distribusi/create', [DistribusiController::class, 'create'])->name('distribusi.create');
+        Route::get('/distribusi/next-bast', [DistribusiController::class, 'getNextBast'])->name('distribusi.next-bast');
+        Route::get('/distribusi/{id}/edit', [DistribusiController::class, 'edit'])->name('distribusi.edit');
+        Route::post('/distribusi/save', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.save');
+        Route::post('/distribusi', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.store');
+        Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
+        Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
+    });
 
     // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima / Admin menolak)
     Route::patch('/distribusi/{id}/status', function (\Illuminate\Http\Request $request, $id) {
@@ -652,21 +654,23 @@ Route::middleware('auth')->group(function () {
     })->name('astap.register_mutasi');
 
     // 4. Mutasi Aset Pages & Forms
-    Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');
-    Route::get('/mutasi-aset/create',          [MutasiController::class, 'create'])->name('mutasi.create');
-    Route::post('/mutasi-aset',                [MutasiController::class, 'store'])->name('mutasi.store');
-    Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
-    Route::put('/mutasi-aset/{id}',            [MutasiController::class, 'update'])->name('mutasi.update');
-    Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy');
-    Route::post('/mutasi-aset/{id}/approve-pengirim', [MutasiController::class, 'approvePengirim'])->name('mutasi.approve.pengirim');
-    Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
-    Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');
-    Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');
-    Route::post('/mutasi-aset/{id}/cancel-reject',    [MutasiController::class, 'cancelReject'])->name('mutasi.cancel.reject');
-    Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
+    Route::middleware('module:mutasi')->group(function () {
+        Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');
+        Route::get('/mutasi-aset/create',          [MutasiController::class, 'create'])->name('mutasi.create');
+        Route::post('/mutasi-aset',                [MutasiController::class, 'store'])->name('mutasi.store');
+        Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
+        Route::put('/mutasi-aset/{id}',            [MutasiController::class, 'update'])->name('mutasi.update');
+        Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy');
+        Route::post('/mutasi-aset/{id}/approve-pengirim', [MutasiController::class, 'approvePengirim'])->name('mutasi.approve.pengirim');
+        Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
+        Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');
+        Route::post('/mutasi-aset/{id}/reject',           [MutasiController::class, 'reject'])->name('mutasi.reject');
+        Route::post('/mutasi-aset/{id}/cancel-reject',    [MutasiController::class, 'cancelReject'])->name('mutasi.cancel.reject');
+        Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
+    });
 
     // 5. Unit & Paviliun Index
-    Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index');
+    Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index')->middleware('module:unit');
 
     // 5b. Halaman Khusus Lembar Kartu Inventaris Ruangan (KIR)
     Route::get('/lembar-kir-ruangan', [UnitController::class, 'kir'])->name('kir.index');
@@ -695,12 +699,15 @@ Route::middleware('auth')->group(function () {
     // Rute Khusus Master Admin & Admin Operasional (Sub Admin Dibatasi)
     Route::middleware([RoleMiddleware::class . ':master_admin,admin'])->group(function () {
         // Berita Acara (BAST)
-        Route::get('/berita-acara', [\App\Http\Controllers\BeritaAcaraController::class, 'index'])->name('bast.index');
-        Route::post('/berita-acara/triwulan/{key}', [\App\Http\Controllers\BeritaAcaraController::class, 'saveTriwulan'])->name('bast.save_triwulan');
-        Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan');
+        Route::middleware('module:bast')->group(function () {
+            Route::get('/berita-acara', [\App\Http\Controllers\BeritaAcaraController::class, 'index'])->name('bast.index');
+            Route::post('/berita-acara/triwulan/{key}', [\App\Http\Controllers\BeritaAcaraController::class, 'saveTriwulan'])->name('bast.save_triwulan');
+            Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan');
+        });
 
-        // Form Tambah & Edit ASTAP
-        Route::get('/astap/create', function () {
+        // Form Tambah, Edit, Simpan, Update & Hapus ASTAP
+        Route::middleware('module:astap')->group(function () {
+            Route::get('/astap/create', function () {
             $dbMaster108 = \App\Models\JenisAstap::getNested108();
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
@@ -3543,39 +3550,48 @@ Route::middleware('auth')->group(function () {
 
         // Route Khusus: Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
         Route::post('/astap/resequence-nibar', [\App\Http\Controllers\AstapController::class, 'resequenceNibar'])->name('astap.resequence_nibar');
+    });
 
-        // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
+    // Form Tambah, Simpan, Edit, Update & Hapus Unit / Paviliun
+    Route::middleware('module:unit')->group(function () {
         Route::get('/unit-paviliun/create', [UnitController::class, 'create'])->name('unit.create');
         Route::post('/unit-paviliun', [UnitController::class, 'store'])->name('unit.store');
         Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit');
         Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update');
         Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy');
+    });
 
-        // Master Data Users CRUD Routes (Hanya Master Admin & Admin Operasional)
+    // Master Data Users CRUD Routes (Hanya Master Admin & Admin yang memiliki izin users)
+    Route::middleware('module:users')->group(function () {
         Route::get('/master-data/users', [UserController::class, 'index'])->name('master.users');
         Route::post('/master-data/users', [UserController::class, 'store'])->name('master.users.store');
         Route::put('/master-data/users/{id}', [UserController::class, 'update'])->name('master.users.update');
         Route::delete('/master-data/users/{id}', [UserController::class, 'destroy'])->name('master.users.destroy');
         Route::post('/master-data/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('master.users.reset_password');
+    });
 
+    // Master Data Jenis ASTAP (Kode 108)
+    Route::middleware('module:astap')->group(function () {
         Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
         Route::post('/master-data/jenis-astap', [JenisAstapController::class, 'store'])->name('master.jenis_astap.store');
         Route::post('/master-data/jenis-astap/import', [JenisAstapController::class, 'import'])->name('master.jenis_astap.import');
         Route::get('/master-data/jenis-astap/download-template', [JenisAstapController::class, 'downloadTemplate'])->name('master.jenis_astap.template');
         Route::put('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'update'])->name('master.jenis_astap.update');
         Route::delete('/master-data/jenis-astap/{id}', [JenisAstapController::class, 'destroy'])->name('master.jenis_astap.destroy');
+    });
 
-        // Master Data Jenis Pengadaan (SIPD)
+    // Master Data SIPD (Jenis Pengadaan & Rekening Belanja)
+    Route::middleware('module:master_data')->group(function () {
         Route::get('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'index'])->name('master.jenis_pengadaan');
         Route::post('/master-data/jenis-pengadaan', [JenisPengadaanController::class, 'store'])->name('master.jenis_pengadaan.store');
         Route::put('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'update'])->name('master.jenis_pengadaan.update');
         Route::delete('/master-data/jenis-pengadaan/{id}', [JenisPengadaanController::class, 'destroy'])->name('master.jenis_pengadaan.destroy');
 
-        // Master Data Rekening Belanja (SIPD)
         Route::get('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'index'])->name('master.rekening_belanja');
         Route::post('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'store'])->name('master.rekening_belanja.store');
         Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
         Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
     });
+});
 });
 

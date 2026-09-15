@@ -55,8 +55,7 @@
                     return this.units.filter(item => {
                         return (item.nama || '').toLowerCase().includes(query) || 
                                (item.kode || '').toLowerCase().includes(query) ||
-                               (item.kepala || '').toLowerCase().includes(query) ||
-                               (item.tipe || '').toLowerCase().includes(query);
+                               (item.kepala || '').toLowerCase().includes(query);
                     });
                 },
 

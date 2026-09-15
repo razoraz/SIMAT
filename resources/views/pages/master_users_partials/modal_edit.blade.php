@@ -66,6 +66,60 @@
                         </div>
                     </template>
 
+                    <!-- Bagian Hak Akses Modul Admin Operasional -->
+                    <template x-if="editFormData.role === 'admin'">
+                        <div class="p-3.5 bg-slate-950/90 border border-cyan-500/30 rounded-2xl space-y-2.5">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <div>
+                                    <label class="block text-cyan-300 font-bold text-xs flex items-center space-x-1.5">
+                                        <span>🛡️</span>
+                                        <span>Wewenang Hak Akses Modul Admin</span>
+                                    </label>
+                                    <p class="text-[10px] text-slate-400" x-text="currentUserRole === 'master_admin' ? 'Tentukan modul yang diizinkan untuk admin ini:' : 'Daftar modul yang saat ini diberikan kepada Anda:'"></p>
+                                </div>
+                                <template x-if="currentUserRole === 'master_admin'">
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" @click="toggleAllEditPermissions(true)" class="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold hover:underline">Pilih Semua</button>
+                                        <span class="text-slate-600">•</span>
+                                        <button type="button" @click="toggleAllEditPermissions(false)" class="text-[10px] text-rose-400 hover:text-rose-300 font-bold hover:underline">Kosongkan</button>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Interactive Checkbox untuk Master Admin -->
+                            <template x-if="currentUserRole === 'master_admin'">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                    <template x-for="(perm, key) in availablePermissions" :key="key">
+                                        <label class="flex items-start space-x-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none"
+                                            :class="editFormData.permissions.includes(key) ? 'bg-cyan-500/10 border-cyan-500/40 text-white' : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'">
+                                            <input type="checkbox" :value="key" x-model="editFormData.permissions" class="mt-0.5 rounded border-slate-700 text-cyan-500 focus:ring-0 focus:ring-offset-0 bg-slate-950">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center space-x-1.5">
+                                                    <span x-text="perm.icon"></span>
+                                                    <span class="font-bold text-[11px] truncate" x-text="perm.label"></span>
+                                                </div>
+                                                <p class="text-[9px] text-slate-400 line-clamp-1 mt-0.5" x-text="perm.description"></p>
+                                            </div>
+                                        </label>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <!-- Read-only Pills untuk Admin Operasional biasa -->
+                            <template x-if="currentUserRole !== 'master_admin'">
+                                <div class="flex flex-wrap gap-1.5 pt-1">
+                                    <template x-for="(perm, key) in availablePermissions" :key="key">
+                                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold flex items-center space-x-1 border"
+                                            :class="editFormData.permissions.includes(key) ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40' : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60 line-through'">
+                                            <span x-text="perm.icon"></span>
+                                            <span x-text="perm.label"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1">Deskripsi Tugas / Penugasan</label>
                         <input type="text" x-model="editFormData.penugasan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:border-amber-500 focus:outline-none">

@@ -7,8 +7,7 @@
                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30" x-text="item.kode"></span>
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-800 text-cyan-300 border border-slate-700" x-text="item.total_aset + ' Aset'"></span>
                         </div>
-                        <h3 class="text-base font-extrabold text-white group-hover:text-blue-400 transition-colors" x-text="item.nama"></h3>
-                        <p class="text-xs text-slate-400 mt-0.5 mb-4" x-text="item.tipe"></p>
+                        <h3 class="text-base font-extrabold text-white group-hover:text-blue-400 transition-colors mb-4" x-text="item.nama"></h3>
 
                         <div class="space-y-2 py-3 border-y border-slate-800/80 text-xs">
                             <div class="flex items-center justify-between">
@@ -63,7 +62,6 @@
                             <th class="px-4 py-3.5 text-center w-12 bg-slate-950">No</th>
                             <th class="px-4 py-3.5 text-center bg-slate-950">Kode Unit</th>
                             <th class="px-4 py-3.5 text-center bg-slate-950">Nama Unit / Paviliun</th>
-                            <th class="px-4 py-3.5 text-center bg-slate-950">Tipe Pelayanan</th>
                             <th class="px-4 py-3.5 text-center bg-slate-950">Kepala Ruangan</th>
                             <th class="px-4 py-3.5 text-center bg-slate-950">Total Aset</th>
                             <th class="px-4 py-3.5 text-center bg-slate-950">Total Nilai</th>
@@ -76,9 +74,6 @@
                                 <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
                                 <td class="px-4 py-4 text-center font-mono font-semibold text-blue-400 whitespace-nowrap" x-text="item.kode"></td>
                                 <td class="px-4 py-4 font-bold text-white whitespace-nowrap" x-text="item.nama"></td>
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="item.tipe"></span>
-                                </td>
                                 <td class="px-4 py-4 text-center whitespace-nowrap text-slate-300" x-text="item.kepala || '-'"></td>
                                 <td class="px-4 py-4 text-center font-bold text-cyan-400 font-mono whitespace-nowrap" x-text="item.total_aset + ' Item'"></td>
                                 <td class="px-4 py-4 text-center font-bold text-emerald-400 font-mono whitespace-nowrap" x-text="item.total_nilai"></td>

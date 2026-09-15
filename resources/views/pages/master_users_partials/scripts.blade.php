@@ -19,9 +19,10 @@
                     name: '',
                     nip: '',
                     email: '',
-                    role: 'sub_admin',
+                    role: 'admin',
                     unit: 'Pav. Anggrek',
                     penugasan: '',
+                    permissions: ['astap', 'distribusi', 'bast', 'mutasi', 'unit', 'master_data'],
                     password: '',
                     status: 'Aktif'
                 },
@@ -34,8 +35,29 @@
                     role: '',
                     unit: '',
                     penugasan: '',
+                    permissions: [],
                     password: '',
                     status: ''
+                },
+
+                // Daftar Definisi Hak Akses Modul dari Backend
+                availablePermissions: @json($availablePermissions ?? \App\Models\User::AVAILABLE_PERMISSIONS),
+
+                // Helper Checklist Permissions
+                toggleAllNewPermissions(select) {
+                    if (select) {
+                        this.newFormData.permissions = Object.keys(this.availablePermissions);
+                    } else {
+                        this.newFormData.permissions = [];
+                    }
+                },
+
+                toggleAllEditPermissions(select) {
+                    if (select) {
+                        this.editFormData.permissions = Object.keys(this.availablePermissions);
+                    } else {
+                        this.editFormData.permissions = [];
+                    }
                 },
 
                 // Data Users & Units dari Database Backend
@@ -151,9 +173,10 @@
                         name: '',
                         nip: '',
                         email: '',
-                        role: 'sub_admin',
+                        role: this.currentUserRole === 'master_admin' ? 'admin' : 'sub_admin',
                         unit: this.unitsList && this.unitsList.length > 0 ? this.unitsList[0] : 'Pav. Anggrek',
                         penugasan: '',
+                        permissions: ['astap', 'distribusi', 'bast', 'mutasi', 'unit', 'master_data'],
                         password: '',
                         status: 'Aktif'
                     };
@@ -165,6 +188,15 @@
                         this.showToast('⛔ Akses Ditolak: ' + this.getEditTooltip(item), 'error');
                         return;
                     }
+
+                    // Inisialisasi permissions: jika null/array kosong pada role admin, defaultkan seluruh modul
+                    let currentPermissions = [];
+                    if (Array.isArray(item.permissions)) {
+                        currentPermissions = [...item.permissions];
+                    } else if (item.role === 'admin') {
+                        currentPermissions = Object.keys(this.availablePermissions);
+                    }
+
                     this.editFormData = { 
                         id: item.id,
                         name: item.name || '',
@@ -173,10 +205,15 @@
                         role: item.role || 'sub_admin',
                         unit: item.unit || '',
                         penugasan: item.penugasan || '',
+                        permissions: currentPermissions,
                         password: '',
                         status: item.status || 'Aktif'
                     };
                     this.showEditModal = true;
+                },
+
+                saveNew() {
+                    return this.saveUser();
                 },
 
                 // 1. Simpan Pengguna Baru ke Backend (CREATE)

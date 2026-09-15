@@ -19,9 +19,58 @@ class User extends Authenticatable
         'password',
         'role',
         'penugasan',
+        'permissions',
         'status',
         'deskripsi',
         'unit_id',
+    ];
+
+    /**
+     * Daftar Definisi Hak Akses Modul Operasional SIMAT-RK
+     */
+    public const AVAILABLE_PERMISSIONS = [
+        'astap' => [
+            'label' => 'Data ASTAP & Kode 108',
+            'icon' => '📦',
+            'color' => 'emerald',
+            'description' => 'Kelola inventaris aset tetap, form input, barcode QR, export, dan klasifikasi kode 108'
+        ],
+        'distribusi' => [
+            'label' => 'Distribusi ASTAP',
+            'icon' => '🚚',
+            'color' => 'teal',
+            'description' => 'Kelola penyaluran aset ke ruangan, verifikasi penerimaan, dan status distribusi'
+        ],
+        'bast' => [
+            'label' => 'Berita Acara (BAST)',
+            'icon' => '📜',
+            'color' => 'blue',
+            'description' => 'Pembuatan dan penandatanganan Berita Acara Serah Terima (BAST) & cetak triwulan'
+        ],
+        'mutasi' => [
+            'label' => 'Mutasi Aset',
+            'icon' => '🔄',
+            'color' => 'amber',
+            'description' => 'Kelola dan persetujuan mutasi/perpindahan aset antar ruangan RSUD'
+        ],
+        'unit' => [
+            'label' => 'Unit & Paviliun',
+            'icon' => '🏥',
+            'color' => 'indigo',
+            'description' => 'Kelola katalog data unit, ruangan, paviliun, penanggung jawab, dan NIP'
+        ],
+        'master_data' => [
+            'label' => 'Master SIPD (Pengadaan & Rekening)',
+            'icon' => '⚙️',
+            'color' => 'cyan',
+            'description' => 'Kelola data master Jenis Pengadaan dan Rekening Belanja SIPD'
+        ],
+        'users' => [
+            'label' => 'Manajemen Pengguna',
+            'icon' => '👥',
+            'color' => 'rose',
+            'description' => 'Kelola akun pegawai, staf operasional, dan hak akses sistem'
+        ],
     ];
 
     /**
@@ -48,6 +97,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'permissions' => 'array',
         ];
     }
 
@@ -115,6 +165,32 @@ class User extends Authenticatable
     public function isSubAdmin(): bool
     {
         return $this->role === 'sub_admin' && !str_contains(strtolower($this->unit ?? ''), 'rumah tangga');
+    }
+
+    /**
+     * Cek Hak Akses Modul Operasional untuk User
+     */
+    public function canAccess(string $module): bool
+    {
+        // 1. Master Admin memiliki akses mutlak ke seluruh modul
+        if ($this->role === 'master_admin') {
+            return true;
+        }
+
+        // 2. Sub Admin bukan admin operasional
+        if ($this->role === 'sub_admin') {
+            return false;
+        }
+
+        // 3. Admin Operasional: cek permissions
+        $permissions = $this->permissions;
+
+        // Fallback backward compatibility jika belum di-set permissions
+        if ($permissions === null || !is_array($permissions)) {
+            return true;
+        }
+
+        return in_array($module, $permissions, true);
     }
 
     /**

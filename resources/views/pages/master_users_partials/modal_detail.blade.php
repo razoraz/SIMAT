@@ -57,6 +57,44 @@
                         <p class="text-slate-300 leading-relaxed" x-text="selectedUser.penugasan || selectedUser.deskripsi || '-'"></p>
                     </div>
 
+                    <!-- Hak Akses Modul Operasional -->
+                    <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400 text-[10px] uppercase font-bold block">Wewenang Modul Sistem:</span>
+                            <span class="text-[10px] font-mono text-cyan-400" x-text="selectedUser.role === 'master_admin' ? 'Akses Penuh' : (selectedUser.role === 'admin' ? ((selectedUser.permissions || []).length + ' Modul Aktif') : 'Ruangan Unit')"></span>
+                        </div>
+
+                        <!-- Master Admin -->
+                        <template x-if="selectedUser.role === 'master_admin'">
+                            <div class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center space-x-2">
+                                <span>👑</span>
+                                <span>Akses Penuh (Full Control): Berhak mengelola seluruh data, pengguna, dan sistem SIMAT-RK.</span>
+                            </div>
+                        </template>
+
+                        <!-- Admin Operasional -->
+                        <template x-if="selectedUser.role === 'admin'">
+                            <div class="flex flex-wrap gap-1.5 pt-0.5">
+                                <template x-for="(perm, key) in availablePermissions" :key="key">
+                                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold flex items-center space-x-1.5 border"
+                                        :class="(selectedUser.permissions && selectedUser.permissions.includes(key)) || !selectedUser.permissions ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' : 'bg-slate-900/50 text-slate-600 border-slate-800/80 line-through opacity-50'">
+                                        <span x-text="perm.icon"></span>
+                                        <span x-text="perm.label"></span>
+                                        <span x-text="(selectedUser.permissions && selectedUser.permissions.includes(key)) || !selectedUser.permissions ? '✓' : '✗'" class="text-[9px] font-bold"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Sub Admin -->
+                        <template x-if="selectedUser.role === 'sub_admin'">
+                            <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-medium flex items-center space-x-2">
+                                <span>🏥</span>
+                                <span>Wewenang Ruangan: Akses Katalog ASTAP, Lembar KIR Ruangan, dan Pengajuan Distribusi Unit.</span>
+                            </div>
+                        </template>
+                    </div>
+
                     <!-- Tombol Reset Password Cepat -->
                     <div class="pt-2 flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
                         <div class="text-[11px] text-amber-200">

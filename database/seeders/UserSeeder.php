@@ -35,6 +35,7 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
                 'unit_id' => null,
+                'permissions' => ['astap', 'distribusi', 'bast', 'mutasi', 'unit', 'master_data', 'users'],
                 'penugasan' => 'Wewenang Operasional: Pengelolaan inventaris ASTAP, verifikasi pengadaan, distribusi & BAST',
                 'status' => 'Aktif',
                 'deskripsi' => 'Admin Operasional - Pengelola Inventaris & Distribusi Aset',

@@ -11,10 +11,6 @@
                         <input type="text" placeholder="Paviliun..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
                     </div>
                     <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Tipe Pelayanan Ruangan</label>
-                        <input type="text" placeholder="Rawat Inap / Penunjang / Administrasi" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
-                    </div>
-                    <div>
                         <label class="block text-slate-300 font-semibold mb-1">Nama Kepala Ruangan</label>
                         <input type="text" placeholder="dr..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white">
                     </div>

@@ -12,7 +12,7 @@
                                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30" x-text="selectedUnit ? selectedUnit.kode : ''"></span>
                                 <h3 class="text-lg sm:text-xl font-extrabold text-white" x-text="selectedUnit ? selectedUnit.nama : ''"></h3>
                             </div>
-                            <p class="text-xs text-slate-400 mt-0.5" x-text="selectedUnit ? (selectedUnit.tipe + ' • Kepala: ' + selectedUnit.kepala) : ''"></p>
+                            <p class="text-xs text-slate-400 mt-0.5" x-text="selectedUnit ? ('Kepala Ruangan: ' + (selectedUnit.kepala || '-')) : ''"></p>
                         </div>
                     </div>
                     

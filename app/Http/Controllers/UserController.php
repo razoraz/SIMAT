@@ -27,8 +27,9 @@ class UserController extends Controller
 
         // Ambil daftar seluruh nama unit dari tabel units
         $units = Unit::pluck('nama')->toArray();
+        $availablePermissions = User::AVAILABLE_PERMISSIONS;
 
-        return view('pages.master_users', compact('users', 'units', 'currentUser'));
+        return view('pages.master_users', compact('users', 'units', 'currentUser', 'availablePermissions'));
     }
 
     /**
@@ -54,9 +55,20 @@ class UserController extends Controller
             'email' => 'required|email|max:255|unique:users,email',
             'role' => ['required', Rule::in(['master_admin', 'admin', 'sub_admin'])],
             'penugasan' => 'nullable|string|max:500',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|in:astap,distribusi,bast,mutasi,unit,master_data,users',
             'status' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:4',
         ]);
+
+        $permissions = null;
+        if ($validated['role'] === 'admin') {
+            $permissions = $request->input('permissions', []);
+            // Jika kosong, default beri modul astap & distribusi
+            if (empty($permissions)) {
+                $permissions = ['astap'];
+            }
+        }
 
         $user = User::create([
             'name' => $validated['name'],
@@ -64,6 +76,7 @@ class UserController extends Controller
             'password' => Hash::make($request->filled('password') ? $request->password : 'rsud123'),
             'role' => $validated['role'],
             'penugasan' => $validated['penugasan'] ?? 'Pengguna Sistem SIMAT',
+            'permissions' => $permissions,
             'status' => $validated['status'] ?? 'Aktif',
             'deskripsi' => $validated['penugasan'] ?? '',
         ]);
@@ -108,6 +121,8 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['required', Rule::in(['master_admin', 'admin', 'sub_admin'])],
             'penugasan' => 'nullable|string|max:500',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|in:astap,distribusi,bast,mutasi,unit,master_data,users',
             'status' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:4',
         ]);
@@ -124,6 +139,15 @@ class UserController extends Controller
             'penugasan' => $validated['penugasan'] ?? $user->penugasan,
             'status' => $validated['status'] ?? $user->status,
         ];
+
+        // Hanya Master Admin yang berwenang mengubah daftar permissions akun Admin
+        if ($currentUser->role === 'master_admin') {
+            if ($validated['role'] === 'admin') {
+                $updateData['permissions'] = $request->input('permissions', []);
+            } else {
+                $updateData['permissions'] = null;
+            }
+        }
 
         if ($request->filled('password')) {
             $updateData['password'] = Hash::make($request->password);
