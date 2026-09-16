@@ -9,33 +9,134 @@
             <div class="absolute -right-12 -top-12 w-64 h-64 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute right-40 -bottom-10 w-48 h-48 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold mb-3 shadow-sm">
-                        <span>♻️ Audit Trail & Central Recycle Bin</span>
+            <div class="relative z-10 space-y-6">
+                <!-- BARIS ATAS: JUDUL & STATISTIK GLOBAL AUDIT -->
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold mb-3 shadow-sm">
+                            <span>♻️ Audit Trail & Central Recycle Bin</span>
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Pusat Data Terhapus</h1>
+                        <p class="text-slate-400 text-xs md:text-sm mt-1 max-w-2xl leading-relaxed">
+                            Arsip terpusat seluruh data transaksi dan inventaris aset SIMAT yang berlabel terhapus (<code class="text-rose-300 font-mono font-bold">is_deleted = 1</code>). Anda dapat meninjau jejak audit penghapus, memulihkan data aktif, atau memusnahkannya secara permanen.
+                        </p>
                     </div>
-                    <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Pusat Data Terhapus</h1>
-                    <p class="text-slate-400 text-xs md:text-sm mt-1 max-w-2xl leading-relaxed">
-                        Arsip terpusat seluruh data transaksi dan inventaris aset SIMAT yang berlabel terhapus (<code class="text-rose-300 font-mono font-bold">is_deleted = 1</code>). Anda dapat meninjau jejak audit penghapus, memulihkan data aktif, atau memusnahkannya secara permanen.
-                    </p>
+
+                    <!-- RINGKASAN AUDIT GLOBAL -->
+                    <div class="flex items-center gap-3 shrink-0">
+                        <div class="p-3.5 px-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 text-center shadow-inner min-w-[130px]">
+                            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-0.5">Total Terhapus</span>
+                            <span class="text-2xl font-black text-white font-mono" x-text="totalCount"></span>
+                            <span class="text-[10px] text-slate-500 block">Semua Modul</span>
+                        </div>
+                        <div class="p-3.5 px-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 text-center shadow-inner min-w-[130px]">
+                            <span class="text-[10px] uppercase tracking-wider font-bold text-rose-400 block mb-0.5">30 Hari Terakhir</span>
+                            <span class="text-2xl font-black text-rose-300 font-mono">{{ $totalThisMonth }}</span>
+                            <span class="text-[10px] text-slate-500 block">Aktivitas Hapus</span>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- KPI STATS CARDS -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
-                    <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 text-center shadow-inner">
-                        <span class="text-[10.5px] uppercase font-bold text-slate-400 block mb-0.5">Total Terhapus</span>
-                        <span class="text-2xl font-black text-white font-mono" x-text="totalCount"></span>
-                        <span class="text-[10px] text-slate-500 block">Semua Modul</span>
+                <!-- BARIS BAWAH: KARTU INDIKATOR SELURUH 5 MODUL (MUTASI, ASTAP, DISTRIBUSI, BAST, UNIT) -->
+                <div class="pt-5 border-t border-slate-800/80">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                            Rincian Data Terhapus Per Modul SIMAT:
+                        </span>
+                        <span class="text-[10.5px] text-slate-500 hidden sm:inline">Klik kartu untuk beralih tampilan modul</span>
                     </div>
-                    <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 text-center shadow-inner">
-                        <span class="text-[10.5px] uppercase font-bold text-amber-400 block mb-0.5" x-text="activeModuleName"></span>
-                        <span class="text-2xl font-black text-amber-300 font-mono" x-text="currentList.length"></span>
-                        <span class="text-[10px] text-slate-500 block">Tab Aktif</span>
-                    </div>
-                    <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800/90 text-center shadow-inner col-span-2 sm:col-span-1">
-                        <span class="text-[10.5px] uppercase font-bold text-rose-400 block mb-0.5">30 Hari Terakhir</span>
-                        <span class="text-2xl font-black text-rose-300 font-mono">{{ $totalThisMonth }}</span>
-                        <span class="text-[10px] text-slate-500 block">Aktivitas Hapus</span>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                        <!-- 1. Mutasi Aset -->
+                        <div @click="changeTab('mutasi')" 
+                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :class="activeModule === 'mutasi' 
+                                ? 'bg-gradient-to-br from-amber-500/20 to-amber-950/30 border-amber-500/60 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10' 
+                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-base p-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300">🔄</span>
+                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+                                    :class="getModuleCount('mutasi') > 0 
+                                        ? 'bg-amber-500 text-slate-950 font-black shadow-sm' 
+                                        : 'bg-slate-800/80 text-slate-400'"
+                                    x-text="getModuleCount('mutasi')">0</span>
+                            </div>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-amber-300 transition-colors">Mutasi Aset</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('mutasi') > 0 ? getModuleCount('mutasi') + ' data terhapus' : 'Tidak ada data'"></span>
+                        </div>
+
+                        <!-- 2. Master ASTAP -->
+                        <div @click="changeTab('astap')" 
+                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :class="activeModule === 'astap' 
+                                ? 'bg-gradient-to-br from-blue-500/20 to-blue-950/30 border-blue-500/60 ring-2 ring-blue-500/30 shadow-lg shadow-blue-500/10' 
+                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-base p-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300">📦</span>
+                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+                                    :class="getModuleCount('astap') > 0 
+                                        ? 'bg-blue-500 text-white font-black shadow-sm' 
+                                        : 'bg-slate-800/80 text-slate-400'"
+                                    x-text="getModuleCount('astap')">0</span>
+                            </div>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-blue-300 transition-colors">Master ASTAP</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('astap') > 0 ? getModuleCount('astap') + ' data terhapus' : 'Tidak ada data'"></span>
+                        </div>
+
+                        <!-- 3. Distribusi Aset -->
+                        <div @click="changeTab('distribusi')" 
+                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :class="activeModule === 'distribusi' 
+                                ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-950/30 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10' 
+                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-base p-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">🚚</span>
+                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+                                    :class="getModuleCount('distribusi') > 0 
+                                        ? 'bg-emerald-500 text-slate-950 font-black shadow-sm' 
+                                        : 'bg-slate-800/80 text-slate-400'"
+                                    x-text="getModuleCount('distribusi')">0</span>
+                            </div>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-emerald-300 transition-colors">Distribusi Aset</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('distribusi') > 0 ? getModuleCount('distribusi') + ' data terhapus' : 'Tidak ada data'"></span>
+                        </div>
+
+                        <!-- 4. Berita Acara (BAST) -->
+                        <div @click="changeTab('bast')" 
+                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :class="activeModule === 'bast' 
+                                ? 'bg-gradient-to-br from-purple-500/20 to-purple-950/30 border-purple-500/60 ring-2 ring-purple-500/30 shadow-lg shadow-purple-500/10' 
+                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-base p-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300">📜</span>
+                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+                                    :class="getModuleCount('bast') > 0 
+                                        ? 'bg-purple-500 text-white font-black shadow-sm' 
+                                        : 'bg-slate-800/80 text-slate-400'"
+                                    x-text="getModuleCount('bast')">0</span>
+                            </div>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-purple-300 transition-colors">Berita Acara (BAST)</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('bast') > 0 ? getModuleCount('bast') + ' data terhapus' : 'Tidak ada data'"></span>
+                        </div>
+
+                        <!-- 5. Unit & Paviliun -->
+                        <div @click="changeTab('unit')" 
+                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :class="activeModule === 'unit' 
+                                ? 'bg-gradient-to-br from-cyan-500/20 to-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10' 
+                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-base p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">🏥</span>
+                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+                                    :class="getModuleCount('unit') > 0 
+                                        ? 'bg-cyan-500 text-slate-950 font-black shadow-sm' 
+                                        : 'bg-slate-800/80 text-slate-400'"
+                                    x-text="getModuleCount('unit')">0</span>
+                            </div>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-cyan-300 transition-colors">Unit & Paviliun</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('unit') > 0 ? getModuleCount('unit') + ' data terhapus' : 'Tidak ada data'"></span>
+                        </div>
                     </div>
                 </div>
             </div>
