@@ -578,8 +578,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/recycle-bin',                                     [RecycleBinController::class, 'index'])->name('recycle_bin.index');
     Route::post('/recycle-bin/{module}/{id}/restore',              [RecycleBinController::class, 'restore'])->name('recycle_bin.restore');
     Route::post('/recycle-bin/{module}/bulk-restore',              [RecycleBinController::class, 'bulkRestore'])->name('recycle_bin.bulk_restore');
+    Route::post('/recycle-bin/{module}/bulk-force-delete',         [RecycleBinController::class, 'bulkForceDelete'])->name('recycle_bin.bulk_force_delete');
     Route::delete('/recycle-bin/{module}/{id}/force-delete',       [RecycleBinController::class, 'forceDelete'])->name('recycle_bin.force_delete');
-    Route::post('/recycle-bin/{module}/empty-trash',               [RecycleBinController::class, 'emptyTrash'])->name('recycle_bin.empty_trash');
 
     // 5. Unit & Paviliun Index
     Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index')->middleware('module:unit');

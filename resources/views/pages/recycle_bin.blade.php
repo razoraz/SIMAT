@@ -37,7 +37,7 @@
                     </div>
                 </div>
 
-                <!-- BARIS BAWAH: KARTU INDIKATOR SELURUH 5 MODUL (MUTASI, ASTAP, DISTRIBUSI, BAST, UNIT) -->
+                <!-- BARIS BAWAH: KARTU INDIKATOR 4 MODUL (MUTASI, ASTAP, DISTRIBUSI, UNIT) -->
                 <div class="pt-5 border-t border-slate-800/80">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -47,7 +47,7 @@
                         <span class="text-[10.5px] text-slate-500 hidden sm:inline">Klik kartu untuk beralih tampilan modul</span>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <!-- 1. Mutasi Aset -->
                         <div @click="changeTab('mutasi')" 
                             class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
@@ -102,25 +102,7 @@
                             <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('distribusi') > 0 ? getModuleCount('distribusi') + ' data terhapus' : 'Tidak ada data'"></span>
                         </div>
 
-                        <!-- 4. Berita Acara (BAST) -->
-                        <div @click="changeTab('bast')" 
-                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :class="activeModule === 'bast' 
-                                ? 'bg-gradient-to-br from-purple-500/20 to-purple-950/30 border-purple-500/60 ring-2 ring-purple-500/30 shadow-lg shadow-purple-500/10' 
-                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300">📜</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('bast') > 0 
-                                        ? 'bg-purple-500 text-white font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('bast')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-purple-300 transition-colors">Berita Acara (BAST)</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('bast') > 0 ? getModuleCount('bast') + ' data terhapus' : 'Tidak ada data'"></span>
-                        </div>
-
-                        <!-- 5. Unit & Paviliun -->
+                        <!-- 4. Unit & Paviliun -->
                         <div @click="changeTab('unit')" 
                             class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
                             :class="activeModule === 'unit' 
@@ -142,24 +124,7 @@
             </div>
         </div>
 
-        <!-- MODULE CATEGORY TABS -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-3 shadow-xl">
-            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                @foreach ($moduleStats as $modKey => $mod)
-                    <button type="button" @click="changeTab('{{ $modKey }}')"
-                        :class="activeModule === '{{ $modKey }}' 
-                            ? 'bg-gradient-to-r from-red-600/30 to-rose-600/30 text-white font-black border-red-500/50 shadow-lg shadow-red-500/10 ring-1 ring-red-500/40' 
-                            : 'bg-slate-950/60 text-slate-400 hover:text-white hover:bg-slate-800 border-slate-800/80'"
-                        class="px-4 py-2.5 rounded-2xl border text-xs transition-all flex items-center space-x-2 shrink-0 active:scale-95 cursor-pointer">
-                        <span class="text-base">{{ $mod['icon'] }}</span>
-                        <span>{{ $mod['name'] }}</span>
-                        <span class="px-2 py-0.5 text-[10.5px] font-mono font-bold rounded-lg"
-                            :class="activeModule === '{{ $modKey }}' ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-300'"
-                            x-text="getModuleCount('{{ $modKey }}')"></span>
-                    </button>
-                @endforeach
-            </div>
-        </div>
+
 
         <!-- TOOLBAR: SEARCH & BULK ACTIONS -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
@@ -179,14 +144,13 @@
                     <span>Pulihkan Terpilih (<span x-text="selectedIds.length"></span>)</span>
                 </button>
 
-                {{-- Tombol Kosongkan Tong Sampah (Khusus Master Admin) --}}
-                @if (Auth::user()?->isMasterAdmin())
-                    <button type="button" @click="emptyTrash(activeModule)" :disabled="currentList.length === 0"
-                        class="px-4 py-2.5 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer active:scale-95">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        <span>Kosongkan Tong Sampah</span>
-                    </button>
-                @endif
+                {{-- Tombol Bulk Force Delete (Hapus Terpilih) --}}
+                <button type="button" @click="bulkForceDelete(activeModule)" :disabled="selectedIds.length === 0"
+                    :class="selectedIds.length > 0 ? 'bg-rose-600/25 hover:bg-rose-600/35 text-rose-300 border-rose-500/50 cursor-pointer shadow-lg shadow-rose-600/15' : 'bg-slate-800/30 text-slate-600 cursor-not-allowed border-slate-800/60'"
+                    class="px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all flex items-center space-x-1.5 active:scale-95">
+                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>Hapus Terpilih (<span x-text="selectedIds.length"></span>)</span>
+                </button>
             </div>
         </div>
 
@@ -468,90 +432,7 @@
             </div>
         </template>
 
-        <!-- ========================================================================= -->
-        <!-- TAB 4: BERITA ACARA (BAST) TABLE -->
-        <!-- ========================================================================= -->
-        <template x-if="activeModule === 'bast'">
-            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-                <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
-                                <tr>
-                                    <th class="px-4 py-3.5 w-10 text-center">
-                                        <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected"
-                                            class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
-                                    </th>
-                                    <th class="px-4 py-3.5">Dokumen Triwulan</th>
-                                    <th class="px-4 py-3.5">Nomor Surat BAST</th>
-                                    <th class="px-4 py-3.5">Tanggal BAST</th>
-                                    <th class="px-4 py-3.5">Pihak 1 (PPK)</th>
-                                    <th class="px-4 py-3.5">Pihak 2 (Pengurus)</th>
-                                    <th class="px-4 py-3.5">Dihapus Oleh</th>
-                                    <th class="px-4 py-3.5">Waktu Penghapusan</th>
-                                    <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
-                                <template x-for="(item, idx) in filteredItems" :key="item.id">
-                                    <tr class="hover:bg-slate-800/30 transition-colors">
-                                        <td class="px-4 py-4 text-center">
-                                            <input type="checkbox" :value="item.id" x-model="selectedIds"
-                                                class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="font-extrabold text-blue-300 block text-sm" x-text="item.triwulan + ' Tahun ' + item.tahun"></span>
-                                            <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400" x-text="item.status"></span>
-                                        </td>
-                                        <td class="px-4 py-4 font-mono font-bold text-white" x-text="item.kode"></td>
-                                        <td class="px-4 py-4 text-slate-300" x-text="item.tanggal_bast"></td>
-                                        <td class="px-4 py-4 text-slate-300" x-text="item.pihak1_nama"></td>
-                                        <td class="px-4 py-4 text-slate-300" x-text="item.pihak2_nama"></td>
-                                        <td class="px-4 py-4">
-                                            <span class="font-bold text-red-300 block" x-text="item.deleted_by"></span>
-                                            <span class="text-[10px] text-slate-500">Label: 1 (Soft Delete)</span>
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
-                                            <span class="text-[10px] text-slate-500" x-text="item.deleted_at_relative"></span>
-                                        </td>
-                                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
-                                            style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
-                                            <div class="flex items-center justify-center gap-1.5">
-                                                <button type="button" @click="openDetail(item)" title="Lihat Detail BAST"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                    <span>👁️ Detail</span>
-                                                </button>
-                                                <button type="button" @click="restoreSingle('bast', item)" title="Pulihkan Data ke Status Aktif (Label 0)"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                                    <span>Pulihkan</span>
-                                                </button>
-                                                <button type="button" @click="forceDeleteSingle('bast', item)" title="Hapus Permanen dari Database"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-if="filteredItems.length === 0">
-                                    <tr>
-                                        <td colspan="9" class="py-14 text-center">
-                                            <div class="flex flex-col items-center justify-center space-y-2">
-                                                <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl text-emerald-400 shadow-inner">📜</div>
-                                                <p class="text-sm font-bold text-slate-200">Tong Sampah BAST Kosong</p>
-                                                <p class="text-xs text-slate-500 max-w-sm">Tidak ada dokumen BAST triwulan yang berstatus terhapus.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </template>
+
 
         <!-- ========================================================================= -->
         <!-- TAB 5: UNIT & PAVILIUN TABLE -->
@@ -816,31 +697,7 @@
                             </div>
                         </template>
 
-                        <!-- 4. DETAIL KHUSUS BAST -->
-                        <template x-if="activeModule === 'bast'">
-                            <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                                <div>
-                                    <span class="text-slate-500 text-[10px] uppercase font-bold block">Dokumen BAST:</span>
-                                    <span class="font-bold text-white text-sm" x-text="selectedItem.triwulan + ' Tahun ' + selectedItem.tahun"></span>
-                                    <span class="text-xs text-cyan-400 font-mono block mt-1" x-text="'Nomor: ' + selectedItem.kode"></span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-slate-500 text-[10px] uppercase font-bold block">Status Tanda Tangan:</span>
-                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold"
-                                        :class="selectedItem.signed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'"
-                                        x-text="selectedItem.status"></span>
-                                    <span class="text-[11px] text-slate-400 block mt-1" x-text="'Tgl BAST: ' + selectedItem.tanggal_bast"></span>
-                                </div>
-                                <div class="mt-2">
-                                    <span class="text-slate-500 text-[10px] block">Pihak 1 (PPK):</span>
-                                    <span class="font-semibold text-slate-200" x-text="selectedItem.pihak1_nama"></span>
-                                </div>
-                                <div class="mt-2 text-right">
-                                    <span class="text-slate-500 text-[10px] block">Pihak 2 (Pengurus Barang):</span>
-                                    <span class="font-semibold text-slate-200" x-text="selectedItem.pihak2_nama"></span>
-                                </div>
-                            </div>
-                        </template>
+
 
                         <!-- 5. DETAIL KHUSUS UNIT -->
                         <template x-if="activeModule === 'unit'">
@@ -894,7 +751,6 @@
                 mutasis: {{ Js::from($deletedMutasis) }},
                 astaps: {{ Js::from($deletedAstaps) }},
                 distribusis: {{ Js::from($deletedDistribusis) }},
-                basts: {{ Js::from($deletedBasts) }},
                 units: {{ Js::from($deletedUnits) }},
 
                 selectedIds: [],
@@ -909,14 +765,13 @@
                 },
 
                 get totalCount() {
-                    return this.mutasis.length + this.astaps.length + this.distribusis.length + this.basts.length + this.units.length;
+                    return this.mutasis.length + this.astaps.length + this.distribusis.length + this.units.length;
                 },
 
                 getModuleCount(mod) {
                     if (mod === 'mutasi') return this.mutasis.length;
                     if (mod === 'astap') return this.astaps.length;
                     if (mod === 'distribusi') return this.distribusis.length;
-                    if (mod === 'bast') return this.basts.length;
                     if (mod === 'unit') return this.units.length;
                     return 0;
                 },
@@ -926,7 +781,6 @@
                         mutasi: 'Mutasi Aset',
                         astap: 'Master ASTAP',
                         distribusi: 'Distribusi Aset',
-                        bast: 'Berita Acara (BAST)',
                         unit: 'Unit & Paviliun'
                     };
                     return map[this.activeModule] || 'Modul';
@@ -937,7 +791,6 @@
                         mutasi: 'Cari BAMB / nama aset / NIBAR / ruangan asal / tujuan / penghapus...',
                         astap: 'Cari nama aset / kode 108 / NIBAR / penyedia / SPK / penghapus...',
                         distribusi: 'Cari kode distribusi / BAST / unit tujuan / tanggal / penghapus...',
-                        bast: 'Cari triwulan / nomor surat / PPK / pengurus / penghapus...',
                         unit: 'Cari kode unit / nama ruangan / kepala ruangan / NIP / penghapus...'
                     };
                     return map[this.activeModule] || 'Cari data terhapus...';
@@ -947,7 +800,6 @@
                     if (this.activeModule === 'mutasi') return this.mutasis;
                     if (this.activeModule === 'astap') return this.astaps;
                     if (this.activeModule === 'distribusi') return this.distribusis;
-                    if (this.activeModule === 'bast') return this.basts;
                     if (this.activeModule === 'unit') return this.units;
                     return [];
                 },
@@ -1053,6 +905,43 @@
                     });
                 },
 
+                bulkForceDelete(module) {
+                    if (this.selectedIds.length === 0) return;
+                    const count = this.selectedIds.length;
+                    this.askConfirmation({
+                        title: '🚨 Konfirmasi Hapus Permanen Massal',
+                        message: `PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN ${count} data terpilih dari database? Tindakan ini TIDAK DAPAT DIBATALKAN!`,
+                        itemName: `${count} Data Terpilih`,
+                        type: 'danger',
+                        btnText: '💥 Ya, Hapus Permanen Sekarang',
+                        onConfirm: () => {
+                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            fetch(`/recycle-bin/${module}/bulk-force-delete`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': token,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ ids: this.selectedIds })
+                            })
+                            .then(res => res.json())
+                            .then(d => {
+                                if (d.success) {
+                                    this.showSimatToast(d.message || 'Data terpilih berhasil dihapus permanen!', 'success');
+                                    setTimeout(() => window.location.reload(), 600);
+                                } else {
+                                    this.showSimatToast(d.message || 'Gagal menghapus data permanen.', 'error');
+                                }
+                            })
+                            .catch(err => {
+                                console.error('bulk force delete error:', err);
+                                window.location.reload();
+                            });
+                        }
+                    });
+                },
+
                 forceDeleteSingle(module, item) {
                     if (!item) return;
                     const bNomor = item.kode || item.nama || 'Item';
@@ -1083,41 +972,6 @@
                             })
                             .catch(err => {
                                 console.error('force delete error:', err);
-                                window.location.reload();
-                            });
-                        }
-                    });
-                },
-
-                emptyTrash(module) {
-                    const count = this.currentList.length;
-                    this.askConfirmation({
-                        title: '🚨 KOSONGKAN SELURUH TONG SAMPAH',
-                        message: `PERINGATAN MASTER ADMIN: Seluruh data yang ada di tong sampah modul ${this.activeModuleName} (${count} data) akan dimusnahkan secara permanen dari database. Tindakan ini TIDAK DAPAT DIKEMBALIKAN!`,
-                        itemName: `Semua Data Terhapus (${count} item)`,
-                        type: 'danger',
-                        btnText: '💥 Kosongkan Seluruhnya',
-                        onConfirm: () => {
-                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                            fetch(`/recycle-bin/${module}/empty-trash`, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': token,
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                }
-                            })
-                            .then(res => res.json())
-                            .then(d => {
-                                if (d.success) {
-                                    this.showSimatToast(d.message || 'Tong sampah berhasil dikosongkan.', 'success');
-                                    setTimeout(() => window.location.reload(), 600);
-                                } else {
-                                    this.showSimatToast(d.message || 'Gagal mengosongkan tong sampah.', 'error');
-                                }
-                            })
-                            .catch(err => {
-                                console.error('empty trash error:', err);
                                 window.location.reload();
                             });
                         }

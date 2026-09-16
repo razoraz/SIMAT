@@ -15,7 +15,6 @@ return new class extends Migration
             'astaps',
             'astap_registers',
             'distribusis',
-            'astap_bast_triwulans',
             'units',
         ];
 
@@ -48,7 +47,6 @@ return new class extends Migration
             'astaps',
             'astap_registers',
             'distribusis',
-            'astap_bast_triwulans',
             'units',
         ];
 
