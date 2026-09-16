@@ -450,6 +450,7 @@
                                     </th>
                                     <th class="px-4 py-3.5">Kode Unit</th>
                                     <th class="px-4 py-3.5">Nama Unit / Paviliun</th>
+                                    <th class="px-4 py-3.5 text-center">Status Aset Terkait</th>
                                     <th class="px-4 py-3.5">Tipe Ruangan</th>
                                     <th class="px-4 py-3.5">Kepala Ruangan & NIP</th>
                                     <th class="px-4 py-3.5">Email Akun Sub Admin</th>
@@ -467,6 +468,18 @@
                                         </td>
                                         <td class="px-4 py-4 font-mono font-bold text-indigo-300" x-text="item.kode"></td>
                                         <td class="px-4 py-4 font-bold text-white text-sm" x-text="item.nama"></td>
+                                        <td class="px-4 py-4 text-center whitespace-nowrap">
+                                            <template x-if="item.total_aset > 0">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm"
+                                                    :title="'Ruangan ini masih menampung ' + item.total_aset + ' aset di database'">
+                                                    <span>⚠️</span>
+                                                    <span x-text="item.total_aset + ' Aset'"></span>
+                                                </span>
+                                            </template>
+                                            <template x-if="!item.total_aset || item.total_aset == 0">
+                                                <span class="text-[10.5px] text-slate-500 font-mono">0 Aset</span>
+                                            </template>
+                                        </td>
                                         <td class="px-4 py-4 text-slate-300" x-text="item.tipe"></td>
                                         <td class="px-4 py-4">
                                             <span class="font-bold text-slate-200 block" x-text="item.kepala"></span>
@@ -503,7 +516,7 @@
                                 </template>
                                 <template x-if="filteredItems.length === 0">
                                     <tr>
-                                        <td colspan="9" class="py-14 text-center">
+                                        <td colspan="10" class="py-14 text-center">
                                             <div class="flex flex-col items-center justify-center space-y-2">
                                                 <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl text-emerald-400 shadow-inner">🏥</div>
                                                 <p class="text-sm font-bold text-slate-200">Tong Sampah Unit & Paviliun Kosong</p>
@@ -701,26 +714,36 @@
 
                         <!-- 5. DETAIL KHUSUS UNIT -->
                         <template x-if="activeModule === 'unit'">
-                            <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                                <div>
-                                    <span class="text-slate-500 text-[10px] uppercase font-bold block">Kode Unit:</span>
-                                    <span class="font-mono font-bold text-indigo-300 text-sm" x-text="selectedItem.kode"></span>
-                                    <span class="text-slate-200 font-bold text-base block mt-1" x-text="selectedItem.nama"></span>
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                                    <div>
+                                        <span class="text-slate-500 text-[10px] uppercase font-bold block">Kode Unit:</span>
+                                        <span class="font-mono font-bold text-indigo-300 text-sm" x-text="selectedItem.kode"></span>
+                                        <span class="text-slate-200 font-bold text-base block mt-1" x-text="selectedItem.nama"></span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-slate-500 text-[10px] uppercase font-bold block">Tipe Ruangan:</span>
+                                        <span class="font-bold text-white" x-text="selectedItem.tipe"></span>
+                                        <span class="text-xs text-slate-400 block mt-1" x-text="'Total Aset: ' + selectedItem.total_aset + ' Barang'"></span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="text-slate-500 text-[10px] block">Kepala Ruangan:</span>
+                                        <span class="font-semibold text-slate-200" x-text="selectedItem.kepala"></span>
+                                        <span class="text-[10px] text-slate-500 block" x-text="'NIP: ' + selectedItem.nip"></span>
+                                    </div>
+                                    <div class="mt-2 text-right">
+                                        <span class="text-slate-500 text-[10px] block">Akun Sub Admin:</span>
+                                        <span class="font-mono text-cyan-400 text-xs" x-text="selectedItem.email"></span>
+                                    </div>
                                 </div>
-                                <div class="text-right">
-                                    <span class="text-slate-500 text-[10px] uppercase font-bold block">Tipe Ruangan:</span>
-                                    <span class="font-bold text-white" x-text="selectedItem.tipe"></span>
-                                    <span class="text-xs text-slate-400 block mt-1" x-text="'Total Aset: ' + selectedItem.total_aset + ' Barang'"></span>
-                                </div>
-                                <div class="mt-2">
-                                    <span class="text-slate-500 text-[10px] block">Kepala Ruangan:</span>
-                                    <span class="font-semibold text-slate-200" x-text="selectedItem.kepala"></span>
-                                    <span class="text-[10px] text-slate-500 block" x-text="'NIP: ' + selectedItem.nip"></span>
-                                </div>
-                                <div class="mt-2 text-right">
-                                    <span class="text-slate-500 text-[10px] block">Akun Sub Admin:</span>
-                                    <span class="font-mono text-cyan-400 text-xs" x-text="selectedItem.email"></span>
-                                </div>
+
+                                <!-- PERINGATAN JIKA UNIT MEMILIKI ASET -->
+                                <template x-if="selectedItem.total_aset > 0">
+                                    <div class="p-3 bg-amber-500/15 border border-amber-500/30 rounded-2xl flex items-center space-x-2.5 text-amber-300 text-xs font-semibold">
+                                        <span class="text-base">⚠️</span>
+                                        <span>Perhatian: Unit ini masih tercatat menampung <strong class="text-white" x-text="selectedItem.total_aset"></strong> aset inventaris aktif. Pemulihan unit ini akan menyambungkan kembali data lokasi aset terkait.</span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
 
@@ -908,10 +931,25 @@
                 bulkForceDelete(module) {
                     if (this.selectedIds.length === 0) return;
                     const count = this.selectedIds.length;
+                    let title = '🚨 Konfirmasi Hapus Permanen Massal';
+                    let message = `PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN ${count} data terpilih dari database? Tindakan ini TIDAK DAPAT DIBATALKAN!`;
+                    let itemName = `${count} Data Terpilih`;
+
+                    // PERINGATAN JIKA ADA UNIT TERPILIH YANG MEMILIKI ASET
+                    if (module === 'unit') {
+                        const unitsWithAssets = this.units.filter(u => this.selectedIds.includes(u.id) && Number(u.total_aset) > 0);
+                        if (unitsWithAssets.length > 0) {
+                            const totalAsetCount = unitsWithAssets.reduce((sum, u) => sum + Number(u.total_aset), 0);
+                            title = '🚨 PERINGATAN KRUSIAL: BEBERAPA UNIT MEMILIKI ASET!';
+                            message = `PERHATIAN BESAR: Di antara ${count} unit yang dipilih, ${unitsWithAssets.length} unit di antaranya tercatat masih menampung total ${totalAsetCount} aset di database! Menghapus permanen unit-unit ini akan memutuskan keterkaitan ruangan pada aset-aset tersebut. Anda yakin ingin memusnahkannya secara permanen?`;
+                            itemName = `${count} Unit Terpilih (${unitsWithAssets.length} Unit memiliki total ${totalAsetCount} Aset)`;
+                        }
+                    }
+
                     this.askConfirmation({
-                        title: '🚨 Konfirmasi Hapus Permanen Massal',
-                        message: `PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN ${count} data terpilih dari database? Tindakan ini TIDAK DAPAT DIBATALKAN!`,
-                        itemName: `${count} Data Terpilih`,
+                        title: title,
+                        message: message,
+                        itemName: itemName,
                         type: 'danger',
                         btnText: '💥 Ya, Hapus Permanen Sekarang',
                         onConfirm: () => {
@@ -944,13 +982,25 @@
 
                 forceDeleteSingle(module, item) {
                     if (!item) return;
-                    const bNomor = item.kode || item.nama || 'Item';
+                    let bNomor = item.kode || item.nama || 'Item';
+                    let title = '🚨 Konfirmasi HAPUS PERMANEN';
+                    let message = 'TINDAKAN BERBAHAYA: Data ini akan dihapus secara PERMANEN dari database dan seluruh relasinya akan hilang. Tindakan ini TIDAK DAPAT DIBATALKAN!';
+                    let btnText = '💥 Ya, Hapus Permanen Sekarang';
+
+                    // PERINGATAN KHUSUS JIKA UNIT MEMILIKI ASET
+                    if (module === 'unit' && Number(item.total_aset) > 0) {
+                        title = '🚨 PERINGATAN KRUSIAL: UNIT MASIH MEMILIKI ASET!';
+                        message = `PERHATIAN BESAR: Unit / Ruangan "${item.nama}" saat ini tercatat masih menampung ${item.total_aset} aset di database! Menghapus unit ini secara permanen akan memutuskan keterkaitan lokasi ruangan pada aset-aset tersebut. Apakah Anda benar-benar yakin ingin memusnahkan unit ini secara permanen dari database?`;
+                        bNomor = `${item.nama} (${item.kode}) — ⚠️ Menampung ${item.total_aset} Aset`;
+                        btnText = '💥 Tetap Hapus Permanen Unit';
+                    }
+
                     this.askConfirmation({
-                        title: '🚨 Konfirmasi HAPUS PERMANEN',
-                        message: 'TINDAKAN BERBAHAYA: Data ini akan dihapus secara PERMANEN dari database dan seluruh relasinya akan hilang. Tindakan ini TIDAK DAPAT DIBATALKAN!',
+                        title: title,
+                        message: message,
                         itemName: bNomor,
                         type: 'danger',
-                        btnText: '💥 Ya, Hapus Permanen Sekarang',
+                        btnText: btnText,
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch(`/recycle-bin/${module}/${item.id}/force-delete`, {

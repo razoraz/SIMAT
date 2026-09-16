@@ -41,6 +41,17 @@
                     </div>
                 </template>
 
+                <!-- Warning Card Khusus: Unit Masih Memiliki Aset -->
+                <template x-if="confirmData.assetWarning">
+                    <div class="p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-2xl space-y-1.5 shadow-sm">
+                        <div class="flex items-center space-x-2 text-rose-400 font-extrabold text-xs">
+                            <span class="text-sm">⚠️</span>
+                            <span>PERINGATAN KETAT: RUANGAN MEMILIKI ASET!</span>
+                        </div>
+                        <p class="text-[11px] text-rose-200/90 leading-relaxed" x-text="confirmData.assetWarning"></p>
+                    </div>
+                </template>
+
                 <!-- Footer Action Buttons -->
                 <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
                     <button type="button" @click="showConfirmModal = false"

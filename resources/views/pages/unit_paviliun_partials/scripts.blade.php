@@ -124,13 +124,14 @@
                     type: 'success'
                 },
 
-                askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
+                askConfirmation({ title, message, itemName, type = 'danger', btnText, assetWarning = null, onConfirm }) {
                     this.confirmData = {
                         title: title || 'Konfirmasi Tindakan',
                         message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                         itemName: itemName || '',
                         type: type,
                         btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        assetWarning: assetWarning,
                         onConfirm: onConfirm
                     };
                     this.showConfirmModal = true;
@@ -150,20 +151,44 @@
 
                 deleteUnit(item) {
                     if (!item) return;
+
+                    const totalAset = Number(item.total_aset || (item.assets ? item.assets.length : 0));
+                    const hasAssets = totalAset > 0;
+                    const nilaiFmt = item.total_nilai || 'Rp 0';
+
+                    let title = '⚠️ Konfirmasi Pindahkan Unit ke Tong Sampah';
+                    let message = 'Apakah Anda yakin ingin menghapus data unit / ruangan ini dari master data RSUD? Data akan dipindahkan ke Pusat Data Terhapus dan akun Sub-Admin terkait dinonaktifkan.';
+                    let btnText = '🗑️ Ya, Pindahkan ke Tong Sampah';
+                    let assetWarning = null;
+
+                    if (hasAssets) {
+                        title = '🚨 PERINGATAN: UNIT MASIH MEMILIKI ASET!';
+                        message = `Ruangan "${item.nama}" saat ini tercatat masih menampung ${totalAset} barang inventaris/aset (${nilaiFmt}) di dalamnya!`;
+                        assetWarning = `PERINGATAN: Ruangan ini masih menampung ${totalAset} aset inventaris aktif. Menghapus ruangan ini akan memindahkan status ruangan ke tong sampah dan menonaktifkan akun penanggung jawab terkait. Disarankan untuk memutasi aset ke ruangan lain terlebih dahulu agar data inventaris tetap tertata rapi.`;
+                        btnText = '⚠️ Tetap Hapus & Nonaktifkan Unit';
+                    }
+
                     this.askConfirmation({
-                        title: '⚠️ Konfirmasi Hapus Unit / Paviliun',
-                        message: 'Apakah Anda yakin ingin menghapus data unit / ruangan ini dari master data RSUD? Keterkaitan lokasi aset pada ruangan ini akan dilepas.',
-                        itemName: (item.nama || 'Unit') + ' (' + (item.kode || 'UNIT') + ')',
+                        title: title,
+                        message: message,
+                        itemName: (item.nama || 'Unit') + ' (' + (item.kode || 'UNIT') + ')' + (hasAssets ? ` — ⚠️ Menampung ${totalAset} Aset (${nilaiFmt})` : ' — Tidak ada aset'),
                         type: 'danger',
-                        btnText: '🗑️ Ya, Hapus Unit',
+                        btnText: btnText,
+                        assetWarning: assetWarning,
                         onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             try {
-                                await fetch('/unit-paviliun/' + item.id, {
+                                const res = await fetch('/unit-paviliun/' + item.id, {
                                     method: 'DELETE',
                                     headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
                                 });
-                                window.location.reload();
+                                const d = await res.json();
+                                if (d.success) {
+                                    this.showSimatToast(d.message || 'Unit berhasil dipindahkan ke tong sampah.', 'success');
+                                    setTimeout(() => window.location.reload(), 600);
+                                } else {
+                                    this.showSimatToast(d.message || 'Gagal menghapus unit.', 'error');
+                                }
                             } catch(err) {
                                 window.location.reload();
                             }
