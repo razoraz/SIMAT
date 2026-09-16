@@ -17,8 +17,8 @@
         <div class="flex items-center space-x-2">
             <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-bold">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span class="hidden xs:inline">QR Terverifikasi</span>
-                <span class="xs:hidden">Resmi</span>
+                <span class="hidden sm:inline">QR Terverifikasi</span>
+                <span class="sm:hidden">Resmi</span>
             </span>
         </div>
     </div>

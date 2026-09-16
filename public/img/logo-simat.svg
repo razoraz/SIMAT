@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" width="100%" height="100%">
+    <defs>
+        <!-- Gradients S-Loop Dinamis RSUD -->
+        <linearGradient id="sRedGlowO" x1="15" y1="12" x2="85" y2="50" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#FF2E5B"/>
+            <stop offset="60%" stop-color="#FF1744"/>
+            <stop offset="100%" stop-color="#D50000"/>
+        </linearGradient>
+
+        <linearGradient id="sMintGlowO" x1="15" y1="50" x2="85" y2="88" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00F5A0"/>
+            <stop offset="60%" stop-color="#00D26A"/>
+            <stop offset="100%" stop-color="#00A854"/>
+        </linearGradient>
+
+        <!-- Daun Sisi Kiri: Neon Mint (Kontras Terhadap Lengkungan Merah) -->
+        <linearGradient id="leafMintBright" x1="50" y1="58" x2="26" y2="38" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00D26A"/>
+            <stop offset="50%" stop-color="#00F5A0"/>
+            <stop offset="100%" stop-color="#E6FFFA"/>
+        </linearGradient>
+
+        <!-- Daun Sisi Kanan: Neon Crimson (Kontras Terhadap Lengkungan Hijau) -->
+        <linearGradient id="leafRedBright" x1="50" y1="58" x2="74" y2="38" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#D50000"/>
+            <stop offset="50%" stop-color="#FF1744"/>
+            <stop offset="100%" stop-color="#FFE4E6"/>
+        </linearGradient>
+
+        <!-- Filter Bayangan Halus 3D -->
+        <filter id="sDropShadowO" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="3.5" stdDeviation="3.5" flood-color="#020617" flood-opacity="0.65"/>
+        </filter>
+
+        <filter id="leafPopShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#000000" flood-opacity="0.75"/>
+        </filter>
+    </defs>
+
+    <!-- 1. LENGKUNGAN ATAS / KIRI: SABIT MERAH RSUD KOESNANDI -->
+    <path d="M 68,14 
+             C 42,14 18,28 18,48 
+             C 18,59 25,67 36,71 
+             C 44,74 48,65 44,58 
+             C 36,54 32,48 32,44 
+             C 32,34 44,26 62,26 
+             C 72,26 78,30 82,34 
+             C 86,26 78,14 68,14 Z" 
+          fill="url(#sRedGlowO)" 
+          filter="url(#sDropShadowO)" />
+
+    <!-- 2. LENGKUNGAN BAWAH / KANAN: TRACK HIJAU MINT RSUD KOESNANDI -->
+    <path d="M 32,86 
+             C 58,86 82,72 82,52 
+             C 82,41 75,33 64,29 
+             C 56,26 52,35 56,42 
+             C 64,46 68,52 68,56 
+             C 68,66 56,74 38,74 
+             C 28,74 22,70 18,66 
+             C 14,74 22,86 32,86 Z" 
+          fill="url(#sMintGlowO)" 
+          filter="url(#sDropShadowO)" />
+
+    <!-- 3. DAUN HERBAL 7 JARI (POSISI DI PUSAT S + DUAL TONE KONTRAS) -->
+    <g filter="url(#leafPopShadow)">
+        <!-- Tangkai Bawah Emas -->
+        <path d="M 50,59 L 50,67" stroke="#FEF08A" stroke-width="1.8" stroke-linecap="round"/>
+
+        <!-- === SISI KIRI: HIJAU MINT BERSINAR (MENUMPUK DI ATAS LENGKUNGAN MERAH) === -->
+        <!-- Jari Bawah Kiri -->
+        <path d="M 50,58 C 42,60 34,61 28,58 C 33,54 42,54 50,58 Z" 
+              fill="url(#leafMintBright)" stroke="#064E3B" stroke-width="0.6"/>
+        
+        <!-- Jari Tengah Kiri -->
+        <path d="M 50,58 C 41,53 32,47 27,40 C 34,39 43,45 50,58 Z" 
+              fill="url(#leafMintBright)" stroke="#064E3B" stroke-width="0.6"/>
+
+        <!-- Jari Atas Kiri -->
+        <path d="M 50,58 C 44,47 38,38 37,30 C 44,32 47,43 50,58 Z" 
+              fill="url(#leafMintBright)" stroke="#064E3B" stroke-width="0.6"/>
+
+        <!-- === SISI KANAN: MERAH CRIMSON (MENUMPUK DI ATAS LENGKUNGAN HIJAU) === -->
+        <!-- Jari Atas Kanan -->
+        <path d="M 50,58 C 56,47 62,38 63,30 C 56,32 53,43 50,58 Z" 
+              fill="url(#leafRedBright)" stroke="#881337" stroke-width="0.6"/>
+
+        <!-- Jari Tengah Kanan -->
+        <path d="M 50,58 C 59,53 68,47 73,40 C 66,39 57,45 50,58 Z" 
+              fill="url(#leafRedBright)" stroke="#881337" stroke-width="0.6"/>
+
+        <!-- Jari Bawah Kanan -->
+        <path d="M 50,58 C 58,60 66,61 72,58 C 67,54 58,54 50,58 Z" 
+              fill="url(#leafRedBright)" stroke="#881337" stroke-width="0.6"/>
+
+        <!-- === JARI PUSAT: SPLIT DUAL-TONE (KIRI HIJAU, KANAN MERAH) === -->
+        <path d="M 50,58 C 45,47 44,35 50,26 L 50,58 Z" 
+              fill="url(#leafMintBright)" stroke="#064E3B" stroke-width="0.5"/>
+        <path d="M 50,58 C 55,47 56,35 50,26 L 50,58 Z" 
+              fill="url(#leafRedBright)" stroke="#881337" stroke-width="0.5"/>
+
+        <!-- Garis Tulang Daun Bersinar -->
+        <line x1="50" y1="58" x2="50" y2="28" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
+        <line x1="50" y1="58" x2="38" y2="33" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" opacity="0.9"/>
+        <line x1="50" y1="58" x2="62" y2="33" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" opacity="0.9"/>
+        <line x1="50" y1="58" x2="30" y2="42" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" opacity="0.9"/>
+        <line x1="50" y1="58" x2="70" y2="42" stroke="#FFFFFF" stroke-width="0.7" stroke-linecap="round" opacity="0.9"/>
+        <line x1="50" y1="58" x2="31" y2="58" stroke="#FFFFFF" stroke-width="0.6" stroke-linecap="round" opacity="0.8"/>
+        <line x1="50" y1="58" x2="69" y2="58" stroke="#FFFFFF" stroke-width="0.6" stroke-linecap="round" opacity="0.8"/>
+
+        <!-- Titik Pusat Inti Emas Bersinar -->
+        <circle cx="50" cy="58" r="2.2" fill="#FEF08A"/>
+    </g>
+</svg>

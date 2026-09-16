@@ -1,5 +1,7 @@
     <!-- Library SheetJS dengan Dukungan Penuh Cell Styling (Warna, Font, Border & Alignment) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <!-- Library QR Code Generator Offline (Self-Hosted Standalone) -->
+    <script src="{{ asset('js/qrcode.min.js') }}"></script>
 
     <!-- Script Global Export Multi-Sheet Excel Berwarna 4 Langkah (Rekapitulasi, KIB A-F, ATB, Extracom) -->
     <script>
@@ -4271,6 +4273,8 @@
                 selectedAstap: null,
                 selectedAstapDetail: null,
                 selectedQrItem: null,
+                qrDataUrl: '',
+                isGeneratingQr: false,
                 detailKondisiFilter: 'all',
                 detailPenempatanFilter: 'all',
                 detailSearchQuery: '',
@@ -5328,6 +5332,7 @@
                         riwayat_servis: riwayatText
                     };
                     this.showQrModal = true;
+                    this.generateQrImage(this.selectedQrItem);
                 },
 
                 downloadQrCodeNibar(reg, astap) {
@@ -5347,6 +5352,7 @@
                         riwayat_servis: riwayatText
                     };
                     this.showQrModal = true;
+                    this.generateQrImage(this.selectedQrItem);
                 },
 
                 getQrPayloadUrl(item) {
@@ -5369,24 +5375,73 @@
                     ].join('\n');
                 },
 
+                generateQrImage(item) {
+                    if (!item) return;
+                    this.isGeneratingQr = true;
+                    this.qrDataUrl = '';
+                    const scanUrl = this.getQrPayloadUrl(item);
+
+                    const renderQr = () => {
+                        if (window.QRCode && typeof window.QRCode.toDataURL === 'function') {
+                            window.QRCode.toDataURL(scanUrl, {
+                                width: 320,
+                                margin: 2,
+                                color: {
+                                    dark: '#000000',
+                                    light: '#ffffff'
+                                },
+                                errorCorrectionLevel: 'M'
+                            }).then(url => {
+                                this.qrDataUrl = url;
+                                this.isGeneratingQr = false;
+                            }).catch(err => {
+                                console.error('Gagal generate QR Code lokal:', err);
+                                this.qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=' + encodeURIComponent(scanUrl);
+                                this.isGeneratingQr = false;
+                            });
+                        } else {
+                            this.qrDataUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=10&data=' + encodeURIComponent(scanUrl);
+                            this.isGeneratingQr = false;
+                        }
+                    };
+
+                    if (this.$nextTick) {
+                        this.$nextTick(() => renderQr());
+                    } else {
+                        setTimeout(renderQr, 50);
+                    }
+                },
+
                 downloadQrImage() {
-                    if (!this.selectedQrItem) return;
-                    const scanUrl = this.getQrPayloadUrl(this.selectedQrItem);
-                    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(scanUrl);
-                    fetch(qrUrl)
+                    if (!this.selectedQrItem || !this.qrDataUrl) return;
+                    const cleanFilename = 'QR_CODE_' + (this.selectedQrItem.kode_barang || 'ASET').replace(/[\/\.\s]/g, '_') + '.png';
+
+                    if (this.qrDataUrl.startsWith('data:image/')) {
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = this.qrDataUrl;
+                        a.download = cleanFilename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        return;
+                    }
+
+                    // Fallback jika berupa external url
+                    fetch(this.qrDataUrl)
                         .then(res => res.blob())
                         .then(blob => {
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = url;
-                            a.download = 'QR_CODE_' + (this.selectedQrItem.kode_barang || 'ASET').replace(/\./g, '_') + '.png';
+                            a.download = cleanFilename;
                             document.body.appendChild(a);
                             a.click();
                             window.URL.revokeObjectURL(url);
                         })
                         .catch(() => {
-                            window.open(qrUrl, '_blank');
+                            window.open(this.qrDataUrl, '_blank');
                         });
                 },
 
