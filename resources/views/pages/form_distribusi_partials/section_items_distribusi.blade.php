@@ -165,7 +165,7 @@
                                                 <span class="text-teal-400 font-mono" x-text="getFilteredAstap(item, item.nama_barang).length + ' barang tersedia'"></span>
                                             </div>
 
-                                            <template x-for="ast in getFilteredAstap(item, item.nama_barang)" :key="ast.id">
+                                            <template x-for="ast in getSlicedFilteredAstap(item, item.nama_barang, 10)" :key="ast.id">
                                                 <div @click="selectAstapItem(item, ast)"
                                                      :class="isItemAlreadySelected(ast, item) ? 'opacity-40 cursor-not-allowed bg-slate-950/40' : 'hover:bg-teal-500/15 cursor-pointer'"
                                                      class="px-4 py-2.5 transition-colors group flex items-center justify-between gap-3">
@@ -179,6 +179,13 @@
                                                         <p class="text-[10px] text-slate-400" x-text="ast.kode + (ast.jenis_nama ? ' • ' + ast.jenis_nama : (ast.kategori ? ' • ' + ast.kategori : '')) + (ast.merk ? ' • ' + ast.merk : '')"></p>
                                                     </div>
                                                     <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-teal-300 font-mono text-[10px] font-bold shrink-0" x-text="ast.satuan || 'Unit'"></span>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="getFilteredAstap(item, item.nama_barang).length > 10">
+                                                <div class="px-4 py-2 bg-slate-950/90 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+                                                    <span class="text-slate-400 italic">Menampilkan 10 hasil teratas</span>
+                                                    <span class="text-teal-400 font-medium">Ketik nama barang untuk mempersempit pencarian</span>
                                                 </div>
                                             </template>
 

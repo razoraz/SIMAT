@@ -391,8 +391,11 @@
                     let list = this.katalogAstap || [];
                     if (item && item.jenis_astap_kode) { list = list.filter(a => a.jenis_kode === item.jenis_astap_kode || (a.kode && a.kode.startsWith(item.jenis_astap_kode))); }
                     if (!query || query.trim() === '') return list;
-                    const q = query.toLowerCase();
+                    const q = query.toLowerCase().trim();
                     return list.filter(a => (a.nama||'').toLowerCase().includes(q) || (a.kode||'').toLowerCase().includes(q));
+                },
+                getSlicedFilteredAstap(item, query, limit = 10) {
+                    return this.getFilteredAstap(item, query).slice(0, limit);
                 },
                 isItemAlreadySelected(ast, currentItem) {
                     if (!ast) return false;
