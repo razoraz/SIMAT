@@ -931,26 +931,39 @@
                 bulkForceDelete(module) {
                     if (this.selectedIds.length === 0) return;
                     const count = this.selectedIds.length;
-                    let title = '🚨 Konfirmasi Hapus Permanen Massal';
-                    let message = `PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN ${count} data terpilih dari database? Tindakan ini TIDAK DAPAT DIBATALKAN!`;
-                    let itemName = `${count} Data Terpilih`;
 
-                    // PERINGATAN JIKA ADA UNIT TERPILIH YANG MEMILIKI ASET
+                    // BLOKIR PENGHAPUSAN MASSAL JIKA ADA UNIT YANG MASIH MEMILIKI ASET
                     if (module === 'unit') {
                         const unitsWithAssets = this.units.filter(u => this.selectedIds.includes(u.id) && Number(u.total_aset) > 0);
                         if (unitsWithAssets.length > 0) {
                             const totalAsetCount = unitsWithAssets.reduce((sum, u) => sum + Number(u.total_aset), 0);
-                            title = '🚨 PERINGATAN KRUSIAL: BEBERAPA UNIT MEMILIKI ASET!';
-                            message = `PERHATIAN BESAR: Di antara ${count} unit yang dipilih, ${unitsWithAssets.length} unit di antaranya tercatat masih menampung total ${totalAsetCount} aset di database! Menghapus permanen unit-unit ini akan memutuskan keterkaitan ruangan pada aset-aset tersebut. Anda yakin ingin memusnahkannya secara permanen?`;
-                            itemName = `${count} Unit Terpilih (${unitsWithAssets.length} Unit memiliki total ${totalAsetCount} Aset)`;
+                            const unitNames = unitsWithAssets.map(u => u.nama).slice(0, 3).join(', ') + (unitsWithAssets.length > 3 ? '...' : '');
+                            this.askConfirmation({
+                                title: '🚫 Penghapusan Massal Ditolak!',
+                                message: `Terdapat ${unitsWithAssets.length} unit terpilih (${unitNames}) yang masih menampung total ${totalAsetCount} aset aktif di database RSUD. Unit yang memiliki aset tidak dapat dihapus.`,
+                                itemName: `${unitsWithAssets.length} Unit Terpilih Masih Memiliki Aset (Total ${totalAsetCount} Aset)`,
+                                type: 'danger',
+                                isBlocked: true,
+                                actionUrl: '/mutasi-aset',
+                                actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                                assetWarning: `Demi integritas data aset RSUD Koesnadi, Anda tidak dapat menghapus unit yang masih memegang inventaris barang. Silakan batalkan centang pada unit yang memiliki aset, atau pulihkan unit tersebut dan ajukan mutasi aset ke ruangan lain terlebih dahulu.`,
+                                btnText: null,
+                                onConfirm: null
+                            });
+                            return;
                         }
                     }
+
+                    let title = '🚨 Konfirmasi Hapus Permanen Massal';
+                    let message = `PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN ${count} data terpilih dari database? Tindakan ini TIDAK DAPAT DIBATALKAN!`;
+                    let itemName = `${count} Data Terpilih`;
 
                     this.askConfirmation({
                         title: title,
                         message: message,
                         itemName: itemName,
                         type: 'danger',
+                        isBlocked: false,
                         btnText: '💥 Ya, Hapus Permanen Sekarang',
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -982,24 +995,35 @@
 
                 forceDeleteSingle(module, item) {
                     if (!item) return;
+
+                    // JIKA RUANGAN / UNIT MEMILIKI ASET: BLOKIR PENGHAPUSAN DAN TAMPILKAN LINK AJUKAN MUTASI
+                    if (module === 'unit' && Number(item.total_aset) > 0) {
+                        this.askConfirmation({
+                            title: '🚫 Unit Tidak Dapat Dihapus Permanen!',
+                            message: `Ruangan "${item.nama}" saat ini TIDAK DAPAT DIHAPUS PERMANEN karena masih tercatat menampung ${item.total_aset} barang inventaris/aset di database RSUD.`,
+                            itemName: `${item.nama} (${item.kode || 'UNIT'}) — ⚠️ Masih Memiliki ${item.total_aset} Aset Aktif`,
+                            type: 'danger',
+                            isBlocked: true,
+                            actionUrl: '/mutasi-aset',
+                            actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                            assetWarning: `Sistem mendeteksi bahwa ruangan ini masih tercatat menampung ${item.total_aset} aset aktif. Demi akuntabilitas inventaris RSUD Koesnadi, unit yang memiliki aset tidak diperkenankan untuk dihapus permanen. Silakan pulihkan unit ini lalu ajukan mutasi aset ke ruangan lain terlebih dahulu sampai ruangan ini kosong (0 aset).`,
+                            btnText: null,
+                            onConfirm: null
+                        });
+                        return;
+                    }
+
                     let bNomor = item.kode || item.nama || 'Item';
                     let title = '🚨 Konfirmasi HAPUS PERMANEN';
                     let message = 'TINDAKAN BERBAHAYA: Data ini akan dihapus secara PERMANEN dari database dan seluruh relasinya akan hilang. Tindakan ini TIDAK DAPAT DIBATALKAN!';
                     let btnText = '💥 Ya, Hapus Permanen Sekarang';
-
-                    // PERINGATAN KHUSUS JIKA UNIT MEMILIKI ASET
-                    if (module === 'unit' && Number(item.total_aset) > 0) {
-                        title = '🚨 PERINGATAN KRUSIAL: UNIT MASIH MEMILIKI ASET!';
-                        message = `PERHATIAN BESAR: Unit / Ruangan "${item.nama}" saat ini tercatat masih menampung ${item.total_aset} aset di database! Menghapus unit ini secara permanen akan memutuskan keterkaitan lokasi ruangan pada aset-aset tersebut. Apakah Anda benar-benar yakin ingin memusnahkan unit ini secara permanen dari database?`;
-                        bNomor = `${item.nama} (${item.kode}) — ⚠️ Menampung ${item.total_aset} Aset`;
-                        btnText = '💥 Tetap Hapus Permanen Unit';
-                    }
 
                     this.askConfirmation({
                         title: title,
                         message: message,
                         itemName: bNomor,
                         type: 'danger',
+                        isBlocked: false,
                         btnText: btnText,
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';

@@ -115,6 +115,10 @@
                     itemName: '',
                     type: 'danger',
                     btnText: 'Ya, Lanjutkan',
+                    isBlocked: false,
+                    actionUrl: null,
+                    actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                    assetWarning: null,
                     onConfirm: null
                 },
 
@@ -124,13 +128,16 @@
                     type: 'success'
                 },
 
-                askConfirmation({ title, message, itemName, type = 'danger', btnText, assetWarning = null, onConfirm }) {
+                askConfirmation({ title, message, itemName, type = 'danger', btnText, assetWarning = null, isBlocked = false, actionUrl = null, actionText = null, onConfirm }) {
                     this.confirmData = {
                         title: title || 'Konfirmasi Tindakan',
                         message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                         itemName: itemName || '',
                         type: type,
-                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        btnText: isBlocked ? null : (btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan'))),
+                        isBlocked: Boolean(isBlocked),
+                        actionUrl: actionUrl,
+                        actionText: actionText || '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
                         assetWarning: assetWarning,
                         onConfirm: onConfirm
                     };
@@ -156,25 +163,31 @@
                     const hasAssets = totalAset > 0;
                     const nilaiFmt = item.total_nilai || 'Rp 0';
 
-                    let title = '⚠️ Konfirmasi Pindahkan Unit ke Tong Sampah';
-                    let message = 'Apakah Anda yakin ingin menghapus data unit / ruangan ini dari master data RSUD? Data akan dipindahkan ke Pusat Data Terhapus dan akun Sub-Admin terkait dinonaktifkan.';
-                    let btnText = '🗑️ Ya, Pindahkan ke Tong Sampah';
-                    let assetWarning = null;
-
+                    // JIKA UNIT/RUANGAN MEMILIKI ASET: BLOKIR PENGHAPUSAN DAN TAMPILKAN LINK AJUKAN MUTASI
                     if (hasAssets) {
-                        title = '🚨 PERINGATAN: UNIT MASIH MEMILIKI ASET!';
-                        message = `Ruangan "${item.nama}" saat ini tercatat masih menampung ${totalAset} barang inventaris/aset (${nilaiFmt}) di dalamnya!`;
-                        assetWarning = `PERINGATAN: Ruangan ini masih menampung ${totalAset} aset inventaris aktif. Menghapus ruangan ini akan memindahkan status ruangan ke tong sampah dan menonaktifkan akun penanggung jawab terkait. Disarankan untuk memutasi aset ke ruangan lain terlebih dahulu agar data inventaris tetap tertata rapi.`;
-                        btnText = '⚠️ Tetap Hapus & Nonaktifkan Unit';
+                        this.askConfirmation({
+                            title: '🚫 Unit Tidak Dapat Dihapus!',
+                            message: `Ruangan "${item.nama}" saat ini TIDAK DAPAT DIHAPUS karena masih tercatat menampung ${totalAset} barang inventaris/aset (${nilaiFmt}) di database RSUD.`,
+                            itemName: `${item.nama} (${item.kode || 'UNIT'}) — ⚠️ Masih Memiliki ${totalAset} Aset Aktif`,
+                            type: 'danger',
+                            isBlocked: true,
+                            actionUrl: '/mutasi-aset',
+                            actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                            assetWarning: `Sistem mendeteksi bahwa unit/ruangan ini masih memegang ${totalAset} aset aktif bernilai ${nilaiFmt}. Demi akuntabilitas dan pencegahan kehilangan aset RSUD Koesnadi, unit yang masih memiliki aset tidak diperkenankan untuk dihapus. Silakan ajukan proses mutasi seluruh aset ke ruangan lain terlebih dahulu sampai ruangan ini kosong.`,
+                            btnText: null,
+                            onConfirm: null
+                        });
+                        return;
                     }
 
                     this.askConfirmation({
-                        title: title,
-                        message: message,
-                        itemName: (item.nama || 'Unit') + ' (' + (item.kode || 'UNIT') + ')' + (hasAssets ? ` — ⚠️ Menampung ${totalAset} Aset (${nilaiFmt})` : ' — Tidak ada aset'),
+                        title: '⚠️ Konfirmasi Pindahkan Unit ke Tong Sampah',
+                        message: 'Apakah Anda yakin ingin menghapus data unit / ruangan ini dari master data RSUD? Data akan dipindahkan ke Pusat Data Terhapus dan akun Sub-Admin terkait dinonaktifkan.',
+                        itemName: (item.nama || 'Unit') + ' (' + (item.kode || 'UNIT') + ') — Tidak ada aset',
                         type: 'danger',
-                        btnText: btnText,
-                        assetWarning: assetWarning,
+                        isBlocked: false,
+                        btnText: '🗑️ Ya, Pindahkan ke Tong Sampah',
+                        assetWarning: null,
                         onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             try {

@@ -471,21 +471,37 @@ class RecycleBinController extends Controller
 
             case 'unit':
                 $units = Unit::whereIn('id', $ids)->get();
-                $totalAsetCount = 0;
-                DB::transaction(function () use ($units, &$deletedCount, &$totalAsetCount) {
+                $unitsWithAssets = [];
+                foreach ($units as $u) {
+                    $count = (int) ($u->total_aset ?: \App\Models\AstapRegister::where('unit_id', $u->id)->count());
+                    if ($count > 0) {
+                        $unitsWithAssets[] = "{$u->nama} ({$count} aset)";
+                    }
+                }
+                if (!empty($unitsWithAssets)) {
+                    $listStr = implode(', ', array_slice($unitsWithAssets, 0, 3));
+                    if (count($unitsWithAssets) > 3) {
+                        $listStr .= '... dan ' . (count($unitsWithAssets) - 3) . ' unit lainnya';
+                    }
+                    $msg = "Penghapusan permanen ditolak: Terdapat unit yang masih memiliki aset aktif [{$listStr}]. Silakan mutasi seluruh aset ke ruangan lain terlebih dahulu.";
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success'    => false,
+                            'message'    => $msg,
+                            'action_url' => route('mutasi.index'),
+                        ], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+
+                DB::transaction(function () use ($units, &$deletedCount) {
                     foreach ($units as $u) {
-                        $count = (int) ($u->total_aset ?: \App\Models\AstapRegister::where('unit_id', $u->id)->count());
-                        $totalAsetCount += $count;
-                        // Putuskan relasi register aset dari unit agar tidak rusak integritas data
-                        \App\Models\AstapRegister::where('unit_id', $u->id)->update(['unit_id' => null]);
                         User::where('unit_id', $u->id)->delete();
                         $u->delete();
                         $deletedCount++;
                     }
                 });
-                $msg = $totalAsetCount > 0
-                    ? "Sebanyak {$deletedCount} Unit & Paviliun telah dihapus permanen ({$totalAsetCount} relasi aset dilepaskan dari unit)."
-                    : "Sebanyak {$deletedCount} Unit & Paviliun telah dihapus permanen dari database.";
+                $msg = "Sebanyak {$deletedCount} Unit & Paviliun telah dihapus permanen dari database.";
                 break;
 
             default:
@@ -548,15 +564,23 @@ class RecycleBinController extends Controller
                 $unit = Unit::findOrFail($id);
                 $nama = $unit->nama;
                 $assetCount = (int) ($unit->total_aset ?: \App\Models\AstapRegister::where('unit_id', $unit->id)->count());
+                if ($assetCount > 0) {
+                    $msg = "Penghapusan permanen ditolak: Unit \"{$nama}\" masih memiliki {$assetCount} aset aktif. Silakan pulihkan unit ini lalu lakukan mutasi aset ke unit lain terlebih dahulu.";
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success'    => false,
+                            'message'    => $msg,
+                            'action_url' => route('mutasi.index'),
+                        ], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+
                 DB::transaction(function () use ($unit) {
-                    // Putuskan relasi register aset dari unit agar tidak rusak integritas data
-                    \App\Models\AstapRegister::where('unit_id', $unit->id)->update(['unit_id' => null]);
                     User::where('unit_id', $unit->id)->delete();
                     $unit->delete();
                 });
-                $msg = $assetCount > 0
-                    ? "Data Unit \"{$nama}\" ({$assetCount} relasi aset dilepaskan dari unit) dan akun terkait telah dihapus secara permanen dari database."
-                    : "Data Unit \"{$nama}\" dan akun terkait telah dihapus secara permanen dari database.";
+                $msg = "Data Unit \"{$nama}\" dan akun terkait telah dihapus secara permanen dari database.";
                 break;
 
             default:

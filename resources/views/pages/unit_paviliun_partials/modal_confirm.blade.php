@@ -53,21 +53,34 @@
                 </template>
 
                 <!-- Footer Action Buttons -->
-                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5 flex-wrap gap-y-2">
                     <button type="button" @click="showConfirmModal = false"
                         class="px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
-                        Batal
+                        <span x-text="confirmData.isBlocked ? 'Tutup' : 'Batal'"></span>
                     </button>
-                    <button type="button" @click="executeConfirmedAction()"
-                        class="px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
-                        :class="{
-                            'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20': confirmData.type === 'danger',
-                            'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20': confirmData.type === 'warning',
-                            'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20': confirmData.type === 'success',
-                            'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20': confirmData.type === 'info'
-                        }">
-                        <span x-text="confirmData.btnText"></span>
-                    </button>
+
+                    <!-- Link / Tombol Ajukan Mutasi Barang (Jika Diblokir karena Memiliki Aset) -->
+                    <template x-if="confirmData.actionUrl">
+                        <a :href="confirmData.actionUrl"
+                            class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95 flex items-center space-x-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                            <span x-text="confirmData.actionText || '🔄 Ajukan Mutasi Barang Terlebih Dahulu'"></span>
+                        </a>
+                    </template>
+
+                    <!-- Tombol Eksekusi Normal (Hanya tampil jika TIDAK diblokir) -->
+                    <template x-if="!confirmData.isBlocked && confirmData.btnText">
+                        <button type="button" @click="executeConfirmedAction()"
+                            class="px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                            :class="{
+                                'bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/20': confirmData.type === 'danger',
+                                'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20': confirmData.type === 'warning',
+                                'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20': confirmData.type === 'success',
+                                'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20': confirmData.type === 'info'
+                            }">
+                            <span x-text="confirmData.btnText"></span>
+                        </button>
+                    </template>
                 </div>
             </div>
         </div>

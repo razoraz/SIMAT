@@ -196,20 +196,32 @@ class UnitController extends Controller
         $nama = $unit->nama;
         $assetCount = (int) ($unit->total_aset ?: \App\Models\AstapRegister::where('unit_id', $unit->id)->count());
 
+        // UNIT YANG MEMILIKI ASET TIDAK DAPAT DIHAPUS
+        if ($assetCount > 0) {
+            $errorMsg = "Penghapusan ditolak: Unit / Ruangan \"{$nama}\" masih memiliki {$assetCount} aset aktif. Silakan lakukan mutasi aset ke ruangan lain terlebih dahulu.";
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success'    => false,
+                    'message'    => $errorMsg,
+                    'total_aset' => $assetCount,
+                    'action_url' => route('mutasi.index'),
+                ], 422);
+            }
+            return redirect()->route('unit.index')->with('error', $errorMsg);
+        }
+
         $unit->softDelete();
         \App\Models\User::where('unit_id', $unit->id)->update(['status' => 'Nonaktif']);
 
-        $message = $assetCount > 0
-            ? "⚠️ Peringatan: Unit {$nama} (masih tercatat menampung {$assetCount} aset) berhasil dipindahkan ke Pusat Data Terhapus dan akun Sub-Admin dinonaktifkan."
-            : "Unit {$nama} berhasil dipindahkan ke Pusat Data Terhapus.";
+        $message = "Unit {$nama} berhasil dipindahkan ke Pusat Data Terhapus.";
 
         session()->flash('success', $message);
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'has_assets' => $assetCount > 0,
-                'total_aset' => $assetCount,
+                'has_assets' => false,
+                'total_aset' => 0,
             ]);
         }
 

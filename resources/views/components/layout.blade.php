@@ -431,6 +431,10 @@
                 itemName: '',
                 type: 'danger',
                 btnText: 'Ya, Lanjutkan',
+                isBlocked: false,
+                actionUrl: null,
+                actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                assetWarning: null,
                 onConfirm: null
             },
             toast: {
@@ -444,7 +448,11 @@
                     message: detail.message || 'Apakah Anda yakin ingin melanjutkan?',
                     itemName: detail.itemName || '',
                     type: detail.type || 'danger',
-                    btnText: detail.btnText || (detail.type === 'danger' ? 'Ya, Hapus Data' : (detail.type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                    btnText: detail.isBlocked ? null : (detail.btnText !== undefined ? detail.btnText : (detail.type === 'danger' ? 'Ya, Hapus Data' : (detail.type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan'))),
+                    isBlocked: Boolean(detail.isBlocked),
+                    actionUrl: detail.actionUrl || null,
+                    actionText: detail.actionText || '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                    assetWarning: detail.assetWarning || null,
                     onConfirm: detail.onConfirm
                 };
                 this.showConfirm = true;
@@ -511,22 +519,46 @@
                     </div>
                 </template>
 
+                <!-- Warning Card Khusus: Unit Masih Memiliki Aset -->
+                <template x-if="confirmData.assetWarning">
+                    <div class="p-3.5 bg-rose-500/15 border border-rose-500/40 rounded-2xl space-y-1.5 shadow-sm">
+                        <div class="flex items-center space-x-2 text-rose-400 font-extrabold text-xs">
+                            <span class="text-sm">⚠️</span>
+                            <span>PERINGATAN KETAT: UNIT MEMILIKI ASET!</span>
+                        </div>
+                        <p class="text-[11px] text-rose-200/90 leading-relaxed" x-text="confirmData.assetWarning"></p>
+                    </div>
+                </template>
+
                 <!-- Footer Action Buttons -->
-                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
+                <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5 flex-wrap gap-y-2">
                     <button type="button" @click="showConfirm = false"
-                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
-                        Batal
+                        class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer">
+                        <span x-text="confirmData.isBlocked ? 'Tutup' : 'Batal'"></span>
                     </button>
-                    <button type="button" @click="executeConfirmed()"
-                        class="px-5 py-2 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
-                        :class="{
-                            'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30': confirmData.type === 'danger',
-                            'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/30': confirmData.type === 'warning',
-                            'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/30': confirmData.type === 'success',
-                            'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/30': confirmData.type === 'info'
-                        }">
-                        <span x-text="confirmData.btnText"></span>
-                    </button>
+
+                    <!-- Link / Tombol Aksi Mutasi Barang (Jika Diblokir karena Memiliki Aset) -->
+                    <template x-if="confirmData.actionUrl">
+                        <a :href="confirmData.actionUrl"
+                            class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95 flex items-center space-x-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                            <span x-text="confirmData.actionText || '🔄 Ajukan Mutasi Barang Terlebih Dahulu'"></span>
+                        </a>
+                    </template>
+
+                    <!-- Tombol Eksekusi Aksi Normal (Hanya tampil jika TIDAK diblokir) -->
+                    <template x-if="!confirmData.isBlocked && confirmData.btnText">
+                        <button type="button" @click="executeConfirmed()"
+                            class="px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-1.5"
+                            :class="{
+                                'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30': confirmData.type === 'danger',
+                                'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/30': confirmData.type === 'warning',
+                                'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/30': confirmData.type === 'success',
+                                'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/30': confirmData.type === 'info'
+                            }">
+                            <span x-text="confirmData.btnText"></span>
+                        </button>
+                    </template>
                 </div>
             </div>
         </div>
