@@ -486,7 +486,10 @@
                                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-emerald-500">
                                                 </div>
                                                 <div>
-                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nilai Satuan (Rp)</label>
+                                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                                        <span>Nilai Satuan (Rp)</span>
+                                                        <span class="text-[9px] font-bold text-emerald-400">Wajib > Rp 300.000</span>
+                                                    </label>
                                                     <input type="text" 
                                                            :value="item.lainnya_nilai_satuan ? Number(item.lainnya_nilai_satuan).toLocaleString('id-ID') : ''"
                                                            @input="
@@ -494,8 +497,12 @@
                                                                item.lainnya_nilai_satuan = raw ? parseInt(raw, 10) : 0;
                                                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                                            "
+                                                           :class="Number(item.lainnya_nilai_satuan || 0) > 0 && Number(item.lainnya_nilai_satuan || 0) <= 300000 ? 'border-rose-500 text-rose-300 focus:border-rose-400 ring-1 ring-rose-500' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
                                                            placeholder="450.000"
-                                                           class="w-full bg-slate-950 border border-slate-700 text-emerald-300 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                                                           class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none">
+                                                    <span x-show="Number(item.lainnya_nilai_satuan || 0) > 0 && Number(item.lainnya_nilai_satuan || 0) <= 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                                        ⚠️ Aset Reguler: Nilai satuan harus > Rp 300.000.
+                                                    </span>
                                                 </div>
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Admin Proyek (Rp)</label>

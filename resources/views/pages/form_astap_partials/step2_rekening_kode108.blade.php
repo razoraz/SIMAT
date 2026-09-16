@@ -295,12 +295,12 @@
                             <!-- Dua Kartu Pilihan -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <!-- Opsi 1: Aset Reguler / Kapitalisasi -->
-                                <div @click="formData.is_extracomtable = false"
+                                <div @click="formData.is_extracomtable = false; fetchExistingAnggaran(); syncRealisasiFromStep3();"
                                      :class="!formData.is_extracomtable ? 'border-emerald-500 bg-emerald-950/40 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
                                      class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-2">
-                                            <input type="radio" name="global_extracom_choice" :checked="!formData.is_extracomtable" @change="formData.is_extracomtable = false" class="text-emerald-500 focus:ring-emerald-500">
+                                            <input type="radio" name="global_extracom_choice" :checked="!formData.is_extracomtable" @change="formData.is_extracomtable = false; fetchExistingAnggaran(); syncRealisasiFromStep3();" class="text-emerald-500 focus:ring-emerald-500">
                                             <span class="text-xs font-black text-emerald-300">⚙️ Aset Reguler / Kapitalisasi</span>
                                         </div>
                                         <span x-show="!formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
@@ -311,12 +311,12 @@
                                 </div>
 
                                 <!-- Opsi 2: Barang Ekstrakomtabel (Extracom) -->
-                                <div @click="formData.is_extracomtable = true"
+                                <div @click="formData.is_extracomtable = true; syncExtracomOnModeSwitch(); fetchExistingAnggaran(); syncRealisasiFromStep3();"
                                      :class="formData.is_extracomtable ? 'border-cyan-500 bg-cyan-950/40 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
                                      class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center space-x-2">
-                                            <input type="radio" name="global_extracom_choice" :checked="formData.is_extracomtable" @change="formData.is_extracomtable = true" class="text-cyan-500 focus:ring-cyan-500">
+                                            <input type="radio" name="global_extracom_choice" :checked="formData.is_extracomtable" @change="formData.is_extracomtable = true; syncExtracomOnModeSwitch(); fetchExistingAnggaran(); syncRealisasiFromStep3();" class="text-cyan-500 focus:ring-cyan-500">
                                             <span class="text-xs font-black text-cyan-300">📦 Barang Ekstrakomtabel (Extracom)</span>
                                         </div>
                                         <span x-show="formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
@@ -358,24 +358,23 @@
                                            if (val.length > 4) {
                                                val = val.slice(0, 4);
                                                $event.target.value = val;
+                                               formData.tahun_anggaran = Number(val);
                                            }
-                                           formData.tahun_anggaran = val ? parseInt(val, 10) : '';
-                                           formData.tahun_perolehan = formData.tahun_anggaran;
                                        "
                                        @change="validateTahunAnggaran(); fetchExistingAnggaran(); syncDatesWithTriwulan();"
                                        @blur="validateTahunAnggaran(); fetchExistingAnggaran(); syncDatesWithTriwulan();"
-                                       placeholder="Contoh: 2026 atau 1994 (4 Digit)"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-cyan-500 placeholder:text-slate-500 placeholder:font-normal">
+                                       placeholder="Contoh: 2026"
+                                       class="w-full bg-slate-950 border border-cyan-500/50 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-cyan-400">
                             </div>
                         </div>
 
-                        <!-- TRIWULAN -->
+                        <!-- TRIWULAN (TW) PENGADAAN (SIPD) -->
                         <div>
-                            <label class="block text-cyan-400 font-semibold text-xs mb-1 flex items-center justify-between">
-                                <span>📊 TRIWULAN PENGADAAN</span>
-                                <span class="text-[10px] text-cyan-300/80 font-mono">TW I - IV</span>
+                            <label class="block text-cyan-300 font-semibold text-xs mb-1 flex items-center justify-between">
+                                <span>⚡ TRIWULAN PENGADAAN (SIPD)</span>
+                                <span class="text-[10px] text-cyan-400/80 font-mono">Bulan Otomatis Terkunci</span>
                             </label>
-                            <select x-model="formData.triwulan"
+                            <select x-model="formData.triwulan" 
                                     @change="fetchExistingAnggaran(); syncDatesWithTriwulan();"
                                     class="w-full bg-slate-950 border border-cyan-500/50 rounded-xl px-3.5 py-2.5 text-xs font-bold focus:outline-none focus:border-cyan-400"
                                     :class="formData.triwulan ? 'text-cyan-300' : 'text-slate-500 font-normal'">
@@ -395,7 +394,7 @@
                             <div>
                                 <label class="block text-slate-300 font-semibold text-xs mb-1 flex items-center justify-between">
                                     <span>JUMLAH ANGGARAN (Rp) (Kolom 14) <span class="text-rose-500 font-bold">*</span></span>
-                                    <span class="text-[10px] text-slate-400">Pagu Sub Rincian</span>
+                                    <span class="text-[10px] text-slate-400" x-text="formData.is_extracomtable ? 'Pagu Ekstrakomtabel' : 'Pagu Aset Reguler'"></span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3.5 top-3 text-slate-500 text-xs font-bold">Rp</span>
@@ -409,13 +408,16 @@
                                         placeholder="1.000.000.000"
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 pl-10 text-xs text-white font-mono font-bold focus:outline-none focus:border-blue-500">
                                 </div>
+                                <div x-show="isAnggaranAutoLoaded && anggaranAutoLoadedMessage" class="mt-1 flex items-center space-x-1 text-[10px] text-emerald-400 font-medium">
+                                    <span x-text="anggaranAutoLoadedMessage"></span>
+                                </div>
                             </div>
         
                             <!-- Kolom 15: JUMLAH REALISASI -->
                             <div>
                                 <label class="block text-emerald-400 font-semibold text-xs mb-1 flex items-center justify-between">
                                     <span>JUMLAH REALISASI (Rp) (Kolom 15)</span>
-                                    <span class="text-[10px] text-emerald-400 font-mono">⚡ Otomatis Akumulasi</span>
+                                    <span class="text-[10px] text-emerald-400 font-mono" x-text="formData.is_extracomtable ? '⚡ Akumulasi Ekstrakom' : '⚡ Otomatis Akumulasi'"></span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3.5 top-3 text-emerald-500 text-xs font-bold">Rp</span>

@@ -376,6 +376,7 @@
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
                                                         <span>Nilai Satuan (Rp)</span>
+                                                        <span x-show="!formData.is_extracomtable" class="text-[9px] font-bold text-emerald-400">Wajib > Rp 300.000</span>
                                                         <span x-show="formData.is_extracomtable" class="text-[9px] font-bold text-amber-400">Maks. Rp 300.000</span>
                                                     </label>
                                                     <input type="text" 
@@ -385,11 +386,14 @@
                                                                item.mesin_nilai_satuan = raw ? parseInt(raw, 10) : 0;
                                                                $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                                            "
-                                                           :class="formData.is_extracomtable && Number(item.mesin_nilai_satuan || 0) > 300000 ? 'border-rose-500 text-rose-300 focus:border-rose-400 ring-1 ring-rose-500' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
+                                                           :class="(formData.is_extracomtable && Number(item.mesin_nilai_satuan || 0) > 300000) || (!formData.is_extracomtable && Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000) ? 'border-rose-500 text-rose-300 focus:border-rose-400 ring-1 ring-rose-500' : 'border-slate-700 text-emerald-300 focus:border-emerald-500'"
                                                            :placeholder="formData.is_extracomtable ? 'Maks: 300.000' : '185.000.000'"
                                                            class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none">
                                                     <span x-show="formData.is_extracomtable && Number(item.mesin_nilai_satuan || 0) > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
                                                         ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
+                                                    </span>
+                                                    <span x-show="!formData.is_extracomtable && Number(item.mesin_nilai_satuan || 0) > 0 && Number(item.mesin_nilai_satuan || 0) <= 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                                        ⚠️ Aset Reguler: Nilai satuan harus > Rp 300.000 (Jika ≤ Rp 300.000, silakan pilih Aset Ekstrakomtabel di Langkah 2).
                                                     </span>
                                                 </div>
                                                 <div>

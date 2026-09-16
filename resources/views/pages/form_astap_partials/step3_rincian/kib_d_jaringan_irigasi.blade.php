@@ -438,9 +438,16 @@
                                                 </div>
                                             </div>
 
-                                            <div class="pt-1 flex items-center justify-between border-t border-slate-800">
-                                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Subtotal Nilai Jaringan Ini:</span>
-                                                <span class="text-xs font-black text-teal-400 font-mono" x-text="'Rp ' + formatRupiah(getJaringanSubtotal(item))"></span>
+                                            <div :class="getJaringanSubtotal(item) > 0 && getJaringanSubtotal(item) < 300000 ? 'border-rose-500/60 bg-rose-950/20' : 'border-slate-800 bg-slate-950/60'" 
+                                                 class="pt-2 p-2.5 rounded-xl border flex flex-col gap-1 transition-colors shadow-inner">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-[10px] text-slate-400 font-semibold uppercase">Subtotal Nilai Jaringan Ini:</span>
+                                                    <span :class="getJaringanSubtotal(item) > 0 && getJaringanSubtotal(item) < 300000 ? 'text-rose-400' : 'text-teal-400'" 
+                                                          class="text-xs font-black font-mono" x-text="'Rp ' + formatRupiah(getJaringanSubtotal(item))"></span>
+                                                </div>
+                                                <span x-show="getJaringanSubtotal(item) > 0 && getJaringanSubtotal(item) < 300000" class="text-[10px] font-bold text-rose-400">
+                                                    ⚠️ Subtotal minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!
+                                                </span>
                                             </div>
                                         </div>
 

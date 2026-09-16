@@ -108,4 +108,20 @@
                         </div>
                     </div>
 
+                    <!-- PANDUAN BATAS KAPITALISASI BMD (RP 300.000) -->
+                    <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-inner">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider shrink-0"
+                                  :class="formData.is_extracomtable ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'">
+                                <span x-text="formData.is_extracomtable ? '📦 ATURAN EXTRACOM' : '🏛️ ATURAN ASET TETAP'"></span>
+                            </span>
+                            <span class="text-slate-300 text-[11px]"
+                                  x-text="formData.is_extracomtable ? 'Nilai satuan per barang wajib ≤ Rp 300.000 (tidak boleh melebihi batas kapitalisasi daerah).' : ((isMesin || isAsetLainnya || isAtb) ? 'Nilai satuan barang reguler wajib > Rp 300.000 (jika ≤ Rp 300.000 wajib dialihkan ke Ekstrakomtabel).' : 'Subtotal nilai perolehan per bidang tanah / bangunan / ruas jaringan / KDP minimal Rp 300.000.')">
+                            </span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 font-mono shrink-0 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+                            Batas Kapitalisasi: <span class="font-bold text-amber-300">Rp 300.000</span>
+                        </div>
+                    </div>
+
                 </div>

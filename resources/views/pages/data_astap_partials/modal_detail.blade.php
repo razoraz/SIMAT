@@ -8,16 +8,16 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
                                 :class="{
-                                    'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail?.category === 'KIB A',
-                                    'bg-cyan-500/20 text-cyan-300 border-cyan-500/30':     selectedAstapDetail?.category === 'KIB B',
-                                    'bg-purple-500/20 text-purple-300 border-purple-500/30': selectedAstapDetail?.category === 'KIB C',
-                                    'bg-teal-500/20 text-teal-300 border-teal-500/30':     selectedAstapDetail?.category === 'KIB D',
-                                    'bg-orange-500/20 text-orange-300 border-orange-500/30': selectedAstapDetail?.category === 'KIB E',
-                                    'bg-rose-500/20 text-rose-300 border-rose-500/30':     selectedAstapDetail?.category === 'KIB F',
-                                    'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': selectedAstapDetail?.category === 'ATB',
-                                    'bg-amber-400/20 text-amber-300 border-amber-400/30': selectedAstapDetail?.category === 'EXTRACOM'
+                                    'bg-amber-400/20 text-amber-300 border-amber-400/30': selectedAstapDetail?.is_extracomtable || selectedAstapDetail?.category === 'EXTRACOM',
+                                    'bg-amber-500/20 text-amber-300 border-amber-500/30': !selectedAstapDetail?.is_extracomtable && selectedAstapDetail?.category === 'KIB A',
+                                    'bg-cyan-500/20 text-cyan-300 border-cyan-500/30':     !selectedAstapDetail?.is_extracomtable && selectedAstapDetail?.category === 'KIB B',
+                                    'bg-purple-500/20 text-purple-300 border-purple-500/30': !selectedAstapDetail?.is_extracomtable && selectedAstapDetail?.category === 'KIB C',
+                                    'bg-teal-500/20 text-teal-300 border-teal-500/30':     !selectedAstapDetail?.is_extracomtable && selectedAstapDetail?.category === 'KIB D',
+                                    'bg-orange-500/20 text-orange-300 border-orange-500/30': !selectedAstapDetail?.is_extracomtable && selectedAstapDetail?.category === 'KIB E',
+                                    'bg-rose-500/20 text-rose-300 border-rose-500/30':     !selectedAstapDetail?.is_extracomtable && selectedAstapDetail?.category === 'KIB F',
+                                    'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': !selectedAstapDetail?.is_extracomtable && selectedAstapDetail?.category === 'ATB'
                                 }"
-                                x-text="selectedAstapDetail?.category || 'ASTAP'"></span>
+                                x-text="selectedAstapDetail?.is_extracomtable ? '📦 EXTRACOM' : (selectedAstapDetail?.category || 'ASTAP')"></span>
 
                             <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
                                 x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>
@@ -207,17 +207,17 @@
                                                         <div class="flex flex-wrap items-center gap-2">
                                                             <span class="px-2.5 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-mono font-bold text-[11px] border border-cyan-500/30"
                                                                   x-text="'Item #' + (mIdx + 1)"></span>
-                                                            <template x-if="(parseFloat(mItem.mesin_nilai_satuan) || 0) >= 300000">
-                                                                <span class="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold text-[10px] border border-cyan-500/40">
-                                                                    ⚙️ KIB B (≥ Rp 300rb)
-                                                                </span>
-                                                            </template>
-                                                            <template x-if="(parseFloat(mItem.mesin_nilai_satuan) || 0) < 300000">
+                                                            <template x-if="selectedAstapDetail?.is_extracomtable || (parseFloat(mItem.mesin_nilai_satuan) || 0) <= 300000">
                                                                 <span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/40">
-                                                                    📦 EXTRACOM (&lt; Rp 300rb)
+                                                                    📦 EXTRACOM (≤ Rp 300rb)
                                                                 </span>
                                                             </template>
-                                                            <span class="text-white font-bold text-xs" x-text="(mItem.mesin_merk || '-') + ' ' + (mItem.mesin_type || '')"></span>
+                                                            <template x-if="!selectedAstapDetail?.is_extracomtable && (parseFloat(mItem.mesin_nilai_satuan) || 0) > 300000">
+                                                                <span class="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold text-[10px] border border-cyan-500/40">
+                                                                    ⚙️ KIB B (&gt; Rp 300rb)
+                                                                </span>
+                                                            </template>
+                                                            <span class="text-white font-bold text-xs" x-text="(mItem.mesin_nama_barang ? (mItem.mesin_nama_barang + ' • ') : '') + ((mItem.mesin_merk || mItem.mesin_type) ? ((mItem.mesin_merk || '') + ' ' + (mItem.mesin_type || '')) : '-')"></span>
                                                             <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
                                                                   x-text="(mItem.mesin_jumlah_barang || 1) + ' ' + (mItem.mesin_satuan || 'Unit')"></span>
                                                             <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"

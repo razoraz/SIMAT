@@ -330,9 +330,16 @@
                                                 </div>
                                             </div>
                                             <!-- Subtotal Kartu Bidang Tanah Ini -->
-                                            <div class="p-2.5 rounded-xl bg-slate-950 border border-emerald-500/30 flex items-center justify-between text-xs">
-                                                <span class="text-slate-400 font-medium text-[11px]">Subtotal Nilai Bidang Tanah #<span x-text="idx + 1"></span>:</span>
-                                                <span class="font-extrabold font-mono text-emerald-400 text-sm" x-text="'Rp ' + formatRupiah(getTanahSubtotal(item))"></span>
+                                            <div :class="getTanahSubtotal(item) > 0 && getTanahSubtotal(item) < 300000 ? 'border-rose-500/60 bg-rose-950/20' : 'border-emerald-500/30 bg-slate-950'" 
+                                                 class="p-2.5 rounded-xl border flex flex-col gap-1 text-xs transition-colors shadow-inner">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-slate-400 font-medium text-[11px]">Subtotal Nilai Bidang Tanah #<span x-text="idx + 1"></span>:</span>
+                                                    <span :class="getTanahSubtotal(item) > 0 && getTanahSubtotal(item) < 300000 ? 'text-rose-400' : 'text-emerald-400'" 
+                                                          class="font-extrabold font-mono text-sm" x-text="'Rp ' + formatRupiah(getTanahSubtotal(item))"></span>
+                                                </div>
+                                                <span x-show="getTanahSubtotal(item) > 0 && getTanahSubtotal(item) < 300000" class="text-[10px] font-bold text-rose-400">
+                                                    ⚠️ Subtotal minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!
+                                                </span>
                                             </div>
                                         </div>
 

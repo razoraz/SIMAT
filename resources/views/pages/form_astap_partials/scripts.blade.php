@@ -786,10 +786,14 @@
                         }
                     });
 
-                    // Watchers Langkah 2: Otomatis Muat Pagu Anggaran jika Sub Rincian / Tahun / TW berubah
+                    // Watchers Langkah 2: Otomatis Muat Pagu Anggaran jika Sub Rincian / Tahun / TW / Ekstrakom berubah
                     this.$watch('formData.sub_rincian_kode', () => this.fetchExistingAnggaran());
                     this.$watch('formData.tahun_anggaran', () => this.fetchExistingAnggaran());
                     this.$watch('formData.triwulan', () => this.fetchExistingAnggaran());
+                    this.$watch('formData.is_extracomtable', () => {
+                        this.fetchExistingAnggaran();
+                        this.syncRealisasiFromStep3();
+                    });
 
                     // Watchers Langkah 3: Otomatis Sinkronisasi Realisasi Langkah 2 dari Total Nilai Barang
                     this.$watch('formData.tanah_items', () => {
@@ -867,6 +871,7 @@
                             sub_rincian_kode: subKode,
                             tahun: thn,
                             triwulan: tw,
+                            is_extracomtable: this.formData.is_extracomtable ? 1 : 0,
                             exclude_id: this.isEdit && this.formData.id ? this.formData.id : null
                         })
                     })
@@ -876,7 +881,8 @@
                             this.formData.jumlah_anggaran = data.jumlah_anggaran;
                             this.existingRealisasiDb = data.total_realisasi_existing || 0;
                             this.isAnggaranAutoLoaded = true;
-                            this.anggaranAutoLoadedMessage = '✨ Pagu anggaran Rp ' + Number(data.jumlah_anggaran).toLocaleString('id-ID') + ' dimuat otomatis dari penetapan ' + tw + ' ' + thn;
+                            const catLabel = this.formData.is_extracomtable ? 'Ekstrakomtabel' : 'Aset Reguler';
+                            this.anggaranAutoLoadedMessage = '✨ Pagu anggaran (' + catLabel + ') Rp ' + Number(data.jumlah_anggaran).toLocaleString('id-ID') + ' dimuat otomatis dari penetapan ' + tw + ' ' + thn;
                         } else {
                             this.formData.jumlah_anggaran = 0;
                             this.existingRealisasiDb = 0;
@@ -1043,6 +1049,50 @@
 
                 updateExtracomStatus() {
                     // Status extracomtable sekarang ditentukan langsung oleh pilihan eksplisit user di Langkah 3
+                },
+
+                syncExtracomOnModeSwitch() {
+                    if (!this.formData.is_extracomtable) return;
+
+                    const activeKode = this.formData.mesin_kode_barang || this.activeKodeBarang || this.formData.sub_rincian_kode || this.formData.jenis_aset_kode || '';
+                    const activeNama = this.formData.mesin_nama_barang || this.activeNamaBarang || this.formData.sub_rincian_nama || 'Barang Ekstrakomtabel';
+
+                    this.formData.mesin_kode_barang = activeKode;
+                    this.formData.mesin_nama_barang = activeNama;
+
+                    if (!this.formData.mesin_items || this.formData.mesin_items.length === 0) {
+                        this.formData.mesin_items = [
+                            {
+                                mesin_nama_barang: activeNama,
+                                mesin_kode_barang: activeKode,
+                                mesin_merk: '',
+                                mesin_type: '',
+                                mesin_ukuran: '',
+                                mesin_no_pabrik: '',
+                                mesin_bahan: '',
+                                mesin_no_rangka: '',
+                                mesin_no_mesin: '',
+                                mesin_no_bpkb: '',
+                                mesin_no_polisi: '',
+                                mesin_kondisi: 'Baik',
+                                mesin_jumlah_barang: 1,
+                                mesin_satuan: 'Unit',
+                                mesin_nilai_satuan: 0,
+                                mesin_administrasi_proyek: 0,
+                                ruang_pemegang: '',
+                                isRuangOpen: false,
+                                searchRuang: ''
+                            }
+                        ];
+                    } else {
+                        this.formData.mesin_items.forEach(it => {
+                            if (!it.mesin_kode_barang && activeKode) it.mesin_kode_barang = activeKode;
+                            if (!it.mesin_nama_barang || it.mesin_nama_barang === 'Barang Ekstrakomtabel') it.mesin_nama_barang = activeNama;
+                        });
+                    }
+
+                    this.syncMesinFieldsToMain();
+                    this.syncRealisasiFromStep3();
                 },
 
                 get isTanah() {
@@ -1952,6 +2002,7 @@
                 // Getter (bukan fungsi biasa) agar Alpine cache hasil per reactive cycle.
                 // Sebelumnya dipanggil 5-6x per render sebagai fungsi → sekarang 1x evaluasi.
                 get activeKodeBarang() {
+                    if (this.formData.is_extracomtable) return this.formData.mesin_kode_barang || '';
                     if (this.isTanah) return this.formData.tanah_kode_barang;
                     if (this.isMesin) return this.formData.mesin_kode_barang;
                     if (this.isGedung) return this.formData.gedung_kode_barang;
@@ -1963,6 +2014,7 @@
                 },
 
                 get activeNamaBarang() {
+                    if (this.formData.is_extracomtable) return this.formData.mesin_nama_barang || '';
                     if (this.isTanah) return this.formData.tanah_nama_barang;
                     if (this.isMesin) return this.formData.mesin_nama_barang;
                     if (this.isGedung) return this.formData.gedung_nama_barang;
@@ -2236,7 +2288,18 @@
                     const meta = (this.master108Map && this.master108Map[kodeSubSub]) ? this.master108Map[kodeSubSub] : null;
                     const found = meta ? meta.subSub : (this.availableSubSubRincian108 || []).find(s => s.kode === kodeSubSub);
 
-                    if (this.isTanah) {
+                    if (this.formData.is_extracomtable) {
+                        this.formData.mesin_kode_barang = kodeSubSub;
+                        if (found) {
+                            this.formData.mesin_nama_barang = found.nama;
+                            if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                                this.formData.mesin_items.forEach(it => {
+                                    it.mesin_kode_barang = kodeSubSub;
+                                    it.mesin_nama_barang = found.nama;
+                                });
+                            }
+                        }
+                    } else if (this.isTanah) {
                         this.formData.tanah_kode_barang = kodeSubSub;
                         if (found) {
                             this.formData.tanah_nama_barang = found.nama;
@@ -2319,6 +2382,205 @@
                     }
                 },
 
+                validateStep3Assets() {
+                    // Sinkronisasi data terlebih dahulu
+                    if (this.formData.is_extracomtable) {
+                        this.syncMesinFieldsToMain();
+                    } else if (this.isTanah) this.syncTanahFieldsToMain();
+                    else if (this.isMesin) this.syncMesinFieldsToMain();
+                    else if (this.isGedung) this.syncGedungFieldsToMain();
+                    else if (this.isAsetLainnya) this.syncLainnyaFieldsToMain();
+                    else if (this.isAtb) this.syncAtbFieldsToMain();
+                    else if (this.isKdp) this.syncKdpFieldsToMain();
+                    this.syncRealisasiFromStep3();
+
+                    const realisasi = Number(this.formData.jumlah_realisasi || 0);
+                    const anggaran = Number(this.formData.jumlah_anggaran || 0);
+
+                    if (realisasi <= 0) {
+                        return {
+                            valid: false,
+                            message: '⚠️ Total Nilai Realisasi pada Langkah 3 belum diisi atau masih bernilai Rp 0!\n\nMohon lengkapi rincian harga/nilai perolehan barang pada Langkah 3 sebelum melanjutkan ke Langkah 4.'
+                        };
+                    }
+
+                    // 1. Validasi Mode Ekstrakomtabel (Barang Satuan / Eceran <= Rp 300.000)
+                    if (this.formData.is_extracomtable) {
+                        const items = this.formData.mesin_items || [];
+                        for (let i = 0; i < items.length; i++) {
+                            const val = Number(items[i].mesin_nilai_satuan || 0);
+                            const nama = items[i].mesin_nama_barang || this.activeNamaBarang || 'Barang Ekstrakomtabel';
+                            if (val <= 0) {
+                                return {
+                                    valid: false,
+                                    message: `⚠️ Nilai satuan barang Ekstrakomtabel item #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                };
+                            }
+                            if (val > 300000) {
+                                return {
+                                    valid: false,
+                                    message: `⚠️ Nilai Satuan Barang Ekstrakomtabel TIDAK BOLEH lebih dari Rp 300.000!\n\nItem #${i + 1} (${nama}) memiliki nilai satuan: Rp ${this.formatRupiah(val)}.\n\nSesuai regulasi, barang dengan nilai satuan di atas Rp 300.000 harus dicatat sebagai Aset Tetap Reguler (silakan pilih Kategori Reguler pada Langkah 2).`
+                                };
+                            }
+                        }
+                    } else {
+                        // 2. Validasi Mode Aset Tetap Reguler (!is_extracomtable)
+                        
+                        // A. Kelompok Barang Satuan / Per Unit (Wajib > Rp 300.000)
+                        if (this.isMesin) {
+                            const items = this.formData.mesin_items || [];
+                            for (let i = 0; i < items.length; i++) {
+                                const val = Number(items[i].mesin_nilai_satuan || 0);
+                                const nama = items[i].mesin_nama_barang || this.activeNamaBarang || 'Peralatan & Mesin';
+                                if (val <= 0) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai satuan Peralatan & Mesin item #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                    };
+                                }
+                                if (val <= 300000) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai Satuan Aset Peralatan & Mesin (Reguler) WAJIB lebih dari Rp 300.000!\n\nItem #${i + 1} (${nama}) bernilai: Rp ${this.formatRupiah(val)}.\n\nBarang dengan nilai satuan ≤ Rp 300.000 bukan aset tetap reguler, melainkan harus dicatat sebagai Aset Ekstrakomtabel (silakan pilih mode Ekstrakomtabel pada Langkah 2).`
+                                    };
+                                }
+                            }
+                        }
+
+                        if (this.isAsetLainnya) {
+                            const items = this.formData.lainnya_items || [];
+                            for (let i = 0; i < items.length; i++) {
+                                const val = Number(items[i].lainnya_nilai_satuan || 0);
+                                const nama = items[i].lainnya_nama_barang || this.activeNamaBarang || 'Aset Tetap Lainnya';
+                                if (val <= 0) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai satuan Aset Tetap Lainnya item #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                    };
+                                }
+                                if (val <= 300000) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai Satuan Aset Tetap Lainnya WAJIB lebih dari Rp 300.000!\n\nItem #${i + 1} (${nama}) bernilai: Rp ${this.formatRupiah(val)}.\n\nBarang dengan nilai satuan ≤ Rp 300.000 tidak memenuhi batas kapitalisasi Aset Tetap Reguler.`
+                                    };
+                                }
+                            }
+                        }
+
+                        if (this.isAtb) {
+                            const items = this.formData.atb_items || [];
+                            for (let i = 0; i < items.length; i++) {
+                                const val = Number(items[i].atb_nilai_satuan || 0);
+                                const nama = items[i].atb_nama_barang || this.activeNamaBarang || 'Aset Tidak Berwujud';
+                                if (val <= 0) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai satuan Aset Tidak Berwujud (ATB) item #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                    };
+                                }
+                                if (val <= 300000) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai Satuan Aset Tidak Berwujud (ATB) WAJIB lebih dari Rp 300.000!\n\nItem #${i + 1} (${nama}) bernilai: Rp ${this.formatRupiah(val)}.\n\nNilai perolehan ≤ Rp 300.000 tidak memenuhi batas kapitalisasi Aset Tidak Berwujud.`
+                                    };
+                                }
+                            }
+                        }
+
+                        // B. Kelompok Aset Fisik / Konstruksi / Bidang / Paket (Subtotal Perolehan Wajib >= Rp 300.000)
+                        if (this.isTanah) {
+                            const items = this.formData.tanah_items || [];
+                            for (let i = 0; i < items.length; i++) {
+                                const subtotal = this.getTanahSubtotal(items[i]);
+                                const nama = items[i].tanah_nama_barang || this.activeNamaBarang || 'Tanah';
+                                if (subtotal <= 0) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai perolehan bidang tanah #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                    };
+                                }
+                                if (subtotal < 300000) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Subtotal Nilai Perolehan Bidang Tanah minimal Rp 300.000!\n\nBidang #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan (Perencanaan + Fisik + Pengawasan) tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
+                                    };
+                                }
+                            }
+                        }
+
+                        if (this.isGedung) {
+                            const items = this.formData.gedung_items || [];
+                            for (let i = 0; i < items.length; i++) {
+                                const subtotal = this.getGedungSubtotal(items[i]);
+                                const nama = items[i].gedung_nama_barang || this.activeNamaBarang || 'Gedung & Bangunan';
+                                if (subtotal <= 0) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai perolehan gedung/bangunan #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                    };
+                                }
+                                if (subtotal < 300000) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Subtotal Nilai Perolehan Gedung/Bangunan minimal Rp 300.000!\n\nBangunan #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan gedung & bangunan tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
+                                    };
+                                }
+                            }
+                        }
+
+                        if (this.isJaringan) {
+                            const items = this.formData.jaringan_items || [];
+                            for (let i = 0; i < items.length; i++) {
+                                const subtotal = this.getJaringanSubtotal(items[i]);
+                                const nama = items[i].jaringan_nama_barang || this.activeNamaBarang || 'Jalan, Irigasi & Jaringan';
+                                if (subtotal <= 0) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai perolehan jaringan/irigasi #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                    };
+                                }
+                                if (subtotal < 300000) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Subtotal Nilai Perolehan Jaringan/Irigasi minimal Rp 300.000!\n\nRuas/Paket #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan jaringan tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
+                                    };
+                                }
+                            }
+                        }
+
+                        if (this.isKdp) {
+                            const items = this.formData.kdp_items || [];
+                            for (let i = 0; i < items.length; i++) {
+                                const subtotal = this.getKdpSubtotal(items[i]);
+                                const nama = items[i].kdp_nama_barang || this.activeNamaBarang || 'Konstruksi Dalam Pengerjaan';
+                                if (subtotal <= 0) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Nilai perolehan KDP #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
+                                    };
+                                }
+                                if (subtotal < 300000) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Subtotal Nilai Perolehan KDP minimal Rp 300.000!\n\nProyek KDP #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan KDP tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
+                                    };
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Cek apakah Total Realisasi melebihi Anggaran
+                    if (anggaran > 0 && realisasi > anggaran) {
+                        const selisih = realisasi - anggaran;
+                        return {
+                            valid: false,
+                            message: `⚠️ Total Nilai Realisasi MELEBIHI Pagu Anggaran!\n\n• Pagu Anggaran: Rp ${this.formatRupiah(anggaran)}\n• Total Realisasi: Rp ${this.formatRupiah(realisasi)}\n• Selisih Kelebihan: Rp ${this.formatRupiah(selisih)}\n\nMohon sesuaikan rincian nilai barang pada Langkah 3 sebelum lanjut ke Langkah 4.`
+                        };
+                    }
+
+                    return { valid: true };
+                },
+
                 goToStep(step) {
                     if (step > this.currentStep) {
                         for (let s = 1; s < step; s++) {
@@ -2345,45 +2607,14 @@
                                 }
                             }
                             if (s === 3) {
-                                this.syncRealisasiFromStep3();
-                                const realisasi = Number(this.formData.jumlah_realisasi || 0);
-                                const anggaran = Number(this.formData.jumlah_anggaran || 0);
-
-                                if (realisasi <= 0) {
+                                const valResult = this.validateStep3Assets();
+                                if (!valResult.valid) {
                                     this.toast = { 
                                         show: true, 
-                                        message: '⚠️ Total Nilai Realisasi pada Langkah 3 belum diisi / masih Rp 0!', 
+                                        message: valResult.message.split('\n')[0], 
                                         type: 'warning' 
                                     };
-                                    alert('⚠️ Total Nilai Realisasi pada Langkah 3 belum diisi atau masih bernilai Rp 0!\n\nMohon lengkapi rincian harga/nilai perolehan barang pada Langkah 3 sebelum melanjutkan ke Langkah 4.');
-                                    this.currentStep = 3;
-                                    this.scrollToTop();
-                                    return;
-                                }
-
-                                if (this.isMesin && this.formData.is_extracomtable) {
-                                    const invalidItem = (this.formData.mesin_items || []).find(it => Number(it.mesin_nilai_satuan || 0) > 300000);
-                                    if (invalidItem) {
-                                        this.toast = { 
-                                            show: true, 
-                                            message: '⚠️ Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' + this.formatRupiah(invalidItem.mesin_nilai_satuan) + ')', 
-                                            type: 'warning' 
-                                        };
-                                        alert('⚠️ Nilai Satuan Barang Ekstrakomtabel TIDAK BOLEH lebih dari Rp 300.000!\n\nDitemukan barang dengan nilai satuan: Rp ' + this.formatRupiah(invalidItem.mesin_nilai_satuan) + '.\n\nSilakan sesuaikan harga satuan barang atau pilih kategori Peralatan & Mesin (KIB B Reguler).');
-                                        this.currentStep = 3;
-                                        this.scrollToTop();
-                                        return;
-                                    }
-                                }
-
-                                if (anggaran > 0 && realisasi > anggaran) {
-                                    const selisih = realisasi - anggaran;
-                                    this.toast = { 
-                                        show: true, 
-                                        message: '⚠️ Total Nilai Realisasi (Rp ' + this.formatRupiah(realisasi) + ') melebihi Pagu Anggaran (Rp ' + this.formatRupiah(anggaran) + ')!', 
-                                        type: 'warning' 
-                                    };
-                                    alert('⚠️ Total Nilai Realisasi MELEBIHI Pagu Anggaran!\n\n• Pagu Anggaran: Rp ' + this.formatRupiah(anggaran) + '\n• Total Realisasi: Rp ' + this.formatRupiah(realisasi) + '\n• Selisih Kelebihan: Rp ' + this.formatRupiah(selisih) + '\n\nMohon sesuaikan rincian nilai barang pada Langkah 3 sebelum lanjut ke Langkah 4.');
+                                    alert(valResult.message);
                                     this.currentStep = 3;
                                     this.scrollToTop();
                                     return;
@@ -2475,31 +2706,27 @@
                     }
 
                     // Sinkronisasi otomatis nilai realisasi dari rincian Nilai Barang Langkah 3
-                    if (this.isTanah) this.syncTanahFieldsToMain();
-                    if (this.isMesin) this.syncMesinFieldsToMain();
-                    if (this.isGedung) this.syncGedungFieldsToMain();
-                    if (this.isAsetLainnya) this.syncLainnyaFieldsToMain();
-                    if (this.isAtb) this.syncAtbFieldsToMain();
-                    if (this.isKdp) this.syncKdpFieldsToMain();
+                    if (this.formData.is_extracomtable) {
+                        this.syncMesinFieldsToMain();
+                    } else if (this.isTanah) this.syncTanahFieldsToMain();
+                    else if (this.isMesin) this.syncMesinFieldsToMain();
+                    else if (this.isGedung) this.syncGedungFieldsToMain();
+                    else if (this.isAsetLainnya) this.syncLainnyaFieldsToMain();
+                    else if (this.isAtb) this.syncAtbFieldsToMain();
+                    else if (this.isKdp) this.syncKdpFieldsToMain();
                     this.syncRealisasiFromStep3();
 
-                    if (!this.formData.jumlah_realisasi || Number(this.formData.jumlah_realisasi) <= 0) {
-                        this.toast = { show: true, message: '⚠️ Total Nilai Barang (Realisasi) pada Langkah 3 wajib diisi dan tidak boleh Rp 0!', type: 'warning' };
-                        setTimeout(() => { this.toast.show = false; }, 4000);
+                    const valResult = this.validateStep3Assets();
+                    if (!valResult.valid) {
+                        this.toast = { 
+                            show: true, 
+                            message: valResult.message.split('\n')[0], 
+                            type: 'warning' 
+                        };
+                        alert(valResult.message);
                         this.currentStep = 3;
+                        this.scrollToTop();
                         return;
-                    }
-                    if (this.isMesin && this.formData.is_extracomtable) {
-                        const invalidItem = (this.formData.mesin_items || []).find(it => Number(it.mesin_nilai_satuan || 0) > 300000);
-                        if (invalidItem) {
-                            this.toast = { 
-                                show: true, 
-                                message: '⚠️ Nilai satuan barang Ekstrakomtabel tidak boleh lebih dari Rp 300.000! (Ditemukan: Rp ' + this.formatRupiah(invalidItem.mesin_nilai_satuan) + ')', 
-                                type: 'warning' 
-                            };
-                            this.currentStep = 3;
-                            return;
-                        }
                     }
 
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -2507,13 +2734,14 @@
                     const isEdit = this.isEdit && astapId;
 
                     // Ambil kode 108 aktif berdasarkan jenis aset (dengan fallback ke sub rincian / jenis aset)
-                    const activeKode108 = this.isTanah ? (this.formData.tanah_kode_barang || this.formData.sub_rincian_kode || this.formData.jenis_aset_kode) 
+                    const activeKode108 = this.formData.is_extracomtable ? (this.formData.mesin_kode_barang || this.formData.sub_rincian_kode || this.formData.jenis_aset_kode)
+                        : (this.isTanah ? (this.formData.tanah_kode_barang || this.formData.sub_rincian_kode || this.formData.jenis_aset_kode) 
                         : (this.isMesin ? (this.formData.mesin_kode_barang || this.formData.sub_rincian_kode)
                         : (this.isGedung ? (this.formData.gedung_kode_barang || this.formData.sub_rincian_kode)
                         : (this.isJaringan ? (this.formData.jaringan_kode_barang || this.formData.sub_rincian_kode)
                         : (this.isAsetLainnya ? (this.formData.lainnya_kode_barang || this.formData.sub_rincian_kode)
                         : (this.isAtb ? (this.formData.atb_kode_barang || this.formData.sub_rincian_kode)
-                        : (this.isKdp ? (this.formData.kdp_kode_barang || this.formData.sub_rincian_kode) : ''))))));
+                        : (this.isKdp ? (this.formData.kdp_kode_barang || this.formData.sub_rincian_kode) : '')))))));
 
                     if (!activeKode108) {
                         this.toast = { show: true, message: '⚠️ Mohon pilih Nama Barang (Sub-Sub Rincian PMDN 108) terlebih dahulu!', type: 'warning' };
@@ -2522,13 +2750,14 @@
                         return;
                     }
 
-                    const namaBarangActive = this.isTanah ? (this.formData.tanah_nama_barang || this.formData.sub_rincian_nama || this.formData.jenis_aset_nama || 'Tanah')
+                    const namaBarangActive = this.formData.is_extracomtable ? (this.formData.mesin_nama_barang || this.formData.sub_rincian_nama || 'Barang Ekstrakomtabel')
+                        : (this.isTanah ? (this.formData.tanah_nama_barang || this.formData.sub_rincian_nama || this.formData.jenis_aset_nama || 'Tanah')
                         : (this.isMesin ? (this.formData.mesin_nama_barang || this.formData.sub_rincian_nama || 'Peralatan dan Mesin')
                         : (this.isGedung ? (this.formData.gedung_nama_barang || this.formData.sub_rincian_nama || 'Gedung dan Bangunan')
                         : (this.isJaringan ? (this.formData.jaringan_nama_barang || this.formData.sub_rincian_nama || 'Jalan, Irigasi dan Jaringan')
                         : (this.isAsetLainnya ? (this.formData.lainnya_nama_barang || this.formData.sub_rincian_nama || 'Aset Tetap Lainnya')
                         : (this.isAtb ? (this.formData.atb_nama_barang || this.formData.sub_rincian_nama || 'Aset Tidak Berwujud')
-                        : (this.isKdp ? (this.formData.kdp_nama_barang || this.formData.sub_rincian_nama || 'Konstruksi Dalam Pengerjaan') : 'Aset Tetap'))))));
+                        : (this.isKdp ? (this.formData.kdp_nama_barang || this.formData.sub_rincian_nama || 'Konstruksi Dalam Pengerjaan') : 'Aset Tetap')))))));
 
                     const tahun = this.formData.tahun_perolehan || new Date().getFullYear();
 
@@ -2539,19 +2768,41 @@
                         const payload = { ...this.formData };
                         const allItemArrays = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items'];
                         let activeArray = null;
-                        if (this.isTanah) activeArray = 'tanah_items';
-                        else if (this.isMesin) activeArray = 'mesin_items';
-                        else if (this.isGedung) activeArray = 'gedung_items';
-                        else if (this.isJaringan) activeArray = 'jaringan_items';
-                        else if (this.isAsetLainnya) activeArray = 'lainnya_items';
-                        else if (this.isAtb) activeArray = 'atb_items';
-                        else if (this.isKdp) activeArray = 'kdp_items';
+                        if (this.formData.is_extracomtable) {
+                            activeArray = 'mesin_items';
+                            payload.mesin_kode_barang = this.activeKodeBarang || this.formData.mesin_kode_barang || this.formData.sub_rincian_kode;
+                            payload.mesin_nama_barang = this.activeNamaBarang || this.formData.mesin_nama_barang || this.formData.sub_rincian_nama || 'Barang Ekstrakomtabel';
+                        } else if (this.isTanah) {
+                            activeArray = 'tanah_items';
+                        } else if (this.isMesin) {
+                            activeArray = 'mesin_items';
+                        } else if (this.isGedung) {
+                            activeArray = 'gedung_items';
+                        } else if (this.isJaringan) {
+                            activeArray = 'jaringan_items';
+                        } else if (this.isAsetLainnya) {
+                            activeArray = 'lainnya_items';
+                        } else if (this.isAtb) {
+                            activeArray = 'atb_items';
+                        } else if (this.isKdp) {
+                            activeArray = 'kdp_items';
+                        }
 
                         allItemArrays.forEach(arrKey => {
                             if (arrKey !== activeArray) {
                                 delete payload[arrKey];
                             }
                         });
+
+                        // Jika Ekstrakomtabel, pastikan item-item terisi kode barang, nama barang, dan satuannya
+                        if (this.formData.is_extracomtable && Array.isArray(payload.mesin_items)) {
+                            payload.mesin_items = payload.mesin_items.map(it => ({
+                                ...it,
+                                mesin_kode_barang: it.mesin_kode_barang || payload.mesin_kode_barang || this.formData.mesin_kode_barang || this.formData.sub_rincian_kode,
+                                mesin_nama_barang: it.mesin_nama_barang || payload.mesin_nama_barang || this.formData.mesin_nama_barang || this.formData.sub_rincian_nama || 'Barang Ekstrakomtabel',
+                                mesin_satuan: it.mesin_satuan || 'Unit'
+                            }));
+                        }
 
                         fetch(url, {
                             method: method,
