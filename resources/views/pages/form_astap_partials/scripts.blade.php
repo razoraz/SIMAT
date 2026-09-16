@@ -892,7 +892,9 @@
 
                 syncRealisasiFromStep3() {
                     let currentVal = 0;
-                    if (this.isTanah) {
+                    if (this.formData.is_extracomtable) {
+                        currentVal = this.totalNilaiMesin;
+                    } else if (this.isTanah) {
                         currentVal = this.totalNilaiTanah;
                     } else if (this.isMesin) {
                         currentVal = this.totalNilaiMesin;

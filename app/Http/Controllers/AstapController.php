@@ -749,7 +749,7 @@ class AstapController extends Controller
                     'success' => true,
                     'message' => 'Sebanyak ' . $totalBidang . ' Bidang Tanah berhasil didaftarkan ke database SIMAT-RK!'
                 ]);
-            } elseif ($isMesin && $hasMesinItems) {
+            } elseif (($isMesin || $isExtracom) && $hasMesinItems) {
                 // =========================================================================
                 // KHUSUS PERALATAN DAN MESIN / EXTRACOM MULTI-ITEM REPEATER MESIN
                 // =========================================================================
@@ -2052,7 +2052,7 @@ class AstapController extends Controller
                     'extracom' => false,
                     'spec' => $spec
                 ];
-            } elseif ($isMesin && $hasMesinItems) {
+            } elseif (($isMesin || $isExtracom) && $hasMesinItems) {
                 $totalVolume = 0;
                 $totalRealisasi = 0;
                 $totalBiayaAdm = 0;

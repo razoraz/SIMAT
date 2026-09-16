@@ -1,4 +1,4 @@
-﻿                <!-- ===================================================================== -->
+                <!-- ===================================================================== -->
                 <!-- KONDISI B: JIKA MEMILIH PERALATAN DAN MESIN (KIB B) DI LANGKAH 2      -->
                 <!-- ===================================================================== -->
                 <template x-if="isMesin">
@@ -155,49 +155,37 @@
 
 
 
-                        <!-- 3. PILIHAN KATEGORI PENCATATAN: KIB B STANDAR vs EKSTRAKOMTABEL -->
-                        <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-800 pb-3">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">3. PILIHAN KATEGORI PENCATATAN BARANG:</span>
-                                </div>
-                                <span class="text-[10px] text-slate-400 font-medium">Pilih salah satu kategori pencatatan aset di bawah ini</span>
-                            </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                <!-- Opsi 1: Peralatan & Mesin (KIB B Reguler) -->
-                                <div @click="formData.is_extracomtable = false" 
-                                     :class="!formData.is_extracomtable ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
-                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-2">
-                                            <input type="radio" name="kategori_extracom_choice" :checked="!formData.is_extracomtable" @change="formData.is_extracomtable = false" class="text-purple-500 focus:ring-purple-500">
-                                            <span class="text-xs font-black text-purple-300">⚙️ Peralatan & Mesin (KIB B Reguler)</span>
-                                        </div>
-                                        <span x-show="!formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">✓ Terpilih</span>
-                                    </div>
-                                    <p class="text-[11px] text-slate-300 leading-relaxed">
-                                        Aset peralatan & mesin standar kapitalisasi penuh. Mendukung spesifikasi lengkap termasuk legalitas kendaraan bermotor (<strong class="text-amber-300">No. Rangka, No. Mesin, No. BPKB, dan No. Polisi</strong>) dengan nilai perolehan bebas/standar.
+
+                        <!-- INFO BADGE: Mode Extracom (diatur dari Langkah 2) -->
+                        <div class="flex items-center justify-between px-4 py-3 rounded-2xl border transition-all"
+                             :class="formData.is_extracomtable
+                                 ? 'bg-cyan-950/30 border-cyan-500/40'
+                                 : 'bg-purple-950/30 border-purple-500/40'">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="text-lg" x-text="formData.is_extracomtable ? '📦' : '⚙️'"></span>
+                                <div>
+                                    <p class="text-xs font-black"
+                                       :class="formData.is_extracomtable ? 'text-cyan-300' : 'text-purple-300'"
+                                       x-text="formData.is_extracomtable ? 'Mode: Barang Ekstrakomtabel (Extracom)' : 'Mode: Peralatan & Mesin (KIB B Reguler)'">
                                     </p>
-                                </div>
-
-                                <!-- Opsi 2: Barang Ekstrakomtabel (Extracom) -->
-                                <div @click="formData.is_extracomtable = true" 
-                                     :class="formData.is_extracomtable ? 'border-cyan-500 bg-cyan-950/40 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
-                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-2">
-                                            <input type="radio" name="kategori_extracom_choice" :checked="formData.is_extracomtable" @change="formData.is_extracomtable = true" class="text-cyan-500 focus:ring-cyan-500">
-                                            <span class="text-xs font-black text-cyan-300">📦 Barang Ekstrakomtabel (Extracom)</span>
-                                        </div>
-                                        <span x-show="formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
-                                    </div>
-                                    <p class="text-[11px] text-slate-300 leading-relaxed">
-                                        Barang non-kapitalisasi (ekstrakomtabel) dengan nilai perolehan satuan <strong class="text-amber-300">maksimal Rp 300.000 / unit</strong>. Inputan legalitas kendaraan (No. Rangka, No. Mesin, No. BPKB, No. Polisi) ditiadakan.
+                                    <p class="text-[10px] text-slate-400 mt-0.5"
+                                       x-text="formData.is_extracomtable
+                                           ? 'Harga satuan maks. Rp 300.000 · Legalitas kendaraan ditiadakan'
+                                           : 'Harga satuan bebas · Mendukung spesifikasi lengkap termasuk legalitas kendaraan'">
                                     </p>
                                 </div>
                             </div>
+                            <a @click.prevent="currentStep = 2"
+                               href="#"
+                               class="shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all border cursor-pointer"
+                               :class="formData.is_extracomtable
+                                   ? 'text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/10'
+                                   : 'text-purple-300 border-purple-500/40 hover:bg-purple-500/10'">
+                                ← Ubah di Langkah 2
+                            </a>
                         </div>
+
 
                         <!-- ========================================================================= -->
                         <!-- PEMBUNGKUS BARANG PERALATAN DAN MESIN / EXTRACOM MULTI-ITEM               -->

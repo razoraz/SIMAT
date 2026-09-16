@@ -271,6 +271,75 @@
                         </div>
                     </div>
 
+                    <!-- ===================================================================== -->
+                    <!-- PILIHAN KATEGORI EKSTRAKOMTABEL (BERLAKU UNTUK SEMUA JENIS ASET)    -->
+                    <!-- ===================================================================== -->
+                    <div x-show="formData.jenis_aset_kode" x-transition class="space-y-2">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black flex items-center justify-center">5</span>
+                            <span class="block text-slate-200 font-bold text-xs">Kategori Pencatatan Aset</span>
+                            <span class="text-[10px] text-amber-400 font-normal italic">(Reguler vs Ekstrakomtabel)</span>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/30 space-y-3 shadow-xl">
+                            <!-- Info Aturan Harga -->
+                            <div class="flex items-start space-x-2 p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/20">
+                                <span class="text-amber-400 text-sm shrink-0 mt-0.5">⚖️</span>
+                                <p class="text-[10.5px] text-amber-300/90 leading-relaxed">
+                                    <strong class="text-amber-300">Aturan Harga Satuan:</strong>
+                                    Aset dengan harga satuan <strong class="text-emerald-300">&gt; Rp 300.000</strong> dicatat sebagai <strong>Aset Reguler/Kapitalisasi</strong>.
+                                    Aset dengan harga satuan <strong class="text-cyan-300">≤ Rp 300.000</strong> dicatat sebagai <strong>Barang Ekstrakomtabel (Extracom)</strong>.
+                                </p>
+                            </div>
+
+                            <!-- Dua Kartu Pilihan -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <!-- Opsi 1: Aset Reguler / Kapitalisasi -->
+                                <div @click="formData.is_extracomtable = false"
+                                     :class="!formData.is_extracomtable ? 'border-emerald-500 bg-emerald-950/40 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <input type="radio" name="global_extracom_choice" :checked="!formData.is_extracomtable" @change="formData.is_extracomtable = false" class="text-emerald-500 focus:ring-emerald-500">
+                                            <span class="text-xs font-black text-emerald-300">⚙️ Aset Reguler / Kapitalisasi</span>
+                                        </div>
+                                        <span x-show="!formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                                        Aset kapitalisasi standar dengan harga satuan <strong class="text-emerald-300">&gt; Rp 300.000 / unit</strong>. Dicatat dalam KIB sesuai jenis aset (KIB A, B, C, D, E, F, ATB).
+                                    </p>
+                                </div>
+
+                                <!-- Opsi 2: Barang Ekstrakomtabel (Extracom) -->
+                                <div @click="formData.is_extracomtable = true"
+                                     :class="formData.is_extracomtable ? 'border-cyan-500 bg-cyan-950/40 ring-1 ring-cyan-500' : 'border-slate-800 bg-slate-900/60 opacity-60 hover:opacity-100 hover:border-slate-700'"
+                                     class="p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative group">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-2">
+                                            <input type="radio" name="global_extracom_choice" :checked="formData.is_extracomtable" @change="formData.is_extracomtable = true" class="text-cyan-500 focus:ring-cyan-500">
+                                            <span class="text-xs font-black text-cyan-300">📦 Barang Ekstrakomtabel (Extracom)</span>
+                                        </div>
+                                        <span x-show="formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">✓ Terpilih</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                                        Barang non-kapitalisasi dengan harga satuan <strong class="text-cyan-300">≤ Rp 300.000 / unit</strong>. Dicatat di Sheet Ekstrakomtabel terpisah (tidak masuk KIB).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Badge status terpilih -->
+                            <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                                <span class="text-[10px] text-slate-500">Status pencatatan aktif:</span>
+                                <span class="text-[10px] font-bold px-3 py-1 rounded-full transition-all"
+                                      :class="formData.is_extracomtable
+                                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'"
+                                      x-text="formData.is_extracomtable ? '📦 Ekstrakomtabel — maks. Rp 300.000/unit' : '⚙️ Aset Reguler / Kapitalisasi'">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Input Tahun Anggaran & Triwulan Pengadaan (SIPD) -->
                     <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <!-- TAHUN ANGGARAN -->

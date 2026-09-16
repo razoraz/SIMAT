@@ -1,8 +1,31 @@
-﻿                <!-- ===================================================================== -->
+                <!-- ===================================================================== -->
                 <!-- KONDISI F: JIKA MEMILIH KONSTRUKSI DALAM PENGERJAAN (KIB F / 1.3.6)   -->
                 <!-- ===================================================================== -->
                 <template x-if="isKdp">
                     <div class="space-y-6">
+
+                        <!-- MODE EKSTRAKOMTABEL (EXTRACOM) -->
+                        <div x-show="formData.is_extracomtable" class="space-y-6">
+                            <!-- INFO BADGE: Mode Extracom Aktif -->
+                            <div class="flex items-center justify-between px-4 py-3 rounded-2xl bg-cyan-950/30 border border-cyan-500/40">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="text-lg">📦</span>
+                                    <div>
+                                        <p class="text-xs font-black text-cyan-300">Mode: Barang Ekstrakomtabel (Extracom) — KIB F Konstruksi Dalam Pengerjaan</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5">Harga satuan maks. Rp 300.000 · Dicatat di Sheet Ekstrakomtabel</p>
+                                    </div>
+                                </div>
+                                <a @click.prevent="currentStep = 2" href="#" class="shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all border cursor-pointer text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/10">
+                                    ← Ubah di Langkah 2
+                                </a>
+                            </div>
+
+                            @include('pages.form_astap_partials.step3_rincian.extracom_dokumen')
+                            @include('pages.form_astap_partials.step3_rincian.extracom_form')
+                        </div>
+
+                        <!-- MODE REGULER: FORM KIB F ASLI -->
+                        <div x-show="!formData.is_extracomtable" class="space-y-6">
 
                         <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1 & 2) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">
@@ -581,6 +604,8 @@
                                 </table>
                             </div>
                         </div>
+
+                        </div><!-- /MODE REGULER -->
 
                     </div>
                 </template>
