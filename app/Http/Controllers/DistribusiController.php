@@ -167,7 +167,7 @@ class DistribusiController extends Controller
         $isSubAdmin = $user && $user->isSubAdmin();
 
         // Eager load: registers → astapRegister agar kondisi, nibar, ruang dibaca dari FK (tidak query N+1)
-        $distribusiQuery = Distribusi::with([
+        $distribusiQuery = Distribusi::where('is_deleted', 0)->with([
                 'unit',
                 'items.astap.jenisAstap',
                 'items.registers.astapRegister',
@@ -960,11 +960,51 @@ class DistribusiController extends Controller
 
         $kode = $distribusi->kode;
         DB::transaction(function () use ($distribusi) {
-            $distribusi->delete();
+            $distribusi->softDelete();
+            // Kembalikan NIBAR terkait menjadi Tersedia
+            foreach ($distribusi->items as $item) {
+                $regIds = $item->registers->pluck('astap_register_id')->filter()->toArray();
+                if (!empty($regIds)) {
+                    AstapRegister::whereIn('id', $regIds)->update([
+                        'unit_id'        => null,
+                        'ruang_pemegang' => null,
+                        'status'         => 'Tersedia',
+                    ]);
+                }
+            }
         });
 
-        session()->flash('success', "Transaksi Distribusi {$kode} berhasil dihapus.");
-        return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dihapus."]);
+        session()->flash('success', "Transaksi Distribusi {$kode} berhasil dipindahkan ke tong sampah.");
+        return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dipindahkan ke tong sampah."]);
+    }
+
+    /**
+     * Pulihkan Transaksi Distribusi
+     */
+    public function restore($id)
+    {
+        $distribusi = Distribusi::findOrFail($id);
+        $kode = $distribusi->kode;
+
+        DB::transaction(function () use ($distribusi) {
+            $distribusi->restoreData();
+            // Kembalikan register terkait ke unit jika status terdistribusi
+            if (in_array($distribusi->status, ['Dalam Pengiriman', 'Telah Diterima', 'Diterima'])) {
+                foreach ($distribusi->items as $it) {
+                    $regIds = $it->registers->pluck('astap_register_id')->filter()->toArray();
+                    if (!empty($regIds) && $distribusi->unit_id) {
+                        AstapRegister::whereIn('id', $regIds)->update([
+                            'unit_id'        => $distribusi->unit_id,
+                            'ruang_pemegang' => $distribusi->unit?->nama ?? 'Ruangan Unit',
+                            'status'         => 'Terdistribusi',
+                        ]);
+                    }
+                }
+            }
+        });
+
+        session()->flash('success', "Transaksi Distribusi {$kode} berhasil dipulihkan.");
+        return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dipulihkan."]);
     }
 
     /**

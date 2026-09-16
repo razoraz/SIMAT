@@ -223,7 +223,11 @@ Route::middleware('auth')->group(function () {
     
     // 1. Data ASTAP Pages
     Route::get('/astap', function () {
-        $astaps = \App\Models\Astap::with([
+        $astaps = \App\Models\Astap::where('is_deleted', 0)
+            ->with([
+                'registers' => function($q) {
+                    $q->where('is_deleted', 0);
+                },
                 'registers.mutasis' => function($q) {
                     $q->where('status', 'Disetujui Admin (Selesai)');
                 }, 
@@ -504,6 +508,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/distribusi', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.store');
         Route::put('/distribusi/{id}', [DistribusiController::class, 'saveDistribusi'])->name('distribusi.update');
         Route::delete('/distribusi/{id}', [DistribusiController::class, 'destroy'])->name('distribusi.destroy');
+        Route::post('/distribusi/{id}/restore', [DistribusiController::class, 'restore'])->name('distribusi.restore');
     });
 
     // API: Update Status Distribusi (misal: Sub Admin menandai Barang Diterima / Admin menolak)
@@ -3262,14 +3267,23 @@ Route::middleware('auth')->group(function () {
                 $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
                 $tahun = $astap->tahun_perolehan ?: date('Y');
                 $vol = $astap->jumlah_volume . ' ' . ($astap->satuan ?: 'Unit');
+                $user = auth()->user();
+                $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
 
-                $astap->registers()->delete();
-                $astap->delete();
+                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $deleterName, $user) {
+                    $astap->softDelete();
+                    $astap->registers()->update([
+                        'is_deleted'    => 1,
+                        'deleted_by'    => $deleterName,
+                        'deleted_by_id' => $user?->id,
+                        'deleted_at'    => now(),
+                    ]);
+                });
 
                 // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
                 try {
                     \App\Services\NotificationService::sendToAdminAndMaster(
-                        "Aset Dihapus: {$namaBarang}",
+                        "Aset Dihapus (Soft Delete): {$namaBarang}",
                         "{$vol} • {$tahun}",
                         'astap',
                         route('astap.index')
@@ -3278,9 +3292,26 @@ Route::middleware('auth')->group(function () {
                     \Log::warning("Gagal kirim notif astap delete: " . $e->getMessage());
                 }
             }
-            session()->flash('success', 'Data ASTAP berhasil dihapus.');
-            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dihapus.']);
+            session()->flash('success', 'Data ASTAP berhasil dipindahkan ke tong sampah.');
+            return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dipindahkan ke tong sampah.']);
         })->name('astap.destroy');
+
+        Route::post('/astap/{id}/restore', function ($id) {
+            $astap = \App\Models\Astap::findOrFail($id);
+            $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
+            \Illuminate\Support\Facades\DB::transaction(function () use ($astap) {
+                $astap->restoreData();
+                $astap->registers()->update([
+                    'is_deleted'    => 0,
+                    'deleted_by'    => null,
+                    'deleted_by_id' => null,
+                    'deleted_at'    => null,
+                ]);
+            });
+            $msg = "Data ASTAP \"{$namaBarang}\" berhasil dipulihkan ke katalog aktif.";
+            session()->flash('success', $msg);
+            return response()->json(['success' => true, 'message' => $msg]);
+        })->name('astap.restore');
 
         // Route Update & Delete Register ASTAP (NIBAR Per-Unit)
         Route::put('/astap-register/{id}', function (\Illuminate\Http\Request $request, $id) {
@@ -3466,6 +3497,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/unit-paviliun/{id}/edit', [UnitController::class, 'edit'])->name('unit.edit');
         Route::put('/unit-paviliun/{id}', [UnitController::class, 'update'])->name('unit.update');
         Route::delete('/unit-paviliun/{id}', [UnitController::class, 'destroy'])->name('unit.destroy');
+        Route::post('/unit-paviliun/{id}/restore', [UnitController::class, 'restore'])->name('unit.restore');
     });
 
     // Master Data Users CRUD Routes (Hanya Master Admin & Admin yang memiliki izin users)

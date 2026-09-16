@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class Unit extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackableSoftDelete;
 
     protected $table = 'units';
 
@@ -23,11 +23,17 @@ class Unit extends Model
         'id_aset',
         'total_aset',
         'total_nilai',
+        'is_deleted',
+        'deleted_by',
+        'deleted_by_id',
+        'deleted_at',
     ];
 
     protected $casts = [
-        'id_aset' => 'array',
+        'id_aset'    => 'array',
         'total_aset' => 'integer',
+        'is_deleted' => 'integer',
+        'deleted_at' => 'datetime',
     ];
 
     /**

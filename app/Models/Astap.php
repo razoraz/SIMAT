@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Astap extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackableSoftDelete;
 
     protected $guarded = ['id'];
 
     protected $casts = [
         'spesifikasi_json' => 'array',
         'is_extracomtable' => 'boolean',
+        'is_deleted'       => 'integer',
+        'deleted_at'       => 'datetime',
         'jumlah_anggaran' => 'decimal:2',
         'jumlah_realisasi' => 'decimal:2',
         'harga_satuan' => 'decimal:2',

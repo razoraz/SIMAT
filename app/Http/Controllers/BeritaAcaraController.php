@@ -66,7 +66,7 @@ class BeritaAcaraController extends Controller
 
         foreach ($triwulanKeys as $key) {
             $doc = AstapBastTriwulan::firstOrCreate(
-                ['tahun' => $tahun, 'triwulan' => $key],
+                ['tahun' => $tahun, 'triwulan' => $key, 'is_deleted' => 0],
                 [
                     'nomor_surat'    => '000.2.3.2/' . ($key === 'TW1' ? '112' : ($key === 'TW2' ? '224' : ($key === 'TW3' ? '318' : '415'))) . '/430.10.7/' . $tahun,
                     'tanggal_bast'   => $tahun . '-' . ($key === 'TW1' ? '03-31' : ($key === 'TW2' ? '06-30' : ($key === 'TW3' ? '09-30' : '12-31'))),
@@ -100,7 +100,8 @@ class BeritaAcaraController extends Controller
             ];
             $twValues = $triwulanValues[$key] ?? [];
 
-            $astaps = Astap::with(['jenisAstap', 'rekeningBelanja', 'registers'])
+            $astaps = Astap::where('is_deleted', 0)
+                ->with(['jenisAstap', 'rekeningBelanja', 'registers'])
                 ->where('tahun_perolehan', $tahun)
                 ->where(function ($q) use ($months, $tahun, $key, $twValues) {
                     // Prioritas 1: kolom triwulan sudah diisi dan sesuai
@@ -244,7 +245,7 @@ class BeritaAcaraController extends Controller
         $user = Auth::user();
         $isSubAdmin = $user && $user->isSubAdmin();
 
-        $distribusiQuery = Distribusi::with([
+        $distribusiQuery = Distribusi::where('is_deleted', 0)->with([
             'unit',
             'items.astap.jenisAstap',
             'items.registers.astapRegister',
@@ -562,7 +563,7 @@ class BeritaAcaraController extends Controller
         $tahun = $request->input('tahun', '2026');
         $defaultLokasi = 'Rumah Sakit Umum Daerah dr. H. Koesnandi Kabupaten Bondowoso';
         $doc = AstapBastTriwulan::firstOrCreate(
-            ['tahun' => $tahun, 'triwulan' => $key],
+            ['tahun' => $tahun, 'triwulan' => $key, 'is_deleted' => 0],
             ['lokasi' => $request->input('lokasi', $defaultLokasi)]
         );
 
@@ -594,7 +595,7 @@ class BeritaAcaraController extends Controller
     public function signTriwulan(Request $request, $key)
     {
         $tahun = $request->input('tahun', '2026');
-        $doc = AstapBastTriwulan::firstOrCreate(['tahun' => $tahun, 'triwulan' => $key]);
+        $doc = AstapBastTriwulan::firstOrCreate(['tahun' => $tahun, 'triwulan' => $key, 'is_deleted' => 0]);
 
         // Tentukan status tanda tangan: jika dikirim di request gunakan itu, jika tidak toggle nilai saat ini
         $newSigned = $request->has('signed')

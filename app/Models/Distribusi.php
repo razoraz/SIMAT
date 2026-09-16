@@ -7,13 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Distribusi extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackableSoftDelete;
 
     protected $guarded = ['id'];
 
     protected $casts = [
         'tanggal_distribusi' => 'date:d/m/Y',
         'signed'             => 'boolean',
+        'is_deleted'         => 'integer',
+        'deleted_at'         => 'datetime',
     ];
 
     public function setTanggalDistribusiAttribute($value)

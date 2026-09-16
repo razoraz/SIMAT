@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AstapBastTriwulan extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackableSoftDelete;
 
     protected $table = 'astap_bast_triwulans';
 
@@ -30,11 +30,17 @@ class AstapBastTriwulan extends Model
         'tgl_signed',
         'qr_hash',
         'catatan',
+        'is_deleted',
+        'deleted_by',
+        'deleted_by_id',
+        'deleted_at',
     ];
 
     protected $casts = [
         'tanggal_bast' => 'date',
         'signed'       => 'boolean',
+        'is_deleted'   => 'integer',
+        'deleted_at'   => 'datetime',
     ];
 
     protected $attributes = [

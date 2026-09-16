@@ -16,7 +16,7 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $units = Unit::with('user')->orderBy('id', 'asc')->get()->map(function ($u, $index) {
+        $units = Unit::where('is_deleted', 0)->with('user')->orderBy('id', 'asc')->get()->map(function ($u, $index) {
             // 1. Cari register ASTAP yang terhubung via unit_id atau ruang_pemegang
             $registers = \App\Models\AstapRegister::with(['astap.jenisAstap'])
                 ->where(function($q) use ($u) {
@@ -188,23 +188,45 @@ class UnitController extends Controller
     }
 
     /**
-     * Hapus Unit.
+     * Hapus Unit (Soft Delete).
      */
     public function destroy(Request $request, $id)
     {
         $unit = Unit::findOrFail($id);
         $nama = $unit->nama;
-        $unit->delete();
+        $unit->softDelete();
+        \App\Models\User::where('unit_id', $unit->id)->update(['status' => 'Nonaktif']);
 
-        session()->flash('success', "Unit {$nama} berhasil dihapus.");
+        session()->flash('success', "Unit {$nama} berhasil dipindahkan ke tong sampah.");
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "Unit {$nama} berhasil dihapus."
+                'message' => "Unit {$nama} berhasil dipindahkan ke tong sampah."
             ]);
         }
 
-        return redirect()->route('unit.index')->with('success', "Unit {$nama} berhasil dihapus.");
+        return redirect()->route('unit.index')->with('success', "Unit {$nama} berhasil dipindahkan ke tong sampah.");
+    }
+
+    /**
+     * Pulihkan Unit dari Tong Sampah.
+     */
+    public function restore(Request $request, $id)
+    {
+        $unit = Unit::findOrFail($id);
+        $nama = $unit->nama;
+        $unit->restoreData();
+        \App\Models\User::where('unit_id', $unit->id)->update(['status' => 'Aktif']);
+
+        session()->flash('success', "Unit {$nama} berhasil dipulihkan ke katalog aktif.");
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "Unit {$nama} berhasil dipulihkan ke katalog aktif."
+            ]);
+        }
+
+        return redirect()->route('unit.index')->with('success', "Unit {$nama} berhasil dipulihkan ke katalog aktif.");
     }
 
     /**

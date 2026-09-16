@@ -7,9 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class AstapRegister extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackableSoftDelete;
 
     protected $guarded = ['id'];
+
+    protected $casts = [
+        'is_deleted' => 'integer',
+        'deleted_at' => 'datetime',
+    ];
 
     public function astap()
     {
