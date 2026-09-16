@@ -347,7 +347,7 @@
                     if (!item) return;
                     this.askConfirmation({
                         title: 'Batalkan Penolakan Mutasi?',
-                        message: 'Status penolakan akan dibatalkan, pengajuan mutasi akan aktif kembali, dan batas waktu 24 jam akan di-reset dari awal.',
+                        message: 'Status penolakan akan dibatalkan dan pengajuan mutasi akan aktif kembali.',
                         itemName: (item.kode || 'Mutasi') + ' (' + (item.nama || '') + ')',
                         type: 'warning',
                         btnText: 'Ya, Batalkan Penolakan',

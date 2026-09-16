@@ -110,35 +110,6 @@
                             </div>
                         </div>
 
-                        <!-- Kotak Informasi Batas Waktu Persetujuan 24 Jam -->
-                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                            <div class="flex items-center space-x-2.5">
-                                <span class="text-base">⏱️</span>
-                                <div>
-                                    <span class="text-slate-400 text-[10px] uppercase font-bold block">Batas Waktu Persetujuan (SLA 24 Jam):</span>
-                                    <span class="text-slate-200 text-xs font-semibold" x-text="'Berakhir: ' + (selectedMutasi.expires_at_formatted || '-')"></span>
-                                </div>
-                            </div>
-                            <div>
-                                <template x-if="selectedMutasi.is_pending && selectedMutasi.sisa_waktu">
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold border inline-flex items-center space-x-1"
-                                        :class="selectedMutasi.sisa_menit < 180 ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' : 'bg-amber-500/15 text-amber-300 border-amber-500/30'">
-                                        <span>⏳ Sisa:</span>
-                                        <strong x-text="selectedMutasi.sisa_waktu"></strong>
-                                    </span>
-                                </template>
-                                <template x-if="selectedMutasi.status === 'Disetujui Admin (Selesai)'">
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                                        ✓ Selesai Tepat Waktu
-                                    </span>
-                                </template>
-                                <template x-if="selectedMutasi.status === 'Ditolak'">
-                                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30"
-                                        x-text="(selectedMutasi.alasan_penolakan || '').includes('24 jam') ? '✕ Kedaluwarsa 24 Jam' : '✕ Ditolak'">
-                                    </span>
-                                </template>
-                            </div>
-                        </div>
 
                         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800" x-show="selectedMutasi.keterangan">
                             <span class="text-slate-500 block mb-1 font-semibold text-[10px]">Alasan / Urgensi Mutasi:</span>

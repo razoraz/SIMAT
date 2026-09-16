@@ -30,7 +30,7 @@
                     <div class="flex items-center space-x-2">
                         <span class="text-base">🔒</span>
                         <span>
-                            Ada <strong class="text-amber-300 font-mono font-bold" x-text="lockedCountForAsal"></strong> aset dari unit ini yang disembunyikan karena sedang dalam proses persetujuan mutasi lain (Batas Persetujuan 24 Jam).
+                            Ada <strong class="text-amber-300 font-mono font-bold" x-text="lockedCountForAsal"></strong> aset dari unit ini yang disembunyikan karena sedang dalam proses persetujuan mutasi lain.
                         </span>
                     </div>
                     <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold shrink-0 uppercase tracking-wider">Terkunci Sementara</span>

@@ -11,52 +11,12 @@ use Illuminate\Support\Facades\Auth;
 
 class MutasiController extends Controller
 {
-    /**
-     * Periksa dan tolak secara otomatis pengajuan mutasi yang telah melewati batas waktu 24 jam
-     * sejak dibuat dan belum disetujui secara lengkap oleh semua pihak.
-     */
-    public static function autoRejectExpiredMutasis(): int
-    {
-        $expiredList = AstapMutasi::where('is_deleted', 0)
-            ->whereNotIn('status', ['Disetujui Admin (Selesai)', 'Ditolak'])
-            ->where('created_at', '<=', now()->subHours(24))
-            ->get();
-
-        $count = 0;
-        foreach ($expiredList as $mutasi) {
-            $mutasi->update([
-                'status'           => 'Ditolak',
-                'alasan_penolakan' => 'Otomatis ditolak sistem: Melebihi batas waktu persetujuan 24 jam tanpa persetujuan lengkap.',
-            ]);
-
-            // Kirim notifikasi sistem ke Sub Admin ruangan asal
-            try {
-                $asalUnit = Unit::where('nama', $mutasi->ruangan_asal)->first();
-                \App\Services\NotificationService::sendToUnitSubAdmin(
-                    $asalUnit?->id,
-                    $mutasi->ruangan_asal,
-                    "Mutasi Kedaluwarsa (24 Jam)",
-                    "{$mutasi->nomor_bamb} • Otomatis ditolak sistem karena batas waktu 24 jam berakhir.",
-                    'mutasi',
-                    route('mutasi.index')
-                );
-            } catch (\Throwable $e) {
-                // Ignore notification error
-            }
-
-            $count++;
-        }
-
-        return $count;
-    }
 
     /**
      * Dapatkan daftar ID register aset yang saat ini sedang dalam proses pengajuan mutasi aktif (pending).
      */
     public static function getLockedRegisterIds(?int $excludeMutasiId = null): array
     {
-        self::autoRejectExpiredMutasis();
-
         $query = AstapMutasi::where('is_deleted', 0)
             ->whereNotIn('status', ['Disetujui Admin (Selesai)', 'Ditolak']);
         if ($excludeMutasiId) {
@@ -89,8 +49,6 @@ class MutasiController extends Controller
      */
     public function index()
     {
-        self::autoRejectExpiredMutasis();
-
         $rawMutasis = AstapMutasi::with(['items.register.astap', 'items.register.unit'])
             ->latest('tanggal_mutasi')
             ->latest('id')
@@ -139,24 +97,6 @@ class MutasiController extends Controller
             }
 
             $isPending = !in_array($m->status, ['Disetujui Admin (Selesai)', 'Ditolak']);
-            $expiresAt = $m->created_at ? $m->created_at->copy()->addHours(24) : null;
-            $isExpired = $isPending && $expiresAt && $expiresAt->isPast();
-
-            $sisaWaktuText = null;
-            $sisaMenitTotal = 0;
-            if ($isPending && $expiresAt && !$isExpired) {
-                $diffMinutes = (int) now()->diffInMinutes($expiresAt, false);
-                if ($diffMinutes > 0) {
-                    $sisaMenitTotal = $diffMinutes;
-                    $jam = intdiv($diffMinutes, 60);
-                    $menit = $diffMinutes % 60;
-                    $sisaWaktuText = $jam > 0 ? "{$jam} jam {$menit} mnt" : "{$menit} mnt";
-                } else {
-                    $sisaWaktuText = 'Kedaluwarsa';
-                }
-            } elseif ($m->status === 'Ditolak' && str_contains(strtolower($m->alasan_penolakan ?? ''), '24 jam')) {
-                $sisaWaktuText = 'Kedaluwarsa (24 Jam)';
-            }
 
             return [
                 'id'                      => $m->id,
@@ -198,12 +138,12 @@ class MutasiController extends Controller
                 'bulan'                   => $m->tanggal_mutasi ? $m->tanggal_mutasi->translatedFormat('F') : date('F'),
                 'tahun'                   => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('Y') : date('Y'),
                 'created_at_formatted'    => $m->created_at ? $m->created_at->translatedFormat('d M Y, H:i') : '-',
-                'expires_at'              => $expiresAt ? $expiresAt->toIso8601String() : null,
-                'expires_at_formatted'    => $expiresAt ? $expiresAt->translatedFormat('d M Y, H:i') : null,
+                'expires_at'              => null,
+                'expires_at_formatted'    => null,
                 'is_pending'              => $isPending,
-                'is_expired'              => $isExpired,
-                'sisa_waktu'              => $sisaWaktuText,
-                'sisa_menit'              => $sisaMenitTotal,
+                'is_expired'              => false,
+                'sisa_waktu'              => null,
+                'sisa_menit'              => 0,
             ];
         });
 
@@ -217,7 +157,6 @@ class MutasiController extends Controller
      */
     public function create()
     {
-        self::autoRejectExpiredMutasis();
         $lockedIds = self::getLockedRegisterIds();
 
         $units = Unit::orderBy('nama')->get(['id', 'nama', 'kepala']);
@@ -285,7 +224,7 @@ class MutasiController extends Controller
             return back()->withErrors(['astap_register_id' => 'Silakan pilih minimal 1 barang aset yang akan dimutasi.']);
         }
 
-        // Pastikan tidak ada barang yang sedang terkunci dalam proses mutasi aktif lain (Batas 24 Jam)
+        // Pastikan tidak ada barang yang sedang terkunci dalam proses mutasi aktif lain
         $lockedIds = self::getLockedRegisterIds();
         $conflictIds = array_intersect(array_map('intval', $registerIds), $lockedIds);
         if (!empty($conflictIds)) {
@@ -293,7 +232,7 @@ class MutasiController extends Controller
                 return ($r->astap?->nama_barang ?? 'Aset') . " (" . ($r->nibar ?? '-') . ")";
             })->implode(', ');
             return back()->withInput()->withErrors([
-                'astap_register_id' => "Barang aset berikut sedang dalam proses pengajuan mutasi lain (Batas Persetujuan 24 Jam) dan belum selesai: {$conflictNames}."
+                'astap_register_id' => "Barang aset berikut sedang dalam proses pengajuan mutasi lain dan belum selesai: {$conflictNames}."
             ]);
         }
 
@@ -440,7 +379,6 @@ class MutasiController extends Controller
      */
     public function edit($id)
     {
-        self::autoRejectExpiredMutasis();
         $mutasi = AstapMutasi::with(['items.register.astap', 'items.register.unit', 'register.astap'])->findOrFail($id);
 
         if ($mutasi->is_deleted) {
@@ -496,7 +434,6 @@ class MutasiController extends Controller
      */
     public function update(Request $request, $id)
     {
-        self::autoRejectExpiredMutasis();
         $mutasi = AstapMutasi::findOrFail($id);
 
         if ($mutasi->is_deleted) {
@@ -535,7 +472,7 @@ class MutasiController extends Controller
                 return ($r->astap?->nama_barang ?? 'Aset') . " (" . ($r->nibar ?? '-') . ")";
             })->implode(', ');
             return back()->withInput()->withErrors([
-                'astap_register_id' => "Barang berikut sedang dalam proses pengajuan mutasi lain (Batas Persetujuan 24 Jam): {$conflictNames}."
+                'astap_register_id' => "Barang berikut sedang dalam proses pengajuan mutasi lain: {$conflictNames}."
             ]);
         }
 
@@ -725,20 +662,6 @@ class MutasiController extends Controller
             return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
         }
 
-        // Cek apakah mutasi telah melebihi batas waktu 24 jam
-        if ($mutasi->created_at && $mutasi->created_at->addHours(24)->isPast()) {
-            $mutasi->update([
-                'status'           => 'Ditolak',
-                'alasan_penolakan' => 'Otomatis ditolak sistem: Melebihi batas waktu persetujuan 24 jam tanpa persetujuan lengkap.',
-            ]);
-            $msg = 'Batas waktu persetujuan 24 jam telah berakhir. Pengajuan mutasi ini otomatis ditolak oleh sistem.';
-            session()->flash('error', $msg);
-            if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $msg, 'is_expired' => true], 422);
-            }
-            return back()->with('error', $msg);
-        }
-
         $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
             str_contains(strtolower($mutasi->ruangan_tujuan), 'perbekalan') ||
             str_contains(strtolower($mutasi->ruangan_tujuan), 'rumah tangga') ||
@@ -776,20 +699,6 @@ class MutasiController extends Controller
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
         if ($mutasi->is_deleted) {
             return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
-        }
-
-        // Cek apakah mutasi telah melebihi batas waktu 24 jam
-        if ($mutasi->created_at && $mutasi->created_at->addHours(24)->isPast()) {
-            $mutasi->update([
-                'status'           => 'Ditolak',
-                'alasan_penolakan' => 'Otomatis ditolak sistem: Melebihi batas waktu persetujuan 24 jam tanpa persetujuan lengkap.',
-            ]);
-            $msg = 'Batas waktu persetujuan 24 jam telah berakhir. Pengajuan mutasi ini otomatis ditolak oleh sistem.';
-            session()->flash('error', $msg);
-            if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $msg, 'is_expired' => true], 422);
-            }
-            return back()->with('error', $msg);
         }
 
         $isCompleted = (bool) $mutasi->persetujuan_admin && (bool) $mutasi->persetujuan_pengirim;
@@ -842,20 +751,6 @@ class MutasiController extends Controller
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
         if ($mutasi->is_deleted) {
             return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
-        }
-
-        // Cek apakah mutasi telah melebihi batas waktu 24 jam
-        if ($mutasi->created_at && $mutasi->created_at->addHours(24)->isPast()) {
-            $mutasi->update([
-                'status'           => 'Ditolak',
-                'alasan_penolakan' => 'Otomatis ditolak sistem: Melebihi batas waktu persetujuan 24 jam tanpa persetujuan lengkap.',
-            ]);
-            $msg = 'Batas waktu persetujuan 24 jam telah berakhir. Pengajuan mutasi ini otomatis ditolak oleh sistem.';
-            session()->flash('error', $msg);
-            if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $msg, 'is_expired' => true], 422);
-            }
-            return back()->with('error', $msg);
         }
 
         $isReturnToGudang = ($mutasi->jenis_mutasi === 'Pengembalian') && (
@@ -1017,10 +912,9 @@ class MutasiController extends Controller
         $mutasi->update([
             'status'           => $newStatus,
             'alasan_penolakan' => null,
-            'created_at'       => now(), // Reset batas 24 jam baru!
         ]);
 
-        $msg = "Penolakan mutasi {$mutasi->nomor_bamb} berhasil dibatalkan. Status dikembalikan ke '{$newStatus}' dengan batas waktu 24 jam yang baru.";
+        $msg = "Penolakan mutasi {$mutasi->nomor_bamb} berhasil dibatalkan. Status dikembalikan ke '{$newStatus}'.";
         session()->flash('success', $msg);
 
         if ($request->wantsJson()) {

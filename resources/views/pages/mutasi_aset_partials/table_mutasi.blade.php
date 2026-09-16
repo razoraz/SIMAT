@@ -103,23 +103,6 @@
                                                 </span>
                                             </span>
 
-                                            {{-- Indikator Batas Waktu 24 Jam (Jika Pending) --}}
-                                            <template x-if="item.is_pending && item.sisa_waktu">
-                                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9.5px] font-bold border"
-                                                    :class="item.sisa_menit < 180 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30 animate-pulse' : 'bg-amber-500/10 text-amber-300/90 border-amber-500/20'"
-                                                    :title="'Batas Waktu Persetujuan 24 Jam: berakhir pada ' + (item.expires_at_formatted || '')">
-                                                    <span>⏱️</span>
-                                                    <span x-text="'Batas: ' + item.sisa_waktu"></span>
-                                                </span>
-                                            </template>
-
-                                            {{-- Badge Jika Ditolak Karena Batas 24 Jam --}}
-                                            <template x-if="item.status === 'Ditolak' && (item.alasan_penolakan || '').includes('24 jam')">
-                                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9px] font-extrabold bg-rose-950/40 text-rose-400 border border-rose-800/40">
-                                                    <span>⚠️ Batas 24 Jam Lewat</span>
-                                                </span>
-                                            </template>
-
                                             {{-- Step Track --}}
                                             <div class="flex items-center gap-0">
                                                 <div class="flex flex-col items-center gap-0.5">
