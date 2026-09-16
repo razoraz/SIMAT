@@ -11,6 +11,27 @@
                 
                 <template x-if="selectedMutasi">
                     <div class="space-y-3.5 text-xs">
+                        {{-- Banner Informasi Data Terhapus (Label 1) --}}
+                        <template x-if="selectedMutasi.is_deleted">
+                            <div class="p-3.5 bg-red-950/60 border border-red-500/50 rounded-2xl flex items-start space-x-3 text-red-200 shadow-xl">
+                                <div class="p-2 rounded-xl bg-red-500/20 text-red-400 text-lg shrink-0 flex items-center justify-center">
+                                    🗑️
+                                </div>
+                                <div class="flex-1 text-xs">
+                                    <p class="font-extrabold text-red-300 text-[13px] flex items-center gap-2">
+                                        <span>DATA MUTASI TELAH DIHAPUS</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] bg-red-500/30 text-white font-mono font-bold">Label Status: 1</span>
+                                    </p>
+                                    <p class="text-slate-300 text-[11px] mt-1">
+                                        Dihapus oleh: <strong class="text-red-200" x-text="selectedMutasi.deleted_by || '-'"></strong>
+                                    </p>
+                                    <p class="text-slate-400 text-[10.5px] mt-0.5">
+                                        Tanggal & Jam Dihapus: <span class="font-mono text-slate-200" x-text="selectedMutasi.deleted_at || '-'"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </template>
+
                         <div class="flex items-center justify-between">
                             <div>
                                 <span class="text-slate-400 text-[10.5px] uppercase font-bold">Nomor BAMB:</span>
@@ -172,39 +193,52 @@
                             </div>
                         </template>
 
-                        {{-- 2. Tombol Setujui Pengirim (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN ASAL) --}}
-                        <template x-if="canApprovePengirim(selectedMutasi)">
-                            <button type="button" @click="approvePengirim(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
-                                <span>✓ Setujui (Pengirim)</span>
+                        {{-- Tombol Pulihkan Khusus Data Terhapus --}}
+                        <template x-if="selectedMutasi && selectedMutasi.is_deleted">
+                            <button type="button" @click="restoreMutasi(selectedMutasi); showDetailModal = false;" class="px-3.5 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-500/30 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>♻️ Pulihkan Data (Kembalikan Label ke 0)</span>
                             </button>
                         </template>
 
-                        {{-- 3. Tombol Setujui Penerima (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN TUJUAN) --}}
-                        <template x-if="canApprovePenerima(selectedMutasi)">
-                            <button type="button" @click="approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
-                                <span>✓ Setujui (Penerima)</span>
-                            </button>
-                        </template>
+                        {{-- Tombol-tombol Persetujuan & Penolakan hanya aktif jika data belum dihapus --}}
+                        <template x-if="selectedMutasi && !selectedMutasi.is_deleted">
+                            <div class="flex items-center space-x-2 flex-wrap gap-y-2">
+                                {{-- 2. Tombol Setujui Pengirim (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN ASAL) --}}
+                                <template x-if="canApprovePengirim(selectedMutasi)">
+                                    <button type="button" @click="approvePengirim(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                        <span>✓ Setujui (Pengirim)</span>
+                                    </button>
+                                </template>
 
-                        {{-- 3. Tombol Setujui Admin (HANYA DITAMPILKAN PADA AKUN ADMIN & MASTER ADMIN - BISA LANGSUNG) --}}
-                        <template x-if="canApproveAdmin(selectedMutasi)">
-                            <button type="button" @click="approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
-                                <span>✓ Setujui (Admin)</span>
-                            </button>
-                        </template>
+                                {{-- 3. Tombol Setujui Penerima (HANYA DITAMPILKAN PADA AKUN SUB ADMIN RUANGAN TUJUAN) --}}
+                                <template x-if="canApprovePenerima(selectedMutasi)">
+                                    <button type="button" @click="approvePenerima(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-teal-500/15 text-teal-300 border border-teal-500/30 hover:bg-teal-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                        <span>✓ Setujui (Penerima)</span>
+                                    </button>
+                                </template>
 
-                        {{-- 4. Tombol Tolak Mutasi (Selalu tampil jika status belum ditolak & belum selesai) --}}
-                        <template x-if="selectedMutasi && selectedMutasi.status !== 'Ditolak' && selectedMutasi.status !== 'Disetujui Admin (Selesai)'">
-                            <button type="button" @click="openRejectModal(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
-                                <span>✕ Tolak Mutasi</span>
-                            </button>
-                        </template>
+                                {{-- 3. Tombol Setujui Admin (HANYA DITAMPILKAN PADA AKUN ADMIN & MASTER ADMIN - BISA LANGSUNG) --}}
+                                <template x-if="canApproveAdmin(selectedMutasi)">
+                                    <button type="button" @click="approveAdmin(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                        <span>✓ Setujui (Admin)</span>
+                                    </button>
+                                </template>
 
-                        {{-- 5. Tombol Batalkan Penolakan (Hanya tampil jika status Ditolak) --}}
-                        <template x-if="selectedMutasi && selectedMutasi.status === 'Ditolak' && canCancelReject(selectedMutasi)">
-                            <button type="button" @click="cancelRejectMutasi(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
-                                <span>↩️ Batalkan Penolakan</span>
-                            </button>
+                                {{-- 4. Tombol Tolak Mutasi (Selalu tampil jika status belum ditolak & belum selesai) --}}
+                                <template x-if="selectedMutasi && selectedMutasi.status !== 'Ditolak' && selectedMutasi.status !== 'Disetujui Admin (Selesai)'">
+                                    <button type="button" @click="openRejectModal(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                        <span>✕ Tolak Mutasi</span>
+                                    </button>
+                                </template>
+
+                                {{-- 5. Tombol Batalkan Penolakan (Hanya tampil jika status Ditolak) --}}
+                                <template x-if="selectedMutasi && selectedMutasi.status === 'Ditolak' && canCancelReject(selectedMutasi)">
+                                    <button type="button" @click="cancelRejectMutasi(selectedMutasi)" class="px-3.5 py-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm active:scale-95">
+                                        <span>↩️ Batalkan Penolakan</span>
+                                    </button>
+                                </template>
+                            </div>
                         </template>
                     </div>
                     <button type="button" @click="showDetailModal = false" class="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer">Tutup</button>

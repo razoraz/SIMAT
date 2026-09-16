@@ -20,6 +20,15 @@
                     const myName = (this.userName || '').toLowerCase().trim();
 
                     return this.mutasis.filter(item => {
+                        // Cek status terhapus (Label 1 vs 0)
+                        const isItemDeleted = Boolean(item.is_deleted);
+                        if (this.statusFilter === 'terhapus') {
+                            if (!isItemDeleted) return false;
+                        } else {
+                            // Untuk tab selain 'terhapus', hanya tampilkan data aktif (is_deleted === 0)
+                            if (isItemDeleted) return false;
+                        }
+
                         // Jika Sub Admin: hanya tampilkan mutasi yang melibatkan unit dia
                         if (role === 'sub_admin' && myUnit) {
                             const isAsal = (item.asal || '').toLowerCase().includes(myUnit) || 
@@ -40,7 +49,8 @@
                             (item.asal || '').toLowerCase().includes(query) ||
                             (item.pemohon || '').toLowerCase().includes(query) ||
                             (item.penerima_pj || '').toLowerCase().includes(query) ||
-                            (item.jenis || '').toLowerCase().includes(query);
+                            (item.jenis || '').toLowerCase().includes(query) ||
+                            (item.deleted_by || '').toLowerCase().includes(query);
 
                         // Status filter tab
                         let matchStatus = true;
@@ -52,6 +62,8 @@
                             matchStatus = item.status === 'Menunggu Persetujuan Penerima' || (!item.persetujuan_penerima && item.status !== 'Ditolak');
                         } else if (this.statusFilter === 'ditolak') {
                             matchStatus = item.status === 'Ditolak';
+                        } else if (this.statusFilter === 'terhapus') {
+                            matchStatus = isItemDeleted;
                         }
 
                         return matchSearch && matchStatus;
@@ -59,19 +71,19 @@
                 },
 
                 get countAll() {
-                    return (this.mutasis || []).length;
+                    return (this.mutasis || []).filter(m => !m.is_deleted).length;
                 },
 
                 get countSelesai() {
-                    return (this.mutasis || []).filter(m => m.persetujuan_admin || m.status === 'Disetujui Admin (Selesai)').length;
+                    return (this.mutasis || []).filter(m => !m.is_deleted && (m.persetujuan_admin || m.status === 'Disetujui Admin (Selesai)')).length;
                 },
 
                 get countMenungguAdmin() {
-                    return (this.mutasis || []).filter(m => m.status === 'Disetujui 2 Pihak (Menunggu Admin)' || (m.persetujuan_penerima && !m.persetujuan_admin && m.status !== 'Ditolak')).length;
+                    return (this.mutasis || []).filter(m => !m.is_deleted && (m.status === 'Disetujui 2 Pihak (Menunggu Admin)' || (m.persetujuan_penerima && !m.persetujuan_admin && m.status !== 'Ditolak'))).length;
                 },
 
                 get countMenungguPenerima() {
-                    return (this.mutasis || []).filter(m => m.status === 'Menunggu Persetujuan Penerima' || (!m.persetujuan_penerima && m.status !== 'Ditolak')).length;
+                    return (this.mutasis || []).filter(m => !m.is_deleted && (m.status === 'Menunggu Persetujuan Penerima' || (!m.persetujuan_penerima && m.status !== 'Ditolak'))).length;
                 },
 
                 get countMenunggu() {
@@ -79,7 +91,11 @@
                 },
 
                 get countDitolak() {
-                    return (this.mutasis || []).filter(m => m.status === 'Ditolak').length;
+                    return (this.mutasis || []).filter(m => !m.is_deleted && m.status === 'Ditolak').length;
+                },
+
+                get countTerhapus() {
+                    return (this.mutasis || []).filter(m => Boolean(m.is_deleted)).length;
                 },
 
                 get countUnits() {
@@ -359,10 +375,10 @@
                     const targetName = (item.nama || 'Pengajuan Mutasi') + ' (' + (item.kode_barang && item.kode_barang !== '-' ? item.kode_barang : bNomor) + ')';
                     this.askConfirmation({
                         title: '⚠️ Konfirmasi Hapus Data Mutasi',
-                        message: 'Apakah Anda yakin ingin menghapus data transaksi pengajuan mutasi aset ini dari sistem? Seluruh rincian register NIBAR terkait juga akan terhapus secara permanen.',
+                        message: 'Apakah Anda yakin ingin menghapus data transaksi pengajuan mutasi aset ini dari sistem? Data tidak akan dihapus fisik dari database, melainkan statusnya ditandai menjadi 1 (Terhapus) serta dicatat siapa yang menghapus dan waktu penghapusannya.',
                         itemName: targetName,
                         type: 'danger',
-                        btnText: '🗑️ Ya, Hapus Mutasi Ini',
+                        btnText: '🗑️ Ya, Hapus Data Ini',
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch('/mutasi-aset/' + item.id, {
@@ -383,6 +399,42 @@
                             })
                             .catch(err => {
                                 console.error('deleteMutasi error:', err);
+                                window.location.reload();
+                            });
+                        }
+                    });
+                },
+
+                restoreMutasi(item) {
+                    if (!item) return;
+                    const bNomor = item.kode || 'BAMB';
+                    const targetName = (item.nama || 'Pengajuan Mutasi') + ' (' + (item.kode_barang && item.kode_barang !== '-' ? item.kode_barang : bNomor) + ')';
+                    this.askConfirmation({
+                        title: '♻️ Konfirmasi Pulihkan Data Mutasi',
+                        message: 'Apakah Anda yakin ingin memulihkan kembali data transaksi pengajuan mutasi ini ke status aktif? Nilai label status hapus akan dikembalikan dari 1 menjadi 0.',
+                        itemName: targetName,
+                        type: 'info',
+                        btnText: '♻️ Ya, Pulihkan Data Ini',
+                        onConfirm: () => {
+                            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                            fetch('/mutasi-aset/' + item.id + '/restore', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': token,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                }
+                            })
+                            .then(res => res.json())
+                            .then(d => {
+                                if (d.success) {
+                                    window.location.reload();
+                                } else {
+                                    this.showSimatToast('⚠️ Gagal memulihkan: ' + (d.message || 'Terjadi kesalahan.'), 'error');
+                                }
+                            })
+                            .catch(err => {
+                                console.error('restoreMutasi error:', err);
                                 window.location.reload();
                             });
                         }

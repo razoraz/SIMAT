@@ -375,6 +375,7 @@ class BeritaAcaraController extends Controller
         // 3. DATA TAB 3: BAMB MUTASI BARANG ANTAR RUANGAN
         // =========================================================================
         $mutasis = AstapMutasi::with(['items.register.astap.jenisAstap', 'register.astap.jenisAstap'])
+            ->where('is_deleted', 0)
             ->where(function ($q) {
                 $q->where('status', 'Disetujui Admin (Selesai)')
                   ->orWhere(function ($sub) {
@@ -664,7 +665,7 @@ class BeritaAcaraController extends Controller
         }
 
         // 3. Cek tabel Mutasi
-        $mts = \App\Models\AstapMutasi::where('nomor_bamb', $hash)->first();
+        $mts = \App\Models\AstapMutasi::where('nomor_bamb', $hash)->where('is_deleted', 0)->first();
         if ($mts) {
             $judul = 'Berita Acara Mutasi Barang (BAMB)';
             $nomor = $mts->nomor_bamb;

@@ -15,7 +15,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredMutasis" :key="item.id">
-                            <tr class="group hover:bg-slate-800/40 transition-colors">
+                            <tr class="group transition-colors" :class="item.is_deleted ? 'bg-red-950/20 hover:bg-red-950/30' : 'hover:bg-slate-800/40'">
                                 {{-- No --}}
                                 <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
 
@@ -66,106 +66,145 @@
                                     </div>
                                 </td>
 
-                                {{-- Status Persetujuan: Badge + Step Indicator --}}
+                                {{-- Status Persetujuan: Badge + Step Indicator (atau Info Terhapus) --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap min-w-[220px]">
-                                    <div class="flex flex-col items-center gap-2">
-                                        {{-- Badge Status --}}
-                                        <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
-                                            :class="{
-                                                'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Disetujui Admin (Selesai)',
-                                                'bg-cyan-500/15 text-cyan-300 border-cyan-500/30':         item.status === 'Disetujui 2 Pihak (Menunggu Admin)',
-                                                'bg-amber-500/15 text-amber-300 border-amber-500/30':     item.status === 'Menunggu Persetujuan Penerima',
-                                                'bg-rose-500/15 text-rose-300 border-rose-500/30':         item.status === 'Ditolak'
-                                            }">
-                                            <span x-text="item.status === 'Disetujui Admin (Selesai)' ? '✓ Selesai'
-                                                         : item.status === 'Disetujui 2 Pihak (Menunggu Admin)' ? '⏳ Menunggu Admin'
-                                                         : item.status === 'Menunggu Persetujuan Penerima' ? '⏳ Menunggu Penerima'
-                                                         : item.status === 'Ditolak' ? '✕ Ditolak'
-                                                         : item.status">
+                                    {{-- Tampilan jika data dihapus (Label 1) --}}
+                                    <template x-if="item.is_deleted">
+                                        <div class="flex flex-col items-center gap-1.5 py-1">
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm">
+                                                <span>🗑️</span>
+                                                <span>Terhapus (Label: 1)</span>
                                             </span>
-                                        </span>
-
-                                        {{-- Indikator Batas Waktu 24 Jam (Jika Pending) --}}
-                                        <template x-if="item.is_pending && item.sisa_waktu">
-                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9.5px] font-bold border"
-                                                :class="item.sisa_menit < 180 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30 animate-pulse' : 'bg-amber-500/10 text-amber-300/90 border-amber-500/20'"
-                                                :title="'Batas Waktu Persetujuan 24 Jam: berakhir pada ' + (item.expires_at_formatted || '')">
-                                                <span>⏱️</span>
-                                                <span x-text="'Batas: ' + item.sisa_waktu"></span>
-                                            </span>
-                                        </template>
-
-                                        {{-- Badge Jika Ditolak Karena Batas 24 Jam --}}
-                                        <template x-if="item.status === 'Ditolak' && (item.alasan_penolakan || '').includes('24 jam')">
-                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9px] font-extrabold bg-rose-950/40 text-rose-400 border border-rose-800/40">
-                                                <span>⚠️ Batas 24 Jam Lewat</span>
-                                            </span>
-                                        </template>
-
-                                        {{-- Step Track --}}
-                                        <div class="flex items-center gap-0">
-                                            <div class="flex flex-col items-center gap-0.5">
-                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
-                                                    :class="item.persetujuan_pengirim ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
-                                                    <svg x-show="item.persetujuan_pengirim" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                </div>
-                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_pengirim ? 'text-emerald-400' : 'text-slate-500'">Kirim</span>
-                                            </div>
-                                            <div class="w-4 h-0.5 mb-3 transition-all" :class="item.persetujuan_penerima ? 'bg-emerald-500' : 'bg-slate-700'"></div>
-                                            <div class="flex flex-col items-center gap-0.5">
-                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
-                                                    :class="item.persetujuan_penerima ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
-                                                    <svg x-show="item.persetujuan_penerima" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                </div>
-                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_penerima ? 'text-emerald-400' : 'text-slate-500'">Terima</span>
-                                            </div>
-                                            <div class="w-4 h-0.5 mb-3 transition-all" :class="item.persetujuan_admin ? 'bg-emerald-500' : 'bg-slate-700'"></div>
-                                            <div class="flex flex-col items-center gap-0.5">
-                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
-                                                    :class="item.persetujuan_admin ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
-                                                    <svg x-show="item.persetujuan_admin" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                                </div>
-                                                <span class="text-[8px] font-semibold" :class="item.persetujuan_admin ? 'text-emerald-400' : 'text-slate-500'">Admin</span>
+                                            <div class="text-[10px] text-slate-400 text-center leading-tight">
+                                                <p class="truncate max-w-[200px]" :title="'Dihapus oleh: ' + (item.deleted_by || '-')">
+                                                    <span class="text-slate-500">Oleh:</span> <span class="text-rose-300 font-semibold" x-text="item.deleted_by || '-'"></span>
+                                                </p>
+                                                <p class="text-slate-400 text-[9.5px] mt-0.5 font-mono" x-text="item.deleted_at || '-'"></p>
                                             </div>
                                         </div>
-                                    </div>
+                                    </template>
+
+                                    {{-- Tampilan jika data aktif (Label 0) --}}
+                                    <template x-if="!item.is_deleted">
+                                        <div class="flex flex-col items-center gap-2">
+                                            {{-- Badge Status --}}
+                                            <span class="inline-flex items-center justify-center px-3 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap tracking-wide leading-none border shadow-sm select-none"
+                                                :class="{
+                                                    'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': item.status === 'Disetujui Admin (Selesai)',
+                                                    'bg-cyan-500/15 text-cyan-300 border-cyan-500/30':         item.status === 'Disetujui 2 Pihak (Menunggu Admin)',
+                                                    'bg-amber-500/15 text-amber-300 border-amber-500/30':     item.status === 'Menunggu Persetujuan Penerima',
+                                                    'bg-rose-500/15 text-rose-300 border-rose-500/30':         item.status === 'Ditolak'
+                                                }">
+                                                <span x-text="item.status === 'Disetujui Admin (Selesai)' ? '✓ Selesai'
+                                                             : item.status === 'Disetujui 2 Pihak (Menunggu Admin)' ? '⏳ Menunggu Admin'
+                                                             : item.status === 'Menunggu Persetujuan Penerima' ? '⏳ Menunggu Penerima'
+                                                             : item.status === 'Ditolak' ? '✕ Ditolak'
+                                                             : item.status">
+                                                </span>
+                                            </span>
+
+                                            {{-- Indikator Batas Waktu 24 Jam (Jika Pending) --}}
+                                            <template x-if="item.is_pending && item.sisa_waktu">
+                                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9.5px] font-bold border"
+                                                    :class="item.sisa_menit < 180 ? 'bg-rose-500/15 text-rose-300 border-rose-500/30 animate-pulse' : 'bg-amber-500/10 text-amber-300/90 border-amber-500/20'"
+                                                    :title="'Batas Waktu Persetujuan 24 Jam: berakhir pada ' + (item.expires_at_formatted || '')">
+                                                    <span>⏱️</span>
+                                                    <span x-text="'Batas: ' + item.sisa_waktu"></span>
+                                                </span>
+                                            </template>
+
+                                            {{-- Badge Jika Ditolak Karena Batas 24 Jam --}}
+                                            <template x-if="item.status === 'Ditolak' && (item.alasan_penolakan || '').includes('24 jam')">
+                                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-lg text-[9px] font-extrabold bg-rose-950/40 text-rose-400 border border-rose-800/40">
+                                                    <span>⚠️ Batas 24 Jam Lewat</span>
+                                                </span>
+                                            </template>
+
+                                            {{-- Step Track --}}
+                                            <div class="flex items-center gap-0">
+                                                <div class="flex flex-col items-center gap-0.5">
+                                                    <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
+                                                        :class="item.persetujuan_pengirim ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
+                                                        <svg x-show="item.persetujuan_pengirim" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    </div>
+                                                    <span class="text-[8px] font-semibold" :class="item.persetujuan_pengirim ? 'text-emerald-400' : 'text-slate-500'">Kirim</span>
+                                                </div>
+                                                <div class="w-4 h-0.5 mb-3 transition-all" :class="item.persetujuan_penerima ? 'bg-emerald-500' : 'bg-slate-700'"></div>
+                                                <div class="flex flex-col items-center gap-0.5">
+                                                    <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
+                                                        :class="item.persetujuan_penerima ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
+                                                        <svg x-show="item.persetujuan_penerima" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    </div>
+                                                    <span class="text-[8px] font-semibold" :class="item.persetujuan_penerima ? 'text-emerald-400' : 'text-slate-500'">Terima</span>
+                                                </div>
+                                                <div class="w-4 h-0.5 mb-3 transition-all" :class="item.persetujuan_admin ? 'bg-emerald-500' : 'bg-slate-700'"></div>
+                                                <div class="flex flex-col items-center gap-0.5">
+                                                    <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
+                                                        :class="item.persetujuan_admin ? 'bg-emerald-500 border-emerald-400 shadow shadow-emerald-500/40' : 'bg-slate-900 border-slate-700'">
+                                                        <svg x-show="item.persetujuan_admin" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                                    </div>
+                                                    <span class="text-[8px] font-semibold" :class="item.persetujuan_admin ? 'text-emerald-400' : 'text-slate-500'">Admin</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
                                 </td>
 
-                                {{-- Kolom Aksi — FREEZE STICKY RIGHT (3 TOMBOL: DETAIL, UBAH, HAPUS) --}}
+                                {{-- Kolom Aksi — FREEZE STICKY RIGHT --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[210px] w-[210px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
-                                    <div class="flex items-center justify-center gap-1.5">
-
-                                        {{-- 1. Tombol Detail --}}
-                                        <button type="button" @click="openDetail(item)" title="Lihat Detail & BAMB Mutasi"
-                                            class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                            <span>Detail</span>
-                                        </button>
-
-                                        {{-- 2. Tombol Ubah (Terkunci jika status Ditolak) --}}
-                                        <template x-if="item.status !== 'Ditolak'">
-                                            <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan Mutasi"
-                                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                                <span>Ubah</span>
-                                            </a>
-                                        </template>
-                                        <template x-if="item.status === 'Ditolak'">
-                                            <button type="button" disabled title="Terkunci: Pengajuan berstatus Ditolak. Batalkan penolakan terlebih dahulu di menu Detail."
-                                                class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/60 font-bold text-xs inline-flex items-center space-x-1 cursor-not-allowed opacity-60 select-none">
-                                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                                <span>Ubah</span>
+                                    {{-- Aksi untuk Data Terhapus (Label 1): Detail & Pulihkan --}}
+                                    <template x-if="item.is_deleted">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <button type="button" @click="openDetail(item)" title="Lihat Detail & BAMB Mutasi"
+                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <span>Detail</span>
                                             </button>
-                                        </template>
 
-                                        {{-- 3. Tombol Hapus --}}
-                                        <button type="button" @click="deleteMutasi(item)" title="Hapus Data Mutasi"
-                                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            <span>Hapus</span>
-                                        </button>
+                                            <button type="button" @click="restoreMutasi(item)" title="Pulihkan Data Mutasi (Kembalikan Label ke 0)"
+                                                class="px-2.5 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                <span>Pulihkan</span>
+                                            </button>
+                                        </div>
+                                    </template>
 
-                                    </div>
+                                    {{-- Aksi untuk Data Aktif (Label 0): Detail, Ubah, Hapus --}}
+                                    <template x-if="!item.is_deleted">
+                                        <div class="flex items-center justify-center gap-1.5">
+
+                                            {{-- 1. Tombol Detail --}}
+                                            <button type="button" @click="openDetail(item)" title="Lihat Detail & BAMB Mutasi"
+                                                class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                <span>Detail</span>
+                                            </button>
+
+                                            {{-- 2. Tombol Ubah (Terkunci jika status Ditolak) --}}
+                                            <template x-if="item.status !== 'Ditolak'">
+                                                <a :href="'/mutasi-aset/' + item.id + '/edit'" title="Ubah Data Pengajuan Mutasi"
+                                                    class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                    <span>Ubah</span>
+                                                </a>
+                                            </template>
+                                            <template x-if="item.status === 'Ditolak'">
+                                                <button type="button" disabled title="Terkunci: Pengajuan berstatus Ditolak. Batalkan penolakan terlebih dahulu di menu Detail."
+                                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800/80 text-slate-500 border border-slate-700/60 font-bold text-xs inline-flex items-center space-x-1 cursor-not-allowed opacity-60 select-none">
+                                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                                    <span>Ubah</span>
+                                                </button>
+                                            </template>
+
+                                            {{-- 3. Tombol Hapus --}}
+                                            <button type="button" @click="deleteMutasi(item)" title="Hapus Data Mutasi"
+                                                class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                <span>Hapus</span>
+                                            </button>
+
+                                        </div>
+                                    </template>
                                 </td>
                             </tr>
                         </template>

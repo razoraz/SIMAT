@@ -73,7 +73,7 @@ Route::get('/validasi-tte/{hash}', function ($hash) {
     }
 
     // 3. Cek tabel Mutasi
-    $mts = \App\Models\AstapMutasi::where('nomor_bamb', $hash)->first();
+    $mts = \App\Models\AstapMutasi::where('nomor_bamb', $hash)->where('is_deleted', 0)->first();
     if ($mts) {
         $judul = 'Berita Acara Mutasi Barang (BAMB)';
         $nomor = $mts->nomor_bamb;
@@ -661,6 +661,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
         Route::put('/mutasi-aset/{id}',            [MutasiController::class, 'update'])->name('mutasi.update');
         Route::delete('/mutasi-aset/{id}',         [MutasiController::class, 'destroy'])->name('mutasi.destroy');
+        Route::post('/mutasi-aset/{id}/restore',    [MutasiController::class, 'restore'])->name('mutasi.restore');
         Route::post('/mutasi-aset/{id}/approve-pengirim', [MutasiController::class, 'approvePengirim'])->name('mutasi.approve.pengirim');
         Route::post('/mutasi-aset/{id}/approve-penerima', [MutasiController::class, 'approvePenerima'])->name('mutasi.approve.penerima');
         Route::post('/mutasi-aset/{id}/approve-admin',    [MutasiController::class, 'approveAdmin'])->name('mutasi.approve.admin');

@@ -68,6 +68,18 @@
                             :class="statusFilter === 'ditolak' ? 'bg-white/20 text-white' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'"
                             x-text="countDitolak"></span>
                     </button>
+
+                    {{-- Button Terhapus (Label 1) --}}
+                    <button type="button" @click="statusFilter = 'terhapus'"
+                        :class="statusFilter === 'terhapus' 
+                            ? 'bg-red-600 text-white font-extrabold shadow-lg shadow-red-600/25 border-red-400 ring-2 ring-red-500/30' 
+                            : 'bg-slate-900/90 text-slate-400 hover:text-red-300 hover:bg-slate-800 border-slate-800'"
+                        class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                        <span>🗑️ Terhapus</span>
+                        <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                            :class="statusFilter === 'terhapus' ? 'bg-white/20 text-white' : 'bg-red-500/10 text-red-400 border border-red-500/20'"
+                            x-text="countTerhapus"></span>
+                    </button>
                 </div>
 
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full pt-2 border-t border-slate-800/80">

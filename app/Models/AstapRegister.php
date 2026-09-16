@@ -35,6 +35,7 @@ class AstapRegister extends Model
     public function mutasis()
     {
         return $this->belongsToMany(AstapMutasi::class, 'astap_mutasi_registers', 'astap_register_id', 'astap_mutasi_id')
+            ->where('astap_mutasis.is_deleted', 0)
             ->withPivot('kondisi')
             ->withTimestamps();
     }

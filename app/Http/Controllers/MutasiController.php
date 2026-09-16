@@ -17,7 +17,8 @@ class MutasiController extends Controller
      */
     public static function autoRejectExpiredMutasis(): int
     {
-        $expiredList = AstapMutasi::whereNotIn('status', ['Disetujui Admin (Selesai)', 'Ditolak'])
+        $expiredList = AstapMutasi::where('is_deleted', 0)
+            ->whereNotIn('status', ['Disetujui Admin (Selesai)', 'Ditolak'])
             ->where('created_at', '<=', now()->subHours(24))
             ->get();
 
@@ -56,7 +57,8 @@ class MutasiController extends Controller
     {
         self::autoRejectExpiredMutasis();
 
-        $query = AstapMutasi::whereNotIn('status', ['Disetujui Admin (Selesai)', 'Ditolak']);
+        $query = AstapMutasi::where('is_deleted', 0)
+            ->whereNotIn('status', ['Disetujui Admin (Selesai)', 'Ditolak']);
         if ($excludeMutasiId) {
             $query->where('id', '!=', $excludeMutasiId);
         }
@@ -158,6 +160,10 @@ class MutasiController extends Controller
 
             return [
                 'id'                      => $m->id,
+                'is_deleted'              => (int) ($m->is_deleted ?? 0),
+                'deleted_by'              => $m->deleted_by,
+                'deleted_at'              => $m->deleted_at ? $m->deleted_at->translatedFormat('d M Y, H:i') . ' WIB' : null,
+                'deleted_at_raw'          => $m->deleted_at ? $m->deleted_at->toIso8601String() : null,
                 'kode'                    => $m->nomor_bamb,
                 'bast_nomor'              => $m->nomor_bamb,
                 'jenis'                   => $m->jenis_mutasi,
@@ -376,6 +382,10 @@ class MutasiController extends Controller
             'persetujuan_admin'        => $pAdmin,
             'tgl_persetujuan_admin'    => $tglAdmin,
             'status'                   => $initialStatus,
+            'is_deleted'               => 0,
+            'deleted_by'               => null,
+            'deleted_by_id'            => null,
+            'deleted_at'               => null,
         ]);
 
         // 3. Masukkan seluruh item register yang dimutasi ke tabel rincian astap_mutasi_registers
@@ -433,6 +443,10 @@ class MutasiController extends Controller
         self::autoRejectExpiredMutasis();
         $mutasi = AstapMutasi::with(['items.register.astap', 'items.register.unit', 'register.astap'])->findOrFail($id);
 
+        if ($mutasi->is_deleted) {
+            return redirect()->route('mutasi.index')->with('error', 'Pengajuan mutasi ini telah dihapus dan tidak dapat diedit.');
+        }
+
         if ($mutasi->status === 'Ditolak') {
             return redirect()->route('mutasi.index')->with('error', 'Pengajuan mutasi ini berstatus Ditolak dan terkunci. Silakan batalkan penolakan terlebih dahulu melalui menu Detail.');
         }
@@ -484,6 +498,10 @@ class MutasiController extends Controller
     {
         self::autoRejectExpiredMutasis();
         $mutasi = AstapMutasi::findOrFail($id);
+
+        if ($mutasi->is_deleted) {
+            return redirect()->route('mutasi.index')->with('error', 'Pengajuan mutasi ini telah dihapus dan tidak dapat diubah.');
+        }
 
         $request->validate([
             'astap_register_ids'      => 'nullable|array',
@@ -583,24 +601,59 @@ class MutasiController extends Controller
     }
 
     /**
-     * Hapus pengajuan mutasi.
+     * Hapus pengajuan mutasi (Soft Delete: mengubah nilai is_deleted dari 0 menjadi 1, catat user & waktu hapus).
      */
     public function destroy(Request $request, $id)
     {
         $mutasi = AstapMutasi::findOrFail($id);
         $bamb   = $mutasi->nomor_bamb;
+        $user   = Auth::user();
+        $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
 
-        // Hapus rincian register barang yang terasosiasi
-        AstapMutasiRegister::where('astap_mutasi_id', $mutasi->id)->delete();
-        $mutasi->delete();
+        // Ubah nilai label status hapus dari 0 menjadi 1, catat siapa yang menghapus dan tanggal & jam dihapus
+        $mutasi->update([
+            'is_deleted'    => 1,
+            'deleted_by'    => $deleterName,
+            'deleted_by_id' => $user?->id,
+            'deleted_at'    => now(),
+        ]);
 
-        session()->flash('success', "Pengajuan Berita Acara Mutasi {$bamb} berhasil dihapus.");
+        $msg = "Data Berita Acara Mutasi {$bamb} berhasil dihapus (label status diubah menjadi 1).";
+        session()->flash('success', $msg);
         if ($request->wantsJson()) {
-            return response()->json(['success' => true]);
+            return response()->json([
+                'success'    => true,
+                'message'    => $msg,
+                'deleted_by' => $deleterName,
+                'deleted_at' => now()->translatedFormat('d M Y, H:i') . ' WIB',
+            ]);
         }
 
-        return redirect()->route('mutasi.index')
-            ->with('success', "Pengajuan Berita Acara Mutasi {$bamb} berhasil dihapus.");
+        return redirect()->route('mutasi.index')->with('success', $msg);
+    }
+
+    /**
+     * Pulihkan pengajuan mutasi yang pernah dihapus (mengubah label is_deleted dari 1 kembali ke 0).
+     */
+    public function restore(Request $request, $id)
+    {
+        $mutasi = AstapMutasi::findOrFail($id);
+        $bamb   = $mutasi->nomor_bamb;
+
+        $mutasi->update([
+            'is_deleted'    => 0,
+            'deleted_by'    => null,
+            'deleted_by_id' => null,
+            'deleted_at'    => null,
+        ]);
+
+        $msg = "Data Berita Acara Mutasi {$bamb} berhasil dipulihkan (label status dikembalikan menjadi 0).";
+        session()->flash('success', $msg);
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+
+        return redirect()->route('mutasi.index')->with('success', $msg);
     }
 
     /**
@@ -668,6 +721,9 @@ class MutasiController extends Controller
     public function approvePengirim(Request $request, $id)
     {
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
+        if ($mutasi->is_deleted) {
+            return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
+        }
 
         // Cek apakah mutasi telah melebihi batas waktu 24 jam
         if ($mutasi->created_at && $mutasi->created_at->addHours(24)->isPast()) {
@@ -718,6 +774,9 @@ class MutasiController extends Controller
     public function approvePenerima(Request $request, $id)
     {
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
+        if ($mutasi->is_deleted) {
+            return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
+        }
 
         // Cek apakah mutasi telah melebihi batas waktu 24 jam
         if ($mutasi->created_at && $mutasi->created_at->addHours(24)->isPast()) {
@@ -781,6 +840,9 @@ class MutasiController extends Controller
     public function approveAdmin(Request $request, $id)
     {
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
+        if ($mutasi->is_deleted) {
+            return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
+        }
 
         // Cek apakah mutasi telah melebihi batas waktu 24 jam
         if ($mutasi->created_at && $mutasi->created_at->addHours(24)->isPast()) {
@@ -868,6 +930,9 @@ class MutasiController extends Controller
         ]);
 
         $mutasi = AstapMutasi::findOrFail($id);
+        if ($mutasi->is_deleted) {
+            return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
+        }
 
         $alasan = $request->input('alasan_penolakan') ?? $request->json('alasan_penolakan');
 
@@ -904,6 +969,9 @@ class MutasiController extends Controller
     public function cancelReject(Request $request, $id)
     {
         $mutasi = AstapMutasi::with(['items.register', 'register'])->findOrFail($id);
+        if ($mutasi->is_deleted) {
+            return back()->with('error', 'Pengajuan mutasi ini telah dihapus.');
+        }
 
         if ($mutasi->status !== 'Ditolak') {
             return back()->with('info', 'Mutasi ini tidak dalam status ditolak.');

@@ -16,7 +16,17 @@ class AstapMutasi extends Model
         'tgl_persetujuan_pengirim' => 'datetime',
         'tgl_persetujuan_penerima' => 'datetime',
         'tgl_persetujuan_admin'    => 'datetime',
+        'is_deleted'               => 'integer',
+        'deleted_at'               => 'datetime',
     ];
+
+    /**
+     * Pengguna yang menghapus dokumen mutasi ini.
+     */
+    public function deleter()
+    {
+        return $this->belongsTo(User::class, 'deleted_by_id');
+    }
 
     public function setTanggalMutasiAttribute($value)
     {
