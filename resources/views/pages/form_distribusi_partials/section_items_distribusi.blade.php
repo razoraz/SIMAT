@@ -207,9 +207,57 @@
                                     </div>
                                 </div>
 
-                                <!-- Baris 2: Volume Pengajuan, Volume ACC (Admin) -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                                    <!-- Vol 1: Volume Pengajuan (Qty) — Sub Admin & Admin bisa isi -->
+                                <!-- Baris 2: Stok Tersedia, Volume Pengajuan, Volume ACC (Admin) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                                    <!-- Kolom 1 (Baru): Stok NIBAR Tersedia (Readonly Info) -->
+                                    <div>
+                                        <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
+                                            <span class="flex items-center space-x-1.5">
+                                                <span class="text-slate-300">Stok Tersedia</span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold transition-all"
+                                                      :class="!item.nama_barang ? 'bg-slate-800 text-slate-400 border border-slate-700' : (getMatchingNibarCount(item) > 0 ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-300 border border-rose-500/30')"
+                                                      x-text="!item.nama_barang ? '⚪ Belum Pilih' : (getMatchingNibarCount(item) > 0 ? '📦 Ada di Gudang' : '⚠️ Stok Habis')">
+                                                </span>
+                                            </span>
+                                        </label>
+                                        <div class="relative flex items-center">
+                                            <input type="text"
+                                                :value="!item.nama_barang ? 'Pilih nama barang...' : (getMatchingNibarCount(item) + ' ' + (item.satuan || 'Unit'))"
+                                                readonly
+                                                tabindex="-1"
+                                                :title="item.nama_barang ? ('Total ' + getMatchingNibarCount(item) + ' ' + (item.satuan || 'Unit') + ' berstatus Tersedia dan kondisi Baik di gudang aset') : 'Pilih nama barang terlebih dahulu'"
+                                                :class="!item.nama_barang ? 'bg-slate-950/80 text-slate-500 border-slate-800' : (getMatchingNibarCount(item) > 0 ? 'bg-slate-900 text-teal-300 border-teal-500/40 shadow-sm' : 'bg-slate-950/90 text-rose-400 border-rose-500/30')"
+                                                class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold cursor-not-allowed select-none focus:outline-none transition-all">
+                                            
+                                            <!-- Suffix status icon di dalam kotak input -->
+                                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <template x-if="item.nama_barang && getMatchingNibarCount(item) > 0">
+                                                    <span class="text-[10px] px-2 py-0.5 rounded-md bg-teal-500/15 text-teal-300 border border-teal-500/30 font-bold font-mono">✓ Siap</span>
+                                                </template>
+                                                <template x-if="item.nama_barang && getMatchingNibarCount(item) === 0">
+                                                    <span class="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 font-bold font-mono">Kosong</span>
+                                                </template>
+                                                <template x-if="!item.nama_barang">
+                                                    <span class="text-xs text-slate-600 font-mono">—</span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Helper note stok -->
+                                        <p class="text-[10px] mt-1 flex items-center space-x-1">
+                                            <template x-if="!item.nama_barang">
+                                                <span class="text-slate-500">Pilih nama barang di atas</span>
+                                            </template>
+                                            <template x-if="item.nama_barang && getMatchingNibarCount(item) > 0">
+                                                <span class="text-teal-400/90">ℹ️ Siap didistribusikan untuk unit</span>
+                                            </template>
+                                            <template x-if="item.nama_barang && getMatchingNibarCount(item) === 0">
+                                                <span class="text-rose-400">⚠️ NIBAR belum ada / sedang terpakai</span>
+                                            </template>
+                                        </p>
+                                    </div>
+
+                                    <!-- Kolom 2: Volume Pengajuan (Qty) — Sub Admin & Admin bisa isi -->
                                     <div>
                                         <label class="block font-semibold text-xs mb-1.5 flex items-center justify-between">
                                             <span class="flex items-center space-x-1.5">
@@ -236,6 +284,18 @@
                                             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-teal-300 font-bold text-xs pointer-events-none px-2 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/20"
                                                   x-text="item.satuan || 'Unit'"></span>
                                         </div>
+                                        <!-- Helper Note jika Pengajuan > Stok Tersedia -->
+                                        <p class="text-[10px] mt-1 flex items-center space-x-1">
+                                            <template x-if="item.nama_barang && item.qty && getMatchingNibarCount(item) > 0 && item.qty > getMatchingNibarCount(item)">
+                                                <span class="text-amber-400 font-semibold">⚠️ Melebihi stok (<span x-text="getMatchingNibarCount(item) + ' ' + (item.satuan || 'Unit')"></span>)</span>
+                                            </template>
+                                            <template x-if="item.nama_barang && getMatchingNibarCount(item) === 0">
+                                                <span class="text-rose-400">⚠️ Tidak dapat di-ACC karena stok kosong</span>
+                                            </template>
+                                            <template x-if="!item.nama_barang || (!item.qty || item.qty <= getMatchingNibarCount(item))">
+                                                <span class="text-slate-400">Jumlah unit barang yang diajukan</span>
+                                            </template>
+                                        </p>
                                     </div>
 
                                     <!-- Vol 2: Volume ACC — Mengikuti NIBAR yang diinput & tidak dapat diedit -->

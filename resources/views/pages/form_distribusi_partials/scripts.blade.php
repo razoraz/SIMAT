@@ -295,9 +295,10 @@
                     if (item.astap_id && n.astap_id && String(item.astap_id) === String(n.astap_id)) return true;
                     const itemKode = this.getItemKode(item);
                     if (itemKode && n.kode && itemKode.trim() === n.kode.trim()) return true;
-                    // Gabungkan NIBAR dari semua astap yang punya nama_barang sama (untuk barang diinput >1x)
+                    // Gabungkan NIBAR dari semua astap yang punya nama_barang sama (toleran terhadap simbol ellipsis … dan ...)
+                    const clean = s => (s || '').replace(/…/g, '...').trim().toLowerCase();
                     if (item.nama_barang && n.nama_barang &&
-                        item.nama_barang.trim().toLowerCase() === n.nama_barang.trim().toLowerCase()) return true;
+                        clean(item.nama_barang) === clean(n.nama_barang)) return true;
                     return false;
                 },
                 isNibarKondisiBaik(n) {
@@ -414,27 +415,30 @@
                         alert('⚠️ Barang "' + ast.nama + '" sudah dipilih pada baris lain!\n\nDalam satu transaksi distribusi tidak diperbolehkan memilih 2 nama barang yang sama. Silakan tambahkan Volume (Qty) pada baris yang sudah ada.');
                         return;
                     }
-                    item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null;
+                    item.astap_id = ast.id; item.nama_barang = ast.nama; item.kode_barang = ast.kode; item.merk_type = ast.merk || ''; item.satuan = ast.satuan || 'Unit'; if (!item.jenis_astap_nama && ast.jenis_nama) item.jenis_astap_nama = ast.jenis_nama; this.activeDropdownIndex = null;
                     item.nibar_selected = [];
                     item.qty_acc = 0;
                 },
                 clearItemBarang(item, idx) {
                     if (this.formData.status === 'Ditolak') return;
-                    item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; item.qty_acc = 0; if (idx !== undefined) this.activeDropdownIndex = idx;
+                    item.astap_id = null; item.nama_barang = ''; item.kode_barang = ''; item.merk_type = ''; item.satuan = 'Unit'; item.nibar_selected = []; item.qty_acc = 0; if (idx !== undefined) this.activeDropdownIndex = idx;
                 },
                 onNamaBarangInput(item) {
-                    if (!item.nama_barang || item.nama_barang.trim() === '') { item.kode_barang = ''; item.nibar_selected = []; item.qty_acc = 0; return; }
+                    if (!item.nama_barang || item.nama_barang.trim() === '') { item.astap_id = null; item.kode_barang = ''; item.nibar_selected = []; item.qty_acc = 0; return; }
                     const match = (this.katalogAstap || []).find(a => a.nama && a.nama.toLowerCase().trim() === item.nama_barang.toLowerCase().trim());
                     if (match) {
                         if (this.isItemAlreadySelected(match, item)) {
                             alert('⚠️ Barang "' + match.nama + '" sudah dipilih pada baris lain!\n\nDalam satu transaksi distribusi tidak diperbolehkan menginput 2 nama barang yang sama.');
+                            item.astap_id = null;
                             item.nama_barang = '';
                             item.kode_barang = '';
                             item.nibar_selected = [];
                             item.qty_acc = 0;
                             return;
                         }
-                        item.kode_barang = match.kode; item.merk_type = match.merk || ''; item.satuan = match.satuan || 'Unit'; if (!item.jenis_astap_nama) item.jenis_astap_nama = match.jenis_nama || '';
+                        item.astap_id = match.id; item.kode_barang = match.kode; item.merk_type = match.merk || ''; item.satuan = match.satuan || 'Unit'; if (!item.jenis_astap_nama) item.jenis_astap_nama = match.jenis_nama || '';
+                    } else {
+                        item.astap_id = null;
                     }
                     item.nibar_selected = [];
                     item.qty_acc = 0;
