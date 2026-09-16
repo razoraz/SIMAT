@@ -1,4 +1,4 @@
-﻿            <!-- ========================================================================= -->
+            <!-- ========================================================================= -->
             <!-- LANGKAH 4: PIHAK PENYEDIA, PPK & KETERANGAN (SESUAI GAMBAR USER)          -->
             <!-- ========================================================================= -->
             <div x-show="currentStep === 4" class="space-y-6">
@@ -27,46 +27,111 @@
                         </div>
 
                         <div :class="(formData.is_extracomtable || isAtb) ? 'grid grid-cols-1 md:grid-cols-3 gap-4' : 'grid grid-cols-1 md:grid-cols-2 gap-4'">
-                            <div>
-                                <label class="block text-slate-300 text-xs mb-1 font-semibold">Nama Penyedia (Perusahaan / Badan Usaha)</label>
-                                <input type="text" x-model="formData.penyedia_nama" placeholder="Contoh: PT. Medika Sarana Utama"
-                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none focus:border-amber-500">
+                            <!-- Nama Penyedia dengan Autocomplete Dropdown & Auto-fill -->
+                            <div class="relative flex flex-col justify-end" @click.away="isPenyediaDropdownOpen = false">
+                                <label class="text-slate-300 text-xs font-semibold mb-1.5 min-h-[34px] flex items-end justify-between gap-2">
+                                    <span class="leading-tight">Nama Penyedia <span class="text-slate-400 font-normal text-[11px]">(Perusahaan / Rekanan)</span></span>
+                                    <template x-if="masterPenyedias.length > 0">
+                                        <span class="text-[10px] text-amber-400 font-mono font-normal flex items-center gap-1 shrink-0 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 leading-none">
+                                            <span>⚡</span>
+                                            <span>Riwayat</span>
+                                        </span>
+                                    </template>
+                                </label>
+                                <div class="relative flex items-center">
+                                    <input type="text" x-model="formData.penyedia_nama" 
+                                           @focus="isPenyediaDropdownOpen = true"
+                                           @input="onPenyediaInput()"
+                                           placeholder="Contoh: PT. Medika Sarana Utama"
+                                           class="w-full h-11 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 pr-8 text-xs text-white font-bold focus:outline-none focus:border-amber-500 transition-colors">
+                                    <template x-if="formData.penyedia_nama">
+                                        <button type="button" @click="clearPenyedia()" 
+                                                title="Kosongkan nama penyedia"
+                                                class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition-colors">
+                                            ✕
+                                        </button>
+                                    </template>
+                                </div>
+
+                                <!-- Floating Dropdown Rekomendasi Penyedia -->
+                                <div x-show="isPenyediaDropdownOpen && masterPenyedias.length > 0"
+                                     x-transition 
+                                     class="absolute top-full left-0 right-0 z-50 mt-1 bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-800">
+                                    
+                                    <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                                        <span>Pilih Riwayat Rekanan / Vendor</span>
+                                        <span class="font-mono text-slate-400" x-text="filteredPenyediaList.length + ' data'"></span>
+                                    </div>
+
+                                    <template x-for="(p, pIdx) in filteredPenyediaList" :key="pIdx">
+                                        <div @click="selectPenyedia(p)"
+                                             class="px-4 py-2.5 hover:bg-amber-500/15 cursor-pointer transition-colors group flex items-start justify-between gap-3 text-left">
+                                            <div class="space-y-0.5 min-w-0">
+                                                <p class="font-bold text-xs text-white group-hover:text-amber-300 truncate" x-text="p.nama"></p>
+                                                <p class="text-[10px] text-slate-400 truncate" x-text="(p.pemilik ? 'Direktur: ' + p.pemilik : '') + (p.rekening_nomor ? ' • Rek: ' + p.rekening_nomor : '')"></p>
+                                                <template x-if="p.alamat">
+                                                    <p class="text-[9.5px] text-slate-500 truncate" x-text="p.alamat"></p>
+                                                </template>
+                                            </div>
+                                            <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/25 font-bold shrink-0 mt-0.5 group-hover:bg-amber-500/20">
+                                                Auto-fill ↵
+                                            </span>
+                                        </div>
+                                    </template>
+
+                                    <!-- Indikator jika tidak ada yang persis cocok / Rekanan Baru -->
+                                    <template x-if="formData.penyedia_nama && filteredPenyediaList.length === 0">
+                                        <div class="p-3 text-center text-xs text-slate-400">
+                                            <p class="text-amber-300 font-semibold" x-text="'➕ Gunakan Rekanan Baru: &quot;' + formData.penyedia_nama + '&quot;'"></p>
+                                            <p class="text-[10px] text-slate-500 mt-0.5">Silakan lengkapi pemilik, rekening bank, dan alamat di bawah (akan tersimpan otomatis)</p>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-slate-300 text-xs mb-1 font-semibold">Pemilik Penyedia (Direktur / Penanggung Jawab)</label>
-                                <input type="text" x-model="formData.penyedia_pemilik" placeholder="Contoh: Ir. H. Budi Santoso, M.T."
-                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+
+                            <div class="flex flex-col justify-end">
+                                <label class="text-slate-300 text-xs font-semibold mb-1.5 min-h-[34px] flex items-end">
+                                    <span class="leading-tight">Pemilik Penyedia <span class="text-slate-400 font-normal text-[11px]">(Direktur / Pimpinan)</span></span>
+                                </label>
+                                <div class="relative flex items-center">
+                                    <input type="text" x-model="formData.penyedia_pemilik" placeholder="Contoh: Ir. H. Budi Santoso, M.T."
+                                           class="w-full h-11 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors">
+                                </div>
                             </div>
                             <template x-if="formData.is_extracomtable || isAtb">
-                                <div>
-                                    <label class="block text-amber-400 text-xs mb-1 font-semibold flex items-center space-x-1.5">
-                                        <span>No Hp / Wa Yang Aktif</span>
-                                        <span class="text-[10px] text-amber-400/80 font-normal">(Khusus Extracom & ATB)</span>
+                                <div class="flex flex-col justify-end">
+                                    <label class="text-slate-300 text-xs font-semibold mb-1.5 min-h-[34px] flex items-end justify-between gap-1.5">
+                                        <span class="leading-tight text-amber-300">No. HP / WA Aktif</span>
+                                        <span class="text-[10px] text-amber-400/90 font-mono font-normal bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 shrink-0 leading-none">
+                                            Khusus Extracom & ATB
+                                        </span>
                                     </label>
-                                    <input type="text" x-model="formData.penyedia_telepon" placeholder="Contoh: 0812-3456-7890 / 0852-9876-5432"
-                                           class="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-400">
+                                    <div class="relative flex items-center">
+                                        <input type="text" x-model="formData.penyedia_telepon" placeholder="Contoh: 0812-3456-7890 / 0852-9876-5432"
+                                               class="w-full h-11 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none transition-colors">
+                                    </div>
                                 </div>
                             </template>
                         </div>
 
                         <!-- Rekening Bank Penyedia (Nama Rek & Nomor Rek) -->
                         <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-slate-400 text-[11px] mb-1">Rekening: Nama Rekening (Atas Nama)</label>
+                            <div class="flex flex-col justify-end">
+                                <label class="block text-slate-400 text-[11px] mb-1 font-medium">Rekening: Nama Rekening (Atas Nama)</label>
                                 <input type="text" x-model="formData.penyedia_rekening_nama" placeholder="Contoh: PT. Medika Sarana Utama"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+                                       class="w-full h-10 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors">
                             </div>
-                            <div>
-                                <label class="block text-slate-400 text-[11px] mb-1">Rekening: Nomor Rekening & Nama Bank</label>
+                            <div class="flex flex-col justify-end">
+                                <label class="block text-slate-400 text-[11px] mb-1 font-medium">Rekening: Nomor Rekening & Nama Bank</label>
                                 <input type="text" x-model="formData.penyedia_rekening_nomor" placeholder="Contoh: 143-00-9876543-2 (Bank Jatim Cab. Bondowoso)"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold">
+                                       class="w-full h-10 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-500 transition-colors">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-slate-300 text-xs mb-1 font-semibold">Alamat Penyedia</label>
                             <input type="text" x-model="formData.penyedia_alamat" placeholder="Contoh: Jl. Raya Darmo No. 45, Wonokromo, Kota Surabaya, Jawa Timur"
-                                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                   class="w-full h-11 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 transition-colors">
                         </div>
                     </div>
 
@@ -80,15 +145,73 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-slate-300 text-xs mb-1 font-semibold">Nama Pejabat Pembuat Komitmen (PPK)</label>
-                                <input type="text" x-model="formData.ppk_nama" placeholder="Contoh: dr. Slamet Widodo, M.Kes"
-                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none focus:border-cyan-500">
+                            <!-- Nama PPK dengan Autocomplete Dropdown & Auto-fill -->
+                            <div class="relative flex flex-col justify-end" @click.away="isPpkDropdownOpen = false">
+                                <label class="text-slate-300 text-xs font-semibold mb-1.5 min-h-[34px] flex items-end justify-between gap-2">
+                                    <span class="leading-tight">Nama Pejabat Pembuat Komitmen <span class="text-slate-400 font-normal text-[11px]">(PPK)</span></span>
+                                    <template x-if="masterPejabats.length > 0">
+                                        <span class="text-[10px] text-cyan-400 font-mono font-normal flex items-center gap-1 shrink-0 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20 leading-none">
+                                            <span>⚡</span>
+                                            <span>Riwayat</span>
+                                        </span>
+                                    </template>
+                                </label>
+                                <div class="relative flex items-center">
+                                    <input type="text" x-model="formData.ppk_nama" 
+                                           @focus="isPpkDropdownOpen = true"
+                                           @input="onPpkInput()"
+                                           placeholder="Contoh: dr. Slamet Widodo, M.Kes"
+                                           class="w-full h-11 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 pr-8 text-xs text-white font-bold focus:outline-none focus:border-cyan-500 transition-colors">
+                                    <template x-if="formData.ppk_nama">
+                                        <button type="button" @click="clearPpk()" 
+                                                title="Kosongkan nama PPK"
+                                                class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition-colors">
+                                            ✕
+                                        </button>
+                                    </template>
+                                </div>
+
+                                <!-- Floating Dropdown Rekomendasi PPK -->
+                                <div x-show="isPpkDropdownOpen && masterPejabats.length > 0"
+                                     x-transition 
+                                     class="absolute top-full left-0 right-0 z-50 mt-1 bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-slate-800">
+                                    
+                                    <div class="px-4 py-2 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                                        <span>Pilih Riwayat Pejabat (PPK)</span>
+                                        <span class="font-mono text-slate-400" x-text="filteredPpkList.length + ' data'"></span>
+                                    </div>
+
+                                    <template x-for="(k, kIdx) in filteredPpkList" :key="kIdx">
+                                        <div @click="selectPpk(k)"
+                                             class="px-4 py-2.5 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left">
+                                            <div class="space-y-0.5 min-w-0">
+                                                <p class="font-bold text-xs text-white group-hover:text-cyan-300 truncate" x-text="k.nama"></p>
+                                                <p class="text-[10px] font-mono text-cyan-400/90" x-text="k.nip ? ('NIP: ' + k.nip) : 'NIP belum terdata'"></p>
+                                            </div>
+                                            <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold shrink-0 group-hover:bg-cyan-500/20">
+                                                Auto-fill ↵
+                                            </span>
+                                        </div>
+                                    </template>
+
+                                    <!-- Indikator jika tidak ada yang persis cocok / PPK Baru -->
+                                    <template x-if="formData.ppk_nama && filteredPpkList.length === 0">
+                                        <div class="p-3 text-center text-xs text-slate-400">
+                                            <p class="text-cyan-300 font-semibold" x-text="'➕ Gunakan Pejabat Baru: &quot;' + formData.ppk_nama + '&quot;'"></p>
+                                            <p class="text-[10px] text-slate-500 mt-0.5">Silakan isi NIP di samping (akan tersimpan otomatis)</p>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-slate-300 text-xs mb-1 font-semibold">NIP PPK</label>
-                                <input type="text" x-model="formData.ppk_nip" placeholder="Contoh: 19760229 200801 1 010"
-                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-cyan-300 font-mono font-bold focus:outline-none focus:border-cyan-500">
+
+                            <div class="flex flex-col justify-end">
+                                <label class="text-slate-300 text-xs font-semibold mb-1.5 min-h-[34px] flex items-end">
+                                    <span class="leading-tight">NIP PPK</span>
+                                </label>
+                                <div class="relative flex items-center">
+                                    <input type="text" x-model="formData.ppk_nip" placeholder="Contoh: 19760229 200801 1 010"
+                                           class="w-full h-11 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-cyan-300 font-mono font-bold focus:outline-none focus:border-cyan-500 transition-colors">
+                                </div>
                             </div>
                         </div>
                     </div>

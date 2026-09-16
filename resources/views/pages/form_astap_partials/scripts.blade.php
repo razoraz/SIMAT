@@ -4,6 +4,8 @@
         window.dbRekeningBelanjas = @json(!empty($dbRekeningBelanjas) ? $dbRekeningBelanjas : []);
         window.dbUnits = @json(!empty($dbUnits) ? $dbUnits : []);
         window.editingAstap = @json(!empty($astap) ? $astap : null);
+        window.dbPenyedias = @json(!empty($dbPenyedias) ? $dbPenyedias : []);
+        window.dbPejabats = @json(!empty($dbPejabats) ? $dbPejabats : []);
 
         function astapForm() {
             return {
@@ -13,6 +15,12 @@
 
                 // Master Data Unit & Paviliun (Diisi dari Database RSUD)
                 masterUnits: window.dbUnits || [],
+
+                // Master Data Rekanan Penyedia & PPK dari Data ASTAP
+                masterPenyedias: window.dbPenyedias || [],
+                masterPejabats: window.dbPejabats || [],
+                isPenyediaDropdownOpen: false,
+                isPpkDropdownOpen: false,
 
                 // State Search Filter Ketik Langkah 1 & Langkah 2
                 searchProgram: '',
@@ -2621,6 +2629,96 @@
                     }
 
                     executeSave();
+                },
+
+                // =========================================================================
+                // AUTOCOMPLETE & AUTO-FILL PENYEDIA (REKANAN) & PPK DARI DATA ASTAP
+                // =========================================================================
+                get filteredPenyediaList() {
+                    let list = this.masterPenyedias || [];
+                    const q = (this.formData.penyedia_nama || '').trim().toLowerCase();
+                    if (!q) return list.slice(0, 8);
+                    return list.filter(p => {
+                        const n = (p.nama || '').toLowerCase();
+                        const m = (p.pemilik || '').toLowerCase();
+                        const a = (p.alamat || '').toLowerCase();
+                        return n.includes(q) || m.includes(q) || a.includes(q);
+                    }).slice(0, 8);
+                },
+
+                selectPenyedia(p) {
+                    if (!p) return;
+                    this.formData.penyedia_nama = p.nama || '';
+                    if (p.pemilik) this.formData.penyedia_pemilik = p.pemilik;
+                    if (p.telepon) this.formData.penyedia_telepon = p.telepon;
+                    if (p.rekening_nama) this.formData.penyedia_rekening_nama = p.rekening_nama;
+                    if (p.rekening_nomor) this.formData.penyedia_rekening_nomor = p.rekening_nomor;
+                    if (p.alamat) this.formData.penyedia_alamat = p.alamat;
+                    this.isPenyediaDropdownOpen = false;
+                    this.toast = {
+                        show: true,
+                        message: 'Data Rekanan "' + p.nama + '" berhasil dimuat otomatis.',
+                        type: 'success'
+                    };
+                    setTimeout(() => { this.toast.show = false; }, 3500);
+                },
+
+                onPenyediaInput() {
+                    this.isPenyediaDropdownOpen = true;
+                    const q = (this.formData.penyedia_nama || '').trim().toLowerCase();
+                    if (!q) return;
+                    const match = (this.masterPenyedias || []).find(p => (p.nama || '').trim().toLowerCase() === q);
+                    if (match) {
+                        if (!this.formData.penyedia_pemilik && match.pemilik) this.formData.penyedia_pemilik = match.pemilik;
+                        if (!this.formData.penyedia_telepon && match.telepon) this.formData.penyedia_telepon = match.telepon;
+                        if (!this.formData.penyedia_rekening_nama && match.rekening_nama) this.formData.penyedia_rekening_nama = match.rekening_nama;
+                        if (!this.formData.penyedia_rekening_nomor && match.rekening_nomor) this.formData.penyedia_rekening_nomor = match.rekening_nomor;
+                        if (!this.formData.penyedia_alamat && match.alamat) this.formData.penyedia_alamat = match.alamat;
+                    }
+                },
+
+                clearPenyedia() {
+                    this.formData.penyedia_nama = '';
+                    this.isPenyediaDropdownOpen = false;
+                },
+
+                get filteredPpkList() {
+                    let list = this.masterPejabats || [];
+                    const q = (this.formData.ppk_nama || '').trim().toLowerCase();
+                    if (!q) return list.slice(0, 8);
+                    return list.filter(k => {
+                        const n = (k.nama || '').toLowerCase();
+                        const nip = (k.nip || '').toLowerCase();
+                        return n.includes(q) || nip.includes(q);
+                    }).slice(0, 8);
+                },
+
+                selectPpk(k) {
+                    if (!k) return;
+                    this.formData.ppk_nama = k.nama || '';
+                    if (k.nip) this.formData.ppk_nip = k.nip;
+                    this.isPpkDropdownOpen = false;
+                    this.toast = {
+                        show: true,
+                        message: 'Data PPK "' + k.nama + '" berhasil dimuat otomatis.',
+                        type: 'success'
+                    };
+                    setTimeout(() => { this.toast.show = false; }, 3500);
+                },
+
+                onPpkInput() {
+                    this.isPpkDropdownOpen = true;
+                    const q = (this.formData.ppk_nama || '').trim().toLowerCase();
+                    if (!q) return;
+                    const match = (this.masterPejabats || []).find(k => (k.nama || '').trim().toLowerCase() === q);
+                    if (match && match.nip && !this.formData.ppk_nip) {
+                        this.formData.ppk_nip = match.nip;
+                    }
+                },
+
+                clearPpk() {
+                    this.formData.ppk_nama = '';
+                    this.isPpkDropdownOpen = false;
                 }
             };
         }

@@ -619,29 +619,71 @@ Route::middleware('auth')->group(function () {
 
         // Form Tambah, Edit, Simpan, Update & Hapus ASTAP
         Route::middleware('module:astap')->group(function () {
-            Route::get('/astap/create', function () {
-            $dbMaster108 = \App\Models\JenisAstap::getNested108();
-            $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
-            $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
-            $dbUnits = \App\Models\Unit::orderBy('nama')->get();
-            return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits'));
-        })->name('astap.create');
+            // Helper pengambilan data unik Penyedia & PPK dari riwayat data ASTAP
+            $getDistinctPenyedias = function() {
+                return \App\Models\Astap::whereNotNull('penyedia_nama')
+                    ->where('penyedia_nama', '!=', '')
+                    ->orderBy('id', 'desc')
+                    ->get(['penyedia_nama', 'penyedia_pemilik', 'penyedia_rekening_nama', 'penyedia_rekening_nomor', 'penyedia_alamat', 'spesifikasi_json'])
+                    ->map(function($a) {
+                        $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
+                        return [
+                            'nama'           => trim($a->penyedia_nama),
+                            'pemilik'        => $a->penyedia_pemilik ?? '',
+                            'telepon'        => $spec['penyedia_telepon'] ?? '',
+                            'rekening_nama'  => $a->penyedia_rekening_nama ?? '',
+                            'rekening_nomor' => $a->penyedia_rekening_nomor ?? '',
+                            'alamat'         => $a->penyedia_alamat ?? '',
+                        ];
+                    })
+                    ->unique(fn($p) => strtolower(trim($p['nama'])))
+                    ->values();
+            };
 
-        Route::get('/astap/{id}/edit', function ($id) {
-            $dbMaster108 = \App\Models\JenisAstap::getNested108();
-            $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
-            $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
-            $dbUnits = \App\Models\Unit::orderBy('nama')->get();
-            $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->find($id);
-            return view('pages.form_astap', [
-                'id' => $id, 
-                'astap' => $astap,
-                'dbMaster108' => $dbMaster108,
-                'dbJenisPengadaans' => $dbJenisPengadaans,
-                'dbRekeningBelanjas' => $dbRekeningBelanjas,
-                'dbUnits' => $dbUnits
-            ]);
-        })->name('astap.edit');
+            $getDistinctPejabats = function() {
+                return \App\Models\Astap::whereNotNull('ppk_nama')
+                    ->where('ppk_nama', '!=', '')
+                    ->orderBy('id', 'desc')
+                    ->get(['ppk_nama', 'ppk_nip'])
+                    ->map(function($a) {
+                        return [
+                            'nama' => trim($a->ppk_nama),
+                            'nip'  => $a->ppk_nip ?? '',
+                        ];
+                    })
+                    ->unique(fn($p) => strtolower(trim($p['nama'])))
+                    ->values();
+            };
+
+            Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
+                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
+                $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbPenyedias = $getDistinctPenyedias();
+                $dbPejabats = $getDistinctPejabats();
+                return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+            })->name('astap.create');
+
+            Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
+                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
+                $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbPenyedias = $getDistinctPenyedias();
+                $dbPejabats = $getDistinctPejabats();
+                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->find($id);
+                return view('pages.form_astap', [
+                    'id' => $id, 
+                    'astap' => $astap,
+                    'dbMaster108' => $dbMaster108,
+                    'dbJenisPengadaans' => $dbJenisPengadaans,
+                    'dbRekeningBelanjas' => $dbRekeningBelanjas,
+                    'dbUnits' => $dbUnits,
+                    'dbPenyedias' => $dbPenyedias,
+                    'dbPejabats' => $dbPejabats,
+                ]);
+            })->name('astap.edit');
 
         Route::post('/astap', function (\Illuminate\Http\Request $request) {
             $data = $request->all();
