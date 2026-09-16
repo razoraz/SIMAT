@@ -66,7 +66,7 @@ class BeritaAcaraController extends Controller
 
         foreach ($triwulanKeys as $key) {
             $doc = AstapBastTriwulan::firstOrCreate(
-                ['tahun' => $tahun, 'triwulan' => $key, 'is_deleted' => 0],
+                ['tahun' => $tahun, 'triwulan' => $key],
                 [
                     'nomor_surat'    => '000.2.3.2/' . ($key === 'TW1' ? '112' : ($key === 'TW2' ? '224' : ($key === 'TW3' ? '318' : '415'))) . '/430.10.7/' . $tahun,
                     'tanggal_bast'   => $tahun . '-' . ($key === 'TW1' ? '03-31' : ($key === 'TW2' ? '06-30' : ($key === 'TW3' ? '09-30' : '12-31'))),
@@ -563,7 +563,7 @@ class BeritaAcaraController extends Controller
         $tahun = $request->input('tahun', '2026');
         $defaultLokasi = 'Rumah Sakit Umum Daerah dr. H. Koesnandi Kabupaten Bondowoso';
         $doc = AstapBastTriwulan::firstOrCreate(
-            ['tahun' => $tahun, 'triwulan' => $key, 'is_deleted' => 0],
+            ['tahun' => $tahun, 'triwulan' => $key],
             ['lokasi' => $request->input('lokasi', $defaultLokasi)]
         );
 
@@ -595,7 +595,7 @@ class BeritaAcaraController extends Controller
     public function signTriwulan(Request $request, $key)
     {
         $tahun = $request->input('tahun', '2026');
-        $doc = AstapBastTriwulan::firstOrCreate(['tahun' => $tahun, 'triwulan' => $key, 'is_deleted' => 0]);
+        $doc = AstapBastTriwulan::firstOrCreate(['tahun' => $tahun, 'triwulan' => $key]);
 
         // Tentukan status tanda tangan: jika dikirim di request gunakan itu, jika tidak toggle nilai saat ini
         $newSigned = $request->has('signed')
