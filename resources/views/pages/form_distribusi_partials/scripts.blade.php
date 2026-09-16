@@ -694,7 +694,26 @@
                                         const errorDetails = Object.values(result.errors).flat().join('; ');
                                         if (errorDetails) errorMsg += ' (' + errorDetails + ')';
                                     }
-                                    this.showSimatToast('❌ Gagal menyimpan distribusi: ' + errorMsg, 'error');
+
+                                    // Jika terdapat ID register NIBAR yang konflik, otomatis lepaskan dari pilihan item formulir
+                                    if (result.conflicted_register_ids && Array.isArray(result.conflicted_register_ids)) {
+                                        const confIds = result.conflicted_register_ids.map(Number);
+                                        (this.formData.items || []).forEach(it => {
+                                            if (it.nibar_selected) {
+                                                it.nibar_selected = it.nibar_selected.filter(n => !confIds.includes(Number(n.id)));
+                                                it.qty_acc = it.nibar_selected.length;
+                                            }
+                                        });
+                                        // Update status di nibarList lokal agar tidak dipilih kembali
+                                        (this.nibarList || []).forEach(n => {
+                                            if (confIds.includes(Number(n.id))) {
+                                                n.status = 'Tidak Tersedia';
+                                            }
+                                        });
+                                    }
+
+                                    alert(errorMsg);
+                                    this.showSimatToast('❌ Gagal: ' + (result.message ? 'Terdapat konflik data alokasi.' : errorMsg), 'error');
                                 }
                             } catch(e) {
                                 console.error(e);

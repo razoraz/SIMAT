@@ -61,6 +61,92 @@ class DistribusiController extends Controller
     }
 
     /**
+     * Generate Kode Transaksi Distribusi Sekuensial per Tahun (DST-YYYY-XXX)
+     */
+    public static function generateNextKode(int $tahun): string
+    {
+        $existingCodes = Distribusi::whereYear('tanggal_distribusi', $tahun)
+            ->orWhere('kode', 'LIKE', "DST-{$tahun}-%")
+            ->pluck('kode');
+
+        $maxSeq = 0;
+        foreach ($existingCodes as $c) {
+            if (preg_match('/DST-\d{4}-(\d+)/', (string)$c, $m)) {
+                $seqVal = (int)$m[1];
+                if ($seqVal > $maxSeq) {
+                    $maxSeq = $seqVal;
+                }
+            }
+        }
+        $nextSeq = $maxSeq + 1;
+        return 'DST-' . $tahun . '-' . str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Dapatkan daftar ID register aset yang saat ini TIDAK DAPAT didistribusikan:
+     * 1. Sedang terdaftar pada transaksi distribusi lain yang aktif ('Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima')
+     * 2. Sedang dalam proses mutasi aktif (berdasarkan MutasiController::getLockedRegisterIds())
+     * 3. Kondisi fisik tidak baik (Kurang Baik, Rusak Ringan, Rusak Berat)
+     * 4. Status fisik sudah 'Tidak Tersedia' atau ruang_pemegang sudah terisi di unit lain
+     * 
+     * @param int|null $excludeDistribusiId ID distribusi yang sedang diedit (agar NIBAR miliknya tetap tersedia untuk transaksi tersebut)
+     * @return array<int>
+     */
+    public static function getUnavailableRegisterIds(?int $excludeDistribusiId = null): array
+    {
+        // 1. Register yang sedang terikat pada distribusi aktif (Dalam Pengiriman / Telah Diterima)
+        $distribusiLockedIds = DistribusiItemRegister::whereHas('distribusiItem.distribusi', function ($q) use ($excludeDistribusiId) {
+            $q->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima']);
+            if ($excludeDistribusiId) {
+                $q->where('id', '!=', $excludeDistribusiId);
+            }
+        })->pluck('astap_register_id')->filter()->unique()->toArray();
+
+        // 2. Register yang sedang terkunci di mutasi aset aktif
+        $mutasiLockedIds = [];
+        if (class_exists(\App\Http\Controllers\MutasiController::class)) {
+            try {
+                $mutasiLockedIds = \App\Http\Controllers\MutasiController::getLockedRegisterIds();
+            } catch (\Throwable $e) {
+                $mutasiLockedIds = [];
+            }
+        }
+
+        // 3. Register yang status fisiknya sudah tidak tersedia atau sudah berada di unit/ruangan lain
+        // (kecuali jika register tersebut adalah milik transaksi $excludeDistribusiId yang sedang diedit)
+        $currentOwnRegisterIds = [];
+        if ($excludeDistribusiId) {
+            $currentOwnRegisterIds = DistribusiItemRegister::whereHas('distribusiItem', function ($q) use ($excludeDistribusiId) {
+                $q->where('distribusi_id', $excludeDistribusiId);
+            })->pluck('astap_register_id')->filter()->toArray();
+        }
+
+        $occupiedQuery = AstapRegister::where(function ($q) {
+            $q->where('status', '!=', 'Tersedia')
+              ->orWhere(function ($sub) {
+                  $sub->whereNotNull('ruang_pemegang')
+                      ->where('ruang_pemegang', '!=', '')
+                      ->where('ruang_pemegang', '!=', 'Belum Ditempatkan / Di Gudang')
+                      ->where('ruang_pemegang', '!=', 'Gudang Aset');
+              });
+        });
+
+        if (!empty($currentOwnRegisterIds)) {
+            $occupiedQuery->whereNotIn('id', $currentOwnRegisterIds);
+        }
+        $occupiedIds = $occupiedQuery->pluck('id')->toArray();
+
+        // 4. Register dengan kondisi bukan Baik
+        $damagedIds = AstapRegister::whereNotNull('kondisi')
+            ->where('kondisi', '!=', '')
+            ->where('kondisi', '!=', 'Baik')
+            ->pluck('id')
+            ->toArray();
+
+        return array_values(array_unique(array_merge($distribusiLockedIds, $mutasiLockedIds, $occupiedIds, $damagedIds)));
+    }
+
+    /**
      * Tampilkan Tabel Daftar Distribusi
      */
     public function index()
@@ -255,18 +341,20 @@ class DistribusiController extends Controller
                 ];
             });
 
-        // Kirim register list dengan id (bukan nibar string) sebagai referensi FK (hanya kondisi Baik yang dapat didistribusikan)
+        $unavailableIds = self::getUnavailableRegisterIds();
+
+        // Kirim register list dengan id (bukan nibar string) sebagai referensi FK (hanya kondisi Baik dan yang benar-benar tersedia)
         $nibarList = AstapRegister::with('astap')
             ->where(function($q) {
                 $q->whereNull('kondisi')
                   ->orWhere('kondisi', 'Baik')
                   ->orWhere('kondisi', '');
             })
+            ->whereNotIn('id', $unavailableIds)
             ->orderBy('astap_id')
             ->orderBy('no_register_int')
             ->get()
             ->map(function($r) {
-                $isTersedia = empty($r->ruang_pemegang) || $r->status === 'Tersedia';
                 return [
                     'id'          => $r->id,            // ← FK integer yang akan disimpan
                     'astap_id'    => $r->astap_id,
@@ -275,14 +363,13 @@ class DistribusiController extends Controller
                     'nama_barang' => $r->astap ? $r->astap->nama_barang : '',
                     'ruang'       => $r->ruang_pemegang ?: 'Belum Ditempatkan / Di Gudang',
                     'kondisi'     => $r->kondisi ?: 'Baik',
-                    'status'      => $isTersedia ? 'Tersedia' : 'Tidak Tersedia',
+                    'status'      => 'Tersedia',
                 ];
             });
 
         // Hitung kode urut berikutnya agar tampil di form (bukan random)
         $tahunIni = date('Y');
-        $nextSeq = Distribusi::whereYear('tanggal_distribusi', $tahunIni)->count() + 1;
-        $nextKode = 'DST-' . $tahunIni . '-' . str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
+        $nextKode = self::generateNextKode((int)$tahunIni);
         $nextBastNomor = self::generateNextBastNomor((int)$tahunIni);
 
         return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'nextKode', 'nextBastNomor'));
@@ -313,6 +400,9 @@ class DistribusiController extends Controller
                 );
             }
         }
+        $currentRegisterIds = array_values(array_unique(array_filter($currentRegisterIds)));
+
+        $unavailableIds = self::getUnavailableRegisterIds($id);
 
         $units = Unit::orderBy('id', 'asc')->get()->map(function($u) {
             return [
@@ -359,19 +449,30 @@ class DistribusiController extends Controller
 
         $nibarList = AstapRegister::with('astap')
             ->where(function($q) use ($currentRegisterIds) {
-                $q->whereIn('id', $currentRegisterIds)
-                  ->orWhere(function($sub) {
-                      $sub->whereNull('kondisi')
-                          ->orWhere('kondisi', 'Baik')
-                          ->orWhere('kondisi', '');
-                  });
+                if (!empty($currentRegisterIds)) {
+                    $q->whereIn('id', $currentRegisterIds)
+                      ->orWhere(function($sub) {
+                          $sub->whereNull('kondisi')
+                              ->orWhere('kondisi', 'Baik')
+                              ->orWhere('kondisi', '');
+                      });
+                } else {
+                    $q->whereNull('kondisi')
+                      ->orWhere('kondisi', 'Baik')
+                      ->orWhere('kondisi', '');
+                }
+            })
+            ->where(function($q) use ($unavailableIds, $currentRegisterIds) {
+                $q->whereNotIn('id', $unavailableIds);
+                if (!empty($currentRegisterIds)) {
+                    $q->orWhereIn('id', $currentRegisterIds);
+                }
             })
             ->orderBy('astap_id')
             ->orderBy('no_register_int')
             ->get()
             ->map(function($r) use ($currentRegisterIds) {
-                $isOwn      = in_array($r->id, $currentRegisterIds);
-                $isTersedia = empty($r->ruang_pemegang) || $r->status === 'Tersedia' || $isOwn;
+                $isOwn = in_array($r->id, $currentRegisterIds);
                 return [
                     'id'          => $r->id,
                     'astap_id'    => $r->astap_id,
@@ -380,7 +481,7 @@ class DistribusiController extends Controller
                     'nama_barang' => $r->astap ? $r->astap->nama_barang : '',
                     'ruang'       => $r->ruang_pemegang ?: 'Belum Ditempatkan / Di Gudang',
                     'kondisi'     => $r->kondisi ?: 'Baik',
-                    'status'      => $isTersedia ? 'Tersedia' : 'Tidak Tersedia',
+                    'status'      => 'Tersedia',
                 ];
             });
 
@@ -526,29 +627,137 @@ class DistribusiController extends Controller
                 }
             }
 
-            // Helper: hitung nomor urut sekuensial kode transaksi per tahun
-            $nextSeq = Distribusi::whereYear('tanggal_distribusi', $tahunDistribusi)->count() + 1;
+            // ── VALIDASI & PROTEKSI CONCURRENCY ALOKASI NIBAR ──
+            $allSubmittedRegisterIds = [];
+            $seenRegisterIds = [];
+            foreach ($validated['items'] as $itemData) {
+                if (!empty($itemData['register_ids']) && is_array($itemData['register_ids'])) {
+                    foreach ($itemData['register_ids'] as $regId) {
+                        $regIdInt = (int)$regId;
+                        if ($regIdInt > 0) {
+                            if (in_array($regIdInt, $seenRegisterIds)) {
+                                $rObj = AstapRegister::find($regIdInt);
+                                $nibarStr = $rObj ? ($rObj->nibar ?: $rObj->no_register) : "ID #{$regIdInt}";
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => "NIBAR {$nibarStr} dipilih lebih dari 1 kali dalam formulir distribusi ini. Satu unit NIBAR hanya dapat dialokasikan ke 1 baris barang.",
+                                    'conflicted_register_ids' => [$regIdInt],
+                                ], 422);
+                            }
+                            $seenRegisterIds[] = $regIdInt;
+                            $allSubmittedRegisterIds[] = $regIdInt;
+                        }
+                    }
+                }
+            }
 
-            $getSeqForExisting = function (Distribusi $d) use ($tahunDistribusi): int {
-                return Distribusi::whereYear('tanggal_distribusi', $tahunDistribusi)
-                    ->where('id', '<=', $d->id)
-                    ->count();
-            };
+            if ($finalStatus !== 'Ditolak' && !empty($allSubmittedRegisterIds)) {
+                // 1. Pessimistic Lock: Kunci baris aset di DB agar transaksi paralel menunggu secara atomik
+                $lockedRegisters = AstapRegister::whereIn('id', $allSubmittedRegisterIds)
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
 
-            $generateKode = function (int $seq) use ($tahunDistribusi): string {
-                return 'DST-' . $tahunDistribusi . '-' . str_pad($seq, 3, '0', STR_PAD_LEFT);
-            };
+                foreach ($allSubmittedRegisterIds as $chkId) {
+                    if (!isset($lockedRegisters[$chkId])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Data register aset dengan ID #{$chkId} tidak ditemukan di master data.",
+                            'conflicted_register_ids' => [$chkId],
+                        ], 422);
+                    }
+                }
+
+                // 2. Cek apakah ada NIBAR yang sedang terdaftar di transaksi distribusi aktif lain (Dalam Pengiriman / Telah Diterima)
+                $conflictDistribusi = DistribusiItemRegister::whereIn('astap_register_id', $allSubmittedRegisterIds)
+                    ->whereHas('distribusiItem.distribusi', function($q) use ($id) {
+                        $q->whereIn('status', ['Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima']);
+                        if ($id) {
+                            $q->where('id', '!=', $id);
+                        }
+                    })
+                    ->with(['astapRegister.astap', 'distribusiItem.distribusi.unit'])
+                    ->first();
+
+                if ($conflictDistribusi) {
+                    $cReg = $conflictDistribusi->astapRegister;
+                    $cDst = $conflictDistribusi->distribusiItem?->distribusi;
+                    $cUnit = $cDst?->unit?->nama ?? 'Unit Lain';
+                    $cNibar = $cReg ? ($cReg->nibar ?: $cReg->no_register) : 'NIBAR Terpilih';
+                    $cBarang = $cReg?->astap?->nama_barang ?? 'Aset';
+                    $cStatus = $cDst?->status ?? 'Dalam Pengiriman';
+                    $cKode = $cDst?->kode ?? '';
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => "⚠️ Gagal Menyimpan Alokasi:\nNIBAR {$cNibar} ({$cBarang}) saat ini sedang dalam status \"{$cStatus}\" menuju {$cUnit} (No. Distribusi: {$cKode}).\n\nBarang fisik ini tidak dapat didistribusikan ganda. Silakan pilih NIBAR lain yang masih tersedia.",
+                        'conflicted_register_ids' => [$conflictDistribusi->astap_register_id],
+                    ], 422);
+                }
+
+                // 3. Cek apakah ada NIBAR yang sedang dalam proses pengajuan mutasi aset aktif
+                $lockedMutasiIds = class_exists(\App\Http\Controllers\MutasiController::class)
+                    ? \App\Http\Controllers\MutasiController::getLockedRegisterIds()
+                    : [];
+
+                $mutasiConflicts = array_intersect($allSubmittedRegisterIds, $lockedMutasiIds);
+                if (!empty($mutasiConflicts)) {
+                    $firstMutasiId = reset($mutasiConflicts);
+                    $mReg = $lockedRegisters[$firstMutasiId] ?? null;
+                    $mNibar = $mReg ? ($mReg->nibar ?: $mReg->no_register) : "ID #{$firstMutasiId}";
+                    $mBarang = $mReg?->astap?->nama_barang ?? 'Aset';
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => "⚠️ Gagal Menyimpan Alokasi:\nNIBAR {$mNibar} ({$mBarang}) saat ini sedang dalam proses pengajuan mutasi aset aktif dan belum selesai. Silakan pilih NIBAR lain.",
+                        'conflicted_register_ids' => [$firstMutasiId],
+                    ], 422);
+                }
+
+                // 4. Cek status ketersediaan fisik aset (hanya izinkan jika status Tersedia atau milik transaksi ini sebelumnya)
+                $existingOwnedRegisterIds = [];
+                if ($id) {
+                    $existingDist = Distribusi::with('items.registers')->find($id);
+                    if ($existingDist) {
+                        foreach ($existingDist->items as $it) {
+                            $existingOwnedRegisterIds = array_merge($existingOwnedRegisterIds, $it->registers->pluck('astap_register_id')->toArray());
+                        }
+                    }
+                }
+
+                foreach ($allSubmittedRegisterIds as $subId) {
+                    if (in_array($subId, $existingOwnedRegisterIds)) {
+                        continue;
+                    }
+                    $regRow = $lockedRegisters[$subId];
+                    $isOccupied = ($regRow->status !== 'Tersedia') || 
+                        (!empty($regRow->ruang_pemegang) && !in_array($regRow->ruang_pemegang, ['', 'Belum Ditempatkan / Di Gudang', 'Gudang Aset']));
+                    
+                    if ($isOccupied) {
+                        $nibarStr = $regRow->nibar ?: $regRow->no_register;
+                        $barangStr = $regRow->astap?->nama_barang ?? 'Aset';
+                        $ruangStr = $regRow->ruang_pemegang ?: 'Unit Lain';
+
+                        return response()->json([
+                            'success' => false,
+                            'message' => "⚠️ Gagal Menyimpan Alokasi:\nNIBAR {$nibarStr} ({$barangStr}) sudah tidak tersedia atau sudah ditempatkan di {$ruangStr}. Silakan pilih NIBAR lain.",
+                            'conflicted_register_ids' => [$subId],
+                        ], 422);
+                    }
+                }
+            }
 
             // 1. Simpan / Update Header Distribusi
             $distribusi = null;
             if ($id) {
                 $distribusi = Distribusi::find($id);
             }
-            if (!$distribusi) {
+            if (!$distribusi && !empty($validated['kode'])) {
                 $distribusi = Distribusi::where('kode', $validated['kode'])->first();
             }
 
             $isNewRecord = !$distribusi;
+            $finalKode = $distribusi ? $distribusi->kode : self::generateNextKode((int)$tahunDistribusi);
 
             // Penentuan Nomor BAST:
             // - Diterbitkan HANYA ketika status 'Dalam Pengiriman' atau 'Telah Diterima'
@@ -579,9 +788,8 @@ class DistribusiController extends Controller
             }
 
             if ($distribusi) {
-                $seq = $getSeqForExisting($distribusi);
                 $updateData = [
-                    'kode'               => $generateKode($seq),
+                    'kode'               => $finalKode,
                     'bast_nomor'         => $finalBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
@@ -599,16 +807,18 @@ class DistribusiController extends Controller
                 }
                 $distribusi->update($updateData);
 
-                // Reset register lama jika ada
+                // Reset register lama jika ada (hanya register yang DILEPAS / tidak dipilih lagi)
+                $oldRegIds = [];
                 foreach ($distribusi->items as $oldItem) {
-                    $oldRegIds = $oldItem->registers->pluck('astap_register_id')->filter()->toArray();
-                    if (!empty($oldRegIds)) {
-                        AstapRegister::whereIn('id', $oldRegIds)->update([
-                            'unit_id'        => null,
-                            'ruang_pemegang' => null,
-                            'status'         => 'Tersedia',
-                        ]);
-                    }
+                    $oldRegIds = array_merge($oldRegIds, $oldItem->registers->pluck('astap_register_id')->filter()->toArray());
+                }
+                $releasedRegIds = array_diff($oldRegIds, $allSubmittedRegisterIds);
+                if (!empty($releasedRegIds)) {
+                    AstapRegister::whereIn('id', $releasedRegIds)->update([
+                        'unit_id'        => null,
+                        'ruang_pemegang' => null,
+                        'status'         => 'Tersedia',
+                    ]);
                 }
 
                 // Hapus item lama
@@ -616,7 +826,7 @@ class DistribusiController extends Controller
             } else {
                 // Buat record baru
                 $createData = [
-                    'kode'               => $generateKode($nextSeq),
+                    'kode'               => $finalKode,
                     'bast_nomor'         => $finalBastNomor,
                     'tanggal_distribusi' => $tglDistribusi,
                     'unit_id'            => $finalUnitId,
