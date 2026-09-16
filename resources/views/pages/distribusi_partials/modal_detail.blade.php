@@ -54,6 +54,14 @@
                                     </span>
                                 </template>
                             </div>
+
+                            <!-- Banner Alasan Penolakan jika Status Ditolak -->
+                            <template x-if="selectedDistribusi.status === 'Ditolak' && selectedDistribusi.alasan_penolakan">
+                                <div class="col-span-2 sm:col-span-4 p-3 bg-rose-950/40 rounded-xl border border-rose-500/30">
+                                    <span class="text-[11px] font-bold text-rose-300 block mb-1">🚫 Alasan Penolakan:</span>
+                                    <p class="text-xs text-rose-200/90 leading-relaxed" x-text="selectedDistribusi.alasan_penolakan"></p>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Tabel Rincian Semua Barang & Register NIBAR yang Didistribusikan -->
@@ -98,9 +106,6 @@
                                                 <!-- Merk & Spesifikasi -->
                                                 <td class="px-3.5 py-3 text-slate-300 text-[11px] align-top text-center">
                                                     <span class="font-semibold text-slate-200" x-text="item.merk_type || item.merk || '-'"></span>
-                                                    <template x-if="item.keterangan">
-                                                        <p class="text-[10px] text-slate-500 italic mt-0.5" x-text="'Ket: ' + item.keterangan"></p>
-                                                    </template>
                                                 </td>
 
                                                 <!-- Kolom NIBAR -->

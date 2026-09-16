@@ -53,6 +53,7 @@
                     penerima_jabatan: '',
                     status: 'Menunggu Konfirmasi',
                     keterangan: '',
+                    alasan_penolakan: '',
                     items: []
                 },
                 init() {
@@ -124,7 +125,6 @@
                                     qty_acc: nibarSelectedObj.length > 0 ? nibarSelectedObj.length : ((it.qty_acc !== undefined && it.qty_acc !== null) ? it.qty_acc : 0),
                                     satuan: astapObj ? (astapObj.satuan || 'Unit') : (it.satuan || 'Unit'),
                                     kondisi: it.kondisi || '-',
-                                    keterangan: it.keterangan || '',
                                     nibar_selected: nibarSelectedObj
                                 };
                             });
@@ -161,6 +161,7 @@
                         this.formData.penerima_nip = uObj ? (uObj.nip || '') : (loadedData.pj_nip || '');
                         this.formData.penerima_jabatan = uObj ? ('Kepala / Penanggung Jawab ' + uObj.nama) : (loadedData.pj_jabatan || '');
                         this.formData.keterangan = loadedData.keterangan || '';
+                        this.formData.alasan_penolakan = loadedData.alasan_penolakan || loadedData.alasan_tolak || '';
                         this.formData.items = itemsMapped;
                         this.unitSearch = this.formData.tujuan;
                         this.selectedUnitObj = uObj || null;
@@ -176,6 +177,7 @@
                         this.formData.penerima_nip = autoUnit ? (autoUnit.nip || '') : '';
                         this.formData.penerima_jabatan = autoUnit ? (autoUnit.jabatan || ('Kepala / PJ ' + autoUnit.nama)) : '';
                         this.formData.keterangan = '';
+                        this.formData.alasan_penolakan = '';
                         if (autoUnit) {
                             this.unitSearch = autoUnit.nama;
                             this.selectedUnitObj = autoUnit;
@@ -184,7 +186,7 @@
                     this.updateYearInKode();
 
                     if (!this.formData.items || this.formData.items.length === 0) {
-                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] }];
+                        this.formData.items = [{ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', nibar_selected: [] }];
                     }
 
                     this.$watch('formData.tgl', () => {
@@ -259,7 +261,7 @@
                 },
                 addItem() {
                     if (this.formData.status === 'Ditolak') return;
-                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', keterangan: '', nibar_selected: [] });
+                    this.formData.items.push({ id: Date.now(), jenis_astap_kode: '', jenis_astap_nama: '', nama_barang: '', kode_barang: '', merk_type: '', qty: 1, qty_acc: 0, satuan: 'Unit', kondisi: '-', nibar_selected: [] });
                 },
                 removeItem(index) {
                     if (this.formData.status === 'Ditolak') return;
@@ -498,11 +500,6 @@
                         if (!this.formData.keterangan || this.formData.keterangan.trim() === '') {
                             this.formData.keterangan = '-';
                         }
-                        (this.formData.items || []).forEach(it => {
-                            if (!it.keterangan || it.keterangan.trim() === '') {
-                                it.keterangan = '-';
-                            }
-                        });
                     }
 
                     // ── 1. Validasi Header Distribusi ──────────────────────────────────
@@ -595,12 +592,6 @@
                             alert('⚠️ Volume Di-ACC / NIBAR terpilih (' + it.nibar_selected.length + ') pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") melebihi Volume Pengajuan (' + qtyPengajuan + ').\n\nSilakan kurangi pilihan NIBAR atau sesuaikan Volume Pengajuan.');
                             return;
                         }
-
-                        // e. Validasi Keterangan / Catatan Spesifik Item Barang
-                        if (this.formData.status !== 'Ditolak' && (!it.keterangan || it.keterangan.trim() === '' || it.keterangan.trim() === '-')) {
-                            alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nKeterangan / Catatan Peruntukan Barang pada Barang #' + urut + ' ("' + (it.nama_barang || 'Aset') + '") belum diisi.');
-                            return;
-                        }
                     }
 
                     // ── Validasi Akumulasi Volume Di-ACC (Khusus Admin jika status Dalam Pengiriman / Telah Diterima) ──
@@ -618,6 +609,14 @@
                     if (this.formData.status !== 'Ditolak' && (!this.formData.keterangan || this.formData.keterangan.trim() === '' || this.formData.keterangan.trim() === '-')) {
                         alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nCatatan Umum / Keterangan Penempatan belum diisi.');
                         return;
+                    }
+
+                    // ── 4. Validasi Alasan Penolakan (Khusus Status Ditolak) ───────────
+                    if (this.formData.status === 'Ditolak') {
+                        if (!this.formData.alasan_penolakan || this.formData.alasan_penolakan.trim() === '' || this.formData.alasan_penolakan.trim() === '-') {
+                            alert('⚠️ Mohon isi Alasan Penolakan terlebih dahulu!\n\nTransaksi dengan status Ditolak wajib mencantumkan alasan penolakan.');
+                            return;
+                        }
                     }
 
                     console.log('[submitForm] semua validasi lolos, menampilkan konfirmasi...');
@@ -649,6 +648,7 @@
                                     pj_jabatan: this.formData.penerima_jabatan,
                                     status: this.formData.status || 'Draft',
                                     keterangan: this.formData.keterangan || '-',
+                                    alasan_penolakan: this.formData.status === 'Ditolak' ? (this.formData.alasan_penolakan || null) : null,
                                     items: this.formData.items.map(it => {
                                         const resolvedKode = it.kode_barang || this.getItemKode(it) || '';
                                         const astapObj = (this.dbAstapList || []).find(a => a.kode === resolvedKode || a.nama === it.nama_barang);
@@ -659,7 +659,6 @@
                                             kode_barang: resolvedKode,
                                             qty: parseInt(it.qty) || 1,
                                             qty_acc: this.formData.status === 'Ditolak' ? 0 : (this.isSubAdmin ? null : registerIds.length),
-                                            keterangan: it.keterangan || '-',
                                             register_ids: registerIds
                                         };
                                     })

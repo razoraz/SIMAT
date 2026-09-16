@@ -329,7 +329,7 @@
                                 'X-CSRF-TOKEN': token,
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({ status: 'Ditolak', alasan_tolak: this.alasanTolak || null })
+                            body: JSON.stringify({ status: 'Ditolak', alasan_penolakan: this.alasanTolak || null, alasan_tolak: this.alasanTolak || null })
                         });
                         const data = await response.json();
                         if (response.ok && data.success) {
@@ -347,6 +347,7 @@
                                 this.selectedDistribusi = {
                                     ...this.selectedDistribusi,
                                     status: 'Ditolak',
+                                    alasan_penolakan: this.alasanTolak || null,
                                     bast_nomor: '(tidak diterbitkan)',
                                     nomor_bast: '(tidak diterbitkan)',
                                     signed: false,
@@ -358,16 +359,18 @@
                             // Update item di dalam array
                             const found = this.distribusis.find(d => String(d.id) === String(item.id));
                             if (found) {
-                                found.status     = 'Ditolak';
-                                found.bast_nomor = '(tidak diterbitkan)';
-                                found.nomor_bast = '(tidak diterbitkan)';
-                                found.signed     = false;
-                                found.tgl_signed = '-';
-                                found.qr_hash    = '';
-                                found.items      = clearRejectedItems(found.items);
+                                found.status           = 'Ditolak';
+                                found.alasan_penolakan = this.alasanTolak || null;
+                                found.bast_nomor       = '(tidak diterbitkan)';
+                                found.nomor_bast       = '(tidak diterbitkan)';
+                                found.signed           = false;
+                                found.tgl_signed       = '-';
+                                found.qr_hash          = '';
+                                found.items            = clearRejectedItems(found.items);
                             }
-                            item.status     = 'Ditolak';
-                            item.bast_nomor = '(tidak diterbitkan)';
+                            item.status           = 'Ditolak';
+                            item.alasan_penolakan = this.alasanTolak || null;
+                            item.bast_nomor       = '(tidak diterbitkan)';
                             item.nomor_bast = '(tidak diterbitkan)';
                             item.signed     = false;
                             item.tgl_signed = '-';

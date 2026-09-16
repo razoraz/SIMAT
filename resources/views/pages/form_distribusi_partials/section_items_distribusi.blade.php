@@ -539,21 +539,6 @@
                                     </div>
                                 </template>
 
-                                <!-- Baris 3: Keterangan / Catatan Spesifik Item (Sendiri / Full-Width) -->
-                                <div>
-                                    <label class="block text-slate-300 font-semibold text-xs mb-1.5 flex items-center space-x-1">
-                                        <span>Keterangan / Catatan Peruntukan Barang</span>
-                                        <span class="text-rose-400 font-bold" x-show="formData.status !== 'Ditolak'">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           x-model="item.keterangan" 
-                                           :disabled="formData.status === 'Ditolak'"
-                                           :readonly="formData.status === 'Ditolak'"
-                                           placeholder="Contoh: u/ Ruang Tindakan IGD / Bed No. 04 / Pengadaan DAK Kesehatan..." 
-                                           :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-slate-200 border-slate-700/90 focus:border-teal-500'"
-                                           class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs placeholder-slate-500 focus:outline-none transition-all">
-                                </div>
-
                             </div>
 
                         </div>
@@ -639,4 +624,21 @@
                           placeholder="Contoh: Pengadaan DAK Kesehatan / BLUD untuk kelengkapan ruangan..." 
                           :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-950 text-white border-slate-800 focus:border-teal-500'"
                           class="w-full border rounded-xl px-4 py-3 text-xs placeholder-slate-500 focus:outline-none"></textarea>
+            </div>
+
+            <!-- BAGIAN 4: ALASAN PENOLAKAN (Hanya muncul jika Status Ditolak) -->
+            <div x-show="formData.status === 'Ditolak'" 
+                 x-transition
+                 class="pt-4 border-t border-rose-500/30 space-y-1.5">
+                <label class="block text-rose-300 font-semibold text-xs flex items-center justify-between">
+                    <span class="flex items-center space-x-1">
+                        <span>Alasan Penolakan</span>
+                        <span class="text-rose-400 font-bold">*</span>
+                    </span>
+                    <span class="text-[10px] text-rose-400 font-medium">Wajib diisi saat status Ditolak</span>
+                </label>
+                <textarea x-model="formData.alasan_penolakan" 
+                          rows="2" 
+                          placeholder="Tuliskan alasan penolakan pengajuan distribusi ini..." 
+                          class="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/40 transition-all"></textarea>
             </div>

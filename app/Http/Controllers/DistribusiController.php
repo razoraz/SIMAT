@@ -225,7 +225,6 @@ class DistribusiController extends Controller
                         'kondisi'         => $firstKondisi,
                         'nibar_list'      => $nibarList,           // Untuk kompatibilitas tampilan
                         'nibar_registers' => $nibarRegisters,       // Detail per NIBAR dari FK
-                        'keterangan'      => $it->keterangan,
                     ];
                 });
 
@@ -286,6 +285,7 @@ class DistribusiController extends Controller
                     'tgl_signed'         => $d->tgl_signed ?: ($d->signed ? ($d->updated_at ? $d->updated_at->format('d/m/Y H:i') . ' WIB' : '16/06/2026 10:15 WIB') : '-'),
                     'qr_hash'            => $d->signed ? ('BSRE-KOESNANDI-' . $d->kode) : '',
                     'keterangan'         => $d->keterangan,
+                    'alasan_penolakan'   => $d->alasan_penolakan,
                     'items'              => $itemsMapped->toArray(),
                 ];
             });
@@ -537,6 +537,7 @@ class DistribusiController extends Controller
             'unit_id'                      => 'required|integer|exists:units,id',
             'status'                       => 'nullable|string',
             'keterangan'                   => 'nullable|string',
+            'alasan_penolakan'             => 'nullable|string',
             'items'                        => 'required|array|min:1',
             'items.*.astap_id'             => 'nullable',
             'items.*.qty'                  => 'nullable|integer|min:1',
@@ -566,8 +567,15 @@ class DistribusiController extends Controller
                 $finalStatus = !$id ? 'Menunggu Konfirmasi' : 'Dalam Pengiriman';
             }
 
-            // Validasi kelengkapan form distribusi (kecuali status Ditolak)
-            if ($finalStatus !== 'Ditolak') {
+            // Validasi kelengkapan form distribusi
+            if ($finalStatus === 'Ditolak') {
+                if (empty($validated['alasan_penolakan']) || trim($validated['alasan_penolakan']) === '' || trim($validated['alasan_penolakan']) === '-') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Alasan Penolakan harus diisi saat status transaksi Ditolak.'
+                    ], 422);
+                }
+            } else {
                 if (empty($validated['keterangan']) || trim($validated['keterangan']) === '-' || trim($validated['keterangan']) === '') {
                     return response()->json([
                         'success' => false,
@@ -795,6 +803,7 @@ class DistribusiController extends Controller
                     'unit_id'            => $finalUnitId,
                     'status'             => $finalStatus,
                     'keterangan'         => $validated['keterangan'] ?? null,
+                    'alasan_penolakan'   => ($finalStatus === 'Ditolak') ? ($validated['alasan_penolakan'] ?? null) : null,
                 ];
                 if ($finalStatus === 'Ditolak') {
                     $updateData['signed'] = false;
@@ -832,6 +841,7 @@ class DistribusiController extends Controller
                     'unit_id'            => $finalUnitId,
                     'status'             => $finalStatus,
                     'keterangan'         => $validated['keterangan'] ?? null,
+                    'alasan_penolakan'   => ($finalStatus === 'Ditolak') ? ($validated['alasan_penolakan'] ?? null) : null,
                 ];
                 if ($finalStatus === 'Ditolak') {
                     $createData['signed'] = false;
@@ -878,7 +888,6 @@ class DistribusiController extends Controller
                     'astap_id'      => $astapId,
                     'qty'           => $itemData['qty'] ?? 1,
                     'qty_acc'       => $finalQtyAcc,
-                    'keterangan'    => $itemData['keterangan'] ?? null,
                 ]);
 
                 foreach ($registerIds as $regId) {
@@ -1017,7 +1026,7 @@ class DistribusiController extends Controller
             return response()->json(['success' => false, 'message' => 'Data distribusi tidak ditemukan.'], 404);
         }
         $newStatus   = $request->input('status', 'Telah Diterima');
-        $alasanTolak = $request->input('alasan_tolak', null);
+        $alasanTolak = $request->input('alasan_penolakan') ?? $request->input('alasan_tolak', null);
 
         $dst->status = $newStatus;
 
@@ -1045,8 +1054,8 @@ class DistribusiController extends Controller
             $dst->signed     = false;
             $dst->tgl_signed = null;
 
-            if ($alasanTolak && \Schema::hasColumn('distribusis', 'alasan_tolak')) {
-                $dst->alasan_tolak = $alasanTolak;
+            if ($alasanTolak) {
+                $dst->alasan_penolakan = $alasanTolak;
             }
 
             // Kembalikan semua register NIBAR ke status Tersedia & reset Vol ACC ke 0

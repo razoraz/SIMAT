@@ -190,4 +190,55 @@ class DistribusiConcurrencyTest extends TestCase
         if ($distA) $distA->delete();
         $register->delete();
     }
+
+    public function test_distribusi_rejection_requires_alasan_penolakan(): void
+    {
+        $admin = User::where('role', 'admin')->first() ?? User::factory()->create(['role' => 'admin']);
+        $unit = Unit::first() ?? Unit::create(['nama' => 'Unit Uji Tolak', 'tipe' => 'Ruangan', 'kepala' => 'Dr. Uji']);
+        $astap = Astap::first();
+
+        // 1. Submit status Ditolak TANPA alasan_penolakan -> Harus 422
+        $payloadTanpaAlasan = [
+            'kode'               => 'DST-TEST-REJECT-1',
+            'unit_id'            => $unit->id,
+            'tanggal_distribusi' => now()->format('Y-m-d'),
+            'pj_nama'            => 'PJ Unit',
+            'pj_nip'             => '19800101',
+            'pj_jabatan'         => 'Kepala Unit',
+            'status'             => 'Ditolak',
+            'keterangan'         => '-',
+            'alasan_penolakan'   => '', // KOSONG
+            'items'              => [
+                [
+                    'astap_id'     => $astap->id,
+                    'nama_barang'  => $astap->nama_barang,
+                    'qty'          => 1,
+                    'qty_acc'      => 0,
+                    'register_ids' => [],
+                ]
+            ]
+        ];
+
+        $res1 = $this->actingAs($admin)->postJson(route('distribusi.save'), $payloadTanpaAlasan);
+        $res1->assertStatus(422);
+        $this->assertFalse($res1->json('success'));
+        $this->assertStringContainsString('Alasan Penolakan harus diisi', $res1->json('message'));
+
+        // 2. Submit status Ditolak DENGAN alasan_penolakan -> Harus 200 & tersimpan di DB
+        $payloadDenganAlasan = $payloadTanpaAlasan;
+        $payloadDenganAlasan['kode'] = 'DST-TEST-REJECT-2';
+        $payloadDenganAlasan['alasan_penolakan'] = 'Stok barang di gudang sedang dialokasikan untuk penanganan darurat.';
+
+        $res2 = $this->actingAs($admin)->postJson(route('distribusi.save'), $payloadDenganAlasan);
+        $res2->assertStatus(200);
+        $savedId = $res2->json('data.id');
+        $distSaved = Distribusi::find($savedId);
+        $this->assertNotNull($distSaved);
+        $this->assertEquals('Ditolak', $distSaved->status);
+        $this->assertEquals('Stok barang di gudang sedang dialokasikan untuk penanganan darurat.', $distSaved->alasan_penolakan);
+
+        // Cleanup
+        $distSaved->delete();
+    }
 }
+

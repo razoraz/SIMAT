@@ -38,7 +38,6 @@ class DistribusiSeeder extends Seeder
                 'distribusi_id' => $distribusi->id,
                 'astap_id'      => $astap->id,
                 'qty'           => $registers->count() ?: $qty,
-                'keterangan'    => $keterangan,
                 // kondisi & nibar TIDAK disimpan di sini — dibaca live dari astap_registers via FK
             ]);
 
