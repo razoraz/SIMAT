@@ -197,6 +197,26 @@
             </div>
         @endif
 
+        <!-- Section 4: Audit & Pemulihan Sistem (Pusat Data Terhapus) -->
+        @if ($role === 'admin' || $role === 'master_admin')
+            <div>
+                <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Audit & Pemulihan</div>
+                <div class="space-y-1">
+                    <a href="{{ route('recycle_bin.index') }}" @click="if (isMobile) sidebarOpen = false"
+                        class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('recycle_bin.*') ? 'bg-gradient-to-r from-red-600/20 to-rose-600/20 text-rose-400 border border-rose-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <div class="flex items-center justify-between flex-1">
+                            <span>Pusat Data Terhapus</span>
+                            <span class="text-[9.5px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold font-mono">Trash</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        @endif
+
     </nav>
 
     <!-- Sidebar Footer / Account Info -->

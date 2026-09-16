@@ -144,18 +144,27 @@
                 },
 
                 askConfirmation({ title, message, itemName, type = 'danger', btnText, onConfirm }) {
-                    this.$dispatch('ask-confirm', {
+                    const payload = {
                         title: title || 'Konfirmasi Tindakan',
                         message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                         itemName: itemName || '',
                         type: type,
                         btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
                         onConfirm: onConfirm
-                    });
+                    };
+                    if (typeof window.askSimatConfirm === 'function') {
+                        window.askSimatConfirm(payload);
+                    } else {
+                        this.$dispatch('ask-confirm', payload);
+                    }
                 },
 
                 showSimatToast(message, type = 'success') {
-                    this.$dispatch('show-toast', { message, type });
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast(message, type);
+                    } else {
+                        this.$dispatch('show-toast', { message, type });
+                    }
                 },
 
                 canApprovePengirim(item) {

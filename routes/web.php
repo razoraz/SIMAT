@@ -10,6 +10,7 @@ use App\Http\Controllers\RekeningBelanjaController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\DistribusiController;
 use App\Http\Controllers\MutasiController;
+use App\Http\Controllers\RecycleBinController;
 use App\Http\Middleware\RoleMiddleware;
 
 // Auth Routes (Guest)
@@ -669,6 +670,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/mutasi-aset/{id}/cancel-reject',    [MutasiController::class, 'cancelReject'])->name('mutasi.cancel.reject');
         Route::get('/mutasi-aset/register/{id}',          [MutasiController::class, 'getRegisterData'])->name('mutasi.register.data');
     });
+
+    // 4b. Pusat Pemulihan Data (Recycle Bin Center Terpadu SIMAT)
+    Route::get('/recycle-bin',                                     [RecycleBinController::class, 'index'])->name('recycle_bin.index');
+    Route::post('/recycle-bin/{module}/{id}/restore',              [RecycleBinController::class, 'restore'])->name('recycle_bin.restore');
+    Route::post('/recycle-bin/{module}/bulk-restore',              [RecycleBinController::class, 'bulkRestore'])->name('recycle_bin.bulk_restore');
+    Route::delete('/recycle-bin/{module}/{id}/force-delete',       [RecycleBinController::class, 'forceDelete'])->name('recycle_bin.force_delete');
+    Route::post('/recycle-bin/{module}/empty-trash',               [RecycleBinController::class, 'emptyTrash'])->name('recycle_bin.empty_trash');
 
     // 5. Unit & Paviliun Index
     Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index')->middleware('module:unit');

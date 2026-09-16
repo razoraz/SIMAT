@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AstapMutasi extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\TrackableSoftDelete;
 
     protected $guarded = ['id'];
 
@@ -19,14 +19,6 @@ class AstapMutasi extends Model
         'is_deleted'               => 'integer',
         'deleted_at'               => 'datetime',
     ];
-
-    /**
-     * Pengguna yang menghapus dokumen mutasi ini.
-     */
-    public function deleter()
-    {
-        return $this->belongsTo(User::class, 'deleted_by_id');
-    }
 
     public function setTanggalMutasiAttribute($value)
     {
