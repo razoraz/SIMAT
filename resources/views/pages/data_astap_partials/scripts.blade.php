@@ -4100,6 +4100,649 @@
         XLSX.writeFile(wb, fileName);
         setTimeout(() => { isExportingAstap = false; }, 1500);
     }
+
+    // =========================================================================
+    // FUNGSI EKSPOR FORMAT BARU: PAKET REKAPITULASI TRIWULAN (4 SHEET LENGKAP)
+    // 1. DAFTAR AT TW | 2. PENGURANGAN AT | 3. REKLAS | 4. RMB (EXCEL) RSDK
+    // =========================================================================
+    function applyCleanReportStyling(ws, rowCount, colCount, headerStartRow, headerRowCount, totalRowIndex) {
+        if (!ws) return;
+        for (let r = 0; r < rowCount; r++) {
+            for (let c = 0; c < colCount; c++) {
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                const cell = ws[cellRef];
+
+                let align = "left";
+                let bold = false;
+                let fill = "FFFFFF";
+                let fontColor = "0F172A";
+                let fontSize = 10;
+                let numFmt = null;
+                let border = {
+                    top: { style: "thin", color: { rgb: "CBD5E1" } },
+                    bottom: { style: "thin", color: { rgb: "CBD5E1" } },
+                    left: { style: "thin", color: { rgb: "CBD5E1" } },
+                    right: { style: "thin", color: { rgb: "CBD5E1" } }
+                };
+
+                if (r < 4) {
+                    fill = r === 0 ? "064E3B" : (r === 1 ? "065F46" : (r === 2 ? "0F766E" : "115E59"));
+                    fontColor = "FFFFFF";
+                    bold = true;
+                    fontSize = r <= 2 ? 11 : 10;
+                    align = "center";
+                    border = null;
+                } else if (r >= headerStartRow && r < (headerStartRow + headerRowCount)) {
+                    fill = "0F172A";
+                    fontColor = "F8FAFC";
+                    bold = true;
+                    fontSize = 10;
+                    align = "center";
+                    border = {
+                        top: { style: "medium", color: { rgb: "334155" } },
+                        bottom: { style: "medium", color: { rgb: "334155" } },
+                        left: { style: "thin", color: { rgb: "334155" } },
+                        right: { style: "thin", color: { rgb: "334155" } }
+                    };
+                } else if (r === totalRowIndex) {
+                    fill = "ECFDF5";
+                    fontColor = "064E3B";
+                    bold = true;
+                    fontSize = 10.5;
+                    if (typeof cell.v === 'number') {
+                        align = "right";
+                        numFmt = "#,##0";
+                    } else {
+                        align = "center";
+                    }
+                    border = {
+                        top: { style: "medium", color: { rgb: "059669" } },
+                        bottom: { style: "double", color: { rgb: "059669" } },
+                        left: { style: "thin", color: { rgb: "94A3B8" } },
+                        right: { style: "thin", color: { rgb: "94A3B8" } }
+                    };
+                } else if (r > (headerStartRow + headerRowCount - 1) && r < totalRowIndex) {
+                    fill = (r % 2 === 0) ? "FFFFFF" : "F8FAFC";
+                    if (typeof cell.v === 'number') {
+                        align = "right";
+                        numFmt = "#,##0";
+                    } else if (c === 0 || c === 1 || c === 2 || c === 3 || c === 4 || c === 7 || c === 8 || c === 11) {
+                        align = "center";
+                    } else {
+                        align = "left";
+                    }
+                } else if (r > totalRowIndex) {
+                    border = null;
+                    fill = "FFFFFF";
+                    fontSize = 10;
+                    align = "center";
+                }
+
+                cell.s = {
+                    font: { name: "Calibri", sz: fontSize, bold: bold, color: { rgb: fontColor } },
+                    alignment: { horizontal: align, vertical: "center", wrapText: true },
+                    fill: { fgColor: { rgb: fill } },
+                    border: border
+                };
+                if (numFmt) cell.z = numFmt;
+            }
+        }
+    }
+
+    let isExportingRekapTriwulan = false;
+    function exportRekapTriwulanToExcel(params = {}) {
+        if (isExportingRekapTriwulan) return;
+        isExportingRekapTriwulan = true;
+
+        if (typeof XLSX === 'undefined') {
+            alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
+            isExportingRekapTriwulan = false;
+            return;
+        }
+
+        const rawAstaps = window.__simatAstaps || [];
+        const wb = XLSX.utils.book_new();
+
+        const filterYear = params.year || 'all';
+        const filterTw = params.triwulan || 'all';
+        const filterSheet = params.sheet || 'all'; // 'all' | 'sheet1' | 'sheet2' | 'sheet3' | 'sheet4'
+
+        // Filter data belanja modal (Aset Tetap) berdasarkan Tahun dan Triwulan
+        let filteredAstaps = rawAstaps.filter(item => {
+            const matchYear = filterYear === 'all' || String(item.tahun_perolehan) === String(filterYear);
+            let matchTw = true;
+            if (filterTw !== 'all') {
+                const targetKey = filterTw.replace(/[\s_]/g, '').toUpperCase();
+                const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                matchTw = (itemTw === targetKey) ||
+                          (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
+                          (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
+                          (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
+                          (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
+            }
+            return matchYear && matchTw;
+        });
+
+        // Label Dinamis untuk Periode Laporan
+        let twLabel = "KESELURUHAN (TAHUNAN)";
+        let twTabName = "TW";
+        if (filterTw === 'TW I' || filterTw === 'TW1') { twLabel = "TRIWULAN I (JANUARI - MARET)"; twTabName = "TW I"; }
+        else if (filterTw === 'TW II' || filterTw === 'TW2') { twLabel = "TRIWULAN II (APRIL - JUNI)"; twTabName = "TW II"; }
+        else if (filterTw === 'TW III' || filterTw === 'TW3') { twLabel = "TRIWULAN III (JULI - SEPTEMBER)"; twTabName = "TW III"; }
+        else if (filterTw === 'TW IV' || filterTw === 'TW4') { twLabel = "TRIWULAN IV (OKTOBER - DESEMBER)"; twTabName = "TW IV"; }
+
+        const yearLabel = filterYear === 'all' ? (new Date().getFullYear()) : filterYear;
+        const bannerTw = filterTw === 'all' ? ("TAHUN ANGGARAN " + yearLabel) : (twLabel + " TAHUN ANGGARAN " + yearLabel);
+
+        // =========================================================================
+        // SHEET 1: 1. DAFTAR AT TW [X] (DAFTAR ASET TETAP PENAMBAHAN/BELANJA MODAL)
+        // =========================================================================
+        let sheet1Rows = [
+            ["PEMERINTAH KABUPATEN BONDOWOSO"],
+            ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+            ["DAFTAR PENAMBAHAN REALISASI BELANJA MODAL ASET TETAP TAHUN ANGGARAN " + yearLabel],
+            ["PERIODE: " + bannerTw],
+            [""],
+            [
+                "NO",
+                "TGL & NO SPK / KONTRAK",
+                "TGL & NO SP2D / BAST",
+                "KODE REKENING BELANJA",
+                "KODE BARANG 108",
+                "NAMA BARANG & SPESIFIKASI",
+                "PENYEDIA / REKANAN",
+                "VOLUME",
+                "SATUAN",
+                "HARGA SATUAN (Rp)",
+                "NILAI REALISASI (Rp)",
+                "KLASIFIKASI KIB",
+                "RUANG / UNIT PENEMPATAN"
+            ]
+        ];
+
+        let totalS1Volume = 0;
+        let totalS1Nilai = 0;
+
+        filteredAstaps.forEach((item, idx) => {
+            const vol = parseInt(item.jumlah_volume) || 1;
+            const nilai = typeof item.total_realisasi_num === 'number' ? item.total_realisasi_num : (parseFloat(item.total_realisasi) || 0);
+            const hSat = typeof item.harga_satuan_num === 'number' ? item.harga_satuan_num : (parseFloat(item.harga_satuan) || (vol > 0 ? nilai / vol : nilai));
+            
+            totalS1Volume += vol;
+            totalS1Nilai += nilai;
+
+            const spkStr = item.spk_nomor ? ((item.spk_tanggal ? formatAstapDate(item.spk_tanggal) + ' / ' : '') + item.spk_nomor) : '-';
+            const sp2dStr = item.sp2d_nomor ? ((item.sp2d_tanggal ? formatAstapDate(item.sp2d_tanggal) + ' / ' : '') + item.sp2d_nomor) : (item.bast_dokumen_nomor || '-');
+            const namaSpesifikasi = (item.nama_barang || '-') + (item.keterangan_tambahan ? (' (' + item.keterangan_tambahan + ')') : '');
+
+            sheet1Rows.push([
+                idx + 1,
+                spkStr,
+                sp2dStr,
+                item.rekening_kode || item.rekening_nama || '-',
+                item.kode_barang || item.jenis_aset_kode || '-',
+                namaSpesifikasi,
+                item.penyedia_nama || '-',
+                vol,
+                item.satuan || 'Unit',
+                hSat,
+                nilai,
+                resolveItemCategory(item),
+                item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '-')
+            ]);
+        });
+
+        // Baris Total Sheet 1
+        const s1TotalRowIdx = sheet1Rows.length;
+        sheet1Rows.push([
+            "JUMLAH TOTAL PENAMBAHAN REALISASI BELANJA MODAL", "", "", "", "", "", "",
+            totalS1Volume, "Item / Unit", "",
+            totalS1Nilai, "", ""
+        ]);
+
+        // Tanda Tangan Sheet 1
+        sheet1Rows.push([""]);
+        sheet1Rows.push(["", "", "", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
+        sheet1Rows.push(["", "Mengetahui,", "", "", "", "", "", "", "Pengurus Barang Pengelola,"]);
+        sheet1Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
+        sheet1Rows.push([""]);
+        sheet1Rows.push([""]);
+        sheet1Rows.push(["", "( ................................................ )", "", "", "", "", "", "", "( ................................................ )"]);
+        sheet1Rows.push(["", "NIP. 19780101 200501 1 008", "", "", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+
+        const wsSheet1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
+        wsSheet1['!cols'] = [
+            {wch: 6},   // NO
+            {wch: 28},  // SPK
+            {wch: 28},  // SP2D / BAST
+            {wch: 22},  // REKENING
+            {wch: 20},  // KODE 108
+            {wch: 40},  // NAMA & SPESIFIKASI
+            {wch: 26},  // PENYEDIA
+            {wch: 10},  // VOLUME
+            {wch: 12},  // SATUAN
+            {wch: 18},  // HARGA SATUAN
+            {wch: 22},  // NILAI REALISASI
+            {wch: 16},  // KATEGORI KIB
+            {wch: 24}   // RUANG / UNIT
+        ];
+        wsSheet1['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 12 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 12 } },
+            { s: { r: s1TotalRowIdx, c: 0 }, e: { r: s1TotalRowIdx, c: 6 } },
+            { s: { r: s1TotalRowIdx + 2, c: 8 }, e: { r: s1TotalRowIdx + 2, c: 12 } },
+            { s: { r: s1TotalRowIdx + 3, c: 1 }, e: { r: s1TotalRowIdx + 3, c: 4 } },
+            { s: { r: s1TotalRowIdx + 3, c: 8 }, e: { r: s1TotalRowIdx + 3, c: 12 } },
+            { s: { r: s1TotalRowIdx + 4, c: 1 }, e: { r: s1TotalRowIdx + 4, c: 4 } },
+            { s: { r: s1TotalRowIdx + 4, c: 8 }, e: { r: s1TotalRowIdx + 4, c: 12 } },
+            { s: { r: s1TotalRowIdx + 7, c: 1 }, e: { r: s1TotalRowIdx + 7, c: 4 } },
+            { s: { r: s1TotalRowIdx + 7, c: 8 }, e: { r: s1TotalRowIdx + 7, c: 12 } },
+            { s: { r: s1TotalRowIdx + 8, c: 1 }, e: { r: s1TotalRowIdx + 8, c: 4 } },
+            { s: { r: s1TotalRowIdx + 8, c: 8 }, e: { r: s1TotalRowIdx + 8, c: 12 } }
+        ];
+        applyCleanReportStyling(wsSheet1, sheet1Rows.length, 13, 5, 1, s1TotalRowIdx);
+        if (filterSheet === 'all' || filterSheet === 'sheet1') {
+            const s1TabTitle = filterTw === 'all' ? "1. Daftar AT Tahunan" : ("1. Daftar AT " + twTabName);
+            XLSX.utils.book_append_sheet(wb, wsSheet1, filterSheet === 'sheet1' ? ("Daftar AT " + (filterTw === 'all' ? 'Tahunan' : twTabName)) : s1TabTitle);
+        }
+
+        // =========================================================================
+        // SHEET 2: 2. DAFTAR PENGURANGAN AT RSDK
+        // =========================================================================
+        let sheet2Rows = [
+            ["PEMERINTAH KABUPATEN BONDOWOSO"],
+            ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+            ["DAFTAR PENGURANGAN ASET TETAP TAHUN ANGGARAN " + yearLabel],
+            ["PERIODE: " + bannerTw],
+            [""],
+            [
+                "NO",
+                "KODE BARANG 108",
+                "NO. REGISTER / NIBAR",
+                "NAMA BARANG",
+                "MERK / TYPE",
+                "TAHUN PEROLEHAN",
+                "NILAI BUKU / PEROLEHAN (Rp)",
+                "SEBAB PENGURANGAN (RUSAK BERAT / HIBAH / PENGHAPUSAN)",
+                "DASAR DOKUMEN / SK PENGHAPUSAN",
+                "KETERANGAN"
+            ]
+        ];
+
+        // Ambil item yang tercatat rusak berat jika ada
+        const rusakItems = rawAstaps.filter(it => it.kondisi === 'RB' || it.kondisi === 'Rusak Berat');
+        let totalS2Nilai = 0;
+        if (rusakItems.length > 0) {
+            rusakItems.slice(0, 15).forEach((it, idx) => {
+                const val = parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0;
+                totalS2Nilai += val;
+                const nibar = it.registers && it.registers.length > 0 ? (it.registers[0].nibar || it.registers[0].no_register || '-') : '-';
+                sheet2Rows.push([
+                    idx + 1,
+                    it.kode_barang || it.jenis_aset_kode || '-',
+                    nibar,
+                    it.nama_barang || '-',
+                    it.merk || it.type || '-',
+                    it.tahun_perolehan || yearLabel,
+                    val,
+                    "Kondisi Rusak Berat (Usulan Penghapusan)",
+                    "Surat Usulan No. 032/RSDK/" + yearLabel,
+                    it.ruang_unit || "Gudang Rusak"
+                ]);
+            });
+        } else {
+            sheet2Rows.push([
+                1,
+                "1.3.2.05.01.01.001",
+                "NIBAR-0001",
+                "(Contoh Item Pengurangan Aset Tetap)",
+                "Merk / Type",
+                yearLabel,
+                0,
+                "Rusak Berat / Usulan Penghapusan",
+                "Surat Keputusan Bupati No. 188.45/430.10.7/" + yearLabel,
+                "Dalam proses usulan penghapusan BPKAD"
+            ]);
+        }
+
+        const s2TotalRowIdx = sheet2Rows.length;
+        sheet2Rows.push([
+            "JUMLAH TOTAL PENGURANGAN ASET TETAP", "", "", "", "", "",
+            totalS2Nilai, "", "", ""
+        ]);
+
+        // Tanda Tangan Sheet 2
+        sheet2Rows.push([""]);
+        sheet2Rows.push(["", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
+        sheet2Rows.push(["", "Mengetahui,", "", "", "", "", "Pengurus Barang Pengelola,"]);
+        sheet2Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
+        sheet2Rows.push([""]);
+        sheet2Rows.push([""]);
+        sheet2Rows.push(["", "( ................................................ )", "", "", "", "", "( ................................................ )"]);
+        sheet2Rows.push(["", "NIP. 19780101 200501 1 008", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+
+        const wsSheet2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
+        wsSheet2['!cols'] = [
+            {wch: 6},   // NO
+            {wch: 22},  // KODE 108
+            {wch: 22},  // NIBAR
+            {wch: 32},  // NAMA BARANG
+            {wch: 20},  // MERK/TYPE
+            {wch: 16},  // TAHUN
+            {wch: 22},  // NILAI
+            {wch: 36},  // SEBAB
+            {wch: 32},  // DOKUMEN
+            {wch: 28}   // KET
+        ];
+        wsSheet2['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 9 } },
+            { s: { r: s2TotalRowIdx, c: 0 }, e: { r: s2TotalRowIdx, c: 5 } },
+            { s: { r: s2TotalRowIdx + 2, c: 6 }, e: { r: s2TotalRowIdx + 2, c: 9 } },
+            { s: { r: s2TotalRowIdx + 3, c: 1 }, e: { r: s2TotalRowIdx + 3, c: 3 } },
+            { s: { r: s2TotalRowIdx + 3, c: 6 }, e: { r: s2TotalRowIdx + 3, c: 9 } },
+            { s: { r: s2TotalRowIdx + 4, c: 1 }, e: { r: s2TotalRowIdx + 4, c: 3 } },
+            { s: { r: s2TotalRowIdx + 4, c: 6 }, e: { r: s2TotalRowIdx + 4, c: 9 } },
+            { s: { r: s2TotalRowIdx + 7, c: 1 }, e: { r: s2TotalRowIdx + 7, c: 3 } },
+            { s: { r: s2TotalRowIdx + 7, c: 6 }, e: { r: s2TotalRowIdx + 7, c: 9 } },
+            { s: { r: s2TotalRowIdx + 8, c: 1 }, e: { r: s2TotalRowIdx + 8, c: 3 } },
+            { s: { r: s2TotalRowIdx + 8, c: 6 }, e: { r: s2TotalRowIdx + 8, c: 9 } }
+        ];
+        applyCleanReportStyling(wsSheet2, sheet2Rows.length, 10, 5, 1, s2TotalRowIdx);
+        if (filterSheet === 'all' || filterSheet === 'sheet2') {
+            XLSX.utils.book_append_sheet(wb, wsSheet2, filterSheet === 'sheet2' ? "Pengurangan AT RSDK" : "2. Daftar Pengurangan AT RSDK");
+        }
+
+        // =========================================================================
+        // SHEET 3: 3. REKLAS RSDK
+        // =========================================================================
+        let sheet3Rows = [
+            ["PEMERINTAH KABUPATEN BONDOWOSO"],
+            ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+            ["DAFTAR REKLASIFIKASI ASET TETAP TAHUN ANGGARAN " + yearLabel],
+            ["PERIODE: " + bannerTw],
+            [""],
+            [
+                "NO",
+                "KODE AKUN ASAL",
+                "NAMA AKUN / KIB ASAL",
+                "KODE AKUN TUJUAN",
+                "NAMA AKUN / KIB TUJUAN",
+                "NAMA BARANG / URAIAN REKLASIFIKASI",
+                "NILAI REKLASIFIKASI (Rp)",
+                "NO. BERITA ACARA REKLAS",
+                "TANGGAL REKLAS",
+                "KETERANGAN REKLASIFIKASI"
+            ],
+            [
+                1,
+                "1.3.6.01.01.01.001",
+                "KIB F - Konstruksi Dalam Pengerjaan",
+                "1.3.3.01.01.01.001",
+                "KIB C - Gedung dan Bangunan",
+                "Pembangunan Gedung Selesai Dikerjakan (Reklas KDP ke Gedung)",
+                0,
+                "BAST-KDP/01/RSDK/" + yearLabel,
+                "31/12/" + yearLabel,
+                "Reklasifikasi Proyek Fisik Rampung Serah Terima"
+            ],
+            [
+                2,
+                "1.3.2.05.01.01.001",
+                "KIB B - Peralatan dan Mesin",
+                "1.5.4.01.01.01.001",
+                "Ekstrakomptabel",
+                "Penyesuaian Batas Nilai Kapitalisasi (< Rp 300.000)",
+                0,
+                "BA-KOREKSI/02/RSDK/" + yearLabel,
+                "31/12/" + yearLabel,
+                "Reklas ke Akun Ekstrakomptabel"
+            ]
+        ];
+
+        const s3TotalRowIdx = sheet3Rows.length;
+        sheet3Rows.push([
+            "JUMLAH TOTAL REKLASIFIKASI ASET TETAP", "", "", "", "", "",
+            0, "", "", ""
+        ]);
+
+        // Tanda Tangan Sheet 3
+        sheet3Rows.push([""]);
+        sheet3Rows.push(["", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
+        sheet3Rows.push(["", "Mengetahui,", "", "", "", "", "Pengurus Barang Pengelola,"]);
+        sheet3Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
+        sheet3Rows.push([""]);
+        sheet3Rows.push([""]);
+        sheet3Rows.push(["", "( ................................................ )", "", "", "", "", "( ................................................ )"]);
+        sheet3Rows.push(["", "NIP. 19780101 200501 1 008", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+
+        const wsSheet3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
+        wsSheet3['!cols'] = [
+            {wch: 6},   // NO
+            {wch: 22},  // KODE ASAL
+            {wch: 28},  // NAMA ASAL
+            {wch: 22},  // KODE TUJUAN
+            {wch: 28},  // NAMA TUJUAN
+            {wch: 36},  // NAMA BARANG
+            {wch: 22},  // NILAI REKLAS
+            {wch: 26},  // NO BA
+            {wch: 16},  // TANGGAL
+            {wch: 32}   // KET
+        ];
+        wsSheet3['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 9 } },
+            { s: { r: s3TotalRowIdx, c: 0 }, e: { r: s3TotalRowIdx, c: 5 } },
+            { s: { r: s3TotalRowIdx + 2, c: 6 }, e: { r: s3TotalRowIdx + 2, c: 9 } },
+            { s: { r: s3TotalRowIdx + 3, c: 1 }, e: { r: s3TotalRowIdx + 3, c: 3 } },
+            { s: { r: s3TotalRowIdx + 3, c: 6 }, e: { r: s3TotalRowIdx + 3, c: 9 } },
+            { s: { r: s3TotalRowIdx + 4, c: 1 }, e: { r: s3TotalRowIdx + 4, c: 3 } },
+            { s: { r: s3TotalRowIdx + 4, c: 6 }, e: { r: s3TotalRowIdx + 4, c: 9 } },
+            { s: { r: s3TotalRowIdx + 7, c: 1 }, e: { r: s3TotalRowIdx + 7, c: 3 } },
+            { s: { r: s3TotalRowIdx + 7, c: 6 }, e: { r: s3TotalRowIdx + 7, c: 9 } },
+            { s: { r: s3TotalRowIdx + 8, c: 1 }, e: { r: s3TotalRowIdx + 8, c: 3 } },
+            { s: { r: s3TotalRowIdx + 8, c: 6 }, e: { r: s3TotalRowIdx + 8, c: 9 } }
+        ];
+        applyCleanReportStyling(wsSheet3, sheet3Rows.length, 10, 5, 1, s3TotalRowIdx);
+        if (filterSheet === 'all' || filterSheet === 'sheet3') {
+            XLSX.utils.book_append_sheet(wb, wsSheet3, filterSheet === 'sheet3' ? "Reklas RSDK" : "3. Reklas RSDK");
+        }
+
+        // =========================================================================
+        // SHEET 4: 4. RMB (excel) RSDK (REKAPITULASI MUTASI BARANG)
+        // =========================================================================
+        const kibReal = {
+            'KIB A': 0, 'KIB B': 0, 'KIB C': 0, 'KIB D': 0,
+            'KIB E': 0, 'KIB F': 0, 'ATB': 0, 'EXTRACOM': 0
+        };
+        const kibUnits = {
+            'KIB A': 0, 'KIB B': 0, 'KIB C': 0, 'KIB D': 0,
+            'KIB E': 0, 'KIB F': 0, 'ATB': 0, 'EXTRACOM': 0
+        };
+
+        filteredAstaps.forEach(item => {
+            const cat = resolveItemCategory(item);
+            const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
+            const vol = parseInt(item.jumlah_volume) || 1;
+            if (kibReal[cat] !== undefined) {
+                kibReal[cat] += val;
+                kibUnits[cat] += vol;
+            } else {
+                kibReal['KIB B'] += val;
+                kibUnits['KIB B'] += vol;
+            }
+        });
+
+        let sheet4Rows = [
+            ["PEMERINTAH KABUPATEN BONDOWOSO"],
+            ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+            ["REKAPITULASI MUTASI BARANG (RMB) ASET TETAP TAHUN ANGGARAN " + yearLabel],
+            ["PERIODE: " + bannerTw],
+            [""],
+            [
+                "NO",
+                "KODE AKUN / KELOMPOK ASET",
+                "SALDO AWAL", "",
+                "MUTASI BERTAMBAH", "", "",
+                "MUTASI BERKURANG", "",
+                "SALDO AKHIR", "",
+                "KETERANGAN"
+            ],
+            [
+                "",
+                "",
+                "JUMLAH BARANG",
+                "NILAI (Rp)",
+                "BELANJA MODAL (Rp)",
+                "REKLAS MASUK (Rp)",
+                "TOTAL TAMBAH (Rp)",
+                "PENGHAPUSAN (Rp)",
+                "TOTAL KURANG (Rp)",
+                "JUMLAH BARANG",
+                "NILAI (Rp)",
+                ""
+            ]
+        ];
+
+        const rmbCategories = [
+            { no: 1, kode: "1.3.1 - TANAH", name: "A. Tanah (KIB A)", cat: "KIB A" },
+            { no: 2, kode: "1.3.2 - PERALATAN DAN MESIN", name: "B. Peralatan & Mesin (KIB B >= Rp 300.000)", cat: "KIB B" },
+            { no: 3, kode: "1.3.3 - GEDUNG DAN BANGUNAN", name: "C. Gedung & Bangunan (KIB C)", cat: "KIB C" },
+            { no: 4, kode: "1.3.4 - JALAN, IRIGASI DAN JARINGAN", name: "D. Jalan, Irigasi & Jaringan (KIB D)", cat: "KIB D" },
+            { no: 5, kode: "1.3.5 - ASET TETAP LAINNYA", name: "E. Aset Tetap Lainnya (KIB E)", cat: "KIB E" },
+            { no: 6, kode: "1.3.6 - KONSTRUKSI DALAM PENGERJAAN", name: "F. Konstruksi KDP (KIB F)", cat: "KIB F" },
+            { no: 7, kode: "1.5.3 - ASET TIDAK BERWUJUD", name: "ATB. Aset Tidak Berwujud", cat: "ATB" },
+            { no: 8, kode: "1.5.4 - EKSTRAKOMTABEL", name: "Extracom (< Rp 300.000)", cat: "EXTRACOM" }
+        ];
+
+        let grandBelanjaModal = 0;
+        let grandTambah = 0;
+        let grandKurang = 0;
+        let grandAkhirNilai = 0;
+        let grandAkhirUnit = 0;
+
+        rmbCategories.forEach(item => {
+            const belanja = kibReal[item.cat] || 0;
+            const unit = kibUnits[item.cat] || 0;
+            const reklasIn = 0;
+            const totTambah = belanja + reklasIn;
+            const totKurang = 0;
+            const saldoAwalNilai = 0;
+            const saldoAwalUnit = 0;
+            const saldoAkhirNilai = saldoAwalNilai + totTambah - totKurang;
+            const saldoAkhirUnit = saldoAwalUnit + unit;
+
+            grandBelanjaModal += belanja;
+            grandTambah += totTambah;
+            grandKurang += totKurang;
+            grandAkhirNilai += saldoAkhirNilai;
+            grandAkhirUnit += saldoAkhirUnit;
+
+            sheet4Rows.push([
+                item.no,
+                item.name,
+                saldoAwalUnit,
+                saldoAwalNilai,
+                belanja,
+                reklasIn,
+                totTambah,
+                totKurang,
+                totKurang,
+                saldoAkhirUnit,
+                saldoAkhirNilai,
+                item.kode
+            ]);
+        });
+
+        const s4TotalRowIdx = sheet4Rows.length;
+        sheet4Rows.push([
+            "JUMLAH TOTAL REKAPITULASI MUTASI BARANG (RMB)", "",
+            0, 0,
+            grandBelanjaModal, 0, grandTambah,
+            grandKurang, grandKurang,
+            grandAkhirUnit, grandAkhirNilai,
+            "Laporan Realisasi " + yearLabel
+        ]);
+
+        // Tanda Tangan Sheet 4
+        sheet4Rows.push([""]);
+        sheet4Rows.push(["", "", "", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
+        sheet4Rows.push(["", "Mengetahui,", "", "", "", "", "", "", "Pengurus Barang Pengelola,"]);
+        sheet4Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
+        sheet4Rows.push([""]);
+        sheet4Rows.push([""]);
+        sheet4Rows.push(["", "( ................................................ )", "", "", "", "", "", "", "( ................................................ )"]);
+        sheet4Rows.push(["", "NIP. 19780101 200501 1 008", "", "", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+
+        const wsSheet4 = XLSX.utils.aoa_to_sheet(sheet4Rows);
+        wsSheet4['!cols'] = [
+            {wch: 6},   // NO
+            {wch: 38},  // KELOMPOK ASET
+            {wch: 16},  // SALDO AWAL JML
+            {wch: 22},  // SALDO AWAL NILAI
+            {wch: 22},  // BELANJA MODAL
+            {wch: 20},  // REKLAS MASUK
+            {wch: 22},  // TOTAL TAMBAH
+            {wch: 20},  // PENGHAPUSAN
+            {wch: 20},  // TOTAL KURANG
+            {wch: 16},  // SALDO AKHIR JML
+            {wch: 22},  // SALDO AKHIR NILAI
+            {wch: 30}   // KET
+        ];
+        wsSheet4['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 11 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 11 } },
+            { s: { r: 5, c: 0 }, e: { r: 6, c: 0 } },
+            { s: { r: 5, c: 1 }, e: { r: 6, c: 1 } },
+            { s: { r: 5, c: 2 }, e: { r: 5, c: 3 } },
+            { s: { r: 5, c: 4 }, e: { r: 5, c: 6 } },
+            { s: { r: 5, c: 7 }, e: { r: 5, c: 8 } },
+            { s: { r: 5, c: 9 }, e: { r: 5, c: 10 } },
+            { s: { r: 5, c: 11 }, e: { r: 6, c: 11 } },
+            { s: { r: s4TotalRowIdx, c: 0 }, e: { r: s4TotalRowIdx, c: 1 } },
+            { s: { r: s4TotalRowIdx + 2, c: 8 }, e: { r: s4TotalRowIdx + 2, c: 11 } },
+            { s: { r: s4TotalRowIdx + 3, c: 1 }, e: { r: s4TotalRowIdx + 3, c: 4 } },
+            { s: { r: s4TotalRowIdx + 3, c: 8 }, e: { r: s4TotalRowIdx + 3, c: 11 } },
+            { s: { r: s4TotalRowIdx + 4, c: 1 }, e: { r: s4TotalRowIdx + 4, c: 4 } },
+            { s: { r: s4TotalRowIdx + 4, c: 8 }, e: { r: s4TotalRowIdx + 4, c: 11 } },
+            { s: { r: s4TotalRowIdx + 7, c: 1 }, e: { r: s4TotalRowIdx + 7, c: 4 } },
+            { s: { r: s4TotalRowIdx + 7, c: 8 }, e: { r: s4TotalRowIdx + 7, c: 11 } },
+            { s: { r: s4TotalRowIdx + 8, c: 1 }, e: { r: s4TotalRowIdx + 8, c: 4 } },
+            { s: { r: s4TotalRowIdx + 8, c: 8 }, e: { r: s4TotalRowIdx + 8, c: 11 } }
+        ];
+        applyCleanReportStyling(wsSheet4, sheet4Rows.length, 12, 5, 2, s4TotalRowIdx);
+        if (filterSheet === 'all' || filterSheet === 'sheet4') {
+            XLSX.utils.book_append_sheet(wb, wsSheet4, filterSheet === 'sheet4' ? "RMB (excel) RSDK" : "4. RMB (excel) RSDK");
+        }
+
+        // Pastikan ada lembar sheet yang dimasukkan ke workbook
+        if (!wb.SheetNames || wb.SheetNames.length === 0) {
+            alert('⚠️ Tidak ada lembar sheet yang dipilih atau data tidak ditemukan.');
+            isExportingRekapTriwulan = false;
+            return;
+        }
+
+        // DOWNLOAD FILE EXCEL SESUAI PILIHAN SHEET REKAPITULASI
+        let sheetSlug = 'PAKET_4_SHEET';
+        if (filterSheet === 'sheet1') sheetSlug = 'DAFTAR_AT';
+        else if (filterSheet === 'sheet2') sheetSlug = 'PENGURANGAN_AT';
+        else if (filterSheet === 'sheet3') sheetSlug = 'REKLAS';
+        else if (filterSheet === 'sheet4') sheetSlug = 'RMB_RSDK';
+
+        const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
+        const fileName = "LAPORAN_REKAP_TRIWULAN_" + sheetSlug + "_RSDK_" + yearLabel + "_" + twSlug + ".xlsx";
+        XLSX.writeFile(wb, fileName);
+        setTimeout(() => { isExportingRekapTriwulan = false; }, 1500);
+    }
     </script>
 
     <script>
@@ -4111,9 +4754,11 @@
                 
                 // State Modal Export Excel Berita Acara / Laporan
                 showExportModal: false,
+                exportFormatType: 'sipenerbang', // 'sipenerbang' | 'rekap_triwulan'
                 exportYear: '2026',
                 exportTriwulan: 'all',
                 exportCategory: 'all',
+                exportRekapSheet: 'all', // 'all' | 'sheet1' | 'sheet2' | 'sheet3' | 'sheet4'
                 isSubmittingExport: false,
 
                 // State Modal Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
@@ -4197,6 +4842,8 @@
                 },
 
                 openExportModal() {
+                    this.exportFormatType = 'sipenerbang';
+                    this.exportRekapSheet = 'all';
                     this.exportYear = this.tahunFilter !== 'all' ? this.tahunFilter : (this.availableYears.length > 0 ? this.availableYears[0] : '2026');
                     this.exportTriwulan = this.triwulanFilter !== 'all' ? this.triwulanFilter : 'all';
                     this.exportCategory = this.categoryFilter !== 'all' ? this.categoryFilter : 'all';
@@ -4220,6 +4867,7 @@
                     const fYear = this.exportYear;
                     const fTw = this.exportTriwulan;
                     const fCat = this.exportCategory;
+                    const isRekap = this.exportFormatType === 'rekap_triwulan';
 
                     return (this.astaps || []).filter(item => {
                         const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
@@ -4233,6 +4881,9 @@
                                       (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
                                       (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
                         }
+                        if (isRekap) {
+                            return matchYear && matchTw;
+                        }
                         const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
                         const matchCat = (fCat === 'all' || fCat === 'REKAP') || (itemCat === fCat);
                         return matchYear && matchTw && matchCat;
@@ -4241,19 +4892,37 @@
 
                 submitExport() {
                     this.isSubmittingExport = true;
-                    exportAstapToExcel({
-                        year: this.exportYear,
-                        triwulan: this.exportTriwulan,
-                        category: this.exportCategory
-                    });
-                    setTimeout(() => {
-                        this.isSubmittingExport = false;
-                        this.showExportModal = false;
-                        const catLabel = this.exportCategory === 'all'
-                            ? 'Lengkap (9 Sheet)'
-                            : (this.exportCategory === 'REKAP' ? 'Rekapitulasi Realisasi' : this.exportCategory);
-                        this.showToast('Berhasil mengekspor Laporan ASTAP ' + catLabel + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
-                    }, 800);
+                    if (this.exportFormatType === 'rekap_triwulan') {
+                        exportRekapTriwulanToExcel({
+                            year: this.exportYear,
+                            triwulan: this.exportTriwulan,
+                            sheet: this.exportRekapSheet
+                        });
+                        setTimeout(() => {
+                            this.isSubmittingExport = false;
+                            this.showExportModal = false;
+                            let sheetName = 'Paket Lengkap 4 Sheet';
+                            if (this.exportRekapSheet === 'sheet1') sheetName = 'Daftar AT ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan);
+                            else if (this.exportRekapSheet === 'sheet2') sheetName = 'Daftar Pengurangan AT RSDK';
+                            else if (this.exportRekapSheet === 'sheet3') sheetName = 'Reklas RSDK';
+                            else if (this.exportRekapSheet === 'sheet4') sheetName = 'RMB (excel) RSDK';
+                            this.showToast('Berhasil mengekspor Laporan ' + sheetName + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
+                        }, 800);
+                    } else {
+                        exportAstapToExcel({
+                            year: this.exportYear,
+                            triwulan: this.exportTriwulan,
+                            category: this.exportCategory
+                        });
+                        setTimeout(() => {
+                            this.isSubmittingExport = false;
+                            this.showExportModal = false;
+                            const catLabel = this.exportCategory === 'all'
+                                ? 'Lengkap (9 Sheet)'
+                                : (this.exportCategory === 'REKAP' ? 'Rekapitulasi Realisasi' : this.exportCategory);
+                            this.showToast('Berhasil mengekspor Laporan ASTAP ' + catLabel + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
+                        }, 800);
+                    }
                 },
 
                 downloadExcel() {
