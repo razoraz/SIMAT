@@ -414,7 +414,7 @@ class BeritaAcaraController extends Controller
                     ? $astap->spesifikasi_json
                     : (json_decode($astap?->spesifikasi_json ?? '', true) ?? []);
                 $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ($astap?->keterangan_tambahan ?? '-')));
-                $kondisi = $mit->kondisi ?: ($reg?->kondisi ?: ($mts->kondisi ?: 'Baik'));
+                $kondisi = $mit->kondisi ?: ($reg?->kondisi ?: 'Baik');
                 $keterangan = $mit->keterangan ?: ($mts->alasan_mutasi ?: ($mts->keterangan ?: 'Pemindahan / Mutasi'));
                 $satuan = $astap?->satuan ?: 'Unit';
 
@@ -456,7 +456,7 @@ class BeritaAcaraController extends Controller
                     ? $astap->spesifikasi_json
                     : (json_decode($astap?->spesifikasi_json ?? '', true) ?? []);
                 $merk = $spec['merk'] ?? ($spec['type'] ?? ($spec['konstruksi'] ?? ($astap?->keterangan_tambahan ?? '-')));
-                $kondisi = $mts->kondisi ?: ($reg->kondisi ?: 'Baik');
+                $kondisi = $reg->kondisi ?: 'Baik';
                 $keterangan = $mts->alasan_mutasi ?: ($mts->keterangan ?: 'Pemindahan / Mutasi');
                 $satuan = $astap?->satuan ?: 'Unit';
 
@@ -512,7 +512,7 @@ class BeritaAcaraController extends Controller
                 'qty'               => $totalQty ?: 1,
                 'vol'               => $totalQty ?: 1,
                 'satuan'            => $firstItemSatuan,
-                'kondisi'           => $mts->kondisi ?: 'Baik',
+                'kondisi'           => ($itemsData[0]['kondisi'] ?? ($mts->register?->kondisi ?? 'Baik')),
                 'jenis_mutasi'      => $mts->jenis_mutasi ?: 'Pemindahan',
                 'asal'              => $mts->ruangan_asal,
                 'tujuan'            => $mts->ruangan_tujuan,

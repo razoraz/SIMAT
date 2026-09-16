@@ -88,7 +88,7 @@ class MutasiController extends Controller
                     'nibar'       => $firstRegister->nibar ?? '-',
                     'nama_barang' => $firstAstap?->nama_barang ?? '-',
                     'kode_108'    => $firstAstap?->kode_108 ?? ($firstRegister->kode_108 ?? '-'),
-                    'kondisi'     => $m->kondisi ?? ($firstRegister->kondisi ?? 'Baik'),
+                    'kondisi'     => $firstRegister->kondisi ?? 'Baik',
                     'kategori'    => $firstAstap?->category ?? 'ASTAP',
                     'satuan'      => $firstAstap?->satuan ?? 'Unit',
                     'volume'      => 1,
@@ -113,7 +113,7 @@ class MutasiController extends Controller
                 'items'                   => $itemsMapped,
                 'kode_barang'             => $firstRegister?->nibar ?? '-',
                 'kode_108'                => $firstAstap?->kode_108 ?? ($firstRegister?->kode_108 ?? '-'),
-                'kondisi'                 => $firstItem?->kondisi ?? ($m->kondisi ?? ($firstRegister?->kondisi ?? 'Baik')),
+                'kondisi'                 => $firstItem?->kondisi ?? ($firstRegister?->kondisi ?? 'Baik'),
                 'asal'                    => $m->ruangan_asal,
                 'tujuan'                  => $m->ruangan_tujuan,
                 'tgl'                     => $m->tanggal_mutasi ? $m->tanggal_mutasi->format('d M Y') : '-',
@@ -307,7 +307,6 @@ class MutasiController extends Controller
             'nomor_bamb'               => $nomor,
             'tanggal_mutasi'           => $request->tanggal_mutasi,
             'jenis_mutasi'             => $request->jenis_mutasi,
-            'kondisi'                  => 'Baik',
             'ruangan_asal'             => $request->ruangan_asal,
             'ruangan_tujuan'           => $request->ruangan_tujuan,
             'penanggung_jawab_asal'    => $request->penanggung_jawab_asal,
@@ -622,7 +621,7 @@ class MutasiController extends Controller
         } elseif ($mutasi->register) {
             $registersToUpdate[] = [
                 'register' => $mutasi->register,
-                'kondisi'  => $mutasi->kondisi,
+                'kondisi'  => $mutasi->register->kondisi ?? 'Baik',
             ];
         }
 
