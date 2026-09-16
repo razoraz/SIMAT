@@ -220,7 +220,7 @@
                                         <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
                                             <template x-if="selectedMutasi.signed !== false">
                                                 <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
-                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" style="width:36px; height:36px; flex-shrink:0;">
+                                                    <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                                                     <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
                                                         <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
                                                         <div style="color:#374151;">Pengurus Barang Aset</div>
@@ -280,7 +280,7 @@
                                         <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
                                             <template x-if="selectedMutasi.signed !== false">
                                                 <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
-                                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" style="width:36px; height:36px; flex-shrink:0;">
+                                                    <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (selectedMutasi.nomor_bast || 'BSRE-MUTASI-PENGURUS'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                                                     <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
                                                         <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
                                                         <div style="color:#374151;">Pengurus Barang Aset</div>

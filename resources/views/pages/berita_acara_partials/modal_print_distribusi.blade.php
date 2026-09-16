@@ -272,7 +272,7 @@
                                     <div class="my-1 flex items-center justify-center" style="height: 52px; min-height: 52px;">
                                         <template x-if="selectedDistribusi.signed">
                                             <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
-                                                <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + encodeURIComponent(selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" style="width:36px; height:36px; flex-shrink:0;">
+                                                <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (selectedDistribusi.nomor_bast || 'BSRE-DISTRIBUSI'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                                                 <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
                                                     <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
                                                     <div style="color:#374151;">Pengurus Barang Aset</div>

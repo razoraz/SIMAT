@@ -263,7 +263,7 @@
                                 <div class="h-20 flex items-center justify-center my-1">
                                     <template x-if="currentTriwulanDoc.pihak2_signed">
                                         <div style="padding:4px; border:1.5px solid #16a34a; background:#f0fdf4; border-radius:5px; display:flex; align-items:center; gap:6px; text-align:left;">
-                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.pihak2_qr_hash || encodeURIComponent(currentTriwulanDoc.nomor_surat) || 'PENGURUS-KOESNANDI'))" style="width:40px; height:40px; flex-shrink:0;">
+                                            <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (currentTriwulanDoc.pihak2_qr_hash || currentTriwulanDoc.nomor_surat || 'PENGURUS-KOESNANDI'))" alt="QR TTE" style="width:40px; height:40px; flex-shrink:0;">
                                             <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
                                                 <div style="font-weight:700; color:#14532d;">DITANDATANGANI ELEKTRONIK</div>
                                                 <div style="color:#374151;">Pengurus Barang Aset</div>

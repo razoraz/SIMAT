@@ -48,6 +48,13 @@
                     }
                 },
 
+                getQrCodeSvg(text) {
+                    if (typeof window.getQrCodeSvg === 'function') {
+                        return window.getQrCodeSvg(text);
+                    }
+                    return 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(text || '');
+                },
+
                 // =========================================================================
                 // DATA TAB 1: BAST PENAMBAHAN DATA ASTAP BERDASARKAN TRIWULAN
                 // =========================================================================
@@ -412,6 +419,10 @@
                     iframe.style.border = '0';
                     document.body.appendChild(iframe);
 
+                    const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                        .map(el => el.outerHTML)
+                        .join('\n');
+
                     const doc = iframe.contentWindow.document;
                     doc.open();
                     doc.write(`<!DOCTYPE html>
@@ -419,7 +430,7 @@
 <head>
     <meta charset="utf-8">
     <title>Berita Acara - RSUD Dr. H. Koesnandi</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
+    ${headStyles}
     <style>
         @page {
             size: auto;
