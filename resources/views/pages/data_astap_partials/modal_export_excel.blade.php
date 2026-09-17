@@ -123,7 +123,7 @@
                         <select x-model="exportCategory"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500">
                             <option value="all">Semua KIB (Buku Aset Lengkap 9 Sheet)</option>
-                            <option value="REKAP">Lembar Rekapitulasi Realisasi Saja (Sheet 1)</option>
+                            <option value="REKAP">Lembar Rekapitulasi Realisasi(Sheet 1)</option>
                             <option value="KIB A">KIB A - Tanah</option>
                             <option value="KIB B">KIB B - Peralatan &amp; Mesin</option>
                             <option value="KIB C">KIB C - Gedung &amp; Bangunan</option>
@@ -144,10 +144,10 @@
                         <select x-model="exportRekapSheet"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-purple-500">
                             <option value="all">Semua Sheet (Paket Lengkap 4 Sheet)</option>
-                            <option value="sheet1" x-text="'1. Daftar AT ' + (exportTriwulan === 'all' ? 'Tahunan' : exportTriwulan) + ' Saja'"></option>
-                            <option value="sheet2">2. Daftar Pengurangan AT RSDK Saja</option>
-                            <option value="sheet3">3. Reklas RSDK Saja</option>
-                            <option value="sheet4">4. RMB (excel) RSDK Saja</option>
+                            <option value="sheet1" x-text="'1. Daftar AT ' + (exportTriwulan === 'all' ? 'Tahunan' : exportTriwulan)"></option>
+                            <option value="sheet2">2. Daftar Pengurangan AT RSDK</option>
+                            <option value="sheet3">3. Reklas RSDK</option>
+                            <option value="sheet4">4. RMB (excel) RSDK</option>
                         </select>
                     </div>
 

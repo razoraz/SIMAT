@@ -22,6 +22,56 @@
                 isPenyediaDropdownOpen: false,
                 isPpkDropdownOpen: false,
 
+                // Posisi dropdown dinamis (dihitung tepat di bawah input saat dibuka)
+                penyediaDropdownPos: { top: '0px', left: '0px', width: '0px', maxHeight: '240px' },
+                ppkDropdownPos: { top: '0px', left: '0px', width: '0px', maxHeight: '224px' },
+
+                openPenyediaDropdown() {
+                    this.isPpkDropdownOpen = false;
+                    this.isPenyediaDropdownOpen = true;
+                    this.$nextTick(() => {
+                        this.updatePenyediaDropdownPos();
+                    });
+                },
+
+                openPpkDropdown() {
+                    this.isPenyediaDropdownOpen = false;
+                    this.isPpkDropdownOpen = true;
+                    this.$nextTick(() => {
+                        this.updatePpkDropdownPos();
+                    });
+                },
+
+                updatePenyediaDropdownPos() {
+                    if (!this.isPenyediaDropdownOpen || this.currentStep !== 4) return;
+                    const el = document.getElementById('input-penyedia-nama');
+                    if (!el) return;
+                    const rect = el.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const dropH = Math.min(240, spaceBelow - 8);
+                    this.penyediaDropdownPos = {
+                        top: `${rect.bottom + 4}px`,
+                        left: `${rect.left}px`,
+                        width: `${rect.width}px`,
+                        maxHeight: `${Math.max(dropH, 120)}px`
+                    };
+                },
+
+                updatePpkDropdownPos() {
+                    if (!this.isPpkDropdownOpen || this.currentStep !== 4) return;
+                    const el = document.getElementById('input-ppk-nama');
+                    if (!el) return;
+                    const rect = el.getBoundingClientRect();
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const dropH = Math.min(224, spaceBelow - 8);
+                    this.ppkDropdownPos = {
+                        top: `${rect.bottom + 4}px`,
+                        left: `${rect.left}px`,
+                        width: `${rect.width}px`,
+                        maxHeight: `${Math.max(dropH, 120)}px`
+                    };
+                },
+
                 // State Search Filter Ketik Langkah 1 & Langkah 2
                 searchProgram: '',
                 isProgramOpen: false,
@@ -778,6 +828,8 @@
 
                     // Watcher perpindahan Step
                     this.$watch('currentStep', (step) => {
+                        this.isPenyediaDropdownOpen = false;
+                        this.isPpkDropdownOpen = false;
                         this.$nextTick(() => {
                             this.scrollToTop();
                         });
@@ -2582,6 +2634,8 @@
                 },
 
                 goToStep(step) {
+                    this.isPenyediaDropdownOpen = false;
+                    this.isPpkDropdownOpen = false;
                     if (step > this.currentStep) {
                         for (let s = 1; s < step; s++) {
                             if (s === 1) {
@@ -2917,7 +2971,9 @@
                 },
 
                 onPenyediaInput() {
+                    this.isPpkDropdownOpen = false;
                     this.isPenyediaDropdownOpen = true;
+                    this.$nextTick(() => this.updatePenyediaDropdownPos());
                     const q = (this.formData.penyedia_nama || '').trim().toLowerCase();
                     if (!q) return;
                     const match = (this.masterPenyedias || []).find(p => (p.nama || '').trim().toLowerCase() === q);
@@ -2960,7 +3016,9 @@
                 },
 
                 onPpkInput() {
+                    this.isPenyediaDropdownOpen = false;
                     this.isPpkDropdownOpen = true;
+                    this.$nextTick(() => this.updatePpkDropdownPos());
                     const q = (this.formData.ppk_nama || '').trim().toLowerCase();
                     if (!q) return;
                     const match = (this.masterPejabats || []).find(k => (k.nama || '').trim().toLowerCase() === q);
