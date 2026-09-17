@@ -5023,19 +5023,19 @@
             {wch: 22},  // 4. JUMLAH ANGGARAN (Rp)
             {wch: 24},  // 5. JUMLAH REALISASI SPM (Rp)
             {wch: 26},  // 6. No Rek. Menurut PERMENDAGRI 108/2016
-            {wch: 35},  // 7. NAMA ASET INVENTARIS
-            {wch: 18},  // 8. MERK
-            {wch: 18},  // 9. TYPE
-            {wch: 28},  // 10. NO PABRIK/NO CHASIS/NO MESIN
+            {wch: 38},  // 7. NAMA ASET INVENTARIS
+            {wch: 20},  // 8. MERK
+            {wch: 20},  // 9. TYPE
+            {wch: 38},  // 10. NO PABRIK/NO CHASIS/NO MESIN (Diperlebar dari 28 ke 38)
             {wch: 14},  // 11. JUMLAH BARANG
             {wch: 16},  // 12. NAMA SATUAN BARANG
             {wch: 22},  // 13. NILAI PEROLEHAN (Rp)
-            {wch: 24},  // 14. ADMINISTRASI PROYEK (Rp)
+            {wch: 26},  // 14. ADMINISTRASI PROYEK (Rp)
             {wch: 22},  // 15. NILAI ASET (Rp)
-            {wch: 26},  // 16. BUKTI PENGADAAN NOMOR
+            {wch: 28},  // 16. BUKTI PENGADAAN NOMOR
             {wch: 16},  // 17. BUKTI PENGADAAN TANGGAL
-            {wch: 26},  // 18. LOKASI BARANG
-            {wch: 28}   // 19. KET. (Berdiri Sendiri)
+            {wch: 28},  // 18. LOKASI BARANG
+            {wch: 55}   // 19. KET. (Berdiri Sendiri) (Diperlebar dari 28 ke 55)
         ];
 
         const rowsHeights = [
@@ -5044,9 +5044,9 @@
             { hpt: 26 }, // 2: DAFTAR PENAMBAHAN ASET TETAP
             { hpt: 22 }, // 3: TRIWULAN ... TAHUN ANGGARAN ...
             { hpt: 22 }, // 4: SUMBER DANA : KELOMPOK ANGGARAN  (BLUD)
-            { hpt: 24 }, // 5: Superheader BELANJA MODAL & RINCIAN ASET...
-            { hpt: 32 }, // 6: Header Kolom Utama & Sub-Superheader
-            { hpt: 24 }, // 7: Subheader Volume & Bukti Pengadaan
+            { hpt: 28 }, // 5: Superheader BELANJA MODAL & RINCIAN ASET...
+            { hpt: 46 }, // 6: Header Kolom Utama & Sub-Superheader
+            { hpt: 28 }, // 7: Subheader Volume & Bukti Pengadaan
             { hpt: 20 }  // 8: Baris Nomor 1 s/d 19
         ];
         for (let rIdx = 9; rIdx < sheet1Rows.length; rIdx++) {
@@ -5057,7 +5057,7 @@
             } else if (rIdx > s1TotalRowIdx) {
                 rowsHeights.push({ hpt: 20 });
             } else {
-                rowsHeights.push({ hpt: 22 });
+                rowsHeights.push({ hpt: 24 });
             }
         }
         wsSheet1['!rows'] = rowsHeights;
@@ -5283,10 +5283,10 @@
         wsSheet2['!cols'] = [
             { wch: 6 },  // 1. No. Urut (c=0)
             { wch: 22 }, // 2. Kode Barang 108 (c=1)
-            { wch: 48 }, // 3. Register / NIBAR (c=2) - Lebar diperbesar agar NIBAR 45 digit muat tanpa terpotong
-            { wch: 38 }, // 4. Nama/Jenis Barang (c=3) - Lebar diperbesar agar nama barang panjang terbaca rapi
-            { wch: 20 }, // 5. Merk/Type (c=4)
-            { wch: 30 }, // 6. No Sertifikat/Pabrik/Mesin (c=5) - Lebar diperbesar untuk nomor dokumen
+            { wch: 50 }, // 3. Register / NIBAR (c=2) - Lebar 50 muat NIBAR 45 digit tanpa terpotong
+            { wch: 40 }, // 4. Nama/Jenis Barang (c=3) - Lebar diperbesar agar nama barang panjang terbaca rapi
+            { wch: 22 }, // 5. Merk/Type (c=4)
+            { wch: 38 }, // 6. No Sertifikat/Pabrik/Mesin (c=5) - Diperlebar dari 30 ke 38 agar teks header 3 baris dan nomor dokumen leluasa
             { wch: 16 }, // 7. Bahan (c=6)
             { wch: 20 }, // 8. Asal/Cara Perolehan (c=7)
             { wch: 14 }, // 9. Tahun Beli/Perolehan (c=8)
@@ -5294,7 +5294,7 @@
             { wch: 14 }, // 11. Keadaan Barang (B/KB/RB) (c=10)
             { wch: 12 }, // 12. Jumlah Barang (c=11)
             { wch: 22 }, // 13. Jumlah Nilai (c=12)
-            { wch: 28 }  // 14. Keterangan (c=13) - Lebar diperbesar untuk keterangan penghapusan
+            { wch: 55 }  // 14. Keterangan (c=13) - Diperlebar dari 28 ke 55 agar keterangan panjang muat 1 baris utuh
         ];
 
         const s2RowHeights = [
@@ -5303,8 +5303,8 @@
             { hpt: 26 }, // 2: DAFTAR PENGURANGAN ASET TETAP
             { hpt: 22 }, // 3: PERIODE: ... TAHUN ANGGARAN ...
             { hpt: 22 }, // 4: SUMBER DANA : KELOMPOK ANGGARAN (BLUD)
-            { hpt: 28 }, // 5: Superheader
-            { hpt: 30 }, // 6: Subheader
+            { hpt: 32 }, // 5: Superheader
+            { hpt: 48 }, // 6: Subheader - Dipertinggi dari 30 ke 48 agar teks 3 baris "No.Sertifikat\nNo. Pabrik\nNo. Mesin" tidak terpotong
             { hpt: 20 }  // 7: Baris Nomor 1 s/d 14
         ];
         for (let rIdx = 8; rIdx < sheet2Rows.length; rIdx++) {
@@ -5315,7 +5315,7 @@
             } else if (rIdx > s2TotalRowIdx) {
                 s2RowHeights.push({ hpt: 20 });
             } else {
-                s2RowHeights.push({ hpt: 22 });
+                s2RowHeights.push({ hpt: 24 });
             }
         }
         wsSheet2['!rows'] = s2RowHeights;
