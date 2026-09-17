@@ -160,7 +160,7 @@ class AstapController extends Controller
                     'merk' => $spec['merk'] ?? ($spec['buku_judul'] ?? ($spec['judul_lisensi'] ?? ($spec['konstruksi'] ?? '-'))),
                     'type' => $spec['type'] ?? ($spec['tipe'] ?? ($spec['model'] ?? '-')),
                     'ukuran' => $spec['ukuran'] ?? (isset($spec['luas_m2']) ? $spec['luas_m2'] . ' m²' : ($spec['buku_spesifikasi'] ?? '-')),
-                    'no_pabrik' => $spec['no_pabrik'] ?? ($spec['sertifikat_no'] ?? '-'),
+                    'no_pabrik' => $spec['no_pabrik'] ?? ($spec['mesin_nomor_pabrik'] ?? '-'),
                     'no_rangka' => $spec['no_rangka'] ?? ($spec['rangka'] ?? '-'),
                     'no_mesin' => $spec['no_mesin'] ?? ($spec['mesin'] ?? '-'),
                     'no_btkb' => $spec['no_btkb'] ?? ($spec['btkb'] ?? '-'),

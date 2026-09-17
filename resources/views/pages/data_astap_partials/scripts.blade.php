@@ -4781,8 +4781,8 @@
                         kode_108: t.tanah_kode_barang || item.kode_barang || item.jenis_aset_kode || item.sub_rincian_kode || '-',
                         nama_barang: t.tanah_nama_barang || item.nama_barang || '-',
                         merk: '-',
-                        type: t.tanah_penggunaan || item.type || '-',
-                        no_pabrik: t.tanah_sertifikat_no ? ('Sertifikat: ' + t.tanah_sertifikat_no) : '-',
+                        type: '-', // Tanah tidak memiliki tipe pabrikan
+                        no_pabrik: t.tanah_sertifikat_no ? ('Sertifikat: ' + t.tanah_sertifikat_no) : (item.sertifikat_nomor && item.sertifikat_nomor !== '-' ? ('Sertifikat: ' + item.sertifikat_nomor) : '-'),
                         vol: vol,
                         satuan: t.tanah_satuan || item.satuan || 'Bidang',
                         nilai_perolehan: nilaiPerolehan,
@@ -4809,14 +4809,18 @@
                 if (item.no_rangka && item.no_rangka !== '-') noIdentifiers.push('Chasis: ' + item.no_rangka);
                 if (item.no_mesin && item.no_mesin !== '-') noIdentifiers.push('Mesin: ' + item.no_mesin);
                 if (item.no_polisi && item.no_polisi !== '-') noIdentifiers.push('Nopol: ' + item.no_polisi);
-                const noPabrikChasisMesin = noIdentifiers.length > 0 ? noIdentifiers.join(' / ') : (item.no_pabrik || item.no_mesin || item.no_rangka || '-');
+                let noPabrikChasisMesin = noIdentifiers.length > 0 ? noIdentifiers.join(' / ') : (item.no_pabrik || item.no_mesin || item.no_rangka || '-');
+                // Sanitasi ketat: Jangan biarkan NIBAR atau string register masuk ke Kolom No Pabrik/Chasis/Mesin
+                if (typeof noPabrikChasisMesin === 'string' && noPabrikChasisMesin.length > 25 && /^\d+$/.test(noPabrikChasisMesin.replace(/[\.\s]/g, ''))) {
+                    noPabrikChasisMesin = '-';
+                }
 
                 return item.registers.map(reg => ({
                     kode_108: item.kode_barang || item.jenis_aset_kode || item.sub_rincian_kode || '-',
                     nama_barang: item.nama_barang || '-',
                     merk: item.merk || '-',
-                    type: item.type || '-',
-                    no_pabrik: reg.no_register || reg.nibar || noPabrikChasisMesin,
+                    type: (item.category === 'KIB A' || (item.kode_barang && item.kode_barang.startsWith('1.3.1'))) ? '-' : (item.type || '-'),
+                    no_pabrik: noPabrikChasisMesin, // Murni no pabrik / chasis / mesin, BUKAN NIBAR
                     vol: 1,
                     satuan: item.satuan || 'Unit',
                     nilai_perolehan: unitPerolehan,
@@ -4838,14 +4842,17 @@
             if (item.no_rangka && item.no_rangka !== '-') noIdentifiers.push('Chasis: ' + item.no_rangka);
             if (item.no_mesin && item.no_mesin !== '-') noIdentifiers.push('Mesin: ' + item.no_mesin);
             if (item.no_polisi && item.no_polisi !== '-') noIdentifiers.push('Nopol: ' + item.no_polisi);
-            const noPabrikChasisMesin = noIdentifiers.length > 0 ? noIdentifiers.join(' / ') : (item.no_pabrik || item.no_mesin || item.no_rangka || '-');
+            let noPabrikChasisMesin = noIdentifiers.length > 0 ? noIdentifiers.join(' / ') : (item.no_pabrik || item.no_mesin || item.no_rangka || '-');
+            if (typeof noPabrikChasisMesin === 'string' && noPabrikChasisMesin.length > 25 && /^\d+$/.test(noPabrikChasisMesin.replace(/[\.\s]/g, ''))) {
+                noPabrikChasisMesin = '-';
+            }
             const lokasiBarang = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : '') || item.alamat_barang || 'RSUD Dr. H. Koesnandi';
 
             return [{
                 kode_108: item.kode_barang || item.jenis_aset_kode || item.sub_rincian_kode || '-',
                 nama_barang: item.nama_barang || '-',
                 merk: item.merk || '-',
-                type: item.type || '-',
+                type: (item.category === 'KIB A' || (item.kode_barang && item.kode_barang.startsWith('1.3.1'))) ? '-' : (item.type || '-'),
                 no_pabrik: noPabrikChasisMesin,
                 vol: vol,
                 satuan: item.satuan || 'Unit',
@@ -5025,7 +5032,7 @@
             {wch: 26},  // 6. No Rek. Menurut PERMENDAGRI 108/2016
             {wch: 38},  // 7. NAMA ASET INVENTARIS
             {wch: 20},  // 8. MERK
-            {wch: 20},  // 9. TYPE
+            {wch: 32},  // 9. TYPE (Diperlebar dari 20 ke 32)
             {wch: 38},  // 10. NO PABRIK/NO CHASIS/NO MESIN (Diperlebar dari 28 ke 38)
             {wch: 14},  // 11. JUMLAH BARANG
             {wch: 16},  // 12. NAMA SATUAN BARANG
@@ -5207,12 +5214,14 @@
                             docIdentitas = "-";
                         }
 
+                        const s2MerkType = [item.merk, item.type].filter(x => x && x !== '-' && x !== 'Baik').join(' / ') || item.merk || item.type || "-";
+
                         sheet2Rows.push([
                             s2ItemCounter,                                                                  // 1. No. Urut (Berurutan 1, 2, 3...)
                             item.kode_barang || "-",                                                        // 2. Kode Barang 108
                             regNibar,                                                                       // 3. Register
                             item.nama_barang || "-",                                                        // 4. Nama/Jenis Barang
-                            item.merk || item.type || "-",                                                  // 5. Merk/Type
+                            s2MerkType,                                                                     // 5. Merk/Type (Digabung rapi jika ada keduanya)
                             docIdentitas,                                                                   // 6. No.Sertifikat No. Pabrik No. Mesin
                             item.bahan || "-",                                                              // 7. Bahan
                             item.asal_usul || "Pembelian BLUD",                                             // 8. Asal/Cara Perolehan
@@ -5237,12 +5246,14 @@
                         docIdentitas = "-";
                     }
 
+                    const s2MerkType = [item.merk, item.type].filter(x => x && x !== '-' && x !== 'Baik').join(' / ') || item.merk || item.type || "-";
+
                     sheet2Rows.push([
                         s2ItemCounter,                                                                  // 1. No. Urut (Berurutan 1, 2, 3...)
                         item.kode_barang || "-",                                                        // 2. Kode Barang 108
                         itemNibar,                                                                      // 3. Register
                         item.nama_barang || "-",                                                        // 4. Nama/Jenis Barang
-                        item.merk || item.type || "-",                                                  // 5. Merk/Type
+                        s2MerkType,                                                                     // 5. Merk/Type (Digabung rapi jika ada keduanya)
                         docIdentitas,                                                                   // 6. No.Sertifikat No. Pabrik No. Mesin
                         item.bahan || "-",                                                              // 7. Bahan
                         item.asal_usul || "Pembelian BLUD",                                             // 8. Asal/Cara Perolehan
