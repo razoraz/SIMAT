@@ -3809,6 +3809,8 @@ Route::middleware('auth')->group(function () {
                     'deleted_by_id' => null,
                     'deleted_at'    => null,
                 ]);
+                $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
+                $astap->save();
             });
             $msg = "Data ASTAP \"{$namaBarang}\" berhasil dipulihkan ke katalog aktif.";
             session()->flash('success', $msg);

@@ -131,7 +131,11 @@ class RecycleBinController extends Controller
         // =========================================================================
         // 2B. DATA TERHAPUS: REGISTER NIBAR INDIVIDUAL
         // =========================================================================
+        // Hanya tampilkan register yang dihapus satuan dari paket pengadaan yang masih aktif di katalog
         $rawDeletedNibars = AstapRegister::onlyDeleted()
+            ->whereHas('astap', function ($q) {
+                $q->where('is_deleted', 0);
+            })
             ->with(['astap.jenisAstap', 'unit'])
             ->latest('deleted_at')
             ->latest('id')
@@ -331,6 +335,9 @@ class RecycleBinController extends Controller
                         'deleted_by_id' => null,
                         'deleted_at'    => null,
                     ]);
+                    // Sinkronkan jumlah volume paket dengan total register aktif
+                    $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
+                    $astap->save();
                 });
                 $msg = "Data Master Aset ASTAP \"{$nama}\" dan seluruh register NIBAR berhasil dipulihkan.";
                 break;
@@ -369,9 +376,28 @@ class RecycleBinController extends Controller
             case 'nibar':
                 $reg = AstapRegister::findOrFail($id);
                 $nibar = $reg->nibar ?: $reg->no_register;
-                $reg->restoreData();
-                $this->syncAstapAfterRegisterChange($reg->astap);
-                $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke katalog aktif.";
+                $astap = $reg->astap;
+                $astapRestored = false;
+
+                DB::transaction(function () use ($reg, $astap, &$astapRestored) {
+                    $reg->restoreData();
+                    // Jika paket induk sedang berstatus terhapus, ikut pulihkan paket induk agar data tidak menjadi orphan
+                    if ($astap && $astap->is_deleted) {
+                        $astap->restoreData();
+                        $astapRestored = true;
+                    }
+                    if ($astap) {
+                        $this->syncAstapAfterRegisterChange($astap);
+                    }
+                });
+
+                if ($astapRestored) {
+                    $msg = "Unit Register NIBAR \"{$nibar}\" dan paket pengadaan induknya \"{$astap->nama_barang}\" berhasil dipulihkan ke katalog aktif.";
+                } elseif ($astap) {
+                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke paket pengadaan \"{$astap->nama_barang}\" (Volume aktif: {$astap->jumlah_volume}).";
+                } else {
+                    $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke katalog aktif.";
+                }
                 break;
 
             default:
@@ -422,6 +448,8 @@ class RecycleBinController extends Controller
                             'deleted_by_id' => null,
                             'deleted_at'    => null,
                         ]);
+                        $a->jumlah_volume = max(1, $a->registers()->where('is_deleted', 0)->count());
+                        $a->save();
                         $restoredCount++;
                     }
                 });
@@ -453,17 +481,29 @@ class RecycleBinController extends Controller
             case 'nibar':
                 $regs = AstapRegister::whereIn('id', $ids)->get();
                 $astapParents = [];
-                foreach ($regs as $r) {
-                    $r->restoreData();
-                    if ($r->astap) {
-                        $astapParents[$r->astap_id] = $r->astap;
+                $parentRestoredCount = 0;
+
+                DB::transaction(function () use ($regs, &$astapParents, &$restoredCount, &$parentRestoredCount) {
+                    foreach ($regs as $r) {
+                        $r->restoreData();
+                        if ($r->astap) {
+                            if ($r->astap->is_deleted && !isset($astapParents[$r->astap_id])) {
+                                $r->astap->restoreData();
+                                $parentRestoredCount++;
+                            }
+                            $astapParents[$r->astap_id] = $r->astap;
+                        }
+                        $restoredCount++;
                     }
-                    $restoredCount++;
-                }
-                foreach ($astapParents as $parent) {
-                    $this->syncAstapAfterRegisterChange($parent);
-                }
+                    foreach ($astapParents as $parent) {
+                        $this->syncAstapAfterRegisterChange($parent);
+                    }
+                });
+
                 $msg = "Sebanyak {$restoredCount} unit register NIBAR berhasil dipulihkan ke katalog aktif.";
+                if ($parentRestoredCount > 0) {
+                    $msg .= " ({$parentRestoredCount} paket pengadaan induk otomatis diaktifkan kembali).";
+                }
                 break;
 
             default:
@@ -511,6 +551,29 @@ class RecycleBinController extends Controller
 
             case 'astap':
                 $astaps = Astap::whereIn('id', $ids)->get();
+                $blockedAstaps = [];
+                foreach ($astaps as $a) {
+                    $regIds = $a->registers()->pluck('id')->toArray();
+                    if (!empty($regIds)) {
+                        $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
+                        $hasMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
+                        if ($hasDistribusi || $hasMutasi) {
+                            $blockedAstaps[] = $a->nama_barang ?: "ASTAP-{$a->id}";
+                        }
+                    }
+                }
+                if (!empty($blockedAstaps)) {
+                    $listStr = implode(', ', array_slice($blockedAstaps, 0, 3));
+                    if (count($blockedAstaps) > 3) {
+                        $listStr .= '... dan ' . (count($blockedAstaps) - 3) . ' paket lainnya';
+                    }
+                    $msg = "Penghapusan permanen ditolak: Terdapat paket ASTAP [{$listStr}] yang unitnya memiliki riwayat transaksi BAST Distribusi atau Mutasi aset aktif yang dilindungi audit.";
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+
                 DB::transaction(function () use ($astaps, &$deletedCount) {
                     foreach ($astaps as $a) {
                         $a->registers()->delete();
@@ -663,6 +726,21 @@ class RecycleBinController extends Controller
             case 'astap':
                 $astap = Astap::findOrFail($id);
                 $nama = $astap->nama_barang ?: 'Aset ASTAP';
+                // Proteksi BAST Distribusi & Mutasi Aset untuk seluruh register di bawah paket ini
+                $regIds = $astap->registers()->pluck('id')->toArray();
+                if (!empty($regIds)) {
+                    $hasDistribusi = \App\Models\DistribusiItemRegister::whereIn('astap_register_id', $regIds)->exists();
+                    $hasMutasi = \App\Models\AstapMutasiRegister::whereIn('astap_register_id', $regIds)->exists();
+                    if ($hasDistribusi || $hasMutasi) {
+                        $reason = $hasDistribusi ? 'telah resmi diserahterimakan via dokumen BAST Distribusi' : 'memiliki riwayat mutasi aset';
+                        $msg = "Penghapusan permanen ditolak: Paket ASTAP \"{$nama}\" memiliki unit yang {$reason}. Data dilindungi undang-undang untuk audit BPK & Inspektorat.";
+                        if ($request->wantsJson()) {
+                            return response()->json(['success' => false, 'message' => $msg], 422);
+                        }
+                        return back()->with('error', $msg);
+                    }
+                }
+
                 DB::transaction(function () use ($astap) {
                     $astap->registers()->delete();
                     $astap->delete();
