@@ -460,7 +460,139 @@ Route::middleware('auth')->group(function () {
                     'spesifikasi_json' => $spec
                 ];
             });
-        return view('pages.data_astap', compact('astaps'));
+
+        // Data Pengurangan Aset Tetap dari Recycle Bin (Master ASTAP is_deleted = 1 & Register NIBAR is_deleted = 1)
+        $rawDeletedAstaps = \App\Models\Astap::where('is_deleted', 1)
+            ->with([
+                'registers' => function($q) {
+                    $q->where('is_deleted', 1);
+                },
+                'jenisAstap',
+                'rekeningBelanja',
+                'jenisPengadaan',
+                'unit'
+            ])
+            ->orderBy('deleted_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $rawDeletedNibars = \App\Models\AstapRegister::where('is_deleted', 1)
+            ->whereHas('astap', function($q) {
+                $q->where('is_deleted', 0);
+            })
+            ->with(['astap.jenisAstap', 'astap.unit', 'unit'])
+            ->orderBy('deleted_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $deletedAstapsList = $rawDeletedAstaps->map(function ($a) {
+            $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
+            $firstReg = $a->registers ? $a->registers->first() : null;
+            $ja = $a->jenisAstap;
+            $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
+            $deletedAt = $a->deleted_at ? \Carbon\Carbon::parse($a->deleted_at) : null;
+            $deletedTw = $deletedAt ? ('TW ' . (intdiv($deletedAt->month - 1, 3) + 1)) : ($a->triwulan ?: 'TW I');
+
+            $registersMapped = $a->registers ? $a->registers->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'no_register' => $r->nibar ?: $r->no_register,
+                    'nibar' => $r->nibar,
+                    'ruang_pemegang' => $r->ruang_pemegang,
+                    'kondisi' => $r->kondisi ?: 'RB',
+                ];
+            })->values()->toArray() : [];
+
+            return [
+                'id' => $a->id,
+                'is_deleted' => 1,
+                'deleted_at' => $deletedAt ? $deletedAt->format('Y-m-d H:i:s') : null,
+                'deleted_year' => $deletedAt ? $deletedAt->format('Y') : ($a->tahun_perolehan ?: date('Y')),
+                'deleted_tw' => $deletedTw,
+                'deleted_by' => $a->deleted_by ?: 'Administrator',
+                'category' => $a->category ?: 'KIB B',
+                'is_extracomtable' => (bool) $a->is_extracomtable,
+                'kode_barang' => $kode108Val,
+                'nama_barang' => $a->nama_barang ?: 'Aset Tetap',
+                'tahun_perolehan' => (string) ($a->tahun_perolehan ?: ''),
+                'triwulan' => $a->triwulan ?: ($spec['triwulan'] ?? 'TW I'),
+                'satuan' => $a->satuan ?: 'Unit',
+                'jumlah_volume' => (int) ($a->jumlah_volume ?: 1),
+                'harga_satuan' => (float) ($a->harga_satuan ?: 0),
+                'total_realisasi' => 'Rp ' . number_format($a->total_realisasi, 0, ',', '.'),
+                'total_realisasi_num' => (float) $a->total_realisasi,
+                'biaya_administrasi_proyek' => (float) $a->biaya_administrasi_proyek,
+                'alasan_hapus' => $a->alasan_hapus ?: ($a->keterangan_tambahan ?: ($spec['keterangan'] ?? '-')),
+                'keterangan' => $a->keterangan_tambahan ?: ($a->alasan_hapus ?: ($a->deleted_by ? 'Dihapus oleh ' . $a->deleted_by : '-')),
+                'bahan' => $spec['bahan'] ?? '-',
+                'asal_usul' => $spec['asal_usul'] ?? ($a->asal_usul ?: 'Pembelian BLUD'),
+                'kondisi' => $firstReg ? ($firstReg->kondisi ?: 'RB') : ($spec['kondisi'] ?? 'RB'),
+                'merk' => $spec['merk'] ?? '-',
+                'type' => $spec['type'] ?? '-',
+                'no_pabrik' => $spec['no_pabrik'] ?? ($firstReg?->nibar ?: '-'),
+                'no_mesin' => $spec['no_mesin'] ?? ($spec['mesin'] ?? '-'),
+                'no_rangka' => $spec['no_rangka'] ?? ($spec['rangka'] ?? '-'),
+                'no_polisi' => $spec['no_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? '-')),
+                'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? '-'),
+                'spesifikasi_json' => $spec,
+                'registers' => $registersMapped
+            ];
+        });
+
+        $deletedNibarsList = $rawDeletedNibars->map(function ($r) {
+            $astap = $r->astap;
+            $spec = $astap ? (is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? [])) : [];
+            $deletedAt = $r->deleted_at ? \Carbon\Carbon::parse($r->deleted_at) : null;
+            $deletedTw = $deletedAt ? ('TW ' . (intdiv($deletedAt->month - 1, 3) + 1)) : ($astap?->triwulan ?: 'TW I');
+            $hargaSatuan = (float) ($astap?->harga_satuan ?: ($astap && $astap->jumlah_volume > 0 ? ($astap->total_realisasi / $astap->jumlah_volume) : 0));
+
+            return [
+                'id' => 'reg_' . $r->id,
+                'is_deleted' => 1,
+                'deleted_at' => $deletedAt ? $deletedAt->format('Y-m-d H:i:s') : null,
+                'deleted_year' => $deletedAt ? $deletedAt->format('Y') : ($r->tahun_perolehan ?: ($astap?->tahun_perolehan ?: date('Y'))),
+                'deleted_tw' => $deletedTw,
+                'deleted_by' => $r->deleted_by ?: 'Administrator',
+                'category' => $astap?->category ?: 'KIB A',
+                'is_extracomtable' => (bool) ($astap?->is_extracomtable ?? false),
+                'kode_barang' => $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($r->kode_108 ?: '-')),
+                'nama_barang' => $astap?->nama_barang ?: 'Aset Register',
+                'tahun_perolehan' => (string) ($r->tahun_perolehan ?: ($astap?->tahun_perolehan ?: '')),
+                'triwulan' => $astap?->triwulan ?: 'TW I',
+                'satuan' => $astap?->satuan ?: 'Unit',
+                'jumlah_volume' => 1,
+                'harga_satuan' => $hargaSatuan,
+                'total_realisasi' => 'Rp ' . number_format($hargaSatuan, 0, ',', '.'),
+                'total_realisasi_num' => $hargaSatuan,
+                'biaya_administrasi_proyek' => 0,
+                'alasan_hapus' => $r->deleted_by ? 'Dihapus oleh ' . $r->deleted_by : '-',
+                'keterangan' => $r->deleted_by ? 'Dihapus oleh ' . $r->deleted_by : ($astap?->keterangan_tambahan ?: '-'),
+                'bahan' => $spec['bahan'] ?? '-',
+                'asal_usul' => $spec['asal_usul'] ?? ($astap?->asal_usul ?: 'Pembelian BLUD'),
+                'kondisi' => $r->kondisi ?: 'RB',
+                'merk' => $spec['merk'] ?? '-',
+                'type' => $spec['type'] ?? '-',
+                'no_pabrik' => $r->nibar ?: ($r->no_register ?: '-'),
+                'no_mesin' => $spec['no_mesin'] ?? ($spec['mesin'] ?? '-'),
+                'no_rangka' => $spec['no_rangka'] ?? ($spec['rangka'] ?? '-'),
+                'no_polisi' => $spec['no_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? '-')),
+                'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? '-'),
+                'spesifikasi_json' => $spec,
+                'registers' => [
+                    [
+                        'id' => $r->id,
+                        'no_register' => $r->no_register ?: $r->nibar,
+                        'nibar' => $r->nibar,
+                        'ruang_pemegang' => $r->ruang_pemegang ?: ($r->unit?->nama ?? '-'),
+                        'kondisi' => $r->kondisi ?: 'RB',
+                    ]
+                ]
+            ];
+        });
+
+        $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
+
+        return view('pages.data_astap', compact('astaps', 'deletedAstaps'));
     })->name('astap.index')->middleware('module:astap');
 
     // API: Ambil riwayat mutasi spesifik unit register NIBAR
