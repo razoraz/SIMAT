@@ -180,6 +180,7 @@ class RecycleBinController extends Controller
 
         $deletedUnits = $rawDeletedUnits->map(function ($u) {
             $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at) : null;
+            $bastCount = \App\Models\Distribusi::where('unit_id', $u->id)->count();
             return [
                 'id'                  => $u->id,
                 'kode'                => $u->kode_unit ?: 'UNIT-' . $u->id,
@@ -189,6 +190,7 @@ class RecycleBinController extends Controller
                 'nip'                 => $u->nip ?: '-',
                 'email'               => $u->email ?: ($u->user?->email ?: '-'),
                 'total_aset'          => $u->total_aset ?: 0,
+                'total_bast'          => $bastCount,
                 'deleted_by'          => $u->deleted_by ?: 'Administrator',
                 'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
                 'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
@@ -472,10 +474,15 @@ class RecycleBinController extends Controller
             case 'unit':
                 $units = Unit::whereIn('id', $ids)->get();
                 $unitsWithAssets = [];
+                $unitsWithBasts = [];
                 foreach ($units as $u) {
                     $count = (int) ($u->total_aset ?: \App\Models\AstapRegister::where('unit_id', $u->id)->count());
                     if ($count > 0) {
                         $unitsWithAssets[] = "{$u->nama} ({$count} aset)";
+                    }
+                    $bastCount = \App\Models\Distribusi::where('unit_id', $u->id)->count();
+                    if ($bastCount > 0) {
+                        $unitsWithBasts[] = "{$u->nama} ({$bastCount} arsip BAST)";
                     }
                 }
                 if (!empty($unitsWithAssets)) {
@@ -489,6 +496,23 @@ class RecycleBinController extends Controller
                             'success'    => false,
                             'message'    => $msg,
                             'action_url' => route('mutasi.index'),
+                        ], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+
+                // PROTEKSI BAST AUDIT: Unit yang memiliki riwayat BAST Distribusi tidak boleh dihapus permanen
+                if (!empty($unitsWithBasts)) {
+                    $listStr = implode(', ', array_slice($unitsWithBasts, 0, 3));
+                    if (count($unitsWithBasts) > 3) {
+                        $listStr .= '... dan ' . (count($unitsWithBasts) - 3) . ' unit lainnya';
+                    }
+                    $msg = "Penghapusan permanen ditolak: Terdapat unit yang memiliki riwayat dokumen BAST Distribusi [{$listStr}]. Demi kepatuhan audit BPK & Inspektorat, unit dengan riwayat BAST tidak boleh dihapus dari database. Silakan pulihkan unit ini jika diperlukan.";
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success'    => false,
+                            'message'    => $msg,
+                            'action_url' => route('bast.index'),
                         ], 422);
                     }
                     return back()->with('error', $msg);
@@ -571,6 +595,20 @@ class RecycleBinController extends Controller
                             'success'    => false,
                             'message'    => $msg,
                             'action_url' => route('mutasi.index'),
+                        ], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+
+                // PROTEKSI BAST AUDIT: Unit yang memiliki riwayat dokumen BAST Distribusi tidak boleh dihapus
+                $bastCount = \App\Models\Distribusi::where('unit_id', $unit->id)->count();
+                if ($bastCount > 0) {
+                    $msg = "Penghapusan permanen ditolak: Unit \"{$nama}\" memiliki {$bastCount} arsip dokumen BAST Distribusi resmi. Dokumen BAST dilindungi undang-undang untuk audit BPK & Inspektorat sehingga unit tidak boleh dihapus dari database. Silakan pulihkan unit ini jika diperlukan.";
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'success'    => false,
+                            'message'    => $msg,
+                            'action_url' => route('bast.index'),
                         ], 422);
                     }
                     return back()->with('error', $msg);

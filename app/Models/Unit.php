@@ -45,6 +45,14 @@ class Unit extends Model
     }
 
     /**
+     * Relasi ke riwayat Dokumen Distribusi & BAST yang pernah diserahkan ke unit ini
+     */
+    public function distribusis()
+    {
+        return $this->hasMany(Distribusi::class, 'unit_id');
+    }
+
+    /**
      * Generate Kode Unit otomatis format UNIT-(3 digit angka nomor urut)
      * Contoh: UNIT-001, UNIT-002, ..., UNIT-056
      */
@@ -113,7 +121,15 @@ class Unit extends Model
             }
         });
 
-        // 3. Saat Unit dihapus -> hapus akun sub admin terkait
+        // 3. Saat Unit akan dihapus permanen -> Proteksi: Blokir jika memiliki riwayat BAST Distribusi
+        static::deleting(function (Unit $unit) {
+            $bastCount = \App\Models\Distribusi::where('unit_id', $unit->id)->count();
+            if ($bastCount > 0) {
+                throw new \Exception("Penghapusan permanen ditolak: Unit \"{$unit->nama}\" memiliki {$bastCount} riwayat dokumen BAST Distribusi yang dilindungi untuk keperluan audit BPK & Inspektorat.");
+            }
+        });
+
+        // 4. Saat Unit telah dihapus permanen -> hapus akun sub admin terkait
         static::deleted(function (Unit $unit) {
             User::withoutEvents(function () use ($unit) {
                 User::where('unit_id', $unit->id)->delete();

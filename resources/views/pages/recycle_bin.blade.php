@@ -450,7 +450,7 @@
                                     </th>
                                     <th class="px-4 py-3.5">Kode Unit</th>
                                     <th class="px-4 py-3.5">Nama Unit / Paviliun</th>
-                                    <th class="px-4 py-3.5 text-center">Status Aset Terkait</th>
+                                    <th class="px-4 py-3.5 text-center">Status Aset & BAST</th>
                                     <th class="px-4 py-3.5">Tipe Ruangan</th>
                                     <th class="px-4 py-3.5">Kepala Ruangan & NIP</th>
                                     <th class="px-4 py-3.5">Email Akun Sub Admin</th>
@@ -469,16 +469,27 @@
                                         <td class="px-4 py-4 font-mono font-bold text-indigo-300" x-text="item.kode"></td>
                                         <td class="px-4 py-4 font-bold text-white text-sm" x-text="item.nama"></td>
                                         <td class="px-4 py-4 text-center whitespace-nowrap">
-                                            <template x-if="item.total_aset > 0">
-                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm"
-                                                    :title="'Ruangan ini masih menampung ' + item.total_aset + ' aset di database'">
-                                                    <span>⚠️</span>
-                                                    <span x-text="item.total_aset + ' Aset'"></span>
-                                                </span>
-                                            </template>
-                                            <template x-if="!item.total_aset || item.total_aset == 0">
-                                                <span class="text-[10.5px] text-slate-500 font-mono">0 Aset</span>
-                                            </template>
+                                            <div class="flex flex-col items-center gap-1">
+                                                <template x-if="item.total_aset > 0">
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-sm"
+                                                        :title="'Ruangan ini masih menampung ' + item.total_aset + ' aset di database'">
+                                                        <span>⚠️</span>
+                                                        <span x-text="item.total_aset + ' Aset'"></span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="!item.total_aset || item.total_aset == 0">
+                                                    <span class="text-[10.5px] text-slate-500 font-mono">0 Aset</span>
+                                                </template>
+
+                                                <!-- Status Arsip BAST Distribusi -->
+                                                <template x-if="item.total_bast > 0">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30 shadow-sm"
+                                                        :title="'Ruangan ini memiliki ' + item.total_bast + ' dokumen BAST Distribusi resmi yang dilindungi audit'">
+                                                        <span>📜</span>
+                                                        <span x-text="item.total_bast + ' BAST (Terkunci)'"></span>
+                                                    </span>
+                                                </template>
+                                            </div>
                                         </td>
                                         <td class="px-4 py-4 text-slate-300" x-text="item.tipe"></td>
                                         <td class="px-4 py-4">
@@ -744,6 +755,14 @@
                                         <span>Perhatian: Unit ini masih tercatat menampung <strong class="text-white" x-text="selectedItem.total_aset"></strong> aset inventaris aktif. Pemulihan unit ini akan menyambungkan kembali data lokasi aset terkait.</span>
                                     </div>
                                 </template>
+
+                                <!-- PERINGATAN JIKA UNIT MEMILIKI ARSIP BAST -->
+                                <template x-if="selectedItem.total_bast > 0">
+                                    <div class="p-3 bg-blue-500/15 border border-blue-500/30 rounded-2xl flex items-center space-x-2.5 text-blue-300 text-xs font-semibold">
+                                        <span class="text-base">📜</span>
+                                        <span>Proteksi Audit: Unit ini memiliki <strong class="text-white" x-text="selectedItem.total_bast"></strong> arsip dokumen BAST Distribusi resmi yang dilindungi undang-undang untuk audit BPK & Inspektorat sehingga unit ini tidak dapat dihapus permanen.</span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
 
@@ -952,6 +971,26 @@
                             });
                             return;
                         }
+
+                        // BLOKIR PENGHAPUSAN MASSAL JIKA ADA UNIT YANG MEMILIKI RIWAYAT BAST DISTRIBUSI
+                        const unitsWithBasts = this.units.filter(u => this.selectedIds.includes(u.id) && Number(u.total_bast) > 0);
+                        if (unitsWithBasts.length > 0) {
+                            const totalBastCount = unitsWithBasts.reduce((sum, u) => sum + Number(u.total_bast), 0);
+                            const unitNames = unitsWithBasts.map(u => u.nama).slice(0, 3).join(', ') + (unitsWithBasts.length > 3 ? '...' : '');
+                            this.askConfirmation({
+                                title: '📜 Proteksi Audit: Penghapusan Massal Ditolak!',
+                                message: `Terdapat ${unitsWithBasts.length} unit terpilih (${unitNames}) yang memiliki total ${totalBastCount} dokumen riwayat BAST Distribusi resmi.`,
+                                itemName: `${unitsWithBasts.length} Unit Terpilih Memiliki Riwayat BAST Resmi (${totalBastCount} Dokumen)`,
+                                type: 'danger',
+                                isBlocked: true,
+                                actionUrl: '/berita-acara',
+                                actionText: '📜 Buka Arsip Berita Acara (BAST)',
+                                assetWarning: `Sesuai standar audit BPK dan Inspektorat, dokumen Berita Acara Serah Terima (BAST) adalah bukti legalitas penyerahan barang yang dilindungi undang-undang dan tidak boleh dihapus dari sistem. Unit-unit ini hanya dapat dinonaktifkan/dipulihkan, tidak boleh dimusnahkan permanen dari database.`,
+                                btnText: null,
+                                onConfirm: null
+                            });
+                            return;
+                        }
                     }
 
                     let title = '🚨 Konfirmasi Hapus Permanen Massal';
@@ -1007,6 +1046,23 @@
                             actionUrl: '/mutasi-aset',
                             actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
                             assetWarning: `Sistem mendeteksi bahwa ruangan ini masih tercatat menampung ${item.total_aset} aset aktif. Demi akuntabilitas inventaris RSUD Koesnadi, unit yang memiliki aset tidak diperkenankan untuk dihapus permanen. Silakan pulihkan unit ini lalu ajukan mutasi aset ke ruangan lain terlebih dahulu sampai ruangan ini kosong (0 aset).`,
+                            btnText: null,
+                            onConfirm: null
+                        });
+                        return;
+                    }
+
+                    // JIKA RUANGAN / UNIT MEMILIKI RIWAYAT BAST DISTRIBUSI: BLOKIR PENGHAPUSAN DEMI KEPATUHAN AUDIT BPK
+                    if (module === 'unit' && Number(item.total_bast) > 0) {
+                        this.askConfirmation({
+                            title: '📜 Proteksi Audit: Unit Tidak Dapat Dihapus Permanen!',
+                            message: `Ruangan "${item.nama}" TIDAK DAPAT DIHAPUS PERMANEN karena memiliki ${item.total_bast} riwayat dokumen Berita Acara Serah Terima (BAST) Distribusi resmi.`,
+                            itemName: `${item.nama} (${item.kode || 'UNIT'}) — 📜 Memiliki ${item.total_bast} Dokumen BAST Resmi`,
+                            type: 'danger',
+                            isBlocked: true,
+                            actionUrl: '/berita-acara',
+                            actionText: '📜 Buka Arsip Berita Acara (BAST)',
+                            assetWarning: `Dokumen Berita Acara Serah Terima (BAST) bernomor resmi dilindungi untuk kepentingan audit berkala BPK & Inspektorat sebagai bukti sah penyerahan barang milik daerah. Unit yang pernah memiliki transaksi BAST tidak boleh dihapus permanen dari database. Silakan pulihkan unit ini ke katalog aktif jika diperlukan.`,
                             btnText: null,
                             onConfirm: null
                         });
