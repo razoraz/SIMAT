@@ -3707,17 +3707,31 @@ Route::middleware('auth')->group(function () {
             }
             $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
             if ($reg) {
+                // 1. Validasi Proteksi: Cek apakah NIBAR pernah didistribusikan atau dimutasi
+                $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
+                $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
+
+                if ($hasDistribusi || $hasMutasi) {
+                    $reason = $hasDistribusi ? 'telah resmi diserahterimakan via BAST Distribusi' : 'memiliki riwayat mutasi aset';
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Penghapusan ditolak: Unit NIBAR \"{$reg->nibar}\" {$reason}. Demi integritas dokumen pertanggungjawaban aset daerah, NIBAR yang memiliki riwayat transaksi tidak boleh dihapus. Silakan ubah kondisinya menjadi 'Rusak Berat / Afkir' jika barang rusak.",
+                    ], 422);
+                }
+
                 $astap = $reg->astap;
                 $nibar = $reg->nibar ?: $reg->no_register;
                 $nama = $astap?->nama_barang ?? 'Aset ASTAP';
-                $reg->delete();
 
-                // Sinkronisasi volume & kondisi ke parent ASTAP di database
+                // 2. Lakukan Soft Delete
+                $reg->softDelete();
+
+                // 3. Sinkronisasi volume & kondisi ke parent ASTAP di database
                 if ($astap) {
-                    $newCount = $astap->registers()->count();
+                    $newCount = $astap->registers()->where('is_deleted', 0)->count();
                     $astap->jumlah_volume = max(1, $newCount);
 
-                    $allRegs = $astap->registers()->get();
+                    $allRegs = $astap->registers()->where('is_deleted', 0)->get();
                     $totalRegs = $allRegs->count();
                     $baikCount = $allRegs->where('kondisi', 'Baik')->count();
                     $kbCount = $allRegs->where('kondisi', 'Kurang Baik')->count();
@@ -3803,10 +3817,10 @@ Route::middleware('auth')->group(function () {
                     \Log::warning("Gagal kirim notif register delete: " . $e->getMessage());
                 }
             }
-            session()->flash('success', 'Unit register NIBAR berhasil dihapus.');
+            session()->flash('success', 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).');
             return response()->json([
                 'success' => true,
-                'message' => 'Unit register berhasil dihapus.',
+                'message' => 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).',
                 'stats' => isset($spec) && isset($spec['kondisi_stats']) ? $spec['kondisi_stats'] : null,
                 'spesifikasi_json' => $spec ?? null
             ]);

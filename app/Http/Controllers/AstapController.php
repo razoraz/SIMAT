@@ -3296,15 +3296,25 @@ class AstapController extends Controller
     {
             $reg = \App\Models\AstapRegister::with('astap')->find($id);
             if ($reg) {
+                $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
+                $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
+                if ($hasDistribusi || $hasMutasi) {
+                    $reason = $hasDistribusi ? 'telah resmi diserahterimakan via BAST Distribusi' : 'memiliki riwayat mutasi aset';
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Penghapusan ditolak: Unit NIBAR \"{$reg->nibar}\" {$reason}. Demi integritas dokumen aset, NIBAR yang memiliki riwayat transaksi tidak boleh dihapus. Silakan ubah kondisinya menjadi 'Rusak Berat / Afkir'.",
+                    ], 422);
+                }
+
                 $nibar = $reg->nibar ?: $reg->no_register;
                 $nama = $reg->astap?->nama_barang ?? 'Aset ASTAP';
-                $reg->delete();
+                $reg->softDelete();
 
                 // Kirim Notifikasi Sistem saat Unit NIBAR Dihapus
                 try {
                     \App\Services\NotificationService::sendToAdminAndMaster(
-                        "Unit Register Dihapus: {$nibar}",
-                        "{$nama} • Register dihapus",
+                        "Unit Register Dipindahkan ke Tong Sampah: {$nibar}",
+                        "{$nama} • Register dipindahkan ke Recycle Bin",
                         'astap',
                         route('astap.index')
                     );
@@ -3312,8 +3322,8 @@ class AstapController extends Controller
                     \Log::warning("Gagal kirim notif register delete: " . $e->getMessage());
                 }
             }
-            session()->flash('success', 'Unit register NIBAR berhasil dihapus.');
-            return response()->json(['success' => true, 'message' => 'Unit register berhasil dihapus.']);
+            session()->flash('success', 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).');
+            return response()->json(['success' => true, 'message' => 'Unit register berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).']);
     }
 
     /**

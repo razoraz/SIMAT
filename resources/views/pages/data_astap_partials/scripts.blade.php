@@ -5868,10 +5868,10 @@
                     if (!reg) return;
                     this.askConfirmation({
                         title: '⚠️ Konfirmasi Hapus Register Unit NIBAR',
-                        message: 'Apakah Anda yakin ingin menghapus unit register NIBAR ini secara permanen dari katalog?',
+                        message: 'Apakah Anda yakin ingin memindahkan unit register NIBAR ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali jika diperlukan.',
                         itemName: 'NIBAR: ' + (reg.nibar || reg.no_register),
                         type: 'danger',
-                        btnText: '🗑️ Ya, Hapus Unit NIBAR',
+                        btnText: '🗑️ Ya, Pindahkan ke Sampah',
                         onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             try {
@@ -5919,12 +5919,12 @@
                                             return a;
                                         });
                                     }
-                                    this.showToast('Unit register NIBAR berhasil dihapus!', 'success');
+                                    this.showToast(data.message || 'Unit register NIBAR berhasil dipindahkan ke Recycle Bin!', 'success');
                                 } else {
-                                    window.location.reload();
+                                    this.showToast(data.message || '⚠️ Gagal menghapus unit NIBAR.', 'error');
                                 }
                             } catch(err) {
-                                window.location.reload();
+                                this.showToast('Terjadi kesalahan jaringan saat menghapus unit NIBAR.', 'error');
                             }
                         }
                     });

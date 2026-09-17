@@ -129,6 +129,37 @@ class RecycleBinController extends Controller
         });
 
         // =========================================================================
+        // 2B. DATA TERHAPUS: REGISTER NIBAR INDIVIDUAL
+        // =========================================================================
+        $rawDeletedNibars = AstapRegister::onlyDeleted()
+            ->with(['astap.jenisAstap', 'unit'])
+            ->latest('deleted_at')
+            ->latest('id')
+            ->get();
+
+        $deletedNibars = $rawDeletedNibars->map(function ($r) {
+            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at) : null;
+            return [
+                'id'                  => $r->id,
+                'astap_id'            => $r->astap_id,
+                'nibar'               => $r->nibar ?: ($r->no_register ?: 'REG-' . $r->id),
+                'no_register'         => $r->no_register ?: '-',
+                'nama_barang'         => $r->astap?->nama_barang ?? 'Aset ASTAP',
+                'kode_108'            => $r->astap?->kode_108 ?: ($r->astap?->jenisAstap?->kode_108 ?: '-'),
+                'kategori'            => $r->astap?->category ?: ($r->astap?->jenisAstap?->kategori ?? 'KIB B'),
+                'ruang'               => $r->ruang_pemegang ?: ($r->unit?->nama ?: 'Gudang Perbekalan'),
+                'kondisi'             => $r->kondisi ?: 'Baik',
+                'status'              => $r->status ?: 'Tersedia',
+                'spk_nomor'           => $r->astap?->spk_nomor ?: '-',
+                'tahun'               => $r->astap?->tahun_perolehan ?: '-',
+                'deleted_by'          => $r->deleted_by ?: 'Administrator',
+                'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+            ];
+        });
+
+        // =========================================================================
         // 3. DATA TERHAPUS: DISTRIBUSI ASET
         // =========================================================================
         $rawDeletedDistribusis = Distribusi::onlyDeleted()
@@ -143,23 +174,24 @@ class RecycleBinController extends Controller
                 $nibars = $it->registers->map(fn($r) => $r->astapRegister?->nibar ?: '-')->filter()->implode(', ');
                 return [
                     'no'          => $idx + 1,
-                    'nama_barang' => $it->astap?->nama_barang ?: 'Barang Distribusi',
-                    'qty'         => $it->qty . ' ' . ($it->astap?->satuan ?: 'Unit'),
+                    'nama_barang' => $it->astap?->nama_barang ?? '-',
+                    'qty'         => $it->qty,
                     'nibar_list'  => $nibars ?: '-',
-                    'keterangan'  => $it->keterangan ?: '-',
                 ];
-            })->values()->toArray();
+            })->toArray();
 
             return [
                 'id'                  => $d->id,
                 'kode'                => $d->kode,
                 'bast_nomor'          => $d->bast_nomor ?: '-',
-                'tujuan'              => $d->unit?->nama ?: ($d->tujuan ?: '-'),
-                'tanggal'             => $d->tanggal_distribusi ? Carbon::parse($d->tanggal_distribusi)->translatedFormat('d M Y') : '-',
-                'status'              => $d->status ?: 'Draft',
+                'tujuan'              => $d->unit?->nama ?? '-',
+                'pj_nama'             => $d->unit?->kepala ?? '-',
+                'pj_nip'              => $d->unit?->nip ?? '-',
+                'status'              => $d->status,
+                'signed'              => (bool)$d->signed,
                 'item_count'          => $d->items->count(),
-                'total_qty'           => $d->total_qty . ' Unit',
                 'items'               => $itemsMapped,
+                'keterangan'          => $d->keterangan ?: '-',
                 'deleted_by'          => $d->deleted_by ?: 'Administrator',
                 'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
                 'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
@@ -207,15 +239,17 @@ class RecycleBinController extends Controller
 
         $mutasiCount     = $deletedMutasis->count();
         $astapCount      = $deletedAstaps->count();
+        $nibarCount      = $deletedNibars->count();
         $distribusiCount = $deletedDistribusis->count();
         $unitCount       = $deletedUnits->count();
 
-        $totalAllDeleted = $mutasiCount + $astapCount + $distribusiCount + $unitCount;
+        $totalAllDeleted = $mutasiCount + $astapCount + $nibarCount + $distribusiCount + $unitCount;
 
         // Hitung 30 hari terakhir
         $filterMonth = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($thirtyDaysAgo))->count();
         $totalThisMonth = $filterMonth($rawDeletedMutasis)
             + $filterMonth($rawDeletedAstaps)
+            + $filterMonth($rawDeletedNibars)
             + $filterMonth($rawDeletedDistribusis)
             + $filterMonth($rawDeletedUnits);
 
@@ -223,6 +257,7 @@ class RecycleBinController extends Controller
         $filterWeek = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($sevenDaysAgo))->count();
         $totalThisWeek = $filterWeek($rawDeletedMutasis)
             + $filterWeek($rawDeletedAstaps)
+            + $filterWeek($rawDeletedNibars)
             + $filterWeek($rawDeletedDistribusis)
             + $filterWeek($rawDeletedUnits);
 
@@ -235,11 +270,12 @@ class RecycleBinController extends Controller
                 'ready' => true,
             ],
             'astap' => [
-                'name'  => 'Master ASTAP',
-                'icon'  => '📦',
-                'count' => $astapCount,
-                'color' => 'emerald',
-                'ready' => true,
+                'name'        => 'Master ASTAP',
+                'icon'        => '📦',
+                'count'       => $astapCount,
+                'nibar_count' => $nibarCount,
+                'color'       => 'emerald',
+                'ready'       => true,
             ],
             'distribusi' => [
                 'name'  => 'Distribusi Aset',
@@ -260,6 +296,7 @@ class RecycleBinController extends Controller
         return view('pages.recycle_bin', compact(
             'deletedMutasis',
             'deletedAstaps',
+            'deletedNibars',
             'deletedDistribusis',
             'deletedUnits',
             'activeTab',
@@ -329,6 +366,14 @@ class RecycleBinController extends Controller
                 $msg = "Data Unit / Paviliun \"{$nama}\" berhasil dipulihkan ke katalog aktif.";
                 break;
 
+            case 'nibar':
+                $reg = AstapRegister::findOrFail($id);
+                $nibar = $reg->nibar ?: $reg->no_register;
+                $reg->restoreData();
+                $this->syncAstapAfterRegisterChange($reg->astap);
+                $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke katalog aktif.";
+                break;
+
             default:
                 return back()->with('error', "Modul {$module} tidak dikenal untuk pemulihan data.");
         }
@@ -338,7 +383,7 @@ class RecycleBinController extends Controller
             return response()->json(['success' => true, 'message' => $msg]);
         }
 
-        return redirect()->route('recycle_bin.index', ['tab' => $module])->with('success', $msg);
+        return redirect()->route('recycle_bin.index', ['tab' => $module === 'nibar' ? 'astap' : $module])->with('success', $msg);
     }
 
     /**
@@ -403,6 +448,22 @@ class RecycleBinController extends Controller
                     $restoredCount++;
                 }
                 $msg = "Sebanyak {$restoredCount} Unit & Paviliun berhasil dipulihkan ke katalog aktif.";
+                break;
+
+            case 'nibar':
+                $regs = AstapRegister::whereIn('id', $ids)->get();
+                $astapParents = [];
+                foreach ($regs as $r) {
+                    $r->restoreData();
+                    if ($r->astap) {
+                        $astapParents[$r->astap_id] = $r->astap;
+                    }
+                    $restoredCount++;
+                }
+                foreach ($astapParents as $parent) {
+                    $this->syncAstapAfterRegisterChange($parent);
+                }
+                $msg = "Sebanyak {$restoredCount} unit register NIBAR berhasil dipulihkan ke katalog aktif.";
                 break;
 
             default:
@@ -528,6 +589,42 @@ class RecycleBinController extends Controller
                 $msg = "Sebanyak {$deletedCount} Unit & Paviliun telah dihapus permanen dari database.";
                 break;
 
+            case 'nibar':
+                $regs = AstapRegister::whereIn('id', $ids)->get();
+                $blockedNibars = [];
+                foreach ($regs as $r) {
+                    $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $r->id)->exists();
+                    $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $r->id)->exists();
+                    if ($hasDistribusi || $hasMutasi) {
+                        $blockedNibars[] = $r->nibar ?: $r->no_register;
+                    }
+                }
+                if (!empty($blockedNibars)) {
+                    $listStr = implode(', ', array_slice($blockedNibars, 0, 3));
+                    if (count($blockedNibars) > 3) {
+                        $listStr .= '... dan ' . (count($blockedNibars) - 3) . ' NIBAR lainnya';
+                    }
+                    $msg = "Penghapusan permanen ditolak: Terdapat register NIBAR [{$listStr}] yang memiliki riwayat transaksi distribusi/mutasi aktif yang dilindungi audit.";
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+
+                $astapParents = [];
+                foreach ($regs as $r) {
+                    if ($r->astap) {
+                        $astapParents[$r->astap_id] = $r->astap;
+                    }
+                    $r->delete();
+                    $deletedCount++;
+                }
+                foreach ($astapParents as $parent) {
+                    $this->syncAstapAfterRegisterChange($parent);
+                }
+                $msg = "Sebanyak {$deletedCount} register NIBAR telah dihapus permanen dari database.";
+                break;
+
             default:
                 return back()->with('error', "Modul {$module} tidak dikenal.");
         }
@@ -537,7 +634,7 @@ class RecycleBinController extends Controller
             return response()->json(['success' => true, 'message' => $msg, 'count' => $deletedCount]);
         }
 
-        return redirect()->route('recycle_bin.index', ['tab' => $module])->with('success', $msg);
+        return redirect()->route('recycle_bin.index', ['tab' => $module === 'nibar' ? 'astap' : $module])->with('success', $msg);
     }
 
     /**
@@ -621,6 +718,24 @@ class RecycleBinController extends Controller
                 $msg = "Data Unit \"{$nama}\" dan akun terkait telah dihapus secara permanen dari database.";
                 break;
 
+            case 'nibar':
+                $reg = AstapRegister::findOrFail($id);
+                $nibar = $reg->nibar ?: $reg->no_register;
+                $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
+                $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
+                if ($hasDistribusi || $hasMutasi) {
+                    $msg = "Penghapusan permanen ditolak: Register NIBAR \"{$nibar}\" memiliki riwayat transaksi BAST/mutasi aktif yang dilindungi audit.";
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+                $parentAstap = $reg->astap;
+                $reg->delete();
+                $this->syncAstapAfterRegisterChange($parentAstap);
+                $msg = "Register NIBAR \"{$nibar}\" telah dihapus secara permanen dari database.";
+                break;
+
             default:
                 return back()->with('error', "Modul {$module} tidak dikenal untuk penghapusan permanen.");
         }
@@ -630,6 +745,45 @@ class RecycleBinController extends Controller
             return response()->json(['success' => true, 'message' => $msg]);
         }
 
-        return redirect()->route('recycle_bin.index', ['tab' => $module])->with('success', $msg);
+        return redirect()->route('recycle_bin.index', ['tab' => $module === 'nibar' ? 'astap' : $module])->with('success', $msg);
+    }
+
+    /**
+     * Sinkronisasi volume dan kondisi dominan parent ASTAP setelah status register berubah
+     */
+    private function syncAstapAfterRegisterChange($astap)
+    {
+        if (!$astap) return;
+        $newCount = $astap->registers()->where('is_deleted', 0)->count();
+        $astap->jumlah_volume = max(1, $newCount);
+
+        $allRegs = $astap->registers()->where('is_deleted', 0)->get();
+        $totalRegs = $allRegs->count();
+        $baikCount = $allRegs->where('kondisi', 'Baik')->count();
+        $kbCount = $allRegs->where('kondisi', 'Kurang Baik')->count();
+        $rrCount = $allRegs->where('kondisi', 'Rusak Ringan')->count();
+        $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
+        $dominan = ($baikCount >= $kbCount && $baikCount >= $rrCount && $baikCount >= $rbCount) ? 'Baik'
+            : (($kbCount >= $rrCount && $kbCount >= $rbCount) ? 'Kurang Baik'
+            : (($rrCount >= $rbCount) ? 'Rusak Ringan' : 'Rusak Berat'));
+
+        $spec = $astap->spesifikasi_json ?? [];
+        if (is_array($spec)) {
+            $spec['kondisi'] = $dominan;
+            $spec['kondisi_stats'] = [
+                'total' => $totalRegs,
+                'baik' => $baikCount,
+                'kurang_baik' => $kbCount,
+                'rusak_ringan' => $rrCount,
+                'rusak_berat' => $rbCount,
+                'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
+                'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
+                'pct_rr' => $totalRegs > 0 ? round($rrCount / $totalRegs * 100) : 0,
+                'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
+                'kondisi_dominan' => $dominan,
+            ];
+            $astap->spesifikasi_json = $spec;
+        }
+        $astap->save();
     }
 }
