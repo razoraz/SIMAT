@@ -3905,89 +3905,104 @@ Route::middleware('auth')->group(function () {
                 $reg->softDelete();
 
                 // 3. Sinkronisasi volume & kondisi ke parent ASTAP di database
+                $astapAutoDeleted = false;
                 if ($astap) {
                     $newCount = $astap->registers()->where('is_deleted', 0)->count();
-                    $astap->jumlah_volume = max(1, $newCount);
 
-                    $allRegs = $astap->registers()->where('is_deleted', 0)->get();
-                    $totalRegs = $allRegs->count();
-                    $baikCount = $allRegs->where('kondisi', 'Baik')->count();
-                    $kbCount = $allRegs->where('kondisi', 'Kurang Baik')->count();
-                    $rrCount = $allRegs->where('kondisi', 'Rusak Ringan')->count();
-                    $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
-                    $dominan = ($baikCount >= $kbCount && $baikCount >= $rrCount && $baikCount >= $rbCount) ? 'Baik'
-                        : (($kbCount >= $rrCount && $kbCount >= $rbCount) ? 'Kurang Baik'
-                        : (($rrCount >= $rbCount) ? 'Rusak Ringan' : 'Rusak Berat'));
+                    // Jika register terakhir habis → soft delete master ASTAP sekalian
+                    if ($newCount === 0) {
+                        $astap->softDelete('Semua unit register NIBAR telah dihapus — master ASTAP otomatis dipindahkan ke Recycle Bin.');
+                        $astapAutoDeleted = true;
+                        $spec = $astap->spesifikasi_json ?? [];
+                    } else {
+                        $astap->jumlah_volume = $newCount;
 
-                    $spec = $astap->spesifikasi_json ?? [];
-                    if (is_array($spec)) {
-                        $spec['kondisi'] = $dominan;
-                        $spec['kondisi_stats'] = [
-                            'total' => $totalRegs,
-                            'baik' => $baikCount,
-                            'kurang_baik' => $kbCount,
-                            'rusak_ringan' => $rrCount,
-                            'rusak_berat' => $rbCount,
-                            'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
-                            'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
-                            'pct_rr' => $totalRegs > 0 ? round($rrCount / $totalRegs * 100) : 0,
-                            'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
-                            'kondisi_dominan' => $dominan,
-                        ];
+                        $allRegs = $astap->registers()->where('is_deleted', 0)->get();
+                        $totalRegs = $allRegs->count();
+                        $baikCount = $allRegs->where('kondisi', 'Baik')->count();
+                        $kbCount = $allRegs->where('kondisi', 'Kurang Baik')->count();
+                        $rrCount = $allRegs->where('kondisi', 'Rusak Ringan')->count();
+                        $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
+                        $dominan = ($baikCount >= $kbCount && $baikCount >= $rrCount && $baikCount >= $rbCount) ? 'Baik'
+                            : (($kbCount >= $rrCount && $kbCount >= $rbCount) ? 'Kurang Baik'
+                            : (($rrCount >= $rbCount) ? 'Rusak Ringan' : 'Rusak Berat'));
 
-                        // Sinkronisasi volume pada repeater items agar selalu seimbang dengan total register
-                        $repeatersConfig = [
-                            'tanah_items' => ['tanah_jumlah_bidang'],
-                            'mesin_items' => ['mesin_jumlah_barang'],
-                            'gedung_items' => ['gedung_jumlah_bangunan'],
-                            'jaringan_items' => ['jaringan_jumlah', 'jaringan_jumlah_barang'],
-                            'lainnya_items' => ['lainnya_jumlah_barang'],
-                            'atb_items' => ['atb_jumlah'],
-                            'kdp_items' => ['kdp_jumlah_bangunan'],
-                        ];
+                        $spec = $astap->spesifikasi_json ?? [];
+                        if (is_array($spec)) {
+                            $spec['kondisi'] = $dominan;
+                            $spec['kondisi_stats'] = [
+                                'total' => $totalRegs,
+                                'baik' => $baikCount,
+                                'kurang_baik' => $kbCount,
+                                'rusak_ringan' => $rrCount,
+                                'rusak_berat' => $rbCount,
+                                'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
+                                'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
+                                'pct_rr' => $totalRegs > 0 ? round($rrCount / $totalRegs * 100) : 0,
+                                'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
+                                'kondisi_dominan' => $dominan,
+                            ];
 
-                        foreach ($repeatersConfig as $itemsKey => $qtyKeys) {
-                            if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
-                                $quota = $astap->jumlah_volume;
-                                $syncedItems = [];
-                                foreach ($spec[$itemsKey] as $it) {
-                                    if ($quota <= 0) break;
-                                    $activeQtyKey = null;
-                                    $curQty = 1;
-                                    foreach ($qtyKeys as $k) {
-                                        if (isset($it[$k]) && is_numeric($it[$k])) {
-                                            $activeQtyKey = $k;
-                                            $curQty = floatval($it[$k]);
+                            // Sinkronisasi volume pada repeater items agar selalu seimbang dengan total register
+                            $repeatersConfig = [
+                                'tanah_items' => ['tanah_jumlah_bidang'],
+                                'mesin_items' => ['mesin_jumlah_barang'],
+                                'gedung_items' => ['gedung_jumlah_bangunan'],
+                                'jaringan_items' => ['jaringan_jumlah', 'jaringan_jumlah_barang'],
+                                'lainnya_items' => ['lainnya_jumlah_barang'],
+                                'atb_items' => ['atb_jumlah'],
+                                'kdp_items' => ['kdp_jumlah_bangunan'],
+                            ];
+
+                            foreach ($repeatersConfig as $itemsKey => $qtyKeys) {
+                                if (!empty($spec[$itemsKey]) && is_array($spec[$itemsKey])) {
+                                    $quota = $astap->jumlah_volume;
+                                    $syncedItems = [];
+                                    foreach ($spec[$itemsKey] as $it) {
+                                        if ($quota <= 0) break;
+                                        $activeQtyKey = null;
+                                        $curQty = 1;
+                                        foreach ($qtyKeys as $k) {
+                                            if (isset($it[$k]) && is_numeric($it[$k])) {
+                                                $activeQtyKey = $k;
+                                                $curQty = floatval($it[$k]);
+                                                break;
+                                            }
+                                        }
+                                        if ($curQty <= 0) $curQty = 1;
+
+                                        if ($curQty <= $quota) {
+                                            if ($activeQtyKey) $it[$activeQtyKey] = $curQty;
+                                            $syncedItems[] = $it;
+                                            $quota -= $curQty;
+                                        } else {
+                                            if ($activeQtyKey) $it[$activeQtyKey] = $quota;
+                                            $syncedItems[] = $it;
+                                            $quota = 0;
                                             break;
                                         }
                                     }
-                                    if ($curQty <= 0) $curQty = 1;
-
-                                    if ($curQty <= $quota) {
-                                        if ($activeQtyKey) $it[$activeQtyKey] = $curQty;
-                                        $syncedItems[] = $it;
-                                        $quota -= $curQty;
-                                    } else {
-                                        if ($activeQtyKey) $it[$activeQtyKey] = $quota;
-                                        $syncedItems[] = $it;
-                                        $quota = 0;
-                                        break;
-                                    }
+                                    $spec[$itemsKey] = $syncedItems;
                                 }
-                                $spec[$itemsKey] = $syncedItems;
                             }
-                        }
 
-                        $astap->spesifikasi_json = $spec;
+                            $astap->spesifikasi_json = $spec;
+                        }
+                        $astap->save();
                     }
-                    $astap->save();
                 }
 
-                // Kirim Notifikasi Sistem saat Unit NIBAR Dihapus
+                // Kirim Notifikasi Sistem
                 try {
+                    $notifTitle = $astapAutoDeleted
+                        ? "Paket ASTAP Dipindahkan ke Recycle Bin: {$nama}"
+                        : "Unit Register Dihapus: {$nibar}";
+                    $notifBody = $astapAutoDeleted
+                        ? "{$nama} • Semua NIBAR habis — master ASTAP otomatis ke Recycle Bin"
+                        : "{$nama} • Register {$nibar} dihapus";
                     \App\Services\NotificationService::sendToAdminAndMaster(
-                        "Unit Register Dihapus: {$nibar}",
-                        "{$nama} • Register dihapus",
+                        $notifTitle,
+                        $notifBody,
                         'astap',
                         route('astap.index')
                     );
@@ -3995,12 +4010,17 @@ Route::middleware('auth')->group(function () {
                     \Log::warning("Gagal kirim notif register delete: " . $e->getMessage());
                 }
             }
-            session()->flash('success', 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).');
+            $responseMessage = ($astapAutoDeleted ?? false)
+                ? "Unit NIBAR terakhir dihapus. Paket pengadaan ASTAP \"{$nama}\" otomatis dipindahkan ke Recycle Bin."
+                : 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).';
+            session()->flash('success', $responseMessage);
             return response()->json([
-                'success' => true,
-                'message' => 'Unit register NIBAR berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).',
-                'stats' => isset($spec) && isset($spec['kondisi_stats']) ? $spec['kondisi_stats'] : null,
-                'spesifikasi_json' => $spec ?? null
+                'success'            => true,
+                'message'            => $responseMessage,
+                'astap_auto_deleted' => $astapAutoDeleted ?? false,
+                'astap_id'           => $astap->id ?? null,
+                'stats'              => isset($spec) && isset($spec['kondisi_stats']) ? $spec['kondisi_stats'] : null,
+                'spesifikasi_json'   => $spec ?? null,
             ]);
         })->name('astap_register.destroy');
 

@@ -37,7 +37,7 @@
                     </div>
                 </div>
 
-                <!-- BARIS BAWAH: KARTU INDIKATOR 4 MODUL (MUTASI, ASTAP, DISTRIBUSI, UNIT) -->
+                <!-- BARIS BAWAH: KARTU INDIKATOR 4 MODUL (ASTAP, UNIT, DISTRIBUSI, MUTASI) -->
                 <div class="pt-5 border-t border-slate-800/80">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -48,25 +48,7 @@
                     </div>
 
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        <!-- 1. Mutasi Aset -->
-                        <div @click="changeTab('mutasi')" 
-                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :class="activeModule === 'mutasi' 
-                                ? 'bg-gradient-to-br from-amber-500/20 to-amber-950/30 border-amber-500/60 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10' 
-                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300">🔄</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('mutasi') > 0 
-                                        ? 'bg-amber-500 text-slate-950 font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('mutasi')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-amber-300 transition-colors">Mutasi Aset</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('mutasi') > 0 ? getModuleCount('mutasi') + ' data terhapus' : 'Tidak ada data'"></span>
-                        </div>
-
-                        <!-- 2. Master ASTAP -->
+                        <!-- 1. Master ASTAP -->
                         <div @click="changeTab('astap')" 
                             class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
                             :class="activeModule === 'astap' 
@@ -82,6 +64,24 @@
                             </div>
                             <span class="text-xs font-bold text-white block truncate group-hover:text-blue-300 transition-colors">Master ASTAP</span>
                             <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('astap') > 0 ? (astaps.length + ' Paket · ' + nibars.length + ' NIBAR') : 'Tidak ada data'"></span>
+                        </div>
+
+                        <!-- 2. Unit & Paviliun -->
+                        <div @click="changeTab('unit')" 
+                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :class="activeModule === 'unit' 
+                                ? 'bg-gradient-to-br from-cyan-500/20 to-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10' 
+                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-base p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">🏥</span>
+                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+                                    :class="getModuleCount('unit') > 0 
+                                        ? 'bg-cyan-500 text-slate-950 font-black shadow-sm' 
+                                        : 'bg-slate-800/80 text-slate-400'"
+                                    x-text="getModuleCount('unit')">0</span>
+                            </div>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-cyan-300 transition-colors">Unit & Paviliun</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('unit') > 0 ? getModuleCount('unit') + ' data terhapus' : 'Tidak ada data'"></span>
                         </div>
 
                         <!-- 3. Distribusi Aset -->
@@ -102,22 +102,22 @@
                             <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('distribusi') > 0 ? getModuleCount('distribusi') + ' data terhapus' : 'Tidak ada data'"></span>
                         </div>
 
-                        <!-- 4. Unit & Paviliun -->
-                        <div @click="changeTab('unit')" 
+                        <!-- 4. Mutasi Aset -->
+                        <div @click="changeTab('mutasi')" 
                             class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :class="activeModule === 'unit' 
-                                ? 'bg-gradient-to-br from-cyan-500/20 to-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10' 
+                            :class="activeModule === 'mutasi' 
+                                ? 'bg-gradient-to-br from-amber-500/20 to-amber-950/30 border-amber-500/60 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10' 
                                 : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
                             <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">🏥</span>
+                                <span class="text-base p-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300">🔄</span>
                                 <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('unit') > 0 
-                                        ? 'bg-cyan-500 text-slate-950 font-black shadow-sm' 
+                                    :class="getModuleCount('mutasi') > 0 
+                                        ? 'bg-amber-500 text-slate-950 font-black shadow-sm' 
                                         : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('unit')">0</span>
+                                    x-text="getModuleCount('mutasi')">0</span>
                             </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-cyan-300 transition-colors">Unit & Paviliun</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('unit') > 0 ? getModuleCount('unit') + ' data terhapus' : 'Tidak ada data'"></span>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-amber-300 transition-colors">Mutasi Aset</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('mutasi') > 0 ? getModuleCount('mutasi') + ' data terhapus' : 'Tidak ada data'"></span>
                         </div>
                     </div>
                 </div>

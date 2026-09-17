@@ -22,9 +22,9 @@ class RecycleBinController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $activeTab = $request->query('tab', 'mutasi');
+        $activeTab = $request->query('tab', 'astap');
         if ($activeTab === 'bast') {
-            $activeTab = 'mutasi';
+            $activeTab = 'astap';
         }
 
         // =========================================================================

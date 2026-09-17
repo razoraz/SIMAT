@@ -87,12 +87,7 @@
                 }
                 // 4. BAGIAN TANDA TANGAN / PENGESAHAN (r >= signStartRow)
                 else if (r >= signStartRow) {
-                    fill = "FFFFFF";
-                    fontColor = "0F172A";
-                    border = null;
-                    align = "center";
-                    fontSize = (r === signStartRow + 5) ? 10.5 : 9.5;
-                    bold = (r === signStartRow + 1 || r === signStartRow + 2 || r === signStartRow + 5 || r === signStartRow + 6);
+                    continue; // Ditangani khusus oleh applySignatureBlockStyling
                 }
                 // 5. BARIS DATA BIASA (r > titleRowCount && r < totalRowIdx)
                 else {
@@ -179,7 +174,7 @@
     }
 
     // HELPER MERGE CELLS DINAMIS PER KIB (TITLE, FOOTER, HEADER)
-    function getKibMerges(baseMerges, colCount, titleRowCount, totalRowCount) {
+    function getKibMerges(baseMerges, colCount, titleRowCount, totalRowCount, hasSignature = false) {
         const offset = titleRowCount - 3; // Baseline merge header tabel adalah index row 3
         const titleMerges = [];
         for (let r = 0; r < titleRowCount; r++) {
@@ -189,11 +184,131 @@
             s: { r: m.s.r + offset, c: m.s.c },
             e: { r: m.e.r + offset, c: m.e.c }
         }));
+        const footerRowIdx = hasSignature ? (totalRowCount - 1 - 9) : (totalRowCount - 1);
         const footerMerge = {
-            s: { r: totalRowCount - 1, c: 0 },
-            e: { r: totalRowCount - 1, c: 12 }
+            s: { r: footerRowIdx, c: 0 },
+            e: { r: footerRowIdx, c: 12 }
         };
         return [...titleMerges, footerMerge, ...shiftedBaseMerges];
+    }
+
+    /**
+     * Menghasilkan teks tanggal akhir periode untuk tanda tangan (misal: "30 Juni 2026")
+     */
+    function getReportSignDate(filterTw, filterYear) {
+        const yr = (filterYear && filterYear !== 'all') ? filterYear : (new Date().getFullYear());
+        const twKey = String(filterTw || '').replace(/[\s_]/g, '').toUpperCase();
+        if (twKey === 'TWI' || twKey === 'TW1') return '31 Maret ' + yr;
+        if (twKey === 'TWII' || twKey === 'TW2') return '30 Juni ' + yr;
+        if (twKey === 'TWIII' || twKey === 'TW3') return '30 September ' + yr;
+        if (twKey === 'TWIV' || twKey === 'TW4') return '31 Desember ' + yr;
+        return new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    /**
+     * Membuat 9 baris tanda tangan baku sesuai format resmi RSUD Koesnadi (screenshot):
+     *   r+0: kosong (spasi pemisah)
+     *   r+1: "MENGETAHUI,"                         /  "Bondowoso, [tanggal]" (di rightStartCol)
+     *   r+2: "DIREKTUR"                            /  "PENGURUS BARANG ASET"
+     *   r+3: "RSUD dr.H.KOESNADI BONDOWOSO"        /  ""
+     *   r+4: kosong (spasi tanda tangan)
+     *   r+5: kosong (spasi tanda tangan)
+     *   r+6: "dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR" /  "BUDI HARTONO,S.sos" (bold & underline)
+     *   r+7: "Pembina Tk.I-IV/b"                   /  "NIP. 19760229 200801 1 010"
+     *   r+8: "NIP. 19771002 200604 1 007"         /  ""
+     */
+    function buildKibSignatureRows(numCols, rightStartCol, ppkNama = '', ppkNip = '', signDate = '', leftStartCol = 1) {
+        const today = signDate || new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const dirNama  = ppkNama && ppkNama !== '-' && ppkNama !== 'Pejabat Pembuat Komitmen (PPK)' ? ppkNama : 'dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR';
+        const dirNip   = ppkNip  && ppkNip  !== '-' && ppkNip  !== '19780101 200501 1 008' ? ppkNip  : '19771002 200604 1 007';
+
+        function makeRow(leftVal, rightVal) {
+            const row = Array(numCols).fill('');
+            row[leftStartCol]   = leftVal;
+            row[rightStartCol]  = rightVal;
+            return row;
+        }
+
+        return [
+            Array(numCols).fill(''),                                                              // r+0 kosong
+            makeRow('MENGETAHUI,',                   'Bondowoso, ' + today),                      // r+1 tanggal & mengetahui
+            makeRow('DIREKTUR',                      'PENGURUS BARANG ASET'),                     // r+2 jabatan
+            makeRow('RSUD dr.H.KOESNADI BONDOWOSO', ''),                                          // r+3 instansi kiri
+            Array(numCols).fill(''),                                                              // r+4 spasi tanda tangan
+            Array(numCols).fill(''),                                                              // r+5 spasi tanda tangan
+            makeRow(dirNama,                         'BUDI HARTONO,S.sos'),                       // r+6 nama pejabat (bold, underline)
+            makeRow('Pembina Tk.I-IV/b',             'NIP. 19760229 200801 1 010'),               // r+7 pangkat kiri & NIP kanan
+            makeRow('NIP. ' + dirNip,                '')                                          // r+8 NIP kiri
+        ];
+    }
+
+    /**
+     * Menghasilkan array merges untuk 9 baris tanda tangan agar lurus tegak presisi.
+     */
+    function getKibSignatureMerges(signStartRow, numCols, rightStartCol, leftStartCol = 1, leftEndCol = null, rightEndCol = null) {
+        const lS = leftStartCol;
+        const lE = leftEndCol !== null ? leftEndCol : Math.min(lS + 5, rightStartCol - 2);
+        const rS = rightStartCol;
+        const rE = rightEndCol !== null ? rightEndCol : (numCols - 1);
+
+        const merges = [];
+        // Baris r+1: "MENGETAHUI," (kiri) & "Bondowoso, [tanggal]" (kanan)
+        merges.push({ s: { r: signStartRow + 1, c: lS }, e: { r: signStartRow + 1, c: lE } });
+        merges.push({ s: { r: signStartRow + 1, c: rS }, e: { r: signStartRow + 1, c: rE } });
+
+        // Baris r+2: "DIREKTUR" (kiri) & "PENGURUS BARANG ASET" (kanan)
+        merges.push({ s: { r: signStartRow + 2, c: lS }, e: { r: signStartRow + 2, c: lE } });
+        merges.push({ s: { r: signStartRow + 2, c: rS }, e: { r: signStartRow + 2, c: rE } });
+
+        // Baris r+3: "RSUD dr.H.KOESNADI BONDOWOSO" (kiri)
+        merges.push({ s: { r: signStartRow + 3, c: lS }, e: { r: signStartRow + 3, c: lE } });
+
+        // Baris r+6: Nama Direktur (kiri) & Nama Pengurus Barang (kanan)
+        merges.push({ s: { r: signStartRow + 6, c: lS }, e: { r: signStartRow + 6, c: lE } });
+        merges.push({ s: { r: signStartRow + 6, c: rS }, e: { r: signStartRow + 6, c: rE } });
+
+        // Baris r+7: Pembina Tk.I-IV/b (kiri) & NIP Pengurus Barang (kanan)
+        merges.push({ s: { r: signStartRow + 7, c: lS }, e: { r: signStartRow + 7, c: lE } });
+        merges.push({ s: { r: signStartRow + 7, c: rS }, e: { r: signStartRow + 7, c: rE } });
+
+        // Baris r+8: NIP Direktur (kiri)
+        merges.push({ s: { r: signStartRow + 8, c: lS }, e: { r: signStartRow + 8, c: lE } });
+
+        return merges;
+    }
+
+    /**
+     * Menerapkan style baku (putih bersih, tanpa border, alignment tengah, bold, underline) pada 9 baris tanda tangan.
+     */
+    function applySignatureBlockStyling(ws, signStartRow, numCols) {
+        for (let offset = 0; offset < 9; offset++) {
+            const r = signStartRow + offset;
+            for (let c = 0; c < numCols; c++) {
+                const cellRef = getColName(c) + (r + 1);
+                if (!ws[cellRef]) {
+                    ws[cellRef] = { v: "", t: "s" };
+                }
+                const cell = ws[cellRef];
+                const hasText = cell.v && String(cell.v).trim() !== '';
+
+                cell.s = {
+                    fill: { fgColor: { rgb: "FFFFFF" } },
+                    font: {
+                        name: "Calibri",
+                        sz: (offset === 6) ? 10.5 : (offset === 7 || offset === 8 ? 9.5 : 10),
+                        bold: (offset === 1 || offset === 2 || offset === 3 || offset === 6),
+                        underline: (offset === 6 && hasText),
+                        color: { rgb: "000000" }
+                    },
+                    alignment: {
+                        vertical: "center",
+                        horizontal: "center",
+                        wrapText: false
+                    },
+                    border: null
+                };
+            }
+        }
     }
 
     // HELPER GENERATE UNIQUE GROUP KEY (PER TAHUN, PER TRIWULAN, PER PROGRAM, KEGIATAN, SUB-KEGIATAN, REKENING, & SUB-RINCIAN PMDN 108)
@@ -228,7 +343,7 @@
     }
 
     // STYLING ENGINE MASTER 4 LANGKAH (LANGKAH 1 s/d 4)
-    function applyUnified4StepMasterSheetStyling(ws, rowCount, colCount, kibL3ColCount, titleRowCount = 5) {
+    function applyUnified4StepMasterSheetStyling(ws, rowCount, colCount, kibL3ColCount, titleRowCount = 5, hasSignature = false) {
         const thinBorder = {
             top: { style: "thin", color: { rgb: "64748B" } },
             bottom: { style: "thin", color: { rgb: "64748B" } },
@@ -242,8 +357,12 @@
         const l3Start = 15;
         const l3End = 15 + kibL3ColCount - 1;
         const l4Start = 15 + kibL3ColCount;
+        const footerRowIdx = hasSignature ? (rowCount - 1 - 9) : (rowCount - 1);
 
         for (let r = 0; r < rowCount; r++) {
+            if (hasSignature && r > footerRowIdx) {
+                continue; // 9 baris tanda tangan ditangani khusus oleh applySignatureBlockStyling
+            }
             for (let c = 0; c < colCount; c++) {
                 const cellRef = getColName(c) + (r + 1);
                 if (!ws[cellRef]) {
@@ -303,8 +422,8 @@
                         fill = "FDE9D9"; // Peach header sesuai gambar 3
                     }
                 }
-                // 3. BARIS FOOTER / TOTAL (BARIS TERAKHIR)
-                else if (r === rowCount - 1) {
+                // 3. BARIS FOOTER / TOTAL
+                else if (r === footerRowIdx) {
                     fill = "93C5FD"; // Soft Blue Background (sesuai gambar format baku)
                     fontColor = "0F172A";
                     bold = true;
@@ -487,6 +606,10 @@
         const yearLabel = filterYear === 'all' ? (new Date().getFullYear()) : filterYear;
         const bannerHeader = `REKAPITULASI REALISASI BELANJA MODAL ASET TETAP (${twLabel}) TAHUN ANGGARAN ${yearLabel}`;
 
+        const ppkNama = (filteredAstaps.find(a => a.ppk_nama && a.ppk_nama !== '-') || {}).ppk_nama || "dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR";
+        const ppkNip  = (filteredAstaps.find(a => a.ppk_nip && a.ppk_nip !== '-') || {}).ppk_nip || "19771002 200604 1 007";
+        const signDate = getReportSignDate(filterTw, filterYear);
+
         // ------------------------------------------------------------------------
         // 1. REKAPITULASI DYNAMIS (LENGKAP 9 KOLOM: ANGGARAN, REALISASI, SELISIH, PERSENTASE & TANDA TANGAN)
         // ------------------------------------------------------------------------
@@ -650,23 +773,12 @@
                 grandTotalPersen,
                 "Laporan Realisasi " + twLabel + " " + yearLabel
             ],
-            // r15: Baris Kosong Pemisah
-            [""],
-            // r16: Tanggal Laporan
-            ["", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})],
-            // r17: Label Mengetahui
-            ["", "Mengetahui,", "", "", "", "Pengurus Barang Pengelola,"],
-            // r18: Jabatan
-            ["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "RSUD Dr. H. Koesnandi"],
-            // r19: Spasi TTD 1
-            [""],
-            // r20: Spasi TTD 2
-            [""],
-            // r21: Nama Pejabat
-            ["", "( ................................................ )", "", "", "", "( ................................................ )"],
-            // r22: NIP Pejabat
-            ["", "NIP. 19780101 200501 1 008", "", "", "", "NIP. 19850615 201001 2 015"]
         ];
+
+        // Tanda Tangan Rekapitulasi (Format Baku RSUD Koesnadi)
+        const rekapSignStartRow = rekapData.length;
+        const rekapSignRows = buildKibSignatureRows(9, 5, ppkNama, ppkNip, signDate, 1);
+        rekapSignRows.forEach(r => rekapData.push(r));
 
         const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
 
@@ -683,7 +795,7 @@
             {wch: 40}   // c8: KETERANGAN
         ];
 
-        // Merge Cells Rekapitulasi (Title, Footer, & Tanda Tangan)
+        // Merge Cells Rekapitulasi (Title, Footer, & Tanda Tangan Lurus Presisi)
         wsRekap['!merges'] = [
             // Title Banners (r0 - r3, c0 s/d c8)
             { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
@@ -694,24 +806,12 @@
             // Footer Total Banner (r14: c0 s/d c2)
             { s: { r: 14, c: 0 }, e: { r: 14, c: 2 } },
 
-            // Tanda Tangan: Tanggal (r16, c5 s/d c8)
-            { s: { r: 16, c: 5 }, e: { r: 16, c: 8 } },
-
-            // Tanda Tangan: PPK (c1 s/d c3) & Pengurus Barang (c5 s/d c8)
-            { s: { r: 17, c: 1 }, e: { r: 17, c: 3 } },
-            { s: { r: 17, c: 5 }, e: { r: 17, c: 8 } },
-
-            { s: { r: 18, c: 1 }, e: { r: 18, c: 3 } },
-            { s: { r: 18, c: 5 }, e: { r: 18, c: 8 } },
-
-            { s: { r: 21, c: 1 }, e: { r: 21, c: 3 } },
-            { s: { r: 21, c: 5 }, e: { r: 21, c: 8 } },
-
-            { s: { r: 22, c: 1 }, e: { r: 22, c: 3 } },
-            { s: { r: 22, c: 5 }, e: { r: 22, c: 8 } }
+            // Tanda Tangan Rekapitulasi (c1 s/d c3 kiri, c5 s/d c8 kanan)
+            ...getKibSignatureMerges(rekapSignStartRow, 9, 5, 1, 3, 8)
         ];
 
-        applyRekapSheetStyling(wsRekap, rekapData.length, 9, 5, 14, 16);
+        applyRekapSheetStyling(wsRekap, rekapData.length, 9, 5, 14, rekapSignStartRow);
+        applySignatureBlockStyling(wsRekap, rekapSignStartRow, 9);
         if (filterCat === 'all' || filterCat === 'REKAP') {
             XLSX.utils.book_append_sheet(wb, wsRekap, filterCat === 'all' ? "1. Rekapitulasi" : "Rekapitulasi Realisasi");
         }
@@ -1118,6 +1218,11 @@
         kibAFooterRow[35] = kibATotalNilaiBarang;
         kibARows.push(kibAFooterRow);
 
+        // Tanda Tangan KIB A (Format Baku RSUD Koesnadi)
+        const kibASignStartRow = kibARows.length;
+        const kibASignRows = buildKibSignatureRows(49, 35, ppkNama, ppkNip, signDate, 1);
+        kibASignRows.forEach(r => kibARows.push(r));
+
         const wsKibA = XLSX.utils.aoa_to_sheet(kibARows);
         wsKibA['!cols'] = Array(49).fill({wch: 18});
         wsKibA['!cols'][0] = {wch: 6};
@@ -1240,9 +1345,11 @@
 
             // Column 49: KET. (Berdiri sendiri r3 sampai r6, c48)
             {s:{r:3,c:48}, e:{r:6,c:48}}
-        ], 49, kibATitleRows.length, kibARows.length);
+        ], 49, kibATitleRows.length, kibARows.length, true);
+        wsKibA['!merges'].push(...getKibSignatureMerges(kibASignStartRow, 49, 35, 1, 6, 48));
         // ─────────────────────────────────────────────────────────────────────────
-        applyUnified4StepMasterSheetStyling(wsKibA, kibARows.length, 49, 25, kibATitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsKibA, kibARows.length, 49, 25, kibATitleRows.length, true);
+        applySignatureBlockStyling(wsKibA, kibASignStartRow, 49);
         if (filterCat === 'all' || filterCat === 'KIB A') {
             XLSX.utils.book_append_sheet(wb, wsKibA, filterCat === 'all' ? "2. A" : "KIB A - Tanah");
         }
@@ -1551,6 +1658,11 @@
         kibBFooterRow[40] = kibBTotalNilaiBarang;
         kibBRows.push(kibBFooterRow);
 
+        // Tanda Tangan KIB B (Format Baku RSUD Koesnadi)
+        const kibBSignStartRow = kibBRows.length;
+        const kibBSignRows = buildKibSignatureRows(54, 40, ppkNama, ppkNip, signDate, 1);
+        kibBSignRows.forEach(r => kibBRows.push(r));
+
         const wsKibB = XLSX.utils.aoa_to_sheet(kibBRows);
         wsKibB['!cols'] = Array(54).fill({wch: 18});
         wsKibB['!cols'][0] = {wch: 6};
@@ -1675,9 +1787,11 @@
 
             // Col 54: KET. (berdiri sendiri r3-r6, c53)
             {s:{r:3,c:53}, e:{r:6,c:53}}
-        ], 54, kibBTitleRows.length, kibBRows.length);
+        ], 54, kibBTitleRows.length, kibBRows.length, true);
+        wsKibB['!merges'].push(...getKibSignatureMerges(kibBSignStartRow, 54, 40, 1, 6, 53));
 
-        applyUnified4StepMasterSheetStyling(wsKibB, kibBRows.length, 54, 31, kibBTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsKibB, kibBRows.length, 54, 31, kibBTitleRows.length, true);
+        applySignatureBlockStyling(wsKibB, kibBSignStartRow, 54);
         if (filterCat === 'all' || filterCat === 'KIB B') {
             XLSX.utils.book_append_sheet(wb, wsKibB, filterCat === 'all' ? "3. B" : "KIB B - Peralatan & Mesin");
         }
@@ -2011,6 +2125,11 @@
         kibCFooterRow[41] = kibCTotalNilaiBarang;
         kibCRows.push(kibCFooterRow);
 
+        // Tanda Tangan KIB C (Format Baku RSUD Koesnadi)
+        const kibCSignStartRow = kibCRows.length;
+        const kibCSignRows = buildKibSignatureRows(55, 41, ppkNama, ppkNip, signDate, 1);
+        kibCSignRows.forEach(r => kibCRows.push(r));
+
         const wsKibC = XLSX.utils.aoa_to_sheet(kibCRows);
         wsKibC['!cols'] = Array(55).fill({wch: 18});
         wsKibC['!cols'][0] = {wch: 6};
@@ -2142,9 +2261,11 @@
 
             // Col 55: KET. (berdiri sendiri r3-r6, c54)
             {s:{r:3,c:54}, e:{r:6,c:54}}
-        ], 55, kibCTitleRows.length, kibCRows.length);
+        ], 55, kibCTitleRows.length, kibCRows.length, true);
+        wsKibC['!merges'].push(...getKibSignatureMerges(kibCSignStartRow, 55, 41, 1, 6, 54));
 
-        applyUnified4StepMasterSheetStyling(wsKibC, kibCRows.length, 55, 30, kibCTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsKibC, kibCRows.length, 55, 30, kibCTitleRows.length, true);
+        applySignatureBlockStyling(wsKibC, kibCSignStartRow, 55);
         if (filterCat === 'all' || filterCat === 'KIB C') {
             XLSX.utils.book_append_sheet(wb, wsKibC, filterCat === 'all' ? "4. C" : "KIB C - Gedung & Bangunan");
         }
@@ -2384,6 +2505,11 @@
         kibDFooterRow[40] = kibDTotalNilaiBarang;
         kibDRows.push(kibDFooterRow);
 
+        // Tanda Tangan KIB D (Format Baku RSUD Koesnadi)
+        const kibDSignStartRow = kibDRows.length;
+        const kibDSignRows = buildKibSignatureRows(54, 40, ppkNama, ppkNip, signDate, 1);
+        kibDSignRows.forEach(r => kibDRows.push(r));
+
         const wsKibD = XLSX.utils.aoa_to_sheet(kibDRows);
         wsKibD['!cols'] = Array(54).fill({wch: 18});
         wsKibD['!cols'][0] = {wch: 6};
@@ -2514,9 +2640,11 @@
 
             // Col 54: KET. (berdiri sendiri r3-r6, c53)
             {s:{r:3,c:53}, e:{r:6,c:53}}
-        ], 54, kibDTitleRows.length, kibDRows.length);
+        ], 54, kibDTitleRows.length, kibDRows.length, true);
+        wsKibD['!merges'].push(...getKibSignatureMerges(kibDSignStartRow, 54, 40, 1, 6, 53));
 
-        applyUnified4StepMasterSheetStyling(wsKibD, kibDRows.length, 54, 30, kibDTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsKibD, kibDRows.length, 54, 30, kibDTitleRows.length, true);
+        applySignatureBlockStyling(wsKibD, kibDSignStartRow, 54);
         if (filterCat === 'all' || filterCat === 'KIB D') {
             XLSX.utils.book_append_sheet(wb, wsKibD, filterCat === 'all' ? "5. D" : "KIB D - Jalan & Jaringan");
         }
@@ -2847,6 +2975,11 @@
         kibEFooterRow[39] = kibETotalNilaiBarang;
         kibERows.push(kibEFooterRow);
 
+        // Tanda Tangan KIB E (Format Baku RSUD Koesnadi)
+        const kibESignStartRow = kibERows.length;
+        const kibESignRows = buildKibSignatureRows(53, 39, ppkNama, ppkNip, signDate, 1);
+        kibESignRows.forEach(r => kibERows.push(r));
+
         const wsKibE = XLSX.utils.aoa_to_sheet(kibERows);
         wsKibE['!cols'] = Array(53).fill({wch: 18});
         wsKibE['!cols'][0] = {wch: 6};
@@ -2963,9 +3096,11 @@
 
             // Col 53: KET. (Berdiri Sendiri r3-r6, c52)
             {s:{r:3,c:52}, e:{r:6,c:52}}
-        ], 53, kibETitleRows.length, kibERows.length);
+        ], 53, kibETitleRows.length, kibERows.length, true);
+        wsKibE['!merges'].push(...getKibSignatureMerges(kibESignStartRow, 53, 39, 1, 6, 52));
 
-        applyUnified4StepMasterSheetStyling(wsKibE, kibERows.length, 53, 29, kibETitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsKibE, kibERows.length, 53, 29, kibETitleRows.length, true);
+        applySignatureBlockStyling(wsKibE, kibESignStartRow, 53);
         if (filterCat === 'all' || filterCat === 'KIB E') {
             XLSX.utils.book_append_sheet(wb, wsKibE, filterCat === 'all' ? "6. E" : "KIB E - Aset Tetap Lainnya");
         }
@@ -3197,6 +3332,11 @@
         kibFFooterRow[41] = kibFTotalNilaiBarang;
         kibFRows.push(kibFFooterRow);
 
+        // Tanda Tangan KIB F (Format Baku RSUD Koesnadi)
+        const kibFSignStartRow = kibFRows.length;
+        const kibFSignRows = buildKibSignatureRows(55, 41, ppkNama, ppkNip, signDate, 1);
+        kibFSignRows.forEach(r => kibFRows.push(r));
+
         const wsKibF = XLSX.utils.aoa_to_sheet(kibFRows);
         wsKibF['!cols'] = Array(55).fill({wch: 18});
         wsKibF['!cols'][0] = {wch: 6};
@@ -3326,9 +3466,11 @@
 
             // Col 55: KET. (Berdiri Sendiri r3-r6, c54)
             {s:{r:3,c:54}, e:{r:6,c:54}}
-        ], 55, kibFTitleRows.length, kibFRows.length);
+        ], 55, kibFTitleRows.length, kibFRows.length, true);
+        wsKibF['!merges'].push(...getKibSignatureMerges(kibFSignStartRow, 55, 41, 1, 6, 54));
 
-        applyUnified4StepMasterSheetStyling(wsKibF, kibFRows.length, 55, 31, kibFTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsKibF, kibFRows.length, 55, 31, kibFTitleRows.length, true);
+        applySignatureBlockStyling(wsKibF, kibFSignStartRow, 55);
         if (filterCat === 'all' || filterCat === 'KIB F') {
             XLSX.utils.book_append_sheet(wb, wsKibF, filterCat === 'all' ? "7. F" : "KIB F - Konstruksi KDP");
         }
@@ -3549,6 +3691,11 @@
         atbFooterRow[32] = atbTotalNilaiBarang;
         atbRows.push(atbFooterRow);
 
+        // Tanda Tangan ATB (Format Baku RSUD Koesnadi)
+        const atbSignStartRow = atbRows.length;
+        const atbSignRows = buildKibSignatureRows(47, 34, ppkNama, ppkNip, signDate, 1);
+        atbSignRows.forEach(r => atbRows.push(r));
+
         const wsAtb = XLSX.utils.aoa_to_sheet(atbRows);
         wsAtb['!cols'] = Array(47).fill({wch: 18});
         wsAtb['!cols'][0] = {wch: 6};
@@ -3664,9 +3811,11 @@
 
             // Col 47: KET. (Berdiri Sendiri r3-r6, c46)
             {s:{r:3,c:46}, e:{r:6,c:46}}
-        ], 47, atbTitleRows.length, atbRows.length);
+        ], 47, atbTitleRows.length, atbRows.length, true);
+        wsAtb['!merges'].push(...getKibSignatureMerges(atbSignStartRow, 47, 34, 1, 6, 46));
 
-        applyUnified4StepMasterSheetStyling(wsAtb, atbRows.length, 47, 22, atbTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsAtb, atbRows.length, 47, 22, atbTitleRows.length, true);
+        applySignatureBlockStyling(wsAtb, atbSignStartRow, 47);
         if (filterCat === 'all' || filterCat === 'ATB') {
             XLSX.utils.book_append_sheet(wb, wsAtb, filterCat === 'all' ? "8. ATB" : "ATB - Aset Tidak Berwujud");
         }
@@ -3968,6 +4117,11 @@
         extracomFooterRow[36] = extracomTotalNilaiBarang;
         extracomRows.push(extracomFooterRow);
 
+        // Tanda Tangan EXTRACOM (Format Baku RSUD Koesnadi)
+        const extracomSignStartRow = extracomRows.length;
+        const extracomSignRows = buildKibSignatureRows(51, 37, ppkNama, ppkNip, signDate, 1);
+        extracomSignRows.forEach(r => extracomRows.push(r));
+
         const wsExtracom = XLSX.utils.aoa_to_sheet(extracomRows);
         wsExtracom['!cols'] = Array(51).fill({wch: 18});
         wsExtracom['!cols'][0] = {wch: 6};
@@ -4089,9 +4243,11 @@
 
             // Col 51: KET. (Berdiri Sendiri r3-r6, c50)
             {s:{r:3,c:50}, e:{r:6,c:50}}
-        ], 51, extracomTitleRows.length, extracomRows.length);
+        ], 51, extracomTitleRows.length, extracomRows.length, true);
+        wsExtracom['!merges'].push(...getKibSignatureMerges(extracomSignStartRow, 51, 37, 1, 6, 50));
 
-        applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 51, 27, extracomTitleRows.length);
+        applyUnified4StepMasterSheetStyling(wsExtracom, extracomRows.length, 51, 27, extracomTitleRows.length, true);
+        applySignatureBlockStyling(wsExtracom, extracomSignStartRow, 51);
         if (filterCat === 'all' || filterCat === 'EXTRACOM') {
             XLSX.utils.book_append_sheet(wb, wsExtracom, filterCat === 'all' ? "9. Extracom" : "Extracom");
         }
@@ -4193,10 +4349,7 @@
                         align = "left";
                     }
                 } else if (r > totalRowIndex) {
-                    border = null;
-                    fill = "FFFFFF";
-                    fontSize = 10;
-                    align = "center";
+                    continue; // Ditangani khusus oleh applySignatureBlockStyling
                 }
 
                 cell.s = {
@@ -4366,14 +4519,7 @@
                 }
                 // 7. AREA TANDA TANGAN (Row > totalRowIndex)
                 else if (r > totalRowIndex) {
-                    border = null;
-                    fill = "FFFFFF";
-                    fontColor = "0F172A";
-                    fontSize = 10;
-                    align = "center";
-                    if (cell.v && (cell.v.includes("PPK") || cell.v.includes("Pengurus Barang") || cell.v.includes("19780101") || cell.v.includes("19850615"))) {
-                        bold = true;
-                    }
+                    continue; // Ditangani khusus oleh applySignatureBlockStyling
                 }
 
                 cell.s = {
@@ -4508,14 +4654,7 @@
                 }
                 // 7. AREA TANDA TANGAN (Row > totalRowIndex)
                 else if (r > totalRowIndex) {
-                    border = null;
-                    fill = "FFFFFF";
-                    fontColor = "0F172A";
-                    fontSize = 10;
-                    align = "center";
-                    if (cell.v && (cell.v.includes("PPK") || cell.v.includes("Pengurus Barang") || cell.v.includes("19780101") || cell.v.includes("19850615"))) {
-                        bold = true;
-                    }
+                    continue; // Ditangani khusus oleh applySignatureBlockStyling
                 }
 
                 cell.s = {
@@ -4597,6 +4736,10 @@
         else if (filterTw === 'TW II' || filterTw === 'TW2') { judulPeriode = "TRIWULAN II TAHUN ANGGARAN " + yearLabel; }
         else if (filterTw === 'TW III' || filterTw === 'TW3') { judulPeriode = "TRIWULAN III TAHUN ANGGARAN " + yearLabel; }
         else if (filterTw === 'TW IV' || filterTw === 'TW4') { judulPeriode = "TRIWULAN IV TAHUN ANGGARAN " + yearLabel; }
+
+        const ppkNama = (filteredAstaps.find(a => a.ppk_nama && a.ppk_nama !== '-') || {}).ppk_nama || "dr. YUS PRIYATNA ADRYANTO,Sp.P,FISR";
+        const ppkNip  = (filteredAstaps.find(a => a.ppk_nip && a.ppk_nip !== '-') || {}).ppk_nip || "19771002 200604 1 007";
+        const signDate = getReportSignDate(filterTw, filterYear);
 
         // =========================================================================
         // SHEET 1: 1. DAFTAR AT (DAFTAR ASET TETAP PENAMBAHAN SESUAI SPJ - 19 KOLOM)
@@ -5009,18 +5152,10 @@
             "", "", "", ""
         ]);
 
-        // Tanda Tangan Sheet 1
-        const ppkNama = (filteredAstaps.find(a => a.ppk_nama && a.ppk_nama !== '-') || {}).ppk_nama || "Pejabat Pembuat Komitmen (PPK)";
-        const ppkNip = (filteredAstaps.find(a => a.ppk_nip && a.ppk_nip !== '-') || {}).ppk_nip || "19780101 200501 1 008";
-
-        sheet1Rows.push([""]);
-        sheet1Rows.push(["", "", "", "", "", "", "", "", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
-        sheet1Rows.push(["", "Mengetahui,", "", "", "", "", "", "", "", "", "", "", "", "Pengurus Barang Pengelola,"]);
-        sheet1Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "", "", "", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
-        sheet1Rows.push([""]);
-        sheet1Rows.push([""]);
-        sheet1Rows.push(["", "( " + ppkNama + " )", "", "", "", "", "", "", "", "", "", "", "", "( ................................................ )"]);
-        sheet1Rows.push(["", "NIP. " + ppkNip, "", "", "", "", "", "", "", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+        // Tanda Tangan Sheet 1 (Format Baku RSUD Koesnadi)
+        const s1SignStartRow = sheet1Rows.length;
+        const s1SignRows = buildKibSignatureRows(19, 13, ppkNama, ppkNip, signDate, 1);
+        s1SignRows.forEach(r => sheet1Rows.push(r));
 
         const wsSheet1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
         wsSheet1['!cols'] = [
@@ -5104,9 +5239,13 @@
             // Kolom 18 (KET.) berdiri sendiri, sudah di-merge vertikal dari row 5 s/d 7 di atas!
 
             // Baris Total Sheet 1 (JUMLAH TOTAL di Col 0 s/d Col 2)
-            { s: { r: s1TotalRowIdx, c: 0 }, e: { r: s1TotalRowIdx, c: 2 } }
+            { s: { r: s1TotalRowIdx, c: 0 }, e: { r: s1TotalRowIdx, c: 2 } },
+
+            // Tanda Tangan Sheet 1 (c1 s/d c5 kiri, c13 s/d c18 kanan)
+            ...getKibSignatureMerges(s1SignStartRow, 19, 13, 1, 5, 18)
         ];
         applyDaftarAtReportStyling(wsSheet1, sheet1Rows.length, 19, 5, 4, s1TotalRowIdx, categoryHeaderRowIndices, groupRanges);
+        applySignatureBlockStyling(wsSheet1, s1SignStartRow, 19);
         if (filterSheet === 'all' || filterSheet === 'sheet1') {
             const s1TabTitle = filterTw === 'all' ? "1. Daftar AT Tahunan" : ("1. Daftar AT " + twTabName);
             XLSX.utils.book_append_sheet(wb, wsSheet1, filterSheet === 'sheet1' ? ("Daftar AT " + (filterTw === 'all' ? 'Tahunan' : twTabName)) : s1TabTitle);
@@ -5280,15 +5419,10 @@
             ""
         ]);
 
-        // Tanda Tangan Sheet 2
-        sheet2Rows.push([""]);
-        sheet2Rows.push(["", "", "", "", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
-        sheet2Rows.push(["", "Mengetahui,", "", "", "", "", "", "", "", "Pengurus Barang Pengelola,"]);
-        sheet2Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
-        sheet2Rows.push([""]);
-        sheet2Rows.push([""]);
-        sheet2Rows.push(["", "( " + ppkNama + " )", "", "", "", "", "", "", "", "( ................................................ )"]);
-        sheet2Rows.push(["", "NIP. " + ppkNip, "", "", "", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+        // Tanda Tangan Sheet 2 (Format Baku RSUD Koesnadi)
+        const s2SignStartRow = sheet2Rows.length;
+        const s2SignRows = buildKibSignatureRows(14, 9, ppkNama, ppkNip, signDate, 1);
+        s2SignRows.forEach(r => sheet2Rows.push(r));
 
         const wsSheet2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
         wsSheet2['!cols'] = [
@@ -5361,19 +5495,12 @@
             // Baris Total Sheet 2 (JUMLAH TOTAL PENGURANGAN ASET TETAP di Col 0 s/d Col 10)
             { s: { r: s2TotalRowIdx, c: 0 }, e: { r: s2TotalRowIdx, c: 10 } },
 
-            // Tanda Tangan
-            { s: { r: s2TotalRowIdx + 2, c: 9 }, e: { r: s2TotalRowIdx + 2, c: 13 } },
-            { s: { r: s2TotalRowIdx + 3, c: 1 }, e: { r: s2TotalRowIdx + 3, c: 4 } },
-            { s: { r: s2TotalRowIdx + 3, c: 9 }, e: { r: s2TotalRowIdx + 3, c: 13 } },
-            { s: { r: s2TotalRowIdx + 4, c: 1 }, e: { r: s2TotalRowIdx + 4, c: 4 } },
-            { s: { r: s2TotalRowIdx + 4, c: 9 }, e: { r: s2TotalRowIdx + 4, c: 13 } },
-            { s: { r: s2TotalRowIdx + 7, c: 1 }, e: { r: s2TotalRowIdx + 7, c: 4 } },
-            { s: { r: s2TotalRowIdx + 7, c: 9 }, e: { r: s2TotalRowIdx + 7, c: 13 } },
-            { s: { r: s2TotalRowIdx + 8, c: 1 }, e: { r: s2TotalRowIdx + 8, c: 4 } },
-            { s: { r: s2TotalRowIdx + 8, c: 9 }, e: { r: s2TotalRowIdx + 8, c: 13 } }
+            // Tanda Tangan Sheet 2 (c1 s/d c4 kiri, c9 s/d c13 kanan)
+            ...getKibSignatureMerges(s2SignStartRow, 14, 9, 1, 4, 13)
         ];
 
         applyPenguranganAtReportStyling(wsSheet2, sheet2Rows.length, 14, 5, 3, s2TotalRowIdx, s2CategoryHeaderRowIndices, s2GroupRanges);
+        applySignatureBlockStyling(wsSheet2, s2SignStartRow, 14);
         if (filterSheet === 'all' || filterSheet === 'sheet2') {
             const s2TabTitle = filterTw === 'all' ? "2. Pengurangan AT Tahunan" : ("2. Pengurangan AT " + twTabName);
             XLSX.utils.book_append_sheet(wb, wsSheet2, filterSheet === 'sheet2' ? ("Pengurangan AT " + (filterTw === 'all' ? 'Tahunan' : twTabName)) : s2TabTitle);
@@ -5432,15 +5559,10 @@
             0, "", "", ""
         ]);
 
-        // Tanda Tangan Sheet 3
-        sheet3Rows.push([""]);
-        sheet3Rows.push(["", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
-        sheet3Rows.push(["", "Mengetahui,", "", "", "", "", "Pengurus Barang Pengelola,"]);
-        sheet3Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
-        sheet3Rows.push([""]);
-        sheet3Rows.push([""]);
-        sheet3Rows.push(["", "( ................................................ )", "", "", "", "", "( ................................................ )"]);
-        sheet3Rows.push(["", "NIP. 19780101 200501 1 008", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+        // Tanda Tangan Sheet 3 (Format Baku RSUD Koesnadi)
+        const s3SignStartRow = sheet3Rows.length;
+        const s3SignRows = buildKibSignatureRows(10, 6, ppkNama, ppkNip, signDate, 1);
+        s3SignRows.forEach(r => sheet3Rows.push(r));
 
         const wsSheet3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
         wsSheet3['!cols'] = [
@@ -5461,17 +5583,12 @@
             { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } },
             { s: { r: 3, c: 0 }, e: { r: 3, c: 9 } },
             { s: { r: s3TotalRowIdx, c: 0 }, e: { r: s3TotalRowIdx, c: 5 } },
-            { s: { r: s3TotalRowIdx + 2, c: 6 }, e: { r: s3TotalRowIdx + 2, c: 9 } },
-            { s: { r: s3TotalRowIdx + 3, c: 1 }, e: { r: s3TotalRowIdx + 3, c: 3 } },
-            { s: { r: s3TotalRowIdx + 3, c: 6 }, e: { r: s3TotalRowIdx + 3, c: 9 } },
-            { s: { r: s3TotalRowIdx + 4, c: 1 }, e: { r: s3TotalRowIdx + 4, c: 3 } },
-            { s: { r: s3TotalRowIdx + 4, c: 6 }, e: { r: s3TotalRowIdx + 4, c: 9 } },
-            { s: { r: s3TotalRowIdx + 7, c: 1 }, e: { r: s3TotalRowIdx + 7, c: 3 } },
-            { s: { r: s3TotalRowIdx + 7, c: 6 }, e: { r: s3TotalRowIdx + 7, c: 9 } },
-            { s: { r: s3TotalRowIdx + 8, c: 1 }, e: { r: s3TotalRowIdx + 8, c: 3 } },
-            { s: { r: s3TotalRowIdx + 8, c: 6 }, e: { r: s3TotalRowIdx + 8, c: 9 } }
+
+            // Tanda Tangan Sheet 3 (c1 s/d c3 kiri, c6 s/d c9 kanan)
+            ...getKibSignatureMerges(s3SignStartRow, 10, 6, 1, 3, 9)
         ];
         applyCleanReportStyling(wsSheet3, sheet3Rows.length, 10, 5, 1, s3TotalRowIdx);
+        applySignatureBlockStyling(wsSheet3, s3SignStartRow, 10);
         if (filterSheet === 'all' || filterSheet === 'sheet3') {
             XLSX.utils.book_append_sheet(wb, wsSheet3, filterSheet === 'sheet3' ? "Reklas RSDK" : "3. Reklas RSDK");
         }
@@ -5592,15 +5709,10 @@
             "Laporan Realisasi " + yearLabel
         ]);
 
-        // Tanda Tangan Sheet 4
-        sheet4Rows.push([""]);
-        sheet4Rows.push(["", "", "", "", "", "", "", "", "Bondowoso, " + new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})]);
-        sheet4Rows.push(["", "Mengetahui,", "", "", "", "", "", "", "Pengurus Barang Pengelola,"]);
-        sheet4Rows.push(["", "Pejabat Pembuat Komitmen (PPK)", "", "", "", "", "", "", "RSUD Dr. H. Koesnandi"]);
-        sheet4Rows.push([""]);
-        sheet4Rows.push([""]);
-        sheet4Rows.push(["", "( ................................................ )", "", "", "", "", "", "", "( ................................................ )"]);
-        sheet4Rows.push(["", "NIP. 19780101 200501 1 008", "", "", "", "", "", "", "NIP. 19850615 201001 2 015"]);
+        // Tanda Tangan Sheet 4 (Format Baku RSUD Koesnadi)
+        const s4SignStartRow = sheet4Rows.length;
+        const s4SignRows = buildKibSignatureRows(12, 8, ppkNama, ppkNip, signDate, 1);
+        s4SignRows.forEach(r => sheet4Rows.push(r));
 
         const wsSheet4 = XLSX.utils.aoa_to_sheet(sheet4Rows);
         wsSheet4['!cols'] = [
@@ -5630,17 +5742,12 @@
             { s: { r: 5, c: 9 }, e: { r: 5, c: 10 } },
             { s: { r: 5, c: 11 }, e: { r: 6, c: 11 } },
             { s: { r: s4TotalRowIdx, c: 0 }, e: { r: s4TotalRowIdx, c: 1 } },
-            { s: { r: s4TotalRowIdx + 2, c: 8 }, e: { r: s4TotalRowIdx + 2, c: 11 } },
-            { s: { r: s4TotalRowIdx + 3, c: 1 }, e: { r: s4TotalRowIdx + 3, c: 4 } },
-            { s: { r: s4TotalRowIdx + 3, c: 8 }, e: { r: s4TotalRowIdx + 3, c: 11 } },
-            { s: { r: s4TotalRowIdx + 4, c: 1 }, e: { r: s4TotalRowIdx + 4, c: 4 } },
-            { s: { r: s4TotalRowIdx + 4, c: 8 }, e: { r: s4TotalRowIdx + 4, c: 11 } },
-            { s: { r: s4TotalRowIdx + 7, c: 1 }, e: { r: s4TotalRowIdx + 7, c: 4 } },
-            { s: { r: s4TotalRowIdx + 7, c: 8 }, e: { r: s4TotalRowIdx + 7, c: 11 } },
-            { s: { r: s4TotalRowIdx + 8, c: 1 }, e: { r: s4TotalRowIdx + 8, c: 4 } },
-            { s: { r: s4TotalRowIdx + 8, c: 8 }, e: { r: s4TotalRowIdx + 8, c: 11 } }
+
+            // Tanda Tangan Sheet 4 (c1 s/d c4 kiri, c8 s/d c11 kanan)
+            ...getKibSignatureMerges(s4SignStartRow, 12, 8, 1, 4, 11)
         ];
         applyCleanReportStyling(wsSheet4, sheet4Rows.length, 12, 5, 2, s4TotalRowIdx);
+        applySignatureBlockStyling(wsSheet4, s4SignStartRow, 12);
         if (filterSheet === 'all' || filterSheet === 'sheet4') {
             XLSX.utils.book_append_sheet(wb, wsSheet4, filterSheet === 'sheet4' ? "RMB (excel) RSDK" : "4. RMB (excel) RSDK");
         }
@@ -6239,30 +6346,39 @@
                                         }
                                         this.selectedAstapDetail = { ...this.selectedAstapDetail };
 
-                                        this.astaps = this.astaps.map(a => {
-                                            if (a.id === this.selectedAstapDetail.id) {
-                                                const updatedRegs = (a.registers || []).filter(r => r.id !== reg.id);
-                                                let spec = (data && data.spesifikasi_json) ? data.spesifikasi_json : (a.spesifikasi_json || {});
-                                                if (typeof spec === 'string') {
-                                                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                                        // Jika master ASTAP otomatis dihapus (NIBAR terakhir habis)
+                                        // → hapus baris dari list tabel & tutup modal detail
+                                        if (data.astap_auto_deleted && data.astap_id) {
+                                            this.astaps = this.astaps.filter(a => a.id !== data.astap_id);
+                                            this.showDetailModal = false;
+                                            this.selectedAstapDetail = null;
+                                            this.showToast(data.message || 'Paket ASTAP otomatis dipindahkan ke Recycle Bin karena semua unit NIBAR telah dihapus.', 'success');
+                                        } else {
+                                            this.astaps = this.astaps.map(a => {
+                                                if (a.id === this.selectedAstapDetail.id) {
+                                                    const updatedRegs = (a.registers || []).filter(r => r.id !== reg.id);
+                                                    let spec = (data && data.spesifikasi_json) ? data.spesifikasi_json : (a.spesifikasi_json || {});
+                                                    if (typeof spec === 'string') {
+                                                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                                                    }
+                                                    if (data.stats) {
+                                                        spec.kondisi_stats = data.stats;
+                                                        spec.kondisi = data.stats.kondisi_dominan;
+                                                    }
+                                                    return {
+                                                        ...a,
+                                                        jumlah_volume: updatedRegs.length,
+                                                        volume_satuan: updatedRegs.length + ' Aset',
+                                                        kondisi_barang: data.stats ? data.stats.kondisi_dominan : a.kondisi_barang,
+                                                        spesifikasi_json: spec,
+                                                        registers: updatedRegs
+                                                    };
                                                 }
-                                                if (data.stats) {
-                                                    spec.kondisi_stats = data.stats;
-                                                    spec.kondisi = data.stats.kondisi_dominan;
-                                                }
-                                                return {
-                                                    ...a,
-                                                    jumlah_volume: updatedRegs.length,
-                                                    volume_satuan: updatedRegs.length + ' Aset',
-                                                    kondisi_barang: data.stats ? data.stats.kondisi_dominan : a.kondisi_barang,
-                                                    spesifikasi_json: spec,
-                                                    registers: updatedRegs
-                                                };
-                                            }
-                                            return a;
-                                        });
+                                                return a;
+                                            });
+                                            this.showToast(data.message || 'Unit register NIBAR berhasil dipindahkan ke Recycle Bin!', 'success');
+                                        }
                                     }
-                                    this.showToast(data.message || 'Unit register NIBAR berhasil dipindahkan ke Recycle Bin!', 'success');
                                 } else {
                                     this.showToast(data.message || '⚠️ Gagal menghapus unit NIBAR.', 'error');
                                 }
