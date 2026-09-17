@@ -503,6 +503,27 @@ Route::middleware('auth')->group(function () {
                 ];
             })->values()->toArray() : [];
 
+            $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? ($spec['jaringan_dokumen_no'] ?? null)));
+            $noPabrik = $spec['no_pabrik'] ?? ($spec['mesin_nomor_pabrik'] ?? null);
+            $noMesin = $spec['no_mesin'] ?? ($spec['mesin_nomor_mesin'] ?? ($spec['mesin'] ?? null));
+            $noRangka = $spec['no_rangka'] ?? ($spec['mesin_nomor_rangka'] ?? ($spec['rangka'] ?? null));
+            $noPolisi = $spec['no_polisi'] ?? ($spec['mesin_nomor_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? null)));
+
+            $dokumenIdentitas = '-';
+            if (!empty($sertifikatNo) && $sertifikatNo !== '-') {
+                $dokumenIdentitas = $sertifikatNo;
+            } elseif (!empty($noPabrik) && $noPabrik !== '-') {
+                $dokumenIdentitas = $noPabrik;
+            } elseif (!empty($noMesin) && $noMesin !== '-') {
+                $dokumenIdentitas = $noMesin;
+            } elseif (!empty($noRangka) && $noRangka !== '-') {
+                $dokumenIdentitas = $noRangka;
+            } elseif (!empty($noPolisi) && $noPolisi !== '-') {
+                $dokumenIdentitas = $noPolisi;
+            } elseif (!empty($spec['buku_nomor_isbn']) && $spec['buku_nomor_isbn'] !== '-') {
+                $dokumenIdentitas = $spec['buku_nomor_isbn'];
+            }
+
             return [
                 'id' => $a->id,
                 'is_deleted' => 1,
@@ -529,11 +550,12 @@ Route::middleware('auth')->group(function () {
                 'kondisi' => $firstReg ? ($firstReg->kondisi ?: 'RB') : ($spec['kondisi'] ?? 'RB'),
                 'merk' => $spec['merk'] ?? '-',
                 'type' => $spec['type'] ?? '-',
-                'no_pabrik' => $spec['no_pabrik'] ?? ($firstReg?->nibar ?: '-'),
-                'no_mesin' => $spec['no_mesin'] ?? ($spec['mesin'] ?? '-'),
-                'no_rangka' => $spec['no_rangka'] ?? ($spec['rangka'] ?? '-'),
-                'no_polisi' => $spec['no_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? '-')),
-                'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? '-'),
+                'dokumen_identitas' => $dokumenIdentitas,
+                'no_pabrik' => $noPabrik ?: '-',
+                'no_mesin' => $noMesin ?: '-',
+                'no_rangka' => $noRangka ?: '-',
+                'no_polisi' => $noPolisi ?: '-',
+                'sertifikat_nomor' => $sertifikatNo ?: '-',
                 'spesifikasi_json' => $spec,
                 'registers' => $registersMapped
             ];
@@ -545,6 +567,27 @@ Route::middleware('auth')->group(function () {
             $deletedAt = $r->deleted_at ? \Carbon\Carbon::parse($r->deleted_at) : null;
             $deletedTw = $deletedAt ? ('TW ' . (intdiv($deletedAt->month - 1, 3) + 1)) : ($astap?->triwulan ?: 'TW I');
             $hargaSatuan = (float) ($astap?->harga_satuan ?: ($astap && $astap->jumlah_volume > 0 ? ($astap->total_realisasi / $astap->jumlah_volume) : 0));
+
+            $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? ($spec['jaringan_dokumen_no'] ?? null)));
+            $noPabrik = $spec['no_pabrik'] ?? ($spec['mesin_nomor_pabrik'] ?? null);
+            $noMesin = $spec['no_mesin'] ?? ($spec['mesin_nomor_mesin'] ?? ($spec['mesin'] ?? null));
+            $noRangka = $spec['no_rangka'] ?? ($spec['mesin_nomor_rangka'] ?? ($spec['rangka'] ?? null));
+            $noPolisi = $spec['no_polisi'] ?? ($spec['mesin_nomor_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? null)));
+
+            $dokumenIdentitas = '-';
+            if (!empty($sertifikatNo) && $sertifikatNo !== '-') {
+                $dokumenIdentitas = $sertifikatNo;
+            } elseif (!empty($noPabrik) && $noPabrik !== '-') {
+                $dokumenIdentitas = $noPabrik;
+            } elseif (!empty($noMesin) && $noMesin !== '-') {
+                $dokumenIdentitas = $noMesin;
+            } elseif (!empty($noRangka) && $noRangka !== '-') {
+                $dokumenIdentitas = $noRangka;
+            } elseif (!empty($noPolisi) && $noPolisi !== '-') {
+                $dokumenIdentitas = $noPolisi;
+            } elseif (!empty($spec['buku_nomor_isbn']) && $spec['buku_nomor_isbn'] !== '-') {
+                $dokumenIdentitas = $spec['buku_nomor_isbn'];
+            }
 
             return [
                 'id' => 'reg_' . $r->id,
@@ -572,11 +615,12 @@ Route::middleware('auth')->group(function () {
                 'kondisi' => $r->kondisi ?: 'RB',
                 'merk' => $spec['merk'] ?? '-',
                 'type' => $spec['type'] ?? '-',
-                'no_pabrik' => $r->nibar ?: ($r->no_register ?: '-'),
-                'no_mesin' => $spec['no_mesin'] ?? ($spec['mesin'] ?? '-'),
-                'no_rangka' => $spec['no_rangka'] ?? ($spec['rangka'] ?? '-'),
-                'no_polisi' => $spec['no_polisi'] ?? ($spec['polisi'] ?? ($spec['nopol'] ?? '-')),
-                'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? '-'),
+                'dokumen_identitas' => $dokumenIdentitas,
+                'no_pabrik' => $noPabrik ?: '-',
+                'no_mesin' => $noMesin ?: '-',
+                'no_rangka' => $noRangka ?: '-',
+                'no_polisi' => $noPolisi ?: '-',
+                'sertifikat_nomor' => $sertifikatNo ?: '-',
                 'spesifikasi_json' => $spec,
                 'registers' => [
                     [

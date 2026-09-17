@@ -4493,26 +4493,17 @@
                     fontColor = "000000";
                     fontSize = 9.5;
 
-                    const grp = (groupRanges && groupRanges.length > 0) ? groupRanges.find(g => r >= g.start && r <= g.end) : null;
-                    const isGroupStart = grp ? (r === grp.start) : true;
-                    const isGroupEnd = grp ? (r === grp.end) : true;
-
-                    border = {
-                        left: { style: "thin", color: { rgb: "000000" } },
-                        right: { style: "thin", color: { rgb: "000000" } },
-                        top: isGroupStart ? { style: "thin", color: { rgb: "000000" } } : { style: "dashed", color: { rgb: "000000" } },
-                        bottom: isGroupEnd ? { style: "thin", color: { rgb: "000000" } } : { style: "dashed", color: { rgb: "000000" } }
-                    };
+                    border = thinBlackBorder;
 
                     if (c === 0) {
                         align = "center"; // No. Urut
                     } else if (typeof cell.v === 'number') {
                         align = "right";
                         numFmt = (c === 11) ? "#,##0" : "#,##0.00";
-                    } else if (c === 1 || c === 2 || c === 6 || c === 7 || c === 8 || c === 9 || c === 10) {
-                        align = "center"; // Kode 108, Register, Bahan, Asal Perolehan, Tahun, Satuan, Keadaan
+                    } else if (c === 1 || c === 2 || c === 5 || c === 6 || c === 7 || c === 8 || c === 9 || c === 10) {
+                        align = "center"; // Kode 108, Register, No Sertifikat/Pabrik/Mesin, Bahan, Asal Perolehan, Tahun, Satuan, Keadaan
                     } else {
-                        align = "left"; // Nama Barang, Merk/Type, No Sertifikat/Pabrik/Mesin, Keterangan
+                        align = "left"; // Nama Barang, Merk/Type, Keterangan
                     }
                 }
                 // 7. AREA TANDA TANGAN (Row > totalRowIndex)
@@ -5189,20 +5180,19 @@
 
             if (catItems.length === 0) return;
 
-            // Baris header judul kategori aset - Beri garis utuh & abu-abu tanpa di-merge vertikal/horizontal
+            // Baris header judul kategori aset - Diperlebar (merge Kolom 0 s/d 5) agar terbaca jelas & tidak terpotong
             const catRow = new Array(14).fill("");
-            catRow[0] = cat.code + " : " + cat.label.toUpperCase();
+            catRow[0] = "  " + cat.code + " : " + cat.label.toUpperCase();
             s2CategoryHeaderRowIndices.push(sheet2Rows.length);
             sheet2Rows.push(catRow);
 
             catItems.forEach(item => {
-                s2ItemCounter++;
                 const groupStartRow = sheet2Rows.length;
                 const registers = (item.registers && item.registers.length > 0) ? item.registers : null;
 
                 if (registers && registers.length > 0) {
-                    registers.forEach((reg, regIdx) => {
-                        const isFirst = regIdx === 0;
+                    registers.forEach((reg) => {
+                        s2ItemCounter++;
                         const regNibar = reg.nibar || reg.no_register || "-";
                         const regKondisi = reg.kondisi || item.kondisi || "RB";
                         const vol = 1;
@@ -5211,13 +5201,19 @@
                         totalS2Volume += vol;
                         totalS2Nilai += nilai;
 
+                        // Dokumen identitas: Sertifikat, No Pabrik, No Mesin, No Rangka, No Polisi, ISBN. NEVER display NIBAR in Kolom 6!
+                        let docIdentitas = item.dokumen_identitas || item.sertifikat_nomor || item.no_pabrik || item.no_mesin || "-";
+                        if (docIdentitas === regNibar || (typeof docIdentitas === 'string' && docIdentitas.length > 30 && docIdentitas.includes('.'))) {
+                            docIdentitas = "-";
+                        }
+
                         sheet2Rows.push([
-                            isFirst ? s2ItemCounter : "",                                                   // 1. No. Urut
+                            s2ItemCounter,                                                                  // 1. No. Urut (Berurutan 1, 2, 3...)
                             item.kode_barang || "-",                                                        // 2. Kode Barang 108
                             regNibar,                                                                       // 3. Register
                             item.nama_barang || "-",                                                        // 4. Nama/Jenis Barang
                             item.merk || item.type || "-",                                                  // 5. Merk/Type
-                            item.no_pabrik || item.sertifikat_nomor || item.no_mesin || "-",                // 6. No.Sertifikat No. Pabrik No. Mesin
+                            docIdentitas,                                                                   // 6. No.Sertifikat No. Pabrik No. Mesin
                             item.bahan || "-",                                                              // 7. Bahan
                             item.asal_usul || "Pembelian BLUD",                                             // 8. Asal/Cara Perolehan
                             item.tahun_perolehan || yearLabel,                                              // 9. Tahun Beli/Perolehan
@@ -5229,18 +5225,25 @@
                         ]);
                     });
                 } else {
+                    s2ItemCounter++;
                     const vol = item.jumlah_volume || 1;
                     const nilai = item.total_realisasi_num || (item.harga_satuan * vol) || 0;
                     totalS2Volume += vol;
                     totalS2Nilai += nilai;
 
+                    const itemNibar = item.nibar || item.no_register || "-";
+                    let docIdentitas = item.dokumen_identitas || item.sertifikat_nomor || item.no_pabrik || item.no_mesin || "-";
+                    if (docIdentitas === itemNibar || (typeof docIdentitas === 'string' && docIdentitas.length > 30 && docIdentitas.includes('.'))) {
+                        docIdentitas = "-";
+                    }
+
                     sheet2Rows.push([
-                        s2ItemCounter,                                                                  // 1. No. Urut
+                        s2ItemCounter,                                                                  // 1. No. Urut (Berurutan 1, 2, 3...)
                         item.kode_barang || "-",                                                        // 2. Kode Barang 108
-                        item.no_pabrik || "-",                                                          // 3. Register
+                        itemNibar,                                                                      // 3. Register
                         item.nama_barang || "-",                                                        // 4. Nama/Jenis Barang
                         item.merk || item.type || "-",                                                  // 5. Merk/Type
-                        item.no_pabrik || item.sertifikat_nomor || item.no_mesin || "-",                // 6. No.Sertifikat No. Pabrik No. Mesin
+                        docIdentitas,                                                                   // 6. No.Sertifikat No. Pabrik No. Mesin
                         item.bahan || "-",                                                              // 7. Bahan
                         item.asal_usul || "Pembelian BLUD",                                             // 8. Asal/Cara Perolehan
                         item.tahun_perolehan || yearLabel,                                              // 9. Tahun Beli/Perolehan
@@ -5280,10 +5283,10 @@
         wsSheet2['!cols'] = [
             { wch: 6 },  // 1. No. Urut (c=0)
             { wch: 22 }, // 2. Kode Barang 108 (c=1)
-            { wch: 24 }, // 3. Register / NIBAR (c=2)
-            { wch: 34 }, // 4. Nama/Jenis Barang (c=3)
+            { wch: 48 }, // 3. Register / NIBAR (c=2) - Lebar diperbesar agar NIBAR 45 digit muat tanpa terpotong
+            { wch: 38 }, // 4. Nama/Jenis Barang (c=3) - Lebar diperbesar agar nama barang panjang terbaca rapi
             { wch: 20 }, // 5. Merk/Type (c=4)
-            { wch: 26 }, // 6. No Sertifikat/Pabrik/Mesin (c=5)
+            { wch: 30 }, // 6. No Sertifikat/Pabrik/Mesin (c=5) - Lebar diperbesar untuk nomor dokumen
             { wch: 16 }, // 7. Bahan (c=6)
             { wch: 20 }, // 8. Asal/Cara Perolehan (c=7)
             { wch: 14 }, // 9. Tahun Beli/Perolehan (c=8)
@@ -5291,7 +5294,7 @@
             { wch: 14 }, // 11. Keadaan Barang (B/KB/RB) (c=10)
             { wch: 12 }, // 12. Jumlah Barang (c=11)
             { wch: 22 }, // 13. Jumlah Nilai (c=12)
-            { wch: 26 }  // 14. Keterangan (c=13)
+            { wch: 28 }  // 14. Keterangan (c=13) - Lebar diperbesar untuk keterangan penghapusan
         ];
 
         const s2RowHeights = [
@@ -5340,6 +5343,9 @@
             { s: { r: 5, c: 10 }, e: { r: 6, c: 10 } }, // 11. Keadaan Barang (B/KB/RB) (vertical)
             { s: { r: 5, c: 11 }, e: { r: 5, c: 12 } }, // Jumlah (horizontal merge Col 11 s/d 12 di Row 5)
             { s: { r: 5, c: 13 }, e: { r: 6, c: 13 } }, // 14. Keterangan (vertical)
+
+            // Baris Judul Kategori Aset (Merge Kolom 0 s/d 5 agar teks kategori lebar dan tidak terpotong)
+            ...s2CategoryHeaderRowIndices.map(catRowIdx => ({ s: { r: catRowIdx, c: 0 }, e: { r: catRowIdx, c: 5 } })),
 
             // Baris Total Sheet 2 (JUMLAH TOTAL PENGURANGAN ASET TETAP di Col 0 s/d Col 10)
             { s: { r: s2TotalRowIdx, c: 0 }, e: { r: s2TotalRowIdx, c: 10 } },
