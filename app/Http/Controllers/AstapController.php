@@ -226,10 +226,11 @@ class AstapController extends Controller
                     })->values()->map(function($r) {
                         return [
                             'id' => $r->id,
+                            'unit_id' => $r->unit_id,
                             'no_register_int' => $r->no_register_int ?: intval(substr($r->nibar ?? '', -7)),
                             'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
-                            'ruang_pemegang' => $r->ruang_pemegang,
+                            'ruang_pemegang' => $r->ruang_pemegang ?: ($r->unit?->nama ?? null),
                             'kondisi' => $r->kondisi,
                             'status_mutasi' => $r->status_mutasi,
                             'qr_code_path' => $r->qr_code_path,

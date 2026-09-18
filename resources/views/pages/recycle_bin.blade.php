@@ -18,7 +18,7 @@
                         </div>
                         <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Pusat Data Terhapus</h1>
                         <p class="text-slate-400 text-xs md:text-sm mt-1 max-w-2xl leading-relaxed">
-                            Arsip terpusat seluruh data transaksi dan inventaris aset SIMAT yang berlabel terhapus (<code class="text-rose-300 font-mono font-bold">is_deleted = 1</code>). Anda dapat meninjau jejak audit penghapus, memulihkan data aktif, atau memusnahkannya secara permanen.
+                            Arsip terpusat seluruh data transaksi dan inventaris aset SIMAT yang telah dinonaktifkan atau dihapus sementara. Anda dapat meninjau jejak audit penghapusan, memulihkan data aktif ke sistem, atau memusnahkannya secara permanen.
                         </p>
                     </div>
 
@@ -702,7 +702,7 @@
                                 ⚠️
                             </div>
                             <div class="flex-1 text-xs space-y-1">
-                                <p class="font-extrabold text-red-300 text-sm">Status Data: Terhapus (Label is_deleted = 1)</p>
+                                <p class="font-extrabold text-red-300 text-sm">Status Data: Terhapus Sementara</p>
                                 <p class="text-slate-300">Dihapus oleh: <strong class="text-white" x-text="selectedItem.deleted_by"></strong></p>
                                 <p class="text-slate-400 text-[11px]">Waktu Penghapusan: <span class="font-mono text-slate-200" x-text="selectedItem.deleted_at"></span></p>
                             </div>
@@ -1070,14 +1070,14 @@
                     const bNomor = item.nibar || item.kode || item.nama || 'Data';
                     const confirmMsg = targetMod === 'nibar'
                         ? `Apakah Anda yakin ingin mengembalikan register NIBAR ${bNomor} ke paket pengadaan aset induk? Volume barang akan bertambah +1 unit.`
-                        : `Apakah Anda yakin ingin mengembalikan ${bNomor} ke status aktif (label 0)? Data akan kembali muncul di katalog operasional.`;
+                        : `Apakah Anda yakin ingin mengembalikan ${bNomor} ke status aktif? Data akan kembali muncul di katalog operasional.`;
 
                     this.askConfirmation({
-                        title: '♻️ Konfirmasi Pulihkan Data',
+                        title: 'Konfirmasi Pulihkan Data',
                         message: confirmMsg,
                         itemName: bNomor,
                         type: 'info',
-                        btnText: '♻️ Ya, Pulihkan Data',
+                        btnText: 'Pulihkan Data',
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch(`/recycle-bin/${targetMod}/${item.id}/restore`, {
@@ -1112,11 +1112,11 @@
                     const entityName = targetMod === 'nibar' ? 'register NIBAR' : 'data';
 
                     this.askConfirmation({
-                        title: '♻️ Konfirmasi Pulihkan Massal',
+                        title: 'Konfirmasi Pulihkan Massal',
                         message: `Apakah Anda yakin ingin memulihkan ${count} ${entityName} terpilih kembali ke status aktif?`,
                         itemName: `${count} Data Terpilih`,
                         type: 'info',
-                        btnText: '♻️ Pulihkan Semua Terpilih',
+                        btnText: 'Pulihkan Semua Terpilih',
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch(`/recycle-bin/${targetMod}/bulk-restore`, {
@@ -1157,13 +1157,13 @@
                             const totalAsetCount = unitsWithAssets.reduce((sum, u) => sum + Number(u.total_aset), 0);
                             const unitNames = unitsWithAssets.map(u => u.nama).slice(0, 3).join(', ') + (unitsWithAssets.length > 3 ? '...' : '');
                             this.askConfirmation({
-                                title: '🚫 Penghapusan Massal Ditolak!',
+                                title: 'Penghapusan Massal Ditolak',
                                 message: `Terdapat ${unitsWithAssets.length} unit terpilih (${unitNames}) yang masih menampung total ${totalAsetCount} aset aktif di database RSUD. Unit yang memiliki aset tidak dapat dihapus.`,
                                 itemName: `${unitsWithAssets.length} Unit Terpilih Masih Memiliki Aset (Total ${totalAsetCount} Aset)`,
                                 type: 'danger',
                                 isBlocked: true,
                                 actionUrl: '/mutasi-aset',
-                                actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                                actionText: 'Ajukan Mutasi Aset',
                                 assetWarning: `Demi integritas data aset RSUD Koesnadi, Anda tidak dapat menghapus unit yang masih memegang inventaris barang. Silakan batalkan centang pada unit yang memiliki aset, atau pulihkan unit tersebut dan ajukan mutasi aset ke ruangan lain terlebih dahulu.`,
                                 btnText: null,
                                 onConfirm: null
@@ -1177,13 +1177,13 @@
                             const totalBastCount = unitsWithBasts.reduce((sum, u) => sum + Number(u.total_bast), 0);
                             const unitNames = unitsWithBasts.map(u => u.nama).slice(0, 3).join(', ') + (unitsWithBasts.length > 3 ? '...' : '');
                             this.askConfirmation({
-                                title: '📜 Proteksi Audit: Penghapusan Massal Ditolak!',
+                                title: 'Proteksi Audit: Penghapusan Massal Ditolak',
                                 message: `Terdapat ${unitsWithBasts.length} unit terpilih (${unitNames}) yang memiliki total ${totalBastCount} dokumen riwayat BAST Distribusi resmi.`,
                                 itemName: `${unitsWithBasts.length} Unit Terpilih Memiliki Riwayat BAST Resmi (${totalBastCount} Dokumen)`,
                                 type: 'danger',
                                 isBlocked: true,
                                 actionUrl: '/berita-acara',
-                                actionText: '📜 Buka Arsip Berita Acara (BAST)',
+                                actionText: 'Buka Arsip BAST',
                                 assetWarning: `Sesuai standar audit BPK dan Inspektorat, dokumen Berita Acara Serah Terima (BAST) adalah bukti legalitas penyerahan barang yang dilindungi undang-undang dan tidak boleh dihapus dari sistem. Unit-unit ini hanya dapat dinonaktifkan/dipulihkan, tidak boleh dimusnahkan permanen dari database.`,
                                 btnText: null,
                                 onConfirm: null
@@ -1192,7 +1192,7 @@
                         }
                     }
 
-                    let title = '🚨 Konfirmasi Hapus Permanen Massal';
+                    let title = 'Konfirmasi Hapus Permanen Massal';
                     let message = `PERINGATAN: Apakah Anda yakin ingin MENGHAPUS PERMANEN ${count} data terpilih dari database? Tindakan ini TIDAK DAPAT DIBATALKAN!`;
                     let itemName = `${count} Data Terpilih`;
 
@@ -1202,7 +1202,7 @@
                         itemName: itemName,
                         type: 'danger',
                         isBlocked: false,
-                        btnText: '💥 Ya, Hapus Permanen Sekarang',
+                        btnText: 'Hapus Permanen Sekarang',
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch(`/recycle-bin/${targetMod}/bulk-force-delete`, {
@@ -1238,13 +1238,13 @@
                     // JIKA RUANGAN / UNIT MEMILIKI ASET: BLOKIR PENGHAPUSAN DAN TAMPILKAN LINK AJUKAN MUTASI
                     if (targetMod === 'unit' && Number(item.total_aset) > 0) {
                         this.askConfirmation({
-                            title: '🚫 Unit Tidak Dapat Dihapus Permanen!',
-                            message: `Ruangan "${item.nama}" saat ini TIDAK DAPAT DIHAPUS PERMANEN karena masih tercatat menampung ${item.total_aset} barang inventaris/aset di database RSUD.`,
-                            itemName: `${item.nama} (${item.kode || 'UNIT'}) — ⚠️ Masih Memiliki ${item.total_aset} Aset Aktif`,
+                            title: 'Unit Tidak Dapat Dihapus Permanen',
+                            message: `Ruangan "${item.nama}" saat ini tidak dapat dihapus permanen karena masih tercatat menampung ${item.total_aset} barang inventaris/aset di database RSUD.`,
+                            itemName: `${item.nama} (${item.kode || 'UNIT'}) — Memiliki ${item.total_aset} Aset Aktif`,
                             type: 'danger',
                             isBlocked: true,
                             actionUrl: '/mutasi-aset',
-                            actionText: '🔄 Ajukan Mutasi Barang Terlebih Dahulu',
+                            actionText: 'Ajukan Mutasi Aset',
                             assetWarning: `Sistem mendeteksi bahwa ruangan ini masih tercatat menampung ${item.total_aset} aset aktif. Demi akuntabilitas inventaris RSUD Koesnadi, unit yang memiliki aset tidak diperkenankan untuk dihapus permanen. Silakan pulihkan unit ini lalu ajukan mutasi aset ke ruangan lain terlebih dahulu sampai ruangan ini kosong (0 aset).`,
                             btnText: null,
                             onConfirm: null
@@ -1255,13 +1255,13 @@
                     // JIKA RUANGAN / UNIT MEMILIKI RIWAYAT BAST DISTRIBUSI: BLOKIR PENGHAPUSAN DEMI KEPATUHAN AUDIT BPK
                     if (targetMod === 'unit' && Number(item.total_bast) > 0) {
                         this.askConfirmation({
-                            title: '📜 Proteksi Audit: Unit Tidak Dapat Dihapus Permanen!',
-                            message: `Ruangan "${item.nama}" TIDAK DAPAT DIHAPUS PERMANEN karena memiliki ${item.total_bast} riwayat dokumen Berita Acara Serah Terima (BAST) Distribusi resmi.`,
-                            itemName: `${item.nama} (${item.kode || 'UNIT'}) — 📜 Memiliki ${item.total_bast} Dokumen BAST Resmi`,
+                            title: 'Proteksi Audit: Unit Tidak Dapat Dihapus Permanen',
+                            message: `Ruangan "${item.nama}" tidak dapat dihapus permanen karena memiliki ${item.total_bast} riwayat dokumen Berita Acara Serah Terima (BAST) Distribusi resmi.`,
+                            itemName: `${item.nama} (${item.kode || 'UNIT'}) — Memiliki ${item.total_bast} Dokumen BAST Resmi`,
                             type: 'danger',
                             isBlocked: true,
                             actionUrl: '/berita-acara',
-                            actionText: '📜 Buka Arsip Berita Acara (BAST)',
+                            actionText: 'Buka Arsip BAST',
                             assetWarning: `Dokumen Berita Acara Serah Terima (BAST) bernomor resmi dilindungi untuk kepentingan audit berkala BPK & Inspektorat sebagai bukti sah penyerahan barang milik daerah. Unit yang pernah memiliki transaksi BAST tidak boleh dihapus permanen dari database. Silakan pulihkan unit ini ke katalog aktif jika diperlukan.`,
                             btnText: null,
                             onConfirm: null
@@ -1270,11 +1270,11 @@
                     }
 
                     let bNomor = item.nibar || item.kode || item.nama || 'Item';
-                    let title = targetMod === 'nibar' ? '🚨 Konfirmasi Hapus Permanen NIBAR' : '🚨 Konfirmasi HAPUS PERMANEN';
+                    let title = targetMod === 'nibar' ? 'Konfirmasi Hapus Permanen NIBAR' : 'Konfirmasi Hapus Permanen';
                     let message = targetMod === 'nibar'
                         ? `TINDAKAN BERBAHAYA: Register NIBAR "${bNomor}" akan dimusnahkan secara PERMANEN dari database RSUD. Tindakan ini TIDAK DAPAT DIBATALKAN!`
                         : 'TINDAKAN BERBAHAYA: Data ini akan dihapus secara PERMANEN dari database dan seluruh relasinya akan hilang. Tindakan ini TIDAK DAPAT DIBATALKAN!';
-                    let btnText = '💥 Ya, Hapus Permanen Sekarang';
+                    let btnText = 'Hapus Permanen Sekarang';
 
                     this.askConfirmation({
                         title: title,

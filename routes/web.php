@@ -431,10 +431,11 @@ Route::middleware('auth')->group(function () {
                     })->values()->map(function($r) {
                         return [
                             'id' => $r->id,
+                            'unit_id' => $r->unit_id,
                             'no_register_int' => $r->no_register_int ?: intval(substr($r->nibar ?? '', -7)),
                             'no_register' => $r->nibar ?: $r->no_register,
                             'nibar' => $r->nibar,
-                            'ruang_pemegang' => $r->ruang_pemegang,
+                            'ruang_pemegang' => $r->ruang_pemegang ?: ($r->unit?->nama ?? null),
                             'kondisi' => $r->kondisi,
                             'status_mutasi' => $r->status_mutasi,
                             'qr_code_path' => $r->qr_code_path,
@@ -3764,36 +3765,67 @@ Route::middleware('auth')->group(function () {
         })->name('astap.update');
 
         Route::delete('/astap/{id}', function ($id) {
-            $astap = \App\Models\Astap::find($id);
-            if ($astap) {
-                $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
-                $tahun = $astap->tahun_perolehan ?: date('Y');
-                $vol = $astap->jumlah_volume . ' ' . ($astap->satuan ?: 'Unit');
-                $user = auth()->user();
-                $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
-
-                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $deleterName, $user) {
-                    $astap->softDelete();
-                    $astap->registers()->update([
-                        'is_deleted'    => 1,
-                        'deleted_by'    => $deleterName,
-                        'deleted_by_id' => $user?->id,
-                        'deleted_at'    => now(),
-                    ]);
-                });
-
-                // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
-                try {
-                    \App\Services\NotificationService::sendToAdminAndMaster(
-                        "Aset Dihapus (Soft Delete): {$namaBarang}",
-                        "{$vol} • {$tahun}",
-                        'astap',
-                        route('astap.index')
-                    );
-                } catch (\Throwable $e) {
-                    \Log::warning("Gagal kirim notif astap delete: " . $e->getMessage());
-                }
+            $astap = \App\Models\Astap::with('registers.unit')->find($id);
+            if (!$astap) {
+                return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
             }
+
+            // Validasi Proteksi Penempatan Ruangan (Unit / Paviliun):
+            // Aset yang masih ditempatkan di ruangan unit/paviliun tidak boleh dihapus langsung. Harus dimutasi terlebih dahulu.
+            $unplacedNames = ['', '-', 'Belum Ditempatkan', 'Belum Ditempatkan / Di Gudang', 'Belum Ditempatkan / Di Gudang Aset', 'Gudang Aset', 'Gudang Perbekalan', 'Gudang Aset Utama / Belum Ditempatkan'];
+            $placedRegisters = $astap->registers->filter(function ($reg) use ($unplacedNames) {
+                if ($reg->is_deleted == 1) return false;
+                if (!empty($reg->unit_id)) return true;
+                $ruang = trim((string)($reg->ruang_pemegang ?: ($reg->unit?->nama ?? '')));
+                if ($ruang !== '' && !in_array($ruang, $unplacedNames, true)) {
+                    return true;
+                }
+                return false;
+            });
+
+            if ($placedRegisters->count() > 0) {
+                $uniqueRooms = $placedRegisters->map(function($r) {
+                    return trim((string)($r->ruang_pemegang ?: ($r->unit?->nama ?? '')));
+                })->filter()->unique()->values()->take(3)->implode(', ');
+                $count = $placedRegisters->count();
+                $nilaiFmt = 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.');
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'action_url' => '/mutasi-aset',
+                    'action_text' => 'Ajukan Mutasi Aset',
+                    'message' => "Aset \"{$astap->nama_barang}\" saat ini belum dapat dihapus karena masih menampung {$count} barang inventaris/aset ({$nilaiFmt}) di database RSUD. Seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong."
+                ], 422);
+            }
+
+            $namaBarang = $astap->nama_barang ?? 'Aset Tetap';
+            $tahun = $astap->tahun_perolehan ?: date('Y');
+            $vol = $astap->jumlah_volume . ' ' . ($astap->satuan ?: 'Unit');
+            $user = auth()->user();
+            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+
+            \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $deleterName, $user) {
+                $astap->softDelete();
+                $astap->registers()->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $user?->id,
+                    'deleted_at'    => now(),
+                ]);
+            });
+
+            // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
+            try {
+                \App\Services\NotificationService::sendToAdminAndMaster(
+                    "Aset Dihapus (Soft Delete): {$namaBarang}",
+                    "{$vol} • {$tahun}",
+                    'astap',
+                    route('astap.index')
+                );
+            } catch (\Throwable $e) {
+                \Log::warning("Gagal kirim notif astap delete: " . $e->getMessage());
+            }
+
             session()->flash('success', 'Data ASTAP berhasil dipindahkan ke tong sampah.');
             return response()->json(['success' => true, 'message' => 'Data ASTAP berhasil dipindahkan ke tong sampah.']);
         })->name('astap.destroy');
@@ -3883,9 +3915,26 @@ Route::middleware('auth')->group(function () {
             if (!in_array(auth()->user()->role ?? '', ['master_admin', 'admin'])) {
                 return response()->json(['success' => false, 'message' => 'Anda tidak memiliki hak akses untuk menghapus register ASTAP.'], 403);
             }
-            $reg = \App\Models\AstapRegister::with('astap.registers')->find($id);
+            $reg = \App\Models\AstapRegister::with(['astap.registers', 'unit'])->find($id);
             if ($reg) {
-                // 1. Validasi Proteksi: Cek apakah NIBAR pernah didistribusikan atau dimutasi
+                // 1. Validasi Proteksi Penempatan: Cek apakah masih aktif ditempatkan di Unit / Paviliun
+                $unplacedNames = ['', '-', 'Belum Ditempatkan', 'Belum Ditempatkan / Di Gudang', 'Belum Ditempatkan / Di Gudang Aset', 'Gudang Aset', 'Gudang Perbekalan', 'Gudang Aset Utama / Belum Ditempatkan'];
+                $ruang = trim((string)($reg->ruang_pemegang ?: ($reg->unit?->nama ?? '')));
+                $isPlaced = !empty($reg->unit_id) || ($ruang !== '' && !in_array($ruang, $unplacedNames, true));
+
+                if ($isPlaced) {
+                    $room = $ruang ?: 'Unit / Paviliun RSUD';
+                    $nibarStr = $reg->nibar ?: $reg->no_register;
+                    return response()->json([
+                        'success' => false,
+                        'is_blocked' => true,
+                        'action_url' => '/mutasi-aset',
+                        'action_text' => 'Ajukan Mutasi Aset',
+                        'message' => "Unit register NIBAR \"{$nibarStr}\" saat ini belum dapat dihapus karena masih aktif ditempatkan di ruangan \"{$room}\" di database RSUD. Demi akuntabilitas aset RSUD Koesnadi, seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong.",
+                    ], 422);
+                }
+
+                // 2. Validasi Proteksi Riwayat Transaksi: Cek apakah NIBAR pernah didistribusikan atau dimutasi
                 $hasDistribusi = \App\Models\DistribusiItemRegister::where('astap_register_id', $reg->id)->exists();
                 $hasMutasi = \App\Models\AstapMutasiRegister::where('astap_register_id', $reg->id)->exists();
 
@@ -3893,7 +3942,10 @@ Route::middleware('auth')->group(function () {
                     $reason = $hasDistribusi ? 'telah resmi diserahterimakan via BAST Distribusi' : 'memiliki riwayat mutasi aset';
                     return response()->json([
                         'success' => false,
-                        'message' => "Penghapusan ditolak: Unit NIBAR \"{$reg->nibar}\" {$reason}. Demi integritas dokumen pertanggungjawaban aset daerah, NIBAR yang memiliki riwayat transaksi tidak boleh dihapus. Silakan ubah kondisinya menjadi 'Rusak Berat / Afkir' jika barang rusak.",
+                        'is_blocked' => true,
+                        'action_url' => '/mutasi-aset',
+                        'action_text' => 'Ajukan Mutasi Aset',
+                        'message' => "Penghapusan ditolak: Unit NIBAR \"{$reg->nibar}\" {$reason}. Demi integritas dokumen pertanggungjawaban aset daerah, NIBAR yang memiliki riwayat transaksi tidak boleh dihapus. Silakan lakukan mutasi aset atau ubah kondisinya.",
                     ], 422);
                 }
 
