@@ -31,7 +31,10 @@
         <!-- 9. Modal Dialog: Rapikan & Urutkan Ulang NIBAR -->
         @include('pages.data_astap_partials.modal_resequence_nibar')
 
-        <!-- 10. Global Floating Toast Notification Popup -->
+        <!-- 10. Modal Dialog: Reklasifikasi Aset Tetap (RSDK) -->
+        @include('pages.data_astap_partials.modal_reklas')
+
+        <!-- 11. Global Floating Toast Notification Popup -->
         @include('pages.data_astap_partials.toast')
 
     </div>

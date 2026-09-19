@@ -9,7 +9,7 @@
             newFormData: {
                 kelompok: '5.2.02',
                 nama_kelompok: 'Belanja Modal Peralatan dan Mesin',
-                kode_rek: '',
+                kode_rek: '5.2.02.',
                 nama_belanja: ''
             },
 
@@ -21,9 +21,90 @@
                 nama_belanja: ''
             },
 
+            masterKelompokList: @json($uniqueKelompok ?? []),
+            masterRekeningList: @json($rekeningList ?? []),
+
+            // --- Kelompok (New) ---
+            showKelompokDropdownNew: false,
+            get allMatchingKelompokNew() {
+                const q = (this.newFormData.nama_kelompok || '').toLowerCase().trim();
+                const list = (this.masterKelompokList || []).filter(item => item && item.nama_kelompok && item.nama_kelompok.trim() !== '');
+                if (!q) return list;
+                return list.filter(item =>
+                    (item.nama_kelompok || '').toLowerCase().includes(q) ||
+                    (item.kelompok || '').toLowerCase().includes(q)
+                );
+            },
+            get filteredKelompokListNew() {
+                return this.allMatchingKelompokNew.slice(0, 5);
+            },
+            get totalKelompokCountNew() {
+                return this.allMatchingKelompokNew.length;
+            },
+            selectKelompokNew(item) {
+                this.newFormData.kelompok = item.kelompok;
+                this.newFormData.nama_kelompok = item.nama_kelompok;
+                if (!this.newFormData.kode_rek || !this.newFormData.kode_rek.startsWith(item.kelompok)) {
+                    this.newFormData.kode_rek = item.kelompok + '.';
+                }
+                this.showKelompokDropdownNew = false;
+            },
+            onKodeKelompokInputNew() {
+                const code = (this.newFormData.kelompok || '').trim();
+                const found = (this.masterKelompokList || []).find(item => item.kelompok === code);
+                if (found) {
+                    this.newFormData.nama_kelompok = found.nama_kelompok;
+                }
+                if (code && (!this.newFormData.kode_rek || !this.newFormData.kode_rek.startsWith(code))) {
+                    this.newFormData.kode_rek = code + '.';
+                }
+            },
+
+            openAdd() {
+                this.newFormData = {
+                    kelompok: '5.2.02',
+                    nama_kelompok: 'Belanja Modal Peralatan dan Mesin',
+                    kode_rek: '5.2.02.',
+                    nama_belanja: ''
+                };
+                this.showKelompokDropdownNew = false;
+                this.showAddModal = true;
+            },
+
+            // --- Kelompok (Edit) ---
+            showKelompokDropdownEdit: false,
+            get allMatchingKelompokEdit() {
+                const q = (this.editFormData.nama_kelompok || '').toLowerCase().trim();
+                const list = (this.masterKelompokList || []).filter(item => item && item.nama_kelompok && item.nama_kelompok.trim() !== '');
+                if (!q) return list;
+                return list.filter(item =>
+                    (item.nama_kelompok || '').toLowerCase().includes(q) ||
+                    (item.kelompok || '').toLowerCase().includes(q)
+                );
+            },
+            get filteredKelompokListEdit() {
+                return this.allMatchingKelompokEdit.slice(0, 5);
+            },
+            get totalKelompokCountEdit() {
+                return this.allMatchingKelompokEdit.length;
+            },
+            selectKelompokEdit(item) {
+                this.editFormData.kelompok = item.kelompok;
+                this.editFormData.nama_kelompok = item.nama_kelompok;
+                this.showKelompokDropdownEdit = false;
+            },
+            onKodeKelompokInputEdit() {
+                const code = (this.editFormData.kelompok || '').trim();
+                const found = (this.masterKelompokList || []).find(item => item.kelompok === code);
+                if (found) {
+                    this.editFormData.nama_kelompok = found.nama_kelompok;
+                }
+            },
+
             openEdit(item) {
                 this.editFormData = { ...item };
                 this.editActionUrl = '/master-data/rekening-belanja/' + item.id;
+                this.showKelompokDropdownEdit = false;
                 this.showEditModal = true;
             },
 

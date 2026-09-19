@@ -6326,6 +6326,84 @@
                 resequenceCategory: 'all',
                 isSubmittingResequence: false,
 
+                // State Modal Reklasifikasi Aset Tetap (RSDK)
+                showReklasModal: false,
+                selectedAstapReklas: null,
+                reklasJenis: 'extracom', // 'extracom' | 'antar_kib' | 'kdp' | 'koreksi_rekening'
+                reklasTujuanKib: '',
+                reklasTujuanKode: '',
+                reklasTujuanNama: '',
+                reklasNomorBa: '',
+                reklasTanggal: '',
+                reklasAlasan: '',
+                isSubmittingReklas: false,
+
+                openReklas(item) {
+                    this.selectedAstapReklas = item;
+                    if (item.is_extracomtable || (item.category === 'KIB B' && parseFloat(item.harga_satuan || item.jumlah_realisasi_raw || 0) < 300000)) {
+                        this.reklasJenis = 'extracom';
+                    } else if (item.category === 'KIB F') {
+                        this.reklasJenis = 'kdp';
+                        this.reklasTujuanKib = 'KIB C';
+                    } else {
+                        this.reklasJenis = 'antar_kib';
+                        this.reklasTujuanKib = item.category === 'KIB B' ? 'ATB' : 'KIB B';
+                    }
+                    let noBukti = (item.bast_dokumen_nomor || item.spk_nomor || item.kwitansi_nomor || '').trim();
+                    if (noBukti === '-' || noBukti.toLowerCase() === 'null') noBukti = '';
+                    this.reklasNomorBa = noBukti;
+                    this.reklasTujuanKode = '';
+                    this.reklasTanggal = new Date().toISOString().split('T')[0];
+                    this.reklasAlasan = '';
+                    this.showReklasModal = true;
+                },
+
+                getReklasNarasiPreview() {
+                    if (!this.selectedAstapReklas) return 'Pilih barang untuk melihat narasi...';
+                    const it = this.selectedAstapReklas;
+                    const subRek = it.sub_rincian_kode || it.kode_barang || '1.3.2.xx';
+                    const subNama = it.sub_rincian_nama || it.nama_barang || '';
+                    const val = it.jumlah_realisasi || 'Rp 0';
+                    const cleanNo = (this.reklasNomorBa || '').trim();
+                    const buktiStr = (cleanNo && cleanNo !== '-') ? `atas dasar bukti belanja ${cleanNo}` : 'atas dasar bukti transaksi belanja';
+                    
+                    let tglStr = '';
+                    if (this.reklasTanggal) {
+                        const parts = this.reklasTanggal.split('-');
+                        tglStr = parts.length === 3 ? `tanggal ${parts[2]}/${parts[1]}/${parts[0]}` : `tanggal ${this.reklasTanggal}`;
+                    }
+
+                    const kdBrg = it.kode_barang || '';
+                    const nmBrg = it.nama_barang || '';
+                    const vol = (it.jumlah_volume || 1) + ' Unit';
+                    const spacerTgl = tglStr ? ` ${tglStr}` : '';
+
+                    if (this.reklasJenis === 'extracom') {
+                        return `Reklasifikasi dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ke Extracompetable berupa ${kdBrg} ${nmBrg} (${vol}) karena sesuai dengan kode rekening Simda BMD 108.`;
+                    } else if (this.reklasJenis === 'kdp') {
+                        const tujuan = this.reklasTujuanKib || 'KIB C';
+                        return `Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
+                    } else if (this.reklasJenis === 'antar_kib') {
+                        const tujuan = this.reklasTujuanKib || 'Aset Lain';
+                        return `Reklasifikasi dari ${it.category || 'KIB Asal'} rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena penyesuaian klasifikasi wujud aset.`;
+                    } else {
+                        const tujuanStr = this.reklasTujuanKode ? ` ke rekening ${this.reklasTujuanKode}` : ' ke rekening Simda BMD 108 yang sesuai';
+                        return `Koreksi kode rekening dari ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) untuk penyesuaian sub-rincian objek Simda BMD.`;
+                    }
+                },
+
+                async submitReklas() {
+                    this.isSubmittingReklas = true;
+                    try {
+                        this.showToast('✅ Pratinjau: Reklasifikasi aset berhasil dipilih!', 'success');
+                        this.showReklasModal = false;
+                    } catch (err) {
+                        this.showToast('⚠️ Gagal memproses reklasifikasi: ' + err.message, 'error');
+                    } finally {
+                        this.isSubmittingReklas = false;
+                    }
+                },
+
                 openResequenceModal() {
                     this.resequenceYear = this.tahunFilter !== 'all' ? this.tahunFilter : 'all';
                     this.resequenceCategory = this.categoryFilter !== 'all' ? this.categoryFilter : 'all';

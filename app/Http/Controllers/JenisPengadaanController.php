@@ -37,8 +37,19 @@ class JenisPengadaanController extends Controller
         }
 
         $sipdList = $query->orderBy('program_kode')->orderBy('kegiatan_kode')->orderBy('sub_kegiatan_kode')->get();
-        $uniquePrograms = JenisPengadaan::select('program_kode', 'program_nama')->distinct()->orderBy('program_kode')->get();
-        $uniqueKegiatan = JenisPengadaan::select('kegiatan_kode', 'kegiatan_nama')->distinct()->orderBy('kegiatan_kode')->get();
+
+        $uniquePrograms = JenisPengadaan::select('program_kode', 'program_nama')
+            ->whereNotNull('program_kode')->where('program_kode', '!=', '')
+            ->whereNotNull('program_nama')->where('program_nama', '!=', '')
+            ->distinct()
+            ->orderBy('program_kode')
+            ->get();
+        $uniqueKegiatan = JenisPengadaan::select('program_kode', 'kegiatan_kode', 'kegiatan_nama')
+            ->whereNotNull('kegiatan_kode')->where('kegiatan_kode', '!=', '')
+            ->whereNotNull('kegiatan_nama')->where('kegiatan_nama', '!=', '')
+            ->distinct()
+            ->orderBy('kegiatan_kode')
+            ->get();
         $totalCount   = JenisPengadaan::count();
 
         return view('pages.master_jenis_pengadaan', compact('sipdList', 'uniquePrograms', 'uniqueKegiatan', 'totalCount'));

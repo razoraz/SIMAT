@@ -4102,6 +4102,7 @@ Route::middleware('auth')->group(function () {
     // Master Data Jenis ASTAP (Kode 108)
     Route::middleware('module:astap')->group(function () {
         Route::get('/master-data/jenis-astap', [JenisAstapController::class, 'index'])->name('master.jenis_astap');
+        Route::get('/master-data/jenis-astap/search-subsub', [JenisAstapController::class, 'searchSubSub'])->name('master.jenis_astap.search_subsub');
         Route::post('/master-data/jenis-astap', [JenisAstapController::class, 'store'])->name('master.jenis_astap.store');
         Route::post('/master-data/jenis-astap/import', [JenisAstapController::class, 'import'])->name('master.jenis_astap.import');
         Route::get('/master-data/jenis-astap/download-template', [JenisAstapController::class, 'downloadTemplate'])->name('master.jenis_astap.template');

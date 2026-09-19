@@ -36,9 +36,31 @@ class RekeningBelanjaController extends Controller
         }
 
         $rekeningList = $query->orderBy('kelompok')->orderBy('kode_rek')->get();
+        
+        $defaultKelompok = [
+            ['kelompok' => '5.2.01', 'nama_kelompok' => 'Belanja Modal Tanah'],
+            ['kelompok' => '5.2.02', 'nama_kelompok' => 'Belanja Modal Peralatan dan Mesin'],
+            ['kelompok' => '5.2.03', 'nama_kelompok' => 'Belanja Modal Gedung dan Bangunan'],
+            ['kelompok' => '5.2.04', 'nama_kelompok' => 'Belanja Modal Jalan, Jaringan dan Irigasi'],
+            ['kelompok' => '5.2.05', 'nama_kelompok' => 'Belanja Modal Aset Tetap Lainnya'],
+            ['kelompok' => '5.2.06', 'nama_kelompok' => 'Belanja Modal Aset Tidak Berwujud'],
+        ];
+
+        $dbKelompok = RekeningBelanja::select('kelompok', 'nama_kelompok')
+            ->whereNotNull('kelompok')->where('kelompok', '!=', '')
+            ->whereNotNull('nama_kelompok')->where('nama_kelompok', '!=', '')
+            ->distinct()
+            ->get()
+            ->toArray();
+
+        $uniqueKelompok = collect(array_merge($defaultKelompok, $dbKelompok))
+            ->unique('kelompok')
+            ->sortBy('kelompok')
+            ->values();
+
         $totalCount = RekeningBelanja::count();
 
-        return view('pages.master_rekening_belanja', compact('rekeningList', 'totalCount'));
+        return view('pages.master_rekening_belanja', compact('rekeningList', 'uniqueKelompok', 'totalCount'));
     }
 
     public function store(Request $request)

@@ -44,9 +44,54 @@ class JenisAstapController extends Controller
 
         $kode108List = $query->paginate(10)->withQueryString();
         $uniqueJenis = JenisAstap::select('jenis', 'nama_jenis')->distinct()->get();
+        $uniqueSubRincian = JenisAstap::select('jenis', 'sub_rincian_objek', 'uraian_sub_rincian')
+            ->whereNotNull('sub_rincian_objek')
+            ->where('sub_rincian_objek', '!=', '')
+            ->whereNotNull('uraian_sub_rincian')
+            ->where('uraian_sub_rincian', '!=', '')
+            ->distinct()
+            ->get();
         $totalCount = JenisAstap::count();
 
-        return view('pages.master_jenis_astap', compact('kode108List', 'uniqueJenis', 'totalCount'));
+        return view('pages.master_jenis_astap', compact('kode108List', 'uniqueJenis', 'uniqueSubRincian', 'totalCount'));
+    }
+
+    public function searchSubSub(Request $request)
+    {
+        $q = $request->query('q', '');
+        $subRincian = $request->query('sub_rincian', '');
+        $jenis = $request->query('jenis', '');
+
+        $query = JenisAstap::query()
+            ->select('sub_sub_rincian_objek', 'uraian_sub_sub_rincian')
+            ->whereNotNull('sub_sub_rincian_objek')
+            ->where('sub_sub_rincian_objek', '!=', '')
+            ->whereNotNull('uraian_sub_sub_rincian')
+            ->where('uraian_sub_sub_rincian', '!=', '');
+
+        if (!empty($subRincian)) {
+            $query->where('sub_rincian_objek', $subRincian);
+        } elseif (!empty($jenis)) {
+            $query->where('jenis', $jenis);
+        }
+
+        if (!empty($q)) {
+            $query->where(function ($sq) use ($q) {
+                $sq->where('uraian_sub_sub_rincian', 'like', "%{$q}%")
+                   ->orWhere('sub_sub_rincian_objek', 'like', "%{$q}%");
+            });
+        }
+
+        $totalCount = (clone $query)->distinct()->count('sub_sub_rincian_objek');
+        $results = $query->select('sub_sub_rincian_objek', 'uraian_sub_sub_rincian')
+            ->distinct()
+            ->limit(5)
+            ->get();
+
+        return response()->json([
+            'total' => $totalCount,
+            'items' => $results
+        ]);
     }
 
     public function store(Request $request)

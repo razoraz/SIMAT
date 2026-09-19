@@ -30,38 +30,229 @@
                 this.showEditModal = true;
             },
 
-            onJenisChangeNew() {
-                const lookup = {
-                    '1.3.1': { nama: 'TANAH', sub_prefix: '1.3.1.01.01.01', sub_sub_prefix: '1.3.1.01.01.01.001' },
-                    '1.3.2': { nama: 'PERALATAN DAN MESIN', sub_prefix: '1.3.2.02.01.01', sub_sub_prefix: '1.3.2.02.01.01.001' },
-                    '1.3.3': { nama: 'GEDUNG DAN BANGUNAN', sub_prefix: '1.3.3.01.01.01', sub_sub_prefix: '1.3.3.01.01.01.001' },
-                    '1.3.4': { nama: 'JALAN, IRIGASI DAN JARINGAN', sub_prefix: '1.3.4.03.01.01', sub_sub_prefix: '1.3.4.03.01.01.001' },
-                    '1.3.5': { nama: 'ASET TETAP LAINNYA', sub_prefix: '1.3.5.01.01.01', sub_sub_prefix: '1.3.5.01.01.01.001' },
-                    '1.3.6': { nama: 'KONSTRUKSI DALAM PENGERJAAN', sub_prefix: '1.3.6.01.01.01', sub_sub_prefix: '1.3.6.01.01.01.001' },
-                    '1.5.3': { nama: 'ASET TIDAK BERWUJUD', sub_prefix: '1.5.3.01.01.01', sub_sub_prefix: '1.5.3.01.01.01.001' },
-                    '1.3.7': { nama: 'ASET TETAP DALAM RENOVASI', sub_prefix: '1.3.7.01.01.01', sub_sub_prefix: '1.3.7.01.01.01.001' }
-                };
-                const item = lookup[this.newFormData.jenis];
-                if (item) {
-                    this.newFormData.nama_jenis = item.nama;
-                    this.newFormData.sub_rincian_objek = item.sub_prefix;
-                    this.newFormData.sub_sub_rincian_objek = item.sub_sub_prefix;
+            masterJenisList: (function() {
+                const defaults = [
+                    { kode: '1.3.1', nama: 'TANAH', sub_prefix: '1.3.1.01.01.01', sub_sub_prefix: '1.3.1.01.01.01.001' },
+                    { kode: '1.3.2', nama: 'PERALATAN DAN MESIN', sub_prefix: '1.3.2.02.01.01', sub_sub_prefix: '1.3.2.02.01.01.001' },
+                    { kode: '1.3.3', nama: 'GEDUNG DAN BANGUNAN', sub_prefix: '1.3.3.01.01.01', sub_sub_prefix: '1.3.3.01.01.01.001' },
+                    { kode: '1.3.4', nama: 'JALAN, IRIGASI DAN JARINGAN', sub_prefix: '1.3.4.03.01.01', sub_sub_prefix: '1.3.4.03.01.01.001' },
+                    { kode: '1.3.5', nama: 'ASET TETAP LAINNYA', sub_prefix: '1.3.5.01.01.01', sub_sub_prefix: '1.3.5.01.01.01.001' },
+                    { kode: '1.3.6', nama: 'KONSTRUKSI DALAM PENGERJAAN', sub_prefix: '1.3.6.01.01.01', sub_sub_prefix: '1.3.6.01.01.01.001' },
+                    { kode: '1.5.3', nama: 'ASET TIDAK BERWUJUD', sub_prefix: '1.5.3.01.01.01', sub_sub_prefix: '1.5.3.01.01.01.001' },
+                    { kode: '1.3.7', nama: 'ASET TETAP DALAM RENOVASI', sub_prefix: '1.3.7.01.01.01', sub_sub_prefix: '1.3.7.01.01.01.001' }
+                ];
+                const fromDb = @json($uniqueJenis ?? []);
+                const merged = [...defaults];
+                if (Array.isArray(fromDb)) {
+                    fromDb.forEach(dbItem => {
+                        const nama = (dbItem.nama_jenis || '').trim();
+                        if (dbItem && dbItem.jenis && nama && !merged.some(m => m.kode === dbItem.jenis || m.nama.toUpperCase() === nama.toUpperCase())) {
+                            merged.push({
+                                kode: dbItem.jenis,
+                                nama: nama.toUpperCase(),
+                                sub_prefix: dbItem.jenis + '.01.01.01',
+                                sub_sub_prefix: dbItem.jenis + '.01.01.01.001'
+                            });
+                        }
+                    });
+                }
+                return merged.filter(m => m && m.nama && m.nama.trim() !== '');
+            })(),
+
+            masterSubRincianList: @json($uniqueSubRincian ?? []),
+
+            showJenisDropdownNew: false,
+            get allMatchingJenisNew() {
+                const q = (this.newFormData.nama_jenis || '').toLowerCase().trim();
+                const list = (this.masterJenisList || []).filter(item => item && item.nama && item.nama.trim() !== '');
+                if (!q) return list;
+                return list.filter(item => 
+                    item.nama.toLowerCase().includes(q) || 
+                    item.kode.toLowerCase().includes(q)
+                );
+            },
+            get filteredJenisListNew() {
+                return this.allMatchingJenisNew.slice(0, 5);
+            },
+            get totalJenisCountNew() {
+                return this.allMatchingJenisNew.length;
+            },
+            selectJenisNew(item) {
+                this.newFormData.nama_jenis = item.nama;
+                this.newFormData.jenis = item.kode;
+                this.newFormData.sub_rincian_objek = item.sub_prefix || (item.kode + '.01.01.01');
+                this.newFormData.sub_sub_rincian_objek = item.sub_sub_prefix || (item.kode + '.01.01.01.001');
+                this.showJenisDropdownNew = false;
+            },
+            onKodeJenisInputNew() {
+                const found = this.masterJenisList.find(m => m.kode === (this.newFormData.jenis || '').trim());
+                if (found) {
+                    this.newFormData.nama_jenis = found.nama;
+                    if (!this.newFormData.sub_rincian_objek || this.newFormData.sub_rincian_objek.endsWith('.01.01.01')) {
+                        this.newFormData.sub_rincian_objek = found.sub_prefix;
+                    }
+                    if (!this.newFormData.sub_sub_rincian_objek || this.newFormData.sub_sub_rincian_objek.endsWith('.01.01.01.001')) {
+                        this.newFormData.sub_sub_rincian_objek = found.sub_sub_prefix;
+                    }
                 }
             },
 
-            onJenisChangeEdit() {
-                const lookup = {
-                    '1.3.1': 'TANAH',
-                    '1.3.2': 'PERALATAN DAN MESIN',
-                    '1.3.3': 'GEDUNG DAN BANGUNAN',
-                    '1.3.4': 'JALAN, IRIGASI DAN JARINGAN',
-                    '1.3.5': 'ASET TETAP LAINNYA',
-                    '1.3.6': 'KONSTRUKSI DALAM PENGERJAAN',
-                    '1.5.3': 'ASET TIDAK BERWUJUD',
-                    '1.3.7': 'ASET TETAP DALAM RENOVASI'
+            // --- Sub Rincian Objek (New) ---
+            showSubRincianDropdownNew: false,
+            get allMatchingSubRincianNew() {
+                const q = (this.newFormData.uraian_sub_rincian || '').toLowerCase().trim();
+                const curJenis = (this.newFormData.jenis || '').trim();
+
+                let list = (this.masterSubRincianList || []).filter(item => item && item.uraian_sub_rincian && item.uraian_sub_rincian.trim() !== '');
+                if (curJenis) {
+                    list = list.filter(item => item.jenis === curJenis || (item.sub_rincian_objek && item.sub_rincian_objek.startsWith(curJenis)));
+                }
+
+                if (!q) return list;
+
+                const filtered = list.filter(item => 
+                    (item.uraian_sub_rincian || '').toLowerCase().includes(q) || 
+                    (item.sub_rincian_objek || '').toLowerCase().includes(q)
+                );
+
+                if (filtered.length === 0 && curJenis) {
+                    return (this.masterSubRincianList || []).filter(item => 
+                        item && item.uraian_sub_rincian && (
+                            (item.uraian_sub_rincian || '').toLowerCase().includes(q) || 
+                            (item.sub_rincian_objek || '').toLowerCase().includes(q)
+                        )
+                    );
+                }
+
+                return filtered;
+            },
+            get filteredSubRincianListNew() {
+                return this.allMatchingSubRincianNew.slice(0, 5);
+            },
+            get totalSubRincianCountNew() {
+                return this.allMatchingSubRincianNew.length;
+            },
+            selectSubRincianNew(item) {
+                this.newFormData.uraian_sub_rincian = item.uraian_sub_rincian;
+                this.newFormData.sub_rincian_objek = item.sub_rincian_objek;
+                if (item.jenis && (!this.newFormData.jenis || this.newFormData.jenis !== item.jenis)) {
+                    this.newFormData.jenis = item.jenis;
+                    const parentJenis = this.masterJenisList.find(j => j.kode === item.jenis);
+                    if (parentJenis) {
+                        this.newFormData.nama_jenis = parentJenis.nama;
+                    }
+                }
+                if (!this.newFormData.sub_sub_rincian_objek || !this.newFormData.sub_sub_rincian_objek.startsWith(item.sub_rincian_objek)) {
+                    this.newFormData.sub_sub_rincian_objek = item.sub_rincian_objek + '.001';
+                }
+                this.showSubRincianDropdownNew = false;
+            },
+            onKodeSubRincianInputNew() {
+                const code = (this.newFormData.sub_rincian_objek || '').trim();
+                const found = (this.masterSubRincianList || []).find(item => item.sub_rincian_objek === code);
+                if (found) {
+                    this.newFormData.uraian_sub_rincian = found.uraian_sub_rincian;
+                }
+                if (code && (!this.newFormData.sub_sub_rincian_objek || !this.newFormData.sub_sub_rincian_objek.startsWith(code))) {
+                    this.newFormData.sub_sub_rincian_objek = code + '.001';
+                }
+            },
+
+            openAdd() {
+                this.newFormData = {
+                    jenis: '',
+                    nama_jenis: '',
+                    sub_rincian_objek: '',
+                    uraian_sub_rincian: '',
+                    sub_sub_rincian_objek: '',
+                    uraian_sub_sub_rincian: ''
                 };
-                if (lookup[this.editFormData.jenis]) {
-                    this.editFormData.nama_jenis = lookup[this.editFormData.jenis];
+                this.showJenisDropdownNew = false;
+                this.showSubRincianDropdownNew = false;
+                this.showAddModal = true;
+            },
+
+            // --- Edit Form Methods ---
+            showJenisDropdownEdit: false,
+            get allMatchingJenisEdit() {
+                const q = (this.editFormData.nama_jenis || '').toLowerCase().trim();
+                const list = (this.masterJenisList || []).filter(item => item && item.nama && item.nama.trim() !== '');
+                if (!q) return list;
+                return list.filter(item => 
+                    item.nama.toLowerCase().includes(q) || 
+                    item.kode.toLowerCase().includes(q)
+                );
+            },
+            get filteredJenisListEdit() {
+                return this.allMatchingJenisEdit.slice(0, 5);
+            },
+            get totalJenisCountEdit() {
+                return this.allMatchingJenisEdit.length;
+            },
+            selectJenisEdit(item) {
+                this.editFormData.nama_jenis = item.nama;
+                this.editFormData.jenis = item.kode;
+                this.showJenisDropdownEdit = false;
+            },
+            onKodeJenisInputEdit() {
+                const found = this.masterJenisList.find(m => m.kode === (this.editFormData.jenis || '').trim());
+                if (found) {
+                    this.editFormData.nama_jenis = found.nama;
+                }
+            },
+
+            // --- Sub Rincian Objek (Edit) ---
+            showSubRincianDropdownEdit: false,
+            get allMatchingSubRincianEdit() {
+                const q = (this.editFormData.uraian_sub_rincian || '').toLowerCase().trim();
+                const curJenis = (this.editFormData.jenis || '').trim();
+
+                let list = (this.masterSubRincianList || []).filter(item => item && item.uraian_sub_rincian && item.uraian_sub_rincian.trim() !== '');
+                if (curJenis) {
+                    list = list.filter(item => item.jenis === curJenis || (item.sub_rincian_objek && item.sub_rincian_objek.startsWith(curJenis)));
+                }
+
+                if (!q) return list;
+
+                const filtered = list.filter(item => 
+                    (item.uraian_sub_rincian || '').toLowerCase().includes(q) || 
+                    (item.sub_rincian_objek || '').toLowerCase().includes(q)
+                );
+
+                if (filtered.length === 0 && curJenis) {
+                    return (this.masterSubRincianList || []).filter(item => 
+                        item && item.uraian_sub_rincian && (
+                            (item.uraian_sub_rincian || '').toLowerCase().includes(q) || 
+                            (item.sub_rincian_objek || '').toLowerCase().includes(q)
+                        )
+                    );
+                }
+
+                return filtered;
+            },
+            get filteredSubRincianListEdit() {
+                return this.allMatchingSubRincianEdit.slice(0, 5);
+            },
+            get totalSubRincianCountEdit() {
+                return this.allMatchingSubRincianEdit.length;
+            },
+            selectSubRincianEdit(item) {
+                this.editFormData.uraian_sub_rincian = item.uraian_sub_rincian;
+                this.editFormData.sub_rincian_objek = item.sub_rincian_objek;
+                if (item.jenis && (!this.editFormData.jenis || this.editFormData.jenis !== item.jenis)) {
+                    this.editFormData.jenis = item.jenis;
+                    const parentJenis = this.masterJenisList.find(j => j.kode === item.jenis);
+                    if (parentJenis) {
+                        this.editFormData.nama_jenis = parentJenis.nama;
+                    }
+                }
+                this.showSubRincianDropdownEdit = false;
+            },
+            onKodeSubRincianInputEdit() {
+                const code = (this.editFormData.sub_rincian_objek || '').trim();
+                const found = (this.masterSubRincianList || []).find(item => item.sub_rincian_objek === code);
+                if (found) {
+                    this.editFormData.uraian_sub_rincian = found.uraian_sub_rincian;
                 }
             },
 
