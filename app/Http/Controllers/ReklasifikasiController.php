@@ -338,6 +338,69 @@ class ReklasifikasiController extends Controller
                         if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
                     }
                 }
+            } elseif ($validated['jenis_reklas'] === 'DEFINITIF_TO_KDP') {
+                $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.6%')->first();
+                if (!$matchingJenis) {
+                    $matchingJenis = JenisAstap::firstOrCreate(
+                        ['jenis' => '1.3.6.01'],
+                        [
+                            'nama_jenis' => 'Konstruksi Dalam Pengerjaan',
+                            'sub_rincian_objek' => '1.3.6.01.01',
+                            'uraian_sub_rincian' => 'Konstruksi Dalam Pengerjaan',
+                            'sub_sub_rincian_objek' => '1.3.6.01.01.01',
+                            'uraian_sub_sub_rincian' => 'Konstruksi Dalam Pengerjaan',
+                        ]
+                    );
+                }
+                if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+            } elseif ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
+                $targetKib = $validated['tujuan_kib'] ?: 'KIB C';
+                if ($targetKib === 'KIB D') {
+                    $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.4%')->first();
+                    if (!$matchingJenis) {
+                        $matchingJenis = JenisAstap::firstOrCreate(
+                            ['jenis' => '1.3.4.01'],
+                            [
+                                'nama_jenis' => 'Jalan, Jaringan dan Irigasi',
+                                'sub_rincian_objek' => '1.3.4.01.01',
+                                'uraian_sub_rincian' => 'Jalan, Jaringan dan Irigasi',
+                                'sub_sub_rincian_objek' => '1.3.4.01.01.01',
+                                'uraian_sub_sub_rincian' => 'Jalan, Jaringan dan Irigasi',
+                            ]
+                        );
+                    }
+                    if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                } elseif ($targetKib === 'KIB B') {
+                    $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.2%')->first();
+                    if (!$matchingJenis) {
+                        $matchingJenis = JenisAstap::firstOrCreate(
+                            ['jenis' => '1.3.2.01'],
+                            [
+                                'nama_jenis' => 'Peralatan dan Mesin',
+                                'sub_rincian_objek' => '1.3.2.01.01',
+                                'uraian_sub_rincian' => 'Peralatan dan Mesin',
+                                'sub_sub_rincian_objek' => '1.3.2.01.01.01',
+                                'uraian_sub_sub_rincian' => 'Peralatan dan Mesin',
+                            ]
+                        );
+                    }
+                    if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                } else {
+                    $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.3%')->first();
+                    if (!$matchingJenis) {
+                        $matchingJenis = JenisAstap::firstOrCreate(
+                            ['jenis' => '1.3.3.01'],
+                            [
+                                'nama_jenis' => 'Gedung dan Bangunan',
+                                'sub_rincian_objek' => '1.3.3.01.01',
+                                'uraian_sub_rincian' => 'Gedung dan Bangunan',
+                                'sub_sub_rincian_objek' => '1.3.3.01.01.01',
+                                'uraian_sub_sub_rincian' => 'Gedung dan Bangunan',
+                            ]
+                        );
+                    }
+                    if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                }
             }
             $astap->save();
 
@@ -347,6 +410,8 @@ class ReklasifikasiController extends Controller
             $reklas = AstapReklas::create($validated);
 
             DB::commit();
+
+            $astap->refresh();
 
             if ($request->wantsJson()) {
                 return response()->json([

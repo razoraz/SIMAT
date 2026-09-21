@@ -122,19 +122,48 @@
                                 </div>
                             </label>
 
-                            <!-- 3. Kapitalisasi KDP Selesai -->
-                            <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
+                            <!-- 3. KDP (Konstruksi Dalam Pengerjaan) - 2 Arah Adaptif -->
+                            <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'kdp' ? 'bg-rose-500/10 border-rose-500/50 shadow-sm shadow-rose-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="kdp" x-model="reklasJenis" class="hidden" style="display: none;">
+                                   :class="{
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isReklasKdpDisabled(),
+                                       'cursor-pointer bg-rose-500/10 border-rose-500/50 shadow-sm shadow-rose-500/10': !isReklasKdpDisabled() && reklasJenis === 'kdp',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isReklasKdpDisabled() && reklasJenis !== 'kdp'
+                                   }">
+                                <input type="radio" name="reklas_jenis" value="kdp" x-model="reklasJenis" :disabled="isReklasKdpDisabled()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
-                                     :class="reklasJenis === 'kdp' ? 'border-rose-400 bg-rose-500/20' : 'border-slate-700 bg-slate-900'">
-                                    <div x-show="reklasJenis === 'kdp'" class="rounded-full bg-rose-400" style="width: 8px; height: 8px;"></div>
+                                     :class="{
+                                         'border-rose-400 bg-rose-500/20': reklasJenis === 'kdp' && !isReklasKdpDisabled(),
+                                         'border-slate-700 bg-slate-900': reklasJenis !== 'kdp' || isReklasKdpDisabled()
+                                     }">
+                                    <div x-show="reklasJenis === 'kdp' && !isReklasKdpDisabled()" class="rounded-full bg-rose-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'kdp' ? 'text-rose-300' : 'text-white'">Kapitalisasi KDP Selesai</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Pembangunan KIB F selesai 100% jadi KIB C/D</div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-xs" 
+                                              :class="{
+                                                  'text-rose-300': reklasJenis === 'kdp' && !isReklasKdpDisabled(),
+                                                  'text-white': reklasJenis !== 'kdp' && !isReklasKdpDisabled(),
+                                                  'text-slate-500': isReklasKdpDisabled()
+                                              }"
+                                              x-text="isCurrentAstapKdp() ? 'Kapitalisasi KDP Selesai' : (isCurrentAstapKonstruksi() ? 'Pengalihan ke KDP' : 'KDP / Konstruksi')"></span>
+                                        <template x-if="isReklasKdpDisabled()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">Terkunci (Khusus Fisik)</span>
+                                        </template>
+                                        <template x-if="isCurrentAstapKdp()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">KDP Selesai</span>
+                                        </template>
+                                        <template x-if="isCurrentAstapKonstruksi()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Start / Proses</span>
+                                        </template>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" 
+                                         x-text="isReklasKdpDisabled() 
+                                            ? 'Khusus proyek fisik Gedung (KIB C), Jaringan (KIB D), atau KDP (KIB F)' 
+                                            : (isCurrentAstapKdp() 
+                                                ? 'Pekerjaan fisik 100% selesai, dialihkan ke KIB C/D Definitif' 
+                                                : 'Pekerjaan fisik baru start/belum selesai 100% (masuk KIB F)')"></div>
                                 </div>
                             </label>
 
@@ -174,14 +203,31 @@
                             </select>
                         </div>
 
-                        <!-- Jika KDP Selesai: Pilih KIB Definitif -->
-                        <div x-show="reklasJenis === 'kdp'">
-                            <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏗️ Alihkan KDP Selesai ke KIB Definitif:</label>
-                            <select x-model="reklasTujuanKib"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-rose-500">
-                                <option value="KIB C">KIB C - Gedung &amp; Bangunan (Default)</option>
-                                <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi</option>
-                            </select>
+                        <!-- Jika KDP: Pilihan KIB Tujuan (2 Arah) -->
+                        <div x-show="reklasJenis === 'kdp'" class="space-y-2">
+                            <template x-if="isCurrentAstapKdp()">
+                                <div>
+                                    <label class="block text-rose-300 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏗️ Alihkan KDP Selesai ke KIB Definitif:</label>
+                                    <select x-model="reklasTujuanKib"
+                                            class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-rose-400">
+                                        <option value="KIB C">KIB C - Gedung &amp; Bangunan (Definitif)</option>
+                                        <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (Definitif)</option>
+                                        <option value="KIB B">KIB B - Peralatan &amp; Mesin (Instalasi Mekanikal Gedung)</option>
+                                    </select>
+                                    <p class="text-[10px] text-slate-400 mt-1">Akumulasi nilai KDP akan dikapitalisasi dan dicatat sebagai aset tetap definitif di neraca.</p>
+                                </div>
+                            </template>
+                            <template x-if="!isCurrentAstapKdp()">
+                                <div class="p-3 rounded-xl bg-slate-900 border border-rose-500/40 space-y-1.5">
+                                    <label class="block text-rose-300 font-bold text-[10.5px] uppercase tracking-wider">🏗️ Tujuan Reklasifikasi:</label>
+                                    <div class="flex items-center space-x-2 text-xs font-bold text-white">
+                                        <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40">KIB F - Konstruksi Dalam Pengerjaan (KDP)</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                                        Belanja modal fisik ini akan dialihkan sementara ke <strong>KIB F (KDP)</strong> karena pekerjaan fisik baru mulai dibangun atau belum selesai 100% per tanggal cut-off pelaporan.
+                                    </p>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Jika Koreksi Rekening: Input Sub-Rincian Tujuan -->
@@ -294,16 +340,27 @@
                                                 <template x-if="reklasJenis === 'intracom'">
                                                     <div>
                                                         <template x-if="parseFloat(item.harga_satuan) <= 300000">
-                                                            <span class="text-rose-400 font-bold flex items-center space-x-1">
-                                                                <span>⚠️</span>
-                                                                <span>Belum memenuhi batas nilai minimum Intrakomtable</span>
-                                                            </span>
+                                                            <div class="space-y-0.5">
+                                                                <span class="text-rose-400 font-bold flex items-center space-x-1">
+                                                                    <span>⚠️</span>
+                                                                    <span>Belum memenuhi batas nilai minimum Intrakomtable</span>
+                                                                </span>
+                                                                <div class="text-[10px] text-rose-300/85 pl-4 flex items-center space-x-1">
+                                                                    <span>ℹ️</span>
+                                                                    <span>Batas Intrakomtable: Nilai satuan wajib <strong>&gt; Rp 300.000</strong> per unit</span>
+                                                                </div>
+                                                            </div>
                                                         </template>
                                                         <template x-if="parseFloat(item.harga_satuan) > 300000">
-                                                            <span class="text-slate-400">
-                                                                <span class="text-slate-300 font-medium" x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times; 
-                                                                <span class="text-emerald-400 font-mono font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
-                                                            </span>
+                                                            <div class="space-y-0.5">
+                                                                <span class="text-slate-400">
+                                                                    <span class="text-slate-300 font-medium" x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times; 
+                                                                    <span class="text-emerald-400 font-mono font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
+                                                                </span>
+                                                                <div class="text-[9.5px] text-emerald-400/80 pl-0.5">
+                                                                    ✓ Memenuhi batas Intrakomtable (&gt; Rp 300.000)
+                                                                </div>
+                                                            </div>
                                                         </template>
                                                     </div>
                                                 </template>
@@ -312,22 +369,38 @@
                                                 <template x-if="reklasJenis === 'extracom'">
                                                     <div>
                                                         <template x-if="parseFloat(item.harga_satuan) > 300000">
-                                                            <span class="text-rose-400 font-bold flex items-center space-x-1">
-                                                                <span>⚠️</span>
-                                                                <span>Melebihi batas nilai maksimum Ekstrakomtable</span>
-                                                            </span>
+                                                            <div class="space-y-0.5">
+                                                                <span class="text-rose-400 font-bold flex items-center space-x-1">
+                                                                    <span>⚠️</span>
+                                                                    <span>Melebihi batas nilai maksimum Ekstrakomtable</span>
+                                                                </span>
+                                                                <div class="text-[10px] text-rose-300/85 pl-4 flex items-center space-x-1">
+                                                                    <span>ℹ️</span>
+                                                                    <span>Batas Ekstrakomtable: Nilai satuan maksimal <strong>Rp 300.000</strong> per unit</span>
+                                                                </div>
+                                                            </div>
                                                         </template>
                                                         <template x-if="parseFloat(item.harga_satuan) <= 0">
-                                                            <span class="text-amber-400 font-medium flex items-center space-x-1">
-                                                                <span>⚠️</span>
-                                                                <span>Wajib diisi (&gt; Rp 0)</span>
-                                                            </span>
+                                                            <div class="space-y-0.5">
+                                                                <span class="text-amber-400 font-medium flex items-center space-x-1">
+                                                                    <span>⚠️</span>
+                                                                    <span>Wajib diisi (&gt; Rp 0)</span>
+                                                                </span>
+                                                                <div class="text-[10px] text-amber-300/80 pl-4">
+                                                                    Batas Ekstrakomtable: Rp 1 s/d Rp 300.000 per unit
+                                                                </div>
+                                                            </div>
                                                         </template>
                                                         <template x-if="parseFloat(item.harga_satuan) > 0 && parseFloat(item.harga_satuan) <= 300000">
-                                                            <span class="text-slate-400">
-                                                                <span class="text-slate-300 font-medium" x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times; 
-                                                                <span class="text-emerald-400 font-mono font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
-                                                            </span>
+                                                            <div class="space-y-0.5">
+                                                                <span class="text-slate-400">
+                                                                    <span class="text-slate-300 font-medium" x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times; 
+                                                                    <span class="text-emerald-400 font-mono font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
+                                                                </span>
+                                                                <div class="text-[9.5px] text-emerald-400/80 pl-0.5">
+                                                                    ✓ Memenuhi batas Ekstrakomtable (&le; Rp 300.000)
+                                                                </div>
+                                                            </div>
                                                         </template>
                                                     </div>
                                                 </template>

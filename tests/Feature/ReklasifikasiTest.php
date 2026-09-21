@@ -341,6 +341,136 @@ class ReklasifikasiTest extends TestCase
         ]);
         $response->assertSee('harus lebih dari Rp 300.000 untuk masuk ke Intrakomptabel');
     }
+
+    public function test_can_reklas_kdp_to_definitif_kib_c()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisKdp = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.6.01'],
+            [
+                'nama_jenis' => 'Konstruksi Dalam Pengerjaan',
+                'sub_rincian_objek' => '1.3.6.01.01',
+                'uraian_sub_rincian' => 'Konstruksi Dalam Pengerjaan',
+                'sub_sub_rincian_objek' => '1.3.6.01.01.01',
+                'uraian_sub_sub_rincian' => 'Konstruksi Dalam Pengerjaan',
+            ]
+        );
+        $jenisKibC = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.3.01'],
+            [
+                'nama_jenis' => 'Gedung dan Bangunan',
+                'sub_rincian_objek' => '1.3.3.01.01',
+                'uraian_sub_rincian' => 'Gedung dan Bangunan',
+                'sub_sub_rincian_objek' => '1.3.3.01.01.01',
+                'uraian_sub_sub_rincian' => 'Gedung dan Bangunan',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Pembangunan Gedung Paviliun VIP',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 1500000000,
+            'total_realisasi' => 1500000000,
+            'jumlah_anggaran' => 1500000000,
+            'user_id' => $admin->id,
+            'jenis_astap_id' => $jenisKdp->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KDP_TO_DEFINITIF',
+            'asal_kib' => 'KIB F',
+            'tujuan_kib' => 'KIB C',
+            'nilai_reklas' => 1500000000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/KDP-SELESAI/001',
+            'keterangan' => 'Kapitalisasi KDP selesai fisik 100%',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'astap' => [
+                'category' => 'KIB C',
+                'is_reklas' => true,
+                'jenis_reklas' => 'KDP_TO_DEFINITIF',
+            ]
+        ]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB C', $astap->category);
+        $this->assertTrue((bool)$astap->is_reklas);
+    }
+
+    public function test_can_reklas_definitif_to_kdp()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisKibD = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.4.01'],
+            [
+                'nama_jenis' => 'Jalan, Jaringan dan Irigasi',
+                'sub_rincian_objek' => '1.3.4.01.01',
+                'uraian_sub_rincian' => 'Jalan, Jaringan dan Irigasi',
+                'sub_sub_rincian_objek' => '1.3.4.01.01.01',
+                'uraian_sub_sub_rincian' => 'Jalan, Jaringan dan Irigasi',
+            ]
+        );
+        $jenisKdp = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.6.01'],
+            [
+                'nama_jenis' => 'Konstruksi Dalam Pengerjaan',
+                'sub_rincian_objek' => '1.3.6.01.01',
+                'uraian_sub_rincian' => 'Konstruksi Dalam Pengerjaan',
+                'sub_sub_rincian_objek' => '1.3.6.01.01.01',
+                'uraian_sub_sub_rincian' => 'Konstruksi Dalam Pengerjaan',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Pembangunan Saluran IPAL Baru',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 400000000,
+            'total_realisasi' => 400000000,
+            'jumlah_anggaran' => 400000000,
+            'user_id' => $admin->id,
+            'jenis_astap_id' => $jenisKibD->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'DEFINITIF_TO_KDP',
+            'asal_kib' => 'KIB D',
+            'tujuan_kib' => 'KIB F',
+            'nilai_reklas' => 400000000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/START-KDP/001',
+            'keterangan' => 'Pengalihan belanja fisik baru ke KDP KIB F',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'astap' => [
+                'category' => 'KIB F',
+                'is_reklas' => true,
+                'jenis_reklas' => 'DEFINITIF_TO_KDP',
+            ]
+        ]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB F', $astap->category);
+        $this->assertTrue((bool)$astap->is_reklas);
+    }
 }
 
 
