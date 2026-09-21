@@ -154,7 +154,8 @@
                 },
 
                 showSimatToast(message, type = 'success') {
-                    this.toast = { show: true, message: message, type: type };
+                    const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+                    this.toast = { show: true, message: cleanMsg, type: type };
                     setTimeout(() => { this.toast.show = false; }, 4000);
                 },
 

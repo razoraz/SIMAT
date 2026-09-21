@@ -480,7 +480,8 @@
                     }
                 },
                 showSimatToast(message, type = 'success') {
-                    this.toast = { show: true, message, type };
+                    const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+                    this.toast = { show: true, message: cleanMsg, type };
                     setTimeout(() => { this.toast.show = false; }, 4000);
                 },
                 async submitForm() {
@@ -687,7 +688,7 @@
                                     }
                                     sessionStorage.setItem('flash_success', this.isEdit ? ('Data transaksi distribusi ' + this.formData.kode + ' berhasil diperbarui!') : ('Data transaksi distribusi ' + this.formData.kode + ' berhasil ditambahkan! No. BAST: ' + (result.bast_nomor || '')));
                                     this.showSimatToast(
-                                        (this.isEdit ? '✏️ Distribusi berhasil diperbarui!' : '✅ Distribusi berhasil disimpan!') +
+                                        (this.isEdit ? 'Distribusi berhasil diperbarui!' : 'Distribusi berhasil disimpan!') +
                                         (result.bast_nomor ? ' | No. BAST: ' + result.bast_nomor : ''),
                                         'success'
                                     );
@@ -719,11 +720,11 @@
                                     }
 
                                     alert(errorMsg);
-                                    this.showSimatToast('❌ Gagal: ' + (result.message ? 'Terdapat konflik data alokasi.' : errorMsg), 'error');
+                                    this.showSimatToast('Gagal: ' + (result.message ? 'Terdapat konflik data alokasi.' : errorMsg), 'error');
                                 }
                             } catch(e) {
                                 console.error(e);
-                                this.showSimatToast('❌ Terjadi kesalahan jaringan / server saat menyimpan data.', 'error');
+                                this.showSimatToast('Terjadi kesalahan jaringan / server saat menyimpan data.', 'error');
                             } finally {
                                 this.isSaving = false;
                             }

@@ -464,8 +464,9 @@
                 this.showConfirm = false;
             },
             openToast(detail) {
-                this.toast.message = detail.message;
-                this.toast.type = detail.type || 'success';
+                const rawMsg = detail && typeof detail === 'object' ? (detail.message || '') : detail;
+                this.toast.message = String(rawMsg || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+                this.toast.type = (detail && detail.type) || 'success';
                 this.toast.show = true;
                 setTimeout(() => { this.toast.show = false; }, 4000);
             }
@@ -610,7 +611,7 @@
              }">
             <div class="flex items-center space-x-2.5 min-w-0">
                 <span class="text-base shrink-0" x-text="toast.type === 'success' ? '✅' : (toast.type === 'error' ? '⚠️' : 'ℹ️')"></span>
-                <p class="text-xs font-bold leading-snug truncate" x-text="toast.message"></p>
+                <p class="text-xs font-bold leading-snug truncate" x-text="String(toast.message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim()"></p>
             </div>
             <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
         </div>
@@ -736,11 +737,15 @@
             });
         });
 
+        window.cleanSimatToastMessage = function(message) {
+            return String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+        };
         window.askSimatConfirm = function(options) {
             window.dispatchEvent(new CustomEvent('ask-confirm', { detail: options }));
         };
         window.showSimatToast = function(message, type = 'success') {
-            window.dispatchEvent(new CustomEvent('show-toast', { detail: { message, type } }));
+            const cleanMsg = window.cleanSimatToastMessage(message);
+            window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: cleanMsg, type } }));
         };
         
         // Safeguard Override window.confirm agar pop-up bawaan browser tidak pernah muncul lagi

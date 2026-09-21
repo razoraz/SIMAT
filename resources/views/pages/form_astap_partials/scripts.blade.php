@@ -2714,19 +2714,19 @@
 
                 async submitForm() {
                     if (!this.formData.program_kode || !this.formData.kegiatan_kode || !this.formData.sub_kegiatan_kode) {
-                        this.toast = { show: true, message: '⚠️ Mohon lengkapi pilihan pada Langkah 1 terlebih dahulu!', type: 'warning' };
+                        this.toast = { show: true, message: 'Mohon lengkapi pilihan pada Langkah 1 terlebih dahulu!', type: 'warning' };
                         setTimeout(() => { this.toast.show = false; }, 4000);
                         this.currentStep = 1;
                         return;
                     }
                     if (!this.formData.kode_rek || !this.formData.jenis_aset_kode) {
-                        this.toast = { show: true, message: '⚠️ Mohon lengkapi pilihan pada Langkah 2 (Rekening Belanja & Jenis Aset) terlebih dahulu!', type: 'warning' };
+                        this.toast = { show: true, message: 'Mohon lengkapi pilihan pada Langkah 2 (Rekening Belanja & Jenis Aset) terlebih dahulu!', type: 'warning' };
                         setTimeout(() => { this.toast.show = false; }, 4000);
                         this.currentStep = 2;
                         return;
                     }
                     if (!this.formData.jumlah_anggaran || Number(this.formData.jumlah_anggaran) <= 0) {
-                        this.toast = { show: true, message: '⚠️ Jumlah Anggaran (Rp) (Kolom 14) wajib diisi dan tidak boleh kosong!', type: 'warning' };
+                        this.toast = { show: true, message: 'Jumlah Anggaran (Rp) (Kolom 14) wajib diisi dan tidak boleh kosong!', type: 'warning' };
                         setTimeout(() => { this.toast.show = false; }, 4000);
                         this.currentStep = 2;
                         return;
@@ -2771,7 +2771,7 @@
                         : (this.isKdp ? (this.formData.kdp_kode_barang || this.formData.sub_rincian_kode) : '')))))));
 
                     if (!activeKode108) {
-                        this.toast = { show: true, message: '⚠️ Mohon pilih Nama Barang (Sub-Sub Rincian PMDN 108) terlebih dahulu!', type: 'warning' };
+                        this.toast = { show: true, message: 'Mohon pilih Nama Barang (Sub-Sub Rincian PMDN 108) terlebih dahulu!', type: 'warning' };
                         setTimeout(() => { this.toast.show = false; }, 4000);
                         this.currentStep = this.isTanah ? 2 : 3;
                         return;
@@ -2848,15 +2848,15 @@
                             return data;
                         })
                         .then(data => {
-                            this.toast = { show: true, message: '✅ ' + (data.message || 'Data ASTAP berhasil disimpan!'), type: 'success' };
+                            this.toast = { show: true, message: data.message || 'Data ASTAP berhasil disimpan!', type: 'success' };
                             setTimeout(() => {
                                 window.location.href = '{{ route('astap.index') }}';
                             }, 1200);
                         })
                         .catch(err => {
                             console.error('Submit error:', err);
-                            this.toast = { show: true, message: '❌ ' + (err.message || 'Gagal menyimpan data ASTAP ke database!'), type: 'error' };
-                            alert('❌ Gagal menyimpan data ASTAP ke database: ' + (err.message || 'Terjadi kesalahan sistem'));
+                            this.toast = { show: true, message: err.message || 'Gagal menyimpan data ASTAP ke database!', type: 'error' };
+                            alert('Gagal menyimpan data ASTAP ke database: ' + (err.message || 'Terjadi kesalahan sistem'));
                         });
                     };
 

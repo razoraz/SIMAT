@@ -268,11 +268,19 @@
                             const data = await res.json();
                             if (data.success) {
                                 this.showEditTriwulanForm = false;
-                                alert('✅ ' + data.message);
+                                if (typeof window.showSimatToast === 'function') {
+                                    window.showSimatToast(data.message || 'Data BAST Triwulan berhasil diperbarui!', 'success');
+                                } else {
+                                    alert(data.message || 'Data BAST Triwulan berhasil diperbarui!');
+                                }
                             }
                         } catch(e) {
                             this.showEditTriwulanForm = false;
-                            alert('✅ Data BAST Triwulan berhasil diperbarui!');
+                            if (typeof window.showSimatToast === 'function') {
+                                window.showSimatToast('Data BAST Triwulan berhasil diperbarui!', 'success');
+                            } else {
+                                alert('Data BAST Triwulan berhasil diperbarui!');
+                            }
                         }
                     }
                 },

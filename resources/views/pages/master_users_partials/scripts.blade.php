@@ -257,13 +257,13 @@
                                 if (response.ok && res.success) {
                                     this.users.unshift(res.user);
                                     this.showAddModal = false;
-                                    this.showToast('✅ ' + res.message, 'success');
+                                    this.showToast(res.message, 'success');
                                 } else {
-                                    this.showToast('⚠️ ' + (res.message || 'Gagal mendaftarkan akun baru.'), 'error');
+                                    this.showToast(res.message || 'Gagal mendaftarkan akun baru.', 'error');
                                 }
                             } catch (err) {
                                 console.error(err);
-                                this.showToast('❌ Terjadi kesalahan server saat mendaftarkan akun.', 'error');
+                                this.showToast('Terjadi kesalahan server saat mendaftarkan akun.', 'error');
                             } finally {
                                 this.isSaving = false;
                             }
@@ -312,13 +312,13 @@
                                         this.selectedUser = { ...res.user };
                                     }
                                     this.showEditModal = false;
-                                    this.showToast('✅ ' + res.message, 'success');
+                                    this.showToast(res.message, 'success');
                                 } else {
-                                    this.showToast('⚠️ ' + (res.message || 'Gagal menyimpan perubahan.'), 'error');
+                                    this.showToast(res.message || 'Gagal menyimpan perubahan.', 'error');
                                 }
                             } catch (err) {
                                 console.error(err);
-                                this.showToast('❌ Terjadi kesalahan server saat memperbarui akun.', 'error');
+                                this.showToast('Terjadi kesalahan server saat memperbarui akun.', 'error');
                             } finally {
                                 this.isSaving = false;
                             }
@@ -365,13 +365,13 @@
                                     if (this.selectedUser && this.selectedUser.id === item.id) {
                                         this.showDetailModal = false;
                                     }
-                                    this.showToast('🗑️ ' + res.message, 'success');
+                                    this.showToast(res.message, 'success');
                                 } else {
-                                    this.showToast('⚠️ ' + (res.message || 'Gagal menghapus akun pengguna.'), 'error');
+                                    this.showToast(res.message || 'Gagal menghapus akun pengguna.', 'error');
                                 }
                             } catch (err) {
                                 console.error(err);
-                                this.showToast('❌ Terjadi kesalahan server saat menghapus akun.', 'error');
+                                this.showToast('Terjadi kesalahan server saat menghapus akun.', 'error');
                             }
                         }
                     });
@@ -413,7 +413,8 @@
                 },
 
                 showToast(message, type = 'success') {
-                    this.toast = { show: true, message: message, type: type };
+                    const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+                    this.toast = { show: true, message: cleanMsg, type: type };
                     setTimeout(() => { this.toast.show = false; }, 4000);
                 },
 
@@ -444,13 +445,13 @@
 
                                 const res = await response.json();
                                 if (response.ok && res.success) {
-                                    this.showToast('🔑 ' + res.message, 'success');
+                                    this.showToast(res.message, 'success');
                                 } else {
-                                    this.showToast('⚠️ ' + (res.message || 'Gagal mereset password.'), 'error');
+                                    this.showToast(res.message || 'Gagal mereset password.', 'error');
                                 }
                             } catch (err) {
                                 console.error(err);
-                                this.showToast('❌ Terjadi kesalahan server saat mereset password.', 'error');
+                                this.showToast('Terjadi kesalahan server saat mereset password.', 'error');
                             }
                         }
                     });

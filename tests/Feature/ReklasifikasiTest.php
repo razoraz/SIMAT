@@ -212,5 +212,135 @@ class ReklasifikasiTest extends TestCase
         ]);
         $response->assertSee('melebihi batas Ekstrakomptabel (Maksimal Rp 300.000)');
     }
+
+    public function test_can_reklas_extracom_to_intracom_kapitalisasi_with_multi_items()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        // Aset awal berstatus Ekstrakomptabel
+        $astap = Astap::create([
+            'nama_barang' => 'Perangkat Diagnostik',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 2,
+            'harga_satuan' => 250000,
+            'total_realisasi' => 500000,
+            'jumlah_anggaran' => 500000,
+            'user_id' => $admin->id,
+            'is_extracomtable' => true,
+            'category' => 'EXTRACOM',
+            'spesifikasi_json' => [
+                'mesin_items' => [
+                    [
+                        'mesin_nama_barang' => 'Diagnostik Pro A',
+                        'mesin_jumlah_barang' => 1,
+                        'mesin_satuan' => 'Unit',
+                        'mesin_nilai_satuan' => 250000,
+                    ],
+                    [
+                        'mesin_nama_barang' => 'Diagnostik Pro B',
+                        'mesin_jumlah_barang' => 1,
+                        'mesin_satuan' => 'Unit',
+                        'mesin_nilai_satuan' => 250000,
+                    ]
+                ]
+            ]
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KAPITALISASI_INTRAKOM',
+            'asal_kib' => 'EKSTRAKOMPTABEL',
+            'tujuan_kib' => 'KIB B',
+            'nilai_reklas' => 800000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/KAPITALISASI/001',
+            'keterangan' => 'Kapitalisasi balik ke Intrakomptabel KIB B',
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'Diagnostik Pro A',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 350000, // > 300.000
+                ],
+                [
+                    'nama_barang' => 'Diagnostik Pro B',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 450000, // > 300.000
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'astap' => [
+                'is_extracomtable' => false,
+                'category' => 'KIB B',
+                'is_reklas' => true,
+                'jenis_reklas' => 'KAPITALISASI_INTRAKOM',
+                'total_realisasi_num' => 800000,
+            ]
+        ]);
+
+        $astap->refresh();
+        $this->assertFalse((bool)$astap->is_extracomtable);
+        $this->assertEquals('KIB B', $astap->category);
+        $this->assertTrue((bool)$astap->is_reklas);
+        $this->assertEquals('KAPITALISASI_INTRAKOM', $astap->jenis_reklas);
+        $this->assertEquals(800000, (float)$astap->total_realisasi);
+
+        $spec = $astap->spesifikasi_json;
+        $this->assertCount(2, $spec['mesin_items']);
+        $this->assertEquals(350000, (float)$spec['mesin_items'][0]['mesin_nilai_satuan']);
+        $this->assertEquals(450000, (float)$spec['mesin_items'][1]['mesin_nilai_satuan']);
+    }
+
+    public function test_reklas_intracom_rejects_unit_price_300000_or_below()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Barang Ekstrakom Murah',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 100000,
+            'total_realisasi' => 100000,
+            'jumlah_anggaran' => 100000,
+            'user_id' => $admin->id,
+            'is_extracomtable' => true,
+            'category' => 'EXTRACOM',
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KAPITALISASI_INTRAKOM',
+            'asal_kib' => 'EKSTRAKOMPTABEL',
+            'tujuan_kib' => 'KIB B',
+            'nilai_reklas' => 250000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'Barang Ekstrakom Murah',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 250000, // <= 300.000
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+        ]);
+        $response->assertSee('harus lebih dari Rp 300.000 untuk masuk ke Intrakomptabel');
+    }
 }
+
 

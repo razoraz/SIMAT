@@ -277,13 +277,23 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        alert('✅ ' + result.message);
-                        window.location.reload();
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(result.message, 'success');
+                        }
+                        setTimeout(() => window.location.reload(), 600);
                     } else {
-                        alert('❌ ' + (result.message || 'Gagal menyimpan data reklasifikasi.'));
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(result.message || 'Gagal menyimpan data reklasifikasi.', 'error');
+                        } else {
+                            alert(result.message || 'Gagal menyimpan data reklasifikasi.');
+                        }
                     }
                 } catch (error) {
-                    alert('❌ Terjadi kesalahan jaringan saat menyimpan data: ' + error.message);
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('Terjadi kesalahan jaringan: ' + error.message, 'error');
+                    } else {
+                        alert('Terjadi kesalahan jaringan saat menyimpan data: ' + error.message);
+                    }
                 } finally {
                     this.isSubmitting = false;
                 }
@@ -312,13 +322,23 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        alert('✅ ' + result.message);
-                        window.location.reload();
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(result.message, 'success');
+                        }
+                        setTimeout(() => window.location.reload(), 600);
                     } else {
-                        alert('❌ ' + (result.message || 'Gagal menghapus transaksi.'));
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(result.message || 'Gagal menghapus transaksi.', 'error');
+                        } else {
+                            alert(result.message || 'Gagal menghapus transaksi.');
+                        }
                     }
                 } catch (error) {
-                    alert('❌ Terjadi kesalahan saat menghapus transaksi: ' + error.message);
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('Terjadi kesalahan saat menghapus transaksi: ' + error.message, 'error');
+                    } else {
+                        alert('Terjadi kesalahan saat menghapus transaksi: ' + error.message);
+                    }
                 } finally {
                     this.showConfirmDelete = false;
                 }

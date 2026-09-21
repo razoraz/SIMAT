@@ -24,8 +24,7 @@
                        'text-amber-300': toast.type === 'warning',
                        'text-cyan-300': toast.type === 'info'
                    }"
-                   x-text="toast.message"></p>
+                   x-text="String(toast.message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim()"></p>
             </div>
             <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
         </div>
-

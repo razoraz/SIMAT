@@ -96,15 +96,15 @@
                         const result = await response.json();
 
                         if (response.ok && result.success) {
-                            this.toast = { show: true, message: '✅ ' + result.message, type: 'success' };
+                            this.toast = { show: true, message: result.message, type: 'success' };
                             setTimeout(() => {
                                 window.location.href = '{{ route("unit.index") }}';
                             }, 1200);
                         } else {
-                            this.toast = { show: true, message: '❌ Gagal menyimpan unit: ' + (result.message || 'Terjadi kesalahan'), type: 'error' };
+                            this.toast = { show: true, message: 'Gagal menyimpan unit: ' + (result.message || 'Terjadi kesalahan'), type: 'error' };
                         }
                     } catch (err) {
-                        this.toast = { show: true, message: '❌ Terjadi kesalahan koneksi saat menyimpan data.', type: 'error' };
+                        this.toast = { show: true, message: 'Terjadi kesalahan koneksi saat menyimpan data.', type: 'error' };
                         console.error(err);
                     } finally {
                         this.isSaving = false;
@@ -315,7 +315,7 @@
              }">
             <div class="flex items-center space-x-2.5 min-w-0">
                 <span class="text-base shrink-0" x-text="toast.type === 'success' ? '✅' : (toast.type === 'error' ? '⚠️' : 'ℹ️')"></span>
-                <p class="text-xs font-bold leading-snug truncate" x-text="toast.message"></p>
+                <p class="text-xs font-bold leading-snug truncate" x-text="String(toast.message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim()"></p>
             </div>
             <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
         </div>

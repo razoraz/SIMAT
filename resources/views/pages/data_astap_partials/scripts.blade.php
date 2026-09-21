@@ -6341,7 +6341,7 @@
                 // State Modal Reklasifikasi Aset Tetap (RSDK)
                 showReklasModal: false,
                 selectedAstapReklas: null,
-                reklasJenis: 'extracom', // 'extracom' | 'antar_kib' | 'kdp' | 'koreksi_rekening'
+                reklasJenis: 'extracom', // 'extracom' | 'intracom' | 'antar_kib' | 'kdp' | 'koreksi_rekening'
                 reklasTujuanKib: '',
                 reklasTujuanKode: '',
                 reklasTujuanNama: '',
@@ -6351,10 +6351,21 @@
                 reklasExtracomItems: [],
                 isSubmittingReklas: false,
 
-                isReklasExtracomDisabled() {
+                isCurrentAstapExtracom() {
                     if (!this.selectedAstapReklas) return false;
                     const it = this.selectedAstapReklas;
-                    const cat = resolveItemCategory(it);
+                    if (it.is_extracomtable === true || it.is_extracomtable === 1 || it.is_extracomtable === '1') return true;
+                    const cat = (it.category || '').toString().trim().toUpperCase();
+                    if (cat === 'EXTRACOM') return true;
+                    if (typeof resolveItemCategory === 'function' && resolveItemCategory(it) === 'EXTRACOM') return true;
+                    return false;
+                },
+
+                isReklasExtracomDisabled() {
+                    if (!this.selectedAstapReklas) return false;
+                    if (this.isCurrentAstapExtracom()) return false; // Selalu aktif untuk direklas balik ke Intrakom
+                    const it = this.selectedAstapReklas;
+                    const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(it) : (it.category || '');
                     const kode = it.kode_barang || it.jenis_aset_kode || '';
                     if (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3')) {
                         return true;
@@ -6364,11 +6375,16 @@
 
                 openReklas(item) {
                     this.selectedAstapReklas = item;
-                    const cat = resolveItemCategory(item);
+                    const isExtracomNow = this.isCurrentAstapExtracom();
+                    const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : (item.category || '');
                     const kode = item.kode_barang || item.jenis_aset_kode || '';
                     const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB');
 
-                    if (isNonExtracom) {
+                    if (isExtracomNow) {
+                        // Kebalikan: dari Ekstrakomptabel dikapitalisasi ke Intrakomptabel
+                        this.reklasJenis = 'intracom';
+                        this.reklasTujuanKib = (kode.startsWith('1.3.5') || cat === 'KIB E') ? 'KIB E' : 'KIB B';
+                    } else if (isNonExtracom) {
                         if (cat === 'KIB F' || kode.startsWith('1.3.6')) {
                             this.reklasJenis = 'kdp';
                             this.reklasTujuanKib = 'KIB C';
@@ -6376,14 +6392,13 @@
                             this.reklasJenis = 'antar_kib';
                             this.reklasTujuanKib = cat === 'KIB A' ? 'KIB C' : 'KIB B';
                         }
-                    } else if (item.is_extracomtable || (cat === 'KIB B' && parseFloat(item.harga_satuan || item.jumlah_realisasi_raw || 0) < 300000)) {
-                        this.reklasJenis = 'extracom';
                     } else {
-                        this.reklasJenis = 'antar_kib';
-                        this.reklasTujuanKib = cat === 'KIB B' ? 'ATB' : 'KIB B';
+                        // Normal KIB B / KIB E -> opsi ke Ekstrakomptabel
+                        this.reklasJenis = 'extracom';
+                        this.reklasTujuanKib = 'EKSTRAKOMPTABEL';
                     }
 
-                    // Inisialisasi rincian barang untuk Ekstrakomptabel
+                    // Inisialisasi rincian barang untuk Ekstrakomptabel / Intrakomptabel
                     let spec = item.spesifikasi_json;
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
@@ -6410,7 +6425,7 @@
                         const fallbackVol = parseInt(item.jumlah_volume) || 1;
                         const fallbackHarga = parseFloat(item.harga_satuan) || (fallbackVol > 0 && item.total_realisasi_num ? (parseFloat(item.total_realisasi_num) / fallbackVol) : 0);
                         this.reklasExtracomItems = [{
-                            nama_barang: item.nama_barang || 'Barang Ekstrakomptabel',
+                            nama_barang: item.nama_barang || 'Barang Aset',
                             jumlah_volume: fallbackVol,
                             satuan: item.satuan || 'Unit',
                             harga_satuan: fallbackHarga,
@@ -6501,6 +6516,30 @@
                         }
 
                         return `Reklasifikasi dari rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ke Extracompetable ${rincianBrgStr} karena sesuai dengan kode rekening Simda BMD 108.`;
+                    } else if (this.reklasJenis === 'intracom') {
+                        const totalVal = this.getReklasExtracomTotal();
+                        const valStr = 'Rp ' + Number(totalVal).toLocaleString('id-ID');
+                        const tujuanKib = this.reklasTujuanKib || 'KIB B';
+                        
+                        let rincianBrgStr = '';
+                        if (this.reklasExtracomItems && this.reklasExtracomItems.length > 1) {
+                            const detailList = this.reklasExtracomItems.map((item, idx) => {
+                                const nm = item.nama_barang || ('Barang #' + (idx + 1));
+                                const qty = item.jumlah_volume || 1;
+                                const sat = item.satuan || 'Unit';
+                                const hrg = 'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID');
+                                return `${nm} (${qty} ${sat} @ ${hrg})`;
+                            }).join(', ');
+                            rincianBrgStr = `berupa ${this.reklasExtracomItems.length} rincian barang: ${detailList}`;
+                        } else {
+                            const firstItem = (this.reklasExtracomItems && this.reklasExtracomItems[0]) || {};
+                            const kdBrg = firstItem.kode_barang || it.kode_barang || '';
+                            const nmBrg = firstItem.nama_barang || it.nama_barang || '';
+                            const vol = (firstItem.jumlah_volume || it.jumlah_volume || 1) + ' ' + (firstItem.satuan || it.satuan || 'Unit');
+                            rincianBrgStr = `berupa ${kdBrg} ${nmBrg} (${vol})`;
+                        }
+
+                        return `Kapitalisasi dan reklasifikasi dari kelompok Extracompetable ke Aset Tetap ${tujuanKib} rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ${rincianBrgStr} karena nilai riil perolehan telah memenuhi syarat kapitalisasi aset tetap.`;
                     } else if (this.reklasJenis === 'kdp') {
                         const val = it.jumlah_realisasi || 'Rp 0';
                         const kdBrg = it.kode_barang || '';
@@ -6528,10 +6567,10 @@
                 async submitReklas() {
                     if (!this.selectedAstapReklas) return;
 
-                    // Validasi Ekstrakomptabel harga satuan <= 300.000 dan > 0
+                    // Validasi Ekstrakomptabel vs Intrakomptabel
                     if (this.reklasJenis === 'extracom') {
                         if (!this.reklasExtracomItems || this.reklasExtracomItems.length === 0) {
-                            this.showToast('⚠️ Minimal harus ada 1 rincian barang untuk Ekstrakomptabel.', 'error');
+                            this.showToast('Minimal harus ada 1 rincian barang untuk Ekstrakomtable.', 'error');
                             return;
                         }
 
@@ -6540,11 +6579,26 @@
                             const hrg = parseFloat(rItem.harga_satuan) || 0;
                             const nm = (rItem.nama_barang || '').trim() || ('Barang #' + (i + 1));
                             if (hrg <= 0) {
-                                this.showToast(`⚠️ Harga satuan untuk "${nm}" harus lebih dari Rp 0!`, 'error');
+                                this.showToast(`Harga satuan untuk "${nm}" harus lebih dari Rp 0!`, 'error');
                                 return;
                             }
                             if (hrg > 300000) {
-                                this.showToast(`⚠️ Harga satuan untuk "${nm}" (Rp ${Number(hrg).toLocaleString('id-ID')}) melebihi batas Ekstrakomptabel (Maks. Rp 300.000)!`, 'error');
+                                this.showToast(`Harga satuan untuk "${nm}" (Rp ${Number(hrg).toLocaleString('id-ID')}) melebihi batas nilai Ekstrakomtable!`, 'error');
+                                return;
+                            }
+                        }
+                    } else if (this.reklasJenis === 'intracom') {
+                        if (!this.reklasExtracomItems || this.reklasExtracomItems.length === 0) {
+                            this.showToast('Minimal harus ada 1 rincian barang untuk Intrakomtable.', 'error');
+                            return;
+                        }
+
+                        for (let i = 0; i < this.reklasExtracomItems.length; i++) {
+                            const rItem = this.reklasExtracomItems[i];
+                            const hrg = parseFloat(rItem.harga_satuan) || 0;
+                            const nm = (rItem.nama_barang || '').trim() || ('Barang #' + (i + 1));
+                            if (hrg <= 300000) {
+                                this.showToast(`Harga satuan untuk "${nm}" (Rp ${Number(hrg).toLocaleString('id-ID')}) belum memenuhi syarat nilai Intrakomtable!`, 'error');
                                 return;
                             }
                         }
@@ -6563,25 +6617,26 @@
 
                         let jenisReklasDb = 'KOREKSI_REKENING';
                         if (this.reklasJenis === 'extracom') jenisReklasDb = 'EKSTRAKOMPTABEL';
+                        else if (this.reklasJenis === 'intracom') jenisReklasDb = 'KAPITALISASI_INTRAKOM';
                         else if (this.reklasJenis === 'kdp') jenisReklasDb = 'KDP_TO_DEFINITIF';
                         else if (this.reklasJenis === 'antar_kib') jenisReklasDb = 'KOREKSI_REKENING';
 
-                        const nilaiReklas = (this.reklasJenis === 'extracom') 
+                        const nilaiReklas = (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') 
                             ? this.getReklasExtracomTotal()
                             : parseFloat(it.jumlah_realisasi_raw || it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0);
 
                         const payload = {
                             astap_id: it.id,
                             jenis_reklas: jenisReklasDb,
-                            asal_kib: it.category || 'KIB B',
-                            tujuan_kib: this.reklasTujuanKib || (this.reklasJenis === 'extracom' ? 'EKSTRAKOMPTABEL' : 'KIB C'),
+                            asal_kib: (this.reklasJenis === 'intracom') ? 'EKSTRAKOMPTABEL' : (it.category || 'KIB B'),
+                            tujuan_kib: (this.reklasJenis === 'intracom') ? (this.reklasTujuanKib || 'KIB B') : (this.reklasTujuanKib || (this.reklasJenis === 'extracom' ? 'EKSTRAKOMPTABEL' : 'KIB C')),
                             nilai_reklas: nilaiReklas,
                             tanggal_reklas: tgl,
                             triwulan: tw,
                             tahun: thn,
                             nomor_ba_reklas: (this.reklasNomorBa || '').trim() || null,
                             keterangan: this.getReklasNarasiPreview(),
-                            reklas_items: (this.reklasJenis === 'extracom') ? this.reklasExtracomItems : null,
+                            reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') ? this.reklasExtracomItems : null,
                         };
 
                         const res = await fetch('{{ route("master.reklasifikasi.store") }}', {
@@ -6629,13 +6684,13 @@
                                 }
                             }
 
-                            this.showToast('✅ ' + (resJson.message || 'Reklasifikasi aset berhasil dicatat!'), 'success');
+                            this.showToast(resJson.message || 'Reklasifikasi aset berhasil dicatat!', 'success');
                             this.showReklasModal = false;
                         } else {
-                            this.showToast('⚠️ ' + (resJson.message || 'Gagal mencatat reklasifikasi.'), 'error');
+                            this.showToast(resJson.message || 'Gagal mencatat reklasifikasi.', 'error');
                         }
                     } catch (err) {
-                        this.showToast('⚠️ Gagal memproses reklasifikasi: ' + err.message, 'error');
+                        this.showToast('Gagal memproses reklasifikasi: ' + err.message, 'error');
                     } finally {
                         this.isSubmittingReklas = false;
                     }
@@ -6669,10 +6724,10 @@
                             this.showToast(data.message, 'success');
                             setTimeout(() => { window.location.reload(); }, 1200);
                         } else {
-                            this.showToast('⚠️ Gagal: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                            this.showToast('Gagal: ' + (data.message || 'Terjadi kesalahan'), 'error');
                         }
                     } catch (err) {
-                        this.showToast('⚠️ Terjadi kendala saat merapikan NIBAR: ' + err.message, 'error');
+                        this.showToast('Terjadi kendala saat merapikan NIBAR: ' + err.message, 'error');
                     } finally {
                         this.isSubmittingResequence = false;
                     }
@@ -6706,10 +6761,10 @@
                                     this.showToast(data.message, 'success');
                                     setTimeout(() => { window.location.reload(); }, 1200);
                                 } else {
-                                    this.showToast('⚠️ Gagal: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                                    this.showToast('Gagal: ' + (data.message || 'Terjadi kesalahan'), 'error');
                                 }
                             } catch (err) {
-                                this.showToast('⚠️ Terjadi kendala saat merapikan NIBAR: ' + err.message, 'error');
+                                this.showToast('Terjadi kendala saat merapikan NIBAR: ' + err.message, 'error');
                             }
                         }
                     });
@@ -7018,7 +7073,7 @@
                 },
 
                 showToast(message, type = 'success') {
-                    this.toast.message = message;
+                    this.toast.message = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
                     this.toast.type = type;
                     this.toast.show = true;
                     setTimeout(() => {
@@ -7131,7 +7186,7 @@
                                     this.showEditKondisiModal = false;
                                     this.showToast('Kondisi unit berhasil diperbarui menjadi ' + this.newKondisiValue + '!', 'success');
                                 } else {
-                                    this.showToast('⚠️ Gagal memperbarui: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                                    this.showToast('Gagal memperbarui: ' + (data.message || 'Terjadi kesalahan'), 'error');
                                 }
                             } catch(err) {
                                 reg.kondisi = this.newKondisiValue;
@@ -7304,7 +7359,7 @@
                                         btnText: null
                                     });
                                 } else {
-                                    this.showToast(data.message || '⚠️ Gagal menghapus unit NIBAR.', 'error');
+                                    this.showToast(data.message || 'Gagal menghapus unit NIBAR.', 'error');
                                 }
                             } catch(err) {
                                 this.showToast('Terjadi kesalahan jaringan saat menghapus unit NIBAR.', 'error');
@@ -7391,7 +7446,7 @@
                                         btnText: null
                                     });
                                 } else {
-                                    this.showToast(data.message || '⚠️ Gagal menghapus data ASTAP.', 'error');
+                                    this.showToast(data.message || 'Gagal menghapus data ASTAP.', 'error');
                                 }
                             } catch(err) {
                                 window.location.reload();

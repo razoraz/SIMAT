@@ -79,7 +79,8 @@
                 },
 
                 showSimatToast(message, type = 'success') {
-                    this.toast = { show: true, message: message, type: type };
+                    const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+                    this.toast = { show: true, message: cleanMsg, type: type };
                     setTimeout(() => { this.toast.show = false; }, 4000);
                 },
 
@@ -104,13 +105,13 @@
                                 if (res.ok) {
                                     this.distribusis = this.distribusis.filter(d => String(d.id) !== String(targetId));
                                     this.showDetailModal = false;
-                                    this.showSimatToast('✅ Transaksi distribusi berhasil dihapus.', 'success');
+                                    this.showSimatToast('Transaksi distribusi berhasil dihapus.', 'success');
                                 } else {
                                     const data = await res.json().catch(() => ({}));
-                                    this.showSimatToast('❌ Gagal menghapus: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                                    this.showSimatToast('Gagal menghapus: ' + (data.message || 'Terjadi kesalahan.'), 'error');
                                 }
                             } catch(err) {
-                                this.showSimatToast('❌ Gagal menghapus transaksi distribusi.', 'error');
+                                this.showSimatToast('Gagal menghapus transaksi distribusi.', 'error');
                             }
                         }
                     });
@@ -380,13 +381,13 @@
                             // Reaktivitas array Alpine
                             this.distribusis = [...this.distribusis];
                             this.saveToStorage();
-                            this.showSimatToast('🚫 Distribusi ' + (item.kode || '') + ' berhasil ditolak. Barang NIBAR dikembalikan ke Tersedia.', 'error');
+                            this.showSimatToast('Distribusi ' + (item.kode || '') + ' berhasil ditolak. Barang NIBAR dikembalikan ke Tersedia.', 'error');
                         } else {
-                            this.showSimatToast('❌ Gagal menolak distribusi: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                            this.showSimatToast('Gagal menolak distribusi: ' + (data.message || 'Terjadi kesalahan.'), 'error');
                         }
                     } catch(e) {
                         console.error(e);
-                        this.showSimatToast('❌ Terjadi kesalahan koneksi saat menolak distribusi.', 'error');
+                        this.showSimatToast('Terjadi kesalahan koneksi saat menolak distribusi.', 'error');
                     }
                 },
 
@@ -499,13 +500,13 @@
                                 }
                             }
                             this.saveToStorage();
-                            this.showSimatToast('✅ Status distribusi ' + (item.kode || '') + ' berhasil diperbarui menjadi ' + newStatus + '!', 'success');
+                            this.showSimatToast('Status distribusi ' + (item.kode || '') + ' berhasil diperbarui menjadi ' + newStatus + '!', 'success');
                         } else {
-                            this.showSimatToast('❌ Gagal memperbarui status: ' + (data.message || 'Terjadi kesalahan.'), 'error');
+                            this.showSimatToast('Gagal memperbarui status: ' + (data.message || 'Terjadi kesalahan.'), 'error');
                         }
                     } catch(e) {
                         console.error(e);
-                        this.showSimatToast('❌ Terjadi kesalahan koneksi saat memperbarui status.', 'error');
+                        this.showSimatToast('Terjadi kesalahan koneksi saat memperbarui status.', 'error');
                     }
                 }
             }

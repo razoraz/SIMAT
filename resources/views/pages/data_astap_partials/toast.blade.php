@@ -1,4 +1,4 @@
-﻿        <!-- GLOBAL FLOATING TOAST NOTIFICATION POPUP -->
+        <!-- GLOBAL FLOATING TOAST NOTIFICATION POPUP -->
         <div x-show="toast.show" x-cloak
              x-transition:enter="transition ease-out duration-300 transform opacity-0 translate-y-4 scale-95"
              x-transition:enter-start="opacity-0 translate-y-4 scale-95"
@@ -15,7 +15,7 @@
              }">
             <div class="flex items-center space-x-2.5 min-w-0">
                 <span class="text-base shrink-0" x-text="toast.type === 'success' ? '✅' : (toast.type === 'error' ? '⚠️' : 'ℹ️')"></span>
-                <p class="text-xs font-bold leading-snug truncate" x-text="toast.message"></p>
+                <p class="text-xs font-bold leading-snug truncate" x-text="String(toast.message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim()"></p>
             </div>
             <button type="button" @click="toast.show = false" class="text-slate-400 hover:text-white text-base font-bold shrink-0">&times;</button>
         </div>

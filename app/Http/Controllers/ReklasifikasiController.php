@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Astap;
 use App\Models\AstapReklas;
+use App\Models\JenisAstap;
 use App\Models\JenisReklasifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -197,35 +198,50 @@ class ReklasifikasiController extends Controller
             'reklas_items' => 'nullable|array',
         ]);
 
+        // Jika jenis reklasifikasi adalah Ekstrakomptabel atau Kapitalisasi ke Intrakomptabel
+        $isExtracom = ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL');
+        $isIntracom = ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM');
+
+        if (($isExtracom || $isIntracom) && !empty($request->reklas_items) && is_array($request->reklas_items)) {
+            // Validasi tiap rincian barang: batas Rp 300.000 dan > Rp 0 sebelum transaksi DB
+            foreach ($request->reklas_items as $itemIdx => $rItem) {
+                $harga = (float) ($rItem['harga_satuan'] ?? 0);
+                $nama = trim((string) ($rItem['nama_barang'] ?? 'Barang #' . ($itemIdx + 1)));
+
+                if ($harga <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Harga satuan untuk {$nama} harus lebih dari Rp 0.",
+                    ], 422);
+                }
+
+                if ($isExtracom && $harga > 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Harga satuan untuk {$nama} (Rp " . number_format($harga, 0, ',', '.') . ") melebihi batas Ekstrakomptabel (Maksimal Rp 300.000).",
+                    ], 422);
+                }
+
+                if ($isIntracom && $harga <= 300000) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Harga satuan untuk {$nama} (Rp " . number_format($harga, 0, ',', '.') . ") harus lebih dari Rp 300.000 untuk masuk ke Intrakomptabel / Aset Tetap.",
+                    ], 422);
+                }
+            }
+        }
+
         DB::beginTransaction();
         try {
             $astap = Astap::findOrFail($validated['astap_id']);
 
-            // Jika jenis reklasifikasi adalah Ekstrakomptabel dan ada penyesuaian item harga satuan
-            if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL' && !empty($request->reklas_items) && is_array($request->reklas_items)) {
+            if (($isExtracom || $isIntracom) && !empty($request->reklas_items) && is_array($request->reklas_items)) {
                 $totalBaru = 0;
                 $totalVolume = 0;
                 
-                // Validasi tiap rincian barang: batas Rp 300.000 dan > Rp 0
-                foreach ($request->reklas_items as $itemIdx => $rItem) {
+                foreach ($request->reklas_items as $rItem) {
                     $harga = (float) ($rItem['harga_satuan'] ?? 0);
                     $qty = (int) ($rItem['jumlah_volume'] ?? 1);
-                    $nama = trim((string) ($rItem['nama_barang'] ?? 'Barang #' . ($itemIdx + 1)));
-
-                    if ($harga <= 0) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Harga satuan untuk {$nama} harus lebih dari Rp 0.",
-                        ], 422);
-                    }
-
-                    if ($harga > 300000) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Harga satuan untuk {$nama} (Rp " . number_format($harga, 0, ',', '.') . ") melebihi batas Ekstrakomptabel (Maksimal Rp 300.000).",
-                        ], 422);
-                    }
-
                     $totalBaru += ($qty * $harga);
                     $totalVolume += $qty;
                 }
@@ -282,7 +298,25 @@ class ReklasifikasiController extends Controller
                 $astap->harga_satuan = $firstHarga;
                 $astap->jumlah_volume = $totalVolume;
                 $astap->total_realisasi = $totalBaru;
-                $astap->is_extracomtable = true;
+
+                if ($isIntracom) {
+                    $astap->is_extracomtable = false;
+                    $targetKib = $validated['tujuan_kib'] ?: 'KIB B';
+                    if ($targetKib === 'KIB E') {
+                        if (!$astap->jenisAstap || !str_starts_with($astap->jenisAstap->jenis, '1.3.5')) {
+                            $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.5%')->first();
+                            if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                        }
+                    } elseif ($targetKib === 'KIB B') {
+                        if (!$astap->jenisAstap || !str_starts_with($astap->jenisAstap->jenis, '1.3.2')) {
+                            $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.2%')->first();
+                            if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                        }
+                    }
+                } else {
+                    $astap->is_extracomtable = true;
+                }
+
                 $validated['nilai_reklas'] = $totalBaru;
             }
 
@@ -290,6 +324,20 @@ class ReklasifikasiController extends Controller
             $astap->jenis_reklas = $validated['jenis_reklas'];
             if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
                 $astap->is_extracomtable = true;
+            } elseif ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM') {
+                $astap->is_extracomtable = false;
+                $targetKib = $validated['tujuan_kib'] ?: 'KIB B';
+                if ($targetKib === 'KIB E') {
+                    if (!$astap->jenisAstap || !str_starts_with($astap->jenisAstap->jenis, '1.3.5')) {
+                        $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.5%')->first();
+                        if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                    }
+                } elseif ($targetKib === 'KIB B') {
+                    if (!$astap->jenisAstap || !str_starts_with($astap->jenisAstap->jenis, '1.3.2')) {
+                        $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.2%')->first();
+                        if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                    }
+                }
             }
             $astap->save();
 

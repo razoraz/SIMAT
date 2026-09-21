@@ -322,7 +322,7 @@
                     return;
                 }
                 if (!this.alasan_mutasi || !this.alasan_mutasi.trim()) {
-                    this.showToast('⚠️ Alasan / Urgensi pengajuan mutasi wajib diisi sebelum lanjut ke Langkah 4.', 'warning');
+                    this.showToast('Alasan / Urgensi pengajuan mutasi wajib diisi sebelum lanjut ke Langkah 4.', 'warning');
                     return;
                 }
             }
@@ -344,12 +344,13 @@
                 this.step = s;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (s > this.step) {
-                this.showToast('⚠️ Mohon selesaikan pengisian dan tekan tombol Lanjut ke Langkah ' + (this.step + 1) + ' terlebih dahulu.', 'warning');
+                this.showToast('Mohon selesaikan pengisian dan tekan tombol Lanjut ke Langkah ' + (this.step + 1) + ' terlebih dahulu.', 'warning');
             }
         },
 
         showToast(msg, type = 'warning') {
-            this.toast = { show: true, message: msg, type: type };
+            const cleanMsg = String(msg || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+            this.toast = { show: true, message: cleanMsg, type: type };
             setTimeout(() => { this.toast.show = false; }, 4000);
         },
 
@@ -386,12 +387,12 @@
 
         validateBeforeSubmit(e) {
             if (this.ruangan_asal && this.ruangan_tujuan && this.ruangan_asal === this.ruangan_tujuan) {
-                this.showToast('⚠️ Ruangan Asal dan Ruangan Tujuan tidak boleh sama! Silakan pilih ruangan tujuan yang berbeda.', 'warning');
+                this.showToast('Ruangan Asal dan Ruangan Tujuan tidak boleh sama! Silakan pilih ruangan tujuan yang berbeda.', 'warning');
                 e.preventDefault();
                 return false;
             }
             if (this.selectedRegisterIds.length === 0) {
-                this.showToast('⚠️ Silakan pilih minimal 1 barang aset yang akan dimutasi.', 'warning');
+                this.showToast('Silakan pilih minimal 1 barang aset yang akan dimutasi.', 'warning');
                 e.preventDefault();
                 return false;
             }
