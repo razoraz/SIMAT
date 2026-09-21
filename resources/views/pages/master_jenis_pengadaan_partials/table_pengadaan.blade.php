@@ -30,8 +30,11 @@
                             <span>Sub Kegiatan Pengadaan SIPD</span>
                         </div>
                     </th>
-                    <th rowspan="2" class="px-4 py-3 bg-slate-950 text-slate-300 text-center align-middle w-28 border-l border-slate-800/80" style="position: sticky; right: 0; z-index: 20; background-color: #020617;">
-                        Aksi
+                    <th rowspan="2" class="px-3 py-3 bg-blue-950/80 text-blue-300 text-center align-middle whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]" style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #0f1d38 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                        <div class="flex items-center justify-center space-x-1.5 font-extrabold uppercase tracking-wider">
+                            <span>⚡</span>
+                            <span>AKSI</span>
+                        </div>
                     </th>
                 </tr>
 
@@ -88,23 +91,25 @@
                         <!-- Kolom 7: Nama Sub Kegiatan -->
                         <td class="px-4 py-4 font-semibold text-white bg-purple-950/10 border-r border-slate-800/80">{{ $item->sub_kegiatan_nama }}</td>
 
-                        <!-- Kolom 8: Aksi -->
-                        <td class="px-3 py-4 text-center space-x-1 whitespace-nowrap border-l border-slate-800/80 shadow-2xl" style="position: sticky; right: 0; z-index: 10; background-color: #0b1329;">
-                            <button type="button" @click="openEdit({{ json_encode($item) }})"
-                                class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                <span>Ubah</span>
-                            </button>
-
-                            <form method="POST" action="{{ route('master.jenis_pengadaan.destroy', $item->id) }}" class="inline-block" @submit="confirmDeleteForm($event, '{{ $item->sub_kegiatan_nama }} ({{ $item->sub_kegiatan_kode }})')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    <span>Hapus</span>
+                        <!-- Kolom 8: Aksi — FREEZE STICKY RIGHT -->
+                        <td class="px-3 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[190px] w-[190px]" style="position: sticky; right: 0; z-index: 2; background-color: #0c172e !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button type="button" @click="openEdit({{ json_encode($item) }})"
+                                    class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    <span>Ubah</span>
                                 </button>
-                            </form>
+
+                                <form method="POST" action="{{ route('master.jenis_pengadaan.destroy', $item->id) }}" class="inline-block" @submit="confirmDeleteForm($event, '{{ $item->sub_kegiatan_nama }} ({{ $item->sub_kegiatan_kode }})')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 font-semibold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        <span>Hapus</span>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @empty

@@ -110,7 +110,7 @@
         </div>
 
         <!-- Section 2: Master Aset (Grup Khusus Manajemen Lokasi & Servis Aset) -->
-        @if ($role === 'sub_admin' || $user->canAccess('mutasi') || $user->canAccess('unit'))
+        @if ($role === 'sub_admin' || $user->canAccess('mutasi') || $user->canAccess('unit') || $user->canAccess('astap'))
             <div>
                 <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Master Aset</div>
                 <div class="space-y-1">
@@ -123,6 +123,18 @@
                                     d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                             </svg>
                             <span>Mutasi Aset</span>
+                        </a>
+                    @endif
+
+                    <!-- Reklasifikasi Aset (PMDN 108 / Sheet 3 Reklas) -->
+                    @if ($user->canAccess('astap') || $user->canAccess('master_data') || $role === 'admin' || $role === 'master_admin')
+                        <a href="{{ route('master.reklasifikasi') }}" @click="if (isMobile) sidebarOpen = false"
+                            class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.reklasifikasi*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>Reklasifikasi Aset</span>
                         </a>
                     @endif
 

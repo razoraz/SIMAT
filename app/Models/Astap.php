@@ -14,6 +14,7 @@ class Astap extends Model
     protected $casts = [
         'spesifikasi_json' => 'array',
         'is_extracomtable' => 'boolean',
+        'is_reklas'        => 'boolean',
         'is_deleted'       => 'integer',
         'deleted_at'       => 'datetime',
         'jumlah_anggaran' => 'decimal:2',
@@ -116,6 +117,11 @@ class Astap extends Model
     public function registers()
     {
         return $this->hasMany(AstapRegister::class)->orderBy('no_register_int', 'asc')->orderBy('id', 'asc');
+    }
+
+    public function reklas()
+    {
+        return $this->hasMany(AstapReklas::class)->orderBy('tanggal_reklas', 'desc');
     }
 
     public function getKode108Attribute(): string

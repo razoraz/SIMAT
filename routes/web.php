@@ -4121,6 +4121,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/master-data/rekening-belanja', [RekeningBelanjaController::class, 'store'])->name('master.rekening_belanja.store');
         Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
         Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
+
+        // Master Reklasifikasi Aset (PMDN 108)
+        Route::get('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'index'])->name('master.reklasifikasi');
+        Route::post('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'store'])->name('master.reklasifikasi.store');
+        Route::delete('/master-data/reklasifikasi/{id}', [\App\Http\Controllers\ReklasifikasiController::class, 'destroy'])->name('master.reklasifikasi.destroy');
     });
 });
 });

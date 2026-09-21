@@ -6393,10 +6393,56 @@
                 },
 
                 async submitReklas() {
+                    if (!this.selectedAstapReklas) return;
                     this.isSubmittingReklas = true;
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
                     try {
-                        this.showToast('✅ Pratinjau: Reklasifikasi aset berhasil dipilih!', 'success');
-                        this.showReklasModal = false;
+                        const it = this.selectedAstapReklas;
+                        const tgl = this.reklasTanggal || new Date().toISOString().split('T')[0];
+                        const dateObj = new Date(tgl);
+                        const month = dateObj.getMonth() + 1;
+                        const tw = Math.ceil(month / 3);
+                        const thn = dateObj.getFullYear() || it.tahun_perolehan || new Date().getFullYear();
+
+                        let jenisReklasDb = 'KOREKSI_REKENING';
+                        if (this.reklasJenis === 'extracom') jenisReklasDb = 'EKSTRAKOMPTABEL';
+                        else if (this.reklasJenis === 'kdp') jenisReklasDb = 'KDP_TO_DEFINITIF';
+                        else if (this.reklasJenis === 'antar_kib') jenisReklasDb = 'KOREKSI_REKENING';
+
+                        const payload = {
+                            astap_id: it.id,
+                            jenis_reklas: jenisReklasDb,
+                            asal_kib: it.category || 'KIB B',
+                            tujuan_kib: this.reklasTujuanKib || (this.reklasJenis === 'extracom' ? 'EKSTRAKOMPTABEL' : 'KIB C'),
+                            nilai_reklas: parseFloat(it.jumlah_realisasi_raw || it.total_realisasi || it.harga_satuan || 0),
+                            tanggal_reklas: tgl,
+                            triwulan: tw,
+                            tahun: thn,
+                            nomor_ba_reklas: (this.reklasNomorBa || '').trim() || null,
+                            keterangan: this.getReklasNarasiPreview(),
+                        };
+
+                        const res = await fetch('{{ route("master.reklasifikasi.store") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify(payload),
+                        });
+
+                        const resJson = await res.json();
+
+                        if (resJson.success) {
+                            it.is_reklas = true;
+                            it.jenis_reklas = jenisReklasDb;
+                            this.showToast('✅ ' + (resJson.message || 'Reklasifikasi aset berhasil dicatat!'), 'success');
+                            this.showReklasModal = false;
+                        } else {
+                            this.showToast('⚠️ ' + (resJson.message || 'Gagal mencatat reklasifikasi.'), 'error');
+                        }
                     } catch (err) {
                         this.showToast('⚠️ Gagal memproses reklasifikasi: ' + err.message, 'error');
                     } finally {
