@@ -755,15 +755,15 @@
         };
 
         // Helper form submit handler dengan konfirmasi kustom
-        window.confirmSimatFormSubmit = function(event, message, title = 'Konfirmasi Pindahkan ke Tong Sampah', itemName = '') {
+        window.confirmSimatFormSubmit = function(event, message, title = 'Konfirmasi Hapus Data', itemName = '', btnText = '🗑️ Ya, Hapus') {
             event.preventDefault();
             const form = event.target;
             window.askSimatConfirm({
                 title: title,
-                message: message || 'Apakah Anda yakin ingin memindahkan data ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali sewaktu-waktu.',
+                message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                 itemName: itemName,
                 type: 'danger',
-                btnText: 'Pindahkan ke Tong Sampah',
+                btnText: btnText,
                 onConfirm: function() {
                     form.submit();
                 }

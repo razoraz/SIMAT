@@ -21,7 +21,7 @@
                 </svg>
             </div>
             <div class="space-y-1 min-w-0 flex-1">
-                <h3 class="text-base sm:text-lg font-black text-white leading-snug tracking-tight">Konfirmasi Pindahkan ke Tong Sampah</h3>
+                <h3 class="text-base sm:text-lg font-black text-white leading-snug tracking-tight">Batalkan Transaksi Reklasifikasi?</h3>
                 <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
                     Apakah Anda yakin ingin membatalkan transaksi reklasifikasi ini? Nilai mutasi akan dikembalikan ke saldo asalnya.
                 </p>
@@ -47,7 +47,7 @@
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                 </svg>
-                <span>Pindahkan ke Tong Sampah</span>
+                <span>Ya, Hapus Transaksi</span>
             </button>
         </div>
     </div>

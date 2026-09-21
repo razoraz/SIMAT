@@ -162,7 +162,7 @@
                     message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                     itemName: itemName || '',
                     type: type,
-                    btnText: btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                    btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
                     onConfirm: onConfirm
                 };
                 this.showConfirmModal = true;
@@ -184,11 +184,11 @@
                 event.preventDefault();
                 const formElement = event.target;
                 this.askConfirmation({
-                    title: 'Konfirmasi Pindahkan ke Tong Sampah',
-                    message: 'Apakah Anda yakin ingin memindahkan data rekening belanja ini ke Recycle Bin (Tong Sampah)?',
+                    title: '🗑️ Konfirmasi Hapus Rekening Belanja',
+                    message: 'Apakah Anda yakin ingin menghapus data rekening belanja ini dari master data?',
                     itemName: itemName || '',
                     type: 'danger',
-                    btnText: 'Pindahkan ke Tong Sampah',
+                    btnText: '🗑️ Ya, Hapus Rekening',
                     onConfirm: () => {
                         formElement.submit();
                     }
