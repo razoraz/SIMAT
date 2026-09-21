@@ -194,21 +194,109 @@ class ReklasifikasiController extends Controller
             'tahun' => 'required|integer|min:2000|max:2099',
             'nomor_ba_reklas' => 'nullable|string|max:150',
             'keterangan' => 'nullable|string',
+            'reklas_items' => 'nullable|array',
         ]);
 
         DB::beginTransaction();
         try {
-            $validated['user_id'] = Auth::id();
-            $reklas = AstapReklas::create($validated);
+            $astap = Astap::findOrFail($validated['astap_id']);
 
-            // Update status reklas pada tabel astap
-            $astap = Astap::find($validated['astap_id']);
-            if ($astap) {
-                $astap->update([
-                    'is_reklas' => true,
-                    'jenis_reklas' => $validated['jenis_reklas'],
-                ]);
+            // Jika jenis reklasifikasi adalah Ekstrakomptabel dan ada penyesuaian item harga satuan
+            if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL' && !empty($request->reklas_items) && is_array($request->reklas_items)) {
+                $totalBaru = 0;
+                $totalVolume = 0;
+                
+                // Validasi tiap rincian barang: batas Rp 300.000 dan > Rp 0
+                foreach ($request->reklas_items as $itemIdx => $rItem) {
+                    $harga = (float) ($rItem['harga_satuan'] ?? 0);
+                    $qty = (int) ($rItem['jumlah_volume'] ?? 1);
+                    $nama = trim((string) ($rItem['nama_barang'] ?? 'Barang #' . ($itemIdx + 1)));
+
+                    if ($harga <= 0) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Harga satuan untuk {$nama} harus lebih dari Rp 0.",
+                        ], 422);
+                    }
+
+                    if ($harga > 300000) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Harga satuan untuk {$nama} (Rp " . number_format($harga, 0, ',', '.') . ") melebihi batas Ekstrakomptabel (Maksimal Rp 300.000).",
+                        ], 422);
+                    }
+
+                    $totalBaru += ($qty * $harga);
+                    $totalVolume += $qty;
+                }
+
+                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+
+                if (isset($spec['mesin_items']) && is_array($spec['mesin_items'])) {
+                    $updatedMesinItems = [];
+                    foreach ($request->reklas_items as $idx => $rItem) {
+                        $existing = $spec['mesin_items'][$idx] ?? ($spec['mesin_items'][0] ?? []);
+                        $existing['mesin_nama_barang'] = $rItem['nama_barang'] ?? ($existing['mesin_nama_barang'] ?? $astap->nama_barang);
+                        $existing['mesin_jumlah_barang'] = (int) ($rItem['jumlah_volume'] ?? 1);
+                        $existing['mesin_satuan'] = $rItem['satuan'] ?? ($existing['mesin_satuan'] ?? ($astap->satuan ?: 'Unit'));
+                        $existing['mesin_nilai_satuan'] = (float) ($rItem['harga_satuan'] ?? 0);
+                        $existing['mesin_total_nilai'] = (int) ($rItem['jumlah_volume'] ?? 1) * (float) ($rItem['harga_satuan'] ?? 0);
+                        $updatedMesinItems[] = $existing;
+                    }
+                    $spec['mesin_items'] = $updatedMesinItems;
+                } elseif (isset($spec['lainnya_items']) && is_array($spec['lainnya_items'])) {
+                    $updatedLainnyaItems = [];
+                    foreach ($request->reklas_items as $idx => $rItem) {
+                        $existing = $spec['lainnya_items'][$idx] ?? ($spec['lainnya_items'][0] ?? []);
+                        $existing['lainnya_nama_barang'] = $rItem['nama_barang'] ?? ($existing['lainnya_nama_barang'] ?? $astap->nama_barang);
+                        $existing['lainnya_jumlah_barang'] = (int) ($rItem['jumlah_volume'] ?? 1);
+                        $existing['lainnya_satuan'] = $rItem['satuan'] ?? ($existing['lainnya_satuan'] ?? ($astap->satuan ?: 'Unit'));
+                        $existing['lainnya_nilai_satuan'] = (float) ($rItem['harga_satuan'] ?? 0);
+                        $existing['lainnya_total_nilai'] = (int) ($rItem['jumlah_volume'] ?? 1) * (float) ($rItem['harga_satuan'] ?? 0);
+                        $updatedLainnyaItems[] = $existing;
+                    }
+                    $spec['lainnya_items'] = $updatedLainnyaItems;
+                } else {
+                    if (count($request->reklas_items) > 1) {
+                        $updatedMesinItems = [];
+                        foreach ($request->reklas_items as $idx => $rItem) {
+                            $updatedMesinItems[] = [
+                                'mesin_nama_barang' => $rItem['nama_barang'] ?? $astap->nama_barang,
+                                'mesin_jumlah_barang' => (int) ($rItem['jumlah_volume'] ?? 1),
+                                'mesin_satuan' => $rItem['satuan'] ?? ($astap->satuan ?: 'Unit'),
+                                'mesin_nilai_satuan' => (float) ($rItem['harga_satuan'] ?? 0),
+                                'mesin_total_nilai' => (int) ($rItem['jumlah_volume'] ?? 1) * (float) ($rItem['harga_satuan'] ?? 0),
+                            ];
+                        }
+                        $spec['mesin_items'] = $updatedMesinItems;
+                    } else {
+                        $firstItem = $request->reklas_items[0] ?? [];
+                        if (!empty($firstItem['nama_barang'])) {
+                            $astap->nama_barang = $firstItem['nama_barang'];
+                        }
+                    }
+                }
+
+                $firstHarga = count($request->reklas_items) > 0 ? (float) $request->reklas_items[0]['harga_satuan'] : (float) ($totalBaru / max(1, $totalVolume));
+                $astap->spesifikasi_json = $spec;
+                $astap->harga_satuan = $firstHarga;
+                $astap->jumlah_volume = $totalVolume;
+                $astap->total_realisasi = $totalBaru;
+                $astap->is_extracomtable = true;
+                $validated['nilai_reklas'] = $totalBaru;
             }
+
+            $astap->is_reklas = true;
+            $astap->jenis_reklas = $validated['jenis_reklas'];
+            if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
+                $astap->is_extracomtable = true;
+            }
+            $astap->save();
+
+            // Set user dan simpan audit log reklasifikasi
+            $validated['user_id'] = Auth::id();
+            unset($validated['reklas_items']);
+            $reklas = AstapReklas::create($validated);
 
             DB::commit();
 
@@ -217,6 +305,18 @@ class ReklasifikasiController extends Controller
                     'success' => true,
                     'message' => 'Transaksi reklasifikasi aset berhasil dicatat!',
                     'data' => $reklas,
+                    'astap' => [
+                        'id' => $astap->id,
+                        'total_realisasi' => 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.'),
+                        'total_realisasi_num' => (float) $astap->total_realisasi,
+                        'jumlah_volume' => (int) $astap->jumlah_volume,
+                        'harga_satuan' => (float) $astap->harga_satuan,
+                        'is_extracomtable' => (bool) $astap->is_extracomtable,
+                        'category' => $astap->is_extracomtable ? 'EXTRACOM' : $astap->category,
+                        'is_reklas' => (bool) $astap->is_reklas,
+                        'jenis_reklas' => $astap->jenis_reklas,
+                        'spesifikasi_json' => $astap->spesifikasi_json,
+                    ],
                 ]);
             }
 
