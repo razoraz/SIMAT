@@ -11,7 +11,7 @@
 
             <div class="relative z-10 space-y-6">
                 <!-- BARIS ATAS: JUDUL & STATISTIK GLOBAL AUDIT -->
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div>
                         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold mb-3 shadow-sm">
                             <span>♻️ Audit Trail & Central Recycle Bin</span>
@@ -47,10 +47,10 @@
                         <span class="text-[10.5px] text-slate-500 hidden sm:inline">Klik kartu untuk beralih tampilan modul</span>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    <div class="flex flex-wrap gap-3">
                         <!-- 1. Master ASTAP -->
                         <div @click="changeTab('astap')" 
-                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
                             :class="activeModule === 'astap' 
                                 ? 'bg-gradient-to-br from-blue-500/20 to-blue-950/30 border-blue-500/60 ring-2 ring-blue-500/30 shadow-lg shadow-blue-500/10' 
                                 : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
@@ -68,7 +68,7 @@
 
                         <!-- 2. Unit & Paviliun -->
                         <div @click="changeTab('unit')" 
-                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
                             :class="activeModule === 'unit' 
                                 ? 'bg-gradient-to-br from-cyan-500/20 to-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10' 
                                 : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
@@ -86,7 +86,7 @@
 
                         <!-- 3. Distribusi Aset -->
                         <div @click="changeTab('distribusi')" 
-                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
                             :class="activeModule === 'distribusi' 
                                 ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-950/30 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10' 
                                 : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
@@ -104,7 +104,7 @@
 
                         <!-- 4. Mutasi Aset -->
                         <div @click="changeTab('mutasi')" 
-                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
                             :class="activeModule === 'mutasi' 
                                 ? 'bg-gradient-to-br from-amber-500/20 to-amber-950/30 border-amber-500/60 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10' 
                                 : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
@@ -122,7 +122,7 @@
 
                         <!-- 5. Akun Pengguna -->
                         <div @click="changeTab('users')" 
-                            class="cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
                             :class="activeModule === 'users' 
                                 ? 'bg-gradient-to-br from-rose-500/20 to-rose-950/30 border-rose-500/60 ring-2 ring-rose-500/30 shadow-lg shadow-rose-500/10' 
                                 : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
