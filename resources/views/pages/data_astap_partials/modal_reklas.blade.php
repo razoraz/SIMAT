@@ -45,9 +45,13 @@
                                 <div class="text-[11px] font-mono text-cyan-400 font-medium mt-0.5" x-text="'Kode: ' + (selectedAstapReklas?.kode_barang || '-')"></div>
                             </div>
                             <div class="text-right shrink-0">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Nilai Realisasi</span>
-                                <div class="text-sm font-extrabold text-emerald-400 font-mono" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></div>
-                                <div class="text-[10.5px] text-teal-300 font-mono mt-0.5" x-text="(selectedAstapReklas?.jumlah_volume || 1) + ' Unit'"></div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block" x-text="reklasJenis === 'extracom' ? 'Nilai Realisasi (Disesuaikan)' : 'Nilai Realisasi'"></span>
+                                <div class="text-sm font-extrabold font-mono"
+                                     :class="reklasJenis === 'extracom' ? 'text-amber-300' : 'text-emerald-400'"
+                                     x-text="reklasJenis === 'extracom' ? ('Rp ' + Number(getReklasExtracomTotal()).toLocaleString('id-ID')) : (selectedAstapReklas?.jumlah_realisasi || 'Rp 0')"></div>
+                                <div class="text-[10.5px] font-mono mt-0.5"
+                                     :class="reklasJenis === 'extracom' ? 'text-amber-200/80' : 'text-teal-300'"
+                                     x-text="(reklasJenis === 'extracom' ? getReklasExtracomTotalVolume() : (selectedAstapReklas?.jumlah_volume || 1)) + ' Unit'"></div>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2 pt-2 border-t border-slate-800/80">
@@ -174,11 +178,135 @@
                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-cyan-500">
                         </div>
 
-                        <!-- Jika Ekstrakomptabel: Info Box Penjelasan -->
-                        <div x-show="reklasJenis === 'extracom'" class="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start space-x-2.5">
-                            <span class="text-amber-400 text-sm shrink-0">💡</span>
-                            <div class="text-[11px] text-amber-200/90 leading-relaxed">
-                                Barang ini akan dialihkan keluar dari Aset Tetap ke kelompok <strong>Ekstrakomptabel</strong> dan dicatat pada baris koreksi Sheet 3 Reklas RSDK serta kolom <em>Direklasifikasi ke Aset Lain</em> pada Sheet 4 RMB.
+                        <!-- Jika Ekstrakomptabel: Form Penyesuaian Harga Satuan per Item -->
+                        <div x-show="reklasJenis === 'extracom'" class="space-y-3">
+                            <!-- Info Box Penjelasan -->
+                            <div class="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start space-x-2.5">
+                                <span class="text-amber-400 text-sm shrink-0">💡</span>
+                                <div class="text-[11px] text-amber-200/90 leading-relaxed">
+                                    Barang ini akan dialihkan keluar dari Aset Tetap ke kelompok <strong>Ekstrakomptabel (&lt; Rp 300rb)</strong>. Anda dapat menyesuaikan harga satuan langsung di bawah ini. Jika terdapat lebih dari 1 barang, isikan harga satuan untuk masing-masing barang.
+                                </div>
+                            </div>
+
+                            <!-- Header Section & Tombol Tambah Barang -->
+                            <div class="flex items-center justify-between pt-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-amber-300 uppercase tracking-wider">📦 Rincian Barang &amp; Harga Satuan:</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                          x-text="reklasExtracomItems.length + ' Item'"></span>
+                                </div>
+                                <button type="button" @click="addExtracomItem()"
+                                        class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-bold border border-amber-500/30 hover:border-amber-400 transition-all cursor-pointer">
+                                    <span>➕</span>
+                                    <span>Tambah Rincian Barang</span>
+                                </button>
+                            </div>
+
+                            <!-- Daftar Rincian Barang (Repeater Cards) -->
+                            <div class="space-y-2.5 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                                <template x-for="(item, idx) in reklasExtracomItems" :key="idx">
+                                    <div class="p-3 rounded-xl bg-slate-900/90 border transition-all space-y-2.5"
+                                         :class="parseFloat(item.harga_satuan) > 300000 ? 'border-rose-500/60 bg-rose-950/10' : (parseFloat(item.harga_satuan) <= 0 ? 'border-amber-500/40' : 'border-slate-800 hover:border-slate-700')">
+                                        
+                                        <!-- Baris Atas Item: Nomor & Tombol Hapus -->
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-slate-300 border border-slate-700"
+                                                      x-text="'Barang #' + (idx + 1)"></span>
+                                                <span class="text-[11px] font-bold text-white truncate max-w-[220px]" x-text="item.nama_barang || 'Barang Baru'"></span>
+                                            </div>
+                                            <template x-if="reklasExtracomItems.length > 1">
+                                                <button type="button" @click="removeExtracomItem(idx)"
+                                                        title="Hapus baris barang ini"
+                                                        class="text-rose-400 hover:text-rose-200 text-xs p-1 rounded hover:bg-rose-500/20 transition-colors cursor-pointer">
+                                                    ✕ Hapus
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        <!-- Grid Input Kolom -->
+                                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                                            <!-- 1. Nama Barang (Cols 5) -->
+                                            <div class="sm:col-span-5">
+                                                <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-1">Nama Barang:</label>
+                                                <input type="text" x-model="item.nama_barang" placeholder="Nama barang..."
+                                                       class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 font-medium">
+                                            </div>
+
+                                            <!-- 2. Volume & Satuan (Cols 3) -->
+                                            <div class="sm:col-span-3">
+                                                <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-1">Volume &amp; Satuan:</label>
+                                                <div class="flex space-x-1">
+                                                    <input type="number" min="1" x-model.number="item.jumlah_volume" placeholder="Qty"
+                                                           class="w-16 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white text-center focus:outline-none focus:border-amber-500 font-bold">
+                                                    <input type="text" x-model="item.satuan" placeholder="Satuan"
+                                                           class="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                                </div>
+                                            </div>
+
+                                            <!-- 3. Harga Satuan (Rp) (Cols 4) -->
+                                            <div class="sm:col-span-4">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <label class="block text-amber-300 font-bold text-[10px] uppercase tracking-wider">Harga Satuan (Rp):</label>
+                                                    <span class="text-[9.5px] font-mono text-slate-400">Maks 300rb</span>
+                                                </div>
+                                                <div class="relative">
+                                                    <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs font-mono font-bold">Rp</span>
+                                                    <input type="number" step="100" min="0" max="300000" x-model.number="item.harga_satuan"
+                                                           placeholder="0"
+                                                           class="w-full pl-8 pr-2.5 py-1.5 bg-slate-950 border rounded-lg text-xs font-mono font-extrabold focus:outline-none transition-colors text-right"
+                                                           :class="parseFloat(item.harga_satuan) > 300000 ? 'border-rose-500 text-rose-300 focus:border-rose-400' : (parseFloat(item.harga_satuan) <= 0 ? 'border-amber-500/50 text-amber-300 focus:border-amber-400' : 'border-slate-700 text-emerald-400 focus:border-emerald-500')">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Subtotal & Status Validasi per Item -->
+                                        <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[11px]">
+                                            <div>
+                                                <template x-if="parseFloat(item.harga_satuan) > 300000">
+                                                    <span class="text-rose-400 font-bold flex items-center space-x-1">
+                                                        <span>⚠️</span>
+                                                        <span>Melebihi batas Ekstrakomptabel (Maksimal Rp 300.000 / unit)</span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="parseFloat(item.harga_satuan) <= 0">
+                                                    <span class="text-amber-400 font-medium flex items-center space-x-1">
+                                                        <span>⚠️</span>
+                                                        <span>Wajib diisi (&gt; Rp 0)</span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="parseFloat(item.harga_satuan) > 0 && parseFloat(item.harga_satuan) <= 300000">
+                                                    <span class="text-slate-400">
+                                                        <span class="text-slate-300 font-medium" x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span> &times; 
+                                                        <span class="text-emerald-400 font-mono font-bold" x-text="'Rp ' + Number(item.harga_satuan || 0).toLocaleString('id-ID')"></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-slate-400 text-[10px]">Subtotal: </span>
+                                                <span class="font-mono font-extrabold text-emerald-300"
+                                                      x-text="'Rp ' + Number((item.jumlah_volume || 1) * (item.harga_satuan || 0)).toLocaleString('id-ID')"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Total Ringkasan Ekstrakomptabel -->
+                            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+                                <div>
+                                    <div class="text-[10px] uppercase font-bold text-amber-300 tracking-wider">Total Nilai Realisasi Ekstrakomptabel:</div>
+                                    <div class="text-[11px] text-slate-400 mt-0.5">
+                                        Semula: <span class="line-through text-slate-400 font-mono" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+                                        <span class="text-amber-400 font-bold ml-1">➔ Disesuaikan</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-base font-extrabold text-amber-300 font-mono"
+                                         x-text="'Rp ' + Number(getReklasExtracomTotal()).toLocaleString('id-ID')"></div>
+                                    <div class="text-[10.5px] text-amber-200/80 font-mono"
+                                         x-text="getReklasExtracomTotalVolume() + ' Total Unit'"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -223,7 +351,7 @@
                         Batal
                     </button>
                     <button type="button" @click="submitReklas()"
-                        :disabled="isSubmittingReklas"
+                        :disabled="isSubmittingReklas || (reklasJenis === 'extracom' && (reklasExtracomItems.some(i => parseFloat(i.harga_satuan) > 300000 || parseFloat(i.harga_satuan) <= 0)))"
                         class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 cursor-pointer">
                         <template x-if="isSubmittingReklas">
                             <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

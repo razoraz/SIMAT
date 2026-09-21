@@ -87,4 +87,130 @@ class ReklasifikasiTest extends TestCase
             'id' => $reklas->id,
         ]);
     }
+
+    public function test_can_reklas_to_extracom_with_multi_items_and_custom_unit_prices()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Paket Perlengkapan Medis',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 5,
+            'harga_satuan' => 400000,
+            'total_realisasi' => 2000000,
+            'jumlah_anggaran' => 2000000,
+            'user_id' => $admin->id,
+            'spesifikasi_json' => [
+                'mesin_items' => [
+                    [
+                        'mesin_nama_barang' => 'Stetoskop Medis',
+                        'mesin_jumlah_barang' => 2,
+                        'mesin_satuan' => 'Unit',
+                        'mesin_nilai_satuan' => 400000,
+                    ],
+                    [
+                        'mesin_nama_barang' => 'Tensimeter Digital',
+                        'mesin_jumlah_barang' => 3,
+                        'mesin_satuan' => 'Unit',
+                        'mesin_nilai_satuan' => 400000,
+                    ]
+                ]
+            ]
+        ]);
+
+        // Simpan reklasifikasi ke Ekstrakomptabel dengan 2 harga satuan berbeda (< 300rb)
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => (2 * 150000) + (3 * 200000), // 300.000 + 600.000 = 900.000
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/EXTRACOM/001',
+            'keterangan' => 'Reklasifikasi 2 barang berbeda ke Ekstrakomptabel',
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'Stetoskop Medis',
+                    'jumlah_volume' => 2,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 150000,
+                ],
+                [
+                    'nama_barang' => 'Tensimeter Digital',
+                    'jumlah_volume' => 3,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 200000,
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'astap' => [
+                'is_extracomtable' => true,
+                'category' => 'EXTRACOM',
+                'is_reklas' => true,
+                'jenis_reklas' => 'EKSTRAKOMPTABEL',
+                'total_realisasi_num' => 900000,
+            ]
+        ]);
+
+        $astap->refresh();
+        $this->assertTrue((bool)$astap->is_extracomtable);
+        $this->assertTrue((bool)$astap->is_reklas);
+        $this->assertEquals('EKSTRAKOMPTABEL', $astap->jenis_reklas);
+        $this->assertEquals(900000, (float)$astap->total_realisasi);
+
+        // Verifikasi spesifikasi_json ter-update untuk 2 barang tersebut
+        $spec = $astap->spesifikasi_json;
+        $this->assertCount(2, $spec['mesin_items']);
+        $this->assertEquals(150000, (float)$spec['mesin_items'][0]['mesin_nilai_satuan']);
+        $this->assertEquals(200000, (float)$spec['mesin_items'][1]['mesin_nilai_satuan']);
+    }
+
+    public function test_reklas_extracom_rejects_unit_price_above_300000()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Alat Kesehatan Mahal',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 500000,
+            'total_realisasi' => 500000,
+            'jumlah_anggaran' => 500000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => 350000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'Alat Kesehatan Mahal',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 350000, // > 300.000
+                ]
+            ]
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false,
+        ]);
+        $response->assertSee('melebihi batas Ekstrakomptabel (Maksimal Rp 300.000)');
+    }
 }
+
