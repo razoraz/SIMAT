@@ -6382,16 +6382,31 @@
                 },
 
                 isCurrentAstapKonstruksi() {
-                    if (!this.selectedAstapReklas) return false;
-                    const it = this.selectedAstapReklas;
-                    const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(it) : (it.category || '');
-                    const kode = it.kode_barang || it.jenis_aset_kode || '';
-                    return (cat === 'KIB C' || cat === 'KIB D' || kode.startsWith('1.3.3') || kode.startsWith('1.3.4'));
+                    return this.isCurrentAstapKdp();
                 },
 
                 isReklasKdpDisabled() {
-                    if (!this.selectedAstapReklas) return false;
-                    return !(this.isCurrentAstapKdp() || this.isCurrentAstapKonstruksi());
+                    if (!this.selectedAstapReklas) return true;
+                    return !this.isCurrentAstapKdp();
+                },
+
+                getRmbAsalLabel() {
+                    if (!this.selectedAstapReklas) return '-';
+                    const cat = this.selectedAstapReklas.category || 'KIB B';
+                    if (this.reklasJenis === 'kdp') return 'KIB F (KDP / Konstruksi)';
+                    if (this.reklasJenis === 'intracom') return 'Ekstrakomptabel (Luar Neraca)';
+                    if (this.reklasJenis === 'extracom') return `${cat} (Neraca Aset Tetap)`;
+                    if (this.reklasJenis === 'antar_kib') return `${cat} (KIB Asal)`;
+                    return `${cat} (Rekening Semula)`;
+                },
+
+                getRmbTujuanLabel() {
+                    if (!this.selectedAstapReklas) return '-';
+                    if (this.reklasJenis === 'kdp') return `${this.reklasTujuanKib || 'KIB C'} (Definitif)`;
+                    if (this.reklasJenis === 'extracom') return 'Ekstrakomptabel (Luar Neraca)';
+                    if (this.reklasJenis === 'intracom') return `${this.reklasTujuanKib || 'KIB B'} (Neraca Aset Tetap)`;
+                    if (this.reklasJenis === 'antar_kib') return `${this.reklasTujuanKib || 'KIB Tujuan'}`;
+                    return this.reklasTujuanKode ? `Rekening ${this.reklasTujuanKode}` : 'Rekening Simda Baru';
                 },
 
                 openReklas(item) {
@@ -6409,10 +6424,6 @@
                         // Proyek KDP selesai -> Kapitalisasi ke KIB C / D Definitif
                         this.reklasJenis = 'kdp';
                         this.reklasTujuanKib = 'KIB C';
-                    } else if (cat === 'KIB C' || cat === 'KIB D' || kode.startsWith('1.3.3') || kode.startsWith('1.3.4')) {
-                        // Belanja Gedung / Jaringan Fisik -> Default KDP (jika sedang dibangun)
-                        this.reklasJenis = 'kdp';
-                        this.reklasTujuanKib = 'KIB F';
                     } else if (isNonExtracom) {
                         this.reklasJenis = 'antar_kib';
                         this.reklasTujuanKib = cat === 'KIB A' ? 'KIB C' : 'KIB B';
@@ -6569,12 +6580,8 @@
                         const kdBrg = it.kode_barang || '';
                         const nmBrg = it.nama_barang || '';
                         const vol = (it.jumlah_volume || 1) + ' Unit';
-                        if (this.isCurrentAstapKdp()) {
-                            const tujuan = this.reklasTujuanKib || 'KIB C';
-                            return `Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
-                        } else {
-                            return `Pengalihan belanja fisik ke Konstruksi Dalam Pengerjaan (KDP) dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke KIB F berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik baru mulai/belum selesai 100% per tanggal laporan.`;
-                        }
+                        const tujuan = this.reklasTujuanKib || 'KIB C';
+                        return `Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
                     } else if (this.reklasJenis === 'antar_kib') {
                         const val = it.jumlah_realisasi || 'Rp 0';
                         const kdBrg = it.kode_barang || '';
@@ -6646,7 +6653,7 @@
                         let jenisReklasDb = 'KOREKSI_REKENING';
                         if (this.reklasJenis === 'extracom') jenisReklasDb = 'EKSTRAKOMPTABEL';
                         else if (this.reklasJenis === 'intracom') jenisReklasDb = 'KAPITALISASI_INTRAKOM';
-                        else if (this.reklasJenis === 'kdp') jenisReklasDb = this.isCurrentAstapKdp() ? 'KDP_TO_DEFINITIF' : 'DEFINITIF_TO_KDP';
+                        else if (this.reklasJenis === 'kdp') jenisReklasDb = 'KDP_TO_DEFINITIF';
                         else if (this.reklasJenis === 'antar_kib') jenisReklasDb = 'KOREKSI_REKENING';
 
                         let asalKib = (it.category || 'KIB B');
@@ -6658,12 +6665,8 @@
                         } else if (this.reklasJenis === 'extracom') {
                             targetKib = 'EKSTRAKOMPTABEL';
                         } else if (this.reklasJenis === 'kdp') {
-                            if (this.isCurrentAstapKdp()) {
-                                asalKib = 'KIB F';
-                                targetKib = this.reklasTujuanKib || 'KIB C';
-                            } else {
-                                targetKib = 'KIB F';
-                            }
+                            asalKib = 'KIB F';
+                            targetKib = this.reklasTujuanKib || 'KIB C';
                         }
 
                         const nilaiReklas = (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') 

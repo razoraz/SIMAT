@@ -122,7 +122,7 @@
                                 </div>
                             </label>
 
-                            <!-- 3. KDP (Konstruksi Dalam Pengerjaan) - 2 Arah Adaptif -->
+                              <!-- 3. KDP (Konstruksi Dalam Pengerjaan) - Kapitalisasi KDP Selesai -->
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
                                    :class="{
@@ -146,24 +146,18 @@
                                                   'text-rose-300': reklasJenis === 'kdp' && !isReklasKdpDisabled(),
                                                   'text-white': reklasJenis !== 'kdp' && !isReklasKdpDisabled(),
                                                   'text-slate-500': isReklasKdpDisabled()
-                                              }"
-                                              x-text="isCurrentAstapKdp() ? 'Kapitalisasi KDP Selesai' : (isCurrentAstapKonstruksi() ? 'Pengalihan ke KDP' : 'KDP / Konstruksi')"></span>
+                                              }">Kapitalisasi KDP Selesai</span>
                                         <template x-if="isReklasKdpDisabled()">
-                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">Terkunci (Khusus Fisik)</span>
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">Khusus KDP (KIB F)</span>
                                         </template>
-                                        <template x-if="isCurrentAstapKdp()">
+                                        <template x-if="!isReklasKdpDisabled()">
                                             <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">KDP Selesai</span>
-                                        </template>
-                                        <template x-if="isCurrentAstapKonstruksi()">
-                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Start / Proses</span>
                                         </template>
                                     </div>
                                     <div class="text-[10px] text-slate-400 mt-0.5" 
                                          x-text="isReklasKdpDisabled() 
-                                            ? 'Khusus proyek fisik Gedung (KIB C), Jaringan (KIB D), atau KDP (KIB F)' 
-                                            : (isCurrentAstapKdp() 
-                                                ? 'Pekerjaan fisik 100% selesai, dialihkan ke KIB C/D Definitif' 
-                                                : 'Pekerjaan fisik baru start/belum selesai 100% (masuk KIB F)')"></div>
+                                            ? 'Hanya untuk kapitalisasi aset KDP (KIB F) yang telah selesai 100%' 
+                                            : 'Pekerjaan fisik 100% selesai, dialihkan ke KIB C/D Definitif'"></div>
                                 </div>
                             </label>
 
@@ -203,31 +197,16 @@
                             </select>
                         </div>
 
-                        <!-- Jika KDP: Pilihan KIB Tujuan (2 Arah) -->
+                        <!-- Jika KDP: Pilihan KIB Tujuan Definitif -->
                         <div x-show="reklasJenis === 'kdp'" class="space-y-2">
-                            <template x-if="isCurrentAstapKdp()">
-                                <div>
-                                    <label class="block text-rose-300 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏗️ Alihkan KDP Selesai ke KIB Definitif:</label>
-                                    <select x-model="reklasTujuanKib"
-                                            class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-rose-400">
-                                        <option value="KIB C">KIB C - Gedung &amp; Bangunan (Definitif)</option>
-                                        <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (Definitif)</option>
-                                        <option value="KIB B">KIB B - Peralatan &amp; Mesin (Instalasi Mekanikal Gedung)</option>
-                                    </select>
-                                    <p class="text-[10px] text-slate-400 mt-1">Akumulasi nilai KDP akan dikapitalisasi dan dicatat sebagai aset tetap definitif di neraca.</p>
-                                </div>
-                            </template>
-                            <template x-if="!isCurrentAstapKdp()">
-                                <div class="p-3 rounded-xl bg-slate-900 border border-rose-500/40 space-y-1.5">
-                                    <label class="block text-rose-300 font-bold text-[10.5px] uppercase tracking-wider">🏗️ Tujuan Reklasifikasi:</label>
-                                    <div class="flex items-center space-x-2 text-xs font-bold text-white">
-                                        <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40">KIB F - Konstruksi Dalam Pengerjaan (KDP)</span>
-                                    </div>
-                                    <p class="text-[10px] text-slate-400 leading-relaxed">
-                                        Belanja modal fisik ini akan dialihkan sementara ke <strong>KIB F (KDP)</strong> karena pekerjaan fisik baru mulai dibangun atau belum selesai 100% per tanggal cut-off pelaporan.
-                                    </p>
-                                </div>
-                            </template>
+                            <label class="block text-rose-300 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏗️ Alihkan KDP Selesai ke KIB Definitif:</label>
+                            <select x-model="reklasTujuanKib"
+                                    class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-rose-400">
+                                <option value="KIB C">KIB C - Gedung &amp; Bangunan (Definitif)</option>
+                                <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (Definitif)</option>
+                                <option value="KIB B">KIB B - Peralatan &amp; Mesin (Instalasi Mekanikal Gedung)</option>
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-1">Akumulasi nilai KDP akan dikapitalisasi dan dicatat sebagai aset tetap definitif di neraca.</p>
                         </div>
 
                         <!-- Jika Koreksi Rekening: Input Sub-Rincian Tujuan -->
@@ -468,6 +447,33 @@
                         </div>
                         <p class="text-[11px] text-indigo-200/90 italic leading-relaxed"
                            x-text="getReklasNarasiPreview()"></p>
+                    </div>
+
+                    <!-- Preview Dampak Mutasi RMB (Rekapitulasi Mutasi Barang) -->
+                    <div class="p-3 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                            <span class="flex items-center space-x-1.5">
+                                <span>⚖️</span>
+                                <span>Dampak ke Laporan RMB (Rekapitulasi Mutasi Barang):</span>
+                            </span>
+                            <span class="text-[9.5px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">Format Baku Neraca BMD</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center space-x-2.5">
+                                <span class="text-rose-400 text-base font-bold">🔻</span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-[9.5px] font-bold text-rose-300 uppercase tracking-wider">RMB Pengurangan (-)</div>
+                                    <div class="text-[11px] font-extrabold text-white truncate font-mono mt-0.5" x-text="getRmbAsalLabel()"></div>
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center space-x-2.5">
+                                <span class="text-emerald-400 text-base font-bold">🔺</span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-[9.5px] font-bold text-emerald-300 uppercase tracking-wider">RMB Penambahan (+)</div>
+                                    <div class="text-[11px] font-extrabold text-white truncate font-mono mt-0.5" x-text="getRmbTujuanLabel()"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
