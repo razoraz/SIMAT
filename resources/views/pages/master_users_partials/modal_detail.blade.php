@@ -43,15 +43,9 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                            <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1">Role Otorisasi</span>
-                            <p class="font-bold text-amber-300" x-text="selectedUser.role.toUpperCase().replace('_', ' ')"></p>
-                        </div>
-                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                            <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1">Status Akun</span>
-                            <p class="font-bold text-emerald-400" x-text="selectedUser.status || 'Aktif'"></p>
-                        </div>
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1">Role Otorisasi</span>
+                        <p class="font-bold text-amber-300" x-text="selectedUser.role ? selectedUser.role.toUpperCase().replace('_', ' ') : ''"></p>
                     </div>
 
                     <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">

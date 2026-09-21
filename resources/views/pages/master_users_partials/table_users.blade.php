@@ -9,7 +9,6 @@
                             <th class="px-4 py-3.5 text-left min-w-[190px] whitespace-nowrap">Email Kredensial</th>
                             <th class="px-4 py-3.5 text-center min-w-[160px] whitespace-nowrap">Role Otorisasi</th>
                             <th class="px-4 py-3.5 text-left min-w-[180px] whitespace-nowrap">Unit Penugasan</th>
-                            <th class="px-4 py-3.5 text-center whitespace-nowrap min-w-[90px]">Status</th>
                             <th class="px-4 py-3.5 text-center min-w-[260px] w-[260px] whitespace-nowrap border-l border-slate-800/80 shrink-0" style="position: sticky; right: 0; top: 0; z-index: 30; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                         </tr>
                     </thead>
@@ -71,11 +70,6 @@
                                     <template x-if="!item.unit">
                                         <span class="text-slate-400 font-mono text-[11px] px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-800 inline-block whitespace-nowrap">- Non-Unit (Pusat) -</span>
                                     </template>
-                                </td>
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap"
-                                        :class="item.status === 'Aktif' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-slate-500/15 text-slate-400 border border-slate-500/30'"
-                                        x-text="item.status || 'Aktif'"></span>
                                 </td>
                                 
                                 <!-- Aksi Frozen/Sticky di Sebelah Kanan -->

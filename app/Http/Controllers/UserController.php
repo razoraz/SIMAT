@@ -66,7 +66,6 @@ class UserController extends Controller
             'penugasan' => 'nullable|string|max:500',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|in:astap,distribusi,bast,mutasi,unit,master_data,users',
-            'status' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:4',
         ]);
 
@@ -86,7 +85,7 @@ class UserController extends Controller
             'role' => $validated['role'],
             'penugasan' => $validated['penugasan'] ?? 'Pengguna Sistem SIMAT',
             'permissions' => $permissions,
-            'status' => $validated['status'] ?? 'Aktif',
+            'status' => 'Aktif',
             'deskripsi' => $validated['penugasan'] ?? '',
         ]);
 
@@ -132,7 +131,6 @@ class UserController extends Controller
             'penugasan' => 'nullable|string|max:500',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|in:astap,distribusi,bast,mutasi,unit,master_data,users',
-            'status' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:4',
         ]);
 
@@ -146,7 +144,7 @@ class UserController extends Controller
             'email' => $validated['email'],
             'role' => $validated['role'],
             'penugasan' => $validated['penugasan'] ?? $user->penugasan,
-            'status' => $validated['status'] ?? $user->status,
+            'status' => 'Aktif',
         ];
 
         // Hanya Master Admin yang berwenang mengubah daftar permissions akun Admin

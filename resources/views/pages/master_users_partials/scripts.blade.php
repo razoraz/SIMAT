@@ -339,7 +339,7 @@
 
                     this.askConfirmation({
                         title: 'Konfirmasi Pindahkan ke Tong Sampah',
-                        message: 'Apakah Anda yakin ingin memindahkan akun pengguna ini ke Pusat Data Terhapus (Recycle Bin)? Data akun akan dinonaktifkan sementara dan dapat dipulihkan sewaktu-waktu oleh Administrator.',
+                        message: 'Apakah Anda yakin ingin memindahkan akun pengguna ini ke Pusat Data Terhapus (Recycle Bin)? Akun tidak akan dapat digunakan untuk login kembali kecuali dipulihkan sewaktu-waktu oleh Administrator.',
                         itemName: `${item.name} (${item.unit || (item.role === 'master_admin' ? 'Master Admin' : (item.role === 'admin' ? 'Admin Operasional' : 'Sub Admin Unit'))})`,
                         type: 'danger',
                         btnText: 'Pindahkan ke Tong Sampah',

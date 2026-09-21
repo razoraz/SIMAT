@@ -11,7 +11,7 @@
                 <!-- Header Center -->
                 <div class="text-center pb-3 border-b border-slate-800 mb-4">
                     <h3 class="text-base font-extrabold text-white" x-text="isSelf(editFormData) ? '✏️ Ubah Profil Akun Saya' : '✏️ Ubah Data Pengguna'"></h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="isSelf(editFormData) ? 'Perbarui informasi identitas, email dan NIP akun Anda' : 'Perbarui data penugasan unit, email, dan status aktif pengguna'"></p>
+                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="isSelf(editFormData) ? 'Perbarui informasi identitas, email dan NIP akun Anda' : 'Perbarui data penugasan unit, email, dan wewenang akun pengguna'"></p>
                 </div>
 
                 <form @submit.prevent="saveEdit()" class="space-y-3.5 text-xs">
@@ -44,18 +44,9 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Status Akun</label>
-                            <select x-model="editFormData.status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold focus:border-amber-500 focus:outline-none">
-                                <option value="Aktif">Aktif</option>
-                                <option value="Nonaktif">Nonaktif</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-slate-300 font-semibold mb-1">Ubah Password (Opsional)</label>
-                            <input type="password" x-model="editFormData.password" placeholder="Kosongkan jika tidak diganti" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
-                        </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Ubah Password (Opsional)</label>
+                        <input type="password" x-model="editFormData.password" placeholder="Kosongkan jika tidak diganti" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono focus:border-amber-500 focus:outline-none">
                     </div>
 
                     <template x-if="editFormData.unit">
