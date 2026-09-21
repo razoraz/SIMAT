@@ -65,18 +65,27 @@
                         </label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <!-- 1. Ekstrakomptabel -->
-                            <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
+                            <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'extracom' ? 'bg-amber-500/10 border-amber-500/50 shadow-sm shadow-amber-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="extracom" x-model="reklasJenis" class="hidden" style="display: none;">
+                                   :class="{
+                                       'opacity-40 cursor-not-allowed bg-slate-950/30 border-slate-800': isReklasExtracomDisabled(),
+                                       'cursor-pointer bg-amber-500/10 border-amber-500/50 shadow-sm shadow-amber-500/10': !isReklasExtracomDisabled() && reklasJenis === 'extracom',
+                                       'cursor-pointer bg-slate-950/60 border-slate-800 hover:border-slate-700': !isReklasExtracomDisabled() && reklasJenis !== 'extracom'
+                                   }">
+                                <input type="radio" name="reklas_jenis" value="extracom" x-model="reklasJenis" :disabled="isReklasExtracomDisabled()" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
-                                     :class="reklasJenis === 'extracom' ? 'border-amber-400 bg-amber-500/20' : 'border-slate-700 bg-slate-900'">
-                                    <div x-show="reklasJenis === 'extracom'" class="rounded-full bg-amber-400" style="width: 8px; height: 8px;"></div>
+                                     :class="reklasJenis === 'extracom' && !isReklasExtracomDisabled() ? 'border-amber-400 bg-amber-500/20' : 'border-slate-700 bg-slate-900'">
+                                    <div x-show="reklasJenis === 'extracom' && !isReklasExtracomDisabled()" class="rounded-full bg-amber-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'extracom' ? 'text-amber-300' : 'text-white'">Ekstrakomptabel (< Rp 300rb)</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Nilai di bawah batas kapitalisasi aset tetap</div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="font-bold text-xs" :class="reklasJenis === 'extracom' && !isReklasExtracomDisabled() ? 'text-amber-300' : 'text-white'">Ekstrakomptabel (&lt; Rp 300rb)</span>
+                                        <template x-if="isReklasExtracomDisabled()">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">Terkunci (SAP)</span>
+                                        </template>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="isReklasExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomptabel)' : 'Nilai di bawah batas kapitalisasi aset tetap'"></div>
                                 </div>
                             </label>
 

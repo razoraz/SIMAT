@@ -494,27 +494,39 @@
 
     function resolveItemCategory(item) {
         if (!item) return 'KIB B';
-        const isExtracom = !!item.is_extracomtable || (item.category && item.category.toUpperCase() === 'EXTRACOM');
-        if (isExtracom) return 'EXTRACOM';
+
+        // 1. Cek kode barang / jenis aset terlebih dahulu untuk KIB yang mutlak Intrakomptabel (SAP)
+        const kode = item.jenis_aset_kode || item.kode_barang || '';
+        if (kode.startsWith('1.3.1')) return 'KIB A';
+        if (kode.startsWith('1.3.3')) return 'KIB C';
+        if (kode.startsWith('1.3.4')) return 'KIB D';
+        if (kode.startsWith('1.3.6')) return 'KIB F';
+        if (kode.startsWith('1.5.3')) return 'ATB';
+
+        // 2. Kategori tekstual eksplisit (kecuali EXTRACOM yang nanti dicek validitasnya)
         if (item.category) {
             const cUpper = item.category.toUpperCase().trim();
             if (cUpper === 'KIB A' || cUpper === 'A' || cUpper.includes('TANAH')) return 'KIB A';
-            if (cUpper === 'KIB B' || cUpper === 'B' || cUpper.includes('MESIN') || cUpper.includes('PERALATAN')) return 'KIB B';
             if (cUpper === 'KIB C' || cUpper === 'C' || cUpper.includes('GEDUNG') || cUpper.includes('BANGUNAN')) return 'KIB C';
             if (cUpper === 'KIB D' || cUpper === 'D' || cUpper.includes('JALAN') || cUpper.includes('JARINGAN')) return 'KIB D';
-            if (cUpper === 'KIB E' || cUpper === 'E' || cUpper.includes('LAINNYA')) return 'KIB E';
             if (cUpper === 'KIB F' || cUpper === 'F' || cUpper.includes('KDP') || cUpper.includes('KONSTRUKSI')) return 'KIB F';
             if (cUpper === 'ATB' || cUpper.includes('TIDAK BERWUJUD')) return 'ATB';
-            if (cUpper === 'EXTRACOM') return 'EXTRACOM';
         }
-        const kode = item.jenis_aset_kode || item.kode_barang || '';
-        if (kode.startsWith('1.3.1')) return 'KIB A';
+
+        // 3. Hanya KIB B (Peralatan & Mesin) atau KIB E (Aset Tetap Lainnya) yang boleh menjadi EXTRACOM
+        const isExtracom = !!item.is_extracomtable || (item.category && item.category.toUpperCase() === 'EXTRACOM');
+        if (isExtracom && (kode.startsWith('1.3.2') || kode.startsWith('1.3.5') || !kode)) {
+            return 'EXTRACOM';
+        }
+
+        if (item.category) {
+            const cUpper = item.category.toUpperCase().trim();
+            if (cUpper === 'KIB B' || cUpper === 'B' || cUpper.includes('MESIN') || cUpper.includes('PERALATAN')) return 'KIB B';
+            if (cUpper === 'KIB E' || cUpper === 'E' || cUpper.includes('LAINNYA')) return 'KIB E';
+        }
+
         if (kode.startsWith('1.3.2')) return 'KIB B';
-        if (kode.startsWith('1.3.3')) return 'KIB C';
-        if (kode.startsWith('1.3.4')) return 'KIB D';
         if (kode.startsWith('1.3.5')) return 'KIB E';
-        if (kode.startsWith('1.3.6')) return 'KIB F';
-        if (kode.startsWith('1.5.3')) return 'ATB';
 
         const rekKode = item.rekening_kode || '';
         const rekNama = (item.rekening_nama || '').toUpperCase();
@@ -6338,16 +6350,36 @@
                 reklasAlasan: '',
                 isSubmittingReklas: false,
 
+                isReklasExtracomDisabled() {
+                    if (!this.selectedAstapReklas) return false;
+                    const it = this.selectedAstapReklas;
+                    const cat = resolveItemCategory(it);
+                    const kode = it.kode_barang || it.jenis_aset_kode || '';
+                    if (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3')) {
+                        return true;
+                    }
+                    return (cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB');
+                },
+
                 openReklas(item) {
                     this.selectedAstapReklas = item;
-                    if (item.is_extracomtable || (item.category === 'KIB B' && parseFloat(item.harga_satuan || item.jumlah_realisasi_raw || 0) < 300000)) {
+                    const cat = resolveItemCategory(item);
+                    const kode = item.kode_barang || item.jenis_aset_kode || '';
+                    const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB');
+
+                    if (isNonExtracom) {
+                        if (cat === 'KIB F' || kode.startsWith('1.3.6')) {
+                            this.reklasJenis = 'kdp';
+                            this.reklasTujuanKib = 'KIB C';
+                        } else {
+                            this.reklasJenis = 'antar_kib';
+                            this.reklasTujuanKib = cat === 'KIB A' ? 'KIB C' : 'KIB B';
+                        }
+                    } else if (item.is_extracomtable || (cat === 'KIB B' && parseFloat(item.harga_satuan || item.jumlah_realisasi_raw || 0) < 300000)) {
                         this.reklasJenis = 'extracom';
-                    } else if (item.category === 'KIB F') {
-                        this.reklasJenis = 'kdp';
-                        this.reklasTujuanKib = 'KIB C';
                     } else {
                         this.reklasJenis = 'antar_kib';
-                        this.reklasTujuanKib = item.category === 'KIB B' ? 'ATB' : 'KIB B';
+                        this.reklasTujuanKib = cat === 'KIB B' ? 'ATB' : 'KIB B';
                     }
                     let noBukti = (item.bast_dokumen_nomor || item.spk_nomor || item.kwitansi_nomor || '').trim();
                     if (noBukti === '-' || noBukti.toLowerCase() === 'null') noBukti = '';

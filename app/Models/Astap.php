@@ -133,19 +133,20 @@ class Astap extends Model
     {
         $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
 
-        // Cek jika spesifikasi memiliki array mesin_items multi-item
-        $spec = is_array($this->spesifikasi_json) ? $this->spesifikasi_json : (json_decode($this->spesifikasi_json, true) ?? []);
+        // KIB yang TIDAK PERNAH boleh menjadi EXTRACOM menurut Standar Akuntansi Pemerintahan (SAP)
+        if (str_starts_with($jenisKode, '1.3.1')) return 'KIB A';
+        if (str_starts_with($jenisKode, '1.3.3')) return 'KIB C';
+        if (str_starts_with($jenisKode, '1.3.4')) return 'KIB D';
+        if (str_starts_with($jenisKode, '1.3.6')) return 'KIB F';
+        if (str_starts_with($jenisKode, '1.5.3')) return 'ATB';
+
+        // Hanya KIB B (Peralatan & Mesin) atau KIB E (Aset Tetap Lainnya) yang bisa EXTRACOM
         if ($this->is_extracomtable) {
             return 'EXTRACOM';
         }
 
-        if (str_starts_with($jenisKode, '1.3.1')) return 'KIB A';
         if (str_starts_with($jenisKode, '1.3.2')) return 'KIB B';
-        if (str_starts_with($jenisKode, '1.3.3')) return 'KIB C';
-        if (str_starts_with($jenisKode, '1.3.4')) return 'KIB D';
         if (str_starts_with($jenisKode, '1.3.5')) return 'KIB E';
-        if (str_starts_with($jenisKode, '1.3.6')) return 'KIB F';
-        if (str_starts_with($jenisKode, '1.5.3')) return 'ATB';
 
         return 'KIB B';
     }

@@ -2276,6 +2276,9 @@
                     } else {
                         this.formData.jenis_aset_nama = '';
                     }
+                    if (!this.isMesin && !this.isAsetLainnya) {
+                        this.formData.is_extracomtable = false;
+                    }
                     // Reset sub rincian agar pengguna memilih sendiri secara mandiri
                     this.formData.sub_rincian_kode = '';
                     this.formData.sub_rincian_nama = '';

@@ -272,23 +272,42 @@
                     </div>
 
                     <!-- ===================================================================== -->
-                    <!-- PILIHAN KATEGORI EKSTRAKOMTABEL (BERLAKU UNTUK SEMUA JENIS ASET)    -->
+                    <!-- PILIHAN KATEGORI EKSTRAKOMTABEL (HANYA UNTUK KIB B & KIB E)         -->
                     <!-- ===================================================================== -->
                     <div x-show="formData.jenis_aset_kode" x-transition class="space-y-2">
                         <div class="flex items-center space-x-2 mb-1">
                             <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black flex items-center justify-center">5</span>
                             <span class="block text-slate-200 font-bold text-xs">Kategori Pencatatan Aset</span>
-                            <span class="text-[10px] text-amber-400 font-normal italic">(Reguler vs Ekstrakomtabel)</span>
+                            <span class="text-[10px] text-amber-400 font-normal italic" x-text="(isMesin || isAsetLainnya) ? '(Reguler vs Ekstrakomtabel)' : '(Wajib Aset Tetap Intrakomptabel)'"></span>
                         </div>
 
-                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/30 space-y-3 shadow-xl">
+                        <!-- KONDISI A: UNTUK KIB A (TANAH), KIB C (GEDUNG), KIB D (JALAN), KIB F (KDP), ATB -->
+                        <div x-show="!isMesin && !isAsetLainnya" class="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 space-y-2.5 shadow-xl">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-base shrink-0 mt-0.5">
+                                    🏛️
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs font-black text-emerald-300 uppercase tracking-wider">Aset Tetap Intrakomptabel (Wajib Kapitalisasi)</span>
+                                        <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Standar SAP</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                                        Sesuai Standar Akuntansi Pemerintahan (SAP), kategori <strong class="text-white" x-text="isTanah ? 'Tanah (KIB A)' : (isGedung ? 'Gedung & Bangunan (KIB C)' : (isJaringan ? 'Jalan, Irigasi & Jaringan (KIB D)' : (isKdp ? 'Konstruksi Dalam Pengerjaan (KIB F)' : 'Aset Tidak Berwujud (ATB)')))"></strong> tidak mengenal batas minimal kapitalisasi Rp 300.000 dan wajib dicatat penuh ke dalam Neraca Aset Tetap.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KONDISI B: UNTUK KIB B (PERALATAN & MESIN) DAN KIB E (ASET TETAP LAINNYA) -->
+                        <div x-show="isMesin || isAsetLainnya" class="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/30 space-y-3 shadow-xl">
                             <!-- Info Aturan Harga -->
                             <div class="flex items-start space-x-2 p-2.5 rounded-xl bg-amber-950/30 border border-amber-500/20">
                                 <span class="text-amber-400 text-sm shrink-0 mt-0.5">⚖️</span>
                                 <p class="text-[10.5px] text-amber-300/90 leading-relaxed">
-                                    <strong class="text-amber-300">Aturan Harga Satuan:</strong>
-                                    Aset dengan harga satuan <strong class="text-emerald-300">&gt; Rp 300.000</strong> dicatat sebagai <strong>Aset Reguler/Kapitalisasi</strong>.
-                                    Aset dengan harga satuan <strong class="text-cyan-300">≤ Rp 300.000</strong> dicatat sebagai <strong>Barang Ekstrakomtabel (Extracom)</strong>.
+                                    <strong class="text-amber-300">Aturan Nilai Kapitalisasi Daerah:</strong>
+                                    Barang dengan harga satuan <strong class="text-emerald-300">&gt; Rp 300.000</strong> dicatat sebagai <strong>Aset Reguler (KIB)</strong>.
+                                    Barang dengan harga satuan <strong class="text-cyan-300">≤ Rp 300.000</strong> dicatat sebagai <strong>Barang Ekstrakomtabel (Extracom)</strong>.
                                 </p>
                             </div>
 
@@ -306,7 +325,7 @@
                                         <span x-show="!formData.is_extracomtable" class="text-[9px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">✓ Terpilih</span>
                                     </div>
                                     <p class="text-[11px] text-slate-300 leading-relaxed">
-                                        Aset kapitalisasi standar dengan harga satuan <strong class="text-emerald-300">&gt; Rp 300.000 / unit</strong>. Dicatat dalam KIB sesuai jenis aset (KIB A, B, C, D, E, F, ATB).
+                                        Aset kapitalisasi standar dengan harga satuan <strong class="text-emerald-300">&gt; Rp 300.000 / unit</strong>. Dicatat dalam KIB Peralatan &amp; Mesin.
                                     </p>
                                 </div>
 
