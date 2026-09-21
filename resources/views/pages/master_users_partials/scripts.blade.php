@@ -327,6 +327,10 @@
                 },
 
                 // 3. Hapus Pengguna dari Backend (DELETE)
+                confirmDelete(item) {
+                    this.deleteItem(item);
+                },
+
                 deleteItem(item) {
                     if (!this.canDeleteUser(item)) {
                         this.showToast('⛔ Akses Ditolak: ' + this.getDeleteTooltip(item), 'error');

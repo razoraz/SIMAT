@@ -17,7 +17,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $currentUser = Auth::user();
-        $users = User::with('unitModel')->orderByRaw("
+        $users = User::active()->with('unitModel')->orderByRaw("
             CASE 
                 WHEN role = 'master_admin' THEN 1 
                 WHEN role = 'admin' THEN 2 
@@ -48,6 +48,15 @@ class UserController extends Controller
                 ], 403);
             }
             return redirect()->back()->with('error', 'Admin Operasional hanya diizinkan mendaftarkan akun Sub Admin.');
+        }
+
+        // Cek jika email sudah terdaftar di Recycle Bin
+        if (User::onlyDeleted()->where('email', $request->email)->exists()) {
+            $deletedMsg = "Email \"{$request->email}\" sudah terdaftar di Pusat Data Terhapus (Recycle Bin). Silakan pulihkan akun tersebut dari menu Recycle Bin atau gunakan email lain.";
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $deletedMsg], 422);
+            }
+            return redirect()->back()->withInput()->with('error', $deletedMsg);
         }
 
         $validated = $request->validate([
@@ -197,16 +206,16 @@ class UserController extends Controller
         }
 
         $userName = $user->name;
-        $user->delete();
+        $user->softDelete();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "Akun {$userName} berhasil dihapus dari sistem."
+                'message' => "Akun {$userName} berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin)."
             ]);
         }
 
-        return redirect()->route('master.users')->with('success', "Akun {$userName} berhasil dihapus.");
+        return redirect()->route('master.users')->with('success', "Akun {$userName} berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).");
     }
 
     /**

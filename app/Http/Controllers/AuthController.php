@@ -35,11 +35,20 @@ class AuthController extends Controller
         ]);
 
         $remember = $request->has('remember');
+        $attemptCredentials = array_merge($credentials, ['is_deleted' => 0]);
 
-        if (Auth::attempt($credentials, $remember)) {
+        if (Auth::attempt($attemptCredentials, $remember)) {
             $request->session()->regenerate();
             $user = Auth::user();
             return $this->redirectBasedOnRole($user->role);
+        }
+
+        // Cek apakah akun terdaftar namun berstatus di Recycle Bin (is_deleted = 1)
+        $deletedUser = \App\Models\User::onlyDeleted()->where('email', $credentials['email'])->first();
+        if ($deletedUser) {
+            return back()->withErrors([
+                'email' => 'Akun pengguna ini sedang berada di Pusat Data Terhapus (Recycle Bin). Silakan hubungi Administrator atau Master Admin untuk memulihkan akun.',
+            ])->onlyInput('email');
         }
 
         return back()->withErrors([

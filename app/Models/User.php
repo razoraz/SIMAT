@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, \App\Traits\TrackableSoftDelete;
 
     /**
      * Atribut yang boleh diisi pada tabel users
@@ -23,6 +23,10 @@ class User extends Authenticatable
         'status',
         'deskripsi',
         'unit_id',
+        'is_deleted',
+        'deleted_by',
+        'deleted_by_id',
+        'deleted_at',
     ];
 
     /**
@@ -98,6 +102,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'permissions' => 'array',
+            'is_deleted' => 'integer',
+            'deleted_at' => 'datetime',
         ];
     }
 

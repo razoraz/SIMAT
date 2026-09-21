@@ -235,7 +235,36 @@ class RecycleBinController extends Controller
         });
 
         // =========================================================================
-        // 5. STATISTIK TERPUSAT SELURUH MODUL
+        // 6. DATA TERHAPUS: AKUN PENGGUNA (USERS)
+        // =========================================================================
+        $rawDeletedUsers = User::onlyDeleted()
+            ->with('unitModel')
+            ->latest('deleted_at')
+            ->latest('id')
+            ->get();
+
+        $deletedUsers = $rawDeletedUsers->map(function ($u) {
+            $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at) : null;
+            return [
+                'id'                  => $u->id,
+                'name'                => $u->name,
+                'email'               => $u->email,
+                'role'                => $u->role,
+                'role_label'          => $u->role === 'master_admin' ? '👑 Master Admin' : ($u->role === 'admin' ? '🛡️ Admin Operasional' : '🏥 Sub Admin Unit'),
+                'unit'                => $u->unit ?: ($u->unitModel?->nama ?: '-'),
+                'nip'                 => $u->nip ?: '-',
+                'penugasan'           => $u->penugasan ?: '-',
+                'status'              => $u->status ?: 'Aktif',
+                'permissions'         => $u->permissions ?? [],
+                'deleted_by'          => $u->deleted_by ?: 'Administrator',
+                'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+            ];
+        });
+
+        // =========================================================================
+        // 7. STATISTIK TERPUSAT SELURUH MODUL
         // =========================================================================
         $now = now();
         $thirtyDaysAgo = $now->copy()->subDays(30);
@@ -246,8 +275,9 @@ class RecycleBinController extends Controller
         $nibarCount      = $deletedNibars->count();
         $distribusiCount = $deletedDistribusis->count();
         $unitCount       = $deletedUnits->count();
+        $userCount       = $deletedUsers->count();
 
-        $totalAllDeleted = $mutasiCount + $astapCount + $nibarCount + $distribusiCount + $unitCount;
+        $totalAllDeleted = $mutasiCount + $astapCount + $nibarCount + $distribusiCount + $unitCount + $userCount;
 
         // Hitung 30 hari terakhir
         $filterMonth = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($thirtyDaysAgo))->count();
@@ -255,7 +285,8 @@ class RecycleBinController extends Controller
             + $filterMonth($rawDeletedAstaps)
             + $filterMonth($rawDeletedNibars)
             + $filterMonth($rawDeletedDistribusis)
-            + $filterMonth($rawDeletedUnits);
+            + $filterMonth($rawDeletedUnits)
+            + $filterMonth($rawDeletedUsers);
 
         // Hitung 7 hari terakhir
         $filterWeek = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($sevenDaysAgo))->count();
@@ -263,7 +294,8 @@ class RecycleBinController extends Controller
             + $filterWeek($rawDeletedAstaps)
             + $filterWeek($rawDeletedNibars)
             + $filterWeek($rawDeletedDistribusis)
-            + $filterWeek($rawDeletedUnits);
+            + $filterWeek($rawDeletedUnits)
+            + $filterWeek($rawDeletedUsers);
 
         $moduleStats = [
             'mutasi' => [
@@ -295,6 +327,13 @@ class RecycleBinController extends Controller
                 'color' => 'indigo',
                 'ready' => true,
             ],
+            'users' => [
+                'name'  => 'Akun Pengguna',
+                'icon'  => '👥',
+                'count' => $userCount,
+                'color' => 'rose',
+                'ready' => true,
+            ],
         ];
 
         return view('pages.recycle_bin', compact(
@@ -303,6 +342,7 @@ class RecycleBinController extends Controller
             'deletedNibars',
             'deletedDistribusis',
             'deletedUnits',
+            'deletedUsers',
             'activeTab',
             'moduleStats',
             'totalAllDeleted',
@@ -398,6 +438,22 @@ class RecycleBinController extends Controller
                 } else {
                     $msg = "Unit Register NIBAR \"{$nibar}\" berhasil dipulihkan ke katalog aktif.";
                 }
+                break;
+
+            case 'users':
+            case 'user':
+                $targetUser = User::findOrFail($id);
+                $nama = $targetUser->name;
+                $email = $targetUser->email;
+                if (User::active()->where('email', $email)->where('id', '!=', $targetUser->id)->exists()) {
+                    $conflictMsg = "Gagal memulihkan: Email \"{$email}\" saat ini sudah digunakan oleh akun pengguna aktif lain.";
+                    if ($request->wantsJson()) {
+                        return response()->json(['success' => false, 'message' => $conflictMsg], 422);
+                    }
+                    return back()->with('error', $conflictMsg);
+                }
+                $targetUser->restoreData();
+                $msg = "Akun Pengguna \"{$nama}\" ({$email}) berhasil dipulihkan ke status aktif.";
                 break;
 
             default:
@@ -504,6 +560,18 @@ class RecycleBinController extends Controller
                 if ($parentRestoredCount > 0) {
                     $msg .= " ({$parentRestoredCount} paket pengadaan induk otomatis diaktifkan kembali).";
                 }
+                break;
+
+            case 'users':
+            case 'user':
+                $users = User::whereIn('id', $ids)->get();
+                foreach ($users as $u) {
+                    if (!User::active()->where('email', $u->email)->where('id', '!=', $u->id)->exists()) {
+                        $u->restoreData();
+                        $restoredCount++;
+                    }
+                }
+                $msg = "Sebanyak {$restoredCount} akun pengguna berhasil dipulihkan ke status aktif.";
                 break;
 
             default:
@@ -688,6 +756,16 @@ class RecycleBinController extends Controller
                 $msg = "Sebanyak {$deletedCount} register NIBAR telah dihapus permanen dari database.";
                 break;
 
+            case 'users':
+            case 'user':
+                $users = User::whereIn('id', $ids)->get();
+                foreach ($users as $u) {
+                    $u->delete();
+                    $deletedCount++;
+                }
+                $msg = "Sebanyak {$deletedCount} akun pengguna telah dihapus permanen dari database.";
+                break;
+
             default:
                 return back()->with('error', "Modul {$module} tidak dikenal.");
         }
@@ -812,6 +890,14 @@ class RecycleBinController extends Controller
                 $reg->delete();
                 $this->syncAstapAfterRegisterChange($parentAstap);
                 $msg = "Register NIBAR \"{$nibar}\" telah dihapus secara permanen dari database.";
+                break;
+
+            case 'users':
+            case 'user':
+                $targetUser = User::findOrFail($id);
+                $nama = $targetUser->name;
+                $targetUser->delete();
+                $msg = "Akun Pengguna \"{$nama}\" telah dihapus secara permanen dari sistem.";
                 break;
 
             default:
