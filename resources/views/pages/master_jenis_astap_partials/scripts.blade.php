@@ -278,7 +278,7 @@
                     message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                     itemName: itemName || '',
                     type: type,
-                    btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                    btnText: btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
                     onConfirm: onConfirm
                 };
                 this.showConfirmModal = true;
@@ -300,11 +300,11 @@
                 event.preventDefault();
                 const formElement = event.target;
                 this.askConfirmation({
-                    title: '🗑️ Konfirmasi Hapus Kode 108',
-                    message: 'Apakah Anda yakin ingin menghapus data klasifikasi Kode 108 BMD ini dari master data?',
+                    title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                    message: 'Apakah Anda yakin ingin memindahkan data klasifikasi Kode 108 BMD ini ke Recycle Bin (Tong Sampah)?',
                     itemName: itemName || '',
                     type: 'danger',
-                    btnText: '🗑️ Ya, Hapus Kode 108',
+                    btnText: 'Pindahkan ke Tong Sampah',
                     onConfirm: () => {
                         formElement.submit();
                     }

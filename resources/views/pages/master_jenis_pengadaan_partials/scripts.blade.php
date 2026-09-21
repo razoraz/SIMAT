@@ -281,7 +281,7 @@
                     message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                     itemName: itemName || '',
                     type: type,
-                    btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                    btnText: btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
                     onConfirm: onConfirm
                 };
                 this.showConfirmModal = true;
@@ -303,11 +303,11 @@
                 event.preventDefault();
                 const formElement = event.target;
                 this.askConfirmation({
-                    title: '🗑️ Konfirmasi Hapus Jenis Pengadaan',
-                    message: 'Apakah Anda yakin ingin menghapus data jenis pengadaan SIPD ini dari master data?',
+                    title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                    message: 'Apakah Anda yakin ingin memindahkan data jenis pengadaan SIPD ini ke Recycle Bin (Tong Sampah)?',
                     itemName: itemName || '',
                     type: 'danger',
-                    btnText: '🗑️ Ya, Hapus Pengadaan',
+                    btnText: 'Pindahkan ke Tong Sampah',
                     onConfirm: () => {
                         formElement.submit();
                     }

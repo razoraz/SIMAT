@@ -136,7 +136,7 @@
                         itemName: itemName || '',
                         itemDetails: itemDetails || null,
                         type: type,
-                        btnText: isBlocked ? null : (btnText || (type === 'danger' ? 'Hapus Data' : (type === 'warning' ? 'Simpan Perubahan' : 'Tambahkan'))),
+                        btnText: isBlocked ? null : (btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Simpan Perubahan' : 'Tambahkan'))),
                         isBlocked: Boolean(isBlocked),
                         actionUrl: actionUrl,
                         actionText: actionText || 'Ajukan Mutasi Aset',

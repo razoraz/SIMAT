@@ -338,11 +338,11 @@
                     }
 
                     this.askConfirmation({
-                        title: '🗑️ Konfirmasi Hapus Akun Pengguna',
-                        message: 'Apakah Anda yakin ingin menghapus akun pengguna ini secara permanen dari sistem SIMAT-RK?',
-                        itemName: item.name + ' (' + (item.unit || item.role) + ')',
+                        title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                        message: 'Apakah Anda yakin ingin memindahkan akun pengguna ini ke Pusat Data Terhapus (Recycle Bin)? Data akun akan dinonaktifkan sementara dan dapat dipulihkan sewaktu-waktu oleh Administrator.',
+                        itemName: `${item.name} (${item.unit || (item.role === 'master_admin' ? 'Master Admin' : (item.role === 'admin' ? 'Admin Operasional' : 'Sub Admin Unit'))})`,
                         type: 'danger',
-                        btnText: '🗑️ Ya, Hapus Akun',
+                        btnText: 'Pindahkan ke Tong Sampah',
                         onConfirm: async () => {
                             try {
                                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || this.csrfToken;
@@ -399,7 +399,7 @@
                         message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                         itemName: itemName || '',
                         type: type,
-                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        btnText: btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Simpan Perubahan' : 'Tambahkan')),
                         onConfirm: onConfirm
                     };
                     this.showConfirmModal = true;

@@ -6821,7 +6821,7 @@
                         itemName: itemName || '',
                         itemDetails: itemDetails,
                         type: type,
-                        btnText: isBlocked ? null : (btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan'))),
+                        btnText: isBlocked ? null : (btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan'))),
                         isBlocked: Boolean(isBlocked),
                         actionUrl: actionUrl,
                         actionText: actionText,
@@ -7056,7 +7056,7 @@
 
                     // 2. Jika belum ditempatkan (di gudang): Izinkan hapus ke Tong Sampah
                     this.askConfirmation({
-                        title: 'Konfirmasi Hapus Register Unit NIBAR',
+                        title: 'Konfirmasi Pindahkan ke Tong Sampah',
                         message: 'Apakah Anda yakin ingin memindahkan unit register NIBAR ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali jika diperlukan.',
                         itemName: 'NIBAR: ' + (reg.nibar || reg.no_register),
                         itemDetails: {
@@ -7068,7 +7068,7 @@
                         },
                         type: 'danger',
                         isBlocked: false,
-                        btnText: 'Pindahkan ke Sampah',
+                        btnText: 'Pindahkan ke Tong Sampah',
                         onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             try {
@@ -7191,7 +7191,7 @@
 
                     // 2. Jika belum ditempatkan (semua di gudang): Buka konfirmasi hapus biasa ke Tong Sampah
                     this.askConfirmation({
-                        title: 'Konfirmasi Hapus Master ASTAP',
+                        title: 'Konfirmasi Pindahkan ke Tong Sampah',
                         message: 'Apakah Anda yakin ingin memindahkan data aset tetap ini ke Recycle Bin (Tong Sampah)? Seluruh unit register NIBAR terkait juga akan dipindahkan ke Recycle Bin.',
                         itemName: (item.nama_barang || 'ASTAP') + ' (' + (item.kode_barang || '-') + ')',
                         itemDetails: {

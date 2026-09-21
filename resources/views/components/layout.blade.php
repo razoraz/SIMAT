@@ -560,14 +560,14 @@
                 <!-- Footer Action Buttons -->
                 <div class="pt-3 border-t border-slate-800/90 flex items-center justify-end space-x-2.5 flex-wrap sm:flex-nowrap gap-y-2">
                     <button type="button" @click="showConfirm = false"
-                        class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs border border-slate-700 transition-all active:scale-95 cursor-pointer text-center">
+                        class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-slate-700 transition-all active:scale-95 cursor-pointer text-center">
                         <span x-text="confirmData.isBlocked ? 'Tutup' : 'Batal'"></span>
                     </button>
 
                     <!-- Link / Tombol Aksi Mutasi Barang (Jika Diblokir karena Memiliki Aset) -->
                     <template x-if="confirmData.actionUrl">
                         <a :href="confirmData.actionUrl"
-                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 border border-blue-400/30 transition-all active:scale-95 flex items-center justify-center space-x-2 cursor-pointer">
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/30 border border-blue-400/30 transition-all active:scale-95 flex items-center justify-center space-x-2 cursor-pointer">
                             <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
                             <span x-text="confirmData.actionText || 'Ajukan Mutasi Aset'"></span>
                         </a>
@@ -576,7 +576,7 @@
                     <!-- Tombol Eksekusi Aksi Normal (Hanya tampil jika TIDAK diblokir) -->
                     <template x-if="!confirmData.isBlocked && confirmData.btnText">
                         <button type="button" @click="executeConfirmed()"
-                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-center"
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center space-x-2 text-center"
                             :class="{
                                 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30 border border-rose-500/30': confirmData.type === 'danger',
                                 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/30 border border-amber-400/30': confirmData.type === 'warning',
@@ -755,15 +755,15 @@
         };
 
         // Helper form submit handler dengan konfirmasi kustom
-        window.confirmSimatFormSubmit = function(event, message, title = 'Konfirmasi Hapus Data', itemName = '') {
+        window.confirmSimatFormSubmit = function(event, message, title = 'Konfirmasi Pindahkan ke Tong Sampah', itemName = '') {
             event.preventDefault();
             const form = event.target;
             window.askSimatConfirm({
                 title: title,
-                message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+                message: message || 'Apakah Anda yakin ingin memindahkan data ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali sewaktu-waktu.',
                 itemName: itemName,
                 type: 'danger',
-                btnText: '🗑️ Ya, Hapus',
+                btnText: 'Pindahkan ke Tong Sampah',
                 onConfirm: function() {
                     form.submit();
                 }

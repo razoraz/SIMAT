@@ -149,7 +149,7 @@
                         message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                         itemName: itemName || '',
                         type: type,
-                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        btnText: btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
                         onConfirm: onConfirm
                     };
                     if (typeof window.askSimatConfirm === 'function') {
@@ -383,11 +383,11 @@
                     const bNomor = item.kode || 'BAMB';
                     const targetName = (item.nama || 'Pengajuan Mutasi') + ' (' + (item.kode_barang && item.kode_barang !== '-' ? item.kode_barang : bNomor) + ')';
                     this.askConfirmation({
-                        title: '⚠️ Konfirmasi Hapus Data Mutasi',
-                        message: 'Apakah Anda yakin ingin menghapus data transaksi pengajuan mutasi aset ini dari sistem? Data tidak akan dihapus fisik dari database, melainkan statusnya ditandai menjadi 1 (Terhapus) serta dicatat siapa yang menghapus dan waktu penghapusannya.',
+                        title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                        message: 'Apakah Anda yakin ingin memindahkan data transaksi pengajuan mutasi aset ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali sewaktu-waktu.',
                         itemName: targetName,
                         type: 'danger',
-                        btnText: '🗑️ Ya, Hapus Data Ini',
+                        btnText: 'Pindahkan ke Tong Sampah',
                         onConfirm: () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             fetch('/mutasi-aset/' + item.id, {

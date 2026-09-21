@@ -64,7 +64,7 @@
                         message: message || 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
                         itemName: itemName || '',
                         type: type,
-                        btnText: btnText || (type === 'danger' ? 'Ya, Hapus Data' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
+                        btnText: btnText || (type === 'danger' ? 'Pindahkan ke Tong Sampah' : (type === 'warning' ? 'Ya, Simpan Perubahan' : 'Ya, Tambahkan')),
                         showReasonInput: showReasonInput,
                         onConfirm: onConfirm
                     };
@@ -89,11 +89,11 @@
                     const targetId = typeof item === 'object' && item !== null ? item.id : item;
 
                     this.askConfirmation({
-                        title: '⚠️ Konfirmasi Hapus Transaksi Distribusi',
-                        message: 'Apakah Anda yakin ingin menghapus data transaksi distribusi aset ini dari sistem? Status unit register NIBAR terkait akan dikembalikan ke Gudang Aset Utama.',
+                        title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                        message: 'Apakah Anda yakin ingin memindahkan transaksi distribusi aset ini ke Pusat Data Terhapus? Status unit register NIBAR terkait akan dikembalikan ke Gudang Aset Utama.',
                         itemName: targetObj ? ((targetObj.kode || 'DIST') + ' - ' + (targetObj.nama || 'Aset') + ' (' + (targetObj.tujuan || 'Unit') + ')') : ('ID: ' + targetId),
                         type: 'danger',
-                        btnText: '🗑️ Ya, Hapus Transaksi Distribusi',
+                        btnText: 'Pindahkan ke Tong Sampah',
                         onConfirm: async () => {
                             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                             try {
