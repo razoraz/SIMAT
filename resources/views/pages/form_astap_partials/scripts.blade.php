@@ -2533,16 +2533,10 @@
                                         message: `⚠️ Nilai satuan Aset Tidak Berwujud (ATB) item #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
                                     };
                                 }
-                                if (val <= 300000) {
-                                    return {
-                                        valid: false,
-                                        message: `⚠️ Nilai Satuan Aset Tidak Berwujud (ATB) WAJIB lebih dari Rp 300.000!\n\nItem #${i + 1} (${nama}) bernilai: Rp ${this.formatRupiah(val)}.\n\nNilai perolehan ≤ Rp 300.000 tidak memenuhi batas kapitalisasi Aset Tidak Berwujud.`
-                                    };
-                                }
                             }
                         }
 
-                        // B. Kelompok Aset Fisik / Konstruksi / Bidang / Paket (Subtotal Perolehan Wajib >= Rp 300.000)
+                        // B. Kelompok Aset Fisik / Konstruksi / Bidang / Paket (Subtotal Perolehan Wajib Diisi > Rp 0)
                         if (this.isTanah) {
                             const items = this.formData.tanah_items || [];
                             for (let i = 0; i < items.length; i++) {
@@ -2552,12 +2546,6 @@
                                     return {
                                         valid: false,
                                         message: `⚠️ Nilai perolehan bidang tanah #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
-                                    };
-                                }
-                                if (subtotal < 300000) {
-                                    return {
-                                        valid: false,
-                                        message: `⚠️ Subtotal Nilai Perolehan Bidang Tanah minimal Rp 300.000!\n\nBidang #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan (Perencanaan + Fisik + Pengawasan) tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
                                     };
                                 }
                             }
@@ -2574,12 +2562,6 @@
                                         message: `⚠️ Nilai perolehan gedung/bangunan #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
                                     };
                                 }
-                                if (subtotal < 300000) {
-                                    return {
-                                        valid: false,
-                                        message: `⚠️ Subtotal Nilai Perolehan Gedung/Bangunan minimal Rp 300.000!\n\nBangunan #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan gedung & bangunan tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
-                                    };
-                                }
                             }
                         }
 
@@ -2594,12 +2576,6 @@
                                         message: `⚠️ Nilai perolehan jaringan/irigasi #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
                                     };
                                 }
-                                if (subtotal < 300000) {
-                                    return {
-                                        valid: false,
-                                        message: `⚠️ Subtotal Nilai Perolehan Jaringan/Irigasi minimal Rp 300.000!\n\nRuas/Paket #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan jaringan tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
-                                    };
-                                }
                             }
                         }
 
@@ -2612,12 +2588,6 @@
                                     return {
                                         valid: false,
                                         message: `⚠️ Nilai perolehan KDP #${i + 1} (${nama}) belum diisi atau masih Rp 0!`
-                                    };
-                                }
-                                if (subtotal < 300000) {
-                                    return {
-                                        valid: false,
-                                        message: `⚠️ Subtotal Nilai Perolehan KDP minimal Rp 300.000!\n\nProyek KDP #${i + 1} (${nama}) memiliki subtotal: Rp ${this.formatRupiah(subtotal)}.\n\nNilai perolehan KDP tidak boleh di bawah Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap.`
                                     };
                                 }
                             }

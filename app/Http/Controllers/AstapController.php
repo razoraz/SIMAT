@@ -806,6 +806,12 @@ class AstapController extends Controller
                 if ($hasMesinItems) {
                     foreach ($data['mesin_items'] as $idx => $it) {
                         $ns = (float)($it['mesin_nilai_satuan'] ?? 0);
+                        if ($ns <= 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai satuan barang Ekstrakomtabel item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
+                            ], 422);
+                        }
                         if ($ns > 300000) {
                             return response()->json([
                                 'success' => false,
@@ -818,6 +824,12 @@ class AstapController extends Controller
                 if ($isMesin && $hasMesinItems) {
                     foreach ($data['mesin_items'] as $idx => $it) {
                         $ns = (float)($it['mesin_nilai_satuan'] ?? 0);
+                        if ($ns <= 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai satuan Peralatan & Mesin item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
+                            ], 422);
+                        }
                         if ($ns <= 300000) {
                             return response()->json([
                                 'success' => false,
@@ -829,6 +841,12 @@ class AstapController extends Controller
                 if ($isAsetLainnya && $hasLainnyaItems) {
                     foreach ($data['lainnya_items'] as $idx => $it) {
                         $ns = (float)($it['lainnya_nilai_satuan'] ?? 0);
+                        if ($ns <= 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai satuan Aset Tetap Lainnya item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
+                            ], 422);
+                        }
                         if ($ns <= 300000) {
                             return response()->json([
                                 'success' => false,
@@ -840,10 +858,10 @@ class AstapController extends Controller
                 if ($isAtb && $hasAtbItems) {
                     foreach ($data['atb_items'] as $idx => $it) {
                         $ns = (float)($it['atb_nilai_satuan'] ?? 0);
-                        if ($ns <= 300000) {
+                        if ($ns <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Nilai satuan Aset Tidak Berwujud (ATB) item #'.($idx+1).' wajib lebih dari Rp 300.000!'
+                                'message' => 'Nilai satuan Aset Tidak Berwujud (ATB) item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -851,10 +869,10 @@ class AstapController extends Controller
                 if ($isTanah && $hasTanahItems) {
                     foreach ($data['tanah_items'] as $idx => $it) {
                         $sub = (float)($it['tanah_nilai_perencanaan'] ?? 0) + (float)($it['tanah_nilai_fisik'] ?? 0) + (float)($it['tanah_nilai_pengawasan'] ?? 0);
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan bidang tanah #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan bidang tanah #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -862,10 +880,10 @@ class AstapController extends Controller
                 if ($isGedung && $hasGedungItems) {
                     foreach ($data['gedung_items'] as $idx => $it) {
                         $sub = (float)($it['gedung_nilai_perencanaan'] ?? 0) + (float)($it['gedung_nilai_fisik'] ?? 0) + (float)($it['gedung_nilai_pengawasan'] ?? 0) + (float)($it['gedung_nilai_ap'] ?? ($it['gedung_nilai_pip'] ?? 0));
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan gedung & bangunan #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan gedung & bangunan #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -873,10 +891,10 @@ class AstapController extends Controller
                 if ($isJaringan && $hasJaringanItems) {
                     foreach ($data['jaringan_items'] as $idx => $it) {
                         $sub = (float)($it['jaringan_nilai_perencanaan'] ?? 0) + (float)($it['jaringan_nilai_fisik'] ?? 0) + (float)($it['jaringan_nilai_pengawasan'] ?? 0) + (float)($it['jaringan_nilai_ap'] ?? ($it['jaringan_nilai_pip'] ?? 0));
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan jaringan/irigasi #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan jaringan/irigasi #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -884,10 +902,10 @@ class AstapController extends Controller
                 if ($isKdp && $hasKdpItems) {
                     foreach ($data['kdp_items'] as $idx => $it) {
                         $sub = (float)($it['kdp_nilai_perencanaan'] ?? 0) + (float)($it['kdp_nilai_fisik'] ?? 0) + (float)($it['kdp_nilai_pengawasan'] ?? 0) + (float)($it['kdp_nilai_ap'] ?? ($it['kdp_nilai_pip'] ?? 0));
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan KDP #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan KDP #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -2186,6 +2204,12 @@ class AstapController extends Controller
                 if ($hasMesinItems) {
                     foreach ($data['mesin_items'] as $idx => $it) {
                         $ns = (float)($it['mesin_nilai_satuan'] ?? 0);
+                        if ($ns <= 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai satuan barang Ekstrakomtabel item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
+                            ], 422);
+                        }
                         if ($ns > 300000) {
                             return response()->json([
                                 'success' => false,
@@ -2198,6 +2222,12 @@ class AstapController extends Controller
                 if ($isMesin && $hasMesinItems) {
                     foreach ($data['mesin_items'] as $idx => $it) {
                         $ns = (float)($it['mesin_nilai_satuan'] ?? 0);
+                        if ($ns <= 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai satuan Peralatan & Mesin item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
+                            ], 422);
+                        }
                         if ($ns <= 300000) {
                             return response()->json([
                                 'success' => false,
@@ -2209,6 +2239,12 @@ class AstapController extends Controller
                 if ($isAsetLainnya && $hasLainnyaItems) {
                     foreach ($data['lainnya_items'] as $idx => $it) {
                         $ns = (float)($it['lainnya_nilai_satuan'] ?? 0);
+                        if ($ns <= 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Nilai satuan Aset Tetap Lainnya item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
+                            ], 422);
+                        }
                         if ($ns <= 300000) {
                             return response()->json([
                                 'success' => false,
@@ -2220,10 +2256,10 @@ class AstapController extends Controller
                 if ($isAtb && $hasAtbItems) {
                     foreach ($data['atb_items'] as $idx => $it) {
                         $ns = (float)($it['atb_nilai_satuan'] ?? 0);
-                        if ($ns <= 300000) {
+                        if ($ns <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Nilai satuan Aset Tidak Berwujud (ATB) item #'.($idx+1).' wajib lebih dari Rp 300.000!'
+                                'message' => 'Nilai satuan Aset Tidak Berwujud (ATB) item #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -2231,10 +2267,10 @@ class AstapController extends Controller
                 if ($isTanah && $hasTanahItems) {
                     foreach ($data['tanah_items'] as $idx => $it) {
                         $sub = (float)($it['tanah_nilai_perencanaan'] ?? 0) + (float)($it['tanah_nilai_fisik'] ?? 0) + (float)($it['tanah_nilai_pengawasan'] ?? 0);
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan bidang tanah #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan bidang tanah #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -2242,10 +2278,10 @@ class AstapController extends Controller
                 if ($isGedung && $hasGedungItems) {
                     foreach ($data['gedung_items'] as $idx => $it) {
                         $sub = (float)($it['gedung_nilai_perencanaan'] ?? 0) + (float)($it['gedung_nilai_fisik'] ?? 0) + (float)($it['gedung_nilai_pengawasan'] ?? 0) + (float)($it['gedung_nilai_ap'] ?? ($it['gedung_nilai_pip'] ?? 0));
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan gedung & bangunan #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan gedung & bangunan #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -2253,10 +2289,10 @@ class AstapController extends Controller
                 if ($isJaringan && $hasJaringanItems) {
                     foreach ($data['jaringan_items'] as $idx => $it) {
                         $sub = (float)($it['jaringan_nilai_perencanaan'] ?? 0) + (float)($it['jaringan_nilai_fisik'] ?? 0) + (float)($it['jaringan_nilai_pengawasan'] ?? 0) + (float)($it['jaringan_nilai_ap'] ?? ($it['jaringan_nilai_pip'] ?? 0));
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan jaringan/irigasi #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan jaringan/irigasi #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }
@@ -2264,10 +2300,10 @@ class AstapController extends Controller
                 if ($isKdp && $hasKdpItems) {
                     foreach ($data['kdp_items'] as $idx => $it) {
                         $sub = (float)($it['kdp_nilai_perencanaan'] ?? 0) + (float)($it['kdp_nilai_fisik'] ?? 0) + (float)($it['kdp_nilai_pengawasan'] ?? 0) + (float)($it['kdp_nilai_ap'] ?? ($it['kdp_nilai_pip'] ?? 0));
-                        if ($sub < 300000) {
+                        if ($sub <= 0) {
                             return response()->json([
                                 'success' => false,
-                                'message' => 'Subtotal nilai perolehan KDP #'.($idx+1).' minimal Rp 300.000 untuk dapat dikapitalisasi sebagai Aset Tetap!'
+                                'message' => 'Subtotal nilai perolehan KDP #'.($idx+1).' wajib diisi dan lebih dari Rp 0!'
                             ], 422);
                         }
                     }

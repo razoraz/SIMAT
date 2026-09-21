@@ -292,16 +292,16 @@
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
                                                         <span>Nilai Satuan Barang (Rp)</span>
-                                                        <span class="text-[9px] font-bold text-violet-400">Wajib > Rp 300.000</span>
+                                                        <span class="text-[9px] font-bold text-violet-400">Wajib Diisi</span>
                                                     </label>
                                                     <div class="relative">
                                                         <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold">Rp</span>
                                                         <input type="number" x-model.number="item.atb_nilai_satuan" placeholder="145000000"
-                                                               :class="Number(item.atb_nilai_satuan || 0) > 0 && Number(item.atb_nilai_satuan || 0) <= 300000 ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-700'"
+                                                               :class="Number(item.atb_nilai_satuan || 0) <= 0 ? 'border-amber-500/50' : 'border-slate-700'"
                                                                class="w-full bg-slate-950 border rounded-xl pl-9 pr-3 py-2 text-xs text-violet-300 font-mono font-bold focus:border-violet-500">
                                                     </div>
-                                                    <span x-show="Number(item.atb_nilai_satuan || 0) > 0 && Number(item.atb_nilai_satuan || 0) <= 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
-                                                        ⚠️ Aset Reguler: Nilai satuan harus > Rp 300.000.
+                                                    <span x-show="Number(item.atb_nilai_satuan || 0) <= 0" class="text-[9px] font-bold text-amber-400 block mt-1">
+                                                        ⚠️ Wajib diisi (nilai satuan tidak boleh Rp 0).
                                                     </span>
                                                 </div>
 
