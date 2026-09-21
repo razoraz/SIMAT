@@ -410,7 +410,7 @@ class RecycleBinController extends Controller
                 $unit = Unit::findOrFail($id);
                 $nama = $unit->nama;
                 $unit->restoreData();
-                $msg = "Data Unit / Paviliun \"{$nama}\" berhasil dipulihkan ke katalog aktif.";
+                $msg = "Data Unit / Paviliun \"{$nama}\" dan seluruh akun pengguna terkait berhasil dipulihkan ke katalog aktif.";
                 break;
 
             case 'nibar':
@@ -531,7 +531,7 @@ class RecycleBinController extends Controller
                     $u->restoreData();
                     $restoredCount++;
                 }
-                $msg = "Sebanyak {$restoredCount} Unit & Paviliun berhasil dipulihkan ke katalog aktif.";
+                $msg = "Sebanyak {$restoredCount} Unit & Paviliun beserta akun pengguna terkait berhasil dipulihkan ke katalog aktif.";
                 break;
 
             case 'nibar':

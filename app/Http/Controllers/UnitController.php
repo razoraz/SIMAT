@@ -210,10 +210,10 @@ class UnitController extends Controller
             return redirect()->route('unit.index')->with('error', $errorMsg);
         }
 
+        $relatedUsersCount = \App\Models\User::where('unit_id', $unit->id)->count();
         $unit->softDelete();
-        \App\Models\User::where('unit_id', $unit->id)->update(['status' => 'Nonaktif']);
 
-        $message = "Unit {$nama} berhasil dipindahkan ke Pusat Data Terhapus.";
+        $message = "Unit {$nama}" . ($relatedUsersCount > 0 ? " beserta {$relatedUsersCount} akun pengguna terkait" : "") . " berhasil dipindahkan ke Pusat Data Terhapus.";
 
         session()->flash('success', $message);
         if ($request->wantsJson()) {
@@ -236,17 +236,17 @@ class UnitController extends Controller
         $unit = Unit::findOrFail($id);
         $nama = $unit->nama;
         $unit->restoreData();
-        \App\Models\User::where('unit_id', $unit->id)->update(['status' => 'Aktif']);
 
-        session()->flash('success', "Unit {$nama} berhasil dipulihkan ke katalog aktif.");
+        $message = "Unit {$nama} beserta seluruh akun pengguna terkait berhasil dipulihkan ke katalog aktif.";
+        session()->flash('success', $message);
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "Unit {$nama} berhasil dipulihkan ke katalog aktif."
+                'message' => $message
             ]);
         }
 
-        return redirect()->route('unit.index')->with('success', "Unit {$nama} berhasil dipulihkan ke katalog aktif.");
+        return redirect()->route('unit.index')->with('success', $message);
     }
 
     /**

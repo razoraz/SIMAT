@@ -190,7 +190,7 @@
 
                     this.askConfirmation({
                         title: 'Konfirmasi Pindahkan ke Tong Sampah',
-                        message: 'Apakah Anda yakin ingin menghapus data unit / ruangan ini dari master data RSUD? Data akan dipindahkan ke Pusat Data Terhapus dan akun Sub-Admin terkait dinonaktifkan.',
+                        message: 'Apakah Anda yakin ingin menghapus data unit / ruangan ini dari master data RSUD? Data unit beserta seluruh akun pengguna yang terdaftar pada unit ini otomatis akan dipindahkan ke Pusat Data Terhapus (Recycle Bin).',
                         itemName: `${item.nama || 'Unit'} (${item.kode || 'UNIT'})`,
                         itemDetails: {
                             nama: item.nama || 'Unit',

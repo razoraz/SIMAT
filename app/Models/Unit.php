@@ -45,6 +45,14 @@ class Unit extends Model
     }
 
     /**
+     * Relasi ke seluruh akun User pada ruangan ini
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class, 'unit_id');
+    }
+
+    /**
      * Relasi ke riwayat Dokumen Distribusi & BAST yang pernah diserahkan ke unit ini
      */
     public function distribusis()
@@ -74,6 +82,56 @@ class Unit extends Model
     }
 
     /**
+     * Override softDelete: Otomatis soft delete seluruh akun pengguna yang terdaftar pada unit ini.
+     */
+    public function softDelete(?string $reason = null): bool
+    {
+        $user = auth()->user();
+        $deleterName = $user 
+            ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') 
+            : 'Administrator';
+
+        $success = $this->update([
+            'is_deleted'    => 1,
+            'deleted_by'    => $deleterName,
+            'deleted_by_id' => $user?->id,
+            'deleted_at'    => now(),
+        ]);
+
+        if ($success) {
+            $relatedUsers = User::where('unit_id', $this->id)->get();
+            $deleterReason = $reason ?: "Otomatis dipindahkan ke Recycle Bin karena Unit / Ruangan \"{$this->nama}\" dihapus.";
+            foreach ($relatedUsers as $u) {
+                $u->softDelete($deleterReason);
+            }
+        }
+
+        return $success;
+    }
+
+    /**
+     * Override restoreData: Otomatis pulihkan seluruh akun pengguna yang terdaftar pada unit ini.
+     */
+    public function restoreData(): bool
+    {
+        $success = $this->update([
+            'is_deleted'    => 0,
+            'deleted_by'    => null,
+            'deleted_by_id' => null,
+            'deleted_at'    => null,
+        ]);
+
+        if ($success) {
+            $relatedUsers = User::where('unit_id', $this->id)->get();
+            foreach ($relatedUsers as $u) {
+                $u->restoreData();
+            }
+        }
+
+        return $success;
+    }
+
+    /**
      * Hook Boot: Otomatisasi pendaftaran & sinkronisasi akun Sub Admin
      */
     protected static function booted(): void
@@ -87,6 +145,7 @@ class Unit extends Model
 
         // 1. Saat Unit baru dibuat -> otomatis buat Akun Sub Admin dengan unit_id menunjuk ke unit ini
         static::created(function (Unit $unit) {
+            if (!$unit->kepala) return;
             $email = $unit->email ?: (Str::slug($unit->nama, '.') . '@rsudkoesnandi.id');
             
             User::withoutEvents(function () use ($unit, $email) {
@@ -98,6 +157,10 @@ class Unit extends Model
                         'unit_id' => $unit->id,
                         'penugasan' => 'Sub Admin Ruangan ' . $unit->nama,
                         'status' => 'Aktif',
+                        'is_deleted' => 0,
+                        'deleted_by' => null,
+                        'deleted_by_id' => null,
+                        'deleted_at' => null,
                         'password' => Hash::make('rsud123'),
                         'deskripsi' => 'Akun Sub Admin Otomatis dari Pendaftaran Unit ' . $unit->nama,
                     ]
