@@ -51,9 +51,10 @@
                         <!-- 1. Master ASTAP -->
                         <div @click="changeTab('astap')" 
                             class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :style="activeModule === 'astap' ? 'border-color: #3b82f6; box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);' : ''"
                             :class="activeModule === 'astap' 
-                                ? 'bg-gradient-to-br from-blue-500/20 to-blue-950/30 border-blue-500/60 ring-2 ring-blue-500/30 shadow-lg shadow-blue-500/10' 
-                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                                ? 'bg-blue-500/15 border-blue-500 shadow-lg shadow-blue-500' 
+                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
                             <div class="flex items-center justify-between mb-1.5">
                                 <span class="text-base p-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300">📦</span>
                                 <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
@@ -69,9 +70,10 @@
                         <!-- 2. Unit & Paviliun -->
                         <div @click="changeTab('unit')" 
                             class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :style="activeModule === 'unit' ? 'border-color: #06b6d4; box-shadow: 0 0 16px rgba(6, 182, 212, 0.35);' : ''"
                             :class="activeModule === 'unit' 
-                                ? 'bg-gradient-to-br from-cyan-500/20 to-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10' 
-                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                                ? 'bg-cyan-500/15 border-cyan-500 shadow-lg shadow-cyan-500' 
+                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
                             <div class="flex items-center justify-between mb-1.5">
                                 <span class="text-base p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">🏥</span>
                                 <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
@@ -87,9 +89,10 @@
                         <!-- 3. Distribusi Aset -->
                         <div @click="changeTab('distribusi')" 
                             class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :style="activeModule === 'distribusi' ? 'border-color: #10b981; box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);' : ''"
                             :class="activeModule === 'distribusi' 
-                                ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-950/30 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10' 
-                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                                ? 'bg-emerald-500/15 border-emerald-500 shadow-lg shadow-emerald-500' 
+                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
                             <div class="flex items-center justify-between mb-1.5">
                                 <span class="text-base p-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">🚚</span>
                                 <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
@@ -105,9 +108,10 @@
                         <!-- 4. Mutasi Aset -->
                         <div @click="changeTab('mutasi')" 
                             class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :style="activeModule === 'mutasi' ? 'border-color: #f59e0b; box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);' : ''"
                             :class="activeModule === 'mutasi' 
-                                ? 'bg-gradient-to-br from-amber-500/20 to-amber-950/30 border-amber-500/60 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10' 
-                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                                ? 'bg-amber-500/15 border-amber-500 shadow-lg shadow-amber-500' 
+                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
                             <div class="flex items-center justify-between mb-1.5">
                                 <span class="text-base p-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300">🔄</span>
                                 <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
@@ -123,9 +127,10 @@
                         <!-- 5. Akun Pengguna -->
                         <div @click="changeTab('users')" 
                             class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :style="activeModule === 'users' ? 'border-color: #f43f5e; box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);' : ''"
                             :class="activeModule === 'users' 
-                                ? 'bg-gradient-to-br from-rose-500/20 to-rose-950/30 border-rose-500/60 ring-2 ring-rose-500/30 shadow-lg shadow-rose-500/10' 
-                                : 'bg-slate-950/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/80'">
+                                ? 'bg-rose-500/15 border-rose-500 shadow-lg shadow-rose-500' 
+                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
                             <div class="flex items-center justify-between mb-1.5">
                                 <span class="text-base p-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300">👥</span>
                                 <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
@@ -275,25 +280,27 @@
             <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
                 <!-- SUB-TAB SWITCHER (Paket Pengadaan vs Unit Fisik NIBAR) -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 mb-5 border-b border-slate-800/80 gap-3">
-                    <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800/80">
+                    <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
                         <button type="button" @click="changeAstapSubTab('packet')"
+                            :style="astapSubTab === 'packet' ? 'border-color: #3b82f6; box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);' : ''"
                             :class="astapSubTab === 'packet' 
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' 
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'"
+                                ? 'bg-blue-500/15 border border-blue-500 text-blue-300 shadow-lg' 
+                                : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
                             class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer">
                             <span>📦 Paket Pengadaan ASTAP</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-black"
-                                :class="astapSubTab === 'packet' ? 'bg-blue-800 text-blue-100' : 'bg-slate-800 text-slate-400'"
+                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors"
+                                :class="astapSubTab === 'packet' ? 'bg-blue-500 text-white shadow-sm' : 'bg-slate-800 text-slate-400'"
                                 x-text="astaps.length">0</span>
                         </button>
                         <button type="button" @click="changeAstapSubTab('nibar')"
+                            :style="astapSubTab === 'nibar' ? 'border-color: #06b6d4; box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);' : ''"
                             :class="astapSubTab === 'nibar' 
-                                ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/30' 
-                                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'"
+                                ? 'bg-cyan-500/15 border border-cyan-500 text-cyan-300 shadow-lg' 
+                                : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
                             class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer">
                             <span>🏷️ Unit Fisik NIBAR</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-black"
-                                :class="astapSubTab === 'nibar' ? 'bg-cyan-800 text-cyan-100' : 'bg-slate-800 text-slate-400'"
+                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors"
+                                :class="astapSubTab === 'nibar' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'bg-slate-800 text-slate-400'"
                                 x-text="nibars.length">0</span>
                         </button>
                     </div>
