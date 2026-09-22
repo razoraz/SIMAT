@@ -6450,7 +6450,7 @@
                 searchReklasSubSubRincian: '',
                 isReklasSubSubRincianOpen: false,
                 reklasNomorBa: '',
-                reklasTanggal: '',
+                reklasTanggal: new Date().toLocaleDateString('en-CA'),
                 reklasAlasan: '',
                 reklasExtracomItems: [],
                 reklasTipeKoreksiNilai: 'kurang', // 'kurang' | 'tambah'
@@ -6711,7 +6711,7 @@
                     this.isReklasSubRincianOpen = false;
                     this.searchReklasSubSubRincian = '';
                     this.isReklasSubSubRincianOpen = false;
-                    this.reklasTanggal = new Date().toISOString().split('T')[0];
+                    this.reklasTanggal = new Date().toLocaleDateString('en-CA');
                     this.reklasAlasan = '';
                     this.showReklasModal = true;
                 },

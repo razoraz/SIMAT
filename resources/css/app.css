@@ -46,3 +46,26 @@ textarea:-webkit-autofill {
     caret-color: #f8fafc !important;
     transition: background-color 5000s ease-in-out 0s !important;
 }
+
+/* Hilangkan browser number spinner (up/down scroller) agar tidak menutupi teks angka */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+}
+
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+.no-spinner {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+}
