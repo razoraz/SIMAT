@@ -450,8 +450,9 @@ class AstapController extends Controller
         });
 
         $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
+        $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
-        return view('pages.data_astap', compact('astaps', 'deletedAstaps'));
+        return view('pages.data_astap', compact('astaps', 'deletedAstaps', 'dbMaster108'));
     }
 
     /**
