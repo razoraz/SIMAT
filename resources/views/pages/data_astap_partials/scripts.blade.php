@@ -5785,12 +5785,41 @@
 
             if (rowVals[targetCode]) {
                 rowVals[targetCode].saldo_awal += val;
+                const isKoreksiRek = (item.jenis_reklas === 'KOREKSI_REKENING');
+                const isKdp = (item.jenis_reklas === 'KDP_TO_DEFINITIF');
+                const isKoreksiLain = (item.jenis_reklas === 'KOREKSI_LAIN');
+
                 if (isExtracom) {
                     rowVals[targetCode].kurang += val;
                     reklasNotesItems.push({
                         item: item,
                         val: val,
-                        targetCode: targetCode
+                        targetCode: targetCode,
+                        jenis: 'EKSTRAKOMPTABEL'
+                    });
+                } else if (isKoreksiRek) {
+                    rowVals[targetCode].kurang += val;
+                    reklasNotesItems.push({
+                        item: item,
+                        val: val,
+                        targetCode: targetCode,
+                        jenis: 'KOREKSI_REKENING'
+                    });
+                } else if (isKdp) {
+                    rowVals[targetCode].kurang += val;
+                    reklasNotesItems.push({
+                        item: item,
+                        val: val,
+                        targetCode: targetCode,
+                        jenis: 'KDP_TO_DEFINITIF'
+                    });
+                } else if (isKoreksiLain) {
+                    rowVals[targetCode].kurang += val;
+                    reklasNotesItems.push({
+                        item: item,
+                        val: val,
+                        targetCode: targetCode,
+                        jenis: 'KOREKSI_LAIN'
                     });
                 }
             }
@@ -5952,25 +5981,55 @@
             jumlahAset.kurang,
             jumlahAset.akhir
         ]);
-        s3Meta.highlightRows.push(sheet3Rows.length - 1);
+        let totalHibahVal = 0;
+        let totalExtracomVal = 0;
+        let totalKoreksiLainVal = 0;
+
+        filteredAstaps.forEach(item => {
+            const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
+            const isHibah = String(item.asal_usul || item.sumber_dana || '').toUpperCase().includes('HIBAH') || (item.jenis_reklas === 'HIBAH_MASUK');
+            const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM' || item.jenis_reklas === 'EKSTRAKOMPTABEL');
+            const isOtherReklas = Boolean((item.is_reklas && !isExtracom) || (item.jenis_reklas === 'KOREKSI_LAIN' || item.jenis_reklas === 'KOREKSI_REKENING' || item.jenis_reklas === 'KDP_TO_DEFINITIF' || item.jenis_reklas === 'DEFINITIF_TO_KDP' || item.jenis_reklas === 'KAPITALISASI_INTRAKOM'));
+
+            // Format Resmi 3 Baris Koreksi Penyeimbang (Sesuai Template RSUD Koesnandi / BPK):
+            // 1. Hibah: Koreksi yang berasal dari barang Hibah atau pengadaan hibah masuk
+            if (isHibah && (isOtherReklas || isExtracom || item.is_reklas)) {
+                totalHibahVal += val;
+            }
+            // 2. Ekstrakomptabel: Koreksi / reklasifikasi barang di bawah nilai kapitalisasi (<= Rp 300.000)
+            else if (isExtracom) {
+                totalExtracomVal += val;
+            }
+            // 3. Koreksi Lain-Lain: Pindah KIB / Rekening, Kapitalisasi KDP, dan Koreksi Nilai Audit BPK / LKD
+            else if (isOtherReklas) {
+                totalKoreksiLainVal += val;
+            }
+        });
+
+        // Fallback jika tidak ada mutasi khusus tapi ada total pengurangan aset
+        if (totalExtracomVal === 0 && jumlahAset.kurang > 0 && totalKoreksiLainVal === 0 && totalHibahVal === 0) {
+            totalExtracomVal = jumlahAset.kurang;
+        }
+
+        const totalKoreksiPenyeimbang = totalHibahVal + totalExtracomVal + totalKoreksiLainVal;
 
         // 5. Bagian Koreksi Penyeimbang
         sheet3Rows.push([
             "Koreksi Atas Aset Tetap",
             0,
-            totalExtracomVal,
+            totalKoreksiPenyeimbang,
             0,
-            totalExtracomVal
+            totalKoreksiPenyeimbang
         ]);
         s3Meta.subHeaderRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["  Hibah", 0, 0, 0, 0]);
+        sheet3Rows.push(["  Hibah", 0, totalHibahVal, 0, totalHibahVal]);
         s3Meta.dataRows.push(sheet3Rows.length - 1);
 
         sheet3Rows.push(["  Dibawah Kapitalisasi (Extra Comptable)", 0, totalExtracomVal, 0, totalExtracomVal]);
         s3Meta.dataRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["  Koreksi Lain-Lain", 0, 0, 0, 0]);
+        sheet3Rows.push(["  Koreksi Lain-Lain", 0, totalKoreksiLainVal, 0, totalKoreksiLainVal]);
         s3Meta.dataRows.push(sheet3Rows.length - 1);
 
         // 6. REALISASI BELANJA MODAL
@@ -6039,7 +6098,17 @@
                     buktiStr = `atas dasar bukti transaksi belanja tanggal ${docDate}`;
                 }
 
-                const noteText = `${idx + 1}. Reklasifikasi dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi ke Extracompetable berupa ${kdBrg} ${nmBrg} (${vol}) karena sesuai dengan kode rekening Simda BMD 108`;
+                let noteText = '';
+                if (n.jenis === 'KOREKSI_REKENING' || it.jenis_reklas === 'KOREKSI_REKENING') {
+                    const tujuanStr = it.tujuan_kib ? ` ke ${it.tujuan_kib}` : '';
+                    noteText = `${idx + 1}. Reklasifikasi dan koreksi rekening dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
+                } else if (n.jenis === 'KDP_TO_DEFINITIF' || it.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                    noteText = `${idx + 1}. Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi ke Aset Definitif berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
+                } else if (n.jenis === 'KOREKSI_LAIN' || it.jenis_reklas === 'KOREKSI_LAIN') {
+                    noteText = `${idx + 1}. Koreksi nilai aset tetap pada rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnandi berdasarkan rekomendasi audit BPK / rekonsiliasi LKD.`;
+                } else {
+                    noteText = `${idx + 1}. Reklasifikasi dari rekening ${subRek} ${subNama} senilai Rp ${fmtNilaiText} ${buktiStr} pada RSUD dr.H.Koesnadi ke Extracompetable berupa ${kdBrg} ${nmBrg} (${vol}) karena sesuai dengan kode rekening Simda BMD 108.`;
+                }
 
                 const curRowIdx = sheet3Rows.length;
                 sheet3Rows.push([noteText, "", "", "", n.val]);
@@ -6211,9 +6280,35 @@
         rmbCategories.forEach(item => {
             const belanja = kibReal[item.cat] || 0;
             const unit = kibUnits[item.cat] || 0;
-            const reklasIn = 0;
+            let reklasIn = 0;
+            let totKurang = 0;
+
+            // Agregasi dinamis reklasifikasi & mutasi per KIB
+            filteredAstaps.forEach(astap => {
+                const val = parseFloat(astap.total_realisasi_num) || parseFloat(astap.total_realisasi) || 0;
+                const cat = astap.category || '';
+                const isExtracom = Boolean(astap.is_extracomtable || resolveItemCategory(astap) === 'EXTRACOM');
+
+                if (astap.is_reklas) {
+                    if (astap.jenis_reklas === 'EKSTRAKOMPTABEL') {
+                        if (item.cat === 'EXTRACOM') reklasIn += val;
+                        if (item.cat === cat) totKurang += val;
+                    } else if (astap.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                        if (item.cat === 'KIB F') totKurang += val;
+                        if (item.cat === (astap.tujuan_kib || 'KIB C')) reklasIn += val;
+                    } else if (astap.jenis_reklas === 'KOREKSI_REKENING') {
+                        if (item.cat === cat) totKurang += val;
+                        if (item.cat === (astap.tujuan_kib || 'KIB B')) reklasIn += val;
+                    } else if (astap.jenis_reklas === 'KOREKSI_LAIN') {
+                        if (item.cat === cat) totKurang += val;
+                    }
+                } else if (isExtracom) {
+                    if (item.cat === 'EXTRACOM') reklasIn += val;
+                    if (item.cat === cat && cat !== 'EXTRACOM') totKurang += val;
+                }
+            });
+
             const totTambah = belanja + reklasIn;
-            const totKurang = 0;
             const saldoAwalNilai = 0;
             const saldoAwalUnit = 0;
             const saldoAkhirNilai = saldoAwalNilai + totTambah - totKurang;
@@ -6341,7 +6436,7 @@
                 // State Modal Reklasifikasi Aset Tetap (RSDK)
                 showReklasModal: false,
                 selectedAstapReklas: null,
-                reklasJenis: 'extracom', // 'extracom' | 'intracom' | 'antar_kib' | 'kdp' | 'koreksi_rekening'
+                reklasJenis: 'extracom', // 'extracom' | 'intracom' | 'pindah_kib' | 'kdp' | 'koreksi_nilai'
                 reklasTujuanKib: '',
                 reklasTujuanKode: '',
                 reklasTujuanNama: '',
@@ -6349,6 +6444,11 @@
                 reklasTanggal: '',
                 reklasAlasan: '',
                 reklasExtracomItems: [],
+                reklasTipeKoreksiNilai: 'kurang', // 'kurang' | 'tambah'
+                reklasNominalKoreksi: 0,
+                reklasNilaiRealisasiBaru: 0,
+                reklasNilaiAnggaran: 0,
+                reklasNoDokumenKoreksi: '',
                 isSubmittingReklas: false,
 
                 isCurrentAstapExtracom() {
@@ -6390,13 +6490,66 @@
                     return !this.isCurrentAstapKdp();
                 },
 
+                getReklasNilaiBaru() {
+                    if (!this.selectedAstapReklas) return 0;
+                    if (this.reklasJenis === 'koreksi_nilai') {
+                        return parseFloat(this.reklasNilaiRealisasiBaru) || this.getReklasExtracomTotal();
+                    }
+                    const baseVal = parseFloat(this.selectedAstapReklas.total_realisasi_num || this.selectedAstapReklas.harga_satuan || 0);
+                    const selisih = parseFloat(this.reklasNominalKoreksi) || 0;
+                    if (this.reklasTipeKoreksiNilai === 'kurang') {
+                        return Math.max(0, baseVal - selisih);
+                    } else {
+                        return baseVal + selisih;
+                    }
+                },
+
+                setReklasArahKoreksi(tipe) {
+                    this.reklasTipeKoreksiNilai = tipe;
+                    this.reklasNilaiRealisasiBaru = this.getReklasNilaiBaru();
+                },
+
+                onReklasSelisihChanged() {
+                    this.reklasNilaiRealisasiBaru = this.getReklasNilaiBaru();
+                },
+
+                onReklasNilaiBaruChanged() {
+                    if (!this.selectedAstapReklas) return;
+                    const baseVal = parseFloat(this.selectedAstapReklas.total_realisasi_num || this.selectedAstapReklas.harga_satuan || 0);
+                    const targetBaru = parseFloat(this.reklasNilaiRealisasiBaru) || 0;
+                    
+                    if (targetBaru < baseVal) {
+                        this.reklasTipeKoreksiNilai = 'kurang';
+                        this.reklasNominalKoreksi = Math.max(0, baseVal - targetBaru);
+                    } else {
+                        this.reklasTipeKoreksiNilai = 'tambah';
+                        this.reklasNominalKoreksi = Math.max(0, targetBaru - baseVal);
+                    }
+                },
+
+                onReklasItemPriceChanged() {
+                    if (!this.selectedAstapReklas) return;
+                    const baseVal = parseFloat(this.selectedAstapReklas.total_realisasi_num || this.selectedAstapReklas.harga_satuan || 0);
+                    const totalNew = this.getReklasExtracomTotal();
+                    this.reklasNilaiRealisasiBaru = totalNew;
+
+                    if (totalNew < baseVal) {
+                        this.reklasTipeKoreksiNilai = 'kurang';
+                        this.reklasNominalKoreksi = Math.max(0, baseVal - totalNew);
+                    } else {
+                        this.reklasTipeKoreksiNilai = 'tambah';
+                        this.reklasNominalKoreksi = Math.max(0, totalNew - baseVal);
+                    }
+                },
+
                 getRmbAsalLabel() {
                     if (!this.selectedAstapReklas) return '-';
                     const cat = this.selectedAstapReklas.category || 'KIB B';
                     if (this.reklasJenis === 'kdp') return 'KIB F (KDP / Konstruksi)';
                     if (this.reklasJenis === 'intracom') return 'Ekstrakomptabel (Luar Neraca)';
                     if (this.reklasJenis === 'extracom') return `${cat} (Neraca Aset Tetap)`;
-                    if (this.reklasJenis === 'antar_kib') return `${cat} (KIB Asal)`;
+                    if (this.reklasJenis === 'pindah_kib') return `${cat} (KIB Asal / Akun Lama)`;
+                    if (this.reklasJenis === 'koreksi_nilai') return `${cat} (Nilai Tercatat Semula)`;
                     return `${cat} (Rekening Semula)`;
                 },
 
@@ -6405,8 +6558,17 @@
                     if (this.reklasJenis === 'kdp') return `${this.reklasTujuanKib || 'KIB C'} (Definitif)`;
                     if (this.reklasJenis === 'extracom') return 'Ekstrakomptabel (Luar Neraca)';
                     if (this.reklasJenis === 'intracom') return `${this.reklasTujuanKib || 'KIB B'} (Neraca Aset Tetap)`;
-                    if (this.reklasJenis === 'antar_kib') return `${this.reklasTujuanKib || 'KIB Tujuan'}`;
-                    return this.reklasTujuanKode ? `Rekening ${this.reklasTujuanKode}` : 'Rekening Simda Baru';
+                    if (this.reklasJenis === 'pindah_kib') {
+                        const tujuanKib = this.reklasTujuanKib || 'KIB Tujuan';
+                        const tujuanKd = this.reklasTujuanKode ? ` (${this.reklasTujuanKode})` : '';
+                        return `${tujuanKib}${tujuanKd}`;
+                    }
+                    if (this.reklasJenis === 'koreksi_nilai') {
+                        const sign = this.reklasTipeKoreksiNilai === 'kurang' ? '-' : '+';
+                        const selisihFmt = 'Rp ' + Number(this.reklasNominalKoreksi || 0).toLocaleString('id-ID');
+                        return `Koreksi Nilai ${sign} ${selisihFmt} (Nilai Baru: Rp ${Number(this.getReklasNilaiBaru()).toLocaleString('id-ID')})`;
+                    }
+                    return 'Rekening Simda Baru';
                 },
 
                 openReklas(item) {
@@ -6425,15 +6587,20 @@
                         this.reklasJenis = 'kdp';
                         this.reklasTujuanKib = 'KIB C';
                     } else if (isNonExtracom) {
-                        this.reklasJenis = 'antar_kib';
+                        this.reklasJenis = 'pindah_kib';
                         this.reklasTujuanKib = cat === 'KIB A' ? 'KIB C' : 'KIB B';
                     } else {
                         // Normal KIB B / KIB E -> opsi ke Ekstrakomptabel
                         this.reklasJenis = 'extracom';
                         this.reklasTujuanKib = 'EKSTRAKOMPTABEL';
                     }
+                    this.reklasTipeKoreksiNilai = 'kurang';
+                    this.reklasNominalKoreksi = 0;
+                    this.reklasNilaiRealisasiBaru = parseFloat(item.total_realisasi_num || item.harga_satuan || 0);
+                    this.reklasNilaiAnggaran = parseFloat(item.jumlah_anggaran || item.total_realisasi_num || item.harga_satuan || 0);
+                    this.reklasNoDokumenKoreksi = '';
 
-                    // Inisialisasi rincian barang untuk Ekstrakomptabel / Intrakomptabel
+                    // Inisialisasi rincian barang untuk Ekstrakomptabel / Intrakomptabel / Koreksi Nilai
                     let spec = item.spesifikasi_json;
                     if (typeof spec === 'string') {
                         try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
@@ -6449,12 +6616,52 @@
                             kode_barang: m.mesin_kode_barang || item.kode_barang || '',
                         }));
                     } else if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
-                        this.reklasExtracomItems = spec.lainnya_items.map((l, idx) => ({
-                            nama_barang: l.lainnya_nama_barang || item.nama_barang || ('Barang #' + (idx + 1)),
-                            jumlah_volume: parseInt(l.lainnya_jumlah_barang) || 1,
-                            satuan: l.lainnya_satuan || item.satuan || 'Unit',
-                            harga_satuan: parseFloat(l.lainnya_nilai_satuan || item.harga_satuan || 0),
-                            kode_barang: l.lainnya_kode_barang || item.kode_barang || '',
+                        this.reklasExtracomItems = spec.lainnya_items.map((m, idx) => ({
+                            nama_barang: m.lainnya_nama_barang || item.nama_barang || ('Barang #' + (idx + 1)),
+                            jumlah_volume: parseInt(m.lainnya_jumlah_barang) || 1,
+                            satuan: m.lainnya_satuan || item.satuan || 'Unit',
+                            harga_satuan: parseFloat(m.lainnya_nilai_satuan || m.lainnya_harga_satuan || item.harga_satuan || 0),
+                            kode_barang: m.lainnya_kode_barang || item.kode_barang || '',
+                        }));
+                    } else if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                        this.reklasExtracomItems = spec.gedung_items.map((m, idx) => ({
+                            nama_barang: m.gedung_nama_barang || m.gedung_nama || item.nama_barang || ('Barang #' + (idx + 1)),
+                            jumlah_volume: parseInt(m.gedung_jumlah_bangunan) || 1,
+                            satuan: m.gedung_satuan || item.satuan || 'Unit',
+                            harga_satuan: parseFloat(m.gedung_nilai_fisik || m.gedung_harga_satuan || item.harga_satuan || 0),
+                            kode_barang: m.gedung_kode_barang || item.kode_barang || '',
+                        }));
+                    } else if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
+                        this.reklasExtracomItems = spec.jaringan_items.map((m, idx) => ({
+                            nama_barang: m.jaringan_nama_barang || item.nama_barang || ('Barang #' + (idx + 1)),
+                            jumlah_volume: parseInt(m.jaringan_jumlah_barang) || 1,
+                            satuan: m.jaringan_satuan || item.satuan || 'Unit',
+                            harga_satuan: parseFloat(m.jaringan_nilai_fisik || m.jaringan_harga_satuan || item.harga_satuan || 0),
+                            kode_barang: m.jaringan_kode_barang || item.kode_barang || '',
+                        }));
+                    } else if (Array.isArray(spec.kdp_items) && spec.kdp_items.length > 0) {
+                        this.reklasExtracomItems = spec.kdp_items.map((m, idx) => ({
+                            nama_barang: m.kdp_nama_barang || item.nama_barang || ('Barang #' + (idx + 1)),
+                            jumlah_volume: parseInt(m.kdp_jumlah_barang) || 1,
+                            satuan: m.kdp_satuan || item.satuan || 'Unit',
+                            harga_satuan: parseFloat(m.kdp_nilai_fisik || m.kdp_harga_satuan || item.harga_satuan || 0),
+                            kode_barang: m.kdp_kode_barang || item.kode_barang || '',
+                        }));
+                    } else if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                        this.reklasExtracomItems = spec.tanah_items.map((m, idx) => ({
+                            nama_barang: m.tanah_nama_barang || item.nama_barang || ('Barang #' + (idx + 1)),
+                            jumlah_volume: parseInt(m.tanah_jumlah_bidang || m.tanah_jumlah_barang) || 1,
+                            satuan: m.tanah_satuan || item.satuan || 'Bidang',
+                            harga_satuan: parseFloat(m.tanah_nilai_fisik || m.tanah_harga_satuan || item.harga_satuan || 0),
+                            kode_barang: m.tanah_kode_barang || item.kode_barang || '',
+                        }));
+                    } else if (Array.isArray(spec.atb_items) && spec.atb_items.length > 0) {
+                        this.reklasExtracomItems = spec.atb_items.map((m, idx) => ({
+                            nama_barang: m.atb_nama_barang || item.nama_barang || ('Barang #' + (idx + 1)),
+                            jumlah_volume: parseInt(m.atb_jumlah_barang) || 1,
+                            satuan: m.atb_satuan || item.satuan || 'Unit',
+                            harga_satuan: parseFloat(m.atb_nilai_satuan || m.atb_harga_satuan || item.harga_satuan || 0),
+                            kode_barang: m.atb_kode_barang || item.kode_barang || '',
                         }));
                     } else {
                         const fallbackVol = parseInt(item.jumlah_volume) || 1;
@@ -6466,6 +6673,11 @@
                             harga_satuan: fallbackHarga,
                             kode_barang: item.kode_barang || '',
                         }];
+                    }
+
+                    // Sinkronisasi nilai awal realisasi baru dari rincian barang jika koreksi nilai
+                    if (this.reklasJenis === 'koreksi_nilai') {
+                        this.onReklasItemPriceChanged();
                     }
 
                     let noBukti = (item.bast_dokumen_nomor || item.spk_nomor || item.kwitansi_nomor || '').trim();
@@ -6550,7 +6762,7 @@
                             rincianBrgStr = `berupa ${kdBrg} ${nmBrg} (${vol})`;
                         }
 
-                        return `Reklasifikasi dari rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ke Extracompetable ${rincianBrgStr} karena sesuai dengan kode rekening Simda BMD 108.`;
+                        return `Reklasifikasi dari rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ke Extracompetable ${rincianBrgStr} karena sesuai dengan batas kapitalisasi Simda BMD 108.`;
                     } else if (this.reklasJenis === 'intracom') {
                         const totalVal = this.getReklasExtracomTotal();
                         const valStr = 'Rp ' + Number(totalVal).toLocaleString('id-ID');
@@ -6582,13 +6794,22 @@
                         const vol = (it.jumlah_volume || 1) + ' Unit';
                         const tujuan = this.reklasTujuanKib || 'KIB C';
                         return `Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
-                    } else if (this.reklasJenis === 'antar_kib') {
+                    } else if (this.reklasJenis === 'pindah_kib') {
                         const val = it.jumlah_realisasi || 'Rp 0';
                         const kdBrg = it.kode_barang || '';
                         const nmBrg = it.nama_barang || '';
                         const vol = (it.jumlah_volume || 1) + ' Unit';
-                        const tujuan = this.reklasTujuanKib || 'Aset Lain';
-                        return `Reklasifikasi dari ${it.category || 'KIB Asal'} rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena penyesuaian klasifikasi wujud aset.`;
+                        const tujuanKib = this.reklasTujuanKib || 'KIB Tujuan';
+                        const tujuanStr = this.reklasTujuanKode ? ` ke rekening ${this.reklasTujuanKode}` : ` ke ${tujuanKib}`;
+                        return `Reklasifikasi dan koreksi rekening dari ${it.category || 'KIB Asal'} ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
+                    } else if (this.reklasJenis === 'koreksi_nilai') {
+                        const valAwal = it.jumlah_realisasi || ('Rp ' + Number(it.total_realisasi_num || 0).toLocaleString('id-ID'));
+                        const selisihVal = 'Rp ' + Number(this.reklasNominalKoreksi || 0).toLocaleString('id-ID');
+                        const valBaru = 'Rp ' + Number(this.getReklasNilaiBaru()).toLocaleString('id-ID');
+                        const tipeStr = this.reklasTipeKoreksiNilai === 'kurang' ? 'pengurangan nilai buku sebesar' : 'penambahan nilai buku sebesar';
+                        const cleanDoc = (this.reklasNoDokumenKoreksi || this.reklasNomorBa || '').trim();
+                        const docStr = cleanDoc ? ` berdasarkan dokumen/LHP ${cleanDoc}` : ' berdasarkan rekomendasi audit BPK / rekonsiliasi';
+                        return `Koreksi nilai aset tetap pada ${subRek} ${subNama} semula ${valAwal} disesuaikan menjadi ${valBaru} (${tipeStr} ${selisihVal})${docStr}${spacerTgl} pada RSUD dr.H.Koesnandi.`;
                     } else {
                         const val = it.jumlah_realisasi || 'Rp 0';
                         const kdBrg = it.kode_barang || '';
@@ -6637,6 +6858,21 @@
                                 return;
                             }
                         }
+                    } else if (this.reklasJenis === 'koreksi_nilai') {
+                        const nom = parseFloat(this.reklasNominalKoreksi) || 0;
+                        const it = this.selectedAstapReklas;
+                        const baseVal = parseFloat(it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0);
+                        const oldAnggaran = parseFloat(it.jumlah_anggaran || baseVal);
+                        const newAnggaran = parseFloat(this.reklasNilaiAnggaran) || 0;
+
+                        if (nom <= 0 && oldAnggaran === newAnggaran) {
+                            this.showToast('Silakan sesuaikan nilai kapitalisasi barang atau nilai anggaran!', 'error');
+                            return;
+                        }
+                        if (this.reklasTipeKoreksiNilai === 'kurang' && nom >= baseVal) {
+                            this.showToast('Nominal pengurangan nilai tidak boleh melebihi atau sama dengan total nilai barang saat ini!', 'error');
+                            return;
+                        }
                     }
 
                     this.isSubmittingReklas = true;
@@ -6654,7 +6890,8 @@
                         if (this.reklasJenis === 'extracom') jenisReklasDb = 'EKSTRAKOMPTABEL';
                         else if (this.reklasJenis === 'intracom') jenisReklasDb = 'KAPITALISASI_INTRAKOM';
                         else if (this.reklasJenis === 'kdp') jenisReklasDb = 'KDP_TO_DEFINITIF';
-                        else if (this.reklasJenis === 'antar_kib') jenisReklasDb = 'KOREKSI_REKENING';
+                        else if (this.reklasJenis === 'pindah_kib') jenisReklasDb = 'KOREKSI_REKENING';
+                        else if (this.reklasJenis === 'koreksi_nilai') jenisReklasDb = 'KOREKSI_LAIN';
 
                         let asalKib = (it.category || 'KIB B');
                         let targetKib = this.reklasTujuanKib || 'KIB C';
@@ -6667,24 +6904,32 @@
                         } else if (this.reklasJenis === 'kdp') {
                             asalKib = 'KIB F';
                             targetKib = this.reklasTujuanKib || 'KIB C';
+                        } else if (this.reklasJenis === 'pindah_kib') {
+                            asalKib = it.category || 'KIB B';
+                            targetKib = this.reklasTujuanKib || asalKib;
+                        } else if (this.reklasJenis === 'koreksi_nilai') {
+                            asalKib = it.category || 'KIB B';
+                            targetKib = asalKib;
                         }
 
-                        const nilaiReklas = (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') 
+                        let nilaiReklas = (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') 
                             ? this.getReklasExtracomTotal()
-                            : parseFloat(it.jumlah_realisasi_raw || it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0);
+                            : (this.reklasJenis === 'koreksi_nilai' ? (parseFloat(this.reklasNominalKoreksi) || 0) : parseFloat(it.jumlah_realisasi_raw || it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0));
 
                         const payload = {
                             astap_id: it.id,
                             jenis_reklas: jenisReklasDb,
+                            tipe_koreksi: this.reklasTipeKoreksiNilai,
                             asal_kib: asalKib,
                             tujuan_kib: targetKib,
                             nilai_reklas: nilaiReklas,
                             tanggal_reklas: tgl,
                             triwulan: tw,
                             tahun: thn,
-                            nomor_ba_reklas: (this.reklasNomorBa || '').trim() || null,
+                            nomor_ba_reklas: (this.reklasNoDokumenKoreksi || this.reklasNomorBa || '').trim() || null,
                             keterangan: this.getReklasNarasiPreview(),
-                            reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') ? this.reklasExtracomItems : null,
+                            jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? this.reklasNilaiAnggaran : (parseFloat(it.jumlah_anggaran) || null),
+                            reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? this.reklasExtracomItems : null,
                         };
 
                         const res = await fetch('{{ route("master.reklasifikasi.store") }}', {
@@ -6708,6 +6953,7 @@
                                 it.total_realisasi = resJson.astap.total_realisasi;
                                 it.total_realisasi_num = resJson.astap.total_realisasi_num;
                                 it.jumlah_realisasi = resJson.astap.total_realisasi;
+                                it.jumlah_anggaran = resJson.astap.jumlah_anggaran ?? it.jumlah_anggaran;
                                 it.jumlah_volume = resJson.astap.jumlah_volume;
                                 it.harga_satuan = resJson.astap.harga_satuan;
                                 it.is_extracomtable = resJson.astap.is_extracomtable;
@@ -6721,6 +6967,7 @@
                                         total_realisasi: resJson.astap.total_realisasi,
                                         total_realisasi_num: resJson.astap.total_realisasi_num,
                                         jumlah_realisasi: resJson.astap.total_realisasi,
+                                        jumlah_anggaran: resJson.astap.jumlah_anggaran ?? this.astaps[idxInList].jumlah_anggaran,
                                         jumlah_volume: resJson.astap.jumlah_volume,
                                         harga_satuan: resJson.astap.harga_satuan,
                                         is_extracomtable: resJson.astap.is_extracomtable,

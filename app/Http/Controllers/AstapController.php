@@ -29,7 +29,8 @@ class AstapController extends Controller
                 'jenisAstap', 
                 'rekeningBelanja', 
                 'jenisPengadaan', 
-                'unit'
+                'unit',
+                'reklas'
             ])
             ->orderBy('id', 'desc')
             ->get()
@@ -102,6 +103,10 @@ class AstapController extends Controller
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'category' => $a->category,
                     'is_extracomtable' => (bool) $a->is_extracomtable,
+                    'is_reklas' => (bool) $a->is_reklas,
+                    'jenis_reklas' => $a->jenis_reklas,
+                    'asal_usul' => $jp ? ($jp->nama_pengadaan ?: '') : ($spec['asal_usul'] ?? ($spec['cara_perolehan'] ?? '')),
+                    'sumber_dana' => $rb ? ($rb->nama_belanja ?: '') : ($spec['sumber_dana'] ?? ''),
                     'kode_barang' => $kode108Val,
                     'nama_barang' => $a->nama_barang,
                     'tahun_perolehan' => (string) $a->tahun_perolehan,
@@ -251,6 +256,20 @@ class AstapController extends Controller
                                     'catatan_penerima' => $m->catatan_penerima,
                                 ];
                             })->values() : []
+                        ];
+                    })->values() : [],
+                    'reklas_history' => $a->reklas ? $a->reklas->map(function($r) {
+                        return [
+                            'id' => $r->id,
+                            'jenis_reklas' => $r->jenis_reklas,
+                            'asal_kib' => $r->asal_kib,
+                            'tujuan_kib' => $r->tujuan_kib,
+                            'nilai_reklas' => (float) $r->nilai_reklas,
+                            'tanggal_reklas' => $r->tanggal_reklas ? $r->tanggal_reklas->format('Y-m-d') : null,
+                            'triwulan' => $r->triwulan,
+                            'tahun' => $r->tahun,
+                            'nomor_ba_reklas' => $r->nomor_ba_reklas,
+                            'keterangan' => $r->keterangan,
                         ];
                     })->values() : [],
                     'spesifikasi_json' => $spec

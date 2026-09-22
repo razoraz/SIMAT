@@ -196,6 +196,8 @@ class ReklasifikasiController extends Controller
             'nomor_ba_reklas' => 'nullable|string|max:150',
             'keterangan' => 'nullable|string',
             'reklas_items' => 'nullable|array',
+            'jumlah_anggaran' => 'nullable|numeric|min:0',
+            'tipe_koreksi' => 'nullable|string|in:kurang,tambah',
         ]);
 
         // Jika jenis reklasifikasi adalah Ekstrakomptabel atau Kapitalisasi ke Intrakomptabel
@@ -401,13 +403,119 @@ class ReklasifikasiController extends Controller
                     }
                     if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
                 }
+            } elseif ($validated['jenis_reklas'] === 'KOREKSI_LAIN') {
+                $selisih = (float) $validated['nilai_reklas'];
+                $tipe = $request->input('tipe_koreksi', 'kurang');
+
+                // Jika ada penyesuaian nilai anggaran (bisa diubah)
+                if ($request->filled('jumlah_anggaran')) {
+                    $astap->jumlah_anggaran = (float) $request->input('jumlah_anggaran');
+                }
+
+                // Jika ada penyesuaian nilai kapitalisasi rincian barang 1, 2, dst
+                if ($request->has('reklas_items') && is_array($request->reklas_items) && count($request->reklas_items) > 0) {
+                    $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                    $totalBaru = 0;
+                    $oldRealisasi = (float) $astap->total_realisasi;
+
+                    $repeaterKeys = ['mesin_items', 'lainnya_items', 'gedung_items', 'jaringan_items', 'kdp_items', 'tanah_items', 'atb_items'];
+                    $activeKey = null;
+                    foreach ($repeaterKeys as $rk) {
+                        if (!empty($spec[$rk]) && is_array($spec[$rk])) {
+                            $activeKey = $rk;
+                            break;
+                        }
+                    }
+
+                    foreach ($request->reklas_items as $idx => $rItem) {
+                        $vol = (int) ($rItem['jumlah_volume'] ?? 1);
+                        $hrg = (float) ($rItem['harga_satuan'] ?? 0);
+                        $totalBaru += ($vol * $hrg);
+
+                        if ($activeKey && isset($spec[$activeKey][$idx])) {
+                            if ($activeKey === 'mesin_items') {
+                                $spec[$activeKey][$idx]['mesin_nilai_satuan'] = $hrg;
+                                $spec[$activeKey][$idx]['mesin_total_nilai'] = $vol * $hrg;
+                            } elseif ($activeKey === 'lainnya_items') {
+                                $spec[$activeKey][$idx]['lainnya_nilai_satuan'] = $hrg;
+                                $spec[$activeKey][$idx]['lainnya_total_nilai'] = $vol * $hrg;
+                            } elseif ($activeKey === 'gedung_items') {
+                                $spec[$activeKey][$idx]['gedung_nilai_fisik'] = $hrg;
+                            } elseif ($activeKey === 'jaringan_items') {
+                                $spec[$activeKey][$idx]['jaringan_nilai_fisik'] = $hrg;
+                            } elseif ($activeKey === 'kdp_items') {
+                                $spec[$activeKey][$idx]['kdp_nilai_fisik'] = $hrg;
+                            } elseif ($activeKey === 'tanah_items') {
+                                $spec[$activeKey][$idx]['tanah_nilai_fisik'] = $hrg;
+                            } elseif ($activeKey === 'atb_items') {
+                                $spec[$activeKey][$idx]['atb_nilai_satuan'] = $hrg;
+                            }
+                        }
+                    }
+
+                    if (!$activeKey && count($request->reklas_items) === 1) {
+                        $firstItem = $request->reklas_items[0];
+                        $astap->harga_satuan = (float) ($firstItem['harga_satuan'] ?? 0);
+                    }
+
+                    $astap->spesifikasi_json = $spec;
+                    if ($totalBaru >= 0) {
+                        $astap->total_realisasi = $totalBaru;
+                        if ($astap->jumlah_volume > 0) {
+                            $astap->harga_satuan = $totalBaru / $astap->jumlah_volume;
+                        }
+                        $selisih = abs($totalBaru - $oldRealisasi);
+                        $validated['nilai_reklas'] = $selisih;
+                    }
+                } else {
+                    if ($tipe === 'kurang') {
+                        $astap->total_realisasi = max(0, (float) $astap->total_realisasi - $selisih);
+                    } else {
+                        $astap->total_realisasi = (float) $astap->total_realisasi + $selisih;
+                    }
+                    if ($astap->jumlah_volume > 0) {
+                        $astap->harga_satuan = $astap->total_realisasi / $astap->jumlah_volume;
+                    }
+                }
+            } elseif ($validated['jenis_reklas'] === 'KOREKSI_REKENING') {
+                $targetKib = $validated['tujuan_kib'] ?? null;
+                if ($targetKib) {
+                    $kibPrefixMap = [
+                        'KIB A' => '1.3.1',
+                        'KIB B' => '1.3.2',
+                        'KIB C' => '1.3.3',
+                        'KIB D' => '1.3.4',
+                        'KIB E' => '1.3.5',
+                        'ATB'   => '1.5.3',
+                    ];
+                    $prefix = $kibPrefixMap[$targetKib] ?? null;
+                    if ($prefix) {
+                        $matchingJenis = JenisAstap::where('jenis', 'like', $prefix . '%')->first();
+                        if ($matchingJenis) {
+                            $astap->jenis_astap_id = $matchingJenis->id;
+                        }
+                    }
+                }
             }
             $astap->save();
 
-            // Set user dan simpan audit log reklasifikasi
-            $validated['user_id'] = Auth::id();
-            unset($validated['reklas_items']);
-            $reklas = AstapReklas::create($validated);
+            // Simpan audit log reklasifikasi
+            $reklasData = [
+                'astap_id' => $validated['astap_id'],
+                'jenis_reklasifikasi_asal_id' => $validated['jenis_reklasifikasi_asal_id'] ?? null,
+                'jenis_reklasifikasi_tujuan_id' => $validated['jenis_reklasifikasi_tujuan_id'] ?? null,
+                'jenis_reklas' => $validated['jenis_reklas'],
+                'asal_kib' => $validated['asal_kib'] ?? null,
+                'tujuan_kib' => $validated['tujuan_kib'] ?? null,
+                'nilai_reklas' => $validated['nilai_reklas'],
+                'tanggal_reklas' => $validated['tanggal_reklas'],
+                'triwulan' => $validated['triwulan'],
+                'tahun' => $validated['tahun'],
+                'nomor_ba_reklas' => $validated['nomor_ba_reklas'] ?? null,
+                'keterangan' => $validated['keterangan'] ?? null,
+                'user_id' => Auth::id(),
+            ];
+            $reklas = AstapReklas::create($reklasData);
 
             DB::commit();
 
@@ -422,10 +530,11 @@ class ReklasifikasiController extends Controller
                         'id' => $astap->id,
                         'total_realisasi' => 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.'),
                         'total_realisasi_num' => (float) $astap->total_realisasi,
-                        'jumlah_volume' => (int) $astap->jumlah_volume,
+                        'jumlah_anggaran' => (float) $astap->jumlah_anggaran,
                         'harga_satuan' => (float) $astap->harga_satuan,
+                        'jumlah_volume' => (int) $astap->jumlah_volume,
                         'is_extracomtable' => (bool) $astap->is_extracomtable,
-                        'category' => $astap->is_extracomtable ? 'EXTRACOM' : $astap->category,
+                        'category' => $astap->category,
                         'is_reklas' => (bool) $astap->is_reklas,
                         'jenis_reklas' => $astap->jenis_reklas,
                         'spesifikasi_json' => $astap->spesifikasi_json,

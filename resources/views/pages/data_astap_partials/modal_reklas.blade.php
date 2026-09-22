@@ -102,27 +102,27 @@
                                         </template>
                                     </div>
                                     <div class="text-[10px] text-slate-400 mt-0.5" 
-                                         x-text="isReklasExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)' : (isCurrentAstapExtracom() ? 'Pengalihan aset ke kelompok Intrakomtable' : 'Pengalihan aset ke kelompok Ekstrakomtable')"></div>
+                                         x-text="isReklasExtracomDisabled() ? 'Tidak berlaku untuk kelompok aset ini (Wajib Intrakomtable)' : (isCurrentAstapExtracom() ? 'Pengalihan aset ke kelompok Intrakomtable' : 'Batas nilai satuan ≤ Rp 300.000 per unit')"></div>
                                 </div>
                             </label>
 
-                            <!-- 2. Antar-KIB / ATB -->
+                            <!-- 2. Pindah KIB / Koreksi Rekening (Salah Kamar / Salah Akun 108) -->
                             <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'antar_kib' ? 'bg-indigo-500/10 border-indigo-500/50 shadow-sm shadow-indigo-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="antar_kib" x-model="reklasJenis" class="hidden" style="display: none;">
+                                   :class="reklasJenis === 'pindah_kib' ? 'bg-indigo-500/10 border-indigo-500/50 shadow-sm shadow-indigo-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
+                                <input type="radio" name="reklas_jenis" value="pindah_kib" x-model="reklasJenis" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
-                                     :class="reklasJenis === 'antar_kib' ? 'border-indigo-400 bg-indigo-500/20' : 'border-slate-700 bg-slate-900'">
-                                    <div x-show="reklasJenis === 'antar_kib'" class="rounded-full bg-indigo-400" style="width: 8px; height: 8px;"></div>
+                                     :class="reklasJenis === 'pindah_kib' ? 'border-indigo-400 bg-indigo-500/20' : 'border-slate-700 bg-slate-900'">
+                                    <div x-show="reklasJenis === 'pindah_kib'" class="rounded-full bg-indigo-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'antar_kib' ? 'text-indigo-300' : 'text-white'">Pindah KIB / ke ATB</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Salah kamar (misal: Mesin ke ATB/Software)</div>
+                                    <div class="font-bold text-xs" :class="reklasJenis === 'pindah_kib' ? 'text-indigo-300' : 'text-white'">Pindah KIB / Koreksi Rekening</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Salah kamar KIB atau perbaikan sub-rincian Simda 108</div>
                                 </div>
                             </label>
 
-                              <!-- 3. KDP (Konstruksi Dalam Pengerjaan) - Kapitalisasi KDP Selesai -->
+                            <!-- 3. KDP (Konstruksi Dalam Pengerjaan) - Kapitalisasi KDP Selesai -->
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
                                    :class="{
@@ -161,19 +161,19 @@
                                 </div>
                             </label>
 
-                            <!-- 4. Koreksi Kode Rekening -->
+                            <!-- 4. Koreksi Nilai / Audit BPK (Koreksi Lain-Lain) -->
                             <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
                                    style="gap: 12px;"
-                                   :class="reklasJenis === 'koreksi_rekening' ? 'bg-cyan-500/10 border-cyan-500/50 shadow-sm shadow-cyan-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
-                                <input type="radio" name="reklas_jenis" value="koreksi_rekening" x-model="reklasJenis" class="hidden" style="display: none;">
+                                   :class="reklasJenis === 'koreksi_nilai' ? 'bg-cyan-500/10 border-cyan-500/50 shadow-sm shadow-cyan-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
+                                <input type="radio" name="reklas_jenis" value="koreksi_nilai" x-model="reklasJenis" class="hidden" style="display: none;">
                                 <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
                                      style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
-                                     :class="reklasJenis === 'koreksi_rekening' ? 'border-cyan-400 bg-cyan-500/20' : 'border-slate-700 bg-slate-900'">
-                                    <div x-show="reklasJenis === 'koreksi_rekening'" class="rounded-full bg-cyan-400" style="width: 8px; height: 8px;"></div>
+                                     :class="reklasJenis === 'koreksi_nilai' ? 'border-cyan-400 bg-cyan-500/20' : 'border-slate-700 bg-slate-900'">
+                                    <div x-show="reklasJenis === 'koreksi_nilai'" class="rounded-full bg-cyan-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'koreksi_rekening' ? 'text-cyan-300' : 'text-white'">Koreksi Rekening / Sub-Rincian</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Koreksi kodefikasi belanja/rekening Simda BMD</div>
+                                    <div class="font-bold text-xs" :class="reklasJenis === 'koreksi_nilai' ? 'text-cyan-300' : 'text-white'">Koreksi Nilai Realisasi / Audit BPK</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Penyesuaian nilai realisasi belanja modal hasil pemeriksaan BPK / rekonsiliasi LKD</div>
                                 </div>
                             </label>
                         </div>
@@ -181,20 +181,30 @@
 
                     <!-- Input Dinamis Berdasarkan Jenis Reklas -->
                     <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                        <!-- Jika Antar-KIB: Pilih KIB Tujuan -->
-                        <div x-show="reklasJenis === 'antar_kib'">
-                            <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📦 Klasifikasi / KIB Tujuan:</label>
-                            <select x-model="reklasTujuanKib"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
-                                <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
-                                <option value="KIB A">KIB A - Tanah</option>
-                                <option value="KIB B">KIB B - Peralatan &amp; Mesin</option>
-                                <option value="KIB C">KIB C - Gedung &amp; Bangunan</option>
-                                <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi</option>
-                                <option value="KIB E">KIB E - Aset Tetap Lainnya</option>
-                                <option value="ATB">ATB - Aset Tidak Berwujud</option>
-                                <option value="ASET LAIN">Aset Lain-Lain</option>
-                            </select>
+                        <!-- Jika Pindah KIB / Koreksi Rekening -->
+                        <div x-show="reklasJenis === 'pindah_kib'" class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📦 Klasifikasi / KIB Tujuan:</label>
+                                    <select x-model="reklasTujuanKib"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+                                        <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
+                                        <option value="KIB A">KIB A - Tanah</option>
+                                        <option value="KIB B">KIB B - Peralatan &amp; Mesin</option>
+                                        <option value="KIB C">KIB C - Gedung &amp; Bangunan</option>
+                                        <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi</option>
+                                        <option value="KIB E">KIB E - Aset Tetap Lainnya</option>
+                                        <option value="ATB">ATB - Aset Tidak Berwujud</option>
+                                        <option value="ASET LAIN">Aset Lain-Lain</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏷️ Sub-Rincian Rekening Simda 108:</label>
+                                    <input type="text" x-model="reklasTujuanKode" placeholder="Contoh: 1.3.2.05.01 Alat Kantor"
+                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400">Digunakan jika aset salah kamar kelompok KIB atau salah sub-rincian kode rekening Simda BMD 108.</p>
                         </div>
 
                         <!-- Jika KDP: Pilihan KIB Tujuan Definitif -->
@@ -209,11 +219,133 @@
                             <p class="text-[10px] text-slate-400 mt-1">Akumulasi nilai KDP akan dikapitalisasi dan dicatat sebagai aset tetap definitif di neraca.</p>
                         </div>
 
-                        <!-- Jika Koreksi Rekening: Input Sub-Rincian Tujuan -->
-                        <div x-show="reklasJenis === 'koreksi_rekening'">
-                            <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏷️ Kode / Sub-Rincian Rekening Tujuan (Simda BMD 108):</label>
-                            <input type="text" x-model="reklasTujuanKode" placeholder="Contoh: 1.3.2.05.01 ALAT KANTOR DAN RUMAH TANGGA"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-cyan-500">
+                        <!-- Jika Koreksi Nilai / Audit BPK (Koreksi Lain-Lain) -->
+                        <div x-show="reklasJenis === 'koreksi_nilai'" class="space-y-3.5">
+                            <!-- Banner Info Koreksi Temuan BPK -->
+                            <div class="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/30 flex items-start space-x-2.5">
+                                <span class="text-cyan-400 text-base shrink-0">💡</span>
+                                <div class="text-[11px] text-cyan-200/90 leading-relaxed">
+                                    <strong>Penyesuaian Nilai Kapitalisasi &amp; Anggaran (Temuan Audit BPK):</strong><br>
+                                    Ubah nilai kapitalisasi satuan pada masing-masing barang (Barang 1, 2, dst) di bawah. <strong>Total Nilai Realisasi</strong> akan terkalkulasi secara otomatis. <strong>Nilai Anggaran (DPA/RBA)</strong> dapat disesuaikan jika terdapat revisi pagu anggaran.
+                                </div>
+                            </div>
+
+                            <!-- 1. Grid Anggaran & Realisasi -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <!-- Nilai Anggaran (DPA/RBA) -->
+                                <div class="p-3.5 rounded-xl bg-blue-950/30 border border-blue-500/40 space-y-2">
+                                    <div>
+                                        <label class="block text-blue-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                            💰 Nilai Anggaran (DPA/RBA):
+                                        </label>
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-slate-400 text-xs font-mono font-bold">Rp</span>
+                                        <input type="number" step="1000" min="0" x-model.number="reklasNilaiAnggaran" placeholder="0"
+                                               class="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-blue-500/50 rounded-xl text-xs font-mono font-bold text-blue-200 focus:outline-none focus:border-blue-400 text-right">
+                                    </div>
+                                    <p class="text-[9.5px] text-slate-400 leading-tight">Pagu anggaran belanja modal dapat disesuaikan jika ada perubahan pagu DPA.</p>
+                                </div>
+
+                                <!-- Nilai Realisasi Aset -->
+                                <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-2">
+                                    <div>
+                                        <label class="block text-emerald-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                            🔒 Total Nilai Realisasi Aset:
+                                        </label>
+                                    </div>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-slate-400 text-xs font-mono font-bold">Rp</span>
+                                        <input type="text" readonly :value="Number(reklasNilaiRealisasiBaru || 0).toLocaleString('id-ID')"
+                                               class="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-emerald-500/40 rounded-xl text-xs font-mono font-extrabold text-emerald-300 cursor-not-allowed text-right focus:outline-none select-none">
+                                    </div>
+                                    <p class="text-[9.5px] text-slate-400 leading-tight">Terkalkulasi otomatis dari akumulasi nilai barang (Barang 1, 2, dst) di bawah.</p>
+                                </div>
+                            </div>
+
+                            <!-- 2. Ringkasan Perbandingan & Dampak Selisih Koreksi -->
+                            <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2.5 text-[11px]">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-slate-400">Realisasi Semula:</span>
+                                    <span class="font-mono text-slate-200 font-bold" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-slate-400">➔ Realisasi Baru:</span>
+                                    <span class="font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + Number(reklasNilaiRealisasiBaru || 0).toLocaleString('id-ID')"></span>
+                                </div>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="text-slate-400">Dampak Koreksi:</span>
+                                    <template x-if="reklasNominalKoreksi > 0">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold border"
+                                              :class="reklasTipeKoreksiNilai === 'kurang' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'"
+                                              x-text="(reklasTipeKoreksiNilai === 'kurang' ? '🔻 Berkurang Rp ' : '🔺 Bertambah Rp ') + Number(reklasNominalKoreksi).toLocaleString('id-ID')"></span>
+                                    </template>
+                                    <template x-if="reklasNominalKoreksi <= 0">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">Tidak ada selisih nilai</span>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- 3. Rincian Barang & Nilai Kapitalisasi (Barang 1, Barang 2, dst) -->
+                            <div class="space-y-2 pt-1">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider">📦 Rincian Nilai Kapitalisasi Barang:</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                                              x-text="reklasExtracomItems.length + ' Item Terdaftar'"></span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400">Ubah nilai per unit barang temuan</span>
+                                </div>
+
+                                <!-- Cards Container Barang 1 & 2 -->
+                                <div class="space-y-2.5 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
+                                    <template x-for="(item, idx) in reklasExtracomItems" :key="idx">
+                                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all space-y-2">
+                                            <!-- Baris Atas Item: Badge Nomor & Nama Barang -->
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-2 min-w-0">
+                                                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-cyan-300 border border-slate-700 shrink-0"
+                                                          x-text="'Barang #' + (idx + 1)"></span>
+                                                    <span class="text-xs font-bold text-white truncate" x-text="item.nama_barang || ('Barang #' + (idx + 1))"></span>
+                                                </div>
+                                                <span class="text-[10.5px] font-mono text-slate-400 shrink-0"
+                                                      x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span>
+                                            </div>
+
+                                            <!-- Grid Input: Nilai Kapitalisasi Satuan & Subtotal -->
+                                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center pt-1.5 border-t border-slate-800/80">
+                                                <div class="sm:col-span-7">
+                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-1">
+                                                        Nilai Kapitalisasi Satuan (Rp):
+                                                    </label>
+                                                    <div class="relative">
+                                                        <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs font-mono font-bold">Rp</span>
+                                                        <input type="number" step="100" min="0" x-model.number="item.harga_satuan"
+                                                               @input="onReklasItemPriceChanged()"
+                                                               placeholder="0"
+                                                               class="w-full pl-8 pr-2.5 py-1.5 bg-slate-950 border border-cyan-500/40 rounded-lg text-xs font-mono font-bold text-cyan-200 focus:outline-none focus:border-cyan-400 text-right">
+                                                    </div>
+                                                </div>
+                                                <div class="sm:col-span-5 text-right">
+                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-1">
+                                                        Subtotal Barang:
+                                                    </label>
+                                                    <div class="text-xs font-mono font-extrabold text-emerald-400 py-1.5"
+                                                         x-text="'Rp ' + Number((item.jumlah_volume || 1) * (parseFloat(item.harga_satuan) || 0)).toLocaleString('id-ID')">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- 4. No Dokumen Pendukung / LHP BPK -->
+                            <div>
+                                <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📑 No. LHP BPK / BA Rekonsiliasi / Dasar Koreksi:</label>
+                                <input type="text" x-model="reklasNoDokumenKoreksi" placeholder="Contoh: LHP/BPK/2026/04 atau BA-REKON/01/2026"
+                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+                            </div>
                         </div>
 
                         <!-- Jika Ekstrakomptabel ATAU Kapitalisasi Intrakomptabel: Form Penyesuaian Harga Satuan per Item -->
@@ -449,45 +581,8 @@
                            x-text="getReklasNarasiPreview()"></p>
                     </div>
 
-                    <!-- Preview Dampak Mutasi RMB (Rekapitulasi Mutasi Barang) -->
-                    <div class="p-3 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-300">
-                            <span class="flex items-center space-x-1.5">
-                                <span>⚖️</span>
-                                <span>Dampak ke Laporan RMB (Rekapitulasi Mutasi Barang):</span>
-                            </span>
-                            <span class="text-[9.5px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">Format Baku Neraca BMD</span>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                            <div class="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center space-x-2.5">
-                                <span class="text-rose-400 text-base font-bold">🔻</span>
-                                <div class="min-w-0 flex-1">
-                                    <div class="text-[9.5px] font-bold text-rose-300 uppercase tracking-wider">RMB Pengurangan (-)</div>
-                                    <div class="text-[11px] font-extrabold text-white truncate font-mono mt-0.5" x-text="getRmbAsalLabel()"></div>
-                                </div>
-                            </div>
-                            <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center space-x-2.5">
-                                <span class="text-emerald-400 text-base font-bold">🔺</span>
-                                <div class="min-w-0 flex-1">
-                                    <div class="text-[9.5px] font-bold text-emerald-300 uppercase tracking-wider">RMB Penambahan (+)</div>
-                                    <div class="text-[11px] font-extrabold text-white truncate font-mono mt-0.5" x-text="getRmbTujuanLabel()"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- 3. Modal Footer Actions (Fixed Bottom) -->
-                <div class="shrink-0 px-6 py-3.5 border-t border-slate-800/90 bg-slate-950/60 flex items-center justify-end space-x-2.5">
-                    <button type="button" @click="showReklasModal = false"
-                        class="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-bold text-xs border border-slate-700 transition-all cursor-pointer">
-                        Batal
-                    </button>
                     <button type="button" @click="submitReklas()"
-                        :disabled="isSubmittingReklas || 
-                                   (reklasJenis === 'extracom' && (!reklasExtracomItems.length || reklasExtracomItems.some(i => parseFloat(i.harga_satuan) > 300000 || parseFloat(i.harga_satuan) <= 0))) || 
-                                   (reklasJenis === 'intracom' && (!reklasExtracomItems.length || reklasExtracomItems.some(i => parseFloat(i.harga_satuan) <= 300000)))"
+                        :disabled="isSubmittingReklas"
                         class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 cursor-pointer">
                         <template x-if="isSubmittingReklas">
                             <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">

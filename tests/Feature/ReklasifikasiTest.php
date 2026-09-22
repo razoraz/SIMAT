@@ -471,6 +471,203 @@ class ReklasifikasiTest extends TestCase
         $this->assertEquals('KIB F', $astap->category);
         $this->assertTrue((bool)$astap->is_reklas);
     }
+
+    public function test_can_reklas_koreksi_nilai_audit_bpk_kurang()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Mesin Anaesthesia Carestation',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 45000000,
+            'total_realisasi' => 45000000,
+            'jumlah_anggaran' => 45000000,
+            'user_id' => $admin->id,
+        ]);
+
+        // Koreksi nilai audit BPK berkurang Rp 5.000.000 karena salah hitung pajak / biaya administrasi
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'tipe_koreksi' => 'kurang',
+            'nilai_reklas' => 5000000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'LHP-BPK/2026/04/RSDK',
+            'keterangan' => 'Koreksi nilai audit BPK atas kelebihan beban administrasi',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'astap' => [
+                'total_realisasi_num' => 40000000,
+                'is_reklas' => true,
+                'jenis_reklas' => 'KOREKSI_LAIN',
+            ]
+        ]);
+
+        $astap->refresh();
+        $this->assertEquals(40000000, (float)$astap->total_realisasi);
+        $this->assertEquals(40000000, (float)$astap->harga_satuan);
+        $this->assertTrue((bool)$astap->is_reklas);
+        $this->assertEquals('KOREKSI_LAIN', $astap->jenis_reklas);
+    }
+
+    public function test_can_reklas_pindah_kib_rekening()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisB = JenisAstap::firstOrCreate(
+            ['jenis' => '1.3.2.05'],
+            [
+                'nama_jenis' => 'Peralatan dan Mesin',
+                'sub_rincian_objek' => '1.3.2.05.01',
+                'uraian_sub_rincian' => 'Alat Rumah Tangga',
+                'sub_sub_rincian_objek' => '1.3.2.05.01.01',
+                'uraian_sub_sub_rincian' => 'Alat Rumah Tangga',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Instalasi Panel Listrik Sentral',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 25000000,
+            'total_realisasi' => 25000000,
+            'jumlah_anggaran' => 25000000,
+            'user_id' => $admin->id,
+            'jenis_astap_id' => $jenisB->id,
+        ]);
+
+        // Pindah KIB dari KIB B ke KIB D (Jaringan/Instalasi)
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'KIB D',
+            'nilai_reklas' => 25000000,
+            'tanggal_reklas' => '2026-03-21',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/PINDAH-KIB/002',
+            'keterangan' => 'Pindah KIB B ke KIB D penyesuaian kodefikasi 108',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'astap' => [
+                'is_reklas' => true,
+                'jenis_reklas' => 'KOREKSI_REKENING',
+            ]
+        ]);
+
+        $astap->refresh();
+        $this->assertTrue((bool)$astap->is_reklas);
+        $this->assertEquals('KOREKSI_REKENING', $astap->jenis_reklas);
+    }
+
+    public function test_can_reklas_koreksi_nilai_with_multi_items_and_anggaran_adjustment()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        // Aset dengan 2 rincian barang: Barang 1 (25jt) & Barang 2 (20jt) -> Total 45jt
+        $astap = Astap::create([
+            'nama_barang' => 'Paket Alat Diagnostik Rawat Jalan',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 2,
+            'harga_satuan' => 22500000,
+            'total_realisasi' => 45000000,
+            'jumlah_anggaran' => 50000000,
+            'user_id' => $admin->id,
+            'spesifikasi_json' => [
+                'mesin_items' => [
+                    [
+                        'mesin_nama_barang' => 'USG Portable Unit',
+                        'mesin_jumlah_barang' => 1,
+                        'mesin_satuan' => 'Unit',
+                        'mesin_nilai_satuan' => 25000000,
+                        'mesin_total_nilai' => 25000000,
+                    ],
+                    [
+                        'mesin_nama_barang' => 'Trolley Stand & Aksesoris',
+                        'mesin_jumlah_barang' => 1,
+                        'mesin_satuan' => 'Unit',
+                        'mesin_nilai_satuan' => 20000000,
+                        'mesin_total_nilai' => 20000000,
+                    ],
+                ]
+            ],
+        ]);
+
+        // Temuan audit BPK: Barang 1 salah kapitalisasi biaya kirim/pajak Rp 5.000.000 (menjadi 20jt)
+        // Nilai realisasi baru otomatis menjadi: (1 * 20jt) + (1 * 20jt) = 40jt
+        // Selisih koreksi: 5jt berkurang. Nilai anggaran disesuaikan menjadi 45jt.
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'tipe_koreksi' => 'kurang',
+            'nilai_reklas' => 5000000,
+            'jumlah_anggaran' => 45000000,
+            'tanggal_reklas' => '2026-03-22',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'LHP-BPK/2026/04/AUDIT',
+            'keterangan' => 'Koreksi nilai kapitalisasi barang 1 hasil temuan BPK',
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'USG Portable Unit',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 20000000,
+                ],
+                [
+                    'nama_barang' => 'Trolley Stand & Aksesoris',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Unit',
+                    'harga_satuan' => 20000000,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'astap' => [
+                'total_realisasi_num' => 40000000,
+                'jumlah_anggaran' => 45000000,
+                'is_reklas' => true,
+                'jenis_reklas' => 'KOREKSI_LAIN',
+            ]
+        ]);
+
+        $astap->refresh();
+        $this->assertEquals(40000000, (float)$astap->total_realisasi);
+        $this->assertEquals(45000000, (float)$astap->jumlah_anggaran);
+        $this->assertTrue((bool)$astap->is_reklas);
+        $this->assertEquals('KOREKSI_LAIN', $astap->jenis_reklas);
+
+        // Verifikasi spesifikasi_json terupdate
+        $spec = $astap->spesifikasi_json;
+        $this->assertEquals(20000000, $spec['mesin_items'][0]['mesin_nilai_satuan']);
+        $this->assertEquals(20000000, $spec['mesin_items'][0]['mesin_total_nilai']);
+        $this->assertEquals(20000000, $spec['mesin_items'][1]['mesin_nilai_satuan']);
+        $this->assertEquals(20000000, $spec['mesin_items'][1]['mesin_total_nilai']);
+
+        // Verifikasi tabel transaksi reklasifikasi tercatat
+        $this->assertDatabaseHas('astap_reklasis', [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'nilai_reklas' => 5000000,
+            'nomor_ba_reklas' => 'LHP-BPK/2026/04/AUDIT',
+        ]);
+    }
 }
 
 
