@@ -175,6 +175,8 @@ class RecycleBinController extends Controller
 
         $deletedDistribusis = $rawDeletedDistribusis->map(function ($d) {
             $deletedAt = $d->deleted_at ? Carbon::parse($d->deleted_at)->timezone('Asia/Jakarta') : null;
+            $tglCarbon = $d->tanggal_distribusi ? Carbon::parse($d->tanggal_distribusi)->timezone('Asia/Jakarta') : ($d->created_at ? Carbon::parse($d->created_at)->timezone('Asia/Jakarta') : null);
+            $totalQty  = $d->items->sum('qty');
             $itemsMapped = $d->items->map(function ($it, $idx) {
                 $nibars = $it->registers->map(fn($r) => $r->astapRegister?->nibar ?: '-')->filter()->implode(', ');
                 return [
@@ -190,6 +192,8 @@ class RecycleBinController extends Controller
                 'kode'                => $d->kode,
                 'bast_nomor'          => $d->bast_nomor ?: '-',
                 'tujuan'              => $d->unit?->nama ?? '-',
+                'tanggal'             => $tglCarbon ? $tglCarbon->locale('id')->translatedFormat('d M Y') : '-',
+                'total_qty'           => $totalQty . ' Unit',
                 'pj_nama'             => $d->unit?->kepala ?? '-',
                 'pj_nip'              => $d->unit?->nip ?? '-',
                 'status'              => $d->status,

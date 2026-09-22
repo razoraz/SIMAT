@@ -523,7 +523,7 @@
                                     <th class="px-4 py-3.5">Kode Distribusi</th>
                                     <th class="px-4 py-3.5">Nomor BAST</th>
                                     <th class="px-4 py-3.5">Unit / Ruangan Tujuan</th>
-                                    <th class="px-4 py-3.5">Tanggal Distribusi</th>
+                                    <th class="px-4 py-3.5">Tanggal Pengajuan</th>
                                     <th class="px-4 py-3.5">Total Qty & Status</th>
                                     <th class="px-4 py-3.5">Dihapus Oleh</th>
                                     <th class="px-4 py-3.5">Waktu Penghapusan</th>
@@ -990,7 +990,7 @@
                                     <div class="text-right">
                                         <span class="text-slate-500 text-[10px] uppercase font-bold block">Unit / Ruangan Tujuan:</span>
                                         <span class="font-bold text-white" x-text="selectedItem.tujuan"></span>
-                                        <span class="text-xs text-slate-400 block" x-text="'Tgl: ' + selectedItem.tanggal"></span>
+                                        <span class="text-xs text-slate-400 block" x-text="'Tgl Pengajuan: ' + (selectedItem.tanggal || '-')"></span>
                                     </div>
                                 </div>
                                 <div class="space-y-1.5">
