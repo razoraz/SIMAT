@@ -19,12 +19,6 @@
                                 }"
                                 x-text="selectedAstapDetail?.category === 'EXTRACOM' ? '📦 EXTRACOM' : (selectedAstapDetail?.category || 'ASTAP')"></span>
 
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'hibah'">
-                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-amber-400/20 text-amber-300 border-amber-400/30">
-                                    🎁 HIBAH
-                                </span>
-                            </template>
-
                             <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
                                 x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>
 
