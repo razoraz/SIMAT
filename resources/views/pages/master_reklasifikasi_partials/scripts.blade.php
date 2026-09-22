@@ -322,10 +322,19 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(result.message, 'success');
+                        const targetId = this.deleteTargetId;
+                        const row = document.getElementById('row-reklas-' + targetId);
+                        if (row) {
+                            row.remove();
                         }
-                        setTimeout(() => window.location.reload(), 600);
+                        const countEl = document.getElementById('total-reklas-count');
+                        if (countEl) {
+                            const current = parseInt(countEl.innerText.replace(/\D/g, '')) || 0;
+                            countEl.innerText = 'Total ' + Math.max(0, current - 1) + ' Transaksi';
+                        }
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(result.message || 'Transaksi reklasifikasi berhasil dihapus.', 'success');
+                        }
                     } else {
                         if (typeof window.showSimatToast === 'function') {
                             window.showSimatToast(result.message || 'Gagal menghapus transaksi.', 'error');

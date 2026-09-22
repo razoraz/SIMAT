@@ -9,7 +9,7 @@
                 Daftar per item barang yang pernah dipindahkan/direklasifikasi dalam periode aktif
             </p>
         </div>
-        <span class="text-xs font-semibold text-slate-400 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
+        <span id="total-reklas-count" class="text-xs font-semibold text-slate-400 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
             Total {{ count($logReklas) }} Transaksi
         </span>
     </div>
@@ -47,7 +47,7 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800/60 font-medium">
                     @foreach ($logReklas as $idx => $item)
-                        <tr class="hover:bg-slate-800/30 transition-colors">
+                        <tr id="row-reklas-{{ $item->id }}" class="hover:bg-slate-800/30 transition-colors">
                             <td class="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">
                                 {{ $idx + 1 }}
                             </td>

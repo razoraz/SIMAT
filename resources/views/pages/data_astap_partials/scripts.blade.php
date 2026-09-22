@@ -8075,7 +8075,12 @@
                                 });
                                 const data = await res.json();
                                 if (data.success) {
-                                    window.location.reload();
+                                    this.astaps = this.astaps.filter(a => Number(a.id) !== Number(item.id));
+                                    if (this.selectedAstapDetail && Number(this.selectedAstapDetail.id) === Number(item.id)) {
+                                        this.showDetailModal = false;
+                                        this.selectedAstapDetail = null;
+                                    }
+                                    this.showToast(data.message || 'Data ASTAP berhasil dipindahkan ke Recycle Bin!', 'success');
                                 } else if (data.is_blocked) {
                                     this.askConfirmation({
                                         title: 'Unit Tidak Dapat Dihapus',
@@ -8097,7 +8102,8 @@
                                     this.showToast(data.message || 'Gagal menghapus data ASTAP.', 'error');
                                 }
                             } catch(err) {
-                                window.location.reload();
+                                console.error('deleteAstap error:', err);
+                                this.showToast('Terjadi kesalahan jaringan saat menghapus data ASTAP.', 'error');
                             }
                         }
                     });

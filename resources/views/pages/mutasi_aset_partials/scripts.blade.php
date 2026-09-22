@@ -210,20 +210,20 @@
                     .then(d => {
                         if (d.success) {
                             item.persetujuan_pengirim = true;
-                            if (d.is_completed) {
-                                item.status = 'Disetujui Admin (Selesai)';
-                            } else {
-                                item.status = 'Disetujui Pengirim (Menunggu Pihak Lain)';
+                            const newStatus = d.is_completed ? 'Disetujui Admin (Selesai)' : 'Disetujui Pengirim (Menunggu Pihak Lain)';
+                            item.status = newStatus;
+                            if (this.selectedMutasi && this.selectedMutasi.id === item.id) {
+                                this.selectedMutasi.persetujuan_pengirim = true;
+                                this.selectedMutasi.status = newStatus;
                             }
                             this.showSimatToast('Mutasi berhasil disetujui sebagai Pihak Pengirim!', 'success');
-                            setTimeout(() => window.location.reload(), 800);
                         } else {
-                            this.showSimatToast('Gagal menyetujui mutasi.', 'error');
+                            this.showSimatToast(d.message || 'Gagal menyetujui mutasi.', 'error');
                         }
                     })
                     .catch(err => {
                         console.error('approvePengirim error:', err);
-                        window.location.reload();
+                        this.showSimatToast('Gagal menyetujui mutasi.', 'error');
                     });
                 },
 
@@ -250,12 +250,12 @@
                             }
                             this.showSimatToast('Mutasi berhasil disetujui sebagai Pihak Penerima!', 'success');
                         } else {
-                            this.showSimatToast('Gagal menyetujui mutasi.', 'error');
+                            this.showSimatToast(d.message || 'Gagal menyetujui mutasi.', 'error');
                         }
                     })
                     .catch(err => {
                         console.error('approvePenerima error:', err);
-                        window.location.reload();
+                        this.showSimatToast('Gagal menyetujui mutasi.', 'error');
                     });
                 },
 
@@ -282,12 +282,12 @@
                             }
                             this.showSimatToast('Mutasi aset telah disetujui oleh Admin!', 'success');
                         } else {
-                            this.showSimatToast('Gagal menyetujui mutasi.', 'error');
+                            this.showSimatToast(d.message || 'Gagal menyetujui mutasi.', 'error');
                         }
                     })
                     .catch(err => {
                         console.error('approveAdmin error:', err);
-                        window.location.reload();
+                        this.showSimatToast('Gagal menyetujui mutasi.', 'error');
                     });
                 },
 
@@ -320,15 +320,23 @@
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify({ alasan_penolakan: alasan })
-                    }).then(r => {
-                        if (r.ok) {
+                    }).then(async r => {
+                        const d = await r.json().catch(() => ({}));
+                        if (r.ok && d.success !== false) {
                             item.status = 'Ditolak';
                             item.alasan_penolakan = alasan;
+                            if (this.selectedMutasi && this.selectedMutasi.id === item.id) {
+                                this.selectedMutasi.status = 'Ditolak';
+                                this.selectedMutasi.alasan_penolakan = alasan;
+                            }
                             this.showSimatToast('Pengajuan mutasi berhasil ditolak.', 'info');
                         } else {
-                            this.showSimatToast('Gagal menolak pengajuan mutasi.', 'error');
+                            this.showSimatToast(d.message || 'Gagal menolak pengajuan mutasi.', 'error');
                         }
-                    }).catch(() => window.location.reload());
+                    }).catch(err => {
+                        console.error('rejectMutasi error:', err);
+                        this.showSimatToast('Gagal menolak pengajuan mutasi.', 'error');
+                    });
                 },
 
                 canCancelReject(item) {
@@ -365,15 +373,21 @@
                             .then(res => res.json())
                             .then(d => {
                                 if (d.success) {
+                                    const newStatus = d.new_status || 'Menunggu Persetujuan Penerima';
+                                    item.status = newStatus;
+                                    item.alasan_penolakan = null;
+                                    if (this.selectedMutasi && this.selectedMutasi.id === item.id) {
+                                        this.selectedMutasi.status = newStatus;
+                                        this.selectedMutasi.alasan_penolakan = null;
+                                    }
                                     this.showSimatToast(d.message || 'Penolakan mutasi berhasil dibatalkan!', 'success');
-                                    setTimeout(() => window.location.reload(), 700);
                                 } else {
                                     this.showSimatToast(d.message || 'Gagal membatalkan penolakan.', 'error');
                                 }
                             })
                             .catch(err => {
                                 console.error('cancelReject error:', err);
-                                window.location.reload();
+                                this.showSimatToast('Gagal membatalkan penolakan mutasi.', 'error');
                             });
                         }
                     });
@@ -402,14 +416,19 @@
                             .then(res => res.json())
                             .then(d => {
                                 if (d.success) {
-                                    window.location.reload();
+                                    this.mutasis = this.mutasis.filter(m => Number(m.id) !== Number(item.id));
+                                    if (this.selectedMutasi && Number(this.selectedMutasi.id) === Number(item.id)) {
+                                        this.showDetailModal = false;
+                                        this.selectedMutasi = null;
+                                    }
+                                    this.showSimatToast(d.message || 'Data mutasi berhasil dipindahkan ke Tong Sampah.', 'success');
                                 } else {
                                     this.showSimatToast('Gagal menghapus: ' + (d.message || 'Terjadi kesalahan.'), 'error');
                                 }
                             })
                             .catch(err => {
                                 console.error('deleteMutasi error:', err);
-                                window.location.reload();
+                                this.showSimatToast('Gagal memindahkan data mutasi ke Tong Sampah.', 'error');
                             });
                         }
                     });
@@ -438,14 +457,20 @@
                             .then(res => res.json())
                             .then(d => {
                                 if (d.success) {
-                                    window.location.reload();
+                                    item.is_deleted = 0;
+                                    this.mutasis = this.mutasis.filter(m => Number(m.id) !== Number(item.id));
+                                    if (this.selectedMutasi && Number(this.selectedMutasi.id) === Number(item.id)) {
+                                        this.showDetailModal = false;
+                                        this.selectedMutasi = null;
+                                    }
+                                    this.showSimatToast(d.message || 'Data mutasi berhasil dipulihkan!', 'success');
                                 } else {
                                     this.showSimatToast('Gagal memulihkan: ' + (d.message || 'Terjadi kesalahan.'), 'error');
                                 }
                             })
                             .catch(err => {
                                 console.error('restoreMutasi error:', err);
-                                window.location.reload();
+                                this.showSimatToast('Gagal memulihkan data mutasi.', 'error');
                             });
                         }
                     });

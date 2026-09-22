@@ -212,13 +212,18 @@
                                 });
                                 const d = await res.json();
                                 if (d.success) {
+                                    this.units = this.units.filter(u => Number(u.id) !== Number(item.id));
+                                    if (this.selectedUnit && Number(this.selectedUnit.id) === Number(item.id)) {
+                                        this.showDetailModal = false;
+                                        this.selectedUnit = null;
+                                    }
                                     this.showSimatToast(d.message || 'Unit berhasil dipindahkan ke tong sampah.', 'success');
-                                    setTimeout(() => window.location.reload(), 600);
                                 } else {
                                     this.showSimatToast(d.message || 'Gagal menghapus unit.', 'error');
                                 }
                             } catch(err) {
-                                window.location.reload();
+                                console.error('deleteUnit error:', err);
+                                this.showSimatToast('Terjadi kesalahan jaringan saat menghapus unit.', 'error');
                             }
                         }
                     });
