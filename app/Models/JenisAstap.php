@@ -53,6 +53,7 @@ class JenisAstap extends Model
                     return !empty($item->sub_sub_rincian_objek) && !empty(trim($item->uraian_sub_sub_rincian ?? ''));
                 })->map(function ($item) {
                     return [
+                        'id'   => $item->id,
                         'kode' => $item->sub_sub_rincian_objek,
                         'nama' => trim($item->uraian_sub_sub_rincian),
                     ];

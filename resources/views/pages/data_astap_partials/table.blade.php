@@ -38,6 +38,12 @@
                                                 'bg-amber-400/20 text-amber-300 border border-amber-400/30': item.category === 'EXTRACOM'
                                             }"
                                             x-text="item.category === 'ATB' ? 'ATB' : (item.category === 'EXTRACOM' ? 'Extracom' : item.category)"></span>
+                                        {{-- Badge Hibah — tampil bila sumber_dana === 'hibah' --}}
+                                        <template x-if="item.sumber_dana === 'hibah'">
+                                            <span class="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded text-[9px] font-extrabold whitespace-nowrap leading-none shrink-0 bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                                                <span>🎁</span><span>HIBAH</span>
+                                            </span>
+                                        </template>
                                         <span class="text-[11px] text-slate-400 truncate" x-text="item.jenis_aset_nama"></span>
                                     </div>
                                 </td>

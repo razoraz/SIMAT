@@ -306,6 +306,11 @@ Route::middleware('auth')->group(function () {
                     'id' => $a->id,
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'category' => $a->category,
+                    'sumber_dana' => $a->sumber_dana ?? 'belanja_modal',
+                    'hibah_pemberi' => $a->hibah_pemberi ?? '',
+                    'hibah_nomor_bast' => $a->hibah_nomor_bast ?? '',
+                    'hibah_tanggal_bast' => $a->hibah_tanggal_bast ? (is_string($a->hibah_tanggal_bast) ? $a->hibah_tanggal_bast : $a->hibah_tanggal_bast->format('d/m/Y')) : '',
+                    'hibah_keterangan' => $a->hibah_keterangan ?? '',
                     'is_extracomtable' => (bool) $a->is_extracomtable,
                     'kode_barang' => $kode108Val,
                     'nama_barang' => $a->nama_barang,
@@ -833,6 +838,136 @@ Route::middleware('auth')->group(function () {
                     ->unique(fn($p) => strtolower(trim($p['nama'])))
                     ->values();
             };
+
+            // ─── Pilih Jenis Input (Belanja Modal / Hibah) ───────────────
+            Route::get('/astap/pilih-jenis', function () {
+                return view('pages.form_astap_pilih_jenis');
+            })->name('astap.pilih_jenis');
+
+            // ─── Form Hibah (Create & Store) ──────────────────────────────
+            Route::get('/astap/create-hibah', function () {
+                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                return view('pages.form_hibah', compact('dbMaster108', 'dbUnits'));
+            })->name('astap.create_hibah');
+
+            Route::post('/astap/store-hibah', function (\Illuminate\Http\Request $request) {
+                $data = $request->validate([
+                    'nama_barang'        => 'required|string|max:500',
+                    'jenis_astap_id'     => 'required|integer|exists:jenis_astaps,id',
+                    'tahun_perolehan'    => 'required|integer|min:1990|max:2100',
+                    'jumlah_volume'      => 'required|integer|min:1',
+                    'satuan'             => 'required|string|max:100',
+                    'total_realisasi'    => 'required|numeric|min:0',
+                    'triwulan'           => 'required|string|in:TW I,TW II,TW III,TW IV',
+                    'hibah_pemberi'      => 'required|string|max:500',
+                    'hibah_nomor_bast'   => 'required|string|max:255',
+                    'hibah_tanggal_bast' => 'required',
+                    'hibah_keterangan'   => 'nullable|string|max:2000',
+                    'unit_id'            => 'nullable|integer|exists:units,id',
+                    'alamat_barang'      => 'nullable|string|max:1000',
+                    'kondisi'            => 'nullable|string|max:50',
+                ]);
+
+                $totalRealisasi = (float) $data['total_realisasi'];
+                $totalVolume    = max(1, (int) $data['jumlah_volume']);
+                $hargaSatuan    = $totalRealisasi / $totalVolume;
+                $tahun          = (int) $data['tahun_perolehan'];
+                $kondisiItem    = $data['kondisi'] ?: 'Baik';
+
+                $astapPayload = [
+                    'nama_barang'               => $data['nama_barang'],
+                    'jenis_astap_id'            => $data['jenis_astap_id'],
+                    'tahun_perolehan'           => $tahun,
+                    'jumlah_volume'             => $totalVolume,
+                    'satuan'                    => $data['satuan'],
+                    'harga_satuan'              => $hargaSatuan,
+                    'jumlah_anggaran'           => 0,
+                    'jumlah_realisasi'          => $totalRealisasi,
+                    'total_realisasi'           => $totalRealisasi,
+                    'biaya_administrasi_proyek' => 0,
+                    'triwulan'                  => $data['triwulan'],
+                    'sumber_dana'               => 'hibah',
+                    'hibah_pemberi'             => $data['hibah_pemberi'],
+                    'hibah_nomor_bast'          => $data['hibah_nomor_bast'],
+                    'hibah_tanggal_bast'        => $data['hibah_tanggal_bast'],
+                    'hibah_keterangan'          => $data['hibah_keterangan'] ?? null,
+                    'bast_dokumen_nomor'        => $data['hibah_nomor_bast'],
+                    'bast_dokumen_tanggal'      => $data['hibah_tanggal_bast'],
+                    'keterangan_tambahan'       => $data['hibah_keterangan'] ?? null,
+                    'unit_id'                   => $data['unit_id'] ?? null,
+                    'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
+                    'user_id'                   => auth()->id(),
+                    'is_extracomtable'          => false,
+                    'is_reklas'                 => false,
+                    'is_deleted'                => 0,
+                    'spesifikasi_json'          => [
+                        'sumber_dana'        => 'hibah',
+                        'pemberi'            => $data['hibah_pemberi'],
+                        'nomor_bast'         => $data['hibah_nomor_bast'],
+                        'tanggal_bast'       => $data['hibah_tanggal_bast'],
+                        'kondisi'            => $kondisiItem,
+                        'keterangan'         => $data['hibah_keterangan'] ?? null,
+                    ]
+                ];
+
+                $astap = \Illuminate\Support\Facades\DB::transaction(function() use ($astapPayload, $data, $tahun, $totalVolume, $kondisiItem) {
+                    $item = \App\Models\Astap::create($astapPayload);
+
+                    // Buat AstapRegister untuk setiap unit barang hibah
+                    $ja = \App\Models\JenisAstap::find($data['jenis_astap_id']);
+                    $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
+                    $kode108Clean = str_replace('.', '', $kode108Raw);
+
+                    $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                        ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
+                        ->max('no_register_int') ?? 0;
+
+                    $runningRegNum = (int) $maxRegInt;
+                    $unitModel = !empty($data['unit_id']) ? \App\Models\Unit::find($data['unit_id']) : null;
+                    $ruangPemegang = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi');
+
+                    for ($i = 0; $i < $totalVolume; $i++) {
+                        $runningRegNum++;
+                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+
+                        $qrPath = "/scan/{$nibar}";
+                        \App\Models\AstapRegister::create([
+                            'astap_id'        => $item->id,
+                            'unit_id'         => $data['unit_id'] ?? null,
+                            'tahun_perolehan' => $tahun,
+                            'no_register_int' => $runningRegNum,
+                            'no_register'     => $nibar,
+                            'nibar'           => $nibar,
+                            'qr_code_path'    => $qrPath,
+                            'ruang_pemegang'  => $ruangPemegang,
+                            'kondisi'         => $kondisiItem,
+                            'status'          => 'Aktif',
+                            'is_deleted'      => 0,
+                        ]);
+                    }
+
+                    return $item;
+                });
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Data Hibah "' . $astap->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
+                        'redirect' => route('astap.index')
+                    ]);
+                }
+
+                return redirect()->route('astap.index')
+                    ->with('success', 'Data Hibah "' . $astap->nama_barang . '" berhasil ditambahkan.');
+            })->name('astap.store_hibah');
 
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();

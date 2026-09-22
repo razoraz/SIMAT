@@ -6389,6 +6389,115 @@
             XLSX.utils.book_append_sheet(wb, wsSheet4, filterSheet === 'sheet4' ? "RMB (excel) RSDK" : "4. RMB (excel) RSDK");
         }
 
+        // =========================================================================
+        // LEMBAR 5: RMB HIBAH RSDK
+        // =========================================================================
+        if (filterSheet === 'all' || filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') {
+            const hibahItems = rawAstaps.filter(item => {
+                if (item.sumber_dana !== 'hibah') return false;
+                const matchYear = filterYear === 'all' || String(item.tahun_perolehan) === String(filterYear);
+                let matchTw = true;
+                if (filterTw !== 'all') {
+                    const targetKey = filterTw.replace(/[\s_]/g, '').toUpperCase();
+                    const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                    matchTw = (itemTw === targetKey) ||
+                              (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
+                              (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
+                              (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
+                              (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
+                }
+                return matchYear && matchTw;
+            });
+
+            if (hibahItems.length > 0 || filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') {
+                const hibahRows = [];
+                // Header laporan
+                hibahRows.push(["PEMERINTAH KABUPATEN BONDOWOSO"]);
+                hibahRows.push(["RUMAH SAKIT UMUM DAERAH Dr. H. KOESNANDI"]);
+                hibahRows.push(["REKAPITULASI REALISASI MUTASI BERTAMBAH (RMB) HIBAH / BANTUAN"]);
+                hibahRows.push(["TAHUN ANGGARAN " + yearLabel + (filterTw === 'all' ? "" : (" — " + twFullLabel))]);
+                hibahRows.push([]); // Baris kosong
+
+                // Kolom Header
+                hibahRows.push([
+                    "NO",
+                    "NAMA BARANG / SPESIFIKASI",
+                    "KODE BARANG",
+                    "TAHUN",
+                    "VOL",
+                    "SATUAN",
+                    "PEMBERI HIBAH",
+                    "NOMOR BAST",
+                    "TANGGAL BAST",
+                    "NILAI HIBAH (Rp)",
+                    "KETERANGAN"
+                ]);
+
+                let grandHibahTotal = 0;
+                hibahItems.forEach((item, idx) => {
+                    const val = parseFloat(item.total_realisasi_num || item.total_realisasi || 0);
+                    grandHibahTotal += val;
+                    
+                    let tglBast = item.hibah_tanggal_bast || item.bast_dokumen_tanggal || '-';
+                    hibahRows.push([
+                        idx + 1,
+                        item.nama_barang || '-',
+                        item.kode_barang || '-',
+                        item.tahun_perolehan || '-',
+                        item.jumlah_volume || 1,
+                        item.satuan || 'Unit',
+                        item.hibah_pemberi || '-',
+                        item.hibah_nomor_bast || '-',
+                        tglBast,
+                        val,
+                        item.hibah_keterangan || item.keterangan_tambahan || '-'
+                    ]);
+                });
+
+                // Row Total Hibah
+                const hibahTotalRowIdx = hibahRows.length;
+                hibahRows.push([
+                    "JUMLAH TOTAL NILAI HIBAH",
+                    "", "", "", "", "", "", "", "",
+                    grandHibahTotal,
+                    "Total " + hibahItems.length + " Aset Hibah TA " + yearLabel
+                ]);
+
+                // Tanda tangan
+                const hibahSignStart = hibahRows.length;
+                const hibahSignRows = buildKibSignatureRows(11, 7, ppkNama, ppkNip, signDate, 1);
+                hibahSignRows.forEach(r => hibahRows.push(r));
+
+                const wsHibah = XLSX.utils.aoa_to_sheet(hibahRows);
+                wsHibah['!cols'] = [
+                    { wch: 5  },  // NO
+                    { wch: 36 },  // NAMA BARANG
+                    { wch: 18 },  // KODE BARANG
+                    { wch: 10 },  // TAHUN
+                    { wch: 8  },  // VOLUME
+                    { wch: 8  },  // SATUAN
+                    { wch: 34 },  // PEMBERI HIBAH
+                    { wch: 28 },  // NOMOR BAST
+                    { wch: 20 },  // TGL BAST
+                    { wch: 22 },  // NILAI
+                    { wch: 30 }   // KET
+                ];
+
+                wsHibah['!merges'] = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: 10 } },
+                    { s: { r: 2, c: 0 }, e: { r: 2, c: 10 } },
+                    { s: { r: 3, c: 0 }, e: { r: 3, c: 10 } },
+                    { s: { r: hibahTotalRowIdx, c: 0 }, e: { r: hibahTotalRowIdx, c: 8 } },
+                    ...getKibSignatureMerges(hibahSignStart, 11, 7, 1, 4, 10)
+                ];
+
+                applyCleanReportStyling(wsHibah, hibahRows.length, 11, 6, 2, hibahTotalRowIdx);
+                applySignatureBlockStyling(wsHibah, hibahSignStart, 11);
+                XLSX.utils.book_append_sheet(wb, wsHibah, (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') ? "RMB Hibah RSDK" : "5. RMB Hibah RSDK");
+            }
+        }
+
         // Pastikan ada lembar sheet yang dimasukkan ke workbook
         if (!wb.SheetNames || wb.SheetNames.length === 0) {
             alert('⚠️ Tidak ada lembar sheet yang dipilih atau data tidak ditemukan.');
@@ -6397,11 +6506,12 @@
         }
 
         // DOWNLOAD FILE EXCEL SESUAI PILIHAN SHEET REKAPITULASI
-        let sheetSlug = 'PAKET_4_SHEET';
+        let sheetSlug = 'PAKET_5_SHEET';
         if (filterSheet === 'sheet1') sheetSlug = 'DAFTAR_AT';
         else if (filterSheet === 'sheet2') sheetSlug = 'PENGURANGAN_AT';
         else if (filterSheet === 'sheet3') sheetSlug = 'REKLAS';
         else if (filterSheet === 'sheet4') sheetSlug = 'RMB_RSDK';
+        else if (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') sheetSlug = 'RMB_HIBAH';
 
         const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
         const fileName = "LAPORAN_REKAP_TRIWULAN_" + sheetSlug + "_RSDK_" + yearLabel + "_" + twSlug + ".xlsx";
@@ -7335,6 +7445,24 @@
                         }).length;
                     }
 
+                    if (isRekap && (this.exportRekapSheet === 'sheet5' || this.exportRekapSheet === 'sheet5_hibah')) {
+                        return (this.astaps || []).filter(item => {
+                            if (item.sumber_dana !== 'hibah') return false;
+                            const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
+                            let matchTw = true;
+                            if (fTw !== 'all') {
+                                const targetKey = fTw.replace(/[\s_]/g, '').toUpperCase();
+                                const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                                matchTw = (itemTw === targetKey) ||
+                                          (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
+                                          (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
+                                          (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
+                                          (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
+                            }
+                            return matchYear && matchTw;
+                        }).length;
+                    }
+
                     return (this.astaps || []).filter(item => {
                         const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
                         let matchTw = true;
@@ -7367,11 +7495,12 @@
                         setTimeout(() => {
                             this.isSubmittingExport = false;
                             this.showExportModal = false;
-                            let sheetName = 'Paket Lengkap 4 Sheet';
+                            let sheetName = 'Paket Lengkap Rekapitulasi';
                             if (this.exportRekapSheet === 'sheet1') sheetName = 'Daftar AT ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan);
                             else if (this.exportRekapSheet === 'sheet2') sheetName = 'Daftar Pengurangan AT RSDK';
                             else if (this.exportRekapSheet === 'sheet3') sheetName = 'Reklas RSDK';
                             else if (this.exportRekapSheet === 'sheet4') sheetName = 'RMB (excel) RSDK';
+                            else if (this.exportRekapSheet === 'sheet5' || this.exportRekapSheet === 'sheet5_hibah') sheetName = 'RMB Hibah RSDK';
                             this.showToast('Berhasil mengekspor Laporan ' + sheetName + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
                         }, 800);
                     } else {

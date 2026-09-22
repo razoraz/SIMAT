@@ -1,4 +1,4 @@
-﻿        <!-- ========================================================================= -->
+        <!-- ========================================================================= -->
         <!-- HEADER BANNER & STATISTIK RINGKAS                                         -->
         <!-- ========================================================================= -->
         <div class="bg-gradient-to-r from-emerald-600/15 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-6 relative overflow-hidden">

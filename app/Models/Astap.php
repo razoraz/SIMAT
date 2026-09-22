@@ -28,6 +28,7 @@ class Astap extends Model
         'faktur_tanggal' => 'date:d/m/Y',
         'sp2d_tanggal' => 'date:d/m/Y',
         'bast_dokumen_tanggal' => 'date:d/m/Y',
+        'hibah_tanggal_bast' => 'date:d/m/Y',
     ];
 
     /**
@@ -87,6 +88,19 @@ class Astap extends Model
     public function setBastDokumenTanggalAttribute($value)
     {
         $this->attributes['bast_dokumen_tanggal'] = static::parseDateInput($value);
+    }
+
+    public function setHibahTanggalBastAttribute($value)
+    {
+        $this->attributes['hibah_tanggal_bast'] = static::parseDateInput($value);
+    }
+
+    /**
+     * Cek apakah aset ini berasal dari hibah.
+     */
+    public function isHibah(): bool
+    {
+        return $this->sumber_dana === 'hibah';
     }
 
     public function jenisPengadaan()
