@@ -611,13 +611,6 @@ class DistribusiController extends Controller
                         $itemData['qty_acc'] = $regCount;
                     }
                     $totalQtyAcc += (int)($itemData['qty_acc'] ?? 0);
-
-                    if (empty($itemData['keterangan']) || trim($itemData['keterangan']) === '-' || trim($itemData['keterangan']) === '') {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Keterangan / Catatan Peruntukan Barang untuk {$namaBrg} harus diisi."
-                        ], 422);
-                    }
                 }
                 unset($itemData);
 
@@ -959,7 +952,7 @@ class DistribusiController extends Controller
      */
     public function destroy($id)
     {
-        $distribusi = Distribusi::findOrFail($id);
+        $distribusi = Distribusi::with('unit')->findOrFail($id);
 
         // Proteksi: sub admin tidak bisa menghapus pengajuan distribusi
         $user = auth()->user();
@@ -968,6 +961,10 @@ class DistribusiController extends Controller
         }
 
         $kode = $distribusi->kode;
+        $unitId = $distribusi->unit_id;
+        $unitNama = $distribusi->unit?->nama ?? 'Ruangan RSUD';
+        $userName = $user ? $user->name : 'Admin';
+
         DB::transaction(function () use ($distribusi) {
             $distribusi->softDelete();
             // Kembalikan NIBAR terkait menjadi Tersedia
@@ -983,6 +980,36 @@ class DistribusiController extends Controller
             }
         });
 
+        // 1. Bersihkan notifikasi pengajuan/pengiriman lama yang berkaitan dengan kode distribusi ini
+        try {
+            \App\Models\SystemNotification::where('message', 'LIKE', "%{$kode}%")->delete();
+        } catch (\Throwable $e) {}
+
+        // 2. Kirim notifikasi pembatalan/penghapusan baru ke Admin & Sub Admin Unit Ruangan
+        try {
+            // Ke Admin & Master Admin
+            \App\Services\NotificationService::sendToAdminAndMaster(
+                "Distribusi Dihapus: {$unitNama}",
+                "{$kode} telah dihapus ke Tong Sampah oleh {$userName}",
+                'distribusi',
+                route('recycle_bin.index', ['tab' => 'distribusi'])
+            );
+
+            // Ke Sub Admin unit terkait agar mereka tahu distribusi ke ruangannya dibatalkan/dihapus
+            if ($unitId) {
+                \App\Services\NotificationService::sendToUnitSubAdmin(
+                    $unitId,
+                    $unitNama,
+                    "Distribusi Dibatalkan: {$unitNama}",
+                    "{$kode} dibatalkan & dipindahkan ke Tong Sampah",
+                    'distribusi',
+                    route('distribusi.index')
+                );
+            }
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal mengirim notifikasi penghapusan distribusi: " . $e->getMessage());
+        }
+
         session()->flash('success', "Transaksi Distribusi {$kode} berhasil dipindahkan ke tong sampah.");
         return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dipindahkan ke tong sampah."]);
     }
@@ -992,8 +1019,11 @@ class DistribusiController extends Controller
      */
     public function restore($id)
     {
-        $distribusi = Distribusi::findOrFail($id);
+        $distribusi = Distribusi::with('unit')->findOrFail($id);
         $kode = $distribusi->kode;
+        $unitId = $distribusi->unit_id;
+        $unitNama = $distribusi->unit?->nama ?? 'Ruangan RSUD';
+        $userName = auth()->user()?->name ?? 'Admin';
 
         DB::transaction(function () use ($distribusi) {
             $distribusi->restoreData();
@@ -1011,6 +1041,34 @@ class DistribusiController extends Controller
                 }
             }
         });
+
+        // 1. Bersihkan notifikasi pembatalan lama yang berkaitan dengan kode distribusi ini
+        try {
+            \App\Models\SystemNotification::where('message', 'LIKE', "%{$kode}%")->delete();
+        } catch (\Throwable $e) {}
+
+        // 2. Kirim notifikasi pemulihan baru ke Admin & Sub Admin Unit Ruangan
+        try {
+            \App\Services\NotificationService::sendToAdminAndMaster(
+                "Distribusi Dipulihkan: {$unitNama}",
+                "{$kode} telah dipulihkan dari Tong Sampah oleh {$userName}",
+                'distribusi',
+                route('distribusi.index')
+            );
+
+            if ($unitId) {
+                \App\Services\NotificationService::sendToUnitSubAdmin(
+                    $unitId,
+                    $unitNama,
+                    "Distribusi Aktif Kembali: {$unitNama}",
+                    "{$kode} telah dipulihkan & aktif kembali",
+                    'distribusi',
+                    route('distribusi.index')
+                );
+            }
+        } catch (\Throwable $e) {
+            \Log::warning("Gagal mengirim notifikasi pemulihan distribusi: " . $e->getMessage());
+        }
 
         session()->flash('success', "Transaksi Distribusi {$kode} berhasil dipulihkan.");
         return response()->json(['success' => true, 'message' => "Transaksi Distribusi {$kode} berhasil dipulihkan."]);

@@ -94,53 +94,10 @@
         </div>
 
         <!-- Tombol Notifikasi Systems -->
-        <div x-data="{
-                notifOpen: false,
-                filterType: 'all',
-                unreadCount: {{ (int)($unreadNotifCount ?? 0) }},
-                timer: null,
-                init() {
-                    // Auto poll notifikasi setiap 60 detik (1 menit)
-                    this.timer = setInterval(() => {
-                        this.refreshNotif();
-                    }, 60000);
-                },
-                async refreshNotif() {
-                    try {
-                        const res = await fetch('{{ route('notifications.list') }}', {
-                            headers: { 'Accept': 'application/json' }
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                            this.unreadCount = data.unread_count;
-                        }
-                    } catch (e) {}
-                },
-                async markAllAsRead() {
-                    if (this.unreadCount === 0) return;
-                    try {
-                        const res = await fetch('{{ route('notifications.mark_all_read') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        const json = await res.json();
-                        if (json.success) {
-                            this.unreadCount = 0;
-                            document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
-                            document.querySelectorAll('.notif-item-unread').forEach(el => el.classList.remove('bg-emerald-500/5', 'border-emerald-500/20'));
-                        }
-                    } catch (e) {
-                        console.error('Gagal menandai notifikasi dibaca', e);
-                    }
-                }
-            }" class="relative">
+        <div x-data="systemNotificationComponent()" class="relative">
 
-            <!-- Bell Button -->
-            <button type="button" @click="notifOpen = !notifOpen; if(notifOpen && unreadCount > 0) markAllAsRead()"
+            <!-- Bell Button (Klik untuk melihat daftar tanpa otomatis menandai terbaca semua) -->
+            <button type="button" @click="notifOpen = !notifOpen"
                 class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 focus:outline-none transition-all relative group"
                 title="Notifikasi">
                 <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,6 +134,41 @@
                         Tandai Dibaca
                     </button>
                 </div>
+
+                <!-- Windows Desktop Notification & Sound Control Bar -->
+                <template x-if="desktopPermission !== 'granted'">
+                    <div class="px-3.5 py-2 bg-gradient-to-r from-emerald-950/50 via-teal-950/40 to-slate-950/60 border-b border-emerald-500/30 flex items-center justify-between gap-2">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <span class="text-xs">🔔</span>
+                            <span class="text-[11px] text-emerald-200 font-medium truncate">Aktifkan Notifikasi Windows & Suara</span>
+                        </div>
+                        <button type="button" @click="requestDesktopPermission()" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-md transition-all shrink-0 flex items-center space-x-1">
+                            <span>Aktifkan</span>
+                        </button>
+                    </div>
+                </template>
+                <template x-if="desktopPermission === 'granted'">
+                    <div class="px-3.5 py-1.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between text-[10.5px] text-slate-400">
+                        <div class="flex items-center space-x-1.5 text-emerald-400 font-semibold">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
+                            <span>Windows Desktop Aktif</span>
+                        </div>
+                        <div class="flex items-center space-x-2.5">
+                            <button type="button" @click="playChimeSound(); showDesktopToast('SIMAT-RK RSUD Dr. H. Koesnandi', 'Tes Suara & Notifikasi Windows Berhasil! 🔔', null)" 
+                                    class="text-slate-300 hover:text-emerald-300 transition-colors font-semibold flex items-center space-x-1" 
+                                    title="Klik untuk uji coba suara lonceng dan pop-up Windows">
+                                <span>🔊 Tes Suara</span>
+                            </button>
+                            <span class="text-slate-700">|</span>
+                            <button type="button" @click="toggleSound()" 
+                                    class="transition-colors font-medium flex items-center space-x-1" 
+                                    :class="soundEnabled ? 'text-cyan-400 hover:text-cyan-300' : 'text-rose-400 hover:text-rose-300 line-through'" 
+                                    :title="soundEnabled ? 'Mute Suara' : 'Nyalakan Suara'">
+                                <span x-text="soundEnabled ? 'Mute' : 'Muted'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- Filter Cards / Chips 1 Baris Horisontal -->
                 <div class="px-3 py-2 bg-slate-950/40 border-b border-slate-800/60 flex items-center gap-1.5">
@@ -259,6 +251,195 @@
                 </div>
             </div>
         </div>
+
+        <!-- Script Logika Notifikasi Terpusat & Windows Desktop Audio API -->
+        <script>
+            function systemNotificationComponent() {
+                return {
+                    notifOpen: false,
+                    filterType: 'all',
+                    unreadCount: {{ (int)($unreadNotifCount ?? 0) }},
+                    timer: null,
+                    soundEnabled: localStorage.getItem('simat_sound_enabled') !== 'false',
+                    desktopPermission: (typeof window !== 'undefined' && 'Notification' in window) ? Notification.permission : 'default',
+
+                    init() {
+                        if (typeof window !== 'undefined' && 'Notification' in window) {
+                            this.desktopPermission = Notification.permission;
+                        }
+
+                        const initialNotifs = @json($systemNotifications ?? []);
+                        if (Array.isArray(initialNotifs) && initialNotifs.length > 0) {
+                            this.checkAndAlertNew(initialNotifs);
+                        } else if (!localStorage.getItem('simat_last_alerted_id')) {
+                            localStorage.setItem('simat_last_alerted_id', '0');
+                        }
+
+                        this.timer = setInterval(() => {
+                            this.refreshNotif();
+                        }, 15000);
+                    },
+
+                    playChimeSound() {
+                        if (!this.soundEnabled) return;
+                        try {
+                            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                            if (!AudioCtx) return;
+                            const ctx = new AudioCtx();
+                            
+                            if (ctx.state === 'suspended') {
+                                ctx.resume();
+                            }
+
+                            const now = ctx.currentTime;
+                            
+                            // Nada 1: C5 (523.25 Hz)
+                            const osc1 = ctx.createOscillator();
+                            const gain1 = ctx.createGain();
+                            osc1.type = 'sine';
+                            osc1.frequency.setValueAtTime(523.25, now);
+                            gain1.gain.setValueAtTime(0.25, now);
+                            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                            osc1.connect(gain1);
+                            gain1.connect(ctx.destination);
+                            osc1.start(now);
+                            osc1.stop(now + 0.35);
+
+                            // Nada 2: E5 (659.25 Hz) Lonceng Harmonis
+                            const osc2 = ctx.createOscillator();
+                            const gain2 = ctx.createGain();
+                            osc2.type = 'sine';
+                            osc2.frequency.setValueAtTime(659.25, now + 0.12);
+                            gain2.gain.setValueAtTime(0.3, now + 0.12);
+                            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                            osc2.connect(gain2);
+                            gain2.connect(ctx.destination);
+                            osc2.start(now + 0.12);
+                            osc2.stop(now + 0.55);
+                        } catch (e) {
+                            console.warn('Audio chime error:', e);
+                        }
+                    },
+
+                    showDesktopToast(title, message, link) {
+                        if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') return;
+                        try {
+                            const iconUrl = '{{ asset('img/Logo-rsud/logo-rsud.png') }}';
+                            const notif = new Notification(title, {
+                                body: message,
+                                icon: iconUrl,
+                                badge: iconUrl,
+                                tag: 'simat-notif-' + Date.now(),
+                                renotify: true
+                            });
+                            notif.onclick = () => {
+                                window.focus();
+                                if (link && link !== '#') {
+                                    window.location.href = link;
+                                }
+                                notif.close();
+                            };
+                        } catch (e) {
+                            console.warn('Windows Desktop notification error:', e);
+                        }
+                    },
+
+                    async requestDesktopPermission() {
+                        if (typeof window === 'undefined' || !('Notification' in window)) {
+                            alert('Browser Anda tidak mendukung Web Notification API Windows.');
+                            return;
+                        }
+                        try {
+                            const perm = await Notification.requestPermission();
+                            this.desktopPermission = perm;
+                            if (perm === 'granted') {
+                                this.playChimeSound();
+                                this.showDesktopToast('SIMAT-RK RSUD Dr. H. Koesnandi', 'Notifikasi Windows & Suara Berhasil Diaktifkan! ✅', null);
+                            } else if (perm === 'denied') {
+                                alert('Izin notifikasi ditolak di browser. Silakan klik ikon gembok di samping alamat URL browser Anda untuk mengizinkan notifikasi.');
+                            }
+                        } catch (e) {
+                            console.error('Gagal meminta izin notifikasi:', e);
+                        }
+                    },
+
+                    toggleSound() {
+                        this.soundEnabled = !this.soundEnabled;
+                        localStorage.setItem('simat_sound_enabled', this.soundEnabled ? 'true' : 'false');
+                        if (this.soundEnabled) {
+                            this.playChimeSound();
+                        }
+                    },
+
+                    checkAndAlertNew(notifications) {
+                        if (!Array.isArray(notifications) || notifications.length === 0) return;
+
+                        const unreadItems = notifications.filter(n => n.is_unread);
+                        if (unreadItems.length === 0) return;
+
+                        const storedAlertedId = localStorage.getItem('simat_last_alerted_id');
+                        const lastAlertedId = storedAlertedId !== null ? parseInt(storedAlertedId, 10) : 0;
+                        
+                        // Ambil item belum dibaca yang ID-nya lebih baru dari lastAlertedId
+                        const newItems = unreadItems.filter(n => (parseInt(n.id) || 0) > lastAlertedId);
+
+                        if (newItems.length > 0) {
+                            const maxNewId = Math.max(...unreadItems.map(n => parseInt(n.id) || 0));
+                            localStorage.setItem('simat_last_alerted_id', String(maxNewId));
+
+                            this.playChimeSound();
+
+                            const newest = newItems[0];
+                            const notifTitle = newItems.length === 1 
+                                ? newest.title 
+                                : `(${newItems.length}) Notifikasi Baru SIMAT-RK`;
+                            const notifMsg = newItems.length === 1
+                                ? newest.message
+                                : `${newest.title} dan ${newItems.length - 1} transaksi lainnya.`;
+
+                            this.showDesktopToast(notifTitle, notifMsg, newest.link);
+                        }
+                    },
+
+                    async refreshNotif() {
+                        try {
+                            const res = await fetch('{{ route('notifications.list') }}', {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                this.unreadCount = data.unread_count;
+                                if (Array.isArray(data.notifications)) {
+                                    this.checkAndAlertNew(data.notifications);
+                                }
+                            }
+                        } catch (e) {}
+                    },
+
+                    async markAllAsRead() {
+                        if (this.unreadCount === 0) return;
+                        try {
+                            const res = await fetch('{{ route('notifications.mark_all_read') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            const json = await res.json();
+                            if (json.success) {
+                                this.unreadCount = 0;
+                                document.querySelectorAll('.notif-unread-dot').forEach(el => el.remove());
+                                document.querySelectorAll('.notif-item-unread').forEach(el => el.classList.remove('bg-emerald-500/5', 'border-emerald-500/20'));
+                            }
+                        } catch (e) {
+                            console.error('Gagal menandai notifikasi dibaca', e);
+                        }
+                    }
+                };
+            }
+        </script>
 
         <!-- Custom Scrollbar Styling -->
         <style>

@@ -383,8 +383,12 @@ class RecycleBinController extends Controller
                 break;
 
             case 'distribusi':
-                $distribusi = Distribusi::findOrFail($id);
+                $distribusi = Distribusi::with('unit')->findOrFail($id);
                 $kode = $distribusi->kode;
+                $unitId = $distribusi->unit_id;
+                $unitNama = $distribusi->unit?->nama ?? 'Ruangan RSUD';
+                $userName = auth()->user()?->name ?? 'Admin';
+
                 DB::transaction(function () use ($distribusi) {
                     $distribusi->restoreData();
                     // Kembalikan register terkait ke unit jika status terdistribusi
@@ -401,6 +405,30 @@ class RecycleBinController extends Controller
                         }
                     }
                 });
+
+                // Bersihkan notifikasi pembatalan lama & kirim notifikasi pemulihan
+                try {
+                    \App\Models\SystemNotification::where('message', 'LIKE', "%{$kode}%")->delete();
+
+                    \App\Services\NotificationService::sendToAdminAndMaster(
+                        "Distribusi Dipulihkan: {$unitNama}",
+                        "{$kode} telah dipulihkan dari Tong Sampah oleh {$userName}",
+                        'distribusi',
+                        route('distribusi.index')
+                    );
+
+                    if ($unitId) {
+                        \App\Services\NotificationService::sendToUnitSubAdmin(
+                            $unitId,
+                            $unitNama,
+                            "Distribusi Aktif Kembali: {$unitNama}",
+                            "{$kode} telah dipulihkan & aktif kembali",
+                            'distribusi',
+                            route('distribusi.index')
+                        );
+                    }
+                } catch (\Throwable $e) {}
+
                 $msg = "Transaksi Distribusi Aset {$kode} berhasil dipulihkan ke status aktif.";
                 break;
 
@@ -656,7 +684,11 @@ class RecycleBinController extends Controller
                 $distribusis = Distribusi::whereIn('id', $ids)->get();
                 DB::transaction(function () use ($distribusis, &$deletedCount) {
                     foreach ($distribusis as $d) {
+                        $kode = $d->kode;
                         $d->delete();
+                        try {
+                            \App\Models\SystemNotification::where('message', 'LIKE', "%{$kode}%")->delete();
+                        } catch (\Throwable $e) {}
                         $deletedCount++;
                     }
                 });
@@ -832,6 +864,11 @@ class RecycleBinController extends Controller
                 DB::transaction(function () use ($distribusi) {
                     $distribusi->delete();
                 });
+                // Bersihkan seluruh notifikasi terkait saat data dimusnahkan permanen
+                try {
+                    \App\Models\SystemNotification::where('message', 'LIKE', "%{$kode}%")->delete();
+                } catch (\Throwable $e) {}
+
                 $msg = "Transaksi Distribusi {$kode} telah dihapus secara permanen dari database.";
                 break;
 
