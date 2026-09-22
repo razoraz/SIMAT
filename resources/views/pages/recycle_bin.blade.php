@@ -734,7 +734,8 @@
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap">
                                             <div class="flex items-center space-x-2.5">
-                                                <div class="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0"
+                                                <div class="rounded-xl flex items-center justify-center font-bold text-xs shrink-0"
+                                                     style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;"
                                                      :class="{
                                                          'bg-amber-500/20 text-amber-300 border border-amber-500/30': item.role === 'master_admin',
                                                          'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': item.role === 'admin',

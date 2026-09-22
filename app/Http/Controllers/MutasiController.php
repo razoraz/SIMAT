@@ -212,7 +212,15 @@ class MutasiController extends Controller
             'alasan_mutasi'           => 'required|string|max:2000',
             'catatan_penerima'        => 'nullable|string|max:1000',
         ], [
-            'ruangan_tujuan.different' => 'Ruangan tujuan harus berbeda dengan ruangan asal.',
+            'jenis_mutasi.required'            => 'Jenis mutasi wajib dipilih pada Tahap 1.',
+            'jenis_mutasi.in'                  => 'Jenis mutasi yang dipilih tidak valid.',
+            'tanggal_mutasi.required'          => 'Tanggal mutasi wajib diisi.',
+            'ruangan_asal.required'            => 'Unit / Ruangan asal pengirim wajib ditentukan.',
+            'ruangan_tujuan.required'          => 'Unit / Ruangan tujuan penerima wajib ditentukan.',
+            'ruangan_tujuan.different'         => 'Ruangan tujuan penerima harus berbeda dengan ruangan asal pengirim.',
+            'penanggung_jawab_asal.required'   => 'Penanggung jawab unit asal wajib diisi.',
+            'penanggung_jawab_tujuan.required' => 'Penanggung jawab unit tujuan wajib diisi.',
+            'alasan_mutasi.required'           => 'Alasan / keperluan mutasi wajib diisi.',
         ]);
 
         $registerIds = $request->input('astap_register_ids', []);
@@ -452,7 +460,14 @@ class MutasiController extends Controller
             'alasan_mutasi'           => 'required|string|max:2000',
             'catatan_penerima'        => 'nullable|string|max:1000',
         ], [
-            'ruangan_tujuan.different' => 'Ruangan tujuan harus berbeda dengan ruangan asal.',
+            'jenis_mutasi.required'            => 'Jenis mutasi wajib dipilih pada Tahap 1.',
+            'jenis_mutasi.in'                  => 'Jenis mutasi yang dipilih tidak valid.',
+            'ruangan_asal.required'            => 'Unit / Ruangan asal pengirim wajib ditentukan.',
+            'ruangan_tujuan.required'          => 'Unit / Ruangan tujuan penerima wajib ditentukan.',
+            'ruangan_tujuan.different'         => 'Ruangan tujuan penerima harus berbeda dengan ruangan asal pengirim.',
+            'penanggung_jawab_asal.required'   => 'Penanggung jawab unit asal wajib diisi.',
+            'penanggung_jawab_tujuan.required' => 'Penanggung jawab unit tujuan wajib diisi.',
+            'alasan_mutasi.required'           => 'Alasan / keperluan mutasi wajib diisi.',
         ]);
 
         $registerIds = $request->input('astap_register_ids', []);

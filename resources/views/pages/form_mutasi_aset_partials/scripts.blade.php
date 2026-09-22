@@ -289,40 +289,42 @@
             return map[this.jenis_mutasi] || 'Alasan pemindahan / mutasi aset...';
         },
 
-        get isStep1Valid() {
-            return !!this.jenis_mutasi;
-        },
-
-        get isStep2Valid() {
-            return !!this.ruangan_asal && !!this.ruangan_tujuan && (this.ruangan_asal !== this.ruangan_tujuan);
-        },
-
-        get isStep3Valid() {
-            return this.selectedRegisterIds.length > 0 && !!(this.alasan_mutasi && this.alasan_mutasi.trim());
-        },
-
         nextStep() {
-            if (this.step === 1 && !this.isStep1Valid) {
-                this.showToast('Silakan pilih salah satu Jenis Pengajuan Mutasi terlebih dahulu.', 'warning');
-                return;
+            if (this.step === 1) {
+                if (!this.jenis_mutasi) {
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nJenis Pengajuan Mutasi belum dipilih.');
+                    return;
+                }
             }
             if (this.step === 2) {
-                if (!this.ruangan_asal || !this.ruangan_tujuan) {
-                    this.showToast('Ruangan Asal (Pengirim) dan Ruangan Tujuan (Penerima) wajib dipilih.', 'warning');
+                if (!this.ruangan_asal) {
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nUnit Pengirim (Asal) belum dipilih.');
+                    return;
+                }
+                if (!this.ruangan_tujuan) {
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nUnit Penerima (Tujuan) belum dipilih.');
                     return;
                 }
                 if (this.ruangan_asal === this.ruangan_tujuan) {
-                    this.showToast('Ruangan Asal dan Ruangan Tujuan tidak boleh sama! Silakan pilih unit tujuan yang berbeda.', 'warning');
+                    alert('⚠️ Unit Pengirim dan Unit Penerima tidak boleh sama!\n\nSilakan pilih Unit Penerima (Tujuan) yang berbeda.');
+                    return;
+                }
+                if (!this.penanggung_jawab_asal || !this.penanggung_jawab_asal.trim()) {
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nPenanggung Jawab Unit Pengirim belum diisi.');
+                    return;
+                }
+                if (!this.penanggung_jawab_tujuan || !this.penanggung_jawab_tujuan.trim()) {
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nPenanggung Jawab Unit Penerima belum diisi.');
                     return;
                 }
             }
             if (this.step === 3) {
-                if (this.selectedRegisterIds.length === 0) {
-                    this.showToast('Silakan pilih minimal 1 barang aset yang akan dimutasi terlebih dahulu.', 'warning');
+                if (!this.selectedRegisterIds || this.selectedRegisterIds.length === 0) {
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nMinimal harus ada 1 barang aset yang dipilih untuk dimutasi.');
                     return;
                 }
                 if (!this.alasan_mutasi || !this.alasan_mutasi.trim()) {
-                    this.showToast('Alasan / Urgensi pengajuan mutasi wajib diisi sebelum lanjut ke Langkah 4.', 'warning');
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nAlasan / Keperluan mutasi aset belum diisi.');
                     return;
                 }
             }
@@ -340,18 +342,60 @@
         },
 
         goToStep(s) {
-            if (s < this.step) {
+            if (s <= this.step) {
                 this.step = s;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else if (s > this.step) {
-                this.showToast('Mohon selesaikan pengisian dan tekan tombol Lanjut ke Langkah ' + (this.step + 1) + ' terlebih dahulu.', 'warning');
+                return;
             }
+
+            // Validasi saat lompat ke langkah di depan
+            if (s > 1 && !this.jenis_mutasi) {
+                this.step = 1;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nJenis Pengajuan Mutasi belum dipilih.');
+                return;
+            }
+            if (s > 2) {
+                if (!this.ruangan_asal) {
+                    this.step = 2;
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nUnit Pengirim (Asal) belum dipilih.');
+                    return;
+                }
+                if (!this.ruangan_tujuan) {
+                    this.step = 2;
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nUnit Penerima (Tujuan) belum dipilih.');
+                    return;
+                }
+                if (this.ruangan_asal === this.ruangan_tujuan) {
+                    this.step = 2;
+                    alert('⚠️ Unit Pengirim dan Unit Penerima tidak boleh sama!\n\nSilakan pilih Unit Penerima (Tujuan) yang berbeda.');
+                    return;
+                }
+            }
+            if (s > 3) {
+                if (!this.selectedRegisterIds || this.selectedRegisterIds.length === 0) {
+                    this.step = 3;
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nMinimal harus ada 1 barang aset yang dipilih untuk dimutasi.');
+                    return;
+                }
+                if (!this.alasan_mutasi || !this.alasan_mutasi.trim()) {
+                    this.step = 3;
+                    alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nAlasan / Keperluan mutasi aset belum diisi.');
+                    return;
+                }
+            }
+
+            this.step = s;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        showSimatToast(message, type = 'success') {
+            const cleanMsg = String(message || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
+            this.toast = { show: true, message: cleanMsg, type };
+            setTimeout(() => { this.toast.show = false; }, 4000);
         },
 
         showToast(msg, type = 'warning') {
-            const cleanMsg = String(msg || '').replace(/^[\s✅✔️☑️✓✔⚠️❌🚫⛔ℹ️🗑️✏️🔑💾]+/, '').trim();
-            this.toast = { show: true, message: cleanMsg, type: type };
-            setTimeout(() => { this.toast.show = false; }, 4000);
+            this.showSimatToast(msg, type);
         },
 
         showConfirmModal: false,
@@ -385,28 +429,75 @@
             this.showConfirmModal = false;
         },
 
+        submitWithConfirmation(e) {
+            return this.validateBeforeSubmit(e);
+        },
+
         validateBeforeSubmit(e) {
-            if (this.ruangan_asal && this.ruangan_tujuan && this.ruangan_asal === this.ruangan_tujuan) {
-                this.showToast('Ruangan Asal dan Ruangan Tujuan tidak boleh sama! Silakan pilih ruangan tujuan yang berbeda.', 'warning');
-                e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
+
+            // ── 1. Validasi Jenis Mutasi (Langkah 1) ─────────────────────────
+            if (!this.jenis_mutasi) {
+                this.step = 1;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nJenis Pengajuan Mutasi belum dipilih.');
                 return false;
             }
-            if (this.selectedRegisterIds.length === 0) {
-                this.showToast('Silakan pilih minimal 1 barang aset yang akan dimutasi.', 'warning');
-                e.preventDefault();
+
+            // ── 2. Validasi Unit & Ruangan (Langkah 2) ──────────────────────
+            if (!this.ruangan_asal || !this.ruangan_asal.trim()) {
+                this.step = 2;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nUnit Pengirim (Asal) belum dipilih.');
                 return false;
             }
-            e.preventDefault();
-            const formElement = e.target;
+            if (!this.ruangan_tujuan || !this.ruangan_tujuan.trim()) {
+                this.step = 2;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nUnit Penerima (Tujuan) belum dipilih.');
+                return false;
+            }
+            if (this.ruangan_asal === this.ruangan_tujuan) {
+                this.step = 2;
+                alert('⚠️ Unit Pengirim dan Unit Penerima tidak boleh sama!\n\nSilakan pilih Unit Penerima (Tujuan) yang berbeda.');
+                return false;
+            }
+            if (!this.penanggung_jawab_asal || !this.penanggung_jawab_asal.trim()) {
+                this.step = 2;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nPenanggung Jawab Unit Pengirim belum diisi.');
+                return false;
+            }
+            if (!this.penanggung_jawab_tujuan || !this.penanggung_jawab_tujuan.trim()) {
+                this.step = 2;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nPenanggung Jawab Unit Penerima belum diisi.');
+                return false;
+            }
+
+            // ── 3. Validasi Barang & Alasan Mutasi (Langkah 3) ──────────────
+            if (!this.selectedRegisterIds || this.selectedRegisterIds.length === 0) {
+                this.step = 3;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nMinimal harus ada 1 barang aset yang dipilih untuk dimutasi.');
+                return false;
+            }
+            if (!this.alasan_mutasi || !this.alasan_mutasi.trim()) {
+                this.step = 3;
+                alert('⚠️ Mohon isi seluruh form terlebih dahulu!\n\nAlasan / Keperluan mutasi aset belum diisi.');
+                return false;
+            }
+
+            // ── 4. Konfirmasi Dialog Modal Sesuai Distribusi ────────────────
+            const formElement = (e && e.target && e.target.tagName === 'FORM') ? e.target : document.querySelector('form');
             const targetItem = this.selectedRegisterIds.length + ' Barang Aset (' + (this.ruangan_asal || 'Asal') + ' ➔ ' + (this.ruangan_tujuan || 'Tujuan') + ')';
+            
             this.askConfirmation({
-                title: this.isEdit ? '✏️ Konfirmasi Simpan Perubahan Mutasi' : '🔄 Konfirmasi Pengajuan Mutasi Baru',
-                message: this.isEdit ? 'Apakah Anda yakin ingin menyimpan perubahan data pengajuan mutasi ini?' : 'Apakah Anda yakin ingin mengajukan mutasi untuk ' + this.selectedRegisterIds.length + ' barang aset ini? Pindah tangan ruangan akan diproses setelah persetujuan.',
+                title: this.isEdit ? '✏️ Konfirmasi Ubah Mutasi' : '🔄 Konfirmasi Pengajuan Mutasi',
+                message: this.isEdit 
+                    ? 'Apakah Anda yakin ingin menyimpan perubahan data pengajuan mutasi ini?' 
+                    : 'Apakah Anda yakin ingin mengajukan mutasi untuk ' + this.selectedRegisterIds.length + ' barang aset ini?',
                 itemName: targetItem,
-                type: this.isEdit ? 'warning' : 'success',
-                btnText: this.isEdit ? '✏️ Ya, Simpan Perubahan' : '🔄 Ya, Ajukan Mutasi (' + this.selectedRegisterIds.length + ' Barang)',
+                type: this.isEdit ? 'info' : 'success',
+                btnText: this.isEdit ? '✏️ Ya, Simpan Perubahan' : '✅ Ya, Kirim Pengajuan',
                 onConfirm: () => {
-                    formElement.submit();
+                    if (formElement) {
+                        formElement.submit();
+                    }
                 }
             });
             return false;

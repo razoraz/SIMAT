@@ -79,6 +79,13 @@
                         x-text="selectedRegisterIds.length + ' Barang Terpilih'"></span>
                 </div>
 
+                <template x-if="selectedRegisterIds.length === 0">
+                    <div class="px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs flex items-center space-x-2">
+                        <span>⚠️</span>
+                        <span>Silakan pilih/centang minimal 1 barang aset pada daftar di bawah ini.</span>
+                    </div>
+                </template>
+
                 {{-- Hidden Inputs kondisi_baru untuk setiap barang terpilih --}}
                 <template x-for="id in selectedRegisterIds" :key="id">
                     <input type="hidden" :name="'kondisi_baru[' + id + ']'" :value="editedKondisi[id] || (registers.find(r => Number(r.id) === Number(id))?.kondisi || 'Baik')">

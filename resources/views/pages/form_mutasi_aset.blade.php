@@ -30,6 +30,24 @@
         @include('pages.form_mutasi_aset_partials.header_card')
         @include('pages.form_mutasi_aset_partials.stepper_nav')
 
+        @if ($errors->any())
+            <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-start space-x-3 shadow-lg">
+                <div class="rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div class="space-y-1">
+                    <p class="font-bold text-rose-200">Pengajuan belum dapat diproses karena data belum lengkap atau ada kendala:</p>
+                    <ul class="list-disc list-inside space-y-0.5 text-xs text-rose-300/90 font-medium">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
+
         <form method="POST" action="{{ isset($mutasi) ? route('mutasi.update', $mutasi->id) : route('mutasi.store') }}"
               enctype="multipart/form-data"
               class="space-y-6"

@@ -204,19 +204,23 @@
                                 <!-- Ikon Notifikasi Berdasarkan Kategori -->
                                 <div class="shrink-0">
                                     @if($notif['type'] === 'astap')
-                                        <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs shadow-sm">
+                                        <div class="rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs shadow-sm"
+                                             style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             📦
                                         </div>
                                     @elseif($notif['type'] === 'distribusi')
-                                        <div class="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/30 flex items-center justify-center text-xs shadow-sm">
+                                        <div class="rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/30 flex items-center justify-center text-xs shadow-sm"
+                                             style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             🚚
                                         </div>
                                     @elseif($notif['type'] === 'mutasi')
-                                        <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs shadow-sm">
+                                        <div class="rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs shadow-sm"
+                                             style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             🔄
                                         </div>
                                     @else
-                                        <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xs shadow-sm">
+                                        <div class="rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xs shadow-sm"
+                                             style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;">
                                             🔔
                                         </div>
                                     @endif

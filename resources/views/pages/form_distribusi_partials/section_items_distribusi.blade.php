@@ -15,7 +15,9 @@
                             <!-- Card Header: Nomor Barang, Nama Terpilih Dinamis, Badge Kode 108 & Tombol Hapus Barang di Pojok Kanan -->
                             <div class="flex items-center justify-between pb-3 border-b border-slate-800 gap-3">
                                 <div class="flex items-center space-x-3 min-w-0">
-                                    <span class="w-7 h-7 rounded-xl bg-teal-500/20 text-teal-300 font-extrabold text-xs flex items-center justify-center border border-teal-500/30 shrink-0" x-text="idx + 1"></span>
+                                    <span class="rounded-xl bg-teal-500/20 text-teal-300 font-extrabold text-xs flex items-center justify-center border border-teal-500/30 shrink-0"
+                                          style="width: 28px; height: 28px; min-width: 28px; min-height: 28px;"
+                                          x-text="idx + 1"></span>
                                     
                                     <!-- Judul Dinamis Mengikuti Barang yang Dipilih -->
                                     <div class="min-w-0 flex items-center space-x-2">

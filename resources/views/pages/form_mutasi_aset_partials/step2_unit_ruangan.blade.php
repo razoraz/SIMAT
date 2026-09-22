@@ -34,7 +34,7 @@
                                         <span x-text="ruangan_asal || userUnitNama"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="ruangan_asal" :value="ruangan_asal || userUnitNama" required>
+                                    <input type="hidden" name="ruangan_asal" :value="ruangan_asal || userUnitNama">
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Pengirim (Kepala Ruangan)</label>
@@ -42,7 +42,7 @@
                                         <span x-text="penanggung_jawab_asal || userUnitKepala || 'Kepala Ruangan'"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="penanggung_jawab_asal" :value="penanggung_jawab_asal || userUnitKepala" required>
+                                    <input type="hidden" name="penanggung_jawab_asal" :value="penanggung_jawab_asal || userUnitKepala">
                                 </div>
                             </div>
                         </template>
@@ -73,7 +73,12 @@
                                             style="padding-left: 3.1rem !important;">
                                         <svg class="w-4 h-4 text-rose-400 absolute pointer-events-none" style="left: 1.25rem; top: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                     </div>
-                                    <input type="hidden" name="ruangan_asal" :value="ruangan_asal" required>
+                                    <input type="hidden" name="ruangan_asal" :value="ruangan_asal">
+                                    <template x-if="!ruangan_asal">
+                                        <p class="text-[10.5px] text-amber-400 font-semibold flex items-center space-x-1 mt-1">
+                                            <span>⚠️ Unit pengirim wajib dipilih</span>
+                                        </p>
+                                    </template>
 
                                     {{-- Dropdown Scrollable List (Excludes Unit Tujuan) --}}
                                     <div x-show="isUnitAsalOpen" x-transition x-cloak style="max-height: 210px !important; overflow-y: auto !important;"
@@ -104,7 +109,7 @@
                                         <span x-text="penanggung_jawab_asal || 'Pilih Unit Pengirim Terlebih Dahulu'"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="penanggung_jawab_asal" :value="penanggung_jawab_asal" required>
+                                    <input type="hidden" name="penanggung_jawab_asal" :value="penanggung_jawab_asal">
                                     <template x-if="penanggung_jawab_asal">
                                         <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
                                             <span>✓ Terkunci otomatis dari data Kepala Ruangan RSUD</span>
@@ -133,7 +138,7 @@
                                         <span x-text="ruangan_tujuan || userUnitNama"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan || userUnitNama" required>
+                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan || userUnitNama">
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Penerima (Kepala Ruangan)</label>
@@ -141,7 +146,7 @@
                                         <span x-text="penanggung_jawab_tujuan || userUnitKepala || 'Kepala Ruangan'"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan || userUnitKepala" required>
+                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan || userUnitKepala">
                                 </div>
                             </div>
                         </template>
@@ -155,7 +160,7 @@
                                         <span x-text="ruangan_tujuan || 'Instalasi Perbekalan & Rumah Tangga'"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan" required>
+                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan">
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10.5px] font-semibold uppercase tracking-wider mb-1">Penanggung Jawab Penerima (Pengurus Barang)</label>
@@ -163,7 +168,7 @@
                                         <span x-text="penanggung_jawab_tujuan || 'Pengurus Barang Aset'"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan" required>
+                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan">
                                 </div>
                                 <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
                                     <span>✓ Terkunci otomatis untuk Pengembalian ke Gudang Utama / Pengurus Barang</span>
@@ -197,7 +202,17 @@
                                             style="padding-left: 3.1rem !important;">
                                         <svg class="w-4 h-4 text-rose-400 absolute pointer-events-none" style="left: 1.25rem; top: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                     </div>
-                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan" required>
+                                    <input type="hidden" name="ruangan_tujuan" :value="ruangan_tujuan">
+                                    <template x-if="!ruangan_tujuan">
+                                        <p class="text-[10.5px] text-amber-400 font-semibold flex items-center space-x-1 mt-1">
+                                            <span>⚠️ Unit penerima wajib dipilih</span>
+                                        </p>
+                                    </template>
+                                    <template x-if="ruangan_asal && ruangan_tujuan && ruangan_asal === ruangan_tujuan">
+                                        <p class="text-[10.5px] text-rose-400 font-bold flex items-center space-x-1 mt-1">
+                                            <span>❌ Unit penerima tidak boleh sama dengan unit pengirim</span>
+                                        </p>
+                                    </template>
 
                                     {{-- Dropdown Scrollable List (Excludes Unit Pengirim) --}}
                                     <div x-show="isUnitTujuanOpen" x-transition x-cloak style="max-height: 210px !important; overflow-y: auto !important;"
@@ -228,7 +243,7 @@
                                         <span x-text="penanggung_jawab_tujuan || 'Pilih Unit Penerima Terlebih Dahulu'"></span>
                                         <span>🔒</span>
                                     </div>
-                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan" required>
+                                    <input type="hidden" name="penanggung_jawab_tujuan" :value="penanggung_jawab_tujuan">
                                     <template x-if="penanggung_jawab_tujuan">
                                         <p class="text-[10px] text-emerald-400 font-semibold flex items-center space-x-1 mt-1">
                                             <span>✓ Terkunci otomatis dari data Kepala Ruangan RSUD</span>

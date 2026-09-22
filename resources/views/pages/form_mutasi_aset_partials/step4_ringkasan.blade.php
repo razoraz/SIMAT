@@ -10,7 +10,7 @@
                             <p class="text-xs text-slate-400">Periksa kembali seluruh ringkasan data sebelum mengirimkan dokumen pengajuan mutasi aset.</p>
                         </div>
                     </div>
-                    <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-bold">Siap Dikirim</span>
+                    <span class="text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-bold">Langkah Terakhir</span>
                 </div>
 
                 {{-- Summary Card Review --}}
@@ -97,7 +97,8 @@
                     </button>
                     <button type="submit"
                         class="px-7 py-3 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-xs shadow-lg shadow-rose-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
-                        <span>🚀 Kirim Pengajuan Mutasi</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span x-text="isEdit ? '✏️ Simpan Perubahan Mutasi' : '🚀 Kirim Pengajuan Mutasi'"></span>
                     </button>
                 </div>
             </div>

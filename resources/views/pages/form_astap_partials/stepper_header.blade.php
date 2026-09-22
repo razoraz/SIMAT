@@ -1,4 +1,4 @@
-﻿        <!-- Top Navigation Bar (Back + Title) -->
+        <!-- Top Navigation Bar (Back + Title) -->
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
             <div class="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
                 <a href="{{ route('astap.index') }}" 
@@ -16,12 +16,13 @@
 
         <!-- Multi-Step Stepper Header (1 s/d 4) -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 
                 <!-- Step 1 Tab -->
                 <button type="button" @click="goToStep(1)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0"
+                             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;"
                              :class="currentStep === 1 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 1 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
                             <span x-show="currentStep <= 1">1</span>
                             <span x-show="currentStep > 1">✓</span>
@@ -37,7 +38,8 @@
                 <!-- Step 2 Tab (Rekening Belanja & Jenis ASTAP PMDN 108) -->
                 <button type="button" @click="goToStep(2)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0"
+                             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;"
                              :class="currentStep === 2 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 2 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
                             <span x-show="currentStep <= 2">2</span>
                             <span x-show="currentStep > 2">✓</span>
@@ -53,7 +55,8 @@
                 <!-- Step 3 Tab (Dokumen Pembelian / Rincian Belanja Modal) -->
                 <button type="button" @click="goToStep(3)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0"
+                             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;"
                              :class="currentStep === 3 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : (currentStep > 3 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
                             <span x-show="currentStep <= 3">3</span>
                             <span x-show="currentStep > 3">✓</span>
@@ -69,7 +72,8 @@
                 <!-- Step 4 Tab (Penyedia & PPK) -->
                 <button type="button" @click="goToStep(4)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 sm:hover:bg-transparent transition-all">
                     <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
-                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center transition-all shrink-0"
+                        <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0"
+                             style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;"
                              :class="currentStep === 4 ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30' : 'bg-slate-950 text-slate-500 border border-slate-800'">
                             <span>4</span>
                         </div>
