@@ -31,7 +31,7 @@
                         </div>
                         <div class="p-3.5 px-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 text-center shadow-inner min-w-[130px]">
                             <span class="text-[10px] uppercase tracking-wider font-bold text-rose-400 block mb-0.5">30 Hari Terakhir</span>
-                            <span class="text-2xl font-black text-rose-300 font-mono">{{ $totalThisMonth }}</span>
+                            <span class="text-2xl font-black text-rose-300 font-mono" x-text="totalThisMonth">{{ $totalThisMonth }}</span>
                             <span class="text-[10px] text-slate-500 block">Aktivitas Hapus</span>
                         </div>
                     </div>
@@ -1123,6 +1123,7 @@
                 distribusis: {{ Js::from($deletedDistribusis) }},
                 units: {{ Js::from($deletedUnits) }},
                 users: {{ Js::from($deletedUsers ?? []) }},
+                totalThisMonth: {{ (int) $totalThisMonth }},
                 astapSubTab: 'packet',
 
                 selectedIds: [],
@@ -1228,6 +1229,47 @@
                     this.showDetailModal = true;
                 },
 
+                removeItemsFromState(targetMod, ids, extra = {}) {
+                    if (!Array.isArray(ids)) {
+                        ids = [ids];
+                    }
+                    const idSet = new Set(ids.map(id => Number(id)));
+
+                    if (targetMod === 'mutasi') {
+                        this.mutasis = this.mutasis.filter(i => !idSet.has(Number(i.id)));
+                    } else if (targetMod === 'nibar') {
+                        this.nibars = this.nibars.filter(i => !idSet.has(Number(i.id)));
+                        if (extra && extra.astap_id && extra.astap_restored) {
+                            this.astaps = this.astaps.filter(i => Number(i.id) !== Number(extra.astap_id));
+                        }
+                        if (extra && Array.isArray(extra.restored_parent_ids)) {
+                            const parentSet = new Set(extra.restored_parent_ids.map(Number));
+                            this.astaps = this.astaps.filter(i => !parentSet.has(Number(i.id)));
+                        }
+                    } else if (targetMod === 'astap') {
+                        this.astaps = this.astaps.filter(i => !idSet.has(Number(i.id)));
+                        this.nibars = this.nibars.filter(n => !idSet.has(Number(n.astap_id)));
+                    } else if (targetMod === 'distribusi') {
+                        this.distribusis = this.distribusis.filter(i => !idSet.has(Number(i.id)));
+                    } else if (targetMod === 'unit') {
+                        this.units = this.units.filter(i => !idSet.has(Number(i.id)));
+                    } else if (targetMod === 'users') {
+                        this.users = this.users.filter(i => !idSet.has(Number(i.id)));
+                    }
+
+                    // Kurangi total aktivitas hapus 30 hari terakhir
+                    this.totalThisMonth = Math.max(0, this.totalThisMonth - ids.length);
+
+                    // Hilangkan ID yang sudah diproses dari seleksi checkbox
+                    this.selectedIds = this.selectedIds.filter(id => !idSet.has(Number(id)));
+
+                    // Tutup modal detail jika item yang sedang dibuka terpengaruh
+                    if (this.selectedItem && idSet.has(Number(this.selectedItem.id))) {
+                        this.showDetailModal = false;
+                        this.selectedItem = null;
+                    }
+                },
+
                 restoreSingle(module, item) {
                     if (!item) return;
                     const targetMod = module || this.currentTargetModule;
@@ -1252,18 +1294,20 @@
                                     'Accept': 'application/json'
                                 }
                             })
-                            .then(res => res.json())
-                            .then(d => {
-                                if (d.success) {
-                                    this.showSimatToast(d.message || 'Data berhasil dipulihkan!', 'success');
-                                    setTimeout(() => window.location.reload(), 600);
-                                } else {
-                                    this.showSimatToast(d.message || 'Gagal memulihkan data.', 'error');
+                            .then(async res => {
+                                const d = await res.json().catch(() => ({}));
+                                if (!res.ok || !d.success) {
+                                    throw new Error(d.message || 'Gagal memulihkan data.');
                                 }
+                                return d;
+                            })
+                            .then(d => {
+                                this.showSimatToast(d.message || 'Data berhasil dipulihkan!', 'success');
+                                this.removeItemsFromState(targetMod, [item.id], d);
                             })
                             .catch(err => {
                                 console.error('restore error:', err);
-                                window.location.reload();
+                                this.showSimatToast(err.message || 'Gagal memulihkan data.', 'error');
                             });
                         }
                     });
@@ -1274,6 +1318,7 @@
                     const count = this.selectedIds.length;
                     const targetMod = module || this.currentTargetModule;
                     const entityName = targetMod === 'nibar' ? 'register NIBAR' : 'data';
+                    const targetIds = [...this.selectedIds];
 
                     this.askConfirmation({
                         title: 'Konfirmasi Pulihkan Massal',
@@ -1290,20 +1335,22 @@
                                     'Content-Type': 'application/json',
                                     'Accept': 'application/json'
                                 },
-                                body: JSON.stringify({ ids: this.selectedIds })
+                                body: JSON.stringify({ ids: targetIds })
                             })
-                            .then(res => res.json())
-                            .then(d => {
-                                if (d.success) {
-                                    this.showSimatToast(d.message || 'Data berhasil dipulihkan!', 'success');
-                                    setTimeout(() => window.location.reload(), 600);
-                                } else {
-                                    this.showSimatToast(d.message || 'Gagal memulihkan massal.', 'error');
+                            .then(async res => {
+                                const d = await res.json().catch(() => ({}));
+                                if (!res.ok || !d.success) {
+                                    throw new Error(d.message || 'Gagal memulihkan massal.');
                                 }
+                                return d;
+                            })
+                            .then(d => {
+                                this.showSimatToast(d.message || 'Data berhasil dipulihkan!', 'success');
+                                this.removeItemsFromState(targetMod, targetIds, d);
                             })
                             .catch(err => {
                                 console.error('bulk restore error:', err);
-                                window.location.reload();
+                                this.showSimatToast(err.message || 'Gagal memulihkan massal.', 'error');
                             });
                         }
                     });
@@ -1313,10 +1360,11 @@
                     if (this.selectedIds.length === 0) return;
                     const count = this.selectedIds.length;
                     const targetMod = module || this.currentTargetModule;
+                    const targetIds = [...this.selectedIds];
 
                     // BLOKIR PENGHAPUSAN MASSAL JIKA ADA UNIT YANG MASIH MEMILIKI ASET
                     if (targetMod === 'unit') {
-                        const unitsWithAssets = this.units.filter(u => this.selectedIds.includes(u.id) && Number(u.total_aset) > 0);
+                        const unitsWithAssets = this.units.filter(u => targetIds.includes(u.id) && Number(u.total_aset) > 0);
                         if (unitsWithAssets.length > 0) {
                             const totalAsetCount = unitsWithAssets.reduce((sum, u) => sum + Number(u.total_aset), 0);
                             const unitNames = unitsWithAssets.map(u => u.nama).slice(0, 3).join(', ') + (unitsWithAssets.length > 3 ? '...' : '');
@@ -1336,7 +1384,7 @@
                         }
 
                         // BLOKIR PENGHAPUSAN MASSAL JIKA ADA UNIT YANG MEMILIKI RIWAYAT BAST DISTRIBUSI
-                        const unitsWithBasts = this.units.filter(u => this.selectedIds.includes(u.id) && Number(u.total_bast) > 0);
+                        const unitsWithBasts = this.units.filter(u => targetIds.includes(u.id) && Number(u.total_bast) > 0);
                         if (unitsWithBasts.length > 0) {
                             const totalBastCount = unitsWithBasts.reduce((sum, u) => sum + Number(u.total_bast), 0);
                             const unitNames = unitsWithBasts.map(u => u.nama).slice(0, 3).join(', ') + (unitsWithBasts.length > 3 ? '...' : '');
@@ -1376,20 +1424,22 @@
                                     'Content-Type': 'application/json',
                                     'Accept': 'application/json'
                                 },
-                                body: JSON.stringify({ ids: this.selectedIds })
+                                body: JSON.stringify({ ids: targetIds })
                             })
-                            .then(res => res.json())
-                            .then(d => {
-                                if (d.success) {
-                                    this.showSimatToast(d.message || 'Data terpilih berhasil dihapus permanen!', 'success');
-                                    setTimeout(() => window.location.reload(), 600);
-                                } else {
-                                    this.showSimatToast(d.message || 'Gagal menghapus data permanen.', 'error');
+                            .then(async res => {
+                                const d = await res.json().catch(() => ({}));
+                                if (!res.ok || !d.success) {
+                                    throw new Error(d.message || 'Gagal menghapus data permanen.');
                                 }
+                                return d;
+                            })
+                            .then(d => {
+                                this.showSimatToast(d.message || 'Data terpilih berhasil dihapus permanen!', 'success');
+                                this.removeItemsFromState(targetMod, targetIds, d);
                             })
                             .catch(err => {
                                 console.error('bulk force delete error:', err);
-                                window.location.reload();
+                                this.showSimatToast(err.message || 'Gagal menghapus data permanen.', 'error');
                             });
                         }
                     });
@@ -1457,18 +1507,20 @@
                                     'Accept': 'application/json'
                                 }
                             })
-                            .then(res => res.json())
-                            .then(d => {
-                                if (d.success) {
-                                    this.showSimatToast(d.message || 'Data telah dihapus permanen.', 'success');
-                                    setTimeout(() => window.location.reload(), 600);
-                                } else {
-                                    this.showSimatToast(d.message || 'Gagal menghapus permanen.', 'error');
+                            .then(async res => {
+                                const d = await res.json().catch(() => ({}));
+                                if (!res.ok || !d.success) {
+                                    throw new Error(d.message || 'Gagal menghapus permanen.');
                                 }
+                                return d;
+                            })
+                            .then(d => {
+                                this.showSimatToast(d.message || 'Data telah dihapus permanen.', 'success');
+                                this.removeItemsFromState(targetMod, [item.id], d);
                             })
                             .catch(err => {
                                 console.error('force delete error:', err);
-                                window.location.reload();
+                                this.showSimatToast(err.message || 'Gagal menghapus permanen.', 'error');
                             });
                         }
                     });

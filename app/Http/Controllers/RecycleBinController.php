@@ -495,7 +495,12 @@ class RecycleBinController extends Controller
 
         session()->flash('success', $msg);
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => $msg]);
+            return response()->json([
+                'success'        => true,
+                'message'        => $msg,
+                'astap_restored' => $astapRestored ?? false,
+                'astap_id'       => isset($astap) && ($astapRestored ?? false) ? $astap->id : null,
+            ]);
         }
 
         return redirect()->route('recycle_bin.index', ['tab' => $module === 'nibar' ? 'astap' : $module])->with('success', $msg);
@@ -613,7 +618,12 @@ class RecycleBinController extends Controller
 
         session()->flash('success', $msg);
         if ($request->wantsJson()) {
-            return response()->json(['success' => true, 'message' => $msg, 'count' => $restoredCount]);
+            return response()->json([
+                'success'             => true,
+                'message'             => $msg,
+                'count'               => $restoredCount,
+                'restored_parent_ids' => isset($astapParents) ? array_keys($astapParents) : [],
+            ]);
         }
 
         return redirect()->route('recycle_bin.index', ['tab' => $module])->with('success', $msg);
