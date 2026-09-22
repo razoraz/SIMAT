@@ -227,10 +227,10 @@
                                                 tabindex="-1"
                                                 :title="item.nama_barang ? ('Total ' + getMatchingNibarCount(item) + ' ' + (item.satuan || 'Unit') + ' berstatus Tersedia dan kondisi Baik di gudang aset') : 'Pilih nama barang terlebih dahulu'"
                                                 :class="!item.nama_barang ? 'bg-slate-950/80 text-slate-500 border-slate-800' : (getMatchingNibarCount(item) > 0 ? 'bg-slate-900 text-teal-300 border-teal-500/40 shadow-sm' : 'bg-slate-950/90 text-rose-400 border-rose-500/30')"
-                                                class="w-full h-11 border rounded-xl px-4 py-2.5 text-xs font-mono font-bold cursor-not-allowed select-none focus:outline-none transition-all">
+                                                class="w-full h-11 border rounded-xl px-4 py-2.5 pr-16 text-xs font-mono font-bold cursor-not-allowed select-none focus:outline-none transition-all">
                                             
                                             <!-- Suffix status icon di dalam kotak input -->
-                                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <div style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10;">
                                                 <template x-if="item.nama_barang && getMatchingNibarCount(item) > 0">
                                                     <span class="text-[10px] px-2 py-0.5 rounded-md bg-teal-500/15 text-teal-300 border border-teal-500/30 font-bold font-mono">✓ Siap</span>
                                                 </template>
@@ -281,7 +281,8 @@
                                                 :class="formData.status === 'Ditolak' ? 'bg-slate-950/80 text-slate-400 cursor-not-allowed border-slate-800' : 'bg-slate-900 text-white border-slate-700/90 focus:border-teal-500'"
                                                 class="w-full h-11 border rounded-xl px-4 py-2.5 pr-20 text-xs font-mono font-bold focus:outline-none transition-all">
                                             <!-- Suffix Satuan otomatis -->
-                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-teal-300 font-bold text-xs pointer-events-none px-2 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/20"
+                                            <span style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10;"
+                                                  class="text-teal-300 font-bold text-xs px-2 py-0.5 rounded-lg bg-teal-500/10 border border-teal-500/20"
                                                   x-text="item.satuan || 'Unit'"></span>
                                         </div>
                                         <!-- Helper Note jika Pengajuan > Stok Tersedia -->
@@ -314,8 +315,9 @@
                                                     tabindex="-1"
                                                     title="Volume Di-ACC terisi otomatis mengikuti jumlah NIBAR yang diinput dan tidak dapat diedit manual"
                                                     :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-400 border-slate-800' : 'text-emerald-400 border-emerald-500/30'"
-                                                    class="w-full h-11 bg-slate-950/80 font-mono font-bold border rounded-xl px-4 py-2.5 text-xs cursor-not-allowed select-none focus:outline-none shadow-inner">
-                                                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 pointer-events-none" :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-600' : 'text-emerald-400/80'">
+                                                    class="w-full h-11 bg-slate-950/80 font-mono font-bold border rounded-xl px-4 py-2.5 pr-10 text-xs cursor-not-allowed select-none focus:outline-none shadow-inner">
+                                                <div style="position: absolute; right: 12px; left: auto; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10;"
+                                                     class="flex items-center space-x-1" :class="(!item.qty_acc || item.qty_acc <= 0) ? 'text-slate-600' : 'text-emerald-400/80'">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                                                 </div>
                                             </div>

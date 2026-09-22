@@ -284,8 +284,8 @@
                                                         <input type="number" min="0" max="100" x-model.number="item.kdp_progres_persen" 
                                                                @input="if (item.kdp_progres_persen < 0) item.kdp_progres_persen = 0; if (item.kdp_progres_persen > 100) item.kdp_progres_persen = 100;"
                                                                placeholder="65"
-                                                               class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 text-xs text-rose-300 font-mono font-black focus:outline-none focus:border-rose-400">
-                                                        <span class="absolute right-3 top-2 text-rose-400 text-xs font-bold">%</span>
+                                                               class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 pr-7 text-xs text-rose-300 font-mono font-black focus:outline-none focus:border-rose-400">
+                                                        <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none;" class="text-rose-400 text-xs font-bold">%</span>
                                                     </div>
                                                     <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
                                                         <div class="bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 h-2 rounded-full transition-all duration-300" :style="'width: ' + (item.kdp_progres_persen || 0) + '%'"></div>
