@@ -21,6 +21,7 @@ class RecycleBinController extends Controller
      */
     public function index(Request $request)
     {
+        Carbon::setLocale('id');
         $user = Auth::user();
         $activeTab = $request->query('tab', 'astap');
         if ($activeTab === 'bast') {
@@ -59,7 +60,7 @@ class RecycleBinController extends Controller
                 ];
             })->values()->toArray();
 
-            $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at) : null;
+            $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') : null;
 
             return [
                 'id'                   => $m->id,
@@ -76,8 +77,8 @@ class RecycleBinController extends Controller
                 'status_terakhir'      => $m->status,
                 'alasan_mutasi'        => $m->alasan_mutasi ?: '-',
                 'deleted_by'           => $m->deleted_by ?: 'Administrator',
-                'deleted_at'           => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative'  => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at'           => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative'  => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'       => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
@@ -94,7 +95,7 @@ class RecycleBinController extends Controller
         $deletedAstaps = $rawDeletedAstaps->map(function ($a) {
             $regCount = $a->registers->count();
             $firstReg = $a->registers->first();
-            $deletedAt = $a->deleted_at ? Carbon::parse($a->deleted_at) : null;
+            $deletedAt = $a->deleted_at ? Carbon::parse($a->deleted_at)->timezone('Asia/Jakarta') : null;
 
             $registersMapped = $a->registers->map(function ($r, $idx) {
                 return [
@@ -122,8 +123,8 @@ class RecycleBinController extends Controller
                 'item_count'          => $regCount,
                 'items'               => $registersMapped,
                 'deleted_by'          => $a->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
@@ -142,7 +143,7 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedNibars = $rawDeletedNibars->map(function ($r) {
-            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at) : null;
+            $deletedAt = $r->deleted_at ? Carbon::parse($r->deleted_at)->timezone('Asia/Jakarta') : null;
             return [
                 'id'                  => $r->id,
                 'astap_id'            => $r->astap_id,
@@ -157,8 +158,8 @@ class RecycleBinController extends Controller
                 'spk_nomor'           => $r->astap?->spk_nomor ?: '-',
                 'tahun'               => $r->astap?->tahun_perolehan ?: '-',
                 'deleted_by'          => $r->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
@@ -173,7 +174,9 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedDistribusis = $rawDeletedDistribusis->map(function ($d) {
-            $deletedAt = $d->deleted_at ? Carbon::parse($d->deleted_at) : null;
+            $deletedAt = $d->deleted_at ? Carbon::parse($d->deleted_at)->timezone('Asia/Jakarta') : null;
+            $tglCarbon = $d->tanggal_distribusi ? Carbon::parse($d->tanggal_distribusi)->timezone('Asia/Jakarta') : ($d->created_at ? Carbon::parse($d->created_at)->timezone('Asia/Jakarta') : null);
+            $totalQty  = $d->items->sum('qty');
             $itemsMapped = $d->items->map(function ($it, $idx) {
                 $nibars = $it->registers->map(fn($r) => $r->astapRegister?->nibar ?: '-')->filter()->implode(', ');
                 return [
@@ -189,6 +192,8 @@ class RecycleBinController extends Controller
                 'kode'                => $d->kode,
                 'bast_nomor'          => $d->bast_nomor ?: '-',
                 'tujuan'              => $d->unit?->nama ?? '-',
+                'tanggal'             => $tglCarbon ? $tglCarbon->locale('id')->translatedFormat('d M Y') : '-',
+                'total_qty'           => $totalQty . ' Unit',
                 'pj_nama'             => $d->unit?->kepala ?? '-',
                 'pj_nip'              => $d->unit?->nip ?? '-',
                 'status'              => $d->status,
@@ -197,8 +202,8 @@ class RecycleBinController extends Controller
                 'items'               => $itemsMapped,
                 'keterangan'          => $d->keterangan ?: '-',
                 'deleted_by'          => $d->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
@@ -215,7 +220,7 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedUnits = $rawDeletedUnits->map(function ($u) {
-            $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at) : null;
+            $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at)->timezone('Asia/Jakarta') : null;
             $bastCount = \App\Models\Distribusi::where('unit_id', $u->id)->count();
             return [
                 'id'                  => $u->id,
@@ -228,8 +233,8 @@ class RecycleBinController extends Controller
                 'total_aset'          => $u->total_aset ?: 0,
                 'total_bast'          => $bastCount,
                 'deleted_by'          => $u->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
@@ -244,7 +249,7 @@ class RecycleBinController extends Controller
             ->get();
 
         $deletedUsers = $rawDeletedUsers->map(function ($u) {
-            $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at) : null;
+            $deletedAt = $u->deleted_at ? Carbon::parse($u->deleted_at)->timezone('Asia/Jakarta') : null;
             return [
                 'id'                  => $u->id,
                 'name'                => $u->name,
@@ -257,8 +262,8 @@ class RecycleBinController extends Controller
                 'status'              => $u->status ?: 'Aktif',
                 'permissions'         => $u->permissions ?? [],
                 'deleted_by'          => $u->deleted_by ?: 'Administrator',
-                'deleted_at'          => $deletedAt ? $deletedAt->translatedFormat('d M Y, H:i') . ' WIB' : '-',
-                'deleted_at_relative' => $deletedAt ? $deletedAt->diffForHumans() : '-',
+                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
                 'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
             ];
         });
