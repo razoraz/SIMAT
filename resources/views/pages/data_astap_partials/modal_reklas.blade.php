@@ -54,11 +54,18 @@
                                      x-text="((reklasJenis === 'extracom' || reklasJenis === 'intracom') ? getReklasExtracomTotalVolume() : (selectedAstapReklas?.jumlah_volume || 1)) + ' Unit'"></div>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-2 pt-2 border-t border-slate-800/80">
-                            <span class="text-[11px] text-slate-400">Kategori Saat Ini:</span>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0"
-                                  x-text="selectedAstapReklas?.category || '-'"></span>
-                            <span class="text-[11px] text-slate-300 truncate" x-text="selectedAstapReklas?.jenis_aset_nama || ''"></span>
+                        <div class="pt-2.5 border-t border-slate-800/80 space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[11px] text-slate-400 shrink-0">Kategori Saat Ini:</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0"
+                                      x-text="selectedAstapReklas?.category || '-'"></span>
+                                <span class="text-[11px] text-slate-300 truncate" x-text="selectedAstapReklas?.jenis_aset_nama || ''"></span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                                <span class="text-slate-400 shrink-0">📄 No. Bukti / BAST / SPK:</span>
+                                <span class="font-mono text-cyan-300 font-semibold px-2.5 py-0.5 rounded-lg bg-slate-900 border border-slate-700/80 text-[11px]"
+                                      x-text="getReklasNoBuktiDisplay()"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -182,29 +189,146 @@
                     <!-- Input Dinamis Berdasarkan Jenis Reklas -->
                     <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                         <!-- Jika Pindah KIB / Koreksi Rekening -->
-                        <div x-show="reklasJenis === 'pindah_kib'" class="space-y-3">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📦 Klasifikasi / KIB Tujuan:</label>
-                                    <select x-model="reklasTujuanKib"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
-                                        <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
-                                        <option value="KIB A">KIB A - Tanah</option>
-                                        <option value="KIB B">KIB B - Peralatan &amp; Mesin</option>
-                                        <option value="KIB C">KIB C - Gedung &amp; Bangunan</option>
-                                        <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi</option>
-                                        <option value="KIB E">KIB E - Aset Tetap Lainnya</option>
-                                        <option value="ATB">ATB - Aset Tidak Berwujud</option>
-                                        <option value="ASET LAIN">Aset Lain-Lain</option>
-                                    </select>
+                        <div x-show="reklasJenis === 'pindah_kib'" class="space-y-4">
+                            
+                            <!-- Tingkat 1: Klasifikasi / KIB Tujuan -->
+                            <div class="space-y-1.5">
+                                <label class="block text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5">
+                                    <span class="w-4 h-4 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[9px] font-black flex items-center justify-center">1</span>
+                                    <span>📦 Klasifikasi / KIB Tujuan:</span>
+                                </label>
+                                <select x-model="reklasTujuanKib" @change="onReklasTujuanKibChange()"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                                    <option value="">-- Pilih KIB / Kelompok Tujuan --</option>
+                                    <option value="KIB A">KIB A - Tanah (1.3.1)</option>
+                                    <option value="KIB B">KIB B - Peralatan &amp; Mesin (1.3.2)</option>
+                                    <option value="KIB C">KIB C - Gedung &amp; Bangunan (1.3.3)</option>
+                                    <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
+                                    <option value="KIB E">KIB E - Aset Tetap Lainnya (1.3.5)</option>
+                                    <option value="ATB">ATB - Aset Tidak Berwujud (1.5.3)</option>
+                                    <option value="ASET LAIN">Aset Lain-Lain</option>
+                                </select>
+                            </div>
+
+                            <!-- Tingkat 2: Sub-Rincian Objek PMDN 108 -->
+                            <div class="space-y-1.5 relative" @click.away="isReklasSubRincianOpen = false">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-black flex items-center justify-center">2</span>
+                                        <span>🏷️ Sub-Rincian Objek Rekening 108:</span>
+                                    </label>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" 
+                                                x-show="reklasSubRincianKode" 
+                                                @click="clearReklasSubRincian()" 
+                                                class="text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors flex items-center space-x-1 cursor-pointer">
+                                            <span>🗑️ Kosongkan</span>
+                                        </button>
+                                        <button type="button" 
+                                                x-show="reklasSubRincianKode && !isReklasSubRincianOpen" 
+                                                @click="isReklasSubRincianOpen = true; searchReklasSubRincian = ''" 
+                                                class="text-[11px] font-bold text-rose-400 hover:text-rose-300 transition-colors flex items-center space-x-1 cursor-pointer">
+                                            <span>✕ Ganti</span>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏷️ Sub-Rincian Rekening Simda 108:</label>
-                                    <input type="text" x-model="reklasTujuanKode" placeholder="Contoh: 1.3.2.05.01 Alat Kantor"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+                                <div class="relative">
+                                    <input type="text" 
+                                           :value="(!isReklasSubRincianOpen && reklasSubRincianKode) ? (reklasSubRincianKode + ' - ' + reklasSubRincianNama) : searchReklasSubRincian"
+                                           @input="searchReklasSubRincian = $event.target.value; isReklasSubRincianOpen = true"
+                                           @focus="isReklasSubRincianOpen = true"
+                                           :placeholder="reklasSubRincianKode ? (reklasSubRincianKode + ' - ' + reklasSubRincianNama) : (reklasTujuanKib ? 'Ketik untuk memfilter sub rincian pada ' + reklasTujuanKib + '...' : 'Pilih KIB tujuan atau ketik sub rincian 108...')" 
+                                           class="w-full bg-slate-900 border rounded-xl px-3.5 py-2.5 pl-9 text-xs font-bold transition-all shadow-inner"
+                                           :class="reklasSubRincianKode && !isReklasSubRincianOpen ? 'border-emerald-500/60 text-emerald-200' : 'border-slate-700 text-white focus:border-emerald-400'">
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+
+                                <!-- Dropdown List Sub Rincian -->
+                                <div x-show="isReklasSubRincianOpen" x-transition x-cloak style="max-height: 185px !important; overflow-y: auto !important;" class="absolute z-30 mt-1.5 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-emerald-500/50 rounded-xl shadow-2xl backdrop-blur-xl">
+                                    <template x-for="s in filteredReklasSubRincian108" :key="s.kode">
+                                        <div @click="selectReklasSubRincian(s)"
+                                             class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                             :class="s.kode === reklasSubRincianKode ? 'border-emerald-500 bg-emerald-950/40 shadow-md' : 'border-slate-800 hover:border-emerald-500/50'">
+                                            <div class="min-w-0 pr-2">
+                                                <h4 class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors truncate" x-text="s.kode + ' - ' + s.nama"></h4>
+                                                <p class="text-[10px] text-slate-400 truncate" x-text="'SUB RINCIAN 108'"></p>
+                                            </div>
+                                            <button type="button" 
+                                                    class="shrink-0 px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all"
+                                                    :class="s.kode === reklasSubRincianKode ? 'bg-emerald-500 text-slate-950' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'">
+                                                <span x-text="s.kode === reklasSubRincianKode ? '✓ Terpilih' : 'Pilih →'"></span>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="isReklasSubRincianOpen && filteredReklasSubRincian108.length === 0">
+                                        <div class="p-3 text-center text-xs text-slate-400 italic">
+                                            Tidak ada sub rincian 108 yang cocok.
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
-                            <p class="text-[10px] text-slate-400">Digunakan jika aset salah kamar kelompok KIB atau salah sub-rincian kode rekening Simda BMD 108.</p>
+
+                            <!-- Tingkat 3: Sub-Sub Rincian Objek PMDN 108 (Identitas Barang / Kode 108) -->
+                            <div class="space-y-1.5 relative" @click.away="isReklasSubSubRincianOpen = false">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span class="w-4 h-4 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[9px] font-black flex items-center justify-center">3</span>
+                                        <span>🔖 Sub-Sub Rincian Objek 108 (Identitas / Nama Barang):</span>
+                                    </label>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="button" 
+                                                x-show="reklasSubSubRincianKode" 
+                                                @click="clearReklasSubSubRincian()" 
+                                                class="text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors flex items-center space-x-1 cursor-pointer">
+                                            <span>🗑️ Kosongkan</span>
+                                        </button>
+                                        <button type="button" 
+                                                x-show="reklasSubSubRincianKode && !isReklasSubSubRincianOpen" 
+                                                @click="isReklasSubSubRincianOpen = true; searchReklasSubSubRincian = ''" 
+                                                class="text-[11px] font-bold text-rose-400 hover:text-rose-300 transition-colors flex items-center space-x-1 cursor-pointer">
+                                            <span>✕ Ganti Barang</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <input type="text" 
+                                           :value="(!isReklasSubSubRincianOpen && reklasSubSubRincianKode) ? (reklasSubSubRincianKode + ' - ' + reklasSubSubRincianNama) : searchReklasSubSubRincian"
+                                           @input="searchReklasSubSubRincian = $event.target.value; isReklasSubSubRincianOpen = true"
+                                           @focus="isReklasSubSubRincianOpen = true"
+                                           :placeholder="reklasSubSubRincianKode ? (reklasSubSubRincianKode + ' - ' + reklasSubSubRincianNama) : 'Ketik nama / kode barang untuk mencari spesifik...'" 
+                                           class="w-full bg-slate-900 border rounded-xl px-3.5 py-2.5 pl-9 text-xs font-bold transition-all shadow-inner"
+                                           :class="reklasSubSubRincianKode && !isReklasSubSubRincianOpen ? 'border-purple-500/60 text-purple-200' : 'border-slate-700 text-white focus:border-purple-400'">
+                                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </div>
+
+                                <!-- Dropdown List Sub-Sub Rincian -->
+                                <div x-show="isReklasSubSubRincianOpen" x-transition x-cloak style="max-height: 185px !important; overflow-y: auto !important;" class="absolute z-30 mt-1.5 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-purple-500/50 rounded-xl shadow-2xl backdrop-blur-xl">
+                                    <template x-for="item in filteredReklasSubSubRincian108" :key="item.kode">
+                                        <div @click="selectReklasSubSubRincian(item)"
+                                             class="p-2.5 rounded-xl bg-slate-950 border transition-all flex items-center justify-between group cursor-pointer"
+                                             :class="item.kode === reklasSubSubRincianKode ? 'border-purple-500 bg-purple-950/40 shadow-md' : 'border-slate-800 hover:border-purple-500/50'">
+                                            <div class="min-w-0 pr-2">
+                                                <h4 class="text-xs font-bold text-white group-hover:text-purple-300 transition-colors truncate" x-text="item.kode + ' - ' + item.nama"></h4>
+                                                <p class="text-[10px] text-slate-400 truncate" x-text="'KODE 108 • Identitas Barang Simda BMD'"></p>
+                                            </div>
+                                            <button type="button" 
+                                                    class="shrink-0 px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all"
+                                                    :class="item.kode === reklasSubSubRincianKode ? 'bg-purple-500 text-slate-950' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40'">
+                                                <span x-text="item.kode === reklasSubSubRincianKode ? '✓ Terpilih' : 'Pilih →'"></span>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="isReklasSubSubRincianOpen && filteredReklasSubSubRincian108.length === 0">
+                                        <div class="p-3 text-center text-xs text-slate-400 italic">
+                                            Tidak ada nama barang 108 yang cocok.
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <p class="text-[10.5px] text-slate-400 italic">
+                                💡 <strong class="text-indigo-300">Catatan:</strong> Pilih KIB tujuan terlebih dahulu, kemudian Anda dapat memilih Sub-Rincian dan Sub-Sub Rincian 108 secara berjenjang persis seperti pada Formulir ASTAP Langkah 2.
+                            </p>
                         </div>
 
                         <!-- Jika KDP: Pilihan KIB Tujuan Definitif -->
@@ -350,17 +474,6 @@
 
                         <!-- Jika Ekstrakomptabel ATAU Kapitalisasi Intrakomptabel: Form Penyesuaian Harga Satuan per Item -->
                         <div x-show="reklasJenis === 'extracom' || reklasJenis === 'intracom'" class="space-y-3">
-                            <!-- Jika Intrakom: Pilihan KIB Tujuan -->
-                            <div x-show="reklasJenis === 'intracom'" class="p-3.5 rounded-xl bg-slate-900 border border-emerald-500/30 space-y-1.5">
-                                <label class="block text-emerald-300 font-bold text-[10.5px] uppercase tracking-wider">🎯 KIB Tujuan Intrakomtable:</label>
-                                <select x-model="reklasTujuanKib"
-                                        class="w-full bg-slate-950 border border-emerald-500/50 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-emerald-400">
-                                    <option value="KIB B">KIB B - Peralatan &amp; Mesin (Definitif)</option>
-                                    <option value="KIB E">KIB E - Aset Tetap Lainnya (Definitif)</option>
-                                </select>
-                                <p class="text-[10px] text-slate-400">Aset akan dipindahkan dari Ekstrakomtable ke KIB terpilih di Neraca Aset Tetap.</p>
-                            </div>
-
                             <!-- Info Box Penjelasan -->
                             <div x-show="reklasJenis === 'extracom'" class="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 flex items-start space-x-2.5">
                                 <span class="text-amber-400 text-sm shrink-0">💡</span>
@@ -549,18 +662,11 @@
                             </div>
                         </div>
 
-                        <!-- Dasar Bukti Belanja / BAST & Tanggal Efektif -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📄 No. Bukti Belanja / BAST / SPK:</label>
-                                <input type="text" x-model="reklasNomorBa" placeholder="Kosongkan jika menggunakan bukti transaksi belanja"
-                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📅 Tanggal Efektif Reklas:</label>
-                                <input type="date" x-model="reklasTanggal"
-                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
-                            </div>
+                        <!-- Tanggal Efektif Reklas -->
+                        <div>
+                            <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📅 Tanggal Efektif Reklas:</label>
+                            <input type="date" x-model="reklasTanggal"
+                                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
                         </div>
 
                         <!-- Keterangan / Alasan Reklasifikasi -->
@@ -581,16 +687,29 @@
                            x-text="getReklasNarasiPreview()"></p>
                     </div>
 
+                </div>
+
+                <!-- 3. Modal Footer Actions (Fixed Bottom) -->
+                <div class="shrink-0 px-6 py-3.5 border-t border-slate-800/90 bg-slate-950/70 flex items-center justify-end space-x-3">
+                    <button type="button" @click="showReklasModal = false"
+                        class="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700/80 shadow-sm transition-all active:scale-95 cursor-pointer">
+                        Batal
+                    </button>
                     <button type="button" @click="submitReklas()"
                         :disabled="isSubmittingReklas"
-                        class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 cursor-pointer">
+                        class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 border border-indigo-500/50 hover:border-indigo-400 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 cursor-pointer">
                         <template x-if="isSubmittingReklas">
-                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <svg class="animate-spin w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         </template>
-                        <span x-text="isSubmittingReklas ? 'Menyimpan...' : '💾 Simpan Reklasifikasi'"></span>
+                        <template x-if="!isSubmittingReklas">
+                            <svg class="w-4 h-4 text-indigo-100 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </template>
+                        <span x-text="isSubmittingReklas ? 'Menyimpan...' : 'Simpan Reklasifikasi'"></span>
                     </button>
                 </div>
 

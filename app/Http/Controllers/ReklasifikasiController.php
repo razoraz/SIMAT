@@ -189,6 +189,9 @@ class ReklasifikasiController extends Controller
             'jenis_reklasifikasi_tujuan_id' => 'nullable|exists:jenis_reklasifikasis,id',
             'asal_kib' => 'nullable|string|max:50',
             'tujuan_kib' => 'nullable|string|max:50',
+            'tujuan_kode' => 'nullable|string|max:100',
+            'tujuan_nama' => 'nullable|string|max:255',
+            'kode_108' => 'nullable|string|max:100',
             'nilai_reklas' => 'required|numeric|min:0',
             'tanggal_reklas' => 'required|date',
             'triwulan' => 'required|integer|between:1,4',
@@ -479,7 +482,22 @@ class ReklasifikasiController extends Controller
                 }
             } elseif ($validated['jenis_reklas'] === 'KOREKSI_REKENING') {
                 $targetKib = $validated['tujuan_kib'] ?? null;
-                if ($targetKib) {
+                $targetKode = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
+                $targetNama = $request->input('tujuan_nama');
+
+                if ($targetKode) {
+                    $matchingJenis = JenisAstap::where('sub_sub_rincian_objek', $targetKode)
+                        ->orWhere('sub_rincian_objek', $targetKode)
+                        ->orWhere('jenis', $targetKode)
+                        ->first();
+                    if ($matchingJenis) {
+                        $astap->jenis_astap_id = $matchingJenis->id;
+                    }
+                    $astap->kode_108 = $targetKode;
+                    if ($targetNama && !empty($matchingJenis?->sub_sub_rincian_objek)) {
+                        $astap->nama_barang = $targetNama;
+                    }
+                } elseif ($targetKib) {
                     $kibPrefixMap = [
                         'KIB A' => '1.3.1',
                         'KIB B' => '1.3.2',

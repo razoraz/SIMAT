@@ -2449,6 +2449,88 @@
                     else if (this.isKdp) this.syncKdpFieldsToMain();
                     this.syncRealisasiFromStep3();
 
+                    // 1. Validasi Riwayat Dokumen Pembelian Utama (Wajib 1 Dokumen Terpilih)
+                    const docType = this.formData.doc_type || 'spk';
+                    if (docType === 'spk') {
+                        if (!this.formData.spk_nomor || !String(this.formData.spk_nomor).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Nomor SPK (Kontrak) pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                        if (!this.formData.spk_tanggal || !String(this.formData.spk_tanggal).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Tanggal SPK (Kontrak) pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                    } else if (docType === 'surat_pesanan') {
+                        if (!this.formData.surat_pesanan_nomor || !String(this.formData.surat_pesanan_nomor).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Nomor Surat Pesanan / BAP pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                        if (!this.formData.surat_pesanan_tanggal || !String(this.formData.surat_pesanan_tanggal).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Tanggal Surat Pesanan / BAP pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                    } else if (docType === 'kwitansi') {
+                        if (!this.formData.kwitansi_nomor || !String(this.formData.kwitansi_nomor).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Nomor Kwitansi pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                        if (!this.formData.kwitansi_tanggal || !String(this.formData.kwitansi_tanggal).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Tanggal Kwitansi pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                    } else if (docType === 'faktur') {
+                        if (!this.formData.faktur_nomor || !String(this.formData.faktur_nomor).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Nomor Invoice / Faktur pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                        if (!this.formData.faktur_tanggal || !String(this.formData.faktur_tanggal).trim()) {
+                            return {
+                                valid: false,
+                                message: '⚠️ Tanggal Invoice / Faktur pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                            };
+                        }
+                    }
+
+                    // 2. Validasi Dokumen SP2D & BAST (Wajib Diisi Keduanya)
+                    if (!this.formData.sp2d_nomor || !String(this.formData.sp2d_nomor).trim()) {
+                        return {
+                            valid: false,
+                            message: '⚠️ Nomor SP2D pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                        };
+                    }
+                    if (!this.formData.sp2d_tanggal || !String(this.formData.sp2d_tanggal).trim()) {
+                        return {
+                            valid: false,
+                            message: '⚠️ Tanggal SP2D pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                        };
+                    }
+                    if (!this.formData.bast_dokumen_nomor || !String(this.formData.bast_dokumen_nomor).trim()) {
+                        return {
+                            valid: false,
+                            message: '⚠️ Nomor BAST (Berita Acara Serah Terima) pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                        };
+                    }
+                    if (!this.formData.bast_dokumen_tanggal || !String(this.formData.bast_dokumen_tanggal).trim()) {
+                        return {
+                            valid: false,
+                            message: '⚠️ Tanggal BAST (Berita Acara Serah Terima) pada Langkah 3 wajib diisi terlebih dahulu sebelum melanjutkan ke Langkah 4!'
+                        };
+                    }
+
                     const realisasi = Number(this.formData.jumlah_realisasi || 0);
                     const anggaran = Number(this.formData.jumlah_anggaran || 0);
 

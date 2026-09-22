@@ -6413,6 +6413,7 @@
     <script>
         window.__simatAstaps = @json(!empty($astaps) ? $astaps : []);
         window.__simatDeletedAstaps = @json(!empty($deletedAstaps) ? $deletedAstaps : []);
+        window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : \App\Models\JenisAstap::getNested108());
 
         function astapCatalog() {
             return {
@@ -6440,6 +6441,14 @@
                 reklasTujuanKib: '',
                 reklasTujuanKode: '',
                 reklasTujuanNama: '',
+                reklasSubRincianKode: '',
+                reklasSubRincianNama: '',
+                reklasSubSubRincianKode: '',
+                reklasSubSubRincianNama: '',
+                searchReklasSubRincian: '',
+                isReklasSubRincianOpen: false,
+                searchReklasSubSubRincian: '',
+                isReklasSubSubRincianOpen: false,
                 reklasNomorBa: '',
                 reklasTanggal: '',
                 reklasAlasan: '',
@@ -6680,13 +6689,225 @@
                         this.onReklasItemPriceChanged();
                     }
 
-                    let noBukti = (item.bast_dokumen_nomor || item.spk_nomor || item.kwitansi_nomor || '').trim();
-                    if (noBukti === '-' || noBukti.toLowerCase() === 'null') noBukti = '';
-                    this.reklasNomorBa = noBukti;
+                    const isValidDoc = (val) => val && typeof val === 'string' && val.trim() !== '' && val.trim() !== '-' && val.trim().toLowerCase() !== 'null';
+                    let docs = [];
+                    if (isValidDoc(item.bast_dokumen_nomor)) docs.push('BAST: ' + item.bast_dokumen_nomor.trim());
+                    if (isValidDoc(item.spk_nomor)) docs.push('SPK: ' + item.spk_nomor.trim());
+                    if (docs.length === 0) {
+                        if (isValidDoc(item.surat_pesanan_nomor)) docs.push('SP: ' + item.surat_pesanan_nomor.trim());
+                        else if (isValidDoc(item.faktur_nomor)) docs.push('Faktur: ' + item.faktur_nomor.trim());
+                        else if (isValidDoc(item.kwitansi_nomor)) docs.push('Kwitansi: ' + item.kwitansi_nomor.trim());
+                        else if (isValidDoc(item.sp2d_nomor)) docs.push('SP2D: ' + item.sp2d_nomor.trim());
+                    }
+                    this.reklasNomorBa = docs.length > 0 ? docs.join(' | ') : '';
+                    this.reklasTujuanKib = '';
                     this.reklasTujuanKode = '';
+                    this.reklasTujuanNama = '';
+                    this.reklasSubRincianKode = '';
+                    this.reklasSubRincianNama = '';
+                    this.reklasSubSubRincianKode = '';
+                    this.reklasSubSubRincianNama = '';
+                    this.searchReklasSubRincian = '';
+                    this.isReklasSubRincianOpen = false;
+                    this.searchReklasSubSubRincian = '';
+                    this.isReklasSubSubRincianOpen = false;
                     this.reklasTanggal = new Date().toISOString().split('T')[0];
                     this.reklasAlasan = '';
                     this.showReklasModal = true;
+                },
+
+                getReklasNoBuktiDisplay() {
+                    if (!this.selectedAstapReklas) return '-';
+                    const it = this.selectedAstapReklas;
+                    const isValidDoc = (val) => val && typeof val === 'string' && val.trim() !== '' && val.trim() !== '-' && val.trim().toLowerCase() !== 'null';
+                    
+                    const docs = [];
+                    if (isValidDoc(it.bast_dokumen_nomor)) docs.push(`BAST: ${it.bast_dokumen_nomor.trim()}`);
+                    if (isValidDoc(it.spk_nomor)) docs.push(`SPK: ${it.spk_nomor.trim()}`);
+                    
+                    if (docs.length === 0) {
+                        if (isValidDoc(it.surat_pesanan_nomor)) docs.push(`SP: ${it.surat_pesanan_nomor.trim()}`);
+                        else if (isValidDoc(it.faktur_nomor)) docs.push(`Faktur: ${it.faktur_nomor.trim()}`);
+                        else if (isValidDoc(it.kwitansi_nomor)) docs.push(`Kwitansi: ${it.kwitansi_nomor.trim()}`);
+                        else if (isValidDoc(it.sp2d_nomor)) docs.push(`SP2D: ${it.sp2d_nomor.trim()}`);
+                    }
+
+                    if (docs.length > 0) return docs.join(' | ');
+                    if (isValidDoc(this.reklasNomorBa)) return this.reklasNomorBa.trim();
+                    return 'Bukti Transaksi Belanja';
+                },
+
+                // Getters & Methods Filter Bertingkat 108 untuk Reklas Pindah KIB / Rekening
+                get reklasTargetJenisKode() {
+                    const kibMap = {
+                        'KIB A': '1.3.1',
+                        'KIB B': '1.3.2',
+                        'KIB C': '1.3.3',
+                        'KIB D': '1.3.4',
+                        'KIB E': '1.3.5',
+                        'KIB F': '1.3.6',
+                        'ATB': '1.5.3',
+                    };
+                    return kibMap[this.reklasTujuanKib] || '';
+                },
+
+                get reklasTargetJenisAstap() {
+                    if (!window.dbMasterJenisAstap108 || !this.reklasTujuanKib) return null;
+                    const prefix = this.reklasTargetJenisKode;
+                    if (!prefix) return null;
+                    return window.dbMasterJenisAstap108.find(j => j.kode === prefix) || null;
+                },
+
+                get availableReklasSubRincian108() {
+                    if (this.reklasTargetJenisAstap && this.reklasTargetJenisAstap.subRincian) {
+                        return this.reklasTargetJenisAstap.subRincian;
+                    }
+                    let all = [];
+                    (window.dbMasterJenisAstap108 || []).forEach(j => {
+                        if (j.subRincian) all = all.concat(j.subRincian);
+                    });
+                    return all;
+                },
+
+                get filteredReklasSubRincian108() {
+                    const list = this.availableReklasSubRincian108 || [];
+                    const q = (this.searchReklasSubRincian || '').toLowerCase().trim();
+                    if (!q) return list.slice(0, 30);
+                    return list.filter(s => 
+                        (s.nama && s.nama.toLowerCase().includes(q)) || 
+                        (s.kode && s.kode.toLowerCase().includes(q))
+                    ).slice(0, 30);
+                },
+
+                selectReklasSubRincian(s) {
+                    this.reklasSubRincianKode = s.kode;
+                    this.reklasSubRincianNama = s.nama;
+                    this.searchReklasSubRincian = '';
+                    this.isReklasSubRincianOpen = false;
+
+                    // Jika sub-sub rincian sebelumnya tidak cocok dengan sub rincian baru, reset
+                    if (this.reklasSubSubRincianKode && !this.reklasSubSubRincianKode.startsWith(s.kode)) {
+                        this.reklasSubSubRincianKode = '';
+                        this.reklasSubSubRincianNama = '';
+                        this.searchReklasSubSubRincian = '';
+                    }
+                    this.reklasTujuanKode = this.reklasSubSubRincianKode || s.kode;
+                    this.reklasTujuanNama = this.reklasSubSubRincianNama || s.nama;
+                },
+
+                clearReklasSubRincian() {
+                    this.reklasSubRincianKode = '';
+                    this.reklasSubRincianNama = '';
+                    this.searchReklasSubRincian = '';
+                    this.isReklasSubRincianOpen = false;
+                    this.reklasTujuanKode = this.reklasSubSubRincianKode || '';
+                    this.reklasTujuanNama = this.reklasSubSubRincianNama || '';
+                },
+
+                get currentReklasSubRincianObj() {
+                    if (!this.reklasSubRincianKode) return null;
+                    return (this.availableReklasSubRincian108 || []).find(s => s.kode === this.reklasSubRincianKode) || null;
+                },
+
+                get availableReklasSubSubRincian108() {
+                    // 1. Jika sudah memilih sub-rincian spesifik
+                    if (this.currentReklasSubRincianObj && this.currentReklasSubRincianObj.subSubRincian) {
+                        return this.currentReklasSubRincianObj.subSubRincian;
+                    }
+
+                    // 2. Jika belum, ambil dari KIB tujuan
+                    if (this.reklasTargetJenisAstap) {
+                        if (!this.reklasTargetJenisAstap._flatSubSub) {
+                            const flat = [];
+                            (this.reklasTargetJenisAstap.subRincian || []).forEach(sr => {
+                                if (sr.subSubRincian) {
+                                    sr.subSubRincian.forEach(ssr => flat.push(ssr));
+                                }
+                            });
+                            this.reklasTargetJenisAstap._flatSubSub = flat;
+                        }
+                        return this.reklasTargetJenisAstap._flatSubSub;
+                    }
+
+                    // 3. Fallback jika belum memilih KIB tujuan: ambil semua
+                    let all = [];
+                    (window.dbMasterJenisAstap108 || []).forEach(j => {
+                        (j.subRincian || []).forEach(sr => {
+                            if (sr.subSubRincian) {
+                                sr.subSubRincian.forEach(ssr => all.push(ssr));
+                            }
+                        });
+                    });
+                    return all;
+                },
+
+                get filteredReklasSubSubRincian108() {
+                    const list = this.availableReklasSubSubRincian108 || [];
+                    const q = (this.searchReklasSubSubRincian || '').toLowerCase().trim();
+                    if (!q) return list.slice(0, 30);
+                    return list.filter(item => 
+                        (item.nama && item.nama.toLowerCase().includes(q)) || 
+                        (item.kode && item.kode.toLowerCase().includes(q))
+                    ).slice(0, 30);
+                },
+
+                selectReklasSubSubRincian(item) {
+                    this.reklasSubSubRincianKode = item.kode;
+                    this.reklasSubSubRincianNama = item.nama;
+                    this.searchReklasSubSubRincian = '';
+                    this.isReklasSubSubRincianOpen = false;
+
+                    // Otomatis isi Sub-Rincian dan KIB Tujuan jika belum dipilih
+                    if (window.dbMasterJenisAstap108) {
+                        for (const j of window.dbMasterJenisAstap108) {
+                            for (const sr of (j.subRincian || [])) {
+                                if (item.kode.startsWith(sr.kode)) {
+                                    this.reklasSubRincianKode = sr.kode;
+                                    this.reklasSubRincianNama = sr.nama;
+                                    if (!this.reklasTujuanKib) {
+                                        const reverseKibMap = {
+                                            '1.3.1': 'KIB A',
+                                            '1.3.2': 'KIB B',
+                                            '1.3.3': 'KIB C',
+                                            '1.3.4': 'KIB D',
+                                            '1.3.5': 'KIB E',
+                                            '1.3.6': 'KIB F',
+                                            '1.5.3': 'ATB',
+                                        };
+                                        this.reklasTujuanKib = reverseKibMap[j.kode] || '';
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    this.reklasTujuanKode = item.kode;
+                    this.reklasTujuanNama = item.nama;
+                },
+
+                clearReklasSubSubRincian() {
+                    this.reklasSubSubRincianKode = '';
+                    this.reklasSubSubRincianNama = '';
+                    this.searchReklasSubSubRincian = '';
+                    this.isReklasSubSubRincianOpen = false;
+                    this.reklasTujuanKode = this.reklasSubRincianKode || '';
+                    this.reklasTujuanNama = this.reklasSubRincianNama || '';
+                },
+
+                onReklasTujuanKibChange() {
+                    const prefix = this.reklasTargetJenisKode;
+                    if (prefix) {
+                        if (this.reklasSubRincianKode && !this.reklasSubRincianKode.startsWith(prefix)) {
+                            this.clearReklasSubRincian();
+                            this.clearReklasSubSubRincian();
+                        }
+                        if (this.reklasSubSubRincianKode && !this.reklasSubSubRincianKode.startsWith(prefix)) {
+                            this.clearReklasSubSubRincian();
+                        }
+                    }
+                    this.reklasTujuanKode = this.reklasSubSubRincianKode || this.reklasSubRincianKode || '';
+                    this.reklasTujuanNama = this.reklasSubSubRincianNama || this.reklasSubRincianNama || '';
                 },
 
                 getReklasExtracomTotal() {
@@ -6796,12 +7017,15 @@
                         return `Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
                     } else if (this.reklasJenis === 'pindah_kib') {
                         const val = it.jumlah_realisasi || 'Rp 0';
-                        const kdBrg = it.kode_barang || '';
-                        const nmBrg = it.nama_barang || '';
                         const vol = (it.jumlah_volume || 1) + ' Unit';
                         const tujuanKib = this.reklasTujuanKib || 'KIB Tujuan';
-                        const tujuanStr = this.reklasTujuanKode ? ` ke rekening ${this.reklasTujuanKode}` : ` ke ${tujuanKib}`;
-                        return `Reklasifikasi dan koreksi rekening dari ${it.category || 'KIB Asal'} ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
+                        const kodeTarget = this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode;
+                        const namaTarget = this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama;
+                        let tujuanStr = ` ke kelompok ${tujuanKib}`;
+                        if (kodeTarget) {
+                            tujuanStr = ` ke rekening ${kodeTarget}` + (namaTarget ? ` (${namaTarget})` : '') + ` kelompok ${tujuanKib}`;
+                        }
+                        return `Reklasifikasi dan koreksi rekening dari ${it.category || 'KIB Asal'} ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi${tujuanStr} berupa ${it.kode_barang || ''} ${it.nama_barang || ''} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
                     } else if (this.reklasJenis === 'koreksi_nilai') {
                         const valAwal = it.jumlah_realisasi || ('Rp ' + Number(it.total_realisasi_num || 0).toLocaleString('id-ID'));
                         const selisihVal = 'Rp ' + Number(this.reklasNominalKoreksi || 0).toLocaleString('id-ID');
@@ -6862,14 +7086,8 @@
                         const nom = parseFloat(this.reklasNominalKoreksi) || 0;
                         const it = this.selectedAstapReklas;
                         const baseVal = parseFloat(it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0);
-                        const oldAnggaran = parseFloat(it.jumlah_anggaran || baseVal);
-                        const newAnggaran = parseFloat(this.reklasNilaiAnggaran) || 0;
 
-                        if (nom <= 0 && oldAnggaran === newAnggaran) {
-                            this.showToast('Silakan sesuaikan nilai kapitalisasi barang atau nilai anggaran!', 'error');
-                            return;
-                        }
-                        if (this.reklasTipeKoreksiNilai === 'kurang' && nom >= baseVal) {
+                        if (this.reklasTipeKoreksiNilai === 'kurang' && nom >= baseVal && baseVal > 0) {
                             this.showToast('Nominal pengurangan nilai tidak boleh melebihi atau sama dengan total nilai barang saat ini!', 'error');
                             return;
                         }
@@ -6916,12 +7134,18 @@
                             ? this.getReklasExtracomTotal()
                             : (this.reklasJenis === 'koreksi_nilai' ? (parseFloat(this.reklasNominalKoreksi) || 0) : parseFloat(it.jumlah_realisasi_raw || it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0));
 
+                        const targetKode = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim() || null;
+                        const targetNama = (this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama || '').trim() || null;
+
                         const payload = {
                             astap_id: it.id,
                             jenis_reklas: jenisReklasDb,
                             tipe_koreksi: this.reklasTipeKoreksiNilai,
                             asal_kib: asalKib,
                             tujuan_kib: targetKib,
+                            tujuan_kode: targetKode,
+                            tujuan_nama: targetNama,
+                            kode_108: targetKode,
                             nilai_reklas: nilaiReklas,
                             tanggal_reklas: tgl,
                             triwulan: tw,

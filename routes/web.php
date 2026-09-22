@@ -636,8 +636,9 @@ Route::middleware('auth')->group(function () {
         });
 
         $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
+        $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
-        return view('pages.data_astap', compact('astaps', 'deletedAstaps'));
+        return view('pages.data_astap', compact('astaps', 'deletedAstaps', 'dbMaster108'));
     })->name('astap.index')->middleware('module:astap');
 
     // API: Ambil riwayat mutasi spesifik unit register NIBAR
