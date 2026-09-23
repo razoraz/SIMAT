@@ -158,6 +158,10 @@ class MutasiController extends Controller
      */
     public function eksternal()
     {
+        if (Auth::user()?->role === 'sub_admin') {
+            abort(403, 'Akses Ditolak: Sub Admin Ruangan tidak memiliki wewenang untuk mengakses Mutasi Eksternal.');
+        }
+
         $dbMutasis = \App\Models\Astap::where('is_deleted', 0)
             ->where(function ($q) {
                 $q->whereIn('sumber_dana', ['pelimpahan_skpd', 'mutasi_masuk'])

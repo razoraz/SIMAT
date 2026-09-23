@@ -116,51 +116,63 @@
                 <div class="space-y-1">
                     <!-- Mutasi Aset (Dropdown Accordion Menu: Internal & Eksternal) -->
                     @if ($role === 'sub_admin' || $user->canAccess('mutasi'))
-                        <div x-data="{ mutasiOpen: {{ request()->routeIs('mutasi.*') ? 'true' : 'false' }} }" class="space-y-1">
-                            <button type="button" @click="mutasiOpen = !mutasiOpen"
-                                class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('mutasi.*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
-                                <div class="flex items-center space-x-3">
-                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                    </svg>
-                                    <span>Mutasi Aset</span>
-                                </div>
-                                <svg class="w-3.5 h-3.5 shrink-0 transform origin-center"
-                                    :class="mutasiOpen ? 'text-emerald-400' : 'text-slate-500'"
-                                    :style="mutasiOpen ? 'transform: rotate(90deg);' : 'transform: rotate(0deg);'"
-                                    style="transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        @if ($role === 'sub_admin')
+                            <!-- Jika Sub Admin: langsung ke Mutasi Internal (tidak ada akses Mutasi Eksternal) -->
+                            <a href="{{ route('mutasi.index') }}" @click="if (isMobile) sidebarOpen = false"
+                                class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('mutasi.*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                 </svg>
-                            </button>
-
-                            <!-- Submenu Dropdown -->
-                            <div x-show="mutasiOpen" 
-                                x-transition:enter="transition ease-out duration-150 transform" 
-                                x-transition:enter-start="opacity-0 -translate-y-1" 
-                                x-transition:enter-end="opacity-100 translate-y-0"
-                                x-transition:leave="transition ease-in duration-100 transform" 
-                                x-transition:leave-start="opacity-100 translate-y-0" 
-                                x-transition:leave-end="opacity-0 -translate-y-1"
-                                class="pl-4 pr-1 py-1 space-y-1 border-l-2 border-slate-800 ml-4 my-1">
-                                <!-- 1. Mutasi Internal -->
-                                <a href="{{ route('mutasi.index') }}" @click="if (isMobile) sidebarOpen = false"
-                                    class="flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.index') || request()->routeIs('mutasi.create') || request()->routeIs('mutasi.edit') ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                                    <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ request()->routeIs('mutasi.index') || request()->routeIs('mutasi.create') || request()->routeIs('mutasi.edit') ? 'bg-emerald-400 ring-2 ring-emerald-400/40' : 'bg-slate-600' }}"></span>
-                                    <span>Mutasi Internal</span>
-                                </a>
-
-                                <!-- 2. Mutasi Eksternal (Antar-OPD) -->
-                                <a href="{{ route('mutasi.eksternal') }}" @click="if (isMobile) sidebarOpen = false"
-                                    class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.eksternal*') ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
-                                    <div class="flex items-center space-x-2.5">
-                                        <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ request()->routeIs('mutasi.eksternal*') ? 'bg-indigo-400 ring-2 ring-indigo-400/40' : 'bg-slate-600' }}"></span>
-                                        <span>Mutasi Eksternal</span>
+                                <span>Mutasi Aset</span>
+                            </a>
+                        @else
+                            <div x-data="{ mutasiOpen: {{ request()->routeIs('mutasi.*') ? 'true' : 'false' }} }" class="space-y-1">
+                                <button type="button" @click="mutasiOpen = !mutasiOpen"
+                                    class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('mutasi.*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                                    <div class="flex items-center space-x-3">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        </svg>
+                                        <span>Mutasi Aset</span>
                                     </div>
-                                </a>
+                                    <svg class="w-3.5 h-3.5 shrink-0 transform origin-center"
+                                        :class="mutasiOpen ? 'text-emerald-400' : 'text-slate-500'"
+                                        :style="mutasiOpen ? 'transform: rotate(90deg);' : 'transform: rotate(0deg);'"
+                                        style="transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+
+                                <!-- Submenu Dropdown -->
+                                <div x-show="mutasiOpen" 
+                                    x-transition:enter="transition ease-out duration-150 transform" 
+                                    x-transition:enter-start="opacity-0 -translate-y-1" 
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    x-transition:leave="transition ease-in duration-100 transform" 
+                                    x-transition:leave-start="opacity-100 translate-y-0" 
+                                    x-transition:leave-end="opacity-0 -translate-y-1"
+                                    class="pl-4 pr-1 py-1 space-y-1 border-l-2 border-slate-800 ml-4 my-1">
+                                    <!-- 1. Mutasi Internal -->
+                                    <a href="{{ route('mutasi.index') }}" @click="if (isMobile) sidebarOpen = false"
+                                        class="flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.index') || request()->routeIs('mutasi.create') || request()->routeIs('mutasi.edit') ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ request()->routeIs('mutasi.index') || request()->routeIs('mutasi.create') || request()->routeIs('mutasi.edit') ? 'bg-emerald-400 ring-2 ring-emerald-400/40' : 'bg-slate-600' }}"></span>
+                                        <span>Mutasi Internal</span>
+                                    </a>
+
+                                    <!-- 2. Mutasi Eksternal (Antar-OPD) -->
+                                    <a href="{{ route('mutasi.eksternal') }}" @click="if (isMobile) sidebarOpen = false"
+                                        class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.eksternal*') ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                                        <div class="flex items-center space-x-2.5">
+                                            <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ request()->routeIs('mutasi.eksternal*') ? 'bg-indigo-400 ring-2 ring-indigo-400/40' : 'bg-slate-600' }}"></span>
+                                            <span>Mutasi Eksternal</span>
+                                        </div>
+                                    </a>
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     @endif
 
                     <!-- Reklasifikasi Aset (PMDN 108 / Sheet 3 Reklas) -->
