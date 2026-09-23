@@ -10,7 +10,7 @@
                     <th class="px-4 py-3.5 text-center min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tahun Masuk</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Volume / Kuantitas</th>
-                    <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Realisasi</th>
+                    <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Perolehan</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Kondisi</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                 </tr>
@@ -39,11 +39,6 @@
                                     }"
                                     x-text="item.category === 'ATB' ? 'ATB' : (item.category === 'EXTRACOM' ? 'Extracom' : (item.category || 'KIB B'))"></span>
 
-                                {{-- Badge Pelimpahan SKPD --}}
-                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm tracking-wider">
-                                    <span>🔄</span><span>PELIMPAHAN SKPD</span>
-                                </span>
-
                                 <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama || item.opd_asal"></span>
                             </div>
                         </td>
@@ -59,8 +54,8 @@
                             </div>
                         </td>
 
-                        <!-- Nilai Realisasi Anggaran -->
-                        <td class="px-4 py-4 text-center font-mono font-extrabold text-emerald-400 text-sm whitespace-nowrap" x-text="item.jumlah_realisasi || 'Rp 0'"></td>
+                        <!-- Nilai Perolehan -->
+                        <td class="px-4 py-4 text-center font-mono font-extrabold text-emerald-400 text-sm whitespace-nowrap" x-text="item.nilai_perolehan_formatted || item.jumlah_realisasi || ('Rp ' + Number(item.nilai_perolehan || 0).toLocaleString('id-ID'))"></td>
 
                         <!-- Kondisi Aset Terkini -->
                         <td class="px-4 py-4 text-center whitespace-nowrap">

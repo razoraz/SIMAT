@@ -1,6 +1,6 @@
 <x-layout title="Unit & Paviliun - SIMAT-RK">
     @section('page-title', 'Unit & Paviliun')
-    @section('breadcrumb', 'Master Utama / Unit & Paviliun')
+    @section('breadcrumb', 'Master Data Sistem / Unit & Paviliun')
 
     @include('pages.unit_paviliun_partials.scripts')
 

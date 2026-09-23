@@ -1,6 +1,6 @@
 <x-layout :title="request()->routeIs('unit.edit') ? 'Ubah Unit / Paviliun - SIMAT-RK' : 'Tambah Unit Baru - SIMAT-RK'">
     @section('page-title', request()->routeIs('unit.edit') ? 'Ubah Unit / Paviliun' : 'Tambah Unit Baru')
-    @section('breadcrumb', request()->routeIs('unit.edit') ? 'Master Utama / Unit & Paviliun / Ubah' : 'Master Utama / Unit & Paviliun / Tambah Baru')
+    @section('breadcrumb', request()->routeIs('unit.edit') ? 'Master Data Sistem / Unit & Paviliun / Ubah' : 'Master Data Sistem / Unit & Paviliun / Tambah Baru')
 
     <div x-data="{
         isEdit: {{ request()->routeIs('unit.edit') ? 'true' : 'false' }},

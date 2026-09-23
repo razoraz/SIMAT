@@ -25,6 +25,10 @@
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Nomor BAST Resmi:</span>
                         <p class="font-mono font-black text-indigo-300 text-sm mt-0.5" x-text="selectedMutasi.kode"></p>
                     </div>
+                    <div>
+                        <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Nilai Perolehan:</span>
+                        <p class="font-mono font-black text-emerald-400 text-sm mt-0.5" x-text="selectedMutasi.nilai_perolehan_formatted || selectedMutasi.jumlah_realisasi || ('Rp ' + Number(selectedMutasi.nilai_perolehan || 0).toLocaleString('id-ID'))"></p>
+                    </div>
                     <div class="flex items-center space-x-2">
                         <span class="px-3 py-1 rounded-xl text-xs font-extrabold border shadow-sm"
                             :class="{

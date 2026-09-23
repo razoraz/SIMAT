@@ -284,6 +284,7 @@ class MutasiController extends Controller
                 'tgl_estimasi_kembali'    => null,
                 'dokumen_lampiran'        => null,
                 'nilai_perolehan'         => $nilaiReal,
+                'nilai_perolehan_formatted' => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
             ];
         })->values()->toArray();
 
