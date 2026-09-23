@@ -74,7 +74,7 @@
                         </div>
                         <div class="min-w-0">
                             <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="step === 3 ? 'text-indigo-400' : 'text-slate-500'">Langkah 3</span>
-                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate" x-text="kibLabel + ' & Penempatan'"></span>
+                            <span class="text-[11px] sm:text-xs font-bold text-white block truncate" x-text="(hasSelectedKib ? kibLabel : 'Spesifikasi') + ' & Penempatan'"></span>
                         </div>
                     </div>
                     <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="step >= 3 ? 'bg-indigo-500' : 'bg-slate-950'"></div>
@@ -340,18 +340,32 @@
             <div x-show="step === 3" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
                 
                 <div class="border-b border-slate-800 pb-4">
-                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-bold mb-2">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold mb-2"
+                         :class="isTanah ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'">
                         <span>Langkah 3 dari 3</span>
                     </div>
                     <h2 class="text-lg font-bold text-white flex items-center space-x-2">
                         <span x-text="kibBadgeIcon"></span>
-                        <span x-text="'Spesifikasi Teknis (' + kibLabel + ') & Penempatan Ruangan'"></span>
+                        <span x-text="hasSelectedKib ? ('Spesifikasi Teknis (' + kibLabel + ') & Penempatan Ruangan') : 'Spesifikasi Teknis & Penempatan Ruangan'"></span>
                     </h2>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        <span x-show="isTanah">Lengkapi data sertifikat, luas, dan batas bidang tanah (multi-bidang didukung).</span>
-                        <span x-show="!isTanah">Lengkapi spesifikasi teknis barang (Merk, Tipe, No Seri), lalu tentukan unit penempatan dan penanggung jawab KIR.</span>
+                        <span x-show="!hasSelectedKib">Tentukan Klasifikasi KIB pada Langkah 2 terlebih dahulu agar formulir spesifikasi teknis barang dapat dimuat.</span>
+                        <span x-show="hasSelectedKib && isTanah">Lengkapi data sertifikat, luas, dan batas bidang tanah (multi-bidang didukung).</span>
+                        <span x-show="hasSelectedKib && !isTanah">Lengkapi spesifikasi teknis barang (Merk, Tipe, No Seri), lalu tentukan unit penempatan dan penanggung jawab KIR.</span>
                     </p>
                 </div>
+
+                <!-- Keadaan jika KIB belum dipilih di Langkah 2 -->
+                <template x-if="!hasSelectedKib">
+                    <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-xl text-slate-400">🔍</div>
+                        <h4 class="text-sm font-bold text-white">Kelompok KIB Belum Dipilih</h4>
+                        <p class="text-xs text-slate-400 max-w-md mx-auto">Silakan kembali ke <strong>Langkah 2</strong> dan tentukan Kelompok KIB atau cari nama barang 108 terlebih dahulu agar spesifikasi teknis yang sesuai dapat dimuat.</p>
+                        <button type="button" @click="step = 2" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-bold rounded-xl border border-slate-700 transition">
+                            ← Kembali ke Langkah 2
+                        </button>
+                    </div>
+                </template>
 
                 <!-- --------------------------------------------------------------------- -->
                 <!-- KONDISI A: FORM SPESIFIKASI TANAH (KIB A)                             -->
@@ -776,26 +790,34 @@
                 },
 
                 get isTanah() {
-                    return this.selectedKibKode.startsWith('1.3.1') || this.selectedKibNama.includes('TANAH');
+                    return Boolean(this.selectedKibKode.startsWith('1.3.1') || this.selectedKibNama.includes('TANAH'));
                 },
 
                 get isMesin() {
-                    return this.selectedKibKode.startsWith('1.3.2') || this.selectedKibNama.includes('PERALATAN') || (!this.selectedKibKode && this.selectedJenisIdx === '');
+                    return Boolean(this.selectedKibKode.startsWith('1.3.2') || this.selectedKibNama.includes('PERALATAN') || this.selectedKibNama.includes('MESIN'));
                 },
 
                 get isGedung() {
-                    return this.selectedKibKode.startsWith('1.3.3') || this.selectedKibNama.includes('GEDUNG') || this.selectedKibNama.includes('BANGUNAN');
+                    return Boolean(this.selectedKibKode.startsWith('1.3.3') || this.selectedKibNama.includes('GEDUNG') || this.selectedKibNama.includes('BANGUNAN'));
+                },
+
+                get hasSelectedKib() {
+                    return Boolean(this.selectedKibKode || (this.selectedJenisIdx !== '' && this.selectedJenisIdx !== null && this.selectedJenisIdx !== undefined));
                 },
 
                 get kibLabel() {
+                    if (!this.hasSelectedKib) return 'Belum Dipilih';
                     if (this.isTanah) return 'Rincian Tanah';
                     if (this.isGedung) return 'Rincian Gedung';
-                    return 'Rincian Mesin & Alat';
+                    if (this.isMesin) return 'Rincian Mesin & Alat';
+                    return 'Rincian Aset Tetap';
                 },
 
                 get kibBadgeIcon() {
+                    if (!this.hasSelectedKib) return '🔍';
                     if (this.isTanah) return '🌾';
                     if (this.isGedung) return '🏢';
+                    if (this.isMesin) return '⚙️';
                     return '📦';
                 },
 
@@ -889,6 +911,11 @@
                     }
                     this.search108 = '';
                     this.searchResults108 = [];
+                    if (this.isTanah) {
+                        this.formData.satuan = 'Bidang';
+                    } else if (this.formData.satuan === 'Bidang') {
+                        this.formData.satuan = 'Unit';
+                    }
                 },
 
                 onJenisChange() {
@@ -898,6 +925,7 @@
                         this.selectedSubIdx = '';
                         this.selectedSubSub = null;
                         this.formData.jenis_astap_id = '';
+                        this.formData.satuan = 'Unit';
                         return;
                     }
                     this.currentSubList = this.master108[this.selectedJenisIdx].sub_kategori || [];
@@ -905,6 +933,11 @@
                     this.selectedSubIdx = '';
                     this.selectedSubSub = null;
                     this.formData.jenis_astap_id = '';
+                    if (this.isTanah) {
+                        this.formData.satuan = 'Bidang';
+                    } else if (this.formData.satuan === 'Bidang') {
+                        this.formData.satuan = 'Unit';
+                    }
                 },
 
                 onSubChange() {
