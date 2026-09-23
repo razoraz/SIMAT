@@ -567,8 +567,11 @@
         const filterTw = params.triwulan || 'all';
         const filterCat = params.category || 'all';
 
-        // Filter data berdasarkan Tahun, Triwulan, dan Klasifikasi KIB
+        // Filter data berdasarkan Tahun, Triwulan, dan Klasifikasi KIB (Khusus Belanja Modal untuk SIPENERBANG)
         let filteredAstaps = rawAstaps.filter(item => {
+            if (item.sumber_dana && item.sumber_dana !== 'belanja_modal') {
+                return false;
+            }
             const matchYear = filterYear === 'all' || String(item.tahun_perolehan) === String(filterYear);
             
             let matchTw = true;
@@ -5865,8 +5868,6 @@
             akhir: totalAsetTetap.akhir + totalAsetLainnya.akhir
         };
 
-        const totalExtracomVal = jumlahAset.kurang;
-
         // Metadata Styling
         const s3Meta = {
             highlightRows: [],
@@ -7464,6 +7465,10 @@
                     }
 
                     return (this.astaps || []).filter(item => {
+                        // Khusus format SIPENERBANG hanya memproses Belanja Modal
+                        if (!isRekap && item.sumber_dana && item.sumber_dana !== 'belanja_modal') {
+                            return false;
+                        }
                         const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
                         let matchTw = true;
                         if (fTw !== 'all') {
@@ -7476,6 +7481,9 @@
                                       (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
                         }
                         if (isRekap) {
+                            if (this.exportRekapSheet === 'sheet1' && item.sumber_dana && item.sumber_dana !== 'belanja_modal') {
+                                return false;
+                            }
                             return matchYear && matchTw;
                         }
                         const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
@@ -7486,37 +7494,45 @@
 
                 submitExport() {
                     this.isSubmittingExport = true;
-                    if (this.exportFormatType === 'rekap_triwulan') {
-                        exportRekapTriwulanToExcel({
-                            year: this.exportYear,
-                            triwulan: this.exportTriwulan,
-                            sheet: this.exportRekapSheet
-                        });
-                        setTimeout(() => {
-                            this.isSubmittingExport = false;
-                            this.showExportModal = false;
-                            let sheetName = 'Paket Lengkap Rekapitulasi';
-                            if (this.exportRekapSheet === 'sheet1') sheetName = 'Daftar AT ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan);
-                            else if (this.exportRekapSheet === 'sheet2') sheetName = 'Daftar Pengurangan AT RSDK';
-                            else if (this.exportRekapSheet === 'sheet3') sheetName = 'Reklas RSDK';
-                            else if (this.exportRekapSheet === 'sheet4') sheetName = 'RMB (excel) RSDK';
-                            else if (this.exportRekapSheet === 'sheet5' || this.exportRekapSheet === 'sheet5_hibah') sheetName = 'Hibah RSDK';
-                            this.showToast('Berhasil mengekspor Laporan ' + sheetName + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
-                        }, 800);
-                    } else {
-                        exportAstapToExcel({
-                            year: this.exportYear,
-                            triwulan: this.exportTriwulan,
-                            category: this.exportCategory
-                        });
-                        setTimeout(() => {
-                            this.isSubmittingExport = false;
-                            this.showExportModal = false;
-                            const catLabel = this.exportCategory === 'all'
-                                ? 'Lengkap (9 Sheet)'
-                                : (this.exportCategory === 'REKAP' ? 'Rekapitulasi Realisasi' : this.exportCategory);
-                            this.showToast('Berhasil mengekspor Laporan ASTAP ' + catLabel + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
-                        }, 800);
+                    try {
+                        if (this.exportFormatType === 'rekap_triwulan') {
+                            exportRekapTriwulanToExcel({
+                                year: this.exportYear,
+                                triwulan: this.exportTriwulan,
+                                sheet: this.exportRekapSheet
+                            });
+                            setTimeout(() => {
+                                this.isSubmittingExport = false;
+                                this.showExportModal = false;
+                                let sheetName = 'Paket Lengkap Rekapitulasi';
+                                if (this.exportRekapSheet === 'sheet1') sheetName = 'Daftar AT ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan);
+                                else if (this.exportRekapSheet === 'sheet2') sheetName = 'Daftar Pengurangan AT RSDK';
+                                else if (this.exportRekapSheet === 'sheet3') sheetName = 'Reklas RSDK';
+                                else if (this.exportRekapSheet === 'sheet4') sheetName = 'RMB (excel) RSDK';
+                                else if (this.exportRekapSheet === 'sheet5' || this.exportRekapSheet === 'sheet5_hibah') sheetName = 'Hibah RSDK';
+                                this.showToast('Berhasil mengekspor Laporan ' + sheetName + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
+                            }, 800);
+                        } else {
+                            exportAstapToExcel({
+                                year: this.exportYear,
+                                triwulan: this.exportTriwulan,
+                                category: this.exportCategory
+                            });
+                            setTimeout(() => {
+                                this.isSubmittingExport = false;
+                                this.showExportModal = false;
+                                const catLabel = this.exportCategory === 'all'
+                                    ? 'Lengkap (9 Sheet)'
+                                    : (this.exportCategory === 'REKAP' ? 'Rekapitulasi Realisasi' : this.exportCategory);
+                                this.showToast('Berhasil mengekspor Laporan ASTAP ' + catLabel + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
+                            }, 800);
+                        }
+                    } catch (err) {
+                        console.error('Error saat ekspor excel:', err);
+                        this.isSubmittingExport = false;
+                        if (typeof isExportingAstap !== 'undefined') isExportingAstap = false;
+                        if (typeof isExportingRekapTriwulan !== 'undefined') isExportingRekapTriwulan = false;
+                        this.showToast('Gagal mengekspor file: ' + (err.message || 'Terjadi kesalahan sistem'), 'error');
                     }
                 },
 

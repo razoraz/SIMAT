@@ -142,6 +142,7 @@
                             <span class="text-[10px] text-purple-400/80 font-mono">Sheet Excel</span>
                         </label>
                         <select x-model="exportRekapSheet"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-200 focus:outline-none focus:border-purple-500">
                             <option value="all">Semua Sheet (Paket Lengkap Rekapitulasi)</option>
                             <option value="sheet1" x-text="'1. Daftar AT ' + (exportTriwulan === 'all' ? 'Tahunan' : exportTriwulan)"></option>
                             <option value="sheet2">2. Daftar Pengurangan AT RSDK</option>
