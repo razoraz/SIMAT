@@ -744,6 +744,7 @@ Route::middleware('auth')->group(function () {
     // 4. Mutasi Aset Pages & Forms
     Route::middleware('module:mutasi')->group(function () {
         Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');
+        Route::get('/mutasi-aset/eksternal',        [MutasiController::class, 'eksternal'])->name('mutasi.eksternal');
         Route::get('/mutasi-aset/create',          [MutasiController::class, 'create'])->name('mutasi.create');
         Route::post('/mutasi-aset',                [MutasiController::class, 'store'])->name('mutasi.store');
         Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');

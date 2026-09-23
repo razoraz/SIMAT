@@ -4,19 +4,27 @@
                 <div>
                     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold mb-3">
                         <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
-                        <span>PERPINDAHAN & MUTASI RUANGAN ASET RSUD</span>
+                        <span>PERPINDAHAN & MUTASI INTERNAL RUANGAN ASET RSUD</span>
                     </div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Mutasi Aset</h1>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Katalog Mutasi Internal (Antar Ruangan)</h1>
                     <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                        Pencatatan perpindahan lokasi unit penempatan barang antar ruangan, pelacakan riwayat pergerakan aset, dan pencetakan Berita Acara Mutasi Barang (BAMB).
+                        Pencatatan perpindahan lokasi unit penempatan barang antar ruangan/instalasi di lingkungan RSUD dr. H. Koesnadi, pelacakan riwayat pergerakan aset, dan pencetakan Berita Acara Mutasi Barang (BAMB).
                     </p>
                 </div>
                 
-                <a href="{{ route('mutasi.create') }}"
-                    class="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    <span>Pengajuan Mutasi Baru</span>
-                </a>
+                <div class="flex items-center space-x-3 shrink-0">
+                    <a href="{{ route('mutasi.eksternal') }}"
+                        class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white font-bold text-xs border border-indigo-500/30 transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer"
+                        title="Beralih ke Katalog Mutasi Eksternal Antar-OPD">
+                        <span>🏛️ Ke Mutasi Eksternal</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="{{ route('mutasi.create') }}"
+                        class="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span>Pengajuan Mutasi Baru</span>
+                    </a>
+                </div>
             </div>
 
             <!-- Mini Summary KPI Cards Strip (5 Kartu Selaras dengan Distribusi) -->

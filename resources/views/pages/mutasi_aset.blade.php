@@ -1,6 +1,6 @@
-<x-layout title="Mutasi Aset - SIMAT-RK">
-    @section('page-title', 'Mutasi Aset')
-    @section('breadcrumb', 'Master Utama / Mutasi Aset')
+<x-layout title="Mutasi Internal - SIMAT-RK">
+    @section('page-title', 'Mutasi Internal (Antar Ruangan)')
+    @section('breadcrumb', 'Master Aset / Mutasi Internal')
 
     @include('pages.mutasi_aset_partials.scripts')
 
