@@ -1274,3 +1274,77 @@
         }
     </style>
 </x-layout>
+                            return false;
+                        }
+                        if (!this.formData.nama_barang.trim()) {
+                            alert('⚠️ Mohon isi Nama Lengkap Barang.');
+                            return false;
+                        }
+                        return true;
+                    }
+                    if (s === 3) {
+                        if (this.isTanah) {
+                            this.syncTanahFields();
+                        }
+                        return true;
+                    }
+                    return true;
+                },
+
+                submitForm() {
+                    if (!this.validateStep(1) || !this.validateStep(2) || !this.validateStep(3)) return;
+                    
+                    if (this.isTanah) {
+                        this.syncTanahFields();
+                    }
+
+                    this.isSubmitting = true;
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+                    fetch("{{ route('astap.store_hibah') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify(this.formData)
+                    })
+                    .then(res => res.json().then(data => ({ status: res.status, body: data })))
+                    .then(result => {
+                        this.isSubmitting = false;
+                        if (result.status === 200 && result.body.success) {
+                            alert('🎉 Berhasil! ' + (result.body.message || 'Data Hibah berhasil disimpan.'));
+                            window.location.href = "{{ route('master.hibah') }}";
+                        } else {
+                            const errMsg = result.body.message || (result.body.errors ? Object.values(result.body.errors).flat().join('\n') : 'Gagal menyimpan data.');
+                            alert('❌ Terjadi Kesalahan:\n' + errMsg);
+                        }
+                    })
+                    .catch(err => {
+                        this.isSubmitting = false;
+                        console.error(err);
+                        alert('❌ Gagal menghubungi server. Silakan coba kembali.');
+                    });
+                }
+            };
+        }
+    </script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.4);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.7);
+        }
+    </style>
+</x-layout>
