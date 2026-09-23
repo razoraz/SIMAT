@@ -26,25 +26,25 @@
                                     <div class="font-bold text-white text-sm" x-text="item.nama_barang"></div>
                                     <div class="text-[11px] font-mono text-cyan-400/90 font-medium mt-0.5" x-text="'Kode: ' + item.kode_barang"></div>
                                     <div class="flex items-center space-x-1.5 mt-1">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap leading-none shrink-0"
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold whitespace-nowrap leading-none shrink-0 shadow-sm"
                                             :class="{
-                                                'bg-amber-500/20 text-amber-300 border border-amber-500/30': item.category === 'KIB A',
-                                                'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30': item.category === 'KIB B',
-                                                'bg-purple-500/20 text-purple-300 border border-purple-500/30': item.category === 'KIB C',
-                                                'bg-teal-500/20 text-teal-300 border border-teal-500/30': item.category === 'KIB D',
-                                                'bg-orange-500/20 text-orange-300 border border-orange-500/30': item.category === 'KIB E',
-                                                'bg-rose-500/20 text-rose-300 border border-rose-500/30': item.category === 'KIB F',
-                                                'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30': item.category === 'ATB',
-                                                'bg-amber-400/20 text-amber-300 border border-amber-400/30': item.category === 'EXTRACOM'
+                                                'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-amber-500/10': item.category === 'KIB A',
+                                                'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-cyan-500/10': item.category === 'KIB B',
+                                                'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-purple-500/10': item.category === 'KIB C',
+                                                'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-teal-500/10': item.category === 'KIB D',
+                                                'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-orange-500/10': item.category === 'KIB E',
+                                                'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-rose-500/10': item.category === 'KIB F',
+                                                'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-indigo-500/10': item.category === 'ATB',
+                                                'bg-amber-400/20 text-amber-300 border border-amber-400/40 shadow-amber-400/10': item.category === 'EXTRACOM'
                                             }"
                                             x-text="item.category === 'ATB' ? 'ATB' : (item.category === 'EXTRACOM' ? 'Extracom' : item.category)"></span>
                                         {{-- Badge Hibah — tampil bila sumber_dana === 'hibah' --}}
-                                        <template x-if="item.sumber_dana === 'hibah'">
-                                            <span class="inline-flex items-center space-x-0.5 px-1.5 py-0.5 rounded text-[9px] font-extrabold whitespace-nowrap leading-none shrink-0 bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                                        <template x-if="item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK'">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-gradient-to-r from-amber-500/25 via-amber-400/20 to-orange-500/25 text-amber-300 border border-amber-400/60 shadow-sm shadow-amber-500/20 tracking-wider">
                                                 <span>🎁</span><span>HIBAH</span>
                                             </span>
                                         </template>
-                                        <span class="text-[11px] text-slate-400 truncate" x-text="item.jenis_aset_nama"></span>
+                                        <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama"></span>
                                     </div>
                                 </td>
 

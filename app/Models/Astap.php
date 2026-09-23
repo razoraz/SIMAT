@@ -138,6 +138,11 @@ class Astap extends Model
         return $this->hasMany(AstapReklas::class)->orderBy('tanggal_reklas', 'desc');
     }
 
+    public function hibahs()
+    {
+        return $this->hasMany(AstapHibah::class, 'astap_id')->orderBy('tanggal_bast', 'desc');
+    }
+
     public function getKode108Attribute(): string
     {
         return $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';

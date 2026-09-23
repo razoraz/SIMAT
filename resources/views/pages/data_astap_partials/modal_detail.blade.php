@@ -19,6 +19,12 @@
                                 }"
                                 x-text="selectedAstapDetail?.category === 'EXTRACOM' ? '📦 EXTRACOM' : (selectedAstapDetail?.category || 'ASTAP')"></span>
 
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.jenis_reklas === 'HIBAH_MASUK'">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-amber-400/20 text-amber-300 border-amber-400/30">
+                                    🎁 HIBAH
+                                </span>
+                            </template>
+
                             <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
                                 x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>
 
@@ -64,6 +70,27 @@
                             <div class="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80 min-w-0">
                                 <span class="text-slate-400 text-[10px] uppercase font-bold block mb-1 truncate">💰 Realisasi Belanja</span>
                                 <span class="text-emerald-400 font-extrabold font-mono text-xs sm:text-sm block truncate" x-text="selectedAstapDetail.jumlah_realisasi"></span>
+                            </div>
+                        </div>
+
+                        <!-- DOKUMEN BAST HIBAH (KHUSUS ASET HIBAH) -->
+                        <div x-show="selectedAstapDetail?.sumber_dana === 'hibah' || selectedAstapDetail?.sumber_dana_raw === 'hibah' || selectedAstapDetail?.hibah_pemberi" class="p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 space-y-2">
+                            <div class="flex items-center space-x-2 text-amber-300 font-extrabold text-xs uppercase tracking-wider">
+                                <span>📜 Dokumen Berita Acara Serah Terima (BAST) Hibah</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Pemberi Hibah:</span>
+                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.hibah_pemberi || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor BAST:</span>
+                                    <span class="font-mono text-cyan-300 font-semibold" x-text="selectedAstapDetail?.hibah_nomor_bast || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal BAST:</span>
+                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.hibah_tanggal_bast)"></span>
+                                </div>
                             </div>
                         </div>
 

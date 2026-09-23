@@ -138,6 +138,21 @@
                         </a>
                     @endif
 
+                    <!-- Kelola Hibah Aset (Hibah Masuk & Keluar) -->
+                    @if ($user->canAccess('astap') || $user->canAccess('master_data') || $role === 'admin' || $role === 'master_admin')
+                        <a href="{{ route('master.hibah') }}" @click="if (isMobile) sidebarOpen = false"
+                            class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('master.hibah*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                            </svg>
+                            <span class="flex items-center gap-1.5">
+                                <span>Kelola Hibah Aset</span>
+                                <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-amber-400/20 text-amber-300 border border-amber-400/30 leading-tight">RMB</span>
+                            </span>
+                        </a>
+                    @endif
+
                     <!-- Unit & Paviliun (Katalog Unit & Ruangan RSUD) -->
                     @if ($user->canAccess('unit'))
                         <a href="{{ route('unit.index') }}" @click="if (isMobile) sidebarOpen = false"
