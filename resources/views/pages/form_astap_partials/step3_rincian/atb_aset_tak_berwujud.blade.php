@@ -2,7 +2,6 @@
                     <div class="space-y-6">
 
                         <!-- FORM ATB ASLI -->
-                        <div class="space-y-6">
 
                         <!-- 1. DOKUMEN PEMBELIAN & DOKUMEN SP2D / BAST (TARUH PALING ATAS - NO 1 & 2) -->
                         <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/40 space-y-4 shadow-lg">

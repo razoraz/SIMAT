@@ -7,6 +7,7 @@
                     </button>
                 </div>
 
+                <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
                     @php
                         $cancelUrl = request('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index');
                     @endphp

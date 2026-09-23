@@ -877,9 +877,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/astap/create-hibah', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbRekeningBelanjas = \App\Models\RekeningBelanja::orderBy('kode_rek')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_hibah', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+                return view('pages.form_hibah', compact('dbMaster108', 'dbUnits', 'dbRekeningBelanjas', 'dbPenyedias', 'dbPejabats'));
             })->name('astap.create_hibah');
 
             Route::post('/astap/store-hibah', function (\Illuminate\Http\Request $request) {
@@ -927,9 +928,10 @@ Route::middleware('auth')->group(function () {
                     'bast_dokumen_tanggal'      => $data['hibah_tanggal_bast'],
                     'keterangan_tambahan'       => $data['hibah_keterangan'] ?? null,
                     'unit_id'                   => $data['unit_id'] ?? null,
+                    'rekening_belanja_id'       => $request->input('rekening_belanja_id') ?: null,
                     'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
                     'user_id'                   => auth()->id(),
-                    'is_extracomtable'          => false,
+                    'is_extracomtable'          => (bool) ($request->input('is_extracomtable') ?? false),
                     'is_reklas'                 => false,
                     'is_deleted'                => 0,
                     'spesifikasi_json'          => [
