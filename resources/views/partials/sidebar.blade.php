@@ -126,7 +126,11 @@
                                     </svg>
                                     <span>Mutasi Aset</span>
                                 </div>
-                                <svg class="w-3.5 h-3.5 transition-transform duration-200 shrink-0" :class="mutasiOpen ? 'rotate-90 text-emerald-400' : 'text-slate-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-3.5 h-3.5 shrink-0 transform origin-center"
+                                    :class="mutasiOpen ? 'text-emerald-400' : 'text-slate-500'"
+                                    :style="mutasiOpen ? 'transform: rotate(90deg);' : 'transform: rotate(0deg);'"
+                                    style="transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
@@ -154,7 +158,6 @@
                                         <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ request()->routeIs('mutasi.eksternal*') ? 'bg-indigo-400 ring-2 ring-indigo-400/40' : 'bg-slate-600' }}"></span>
                                         <span>Mutasi Eksternal</span>
                                     </div>
-                                    <span class="text-[9px] px-1.5 py-0.5 rounded font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">OPD</span>
                                 </a>
                             </div>
                         </div>

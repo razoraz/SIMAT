@@ -1,13 +1,18 @@
+@php
+    $isFromEksternal = request('from') === 'eksternal';
+    $backUrl = $isFromEksternal ? route('mutasi.eksternal') : route('astap.pilih_jenis');
+@endphp
+
 <x-layout title="Form Input Pelimpahan SKPD (Dinas Luar) - SIMAT-RK">
     @section('page-title', 'Pencatatan Pelimpahan SKPD')
-    @section('breadcrumb', 'Master Utama / Data ASTAP / Tambah Pelimpahan SKPD')
+    @section('breadcrumb', $isFromEksternal ? 'Master Aset / Mutasi Eksternal / Tambah Mutasi Masuk' : 'Master Utama / Data ASTAP / Tambah Pelimpahan SKPD')
 
     <div x-data="formMutasiMasuk()" x-cloak class="max-w-5xl mx-auto space-y-6 py-2">
 
         <!-- Top Header & Back -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div class="flex items-center space-x-3">
-                <a href="{{ route('astap.pilih_jenis') }}"
+                <a href="{{ $backUrl }}"
                     class="p-2.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-purple-500/50 text-slate-400 hover:text-purple-400 transition-all shadow-lg shadow-black/20 group">
                     <svg class="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -667,7 +672,7 @@
                 </div>
 
                 <div class="flex items-center space-x-3">
-                    <a href="{{ route('astap.pilih_jenis') }}"
+                    <a href="{{ $backUrl }}"
                         class="px-4 py-2.5 rounded-xl text-slate-400 hover:text-rose-400 font-bold text-xs transition-colors">
                         Batal
                     </a>
@@ -705,6 +710,7 @@
 
                 // Form State
                 formData: {
+                    from: {{ Js::from(request('from')) }},
                     sumber_dana: 'pelimpahan_skpd',
                     tahun_perolehan: new Date().getFullYear(),
                     triwulan: 'TW I',
@@ -1079,7 +1085,7 @@
                         this.isSubmitting = false;
                         if (result.status === 200 && result.body.success) {
                             alert('🎉 Berhasil! ' + (result.body.message || 'Data Pelimpahan SKPD berhasil disimpan.'));
-                            window.location.href = "{{ route('astap.index') }}";
+                            window.location.href = result.body.redirect || ({{ Js::from($isFromEksternal) }} ? "{{ route('mutasi.eksternal') }}" : "{{ route('astap.index') }}");
                         } else {
                             const errMsg = result.body.message || (result.body.errors ? Object.values(result.body.errors).flat().join('\n') : 'Gagal menyimpan data.');
                             alert('❌ Terjadi Kesalahan:\n' + errMsg);

@@ -12,18 +12,11 @@
             </p>
         </div>
         
-        <div class="flex items-center space-x-3 shrink-0">
-            <a href="{{ route('mutasi.index') }}"
-                class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs border border-slate-700 transition-all flex items-center space-x-2 active:scale-95">
-                <span>🏢 Ke Mutasi Internal</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </a>
-            <button type="button" @click="alert('Form Pengajuan Mutasi Eksternal Baru akan segera hadir pada tahap selanjutnya!')"
-                class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-bold text-xs shadow-lg shadow-indigo-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                <span>Pengajuan BAST Baru</span>
-            </button>
-        </div>
+        <a href="{{ route('astap.create_mutasi_masuk', ['from' => 'eksternal']) }}"
+            class="px-4 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs shadow-lg shadow-rose-500/20 transition-all flex items-center space-x-2 shrink-0 active:scale-95 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Pengajuan Mutasi Baru</span>
+        </a>
     </div>
 
     <!-- Mini Summary KPI Cards Strip -->

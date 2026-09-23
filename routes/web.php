@@ -223,6 +223,21 @@ Route::middleware('auth')->group(function () {
     
     // 1. Data ASTAP Pages
     Route::get('/astap', function () {
+        $fmtDate = function($val, $fallback = '-') {
+            if (empty($val)) return $fallback;
+            if ($val instanceof \DateTimeInterface) return $val->format('d/m/Y');
+            if (is_string($val)) {
+                $valTrim = trim($val);
+                if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $valTrim)) return $valTrim;
+                try {
+                    return \Carbon\Carbon::parse($valTrim)->format('d/m/Y');
+                } catch (\Throwable $e) {
+                    return $valTrim;
+                }
+            }
+            return $fallback;
+        };
+
         $astaps = \App\Models\Astap::where('is_deleted', 0)
             ->with([
                 'registers' => function($q) {
@@ -242,7 +257,7 @@ Route::middleware('auth')->group(function () {
             ])
             ->orderBy('id', 'desc')
             ->get()
-            ->map(function($a) {
+            ->map(function($a) use ($fmtDate) {
                 $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
 
                 // Sinkronisasi otomatis repeater items spesifikasi dengan sisa unit register
@@ -314,15 +329,15 @@ Route::middleware('auth')->group(function () {
                     'sumber_dana_label' => $a->sumber_dana_label,
                     'hibah_pemberi' => $a->hibah_pemberi ?? '',
                     'hibah_nomor_bast' => $a->hibah_nomor_bast ?? '',
-                    'hibah_tanggal_bast' => $a->hibah_tanggal_bast ? (is_string($a->hibah_tanggal_bast) ? $a->hibah_tanggal_bast : $a->hibah_tanggal_bast->format('d/m/Y')) : '',
+                    'hibah_tanggal_bast' => $fmtDate($a->hibah_tanggal_bast, ''),
                     'hibah_keterangan' => $a->hibah_keterangan ?? '',
                     'mutasi_asal' => $a->pelimpahanSkpd?->skpd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? ($spec['mutasi_asal'] ?? ''))),
                     'mutasi_nomor_bamb' => $a->pelimpahanSkpd?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? ($spec['mutasi_nomor_bamb'] ?? ''))),
-                    'mutasi_tanggal' => $a->pelimpahanSkpd?->tanggal_bamb ? (is_string($a->pelimpahanSkpd->tanggal_bamb) ? $a->pelimpahanSkpd->tanggal_bamb : $a->pelimpahanSkpd->tanggal_bamb->format('d/m/Y')) : ($a->mutasi_tanggal ? (is_string($a->mutasi_tanggal) ? $a->mutasi_tanggal : $a->mutasi_tanggal->format('d/m/Y')) : ($spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? ''))),
+                    'mutasi_tanggal' => $fmtDate($a->pelimpahanSkpd?->tanggal_bamb ?: $a->mutasi_tanggal, $spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? '')),
                     'mutasi_keterangan' => $a->pelimpahanSkpd?->keterangan ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? '')),
                     'rekening_penyedia' => $a->belanjaBarang?->nama_toko ?: ($spec['rekening_penyedia'] ?? ($a->penyedia_nama ?: '')),
                     'rekening_nomor_faktur' => $a->belanjaBarang?->nomor_faktur ?: ($spec['rekening_nomor_faktur'] ?? ($a->faktur_nomor ?: '')),
-                    'rekening_tanggal_faktur' => $a->belanjaBarang?->tanggal_faktur ? (is_string($a->belanjaBarang->tanggal_faktur) ? $a->belanjaBarang->tanggal_faktur : $a->belanjaBarang->tanggal_faktur->format('d/m/Y')) : ($spec['rekening_tanggal_faktur'] ?? ''),
+                    'rekening_tanggal_faktur' => $fmtDate($a->belanjaBarang?->tanggal_faktur, $spec['rekening_tanggal_faktur'] ?? ''),
                     'rekening_keterangan' => $a->belanjaBarang?->keterangan ?: ($spec['rekening_keterangan'] ?? ''),
                     'is_extracomtable' => (bool) $a->is_extracomtable,
                     'kode_barang' => $kode108Val,
@@ -356,17 +371,17 @@ Route::middleware('auth')->group(function () {
 
                     // LANGKAH 3 SPESIFIKASI & DOKUMEN
                     'spk_nomor' => $a->spk_nomor ?: ($spec['spk_nomor'] ?? '-'),
-                    'spk_tanggal' => $a->spk_tanggal ? $a->spk_tanggal->format('d/m/Y') : ($spec['spk_tanggal'] ?? '-'),
+                    'spk_tanggal' => $fmtDate($a->spk_tanggal, $spec['spk_tanggal'] ?? '-'),
                     'surat_pesanan_nomor' => $a->surat_pesanan_nomor ?: ($spec['surat_pesanan_nomor'] ?? '-'),
-                    'surat_pesanan_tanggal' => $a->surat_pesanan_tanggal ? $a->surat_pesanan_tanggal->format('d/m/Y') : ($spec['surat_pesanan_tanggal'] ?? '-'),
+                    'surat_pesanan_tanggal' => $fmtDate($a->surat_pesanan_tanggal, $spec['surat_pesanan_tanggal'] ?? '-'),
                     'kwitansi_nomor' => $a->kwitansi_nomor ?: ($spec['kwitansi_nomor'] ?? '-'),
-                    'kwitansi_tanggal' => $a->kwitansi_tanggal ? $a->kwitansi_tanggal->format('d/m/Y') : ($spec['kwitansi_tanggal'] ?? '-'),
+                    'kwitansi_tanggal' => $fmtDate($a->kwitansi_tanggal, $spec['kwitansi_tanggal'] ?? '-'),
                     'faktur_nomor' => $a->faktur_nomor ?: ($spec['faktur_nomor'] ?? ($spec['invoice_nomor'] ?? '-')),
-                    'faktur_tanggal' => $a->faktur_tanggal ? $a->faktur_tanggal->format('d/m/Y') : ($spec['faktur_tanggal'] ?? ($spec['invoice_tanggal'] ?? '-')),
+                    'faktur_tanggal' => $fmtDate($a->faktur_tanggal, $spec['faktur_tanggal'] ?? ($spec['invoice_tanggal'] ?? '-')),
                     'sp2d_nomor' => $a->sp2d_nomor ?: ($spec['sp2d_nomor'] ?? '-'),
-                    'sp2d_tanggal' => $a->sp2d_tanggal ? $a->sp2d_tanggal->format('d/m/Y') : ($spec['sp2d_tanggal'] ?? '-'),
+                    'sp2d_tanggal' => $fmtDate($a->sp2d_tanggal, $spec['sp2d_tanggal'] ?? '-'),
                     'bast_dokumen_nomor' => $a->bast_dokumen_nomor ?: ($spec['bast_dokumen_nomor'] ?? '-'),
-                    'bast_dokumen_tanggal' => $a->bast_dokumen_tanggal ? $a->bast_dokumen_tanggal->format('d/m/Y') : ($spec['bast_dokumen_tanggal'] ?? '-'),
+                    'bast_dokumen_tanggal' => $fmtDate($a->bast_dokumen_tanggal, $spec['bast_dokumen_tanggal'] ?? '-'),
                     
                     // Rincian Tanah Khusus (KIB A)
                     'hak_tanah' => $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? 'Hak Pakai'),
@@ -1370,15 +1385,17 @@ Route::middleware('auth')->group(function () {
                     return $item;
                 });
 
+                $targetRedirect = $request->input('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index');
+
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => true,
                         'message' => 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
-                        'redirect' => route('astap.index')
+                        'redirect' => $targetRedirect
                     ]);
                 }
 
-                return redirect()->route('astap.index')
+                return redirect()->to($targetRedirect)
                     ->with('success', 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_mutasi_masuk');
 
