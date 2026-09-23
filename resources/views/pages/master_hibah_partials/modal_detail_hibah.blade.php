@@ -16,7 +16,7 @@
                         <h3 class="text-lg font-black text-white" x-text="selectedDetail?.tipe_hibah === 'masuk' ? 'Detail Hibah Masuk' : 'Detail Hibah Keluar'"></h3>
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold"
                             :class="selectedDetail?.tipe_hibah === 'masuk' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'"
-                            x-text="selectedDetail?.tipe_hibah === 'masuk' ? 'RMB HIBAH' : 'PENGURANGAN AT'"></span>
+                            x-text="selectedDetail?.tipe_hibah === 'masuk' ? 'HIBAH MASUK' : 'PENGURANGAN AT'"></span>
                     </div>
                     <p class="text-xs text-slate-400 mt-0.5 font-mono" x-text="'No. BAST: ' + (selectedDetail?.nomor_bast || '-')"></p>
                 </div>

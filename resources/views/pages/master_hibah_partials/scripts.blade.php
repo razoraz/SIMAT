@@ -275,7 +275,7 @@
             },
 
             // =========================================================================
-            // EKSPOR EXCEL BERSTANDAR SIPENERBANG / RMB HIBAH
+            // EKSPOR EXCEL BERSTANDAR SIPENERBANG / HIBAH
             // =========================================================================
             openExportModal() {
                 this.exportConfig.tahun = this.selectedYear !== 'all' ? this.selectedYear : (this.availableYears[0] || new Date().getFullYear());
@@ -333,7 +333,7 @@
 
                         rekapRows.push([
                             1,
-                            "Mutasi Bertambah: Hibah / Bantuan Pihak Ketiga (RMB Hibah Masuk)",
+                            "Mutasi Bertambah: Hibah / Bantuan Pihak Ketiga (Hibah Masuk)",
                             masukList.length + " Berkas",
                             totalMasukVol + " Unit",
                             totalMasukNom,
@@ -390,13 +390,13 @@
                     }
 
                     // =========================================================
-                    // SHEET 2: DAFTAR RMB HIBAH MASUK (FORMAT 'all' atau 'masuk')
+                    // SHEET 2: DAFTAR HIBAH MASUK (FORMAT 'all' atau 'masuk')
                     // =========================================================
                     if (cfg.format === 'all' || cfg.format === 'masuk') {
                         const masukRows = [];
                         masukRows.push(["PEMERINTAH KABUPATEN BONDOWOSO"]);
                         masukRows.push(["RUMAH SAKIT UMUM DAERAH Dr. H. KOESNANDI"]);
-                        masukRows.push(["REKAPITULASI REALISASI MUTASI BERTAMBAH (RMB) HIBAH / BANTUAN"]);
+                        masukRows.push(["REKAPITULASI REALISASI MUTASI BERTAMBAH HIBAH / BANTUAN"]);
                         masukRows.push([`TAHUN ANGGARAN ${yearLabel} — PERIODE ${twLabel}`]);
                         masukRows.push([]); // blank
 
@@ -435,7 +435,7 @@
 
                         const masukTotalIdx = masukRows.length;
                         masukRows.push([
-                            "JUMLAH TOTAL REALISASI RMB HIBAH MASUK",
+                            "JUMLAH TOTAL REALISASI HIBAH MASUK",
                             "", "", "", "", "", "", "", "",
                             sumMasuk,
                             `Total ${masukList.length} Item Hibah Masuk`
@@ -473,7 +473,7 @@
                             { s: { r: 3, c: 0 }, e: { r: 3, c: 10 } },
                             { s: { r: masukTotalIdx, c: 0 }, e: { r: masukTotalIdx, c: 8 } },
                         ];
-                        XLSX.utils.book_append_sheet(wb, wsMasuk, cfg.format === 'masuk' ? "RMB Hibah Masuk RSDK" : "2. RMB Hibah (Masuk)");
+                        XLSX.utils.book_append_sheet(wb, wsMasuk, cfg.format === 'masuk' ? "Hibah Masuk RSDK" : "2. Hibah (Masuk)");
                     }
 
                     // =========================================================

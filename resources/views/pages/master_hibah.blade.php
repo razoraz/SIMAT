@@ -1,5 +1,5 @@
 <x-layout title="Kelola Data Hibah Aset - SIMAT-RK">
-    @section('page-title', 'Kelola Data Hibah Aset (RMB & Pengurangan)')
+    @section('page-title', 'Kelola Data Hibah Aset (Masuk & Pengurangan)')
     @section('breadcrumb', 'Master Aset / Kelola Hibah Aset')
 
     @include('pages.master_hibah_partials.scripts')

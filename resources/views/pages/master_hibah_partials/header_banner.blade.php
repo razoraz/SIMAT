@@ -13,7 +13,7 @@
                             Kelola Data Hibah Aset
                         </h1>
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400/15 text-amber-300 border border-amber-400/30">
-                            RMB &amp; PENGURANGAN HIBAH
+                            MASUK &amp; PENGURANGAN HIBAH
                         </span>
                     </div>
                     <p class="text-xs text-slate-400 mt-0.5">
@@ -31,7 +31,7 @@
                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Sheet RMB Hibah (Excel)</span>
+                <span>Sheet Hibah (Excel)</span>
             </button>
 
             <!-- Catat Hibah Keluar -->
@@ -71,7 +71,7 @@
                 </div>
             </div>
             <div class="text-[10px] text-slate-500 mt-2 flex items-center justify-between border-t border-slate-800/80 pt-2">
-                <span>RMB Hibah Pihak Ketiga</span>
+                <span>Hibah Pihak Ketiga</span>
                 <span class="text-amber-400/80 font-bold">KIB A - F / ATB</span>
             </div>
         </div>

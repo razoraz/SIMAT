@@ -99,7 +99,7 @@
                         </div>
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400/10 text-amber-300 border border-amber-400/20">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                            RMB Hibah Masuk RSDK
+                            Hibah Masuk RSDK
                         </span>
                     </div>
 
@@ -122,7 +122,7 @@
                             📄 Tanpa SIPD
                         </div>
                         <div class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-center font-medium truncate">
-                            📊 Sheet RMB
+                            📊 Sheet Hibah
                         </div>
                     </div>
                 </div>
@@ -243,18 +243,6 @@
                 </div>
             </div>
 
-        </div>
-
-        <!-- Banner Ringkas Bawah (1 Baris Saja) -->
-        <div class="rounded-xl bg-slate-900/80 border border-slate-800 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-400">
-            <div class="flex items-center gap-2">
-                <span class="text-emerald-400 font-bold">ℹ️ Info:</span>
-                <span>Setiap aset yang didaftarkan otomatis mendapatkan <strong class="text-slate-200">NIBAR</strong> dan QR Code untuk penatausahaan KIR.</span>
-            </div>
-            <a href="{{ route('master.hibah') }}" class="inline-flex items-center gap-1.5 text-amber-300 hover:text-amber-200 font-semibold text-xs shrink-0 self-end sm:self-auto">
-                <span>Buka Master Hibah (RMB)</span>
-                <span>→</span>
-            </a>
         </div>
 
     </div>

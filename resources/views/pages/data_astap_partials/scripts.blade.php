@@ -6390,7 +6390,7 @@
         }
 
         // =========================================================================
-        // LEMBAR 5: RMB HIBAH RSDK
+        // LEMBAR 5: HIBAH RSDK
         // =========================================================================
         if (filterSheet === 'all' || filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') {
             const hibahItems = rawAstaps.filter(item => {
@@ -6414,7 +6414,7 @@
                 // Header laporan
                 hibahRows.push(["PEMERINTAH KABUPATEN BONDOWOSO"]);
                 hibahRows.push(["RUMAH SAKIT UMUM DAERAH Dr. H. KOESNANDI"]);
-                hibahRows.push(["REKAPITULASI REALISASI MUTASI BERTAMBAH (RMB) HIBAH / BANTUAN"]);
+                hibahRows.push(["REKAPITULASI REALISASI MUTASI BERTAMBAH HIBAH / BANTUAN"]);
                 hibahRows.push(["TAHUN ANGGARAN " + yearLabel + (filterTw === 'all' ? "" : (" — " + twFullLabel))]);
                 hibahRows.push([]); // Baris kosong
 
@@ -6494,7 +6494,7 @@
 
                 applyCleanReportStyling(wsHibah, hibahRows.length, 11, 6, 2, hibahTotalRowIdx);
                 applySignatureBlockStyling(wsHibah, hibahSignStart, 11);
-                XLSX.utils.book_append_sheet(wb, wsHibah, (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') ? "RMB Hibah RSDK" : "5. RMB Hibah RSDK");
+                XLSX.utils.book_append_sheet(wb, wsHibah, (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') ? "Hibah RSDK" : "5. Hibah RSDK");
             }
         }
 
@@ -6511,7 +6511,7 @@
         else if (filterSheet === 'sheet2') sheetSlug = 'PENGURANGAN_AT';
         else if (filterSheet === 'sheet3') sheetSlug = 'REKLAS';
         else if (filterSheet === 'sheet4') sheetSlug = 'RMB_RSDK';
-        else if (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') sheetSlug = 'RMB_HIBAH';
+        else if (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') sheetSlug = 'HIBAH_RSDK';
 
         const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
         const fileName = "LAPORAN_REKAP_TRIWULAN_" + sheetSlug + "_RSDK_" + yearLabel + "_" + twSlug + ".xlsx";
@@ -7500,7 +7500,7 @@
                             else if (this.exportRekapSheet === 'sheet2') sheetName = 'Daftar Pengurangan AT RSDK';
                             else if (this.exportRekapSheet === 'sheet3') sheetName = 'Reklas RSDK';
                             else if (this.exportRekapSheet === 'sheet4') sheetName = 'RMB (excel) RSDK';
-                            else if (this.exportRekapSheet === 'sheet5' || this.exportRekapSheet === 'sheet5_hibah') sheetName = 'RMB Hibah RSDK';
+                            else if (this.exportRekapSheet === 'sheet5' || this.exportRekapSheet === 'sheet5_hibah') sheetName = 'Hibah RSDK';
                             this.showToast('Berhasil mengekspor Laporan ' + sheetName + ' ' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ' ' + this.exportYear + '!', 'success');
                         }, 800);
                     } else {

@@ -1,4 +1,4 @@
-<!-- MODAL: EKSPOR EXCEL SIPENERBANG / RMB HIBAH -->
+<!-- MODAL: EKSPOR EXCEL SIPENERBANG / HIBAH -->
 <div x-show="showModalExport" x-cloak @click.self="showModalExport = false"
     class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
     style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px);">
@@ -12,7 +12,7 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-black text-white">
-                        Ekspor Sheet RMB Hibah (Excel)
+                        Ekspor Sheet Hibah (Excel)
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">
                         Download berkas spreadsheet berstandar Sipenerbang / Pemkab Bondowoso lengkap dengan kop dan tanda tangan.
@@ -38,7 +38,7 @@
                         <input type="radio" value="all" x-model="exportConfig.format" class="text-emerald-500 focus:ring-emerald-400">
                         <div>
                             <div class="font-bold">Paket Lengkap Hibah (3 Sheet Terintegrasi)</div>
-                            <div class="text-[10px] text-slate-400">Sheet 1: Rekapitulasi Hibah • Sheet 2: RMB Hibah Masuk • Sheet 3: Pengurangan Hibah Keluar</div>
+                            <div class="text-[10px] text-slate-400">Sheet 1: Rekapitulasi Hibah • Sheet 2: Hibah Masuk • Sheet 3: Pengurangan Hibah Keluar</div>
                         </div>
                     </label>
 
@@ -46,7 +46,7 @@
                         :class="exportConfig.format === 'masuk' ? 'bg-amber-400/10 border-amber-400/40 text-white' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'">
                         <input type="radio" value="masuk" x-model="exportConfig.format" class="text-amber-400 focus:ring-amber-400">
                         <div>
-                            <div class="font-bold">Hanya Sheet RMB Hibah Masuk (Penambahan Aset)</div>
+                            <div class="font-bold">Hanya Sheet Hibah Masuk (Penambahan Aset)</div>
                             <div class="text-[10px] text-slate-400">Daftar perolehan hibah dari Kemenkes/Dinkes/Pihak Ketiga TA bersangkutan</div>
                         </div>
                     </label>

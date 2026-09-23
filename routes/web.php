@@ -847,11 +847,10 @@ Route::middleware('auth')->group(function () {
             // ─── Form Hibah (Create & Store) ──────────────────────────────
             Route::get('/astap/create-hibah', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
-                $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_hibah', compact('dbMaster108', 'dbJenisPengadaans', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+                return view('pages.form_hibah', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
             })->name('astap.create_hibah');
 
             Route::post('/astap/store-hibah', function (\Illuminate\Http\Request $request) {
@@ -922,9 +921,25 @@ Route::middleware('auth')->group(function () {
                     // Tangkap spesifikasi teknis jika dikirimkan di root request
                     $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
                     foreach ($repeaterKeys as $rk) {
-                        if ($request->filled($rk)) {
+                        if ($request->has($rk) && !is_null($request->input($rk))) {
                             $astapPayload['spesifikasi_json'][$rk] = $request->input($rk);
                         }
+                    }
+
+                    // Sinkronisasi spesifikasi spesifik Tanah jika memilih KIB A (Tanah)
+                    if ($request->has('tanah_items') && is_array($request->input('tanah_items')) && count($request->input('tanah_items')) > 0) {
+                        $tItems = $request->input('tanah_items');
+                        $firstT = $tItems[0];
+                        $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+                        $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
+
+                        $astapPayload['spesifikasi_json']['tanah_items'] = $tItems;
+                        $astapPayload['spesifikasi_json']['luas_m2'] = $totalLuas;
+                        $astapPayload['spesifikasi_json']['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+                        $astapPayload['spesifikasi_json']['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
+                        $astapPayload['spesifikasi_json']['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
+                        $astapPayload['spesifikasi_json']['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+                        $astapPayload['spesifikasi_json']['tanah_jumlah_bidang'] = count($tItems);
                     }
 
                     if ($request->filled('ppk_nama')) {
