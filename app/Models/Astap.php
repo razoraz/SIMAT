@@ -29,6 +29,7 @@ class Astap extends Model
         'sp2d_tanggal' => 'date:d/m/Y',
         'bast_dokumen_tanggal' => 'date:d/m/Y',
         'hibah_tanggal_bast' => 'date:d/m/Y',
+        'mutasi_tanggal' => 'date:d/m/Y',
     ];
 
     /**
@@ -95,12 +96,42 @@ class Astap extends Model
         $this->attributes['hibah_tanggal_bast'] = static::parseDateInput($value);
     }
 
+    public function setMutasiTanggalAttribute($value)
+    {
+        $this->attributes['mutasi_tanggal'] = static::parseDateInput($value);
+    }
+
     /**
-     * Cek apakah aset ini berasal dari hibah.
+     * Cek sumber perolehan aset.
      */
+    public function isBelanjaModal(): bool
+    {
+        return empty($this->sumber_dana) || $this->sumber_dana === 'belanja_modal';
+    }
+
+    public function isBelanjaRekening(): bool
+    {
+        return $this->sumber_dana === 'belanja_rekening';
+    }
+
     public function isHibah(): bool
     {
         return $this->sumber_dana === 'hibah';
+    }
+
+    public function isMutasiMasuk(): bool
+    {
+        return $this->sumber_dana === 'mutasi_masuk';
+    }
+
+    public function getSumberDanaLabelAttribute(): string
+    {
+        return match ($this->sumber_dana) {
+            'belanja_rekening' => 'Belanja Rekening (Perbekalan)',
+            'hibah'            => 'Hibah Masuk',
+            'mutasi_masuk'     => 'Mutasi Masuk (Pelimpahan)',
+            default            => 'Belanja Modal (APBD/BLUD)',
+        };
     }
 
     public function jenisPengadaan()

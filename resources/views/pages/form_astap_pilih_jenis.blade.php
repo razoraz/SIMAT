@@ -181,9 +181,9 @@
 
                 <!-- Tombol Action Penuh yang Rapi & Seragam -->
                 <div class="mt-4 pt-3 border-t border-slate-800/80">
-                    <a href="{{ route('astap.create') }}"
+                    <a href="{{ route('astap.create_rekening') }}"
                         class="w-full py-2.5 px-4 rounded-xl bg-indigo-500/15 hover:bg-indigo-500 text-indigo-300 hover:text-white font-bold text-xs transition-all duration-200 flex items-center justify-between border border-indigo-500/30 group-hover:border-indigo-500">
-                        <span>Input Ekstrakomptabel</span>
+                        <span>Input Belanja Rekening</span>
                         <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
@@ -191,7 +191,7 @@
                 </div>
             </div>
 
-            <!-- Card 4: Mutasi Antar Ruangan / SKPD -->
+            <!-- Card 4: Mutasi Masuk (Pelimpahan SKPD) -->
             <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-purple-500/60 shadow-lg hover:shadow-purple-500/5 transition-all duration-200 group">
                 <div>
                     <!-- Header Kartu -->
@@ -203,18 +203,18 @@
                         </div>
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-300 border border-purple-500/20">
                             <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                            Mutasi & Pelimpahan
+                            Pelimpahan SKPD Luar
                         </span>
                     </div>
 
                     <!-- Judul -->
                     <h2 class="text-base font-bold text-white group-hover:text-purple-300 transition-colors">
-                        Mutasi Antar Ruangan / SKPD
+                        Mutasi Masuk (Pelimpahan SKPD)
                     </h2>
 
                     <!-- Deskripsi (Kunci 2 baris seragam) -->
                     <p class="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2 h-9">
-                        Pemindahan atau pelimpahan aset antar ruangan internal RSUD Dr. H. Koesnandi maupun mutasi masuk dari dinas luar.
+                        Penerimaan atau pelimpahan aset dari SKPD/Dinas luar ke RSUD Dr. H. Koesnandi berdasarkan Berita Acara BAMB.
                     </p>
 
                     <!-- Tags Seragam (3 Buah) -->
@@ -223,7 +223,7 @@
                             📑 Berita BAMB
                         </div>
                         <div class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-center font-medium truncate">
-                            🔄 KIR Sinkron
+                            🏢 Tanpa SIPD
                         </div>
                         <div class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-center font-medium truncate">
                             📍 Lokasi Baru
@@ -232,14 +232,19 @@
                 </div>
 
                 <!-- Tombol Action Penuh yang Rapi & Seragam -->
-                <div class="mt-4 pt-3 border-t border-slate-800/80">
-                    <a href="{{ route('mutasi.index') }}"
+                <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-2">
+                    <a href="{{ route('astap.create_mutasi_masuk') }}"
                         class="w-full py-2.5 px-4 rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-300 hover:text-white font-bold text-xs transition-all duration-200 flex items-center justify-between border border-purple-500/30 group-hover:border-purple-500">
-                        <span>Buka Modul Mutasi Aset</span>
+                        <span>Input Mutasi Masuk</span>
                         <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
                     </a>
+                    <div class="text-center">
+                        <a href="{{ route('mutasi.index') }}" class="text-[10px] text-slate-500 hover:text-purple-400 transition-colors">
+                            Atau buka modul mutasi ruangan internal &rarr;
+                        </a>
+                    </div>
                 </div>
             </div>
 
