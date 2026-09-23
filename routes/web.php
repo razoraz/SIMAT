@@ -1236,6 +1236,14 @@ Route::middleware('auth')->group(function () {
                 return view('pages.form_mutasi_masuk', compact('dbMaster108', 'dbUnits', 'dbPejabats'));
             })->name('astap.create_mutasi_masuk');
 
+            Route::get('/astap/{id}/edit-mutasi-masuk', function ($id) use ($getDistinctPejabats) {
+                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'pelimpahanSkpd', 'unit'])->findOrFail($id);
+                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbPejabats = $getDistinctPejabats();
+                return view('pages.form_mutasi_masuk', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats'));
+            })->name('astap.edit_mutasi_masuk');
+
             Route::post('/astap/store-mutasi-masuk', function (\Illuminate\Http\Request $request) {
                 $data = $request->validate([
                     'nama_barang'        => 'required|string|max:500',
@@ -1401,6 +1409,123 @@ Route::middleware('auth')->group(function () {
                     ->with('success', 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_mutasi_masuk');
 
+            Route::put('/astap/update-mutasi-masuk/{id}', function (\Illuminate\Http\Request $request, $id) {
+                $item = \App\Models\Astap::with(['registers', 'pelimpahanSkpd'])->findOrFail($id);
+                $data = $request->validate([
+                    'nama_barang'        => 'required|string|max:500',
+                    'jenis_astap_id'     => 'required|integer|exists:jenis_astaps,id',
+                    'tahun_perolehan'    => 'required|integer|min:1990|max:2100',
+                    'jumlah_volume'      => 'required|integer|min:1',
+                    'satuan'             => 'required|string|max:100',
+                    'total_realisasi'    => 'required|numeric|min:0',
+                    'triwulan'           => 'required|string|in:TW I,TW II,TW III,TW IV',
+                    'mutasi_asal'        => 'required|string|max:500',
+                    'mutasi_nomor_bamb'  => 'required|string|max:255',
+                    'mutasi_tanggal'     => 'required',
+                    'mutasi_keterangan'  => 'nullable|string|max:2000',
+                    'unit_id'            => 'nullable|integer|exists:units,id',
+                    'alamat_barang'      => 'nullable|string|max:1000',
+                    'kondisi'            => 'nullable|string|max:50',
+                ]);
+
+                $totalRealisasi = (float) $data['total_realisasi'];
+                $totalVolume    = max(1, (int) $data['jumlah_volume']);
+                $hargaSatuan    = $totalRealisasi / $totalVolume;
+                $tahun          = (int) $data['tahun_perolehan'];
+                $kondisiItem    = $data['kondisi'] ?: 'Baik';
+
+                $astapPayload = [
+                    'nama_barang'               => $data['nama_barang'],
+                    'jenis_astap_id'            => $data['jenis_astap_id'],
+                    'tahun_perolehan'           => $tahun,
+                    'jumlah_volume'             => $totalVolume,
+                    'satuan'                    => $data['satuan'],
+                    'harga_satuan'              => $hargaSatuan,
+                    'jumlah_realisasi'          => $totalRealisasi,
+                    'total_realisasi'           => $totalRealisasi,
+                    'triwulan'                  => $data['triwulan'],
+                    'mutasi_asal'               => $data['mutasi_asal'],
+                    'mutasi_nomor_bamb'         => $data['mutasi_nomor_bamb'],
+                    'mutasi_tanggal'            => $data['mutasi_tanggal'],
+                    'mutasi_keterangan'         => $data['mutasi_keterangan'] ?? null,
+                    'bast_dokumen_nomor'        => $data['mutasi_nomor_bamb'],
+                    'bast_dokumen_tanggal'      => $data['mutasi_tanggal'],
+                    'keterangan_tambahan'       => $data['mutasi_keterangan'] ?? null,
+                    'unit_id'                   => $data['unit_id'] ?? null,
+                    'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
+                ];
+
+                $specJson = is_array($item->spesifikasi_json) ? $item->spesifikasi_json : [];
+                $specJson['sumber_dana'] = 'pelimpahan_skpd';
+                $specJson['skpd_asal'] = $data['mutasi_asal'];
+                $specJson['nomor_bamb'] = $data['mutasi_nomor_bamb'];
+                $specJson['tanggal_bamb'] = $data['mutasi_tanggal'];
+                $specJson['kondisi'] = $kondisiItem;
+                $specJson['keterangan'] = $data['mutasi_keterangan'] ?? null;
+
+                $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
+                foreach ($repeaterKeys as $rk) {
+                    if ($request->has($rk) && !is_null($request->input($rk))) {
+                        $specJson[$rk] = $request->input($rk);
+                    }
+                }
+
+                if ($request->filled('ppk_nama')) {
+                    $astapPayload['ppk_nama'] = $request->input('ppk_nama');
+                    $specJson['ppk_nama'] = $request->input('ppk_nama');
+                }
+                if ($request->filled('ppk_nip')) {
+                    $astapPayload['ppk_nip'] = $request->input('ppk_nip');
+                    $specJson['ppk_nip'] = $request->input('ppk_nip');
+                }
+                $astapPayload['spesifikasi_json'] = $specJson;
+
+                \Illuminate\Support\Facades\DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $kondisiItem) {
+                    $item->update($astapPayload);
+
+                    if ($item->pelimpahanSkpd) {
+                        $item->pelimpahanSkpd->update([
+                            'skpd_asal'       => $data['mutasi_asal'],
+                            'nomor_bamb'      => $data['mutasi_nomor_bamb'],
+                            'tanggal_bamb'    => $data['mutasi_tanggal'],
+                            'nilai_perolehan' => $totalRealisasi,
+                            'keterangan'      => $data['mutasi_keterangan'] ?? null,
+                        ]);
+                    } else {
+                        \App\Models\AstapPelimpahanSkpd::create([
+                            'astap_id'        => $item->id,
+                            'skpd_asal'       => $data['mutasi_asal'],
+                            'nomor_bamb'      => $data['mutasi_nomor_bamb'],
+                            'tanggal_bamb'    => $data['mutasi_tanggal'],
+                            'nilai_perolehan' => $totalRealisasi,
+                            'keterangan'      => $data['mutasi_keterangan'] ?? null,
+                        ]);
+                    }
+
+                    // Update unit penempatan & kondisi pada register yang ada
+                    $unitModel = !empty($data['unit_id']) ? \App\Models\Unit::find($data['unit_id']) : null;
+                    $ruangPemegang = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi');
+                    \App\Models\AstapRegister::where('astap_id', $item->id)->update([
+                        'unit_id'        => $data['unit_id'] ?? null,
+                        'ruang_pemegang' => $ruangPemegang,
+                        'kondisi'        => $kondisiItem,
+                    ]);
+                });
+
+                $targetRedirect = $request->input('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index');
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success'  => true,
+                        'message'  => 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil diperbarui!',
+                        'redirect' => $targetRedirect
+                    ]);
+                }
+
+                return redirect()->to($targetRedirect)
+                    ->with('success', 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil diperbarui.');
+            })->name('astap.update_mutasi_masuk');
+
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
@@ -1412,13 +1537,16 @@ Route::middleware('auth')->group(function () {
             })->name('astap.create');
 
             Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
+                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->findOrFail($id);
+                if ($astap->sumber_dana === 'pelimpahan_skpd' || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
+                    return redirect()->route('astap.edit_mutasi_masuk', ['id' => $id, 'from' => request('from', 'eksternal')]);
+                }
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
                 $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->find($id);
                 return view('pages.form_astap', [
                     'id' => $id, 
                     'astap' => $astap,

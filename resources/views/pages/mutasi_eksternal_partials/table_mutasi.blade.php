@@ -145,7 +145,7 @@
                                 </button>
 
                                 <!-- 3. Tombol Ubah (Form Edit) -->
-                                <a :href="'/astap/' + item.id + '/edit?from=eksternal'"
+                                <a :href="'/astap/' + item.id + '/edit-mutasi-masuk?from=eksternal'"
                                     title="Ubah Data Aset Pelimpahan SKPD"
                                     class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                     <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

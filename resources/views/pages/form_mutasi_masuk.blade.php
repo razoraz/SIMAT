@@ -1,11 +1,69 @@
 @php
     $isFromEksternal = request('from') === 'eksternal';
-    $backUrl = $isFromEksternal ? route('mutasi.eksternal') : route('astap.pilih_jenis');
+    $isEdit = isset($astap);
+    $backUrl = $isFromEksternal ? route('mutasi.eksternal') : ($isEdit ? route('astap.index') : route('astap.pilih_jenis'));
+    $pageTitle = $isEdit ? 'Ubah Data Pelimpahan SKPD' : 'Pencatatan Pelimpahan SKPD';
+    $breadcrumb = $isEdit 
+        ? ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Ubah Data Pelimpahan SKPD' : 'Master Utama / Data ASTAP / Ubah Data Pelimpahan SKPD')
+        : ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Tambah Mutasi Masuk' : 'Master Utama / Data ASTAP / Tambah Pelimpahan SKPD');
+
+    $initialAstap = null;
+    if ($isEdit) {
+        $firstReg = $astap->registers ? $astap->registers->first() : null;
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : [];
+        $initialAstap = [
+            'id' => $astap->id,
+            'from' => request('from', 'eksternal'),
+            'sumber_dana' => 'pelimpahan_skpd',
+            'tahun_perolehan' => (int) ($astap->tahun_perolehan ?: date('Y')),
+            'triwulan' => $astap->triwulan ?: 'TW I',
+            'mutasi_asal' => $astap->pelimpahanSkpd?->skpd_asal ?: ($astap->mutasi_asal ?: ($spec['skpd_asal'] ?? '')),
+            'mutasi_nomor_bamb' => $astap->pelimpahanSkpd?->nomor_bamb ?: ($astap->mutasi_nomor_bamb ?: ($astap->bast_dokumen_nomor ?: ($spec['nomor_bamb'] ?? ''))),
+            'mutasi_tanggal' => $astap->pelimpahanSkpd?->tanggal_bamb ?: ($astap->mutasi_tanggal ?: ($astap->bast_dokumen_tanggal ?: ($spec['tanggal_bamb'] ?? date('Y-m-d')))),
+            'total_realisasi' => (float) ($astap->total_realisasi ?: ($astap->pelimpahanSkpd?->nilai_perolehan ?: 0)),
+            'mutasi_keterangan' => $astap->pelimpahanSkpd?->keterangan ?: ($astap->mutasi_keterangan ?: ($astap->keterangan_tambahan ?: ($spec['keterangan'] ?? ''))),
+            'nama_barang' => $astap->nama_barang,
+            'jenis_astap_id' => $astap->jenis_astap_id,
+            'jumlah_volume' => (int) ($astap->jumlah_volume ?: ($astap->registers ? $astap->registers->count() : 1)),
+            'satuan' => $astap->satuan ?: 'Unit',
+            'kondisi' => $firstReg?->kondisi ?: ($spec['kondisi'] ?? 'Baik'),
+            'unit_id' => $astap->unit_id ?: ($firstReg?->unit_id ?: ''),
+            'alamat_barang' => $astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+            'ppk_nama' => $astap->ppk_nama ?: ($spec['ppk_nama'] ?? ''),
+            'ppk_nip' => $astap->ppk_nip ?: ($spec['ppk_nip'] ?? ''),
+            'tanah_items' => $spec['tanah_items'] ?? [
+                [
+                    'tanah_hak' => $spec['hak_tanah'] ?? 'Hak Pakai',
+                    'tanah_sertifikat_tgl' => $spec['sertifikat_tgl'] ?? '',
+                    'tanah_sertifikat_no' => $spec['sertifikat_no'] ?? ($spec['sertifikat_nomor'] ?? ''),
+                    'tanah_kondisi' => $spec['kondisi'] ?? 'Baik',
+                    'tanah_penggunaan' => $spec['penggunaan'] ?? 'Bangunan Fasilitas Kesehatan & Pelayanan Rumah Sakit',
+                    'tanah_jumlah_bidang' => 1,
+                    'tanah_luas_m2' => $spec['luas_m2'] ?? '',
+                    'tanah_alamat' => '',
+                    'tanah_nilai_fisik' => (float) ($astap->total_realisasi ?: 0),
+                ]
+            ],
+            'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['sertifikat_nomor'] ?? ''),
+            'merk' => $spec['merk'] ?? '',
+            'type' => $spec['type'] ?? '',
+            'no_pabrik' => $spec['no_pabrik'] ?? '',
+            'ukuran' => $spec['ukuran'] ?? '',
+            'bahan' => $spec['bahan'] ?? '',
+            'no_rangka' => $spec['no_rangka'] ?? '',
+            'no_mesin' => $spec['no_mesin'] ?? '',
+            'no_polisi' => $spec['no_polisi'] ?? '',
+            'gedung_luas_m2' => $spec['gedung_luas_m2'] ?? ($spec['luas_m2'] ?? ''),
+            'gedung_bertingkat' => $spec['gedung_bertingkat'] ?? 'Tidak',
+            'gedung_beton' => $spec['gedung_beton'] ?? 'Beton',
+            'gedung_status_tanah' => $spec['gedung_status_tanah'] ?? 'Tanah Pemda',
+        ];
+    }
 @endphp
 
-<x-layout title="Form Input Pelimpahan SKPD (Dinas Luar) - SIMAT-RK">
-    @section('page-title', 'Pencatatan Pelimpahan SKPD')
-    @section('breadcrumb', $isFromEksternal ? 'Master Aset / Mutasi Eksternal / Tambah Mutasi Masuk' : 'Master Utama / Data ASTAP / Tambah Pelimpahan SKPD')
+<x-layout :title="($isEdit ? 'Ubah Data Pelimpahan SKPD: ' . $astap->nama_barang : 'Pencatatan Pelimpahan SKPD (Dinas Luar)') . ' - SIMAT-RK'">
+    @section('page-title', $pageTitle)
+    @section('breadcrumb', $breadcrumb)
 
     <div x-data="formMutasiMasuk()" x-cloak class="max-w-5xl mx-auto space-y-6 py-2">
 
@@ -20,14 +78,14 @@
                 </a>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="text-2xl font-black text-white tracking-tight">
+                        <h1 class="text-2xl font-black text-white tracking-tight" x-text="isEdit ? ('Ubah Data Pelimpahan: ' + (formData.nama_barang || 'Aset')) : 'Pencatatan Pelimpahan SKPD (Dinas Luar)'">
                             Pencatatan Pelimpahan SKPD (Dinas Luar)
                         </h1>
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/15 text-purple-300 border border-purple-500/30" x-text="isEdit ? '✏️ MODE EDIT MUTASI EKSTERNAL' : '🔄 PELIMPAHAN SKPD / DINAS LUAR'">
                             🔄 PELIMPAHAN SKPD / DINAS LUAR
                         </span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-0.5">
+                    <p class="text-xs text-slate-400 mt-0.5" x-text="isEdit ? 'Perbarui informasi dokumen Berita Acara (BAMB/BAST), kode rekening 108, atau ruangan penempatan aset pelimpahan.' : 'Pendaftaran aset pelimpahan dari SKPD/Dinas luar berdasarkan Berita Acara resmi (BAP/BAMB) atau SK Kepala Daerah.'">
                         Pendaftaran aset pelimpahan dari SKPD/Dinas luar berdasarkan Berita Acara resmi (BAP/BAMB) atau SK Kepala Daerah.
                     </p>
                 </div>
@@ -703,7 +761,7 @@
                     <!-- Final Submit Button (Langkah 3) -->
                     <button type="submit" x-show="step === 3" :disabled="isSubmitting"
                         class="px-8 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs shadow-xl shadow-emerald-500/25 transition-all flex items-center space-x-2 cursor-pointer">
-                        <span x-show="!isSubmitting">💾 Simpan Pelimpahan SKPD</span>
+                        <span x-show="!isSubmitting" x-text="isEdit ? '💾 Simpan Perubahan Pelimpahan' : '💾 Simpan Pelimpahan SKPD'">💾 Simpan Pelimpahan SKPD</span>
                         <span x-show="isSubmitting">Menyimpan...</span>
                     </button>
                 </div>
@@ -719,6 +777,9 @@
             return {
                 step: 1,
                 isSubmitting: false,
+                isEdit: {{ Js::from($isEdit) }},
+                astapId: {{ Js::from($isEdit ? $astap->id : null) }},
+                initialAstap: {{ Js::from($initialAstap) }},
                 master108: @json($dbMaster108 ?? []),
                 pejabatsList: @json($dbPejabats ?? []),
 
@@ -787,17 +848,33 @@
                 allFlattened108: [],
 
                 init() {
-                    const m = new Date().getMonth() + 1;
-                    if (m >= 1 && m <= 3) this.formData.triwulan = 'TW I';
-                    else if (m >= 4 && m <= 6) this.formData.triwulan = 'TW II';
-                    else if (m >= 7 && m <= 9) this.formData.triwulan = 'TW III';
-                    else this.formData.triwulan = 'TW IV';
-
                     this.flatten108();
 
-                    if (this.pejabatsList && this.pejabatsList.length > 0) {
-                        this.formData.ppk_nama = this.pejabatsList[0].nama;
-                        this.formData.ppk_nip = this.pejabatsList[0].nip || '';
+                    if (this.isEdit && this.initialAstap) {
+                        Object.assign(this.formData, this.initialAstap);
+
+                        // Aktifkan pilihan kode 108 & KIB yang sesuai
+                        if (this.formData.jenis_astap_id) {
+                            const found = this.allFlattened108.find(x => Number(x.id) === Number(this.formData.jenis_astap_id));
+                            if (found) {
+                                const originalNama = this.formData.nama_barang;
+                                this.selectFromSearch(found);
+                                if (originalNama) {
+                                    this.formData.nama_barang = originalNama;
+                                }
+                            }
+                        }
+                    } else {
+                        const m = new Date().getMonth() + 1;
+                        if (m >= 1 && m <= 3) this.formData.triwulan = 'TW I';
+                        else if (m >= 4 && m <= 6) this.formData.triwulan = 'TW II';
+                        else if (m >= 7 && m <= 9) this.formData.triwulan = 'TW III';
+                        else this.formData.triwulan = 'TW IV';
+
+                        if (this.pejabatsList && this.pejabatsList.length > 0) {
+                            this.formData.ppk_nama = this.pejabatsList[0].nama;
+                            this.formData.ppk_nip = this.pejabatsList[0].nip || '';
+                        }
                     }
                 },
 
@@ -1104,8 +1181,11 @@
                     this.isSubmitting = true;
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
-                    fetch("{{ route('astap.store_mutasi_masuk') }}", {
-                        method: 'POST',
+                    const url = this.isEdit ? `/astap/update-mutasi-masuk/${this.astapId}` : "{{ route('astap.store_mutasi_masuk') }}";
+                    const method = this.isEdit ? 'PUT' : 'POST';
+
+                    fetch(url, {
+                        method: method,
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
@@ -1117,7 +1197,7 @@
                     .then(result => {
                         this.isSubmitting = false;
                         if (result.status === 200 && result.body.success) {
-                            alert('🎉 Berhasil! ' + (result.body.message || 'Data Pelimpahan SKPD berhasil disimpan.'));
+                            alert('🎉 Berhasil! ' + (result.body.message || (this.isEdit ? 'Data Pelimpahan SKPD berhasil diperbarui.' : 'Data Pelimpahan SKPD berhasil disimpan.')));
                             window.location.href = result.body.redirect || ({{ Js::from($isFromEksternal) }} ? "{{ route('mutasi.eksternal') }}" : "{{ route('astap.index') }}");
                         } else {
                             const errMsg = result.body.message || (result.body.errors ? Object.values(result.body.errors).flat().join('\n') : 'Gagal menyimpan data.');
