@@ -1,4 +1,4 @@
-<x-layout title="Mutasi Eksternal (Antar-OPD) - SIMAT-RK">
+<x-layout title="Mutasi Eksternal (Antar-OPD) - SIMAT-RK" :fullWidth="true">
     @section('page-title', 'Mutasi Eksternal (Antar-OPD)')
     @section('breadcrumb', 'Master Aset / Mutasi Eksternal')
 

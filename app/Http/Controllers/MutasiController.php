@@ -153,143 +153,139 @@ class MutasiController extends Controller
     }
 
     /**
-     * Tampilkan katalog mutasi eksternal (Antar-OPD).
-     * Disiapkan frontend dengan data simulasi BAST Antar-OPD Pemkab Bondowoso.
+     * Tampilkan katalog mutasi eksternal (Pelimpahan SKPD / Antar-OPD).
+     * Data ditarik langsung dari pendaftaran aset melalui Form Mutasi Masuk (Pelimpahan SKPD).
      */
     public function eksternal()
     {
-        $mutasiEksternals = [
-            [
-                'id'                      => 1,
-                'is_deleted'              => 0,
-                'kode'                    => '028/014/BAST-OPD/RSUD/2026',
+        $dbMutasis = \App\Models\Astap::where('is_deleted', 0)
+            ->where(function ($q) {
+                $q->whereIn('sumber_dana', ['pelimpahan_skpd', 'mutasi_masuk'])
+                  ->orWhereNotNull('mutasi_nomor_bamb')
+                  ->orWhereNotNull('mutasi_asal');
+            })
+            ->with(['pelimpahanSkpd', 'unit', 'registers', 'jenisAstap'])
+            ->latest('id')
+            ->get();
+
+        $mutasiEksternals = $dbMutasis->map(function ($astap, $index) {
+            // Nomor BAST / BAMB
+            $nomorBamb = $astap->pelimpahanSkpd?->nomor_bamb 
+                ?: ($astap->mutasi_nomor_bamb 
+                ?: ($astap->bast_dokumen_nomor ?: 'BAMB-SKPD-' . str_pad($astap->id, 4, '0', STR_PAD_LEFT)));
+
+            // Tanggal
+            $tglRaw = $astap->mutasi_tanggal 
+                ?: ($astap->pelimpahanSkpd?->tanggal_bamb 
+                ?: ($astap->bast_dokumen_tanggal ?: ($astap->created_at ? $astap->created_at->format('Y-m-d') : '')));
+            
+            $tglFormatted = '-';
+            if (!empty($tglRaw)) {
+                try {
+                    $tglFormatted = \Carbon\Carbon::parse($tglRaw)->locale('id')->isoFormat('D MMM Y');
+                } catch (\Throwable $e) {
+                    $tglFormatted = (string) $tglRaw;
+                }
+            }
+
+            // OPD Pengirim Luar (Asal)
+            $opdAsal = $astap->pelimpahanSkpd?->skpd_asal 
+                ?: ($astap->mutasi_asal ?: 'SKPD / Instansi Luar');
+
+            // Ruangan / Unit Penempatan di RSUD (Tujuan)
+            $ruangRSUD = $astap->unit?->nama ?: ($astap->alamat_barang ?: 'Gudang/Ruangan RSUD');
+            $opdTujuan = 'RSUD dr. H. Koesnadi (' . $ruangRSUD . ')';
+
+            // PPK / Pejabat Penerima RSUD
+            $pjNama = $astap->ppk_nama ?: ($astap->spesifikasi_json['ppk_nama'] ?? 'Pengurus Barang RSUD');
+            $pjNip  = $astap->ppk_nip ?: ($astap->spesifikasi_json['ppk_nip'] ?? '-');
+
+            // Klasifikasi Kode 108
+            $kode108 = $astap->kode_108 ?: ($astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->jenis ?: '-'));
+
+            // Daftar registers / satuan barang
+            $items = [];
+            if ($astap->registers && $astap->registers->isNotEmpty()) {
+                foreach ($astap->registers as $idx => $reg) {
+                    $items[] = [
+                        'no'          => $idx + 1,
+                        'nama_barang' => $astap->nama_barang,
+                        'nibar'       => $reg->nibar ?: '-',
+                        'kode_108'    => $kode108,
+                        'kondisi'     => $reg->kondisi ?: ($astap->spesifikasi_json['kondisi'] ?? 'Baik'),
+                        'satuan'      => $astap->satuan ?: 'Unit',
+                        'volume'      => 1,
+                    ];
+                }
+            } else {
+                $items[] = [
+                    'no'          => 1,
+                    'nama_barang' => $astap->nama_barang,
+                    'nibar'       => '-',
+                    'kode_108'    => $kode108,
+                    'kondisi'     => $astap->spesifikasi_json['kondisi'] ?? 'Baik',
+                    'satuan'      => $astap->satuan ?: 'Unit',
+                    'volume'      => (int) ($astap->jumlah_volume ?: 1),
+                ];
+            }
+
+            $itemCount = count($items);
+            $firstNibar = ($items[0]['nibar'] !== '-') ? $items[0]['nibar'] : ($kode108 ?: '1.3.2.00.00.00');
+            $nilaiReal = (float) ($astap->total_realisasi ?: ($astap->pelimpahanSkpd?->nilai_perolehan ?: 0));
+            $tahunMasuk = (string) ($astap->tahun_perolehan ?: (date('Y', strtotime($tglRaw ?: 'now'))));
+            $volAset = (int) ($astap->jumlah_volume ?: ($itemCount ?: 1));
+
+            return [
+                'id'                      => $astap->id,
+                'is_deleted'              => (int) $astap->is_deleted,
+                'kode'                    => $nomorBamb,
                 'jenis'                   => 'Transfer Antar-OPD',
-                'kategori_label'          => 'Permanen (Alih Status)',
-                'nama'                    => 'Tempat Tidur Pasien Manual Crank 2 Engkol (+4 barang lainnya)',
-                'item_count'              => 5,
-                'items'                   => [
-                    ['no' => 1, 'nama_barang' => 'Tempat Tidur Pasien Manual Crank 2 Engkol', 'nibar' => '120135110200000028000020261320502060010000012', 'kode_108' => '1.3.2.05.02.06.001', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                    ['no' => 2, 'nama_barang' => 'Tempat Tidur Pasien Manual Crank 2 Engkol', 'nibar' => '120135110200000028000020261320502060010000013', 'kode_108' => '1.3.2.05.02.06.001', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                    ['no' => 3, 'nama_barang' => 'Matras Busa Medis Anti Dekubitus',           'nibar' => '120135110200000028000020261320502060010000014', 'kode_108' => '1.3.2.05.02.06.002', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                    ['no' => 4, 'nama_barang' => 'Tiang Infus Standar Stainless Steel',       'nibar' => '120135110200000028000020261320502060010000015', 'kode_108' => '1.3.2.05.02.06.003', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                    ['no' => 5, 'nama_barang' => 'Meja Makan Pasien (Overbed Table)',         'nibar' => '120135110200000028000020261320502060010000016', 'kode_108' => '1.3.2.05.02.06.004', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                ],
-                'kode_barang'             => '120135110200000028000020261320502060010000012',
-                'kode_108'                => '1.3.2.05.02.06.001',
-                'kondisi'                 => 'Baik',
-                'opd_asal'                => 'RSUD dr. H. Koesnadi Bondowoso',
-                'ruangan_asal'            => 'Gudang Perbekalan & Rumah Tangga',
-                'pj_asal_nama'            => 'dr. H. Yus Priyatna, Sp.P',
-                'pj_asal_nip'             => '196904121999031004',
-                'pj_asal_jabatan'         => 'Direktur RSUD dr. H. Koesnadi',
-                'opd_tujuan'              => 'Puskesmas Tamanan (Dinas Kesehatan)',
-                'pejabat_opd_tujuan'      => 'dr. Sri Wahyuni, M.Kes',
-                'nip_pejabat_opd_tujuan'  => '198211042009022001',
-                'jabatan_opd_tujuan'      => 'Kepala Puskesmas Tamanan',
-                'nomor_sk_dasar'          => 'SK Bupati Bondowoso No. 188.45/312/2026',
-                'tgl'                     => '18 Sep 2026',
-                'tgl_raw'                 => '2026-09-18',
-                'status'                  => 'Disahkan Bupati (Selesai)',
-                'alasan_mutasi'           => 'Optimalisasi pemenuhan sarana tempat tidur rawat inap pada Puskesmas DTP Tamanan sesuai arahan Dinas Kesehatan.',
-                'tgl_estimasi_kembali'    => null,
-                'dokumen_lampiran'        => 'BAST-OPD-TAMANAN-2026.pdf',
-            ],
-            [
-                'id'                      => 2,
-                'is_deleted'              => 0,
-                'kode'                    => '028/019/BAST-PINJAM/RSUD/2026',
-                'jenis'                   => 'Peminjaman Antar-OPD',
-                'kategori_label'          => 'Sementara (Pinjam Pakai)',
-                'nama'                    => 'Ventilator Transport Hamilton-T1 (+1 barang lainnya)',
-                'item_count'              => 2,
-                'items'                   => [
-                    ['no' => 1, 'nama_barang' => 'Ventilator Transport Hamilton-T1', 'nibar' => '120135110200000028000020261320701010010000003', 'kode_108' => '1.3.2.07.01.01.001', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                    ['no' => 2, 'nama_barang' => 'Pasien Monitor Bionet BM5',        'nibar' => '120135110200000028000020261320701010010000008', 'kode_108' => '1.3.2.07.01.01.002', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                ],
-                'kode_barang'             => '120135110200000028000020261320701010010000003',
-                'kode_108'                => '1.3.2.07.01.01.001',
-                'kondisi'                 => 'Baik',
-                'opd_asal'                => 'RSUD dr. H. Koesnadi Bondowoso',
-                'ruangan_asal'            => 'Instalasi Rawat Intensif (ICU)',
-                'pj_asal_nama'            => 'dr. H. Yus Priyatna, Sp.P',
-                'pj_asal_nip'             => '196904121999031004',
-                'pj_asal_jabatan'         => 'Direktur RSUD dr. H. Koesnadi',
-                'opd_tujuan'              => 'Dinas Kesehatan Kabupaten Bondowoso',
-                'pejabat_opd_tujuan'      => 'dr. Mohammad Imron, M.M.Kes',
-                'nip_pejabat_opd_tujuan'  => '197405122002121003',
-                'jabatan_opd_tujuan'      => 'Kepala Dinas Kesehatan Bondowoso',
-                'nomor_sk_dasar'          => 'Surat Permohonan Peminjaman Dinkes No. 440/890/430.10.2/2026',
-                'tgl'                     => '10 Sep 2026',
-                'tgl_raw'                 => '2026-09-10',
-                'status'                  => 'Peminjaman Aktif (Sedang Berjalan)',
-                'alasan_mutasi'           => 'Dukungan operasional penanganan darurat Kejadian Luar Biasa (KLB) dan posko kesehatan daerah.',
-                'tgl_estimasi_kembali'    => '10 Okt 2026',
-                'dokumen_lampiran'        => 'BAST-PINJAM-DINKES.pdf',
-            ],
-            [
-                'id'                      => 3,
-                'is_deleted'              => 0,
-                'kode'                    => '028/005/BAST-BMD/RSUD/2026',
-                'jenis'                   => 'Penyerahan ke BPKAD',
-                'kategori_label'          => 'Pengembalian Pengelola BMD',
-                'nama'                    => 'Mobil Ambulance Transport Isuzu Panther LV 2.5',
-                'item_count'              => 1,
-                'items'                   => [
-                    ['no' => 1, 'nama_barang' => 'Mobil Ambulance Transport Isuzu Panther LV 2.5 (Nopol: P 8023 AP)', 'nibar' => '120135110200000028000020141320201010010000001', 'kode_108' => '1.3.2.02.01.01.001', 'kondisi' => 'Rusak Berat', 'satuan' => 'Unit', 'volume' => 1],
-                ],
-                'kode_barang'             => '120135110200000028000020141320201010010000001',
-                'kode_108'                => '1.3.2.02.01.01.001',
-                'kondisi'                 => 'Rusak Berat',
-                'opd_asal'                => 'RSUD dr. H. Koesnadi Bondowoso',
-                'ruangan_asal'            => 'Instalasi Ambulans & Transportasi Medis',
-                'pj_asal_nama'            => 'dr. H. Yus Priyatna, Sp.P',
-                'pj_asal_nip'             => '196904121999031004',
-                'pj_asal_jabatan'         => 'Direktur RSUD dr. H. Koesnadi',
-                'opd_tujuan'              => 'Badan Pengelolaan Keuangan dan Aset Daerah (BPKAD)',
-                'pejabat_opd_tujuan'      => 'Ansori, S.Sos., M.Si',
-                'nip_pejabat_opd_tujuan'  => '197109201995031002',
-                'jabatan_opd_tujuan'      => 'Kepala Bidang Pengelolaan Aset Daerah BPKAD',
-                'nomor_sk_dasar'          => 'Surat Usulan Penarikan BMD No. 028/455/RSUD-K/2026',
-                'tgl'                     => '25 Agu 2026',
-                'tgl_raw'                 => '2026-08-25',
-                'status'                  => 'Diserahkan ke BPKAD (Selesai)',
-                'alasan_mutasi'           => 'Penyerahan aset kendaraan operasional kondisi rusak berat yang sudah melewati masa manfaat ekonomis untuk diproses lelang/penghapusan oleh BPKAD.',
-                'tgl_estimasi_kembali'    => null,
-                'dokumen_lampiran'        => 'BAST-BPKAD-KENDARAAN.pdf',
-            ],
-            [
-                'id'                      => 4,
-                'is_deleted'              => 0,
-                'kode'                    => '028/022/BAST-OPD/RSUD/2026',
-                'jenis'                   => 'Transfer Antar-OPD',
-                'kategori_label'          => 'Permanen (Alih Status)',
-                'nama'                    => 'PC Desktop All-in-One Lenovo ThinkCentre M70a (+1 barang lainnya)',
-                'item_count'              => 2,
-                'items'                   => [
-                    ['no' => 1, 'nama_barang' => 'PC Desktop All-in-One Lenovo ThinkCentre M70a', 'nibar' => '120135110200000028000020261321001010010000045', 'kode_108' => '1.3.2.10.01.01.001', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                    ['no' => 2, 'nama_barang' => 'Printer Multifungsi Laserjet HP LaserJet Pro',   'nibar' => '120135110200000028000020261321001010010000046', 'kode_108' => '1.3.2.10.01.01.002', 'kondisi' => 'Baik', 'satuan' => 'Unit', 'volume' => 1],
-                ],
-                'kode_barang'             => '120135110200000028000020261321001010010000045',
-                'kode_108'                => '1.3.2.10.01.01.001',
-                'kondisi'                 => 'Baik',
-                'opd_asal'                => 'RSUD dr. H. Koesnadi Bondowoso',
-                'ruangan_asal'            => 'Instalasi SIMRS & Teknologi Informasi',
-                'pj_asal_nama'            => 'dr. H. Yus Priyatna, Sp.P',
-                'pj_asal_nip'             => '196904121999031004',
-                'pj_asal_jabatan'         => 'Direktur RSUD dr. H. Koesnadi',
-                'opd_tujuan'              => 'Dinas Lingkungan Hidup Kabupaten Bondowoso',
-                'pejabat_opd_tujuan'      => 'Ir. Dadan Kurniawan, M.Si',
-                'nip_pejabat_opd_tujuan'  => '197302141998031005',
-                'jabatan_opd_tujuan'      => 'Kepala Dinas Lingkungan Hidup',
-                'nomor_sk_dasar'          => 'Persetujuan Sekretaris Daerah No. 028/671/430.4.2/2026',
-                'tgl'                     => '21 Sep 2026',
-                'tgl_raw'                 => '2026-09-21',
-                'status'                  => 'Menunggu Verifikasi BAST Fisik',
-                'alasan_mutasi'           => 'Dukungan fasilitas pengolahan data limbah B3 medis dan lingkungan hidup daerah.',
+                'kategori_label'          => 'Pelimpahan SKPD (Mutasi Masuk)',
+                'nama'                    => $astap->nama_barang . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
+                'nama_murni'              => $astap->nama_barang,
+                'nama_barang'             => $astap->nama_barang,
+                'category'                => $astap->category ?: 'KIB B',
+                'is_extracomtable'        => (bool) $astap->is_extracomtable,
+                'is_reklas'               => (bool) $astap->is_reklas,
+                'jenis_reklas'            => $astap->jenis_reklas,
+                'sumber_dana'             => $astap->sumber_dana ?: 'pelimpahan_skpd',
+                'sumber_dana_raw'         => $astap->sumber_dana ?: 'pelimpahan_skpd',
+                'jenis_aset_nama'         => $astap->jenisAstap?->nama_jenis ?: ($astap->jenisAstap?->jenis ?: 'PELIMPAHAN SKPD'),
+                'tahun_perolehan'         => $tahunMasuk,
+                'volume_satuan'           => $volAset . ' Aset',
+                'jumlah_volume'           => $volAset,
+                'satuan'                  => $astap->satuan ?: 'Unit',
+                'harga_satuan'            => (float) ($astap->harga_satuan ?: ($volAset > 0 ? ($nilaiReal / $volAset) : $nilaiReal)),
+                'jumlah_realisasi'        => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
+                'total_realisasi_num'     => $nilaiReal,
+                'item_count'              => $itemCount,
+                'items'                   => $items,
+                'registers'               => $astap->registers ? $astap->registers->toArray() : [],
+                'kode_barang'             => $kode108 ?: $firstNibar,
+                'kode_108'                => $kode108,
+                'kondisi'                 => $items[0]['kondisi'] ?? 'Baik',
+                'opd_asal'                => $opdAsal,
+                'ruangan_asal'            => $opdAsal,
+                'pj_asal_nama'            => 'Pejabat Penyerah SKPD Pengirim',
+                'pj_asal_nip'             => '-',
+                'pj_asal_jabatan'         => 'Pengurus Barang / PPK Asal',
+                'opd_tujuan'              => $opdTujuan,
+                'ruangan_tujuan'          => $ruangRSUD,
+                'pejabat_opd_tujuan'      => $pjNama,
+                'nip_pejabat_opd_tujuan'  => $pjNip,
+                'jabatan_opd_tujuan'      => 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi',
+                'nomor_sk_dasar'          => $nomorBamb,
+                'tgl'                     => $tglFormatted,
+                'tgl_raw'                 => (string) $tglRaw,
+                'status'                  => 'Disahkan (Selesai)',
+                'alasan_mutasi'           => $astap->mutasi_keterangan 
+                                              ?: ($astap->pelimpahanSkpd?->keterangan 
+                                              ?: 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnadi.'),
                 'tgl_estimasi_kembali'    => null,
                 'dokumen_lampiran'        => null,
-            ],
-        ];
+                'nilai_perolehan'         => $nilaiReal,
+            ];
+        })->values()->toArray();
 
         return view('pages.mutasi_eksternal', compact('mutasiEksternals'));
     }

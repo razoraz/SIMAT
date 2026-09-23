@@ -8890,6 +8890,23 @@
                 openEdit(item) {
                     if (!item || !item.id) return;
                     window.location.href = '/astap/' + item.id + '/edit';
+                },
+
+                init() {
+                    const params = new URLSearchParams(window.location.search);
+                    const openReklasId = params.get('open_reklas');
+                    const searchParam = params.get('search');
+                    if (searchParam && typeof this.searchQuery !== 'undefined') {
+                        this.searchQuery = decodeURIComponent(searchParam);
+                    }
+                    if (openReklasId) {
+                        const target = (this.astaps || []).find(a => String(a.id) === String(openReklasId));
+                        if (target) {
+                            setTimeout(() => {
+                                this.openReklas(target);
+                            }, 350);
+                        }
+                    }
                 }
             };
         }

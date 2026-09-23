@@ -19,18 +19,27 @@
         </a>
     </div>
 
-    <!-- Mini Summary KPI Cards Strip -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+    <!-- Mini Summary KPI Cards Strip (5 Kartu Selaras Sejajar) -->
+    <div class="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-800/80" style="grid-template-columns: repeat(5, minmax(0, 1fr))">
         <!-- 1. Total Eksternal -->
         <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
             <div class="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 text-lg">🏛️</div>
             <div>
-                <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Antar-OPD</span>
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Total Eksternal</span>
                 <span class="text-sm sm:text-base font-extrabold text-white" x-text="countAll + ' BAST'"></span>
             </div>
         </div>
 
-        <!-- 2. Telah Disahkan -->
+        <!-- 2. Pelimpahan SKPD (Mutasi Masuk) -->
+        <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
+            <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 text-lg">🔄</div>
+            <div>
+                <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Pelimpahan SKPD</span>
+                <span class="text-sm sm:text-base font-extrabold text-purple-300" x-text="countTransfer + ' Aset'"></span>
+            </div>
+        </div>
+
+        <!-- 3. Telah Disahkan -->
         <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
             <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">✅</div>
             <div>
@@ -39,7 +48,7 @@
             </div>
         </div>
 
-        <!-- 3. Peminjaman Aktif -->
+        <!-- 4. Peminjaman Aktif -->
         <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
             <div class="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-lg">⏱️</div>
             <div>
@@ -48,21 +57,12 @@
             </div>
         </div>
 
-        <!-- 4. Menunggu Verifikasi -->
+        <!-- 5. Menunggu Verifikasi -->
         <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
             <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 text-lg">⏳</div>
             <div>
                 <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Menunggu Verifikasi</span>
                 <span class="text-sm sm:text-base font-extrabold text-amber-300" x-text="countMenunggu + ' Berkas'"></span>
-            </div>
-        </div>
-
-        <!-- 5. Penyerahan BPKAD -->
-        <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
-            <div class="p-2.5 rounded-xl bg-violet-500/10 text-violet-400 text-lg">📦</div>
-            <div>
-                <span class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Serah ke BPKAD</span>
-                <span class="text-sm sm:text-base font-extrabold text-violet-300" x-text="countBpkad + ' Aset'"></span>
             </div>
         </div>
     </div>

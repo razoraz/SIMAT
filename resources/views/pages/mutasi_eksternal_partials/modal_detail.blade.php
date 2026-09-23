@@ -39,40 +39,36 @@
 
                 <!-- 2 Pihak yang Terlibat (Pengirim & Penerima) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Pihak Pertama (Pengirim: RSUD) -->
+                    <!-- Pihak Pertama (Pengirim: SKPD Pengirim) -->
                     <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
                         <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
                             <span class="text-xs">📤</span>
-                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">PIHAK PERTAMA (PENGIRIM)</span>
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">PIHAK PERTAMA (SKPD PENGIRIM)</span>
                         </div>
                         <div>
-                            <span class="text-slate-400 text-[10px] block">Instansi:</span>
+                            <span class="text-slate-400 text-[10px] block">Instansi Asal Pelimpahan:</span>
                             <p class="font-bold text-white text-xs" x-text="selectedMutasi.opd_asal"></p>
                         </div>
                         <div>
-                            <span class="text-slate-400 text-[10px] block">Ruangan Pemegang Asal:</span>
-                            <p class="text-slate-300 font-semibold" x-text="selectedMutasi.ruangan_asal"></p>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 text-[10px] block">Pejabat yang Menyerahkan:</span>
+                            <span class="text-slate-400 text-[10px] block">Pejabat / Pihak yang Menyerahkan:</span>
                             <p class="text-emerald-400 font-bold" x-text="selectedMutasi.pj_asal_nama"></p>
                             <p class="text-[10px] text-slate-400 font-mono" x-text="'NIP: ' + selectedMutasi.pj_asal_nip"></p>
                             <p class="text-[10px] text-slate-500" x-text="selectedMutasi.pj_asal_jabatan"></p>
                         </div>
                     </div>
 
-                    <!-- Pihak Kedua (Penerima: OPD Luar) -->
+                    <!-- Pihak Kedua (Penerima: RSUD Dr. H. Koesnadi) -->
                     <div class="p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 space-y-2">
                         <div class="flex items-center space-x-2 border-b border-indigo-500/30 pb-2">
                             <span class="text-xs">📥</span>
-                            <span class="text-xs font-bold text-indigo-300 uppercase tracking-wider">PIHAK KEDUA (PENERIMA OPD)</span>
+                            <span class="text-xs font-bold text-indigo-300 uppercase tracking-wider">PIHAK KEDUA (PENERIMA RSUD)</span>
                         </div>
                         <div>
-                            <span class="text-slate-400 text-[10px] block">Perangkat Daerah / OPD Tujuan:</span>
+                            <span class="text-slate-400 text-[10px] block">Instansi Penerima & Ruangan Baru:</span>
                             <p class="font-bold text-indigo-200 text-xs" x-text="selectedMutasi.opd_tujuan"></p>
                         </div>
                         <div>
-                            <span class="text-slate-400 text-[10px] block">Pejabat yang Menerima:</span>
+                            <span class="text-slate-400 text-[10px] block">Pejabat Penerima di RSUD:</span>
                             <p class="text-white font-bold" x-text="selectedMutasi.pejabat_opd_tujuan"></p>
                             <p class="text-[10px] text-slate-400 font-mono" x-text="'NIP: ' + selectedMutasi.nip_pejabat_opd_tujuan"></p>
                             <p class="text-[10px] text-indigo-400/90 font-semibold" x-text="selectedMutasi.jabatan_opd_tujuan"></p>
