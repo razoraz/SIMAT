@@ -670,7 +670,11 @@
                     fp.altInput.readOnly = el.readOnly;
 
                     // Support typing dd/mm/yyyy or dd-mm-yyyy directly
-                    fp.altInput.addEventListener('blur', () => {
+                    fp.altInput.addEventListener('blur', (e) => {
+                        // Jangan proses jika focus berpindah ke dalam kalender flatpickr itu sendiri
+                        if (fp.calendarContainer && (fp.calendarContainer === e.relatedTarget || fp.calendarContainer.contains(e.relatedTarget))) {
+                            return;
+                        }
                         const raw = (fp.altInput.value || '').trim();
                         if (raw) {
                             const match = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
@@ -681,7 +685,8 @@
                                 const iso = `${y}-${m}-${d}`;
                                 fp.setDate(iso, true);
                             }
-                        } else {
+                        } else if (el.value !== '' || (fp.selectedDates && fp.selectedDates.length > 0)) {
+                            // Hanya clear jika sebelumnya memang ada nilainya
                             fp.clear();
                             el.value = '';
                             el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -692,10 +697,13 @@
 
                 effect(() => {
                     const opts = getOpts();
-                    if (opts.minDate !== undefined && opts.minDate !== fp.config.minDate) {
+                    const currentMinStr = fp.config.minDate ? (typeof fp.config.minDate === 'string' ? fp.config.minDate : fp.formatDate(fp.config.minDate, 'Y-m-d')) : undefined;
+                    const currentMaxStr = fp.config.maxDate ? (typeof fp.config.maxDate === 'string' ? fp.config.maxDate : fp.formatDate(fp.config.maxDate, 'Y-m-d')) : undefined;
+
+                    if (opts.minDate !== undefined && opts.minDate !== currentMinStr) {
                         fp.set('minDate', opts.minDate);
                     }
-                    if (opts.maxDate !== undefined && opts.maxDate !== fp.config.maxDate) {
+                    if (opts.maxDate !== undefined && opts.maxDate !== currentMaxStr) {
                         fp.set('maxDate', opts.maxDate);
                     }
 
