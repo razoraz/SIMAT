@@ -16,40 +16,7 @@
         </p>
     </div>
 
-    <!-- Periode Anggaran & Triwulan -->
-    <div class="p-6 rounded-3xl bg-slate-950/80 border border-amber-500/30 space-y-4 shadow-xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <label class="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                <span>📅 Periode Pembukuan Aset</span>
-                <span class="text-rose-400">*</span>
-            </label>
-            <span class="text-[10px] text-slate-400 font-mono">Tahun &amp; Triwulan Pencatatan SIMAT-RK</span>
-        </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                    <span>Tahun Anggaran Pembukuan <span class="text-rose-400">*</span></span>
-                    <span class="text-[10px] text-amber-400 font-mono">1990 - 2100</span>
-                </label>
-                <input type="number" x-model.number="formData.tahun_perolehan" min="1990" max="2100" required
-                    placeholder="Contoh: 2026"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-mono font-bold">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Triwulan Pembukuan <span class="text-rose-400">*</span>
-                </label>
-                <select x-model="formData.triwulan" required
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-semibold">
-                    <option value="TW I">Triwulan I (Januari - Maret)</option>
-                    <option value="TW II">Triwulan II (April - Juni)</option>
-                    <option value="TW III">Triwulan III (Juli - September)</option>
-                    <option value="TW IV">Triwulan IV (Oktober - Desember)</option>
-                </select>
-            </div>
-        </div>
-    </div>
 
     <!-- Bagian BAST & Pemberi Hibah -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-amber-500/30 space-y-5 shadow-xl">

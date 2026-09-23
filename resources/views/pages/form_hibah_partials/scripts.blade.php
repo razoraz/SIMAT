@@ -16,6 +16,7 @@
             masterRekeningBelanja: window.dbRekeningBelanjas || [],
             pejabatsList: window.dbPejabats || [],
             unitsList: window.dbUnits || [],
+            masterUnits: window.dbUnits || [],
 
             // Filter States (Sama Persis seperti Belanja Modal)
             searchRekening: '',
@@ -50,7 +51,7 @@
 
             // Form Data Payload
             formData: {
-                // Langkah 1: BAST & Pemberi
+                // Langkah 1: BAST & Pemberi (Tahun & Triwulan sekarang di Langkah 2 per instruksi PM)
                 tahun_perolehan: new Date().getFullYear(),
                 triwulan: 'TW I',
                 hibah_pemberi: '',
@@ -59,7 +60,7 @@
                 total_realisasi: 0,
                 jumlah_realisasi: 0,
 
-                // Langkah 2: Rekening & 108
+                // Langkah 2: Klasifikasi 108 & Identitas Barang
                 rekening_belanja_id: null,
                 kode_rek: '',
                 nama_belanja: '',
@@ -73,15 +74,17 @@
                 jumlah_volume: 1,
                 is_extracomtable: false,
 
-                // Langkah 3: Rincian KIB
+                // Langkah 3: Rincian KIB Multi-Item
                 // KIB A (Tanah) Repeater
                 tanah_items: [
                     {
+                        tanah_nama_barang: '',
+                        tanah_kode_barang: '',
                         tanah_hak: 'Hak Pakai',
                         tanah_sertifikat_no: '',
                         tanah_sertifikat_tgl: '',
                         tanah_kondisi: 'Baik',
-                        tanah_penggunaan: 'Bangunan Fasilitas Kesehatan & Pelayanan Rumah Sakit',
+                        tanah_penggunaan: 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
                         tanah_jumlah_bidang: 1,
                         tanah_luas_m2: '',
                         tanah_alamat: '',
@@ -89,32 +92,165 @@
                     }
                 ],
 
-                // KIB B (Peralatan & Mesin)
-                merk: '',
-                type: '',
-                no_pabrik: '',
-                ukuran: '',
-                bahan: '',
-                kondisi: 'Baik',
-                no_rangka: '',
-                no_mesin: '',
-                no_polisi: '',
+                // KIB B (Peralatan & Mesin) Multi-Item Repeater
+                mesin_items: [
+                    {
+                        mesin_nama_barang: '',
+                        mesin_kode_barang: '',
+                        mesin_merk: '',
+                        mesin_type: '',
+                        mesin_ukuran: '',
+                        mesin_no_pabrik: '',
+                        mesin_bahan: '',
+                        mesin_no_rangka: '',
+                        mesin_no_mesin: '',
+                        mesin_no_bpkb: '',
+                        mesin_no_polisi: '',
+                        mesin_kondisi: 'Baik',
+                        mesin_jumlah_barang: 1,
+                        mesin_satuan: 'Unit',
+                        mesin_nilai_satuan: 0,
+                        mesin_administrasi_proyek: 0,
+                        ruang_pemegang: '',
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    }
+                ],
 
-                // KIB C (Gedung)
-                gedung_luas_m2: '',
-                gedung_bertingkat: 'Tidak',
-                gedung_beton: 'Beton',
+                // KIB C (Gedung & Bangunan) Multi-Item Repeater
+                gedung_items: [
+                    {
+                        gedung_nama_barang: '',
+                        gedung_kode_barang: '',
+                        gedung_luas_m2: 0,
+                        gedung_kondisi: 'B',
+                        gedung_bertingkat: 'Bertingkat',
+                        gedung_beton: 'Beton',
+                        gedung_status_tanah: 'Tanah Hak Pakai RSUD',
+                        gedung_kode_aset_tanah: '1.3.1.01.01.02.013',
+                        gedung_is_baru: 'Baru',
+                        gedung_kapitalisasi_tahun_induk: '',
+                        gedung_kapitalisasi_nilai_induk: 0,
+                        gedung_jumlah_bangunan: 1,
+                        gedung_satuan: 'Gedung',
+                        gedung_nilai_perencanaan: 0,
+                        gedung_nilai_fisik: 0,
+                        gedung_nilai_pengawasan: 0,
+                        gedung_nilai_ap: 0,
+                        gedung_nilai_pip: 0,
+                        gedung_alamat: ''
+                    }
+                ],
 
-                // KIB D (Jaringan)
-                jaringan_panjang_m: '',
-                jaringan_lebar_m: '',
-                jaringan_luas_m2: '',
+                // KIB D (Jalan, Irigasi & Jaringan) Multi-Item Repeater
+                jaringan_items: [
+                    {
+                        jaringan_nama_barang: '',
+                        jaringan_kode_barang: '',
+                        jaringan_konstruksi: '',
+                        jaringan_panjang_m: 0,
+                        jaringan_lebar_m: 0,
+                        jaringan_luas_m2: 0,
+                        jaringan_kondisi: 'B',
+                        jaringan_bertingkat: 'Bertingkat',
+                        jaringan_beton: 'Beton',
+                        jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
+                        jaringan_kode_aset_tanah: '1.3.1.01.01.02.013',
+                        jaringan_is_baru: 'Baru',
+                        jaringan_kapitalisasi_tahun_induk: '',
+                        jaringan_kapitalisasi_nilai_induk: 0,
+                        jaringan_jumlah: 1,
+                        jaringan_satuan: 'Paket',
+                        jaringan_nilai_perencanaan: 0,
+                        jaringan_nilai_fisik: 0,
+                        jaringan_nilai_pengawasan: 0,
+                        jaringan_nilai_ap: 0,
+                        jaringan_nilai_pip: 0,
+                        jaringan_alamat: ''
+                    }
+                ],
 
-                // ATB
-                atb_jenis: 'Software / Aplikasi Sistem Informasi',
-                atb_masa_manfaat: 4,
+                // KIB E (Aset Tetap Lainnya) Multi-Item Repeater
+                kib_e_default_type: 'buku',
+                kib_e_sub_type: 'buku',
+                lainnya_items: [
+                    {
+                        kib_e_sub_type: 'buku',
+                        lainnya_nama_barang: '',
+                        lainnya_kode_barang: '',
+                        lainnya_buku_judul: '',
+                        lainnya_buku_pencipta: '',
+                        lainnya_buku_spesifikasi: '',
+                        lainnya_kesenian_asal: '',
+                        lainnya_kesenian_pencipta: '',
+                        lainnya_kesenian_spesifikasi: '',
+                        lainnya_kesenian_bahan: '',
+                        lainnya_kesenian_ukuran: '',
+                        lainnya_hewan_judul: '',
+                        lainnya_hewan_jenis: '',
+                        lainnya_hewan_spesifikasi: '',
+                        ruang_pemegang: '',
+                        ruang_pemegang_lainnya: '',
+                        lainnya_kondisi: 'Baik',
+                        lainnya_jumlah_barang: 1,
+                        lainnya_satuan: 'Eksemplar',
+                        lainnya_nilai_satuan: 0,
+                        lainnya_administrasi_proyek: 0,
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    }
+                ],
 
-                // Penempatan Ruangan & PPK
+                // ATB (Aset Tidak Berwujud) Multi-Item Repeater
+                atb_items: [
+                    {
+                        atb_nama_barang: '',
+                        atb_kode_barang: '',
+                        atb_judul_nama: '',
+                        atb_pencipta: '',
+                        atb_spesifikasi: '',
+                        atb_jumlah: 1,
+                        atb_satuan: 'Lisensi',
+                        atb_kondisi: 'Baik',
+                        atb_nilai_satuan: 0,
+                        atb_administrasi_proyek: 0,
+                        atb_ruang_pemegang: '',
+                        isRuangOpen: false,
+                        searchRuang: ''
+                    }
+                ],
+
+                // KIB F (Konstruksi Dalam Pengerjaan) Multi-Item Repeater
+                kdp_items: [
+                    {
+                        kdp_nama_barang: '',
+                        kdp_kode_barang: '',
+                        kdp_luas_m2: 0,
+                        kdp_kondisi: 'B',
+                        kdp_progres_persen: 0,
+                        kdp_bertingkat: 'Bertingkat',
+                        kdp_beton: 'Beton',
+                        kdp_status_tanah: 'Tanah Hak Pakai RSUD',
+                        kdp_kode_aset_tanah: '1.3.1.01.01.02.013',
+                        kdp_is_baru: 'Baru',
+                        kdp_kapitalisasi_tahun_induk: '',
+                        kdp_kapitalisasi_nilai_induk: 0,
+                        kdp_jumlah_bangunan: 1,
+                        kdp_satuan: 'Gedung',
+                        kdp_nilai_perencanaan: 0,
+                        kdp_nilai_fisik: 0,
+                        kdp_nilai_pengawasan: 0,
+                        kdp_nilai_ap: 0,
+                        kdp_nilai_pip: 0,
+                        kdp_alamat: ''
+                    }
+                ],
+
+                // Fallback spesifikasi umum
+                spesifikasi_barang: '',
+                keadaan_barang: 'Baik',
+
+                // Penempatan Ruangan & PPK RSUD
                 unit_id: '',
                 alamat_barang: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                 ppk_nama: '',
@@ -129,17 +265,7 @@
                 }
             },
 
-            // ─── Filtered Getters (Sama Persis seperti Belanja Modal) ──────────
-            get filteredRekeningBelanja() {
-                const q = (this.searchRekening || '').toLowerCase().trim();
-                if (!q) return this.masterRekeningBelanja;
-                return this.masterRekeningBelanja.filter(r => 
-                    (r.kode_rek && r.kode_rek.toLowerCase().includes(q)) ||
-                    (r.nama_belanja && r.nama_belanja.toLowerCase().includes(q)) ||
-                    (r.kelompok && r.kelompok.toLowerCase().includes(q))
-                );
-            },
-
+            // ─── Filtered Getters PMDN 108 ─────────────────────────────────────
             get filteredJenisAstap108() {
                 const q = (this.searchJenis108 || '').toLowerCase().trim();
                 if (!q) return this.master108;
@@ -197,36 +323,14 @@
             },
 
             get activeKodeBarang() {
-                return this.selectedSubSub?.kode || '';
+                return this.selectedSubSub?.kode || this.formData.jenis_aset_kode || '';
             },
 
             get activeNamaBarang() {
                 return this.selectedSubSub?.nama || this.formData.nama_barang || '';
             },
 
-            // ─── Selection Handlers ─────────────────────────────────────────
-            selectRekening(r) {
-                this.formData.rekening_belanja_id = r.id || null;
-                this.formData.kode_rek = r.kode_rek;
-                this.formData.nama_belanja = r.nama_belanja;
-                this.isRekeningOpen = false;
-                this.searchRekening = '';
-
-                // Otomatis arahkan jenis aset jika cocok dengan kelompok rekening
-                if (r.kelompok === 'Tanah') {
-                    this.setJenisAsetByKode('1.3.1');
-                } else if (r.kelompok === 'Bangunan' || r.kelompok === 'Gedung') {
-                    this.setJenisAsetByKode('1.3.3');
-                } else if (r.kelompok === 'Jalan' || r.kelompok === 'Jaringan') {
-                    this.setJenisAsetByKode('1.3.4');
-                }
-            },
-
-            setJenisAsetByKode(kode) {
-                const j = this.master108.find(item => item.kode === kode);
-                if (j) this.selectJenisAstap(j);
-            },
-
+            // ─── Selection Handlers PMDN 108 ───────────────────────────────────
             selectJenisAstap(j) {
                 this.formData.jenis_aset_kode = j.kode;
                 this.formData.jenis_aset_nama = j.nama;
@@ -293,9 +397,36 @@
                 }
 
                 this.adjustSatuanForKib();
+
+                // Propagasi nama dan kode barang ke seluruh repeater item di Step 3
+                this.propagateItemIdentity(item.nama, item.kode);
             },
 
-            // ─── KIB Detection Getters ──────────────────────────────────────
+            propagateItemIdentity(nama, kode) {
+                if (this.formData.tanah_items) {
+                    this.formData.tanah_items.forEach(it => { it.tanah_nama_barang = nama; it.tanah_kode_barang = kode; });
+                }
+                if (this.formData.mesin_items) {
+                    this.formData.mesin_items.forEach(it => { it.mesin_nama_barang = nama; it.mesin_kode_barang = kode; });
+                }
+                if (this.formData.gedung_items) {
+                    this.formData.gedung_items.forEach(it => { it.gedung_nama_barang = nama; it.gedung_kode_barang = kode; });
+                }
+                if (this.formData.jaringan_items) {
+                    this.formData.jaringan_items.forEach(it => { it.jaringan_nama_barang = nama; it.jaringan_kode_barang = kode; });
+                }
+                if (this.formData.lainnya_items) {
+                    this.formData.lainnya_items.forEach(it => { it.lainnya_nama_barang = nama; it.lainnya_kode_barang = kode; });
+                }
+                if (this.formData.atb_items) {
+                    this.formData.atb_items.forEach(it => { it.atb_nama_barang = nama; it.atb_kode_barang = kode; });
+                }
+                if (this.formData.kdp_items) {
+                    this.formData.kdp_items.forEach(it => { it.kdp_nama_barang = nama; it.kdp_kode_barang = kode; });
+                }
+            },
+
+            // ─── KIB Detection Getters ─────────────────────────────────────────
             get isTanah() {
                 const k = this.formData.jenis_aset_kode || '';
                 return k.startsWith('1.3.1') || (this.formData.jenis_aset_nama || '').toLowerCase().includes('tanah');
@@ -349,43 +480,49 @@
             adjustSatuanForKib() {
                 if (this.isTanah) {
                     this.formData.satuan = 'Bidang';
-                    this.syncTanahFieldsToMain();
                 } else if (this.isGedung) {
                     this.formData.satuan = 'Gedung';
                 } else if (this.isJaringan) {
-                    this.formData.satuan = 'M²';
-                } else if (this.isAtb) {
                     this.formData.satuan = 'Paket';
+                } else if (this.isAsetLainnya) {
+                    this.formData.satuan = (this.formData.kib_e_default_type === 'buku') ? 'Eksemplar' : 'Buah';
+                } else if (this.isAtb) {
+                    this.formData.satuan = 'Lisensi';
+                } else if (this.isKdp) {
+                    this.formData.satuan = 'Gedung';
                 } else {
                     this.formData.satuan = 'Unit';
                 }
             },
 
-            // ─── Tanah Repeater Handlers ────────────────────────────────────
+            // ─── 1. KIB A (Tanah) Handlers ──────────────────────────────────────
             get totalLuasTanah() {
                 if (!this.formData.tanah_items) return 0;
                 return this.formData.tanah_items.reduce((s, it) => s + (parseFloat(it.tanah_luas_m2) || 0), 0);
             },
 
             addTanahItem() {
+                if (!this.formData.tanah_items) this.formData.tanah_items = [];
                 this.formData.tanah_items.push({
+                    tanah_nama_barang: this.formData.nama_barang || '',
+                    tanah_kode_barang: this.activeKodeBarang || '',
                     tanah_hak: 'Hak Pakai',
                     tanah_sertifikat_no: '',
                     tanah_sertifikat_tgl: '',
                     tanah_kondisi: 'Baik',
-                    tanah_penggunaan: 'Bangunan Fasilitas Pelayanan Rumah Sakit',
+                    tanah_penggunaan: 'Bangunan Rumah Sakit & Fasilitas Kesehatan',
                     tanah_jumlah_bidang: 1,
                     tanah_luas_m2: '',
                     tanah_alamat: '',
                     tanah_nilai_fisik: 0
                 });
-                this.syncTanahFieldsToMain();
+                this.syncActiveKibTotals();
             },
 
             removeTanahItem(index) {
-                if (this.formData.tanah_items.length > 1) {
+                if (this.formData.tanah_items && this.formData.tanah_items.length > 1) {
                     this.formData.tanah_items.splice(index, 1);
-                    this.syncTanahFieldsToMain();
+                    this.syncActiveKibTotals();
                 }
             },
 
@@ -402,8 +539,490 @@
                 }
             },
 
-            syncRealisasiFromStep3() {
-                this.formData.jumlah_realisasi = this.formData.total_realisasi;
+            // ─── 2. KIB B (Peralatan & Mesin) Handlers ──────────────────────────
+            get totalNilaiMesin() {
+                if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                    return this.formData.mesin_items.reduce((sum, item) => sum + this.getMesinSubtotal(item), 0);
+                }
+                return 0;
+            },
+
+            get totalVolumeMesin() {
+                if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                    return this.formData.mesin_items.reduce((sum, item) => sum + (parseInt(item.mesin_jumlah_barang) || 1), 0);
+                }
+                return 1;
+            },
+
+            getMesinSubtotal(item) {
+                return (Number(item.mesin_jumlah_barang || 1) * Number(item.mesin_nilai_satuan || 0)) + Number(item.mesin_administrasi_proyek || 0);
+            },
+
+            addMesinItem() {
+                if (!this.formData.mesin_items) this.formData.mesin_items = [];
+                this.formData.mesin_items.push({
+                    mesin_nama_barang: this.formData.nama_barang || this.formData.sub_rincian_nama || '',
+                    mesin_kode_barang: this.activeKodeBarang || this.formData.sub_rincian_kode || '',
+                    mesin_merk: '',
+                    mesin_type: '',
+                    mesin_ukuran: '',
+                    mesin_no_pabrik: '',
+                    mesin_bahan: '',
+                    mesin_no_rangka: '',
+                    mesin_no_mesin: '',
+                    mesin_no_bpkb: '',
+                    mesin_no_polisi: '',
+                    mesin_kondisi: 'Baik',
+                    mesin_jumlah_barang: 1,
+                    mesin_satuan: 'Unit',
+                    mesin_nilai_satuan: 0,
+                    mesin_administrasi_proyek: 0,
+                    ruang_pemegang: '',
+                    isRuangOpen: false,
+                    searchRuang: ''
+                });
+                this.syncActiveKibTotals();
+            },
+
+            removeMesinItem(index) {
+                if (this.formData.mesin_items && this.formData.mesin_items.length > 1) {
+                    this.formData.mesin_items.splice(index, 1);
+                    this.syncActiveKibTotals();
+                }
+            },
+
+            syncMesinFieldsToMain() {
+                if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                    const first = this.formData.mesin_items[0];
+                    this.formData.merk = first.mesin_merk;
+                    this.formData.type = first.mesin_type;
+                    this.formData.ukuran = first.mesin_ukuran;
+                    this.formData.no_pabrik = first.mesin_no_pabrik;
+                    this.formData.bahan = first.mesin_bahan;
+                    this.formData.kondisi = first.mesin_kondisi;
+                    this.formData.no_rangka = first.mesin_no_rangka;
+                    this.formData.no_mesin = first.mesin_no_mesin;
+                    this.formData.no_polisi = first.mesin_no_polisi;
+                    this.formData.satuan = first.mesin_satuan || 'Unit';
+                    if (first.ruang_pemegang) {
+                        this.formData.alamat_barang = first.ruang_pemegang;
+                    }
+                }
+            },
+
+            filterUnitsForItem(item) {
+                let list = this.masterUnits || [];
+                if (!item.searchRuang || item.searchRuang.trim() === '') return list;
+                const q = item.searchRuang.toLowerCase().trim();
+                return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+            },
+
+            selectUnitForItem(item, unit) {
+                item.ruang_pemegang = unit.nama;
+                item.isRuangOpen = false;
+                item.searchRuang = '';
+                this.syncActiveKibTotals();
+            },
+
+            // ─── 3. KIB C (Gedung & Bangunan) Handlers ──────────────────────────
+            get totalNilaiGedung() {
+                if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                    return this.formData.gedung_items.reduce((sum, item) => sum + this.getGedungSubtotal(item), 0);
+                }
+                return 0;
+            },
+
+            get totalVolumeGedung() {
+                if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                    return this.formData.gedung_items.reduce((sum, item) => sum + (parseInt(item.gedung_jumlah_bangunan) || 1), 0);
+                }
+                return 1;
+            },
+
+            getGedungSubtotal(item) {
+                return Number(item.gedung_nilai_perencanaan || 0) + 
+                       Number(item.gedung_nilai_fisik || 0) + 
+                       Number(item.gedung_nilai_pengawasan || 0) + 
+                       Number(item.gedung_nilai_ap || item.gedung_nilai_pip || 0);
+            },
+
+            addGedungItem() {
+                if (!this.formData.gedung_items) this.formData.gedung_items = [];
+                this.formData.gedung_items.push({
+                    gedung_nama_barang: this.formData.nama_barang || this.formData.sub_rincian_nama || '',
+                    gedung_kode_barang: this.activeKodeBarang || this.formData.sub_rincian_kode || '',
+                    gedung_luas_m2: 0,
+                    gedung_kondisi: 'B',
+                    gedung_bertingkat: 'Bertingkat',
+                    gedung_beton: 'Beton',
+                    gedung_status_tanah: 'Tanah Hak Pakai RSUD',
+                    gedung_kode_aset_tanah: '1.3.1.01.01.02.013',
+                    gedung_is_baru: 'Baru',
+                    gedung_kapitalisasi_tahun_induk: '',
+                    gedung_kapitalisasi_nilai_induk: 0,
+                    gedung_jumlah_bangunan: 1,
+                    gedung_satuan: 'Gedung',
+                    gedung_nilai_perencanaan: 0,
+                    gedung_nilai_fisik: 0,
+                    gedung_nilai_pengawasan: 0,
+                    gedung_nilai_ap: 0,
+                    gedung_nilai_pip: 0,
+                    gedung_alamat: ''
+                });
+                this.syncActiveKibTotals();
+            },
+
+            removeGedungItem(index) {
+                if (this.formData.gedung_items && this.formData.gedung_items.length > 1) {
+                    this.formData.gedung_items.splice(index, 1);
+                    this.syncActiveKibTotals();
+                }
+            },
+
+            syncGedungFieldsToMain() {
+                if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                    const first = this.formData.gedung_items[0];
+                    this.formData.kondisi = first.gedung_kondisi;
+                    this.formData.satuan = first.gedung_satuan || 'Gedung';
+                    if (first.gedung_alamat) {
+                        this.formData.alamat_barang = first.gedung_alamat;
+                    }
+                }
+            },
+
+            // ─── 4. KIB D (Jalan, Irigasi & Jaringan) Handlers ──────────────────
+            get totalNilaiJaringan() {
+                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                    return this.formData.jaringan_items.reduce((sum, item) => sum + this.getJaringanSubtotal(item), 0);
+                }
+                return 0;
+            },
+
+            get totalVolumeJaringan() {
+                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                    return this.formData.jaringan_items.reduce((sum, item) => sum + (parseInt(item.jaringan_jumlah) || 1), 0);
+                }
+                return 1;
+            },
+
+            getJaringanSubtotal(item) {
+                return Number(item.jaringan_nilai_perencanaan || 0) + 
+                       Number(item.jaringan_nilai_fisik || 0) + 
+                       Number(item.jaringan_nilai_pengawasan || 0) + 
+                       Number(item.jaringan_nilai_ap || item.jaringan_nilai_pip || 0);
+            },
+
+            addJaringanItem() {
+                if (!this.formData.jaringan_items) this.formData.jaringan_items = [];
+                this.formData.jaringan_items.push({
+                    jaringan_nama_barang: this.formData.nama_barang || this.formData.sub_rincian_nama || '',
+                    jaringan_kode_barang: this.activeKodeBarang || this.formData.sub_rincian_kode || '',
+                    jaringan_konstruksi: '',
+                    jaringan_panjang_m: 0,
+                    jaringan_lebar_m: 0,
+                    jaringan_luas_m2: 0,
+                    jaringan_kondisi: 'B',
+                    jaringan_bertingkat: 'Bertingkat',
+                    jaringan_beton: 'Beton',
+                    jaringan_status_tanah: 'Tanah Hak Pakai RSUD',
+                    jaringan_kode_aset_tanah: '1.3.1.01.01.02.013',
+                    jaringan_is_baru: 'Baru',
+                    jaringan_kapitalisasi_tahun_induk: '',
+                    jaringan_kapitalisasi_nilai_induk: 0,
+                    jaringan_jumlah: 1,
+                    jaringan_satuan: 'Paket',
+                    jaringan_nilai_perencanaan: 0,
+                    jaringan_nilai_fisik: 0,
+                    jaringan_nilai_pengawasan: 0,
+                    jaringan_nilai_ap: 0,
+                    jaringan_nilai_pip: 0,
+                    jaringan_alamat: ''
+                });
+                this.syncActiveKibTotals();
+            },
+
+            removeJaringanItem(index) {
+                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 1) {
+                    this.formData.jaringan_items.splice(index, 1);
+                    this.syncActiveKibTotals();
+                }
+            },
+
+            syncJaringanFieldsToMain() {
+                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                    const first = this.formData.jaringan_items[0];
+                    this.formData.kondisi = first.jaringan_kondisi;
+                    this.formData.satuan = first.jaringan_satuan || 'Paket';
+                    if (first.jaringan_alamat) {
+                        this.formData.alamat_barang = first.jaringan_alamat;
+                    }
+                }
+            },
+
+            // ─── 5. KIB E (Aset Tetap Lainnya) Handlers ─────────────────────────
+            get totalNilaiAsetLainnya() {
+                if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                    return this.formData.lainnya_items.reduce((sum, item) => sum + this.getLainnyaSubtotal(item), 0);
+                }
+                return 0;
+            },
+
+            get totalVolumeAsetLainnya() {
+                if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                    return this.formData.lainnya_items.reduce((sum, item) => sum + (parseInt(item.lainnya_jumlah_barang) || 1), 0);
+                }
+                return 1;
+            },
+
+            getLainnyaSubtotal(item) {
+                return (Number(item.lainnya_jumlah_barang || 1) * Number(item.lainnya_nilai_satuan || 0)) + Number(item.lainnya_administrasi_proyek || 0);
+            },
+
+            addLainnyaItem() {
+                if (!this.formData.lainnya_items) this.formData.lainnya_items = [];
+                this.formData.lainnya_items.push({
+                    kib_e_sub_type: this.formData.kib_e_default_type || 'buku',
+                    lainnya_nama_barang: this.formData.nama_barang || this.formData.sub_rincian_nama || '',
+                    lainnya_kode_barang: this.activeKodeBarang || this.formData.sub_rincian_kode || '',
+                    lainnya_buku_judul: '',
+                    lainnya_buku_pencipta: '',
+                    lainnya_buku_spesifikasi: '',
+                    lainnya_kesenian_asal: '',
+                    lainnya_kesenian_pencipta: '',
+                    lainnya_kesenian_spesifikasi: '',
+                    lainnya_kesenian_bahan: '',
+                    lainnya_kesenian_ukuran: '',
+                    lainnya_hewan_judul: '',
+                    lainnya_hewan_jenis: '',
+                    lainnya_hewan_spesifikasi: '',
+                    ruang_pemegang: '',
+                    ruang_pemegang_lainnya: '',
+                    lainnya_kondisi: 'Baik',
+                    lainnya_jumlah_barang: 1,
+                    lainnya_satuan: (this.formData.kib_e_default_type === 'buku') ? 'Eksemplar' : 'Buah',
+                    lainnya_nilai_satuan: 0,
+                    lainnya_administrasi_proyek: 0,
+                    isRuangOpen: false,
+                    searchRuang: ''
+                });
+                this.syncActiveKibTotals();
+            },
+
+            removeLainnyaItem(index) {
+                if (this.formData.lainnya_items && this.formData.lainnya_items.length > 1) {
+                    this.formData.lainnya_items.splice(index, 1);
+                    this.syncActiveKibTotals();
+                }
+            },
+
+            syncLainnyaFieldsToMain() {
+                if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                    const first = this.formData.lainnya_items[0];
+                    this.formData.kondisi = first.lainnya_kondisi;
+                    this.formData.satuan = first.lainnya_satuan || 'Eksemplar';
+                    if (first.ruang_pemegang) {
+                        this.formData.alamat_barang = first.ruang_pemegang;
+                    }
+                }
+            },
+
+            filterUnitsForLainnyaItem(item) {
+                let list = this.masterUnits || [];
+                if (!item.searchRuang || item.searchRuang.trim() === '') return list;
+                const q = item.searchRuang.toLowerCase().trim();
+                return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+            },
+
+            selectUnitForLainnyaItem(item, unit) {
+                item.ruang_pemegang = unit.nama;
+                item.ruang_pemegang_lainnya = unit.nama;
+                item.isRuangOpen = false;
+                item.searchRuang = '';
+                this.syncActiveKibTotals();
+            },
+
+            // ─── 6. ATB (Aset Tidak Berwujud) Handlers ──────────────────────────
+            get totalNilaiAtb() {
+                if (this.formData.atb_items && this.formData.atb_items.length > 0) {
+                    return this.formData.atb_items.reduce((sum, item) => sum + this.getAtbSubtotal(item), 0);
+                }
+                return 0;
+            },
+
+            get totalVolumeAtb() {
+                if (this.formData.atb_items && this.formData.atb_items.length > 0) {
+                    return this.formData.atb_items.reduce((sum, item) => sum + (parseInt(item.atb_jumlah) || 1), 0);
+                }
+                return 1;
+            },
+
+            getAtbSubtotal(item) {
+                return (Number(item.atb_jumlah || 1) * Number(item.atb_nilai_satuan || 0)) + Number(item.atb_administrasi_proyek || 0);
+            },
+
+            addAtbItem() {
+                if (!this.formData.atb_items) this.formData.atb_items = [];
+                this.formData.atb_items.push({
+                    atb_nama_barang: this.formData.nama_barang || this.formData.sub_rincian_nama || '',
+                    atb_kode_barang: this.activeKodeBarang || this.formData.sub_rincian_kode || '',
+                    atb_judul_nama: '',
+                    atb_pencipta: '',
+                    atb_spesifikasi: '',
+                    atb_jumlah: 1,
+                    atb_satuan: 'Lisensi',
+                    atb_kondisi: 'Baik',
+                    atb_nilai_satuan: 0,
+                    atb_administrasi_proyek: 0,
+                    atb_ruang_pemegang: '',
+                    isRuangOpen: false,
+                    searchRuang: ''
+                });
+                this.syncActiveKibTotals();
+            },
+
+            removeAtbItem(index) {
+                if (this.formData.atb_items && this.formData.atb_items.length > 1) {
+                    this.formData.atb_items.splice(index, 1);
+                    this.syncActiveKibTotals();
+                }
+            },
+
+            syncAtbFieldsToMain() {
+                if (this.formData.atb_items && this.formData.atb_items.length > 0) {
+                    const first = this.formData.atb_items[0];
+                    this.formData.kondisi = first.atb_kondisi;
+                    this.formData.satuan = first.atb_satuan || 'Lisensi';
+                    if (first.atb_ruang_pemegang) {
+                        this.formData.alamat_barang = first.atb_ruang_pemegang;
+                    }
+                }
+            },
+
+            // ─── 7. KIB F (Konstruksi Dalam Pengerjaan) Handlers ─────────────────
+            get totalNilaiKdp() {
+                if (this.formData.kdp_items && this.formData.kdp_items.length > 0) {
+                    return this.formData.kdp_items.reduce((sum, item) => sum + this.getKdpSubtotal(item), 0);
+                }
+                return 0;
+            },
+
+            get totalVolumeKdp() {
+                if (this.formData.kdp_items && this.formData.kdp_items.length > 0) {
+                    return this.formData.kdp_items.reduce((sum, item) => sum + (parseInt(item.kdp_jumlah_bangunan) || 1), 0);
+                }
+                return 1;
+            },
+
+            getKdpSubtotal(item) {
+                return Number(item.kdp_nilai_perencanaan || 0) + 
+                       Number(item.kdp_nilai_fisik || 0) + 
+                       Number(item.kdp_nilai_pengawasan || 0) + 
+                       Number(item.kdp_nilai_ap || item.kdp_nilai_pip || 0);
+            },
+
+            addKdpItem() {
+                if (!this.formData.kdp_items) this.formData.kdp_items = [];
+                this.formData.kdp_items.push({
+                    kdp_nama_barang: this.formData.nama_barang || this.formData.sub_rincian_nama || '',
+                    kdp_kode_barang: this.activeKodeBarang || this.formData.sub_rincian_kode || '',
+                    kdp_luas_m2: 0,
+                    kdp_kondisi: 'B',
+                    kdp_progres_persen: 0,
+                    kdp_bertingkat: 'Bertingkat',
+                    kdp_beton: 'Beton',
+                    kdp_status_tanah: 'Tanah Hak Pakai RSUD',
+                    kdp_kode_aset_tanah: '1.3.1.01.01.02.013',
+                    kdp_is_baru: 'Baru',
+                    kdp_kapitalisasi_tahun_induk: '',
+                    kdp_kapitalisasi_nilai_induk: 0,
+                    kdp_jumlah_bangunan: 1,
+                    kdp_satuan: 'Gedung',
+                    kdp_nilai_perencanaan: 0,
+                    kdp_nilai_fisik: 0,
+                    kdp_nilai_pengawasan: 0,
+                    kdp_nilai_ap: 0,
+                    kdp_nilai_pip: 0,
+                    kdp_alamat: ''
+                });
+                this.syncActiveKibTotals();
+            },
+
+            removeKdpItem(index) {
+                if (this.formData.kdp_items && this.formData.kdp_items.length > 1) {
+                    this.formData.kdp_items.splice(index, 1);
+                    this.syncActiveKibTotals();
+                }
+            },
+
+            syncKdpFieldsToMain() {
+                if (this.formData.kdp_items && this.formData.kdp_items.length > 0) {
+                    const first = this.formData.kdp_items[0];
+                    this.formData.kondisi = first.kdp_kondisi;
+                    this.formData.satuan = first.kdp_satuan || 'Gedung';
+                    if (first.kdp_alamat) {
+                        this.formData.alamat_barang = first.kdp_alamat;
+                    }
+                }
+            },
+
+            // ─── Master Sync Function for Active KIB ─────────────────────────────
+            syncActiveKibTotals() {
+                if (this.isTanah) {
+                    this.syncTanahFieldsToMain();
+                    const totalNilai = (this.formData.tanah_items || []).reduce((s, it) => s + (parseFloat(it.tanah_nilai_fisik) || 0), 0);
+                    if (totalNilai > 0) {
+                        this.formData.total_realisasi = totalNilai;
+                        this.formData.jumlah_realisasi = totalNilai;
+                    }
+                } else if (this.isMesin) {
+                    this.syncMesinFieldsToMain();
+                    const totalNilai = this.totalNilaiMesin;
+                    if (totalNilai > 0) {
+                        this.formData.total_realisasi = totalNilai;
+                        this.formData.jumlah_realisasi = totalNilai;
+                    }
+                    this.formData.jumlah_volume = this.totalVolumeMesin;
+                } else if (this.isGedung) {
+                    this.syncGedungFieldsToMain();
+                    const totalNilai = this.totalNilaiGedung;
+                    if (totalNilai > 0) {
+                        this.formData.total_realisasi = totalNilai;
+                        this.formData.jumlah_realisasi = totalNilai;
+                    }
+                    this.formData.jumlah_volume = this.totalVolumeGedung;
+                } else if (this.isJaringan) {
+                    this.syncJaringanFieldsToMain();
+                    const totalNilai = this.totalNilaiJaringan;
+                    if (totalNilai > 0) {
+                        this.formData.total_realisasi = totalNilai;
+                        this.formData.jumlah_realisasi = totalNilai;
+                    }
+                    this.formData.jumlah_volume = this.totalVolumeJaringan;
+                } else if (this.isAsetLainnya) {
+                    this.syncLainnyaFieldsToMain();
+                    const totalNilai = this.totalNilaiAsetLainnya;
+                    if (totalNilai > 0) {
+                        this.formData.total_realisasi = totalNilai;
+                        this.formData.jumlah_realisasi = totalNilai;
+                    }
+                    this.formData.jumlah_volume = this.totalVolumeAsetLainnya;
+                } else if (this.isAtb) {
+                    this.syncAtbFieldsToMain();
+                    const totalNilai = this.totalNilaiAtb;
+                    if (totalNilai > 0) {
+                        this.formData.total_realisasi = totalNilai;
+                        this.formData.jumlah_realisasi = totalNilai;
+                    }
+                    this.formData.jumlah_volume = this.totalVolumeAtb;
+                } else if (this.isKdp) {
+                    this.syncKdpFieldsToMain();
+                    const totalNilai = this.totalNilaiKdp;
+                    if (totalNilai > 0) {
+                        this.formData.total_realisasi = totalNilai;
+                        this.formData.jumlah_realisasi = totalNilai;
+                    }
+                    this.formData.jumlah_volume = this.totalVolumeKdp;
+                }
             },
 
             onPpkSelect() {
@@ -413,7 +1032,7 @@
                 }
             },
 
-            // ─── Utilities ──────────────────────────────────────────────────
+            // ─── Utilities ──────────────────────────────────────────────────────
             formatRupiah(val) {
                 const num = Number(val || 0);
                 return num.toLocaleString('id-ID');
@@ -430,19 +1049,21 @@
                 }
             },
 
-            // ─── Multi-Step Navigation & Validation ─────────────────────────
+            // ─── Multi-Step Navigation & Validation ─────────────────────────────
             goToStep(s) {
                 if (s > this.currentStep) {
                     for (let i = this.currentStep; i < s; i++) {
                         if (!this.validateStep(i)) return;
                     }
                 }
+                this.syncActiveKibTotals();
                 this.currentStep = s;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
             nextStep() {
                 if (!this.validateStep(this.currentStep)) return;
+                this.syncActiveKibTotals();
                 if (this.currentStep < this.totalSteps) {
                     this.currentStep++;
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -458,14 +1079,6 @@
 
             validateStep(s) {
                 if (s === 1) {
-                    if (!this.formData.tahun_perolehan) {
-                        alert('⚠️ Mohon tentukan Tahun Anggaran Pembukuan.');
-                        return false;
-                    }
-                    if (!this.formData.triwulan) {
-                        alert('⚠️ Mohon tentukan Triwulan Pembukuan.');
-                        return false;
-                    }
                     if (!this.formData.hibah_pemberi.trim()) {
                         alert('⚠️ Mohon isi Nama Instansi Pemberi Hibah.');
                         return false;
@@ -482,6 +1095,14 @@
                 }
 
                 if (s === 2) {
+                    if (!this.formData.tahun_perolehan) {
+                        alert('⚠️ Mohon tentukan Tahun Pembukuan Hibah.');
+                        return false;
+                    }
+                    if (!this.formData.triwulan) {
+                        alert('⚠️ Mohon tentukan Triwulan Pembukuan.');
+                        return false;
+                    }
                     if (!this.formData.jenis_astap_id && !this.formData.jenis_aset_kode) {
                         alert('⚠️ Mohon pilih Klasifikasi Jenis Aset / Kode Barang 108.');
                         return false;
@@ -491,16 +1112,14 @@
                         return false;
                     }
                     if (!this.formData.jumlah_volume || this.formData.jumlah_volume < 1) {
-                        alert('⚠️ Mohon isi Volume / Kuantitas Barang.');
+                        alert('⚠️ Mohon tentukan Volume / Kuantitas Barang.');
                         return false;
                     }
                     return true;
                 }
 
                 if (s === 3) {
-                    if (this.isTanah) {
-                        this.syncTanahFieldsToMain();
-                    }
+                    this.syncActiveKibTotals();
                     if (!this.formData.unit_id) {
                         alert('⚠️ Mohon pilih Unit / Ruangan Penempatan Aset (KIR).');
                         return false;
@@ -514,9 +1133,7 @@
             submitForm() {
                 if (!this.validateStep(1) || !this.validateStep(2) || !this.validateStep(3)) return;
 
-                if (this.isTanah) {
-                    this.syncTanahFieldsToMain();
-                }
+                this.syncActiveKibTotals();
 
                 this.isSubmitting = true;
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
