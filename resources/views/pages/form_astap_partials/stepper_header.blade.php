@@ -1,7 +1,10 @@
         <!-- Top Navigation Bar (Back + Title) -->
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
             <div class="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
-                <a href="{{ request()->routeIs('astap.edit') ? route('astap.index') : route('astap.pilih_jenis') }}" 
+                @php
+                    $backUrl = request('from') === 'eksternal' ? route('mutasi.eksternal') : (request()->routeIs('astap.edit') ? route('astap.index') : route('astap.pilih_jenis'));
+                @endphp
+                <a href="{{ $backUrl }}" 
                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all shadow-sm shrink-0">
                     <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 </a>

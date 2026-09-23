@@ -1,4 +1,4 @@
-﻿            <!-- Bottom Navigation Between Steps -->
+            <!-- Bottom Navigation Between Steps -->
             <div class="pt-6 sm:pt-8 mt-6 sm:mt-8 border-t border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
                 <div class="w-full sm:w-auto">
                     <button type="button" x-show="currentStep > 1" @click="prevStep()"
@@ -7,8 +7,10 @@
                     </button>
                 </div>
 
-                <div class="flex items-center justify-end space-x-2.5 sm:space-x-3 w-full sm:w-auto">
-                    <a href="{{ route('astap.index') }}" class="flex-1 sm:flex-initial text-center px-4 sm:px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
+                    @php
+                        $cancelUrl = request('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index');
+                    @endphp
+                    <a href="{{ $cancelUrl }}" class="flex-1 sm:flex-initial text-center px-4 sm:px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all">
                         Batal
                     </a>
 

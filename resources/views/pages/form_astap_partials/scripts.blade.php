@@ -2932,7 +2932,7 @@
                         .then(data => {
                             this.toast = { show: true, message: data.message || 'Data ASTAP berhasil disimpan!', type: 'success' };
                             setTimeout(() => {
-                                window.location.href = '{{ route('astap.index') }}';
+                                window.location.href = {{ Js::from(request('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index')) }};
                             }, 1200);
                         })
                         .catch(err => {

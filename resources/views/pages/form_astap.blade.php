@@ -1,6 +1,6 @@
 <x-layout :title="request()->routeIs('astap.edit') ? 'Ubah Data ASTAP - SIMAT-RK' : 'Tambah Data ASTAP Baru - SIMAT-RK'">
     @section('page-title', request()->routeIs('astap.edit') ? 'Ubah Data ASTAP' : 'Tambah Data ASTAP Baru')
-    @section('breadcrumb', request()->routeIs('astap.edit') ? 'Master Utama / Data ASTAP / Ubah Data' : 'Master Utama / Data ASTAP / Tambah Baru')
+    @section('breadcrumb', request('from') === 'eksternal' ? 'Master Aset / Mutasi Eksternal / Ubah Data' : (request()->routeIs('astap.edit') ? 'Master Utama / Data ASTAP / Ubah Data' : 'Master Utama / Data ASTAP / Tambah Baru'))
 
     <!-- 1. Script Logika Form (Alpine.js & State Management) -->
     @include('pages.form_astap_partials.scripts')
