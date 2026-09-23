@@ -44,6 +44,18 @@
                                                 <span>🎁</span><span>HIBAH</span>
                                             </span>
                                         </template>
+                                        {{-- Badge Belanja Barang --}}
+                                        <template x-if="item.sumber_dana === 'belanja_barang' || item.sumber_dana === 'belanja_rekening'">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-500/50 shadow-sm tracking-wider">
+                                                <span>📦</span><span>PERBEKALAN</span>
+                                            </span>
+                                        </template>
+                                        {{-- Badge Pelimpahan SKPD --}}
+                                        <template x-if="item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk'">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-purple-500/25 text-purple-300 border border-purple-500/50 shadow-sm tracking-wider">
+                                                <span>🔄</span><span>PELIMPAHAN SKPD</span>
+                                            </span>
+                                        </template>
                                         <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama"></span>
                                     </div>
                                 </td>

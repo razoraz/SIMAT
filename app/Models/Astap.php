@@ -32,6 +32,38 @@ class Astap extends Model
         'mutasi_tanggal' => 'date:d/m/Y',
     ];
 
+    protected static function booted()
+    {
+        static::saved(function ($astap) {
+            if ($astap->isBelanjaModal()) {
+                \App\Models\AstapBelanjaModal::updateOrCreate(
+                    ['astap_id' => $astap->id],
+                    [
+                        'jenis_pengadaan_id'     => $astap->jenis_pengadaan_id,
+                        'rekening_belanja_id'    => $astap->rekening_belanja_id,
+                        'spk_nomor'              => $astap->getRawOriginal('spk_nomor') ?? $astap->spk_nomor,
+                        'spk_tanggal'            => $astap->getRawOriginal('spk_tanggal'),
+                        'surat_pesanan_nomor'    => $astap->getRawOriginal('surat_pesanan_nomor') ?? $astap->surat_pesanan_nomor,
+                        'surat_pesanan_tanggal'  => $astap->getRawOriginal('surat_pesanan_tanggal'),
+                        'kwitansi_nomor'         => $astap->getRawOriginal('kwitansi_nomor') ?? $astap->kwitansi_nomor,
+                        'kwitansi_tanggal'       => $astap->getRawOriginal('kwitansi_tanggal'),
+                        'faktur_nomor'           => $astap->getRawOriginal('faktur_nomor') ?? $astap->faktur_nomor,
+                        'faktur_tanggal'         => $astap->getRawOriginal('faktur_tanggal'),
+                        'sp2d_nomor'             => $astap->getRawOriginal('sp2d_nomor') ?? $astap->sp2d_nomor,
+                        'sp2d_tanggal'           => $astap->getRawOriginal('sp2d_tanggal'),
+                        'bast_dokumen_nomor'     => $astap->getRawOriginal('bast_dokumen_nomor') ?? $astap->bast_dokumen_nomor,
+                        'bast_dokumen_tanggal'   => $astap->getRawOriginal('bast_dokumen_tanggal'),
+                        'penyedia_nama'          => $astap->getRawOriginal('penyedia_nama') ?? $astap->penyedia_nama,
+                        'penyedia_pemilik'       => $astap->penyedia_pemilik,
+                        'penyedia_rekening_nama' => $astap->penyedia_rekening_nama,
+                        'penyedia_rekening_nomor'=> $astap->penyedia_rekening_nomor,
+                        'penyedia_alamat'        => $astap->penyedia_alamat,
+                    ]
+                );
+            }
+        });
+    }
+
     /**
      * Helper universal parse string tanggal dari frontend (mendukung dd/mm/yyyy, dd-mm-yyyy, dan yyyy-mm-dd)
      */
@@ -109,9 +141,14 @@ class Astap extends Model
         return empty($this->sumber_dana) || $this->sumber_dana === 'belanja_modal';
     }
 
+    public function isBelanjaBarang(): bool
+    {
+        return $this->sumber_dana === 'belanja_barang' || $this->sumber_dana === 'belanja_rekening';
+    }
+
     public function isBelanjaRekening(): bool
     {
-        return $this->sumber_dana === 'belanja_rekening';
+        return $this->isBelanjaBarang();
     }
 
     public function isHibah(): bool
@@ -119,19 +156,101 @@ class Astap extends Model
         return $this->sumber_dana === 'hibah';
     }
 
+    public function isPelimpahanSkpd(): bool
+    {
+        return $this->sumber_dana === 'pelimpahan_skpd' || $this->sumber_dana === 'mutasi_masuk';
+    }
+
     public function isMutasiMasuk(): bool
     {
-        return $this->sumber_dana === 'mutasi_masuk';
+        return $this->isPelimpahanSkpd();
     }
 
     public function getSumberDanaLabelAttribute(): string
     {
         return match ($this->sumber_dana) {
-            'belanja_rekening' => 'Belanja Rekening (Perbekalan)',
-            'hibah'            => 'Hibah Masuk',
-            'mutasi_masuk'     => 'Mutasi Masuk (Pelimpahan)',
-            default            => 'Belanja Modal (APBD/BLUD)',
+            'belanja_barang', 'belanja_rekening' => 'Belanja Barang (Perbekalan)',
+            'hibah'                             => 'Hibah Pihak Ketiga',
+            'pelimpahan_skpd', 'mutasi_masuk'   => 'Pelimpahan SKPD Luar',
+            default                             => 'Belanja Modal (APBD/BLUD)',
         };
+    }
+
+    // ─── Extension Relations (Opsi B) ──────────────────────────────
+    public function belanjaModal()
+    {
+        return $this->hasOne(AstapBelanjaModal::class, 'astap_id');
+    }
+
+    public function belanjaBarang()
+    {
+        return $this->hasOne(AstapBelanjaBarang::class, 'astap_id');
+    }
+
+    public function pelimpahanSkpd()
+    {
+        return $this->hasOne(AstapPelimpahanSkpd::class, 'astap_id');
+    }
+
+    public function hibahDetail()
+    {
+        return $this->hasOne(AstapHibah::class, 'astap_id')->where('tipe_hibah', 'masuk');
+    }
+
+    // ─── Smart Accessors for Backward Compatibility ───────────────
+    public function getPenyediaNamaAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->penyedia_nama ?? ($this->belanjaBarang?->toko_penyedia ?? null));
+    }
+
+    public function getSpkNomorAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->spk_nomor ?? null);
+    }
+
+    public function getSpkTanggalAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->spk_tanggal ?? null);
+    }
+
+    public function getFakturNomorAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->faktur_nomor ?? ($this->belanjaBarang?->nomor_faktur ?? null));
+    }
+
+    public function getFakturTanggalAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->faktur_tanggal ?? ($this->belanjaBarang?->tanggal_faktur ?? null));
+    }
+
+    public function getSp2dNomorAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->sp2d_nomor ?? null);
+    }
+
+    public function getSp2dTanggalAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->sp2d_tanggal ?? null);
+    }
+
+    public function getBastDokumenNomorAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->bast_dokumen_nomor ?? ($this->hibahDetail?->nomor_bast ?? ($this->pelimpahanSkpd?->nomor_bamb ?? null)));
+    }
+
+    public function getBastDokumenTanggalAttribute($val)
+    {
+        return $val ?: ($this->belanjaModal?->bast_dokumen_tanggal ?? ($this->hibahDetail?->tanggal_bast ?? ($this->pelimpahanSkpd?->tanggal_bamb ?? null)));
+    }
+
+    public function getHibahPemberiAttribute($val)
+    {
+        return $val ?: ($this->hibahDetail?->pihak_hibah ?? null);
+    }
+
+    public function getMutasiAsalAttribute($val)
+    {
+        return $val ?: ($this->pelimpahanSkpd?->skpd_asal ?? null);
     }
 
     public function jenisPengadaan()

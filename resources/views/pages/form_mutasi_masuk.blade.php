@@ -1,6 +1,6 @@
-<x-layout title="Form Input Mutasi Masuk (Pelimpahan SKPD) - SIMAT-RK">
-    @section('page-title', 'Pencatatan Mutasi Masuk')
-    @section('breadcrumb', 'Master Utama / Data ASTAP / Tambah Mutasi Masuk')
+<x-layout title="Form Input Pelimpahan SKPD (Dinas Luar) - SIMAT-RK">
+    @section('page-title', 'Pencatatan Pelimpahan SKPD')
+    @section('breadcrumb', 'Master Utama / Data ASTAP / Tambah Pelimpahan SKPD')
 
     <div x-data="formMutasiMasuk()" x-cloak class="max-w-5xl mx-auto space-y-6 py-2">
 
@@ -16,14 +16,14 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="text-2xl font-black text-white tracking-tight">
-                            Pencatatan Mutasi Masuk
+                            Pencatatan Pelimpahan SKPD (Dinas Luar)
                         </h1>
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/15 text-purple-300 border border-purple-500/30">
                             🔄 PELIMPAHAN SKPD / DINAS LUAR
                         </span>
                     </div>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        Pendaftaran aset pelimpahan dari SKPD/Dinas luar berdasarkan Berita Acara Mutasi Barang (BAMB) atau SK Bupati.
+                        Pendaftaran aset pelimpahan dari SKPD/Dinas luar berdasarkan Berita Acara resmi (BAP/BAMB) atau SK Kepala Daerah.
                     </p>
                 </div>
             </div>
@@ -684,7 +684,7 @@
                     <!-- Final Submit Button (Langkah 3) -->
                     <button type="submit" x-show="step === 3" :disabled="isSubmitting"
                         class="px-8 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs shadow-xl shadow-emerald-500/25 transition-all flex items-center space-x-2 cursor-pointer">
-                        <span x-show="!isSubmitting">💾 Simpan Mutasi Masuk</span>
+                        <span x-show="!isSubmitting">💾 Simpan Pelimpahan SKPD</span>
                         <span x-show="isSubmitting">Menyimpan...</span>
                     </button>
                 </div>
@@ -705,7 +705,7 @@
 
                 // Form State
                 formData: {
-                    sumber_dana: 'mutasi_masuk',
+                    sumber_dana: 'pelimpahan_skpd',
                     tahun_perolehan: new Date().getFullYear(),
                     triwulan: 'TW I',
                     mutasi_asal: '',
@@ -1078,7 +1078,7 @@
                     .then(result => {
                         this.isSubmitting = false;
                         if (result.status === 200 && result.body.success) {
-                            alert('🎉 Berhasil! ' + (result.body.message || 'Data Mutasi Masuk berhasil disimpan.'));
+                            alert('🎉 Berhasil! ' + (result.body.message || 'Data Pelimpahan SKPD berhasil disimpan.'));
                             window.location.href = "{{ route('astap.index') }}";
                         } else {
                             const errMsg = result.body.message || (result.body.errors ? Object.values(result.body.errors).flat().join('\n') : 'Gagal menyimpan data.');

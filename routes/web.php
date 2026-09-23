@@ -234,7 +234,11 @@ Route::middleware('auth')->group(function () {
                 'jenisAstap', 
                 'rekeningBelanja', 
                 'jenisPengadaan', 
-                'unit'
+                'unit',
+                'belanjaModal',
+                'belanjaBarang',
+                'pelimpahanSkpd',
+                'hibahDetail'
             ])
             ->orderBy('id', 'desc')
             ->get()
@@ -307,10 +311,19 @@ Route::middleware('auth')->group(function () {
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'category' => $a->category,
                     'sumber_dana' => $a->sumber_dana ?? 'belanja_modal',
+                    'sumber_dana_label' => $a->sumber_dana_label,
                     'hibah_pemberi' => $a->hibah_pemberi ?? '',
                     'hibah_nomor_bast' => $a->hibah_nomor_bast ?? '',
                     'hibah_tanggal_bast' => $a->hibah_tanggal_bast ? (is_string($a->hibah_tanggal_bast) ? $a->hibah_tanggal_bast : $a->hibah_tanggal_bast->format('d/m/Y')) : '',
                     'hibah_keterangan' => $a->hibah_keterangan ?? '',
+                    'mutasi_asal' => $a->pelimpahanSkpd?->skpd_asal ?: ($a->mutasi_asal ?: ($spec['skpd_asal'] ?? ($spec['mutasi_asal'] ?? ''))),
+                    'mutasi_nomor_bamb' => $a->pelimpahanSkpd?->nomor_bamb ?: ($a->mutasi_nomor_bamb ?: ($spec['nomor_bamb'] ?? ($spec['mutasi_nomor_bamb'] ?? ''))),
+                    'mutasi_tanggal' => $a->pelimpahanSkpd?->tanggal_bamb ? (is_string($a->pelimpahanSkpd->tanggal_bamb) ? $a->pelimpahanSkpd->tanggal_bamb : $a->pelimpahanSkpd->tanggal_bamb->format('d/m/Y')) : ($a->mutasi_tanggal ? (is_string($a->mutasi_tanggal) ? $a->mutasi_tanggal : $a->mutasi_tanggal->format('d/m/Y')) : ($spec['tanggal_bamb'] ?? ($spec['mutasi_tanggal'] ?? ''))),
+                    'mutasi_keterangan' => $a->pelimpahanSkpd?->keterangan ?: ($a->mutasi_keterangan ?: ($spec['mutasi_keterangan'] ?? '')),
+                    'rekening_penyedia' => $a->belanjaBarang?->nama_toko ?: ($spec['rekening_penyedia'] ?? ($a->penyedia_nama ?: '')),
+                    'rekening_nomor_faktur' => $a->belanjaBarang?->nomor_faktur ?: ($spec['rekening_nomor_faktur'] ?? ($a->faktur_nomor ?: '')),
+                    'rekening_tanggal_faktur' => $a->belanjaBarang?->tanggal_faktur ? (is_string($a->belanjaBarang->tanggal_faktur) ? $a->belanjaBarang->tanggal_faktur : $a->belanjaBarang->tanggal_faktur->format('d/m/Y')) : ($spec['rekening_tanggal_faktur'] ?? ''),
+                    'rekening_keterangan' => $a->belanjaBarang?->keterangan ?: ($spec['rekening_keterangan'] ?? ''),
                     'is_extracomtable' => (bool) $a->is_extracomtable,
                     'kode_barang' => $kode108Val,
                     'nama_barang' => $a->nama_barang,
@@ -1072,7 +1085,7 @@ Route::middleware('auth')->group(function () {
                     'total_realisasi'           => $totalRealisasi,
                     'biaya_administrasi_proyek' => 0,
                     'triwulan'                  => $data['triwulan'],
-                    'sumber_dana'               => 'belanja_rekening',
+                    'sumber_dana'               => 'belanja_barang',
                     'penyedia_nama'             => $data['rekening_penyedia'],
                     'faktur_dokumen_nomor'      => $data['rekening_nomor_faktur'],
                     'faktur_dokumen_tanggal'    => $data['rekening_tanggal_faktur'],
@@ -1086,7 +1099,7 @@ Route::middleware('auth')->group(function () {
                     'is_reklas'                 => false,
                     'is_deleted'                => 0,
                     'spesifikasi_json'          => [
-                        'sumber_dana'     => 'belanja_rekening',
+                        'sumber_dana'     => 'belanja_barang',
                         'toko_penyedia'   => $data['rekening_penyedia'],
                         'nomor_faktur'    => $data['rekening_nomor_faktur'],
                         'tanggal_faktur'  => $data['rekening_tanggal_faktur'],
@@ -1132,6 +1145,16 @@ Route::middleware('auth')->group(function () {
 
                 $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem) {
                     $item = \App\Models\Astap::create($astapPayload);
+
+                    // Catat ke extension table astap_belanja_barangs (Opsi B)
+                    \App\Models\AstapBelanjaBarang::create([
+                        'astap_id'        => $item->id,
+                        'toko_penyedia'   => $data['rekening_penyedia'],
+                        'nomor_faktur'    => $data['rekening_nomor_faktur'],
+                        'tanggal_faktur'  => $data['rekening_tanggal_faktur'],
+                        'total_pembelian' => $totalRealisasi,
+                        'keterangan'      => $data['rekening_keterangan'] ?? null,
+                    ]);
 
                     // Buat AstapRegister untuk setiap unit barang
                     $ja = \App\Models\JenisAstap::find($data['jenis_astap_id']);
@@ -1179,16 +1202,16 @@ Route::middleware('auth')->group(function () {
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'Data Belanja Rekening "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
+                        'message' => 'Data Belanja Barang "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
                         'redirect' => route('astap.index')
                     ]);
                 }
 
                 return redirect()->route('astap.index')
-                    ->with('success', 'Data Belanja Rekening "' . $item->nama_barang . '" berhasil ditambahkan.');
+                    ->with('success', 'Data Belanja Barang "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_rekening');
 
-            // ─── Form Mutasi Masuk (Create & Store) ───────────────────────
+            // ─── Form Mutasi Masuk / Pelimpahan SKPD (Create & Store) ─────
             Route::get('/astap/create-mutasi-masuk', function () use ($getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
@@ -1232,7 +1255,7 @@ Route::middleware('auth')->group(function () {
                     'total_realisasi'           => $totalRealisasi,
                     'biaya_administrasi_proyek' => 0,
                     'triwulan'                  => $data['triwulan'],
-                    'sumber_dana'               => 'mutasi_masuk',
+                    'sumber_dana'               => 'pelimpahan_skpd',
                     'mutasi_asal'               => $data['mutasi_asal'],
                     'mutasi_nomor_bamb'         => $data['mutasi_nomor_bamb'],
                     'mutasi_tanggal'            => $data['mutasi_tanggal'],
@@ -1247,7 +1270,7 @@ Route::middleware('auth')->group(function () {
                     'is_reklas'                 => false,
                     'is_deleted'                => 0,
                     'spesifikasi_json'          => [
-                        'sumber_dana'     => 'mutasi_masuk',
+                        'sumber_dana'     => 'pelimpahan_skpd',
                         'skpd_asal'       => $data['mutasi_asal'],
                         'nomor_bamb'      => $data['mutasi_nomor_bamb'],
                         'tanggal_bamb'    => $data['mutasi_tanggal'],
@@ -1294,7 +1317,17 @@ Route::middleware('auth')->group(function () {
                 $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem) {
                     $item = \App\Models\Astap::create($astapPayload);
 
-                    // Buat AstapRegister untuk setiap unit barang mutasi masuk
+                    // Catat ke extension table astap_pelimpahan_skpds (Opsi B)
+                    \App\Models\AstapPelimpahanSkpd::create([
+                        'astap_id'        => $item->id,
+                        'skpd_asal'       => $data['mutasi_asal'],
+                        'nomor_bamb'      => $data['mutasi_nomor_bamb'],
+                        'tanggal_bamb'    => $data['mutasi_tanggal'],
+                        'nilai_perolehan' => $totalRealisasi,
+                        'keterangan'      => $data['mutasi_keterangan'] ?? null,
+                    ]);
+
+                    // Buat AstapRegister untuk setiap unit barang mutasi masuk / pelimpahan
                     $ja = \App\Models\JenisAstap::find($data['jenis_astap_id']);
                     $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
                     $kode108Clean = str_replace('.', '', $kode108Raw);
@@ -1340,13 +1373,13 @@ Route::middleware('auth')->group(function () {
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'Data Mutasi Masuk "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
+                        'message' => 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
                         'redirect' => route('astap.index')
                     ]);
                 }
 
                 return redirect()->route('astap.index')
-                    ->with('success', 'Data Mutasi Masuk "' . $item->nama_barang . '" berhasil ditambahkan.');
+                    ->with('success', 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_mutasi_masuk');
 
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {

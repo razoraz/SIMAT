@@ -1,6 +1,6 @@
-<x-layout title="Form Input Belanja Rekening (Perbekalan) - SIMAT-RK">
-    @section('page-title', 'Pencatatan Belanja Rekening')
-    @section('breadcrumb', 'Master Utama / Data ASTAP / Tambah Belanja Rekening')
+<x-layout title="Form Input Belanja Barang (Perbekalan) - SIMAT-RK">
+    @section('page-title', 'Pencatatan Belanja Barang')
+    @section('breadcrumb', 'Master Utama / Data ASTAP / Tambah Belanja Barang')
 
     <div x-data="formRekening()" x-cloak class="max-w-5xl mx-auto space-y-6 py-2">
 
@@ -16,14 +16,14 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="text-2xl font-black text-white tracking-tight">
-                            Pencatatan Belanja Rekening
+                            Pencatatan Belanja Barang (Perbekalan)
                         </h1>
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                            🏷️ PUSAT PERBEKALAN / KODING REKENING
+                            📦 PUSAT PERBEKALAN / BARANG &amp; JASA
                         </span>
                     </div>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        Pendaftaran barang pengadaan operasional / pusat perbekalan / barang &amp; jasa tanpa pagu belanja modal SIPD &amp; tanpa tender.
+                        Pendaftaran barang perbekalan / operasional dari pusat perbekalan (rekening 5.1.02) untuk pengawasan fisik inventaris ruangan (KIR).
                     </p>
                 </div>
             </div>
@@ -652,7 +652,7 @@
                     <!-- Final Submit Button (Langkah 3) -->
                     <button type="submit" x-show="step === 3" :disabled="isSubmitting"
                         class="px-8 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs shadow-xl shadow-emerald-500/25 transition-all flex items-center space-x-2 cursor-pointer">
-                        <span x-show="!isSubmitting">💾 Simpan Belanja Rekening</span>
+                        <span x-show="!isSubmitting">💾 Simpan Belanja Barang</span>
                         <span x-show="isSubmitting">Menyimpan...</span>
                     </button>
                 </div>
@@ -673,7 +673,7 @@
 
                 // Form State
                 formData: {
-                    sumber_dana: 'belanja_rekening',
+                    sumber_dana: 'belanja_barang',
                     tahun_perolehan: new Date().getFullYear(),
                     triwulan: 'TW I',
                     rekening_penyedia: '',
@@ -1046,7 +1046,7 @@
                     .then(result => {
                         this.isSubmitting = false;
                         if (result.status === 200 && result.body.success) {
-                            alert('🎉 Berhasil! ' + (result.body.message || 'Data Belanja Rekening berhasil disimpan.'));
+                            alert('🎉 Berhasil! ' + (result.body.message || 'Data Belanja Barang berhasil disimpan.'));
                             window.location.href = "{{ route('astap.index') }}";
                         } else {
                             const errMsg = result.body.message || (result.body.errors ? Object.values(result.body.errors).flat().join('\n') : 'Gagal menyimpan data.');

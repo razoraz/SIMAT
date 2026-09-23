@@ -25,6 +25,18 @@
                                 </span>
                             </template>
 
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'belanja_barang' || selectedAstapDetail?.sumber_dana === 'belanja_rekening'">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                                    📦 BELANJA BARANG (PERBEKALAN)
+                                </span>
+                            </template>
+
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk'">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
+                                    🔄 PELIMPAHAN SKPD LUAR
+                                </span>
+                            </template>
+
                             <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
                                 x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>
 
@@ -92,6 +104,60 @@
                                     <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.hibah_tanggal_bast)"></span>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- DOKUMEN FAKTUR TOKO (KHUSUS BELANJA BARANG / PERBEKALAN) -->
+                        <div x-show="selectedAstapDetail?.sumber_dana === 'belanja_barang' || selectedAstapDetail?.sumber_dana === 'belanja_rekening' || selectedAstapDetail?.rekening_nomor_faktur" class="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 space-y-2">
+                            <div class="flex items-center space-x-2 text-indigo-300 font-extrabold text-xs uppercase tracking-wider">
+                                <span>🧾 Dokumen Pembelian Toko &amp; Rekanan (Pusat Perbekalan)</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Toko / Supplier:</span>
+                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.rekening_penyedia || selectedAstapDetail?.penyedia_nama || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor Faktur / Nota:</span>
+                                    <span class="font-mono text-indigo-300 font-semibold" x-text="selectedAstapDetail?.rekening_nomor_faktur || selectedAstapDetail?.faktur_nomor || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal Faktur:</span>
+                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.rekening_tanggal_faktur || selectedAstapDetail?.faktur_tanggal)"></span>
+                                </div>
+                            </div>
+                            <template x-if="selectedAstapDetail?.rekening_keterangan">
+                                <div class="pt-1 text-[11px] text-slate-300">
+                                    <span class="text-slate-400 font-semibold">Keterangan Faktur: </span>
+                                    <span x-text="selectedAstapDetail.rekening_keterangan"></span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- DOKUMEN BAMB PELIMPAHAN SKPD (KHUSUS DINAS LUAR) -->
+                        <div x-show="selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.mutasi_nomor_bamb" class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
+                            <div class="flex items-center space-x-2 text-purple-300 font-extrabold text-xs uppercase tracking-wider">
+                                <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) / SKPD Luar</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">SKPD / Dinas Asal:</span>
+                                    <span class="font-bold text-white text-sm" x-text="selectedAstapDetail?.mutasi_asal || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor BAMB / SK:</span>
+                                    <span class="font-mono text-purple-300 font-semibold" x-text="selectedAstapDetail?.mutasi_nomor_bamb || '-'"></span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal BAMB:</span>
+                                    <span class="text-slate-200 font-medium" x-text="formatTanggalIndo(selectedAstapDetail?.mutasi_tanggal)"></span>
+                                </div>
+                            </div>
+                            <template x-if="selectedAstapDetail?.mutasi_keterangan">
+                                <div class="pt-1 text-[11px] text-slate-300">
+                                    <span class="text-slate-400 font-semibold">Keterangan Pelimpahan: </span>
+                                    <span x-text="selectedAstapDetail.mutasi_keterangan"></span>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- DYNAMIC LANGKAH 3 SPESIFIKASI BERDASARKAN JENIS ASET (KIB A - F, ATB, EXTRACOM) -->
