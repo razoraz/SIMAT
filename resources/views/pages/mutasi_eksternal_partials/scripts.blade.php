@@ -22,12 +22,13 @@
                     }
 
                     // Filter Status BAST
+                    const itemStatus = (item.status || '').toLowerCase();
                     if (this.statusFilter === 'selesai') {
-                        if (!item.status.toLowerCase().includes('selesai') && !item.status.toLowerCase().includes('disahkan')) return false;
+                        if (!itemStatus.includes('selesai') && !itemStatus.includes('disahkan')) return false;
                     } else if (this.statusFilter === 'pinjam_aktif') {
-                        if (!item.status.toLowerCase().includes('peminjaman')) return false;
+                        if (!itemStatus.includes('peminjaman')) return false;
                     } else if (this.statusFilter === 'menunggu_verifikasi') {
-                        if (!item.status.toLowerCase().includes('menunggu')) return false;
+                        if (!itemStatus.includes('menunggu')) return false;
                     }
 
                     // Search Query (Nama Barang, Kode 108, NIBAR, Tahun, No BAST, OPD)
@@ -58,15 +59,15 @@
             },
 
             get countSelesai() {
-                return this.mutasiEksternals.filter(m => m.status.toLowerCase().includes('selesai') || m.status.toLowerCase().includes('disahkan')).length;
+                return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('selesai') || (m.status || '').toLowerCase().includes('disahkan')).length;
             },
 
             get countPinjamAktif() {
-                return this.mutasiEksternals.filter(m => m.status.toLowerCase().includes('peminjaman')).length;
+                return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('peminjaman')).length;
             },
 
             get countMenunggu() {
-                return this.mutasiEksternals.filter(m => m.status.toLowerCase().includes('menunggu')).length;
+                return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('menunggu')).length;
             },
 
             get countTransfer() {

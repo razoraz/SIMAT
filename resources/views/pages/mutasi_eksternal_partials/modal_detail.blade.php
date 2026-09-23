@@ -32,9 +32,9 @@
                     <div class="flex items-center space-x-2">
                         <span class="px-3 py-1 rounded-xl text-xs font-extrabold border shadow-sm"
                             :class="{
-                                'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': selectedMutasi.status.includes('Selesai') || selectedMutasi.status.includes('Disahkan'),
-                                'bg-cyan-500/20 text-cyan-300 border-cyan-500/40':         selectedMutasi.status.includes('Peminjaman'),
-                                'bg-amber-500/20 text-amber-300 border-amber-500/40':     selectedMutasi.status.includes('Menunggu')
+                                'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': (selectedMutasi.status || '').includes('Selesai') || (selectedMutasi.status || '').includes('Disahkan'),
+                                'bg-cyan-500/20 text-cyan-300 border-cyan-500/40':         (selectedMutasi.status || '').includes('Peminjaman'),
+                                'bg-amber-500/20 text-amber-300 border-amber-500/40':     (selectedMutasi.status || '').includes('Menunggu')
                             }"
                             x-text="selectedMutasi.status"></span>
                         <span class="px-2.5 py-1 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 text-[11px] font-mono" x-text="selectedMutasi.tgl"></span>

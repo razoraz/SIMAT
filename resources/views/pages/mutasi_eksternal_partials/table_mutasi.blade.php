@@ -7,7 +7,7 @@
             <thead class="text-slate-400 font-bold uppercase tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
                 <tr>
                     <th class="px-4 py-3.5 text-center w-12 whitespace-nowrap bg-slate-950">No</th>
-                    <th class="px-4 py-3.5 text-center min-w-[220px] bg-slate-950">Nama Barang / ASTAP</th>
+                    <th class="px-4 py-3.5 text-center min-w-[260px] bg-slate-950">Nama Barang / ASTAP</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Tahun Masuk</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Volume / Kuantitas</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Perolehan</th>
@@ -39,7 +39,29 @@
                                     }"
                                     x-text="item.category === 'ATB' ? 'ATB' : (item.category === 'EXTRACOM' ? 'Extracom' : (item.category || 'KIB B'))"></span>
 
-                                <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama || item.opd_asal"></span>
+                                <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama"></span>
+                            </div>
+
+                            <!-- Sub-info Alur Mutasi Eksternal: Asal SKPD, Ruangan Penempatan & Dokumen BAMB -->
+                            <div class="mt-2.5 pt-2 border-t border-slate-800/70 space-y-1 text-[11px]">
+                                <div class="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
+                                    <!-- Asal SKPD Pengirim -->
+                                    <span class="inline-flex items-center space-x-1 text-slate-300" title="Instansi / SKPD Pengirim">
+                                        <span class="text-purple-400 font-bold text-[10px]">🏛️</span>
+                                        <span class="font-semibold text-purple-200" x-text="item.opd_asal || 'SKPD Pengirim'"></span>
+                                    </span>
+                                    <span class="text-slate-600 text-[10px]">&rarr;</span>
+                                    <!-- Ruangan RSUD Tujuan -->
+                                    <span class="inline-flex items-center space-x-1 text-teal-300" title="Ruangan / Unit Penempatan di RSUD">
+                                        <span class="text-teal-400 font-bold text-[10px]">📍</span>
+                                        <span class="font-medium text-slate-200" x-text="item.ruangan_tujuan || 'RSUD Dr. H. Koesnadi'"></span>
+                                    </span>
+                                </div>
+                                <template x-if="item.kode && item.kode !== '-'">
+                                    <div class="text-[10px] text-slate-500 font-mono truncate" title="Nomor Dokumen BAMB / BAST">
+                                        <span class="text-slate-400 font-sans">📄 BAST:</span> <span class="text-indigo-300/90 font-bold" x-text="item.kode"></span>
+                                    </div>
+                                </template>
                             </div>
                         </td>
 

@@ -20,7 +20,7 @@
     </div>
 
     <!-- Mini Summary KPI Cards Strip (5 Kartu Selaras Sejajar) -->
-    <div class="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-800/80" style="grid-template-columns: repeat(5, minmax(0, 1fr))">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-6 pt-6 border-t border-slate-800/80">
         <!-- 1. Total Eksternal -->
         <div class="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 flex items-center space-x-3">
             <div class="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 text-lg">🏛️</div>
