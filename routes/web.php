@@ -772,7 +772,7 @@ Route::middleware('auth')->group(function () {
     // 4. Mutasi Aset Pages & Forms
     Route::middleware('module:mutasi')->group(function () {
         Route::get('/mutasi-aset',                 [MutasiController::class, 'index'])->name('mutasi.index');
-        Route::get('/mutasi-aset/eksternal',        [MutasiController::class, 'eksternal'])->name('mutasi.eksternal')->middleware('role:master_admin,admin');
+        Route::get('/mutasi-aset/eksternal',        [\App\Http\Controllers\MutasiEksternalController::class, 'index'])->name('mutasi.eksternal')->middleware('role:master_admin,admin');
         Route::get('/mutasi-aset/create',          [MutasiController::class, 'create'])->name('mutasi.create');
         Route::post('/mutasi-aset',                [MutasiController::class, 'store'])->name('mutasi.store');
         Route::get('/mutasi-aset/{id}/edit',       [MutasiController::class, 'edit'])->name('mutasi.edit');
@@ -1247,6 +1247,7 @@ Route::middleware('auth')->group(function () {
 
             Route::delete('/mutasi-eksternal/{id}', [\App\Http\Controllers\MutasiEksternalController::class, 'destroy'])->name('mutasi.eksternal.destroy');
             Route::get('/mutasi-eksternal/{id}', [\App\Http\Controllers\MutasiEksternalController::class, 'show'])->name('mutasi.eksternal.show');
+            Route::get('/mutasi-eksternal/{id}/cetak', [\App\Http\Controllers\MutasiEksternalController::class, 'cetak'])->name('mutasi.eksternal.cetak');
 
 
             // ─── Form Kemitraan Pihak Ketiga / KSO (Create & Store) ────────

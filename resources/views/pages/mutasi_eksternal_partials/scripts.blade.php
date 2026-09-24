@@ -7,6 +7,7 @@
             searchQuery: '',
             statusFilter: 'all',
             jenisFilter: 'all',
+            categoryFilter: 'all',
             showDetailModal: false,
             selectedMutasi: null,
 
@@ -16,6 +17,11 @@
                 const query = (this.searchQuery || '').toLowerCase().trim();
 
                 return this.mutasiEksternals.filter(item => {
+                    // Filter Kategori KIB
+                    if (this.categoryFilter !== 'all') {
+                        if ((item.category || '').toLowerCase() !== this.categoryFilter.toLowerCase()) return false;
+                    }
+
                     // Filter Jenis Transaksi
                     if (this.jenisFilter !== 'all') {
                         if (item.jenis !== this.jenisFilter) return false;
@@ -58,6 +64,19 @@
                 return this.mutasiEksternals.length;
             },
 
+            get totalNominal() {
+                return this.mutasiEksternals.reduce((acc, curr) => acc + (parseFloat(curr.nilai_perolehan || curr.total_realisasi_num) || 0), 0);
+            },
+
+            get totalUnits() {
+                return this.mutasiEksternals.reduce((acc, curr) => acc + (parseInt(curr.jumlah_volume || curr.item_count || 1) || 1), 0);
+            },
+
+            get countSkpd() {
+                const opds = this.mutasiEksternals.map(m => (m.opd_asal || '').trim()).filter(Boolean);
+                return new Set(opds).size;
+            },
+
             get countSelesai() {
                 return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('selesai') || (m.status || '').toLowerCase().includes('disahkan')).length;
             },
@@ -76,6 +95,10 @@
 
             get countBpkad() {
                 return this.mutasiEksternals.filter(m => m.jenis === 'Penyerahan ke BPKAD').length;
+            },
+
+            formatRupiah(val) {
+                return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
             },
 
             openDetail(item) {
@@ -174,6 +197,7 @@
                 this.searchQuery = '';
                 this.statusFilter = 'all';
                 this.jenisFilter = 'all';
+                this.categoryFilter = 'all';
             },
 
             openReklas(item) {
@@ -183,24 +207,21 @@
             },
 
             cetakBast(item) {
-                this.selectedMutasi = item;
-                this.showDetailModal = true;
-                this.$nextTick(() => {
-                    setTimeout(() => {
-                        window.print();
-                    }, 250);
-                });
+                if (!item) return;
+                const id = item.mutasi_id || item.id;
+                window.open(`/mutasi-eksternal/${id}/cetak`, '_blank');
             },
 
             deleteMutasi(item) {
                 if (!item) return;
                 const namaAset = item.nama_murni || item.nama || 'Aset';
-                if (!confirm(`⚠️ Apakah Anda yakin ingin memindahkan data mutasi pelimpahan "${namaAset}" ke Recycle Bin (Tong Sampah)?\n\nSeluruh unit register NIBAR terkait juga akan dipindahkan ke Recycle Bin.`)) {
+                if (!confirm(`⚠️ Apakah Anda yakin ingin memindahkan data pelimpahan "${namaAset}" ke Recycle Bin (Tong Sampah)?\n\nSeluruh unit register NIBAR terkait juga akan dipindahkan ke Recycle Bin.`)) {
                     return;
                 }
 
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                fetch(`/astap/${item.id}`, {
+                const id = item.mutasi_id || item.id;
+                fetch(`/mutasi-eksternal/${id}`, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': token,
@@ -211,15 +232,15 @@
                 .then(res => res.json())
                 .then(d => {
                     if (d.success !== false) {
-                        this.mutasiEksternals = this.mutasiEksternals.filter(m => Number(m.id) !== Number(item.id));
-                        if (this.selectedMutasi && Number(this.selectedMutasi.id) === Number(item.id)) {
+                        this.mutasiEksternals = this.mutasiEksternals.filter(m => Number(m.id) !== Number(item.id) && Number(m.mutasi_id) !== Number(item.mutasi_id));
+                        if (this.selectedMutasi && (Number(this.selectedMutasi.id) === Number(item.id) || Number(this.selectedMutasi.mutasi_id) === Number(item.mutasi_id))) {
                             this.showDetailModal = false;
                             this.selectedMutasi = null;
                         }
                         if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast(d.message || 'Data mutasi eksternal berhasil dipindahkan ke Tong Sampah.', 'success');
+                            window.showSimatToast(d.message || 'Data pelimpahan aset berhasil dipindahkan ke Tong Sampah.', 'success');
                         } else {
-                            alert('✓ Data mutasi eksternal berhasil dipindahkan ke Tong Sampah.');
+                            alert('✓ Data pelimpahan aset berhasil dipindahkan ke Tong Sampah.');
                         }
                     } else {
                         if (typeof window.showSimatToast === 'function') {

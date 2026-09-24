@@ -30,6 +30,11 @@
                     alamat_barang: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                     ppk_nama: '',
                     ppk_nip: '',
+                    nomor_sk_dasar: '',
+                    pj_asal_nama: '',
+                    pj_asal_nip: '',
+                    pj_asal_jabatan: '',
+                    dokumen_lampiran_path: '',
                     
                     // Spesifikasi Tanah (KIB A)
                     tanah_items: [
@@ -62,6 +67,20 @@
                     gedung_bertingkat: 'Tidak',
                     gedung_beton: 'Beton',
                     gedung_status_tanah: 'Tanah Pemda'
+                },
+
+                selectedFile: null,
+
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        if (file.size > 10 * 1024 * 1024) {
+                            alert('⚠️ Ukuran file maksimal adalah 10 MB.');
+                            event.target.value = '';
+                            return;
+                        }
+                        this.selectedFile = file;
+                    }
                 },
 
                 // 108 Selection State
@@ -409,16 +428,29 @@
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
                     const url = this.isEdit ? `/astap/update-mutasi-eksternal/${this.astapId}` : "{{ route('astap.store_mutasi_eksternal') }}";
-                    const method = this.isEdit ? 'PUT' : 'POST';
+
+                    const postData = new FormData();
+                    for (const key in this.formData) {
+                        if (key === 'tanah_items') {
+                            postData.append('tanah_items', JSON.stringify(this.formData.tanah_items));
+                        } else if (this.formData[key] !== null && this.formData[key] !== undefined) {
+                            postData.append(key, this.formData[key]);
+                        }
+                    }
+                    if (this.selectedFile) {
+                        postData.append('dokumen_file', this.selectedFile);
+                    }
+                    if (this.isEdit) {
+                        postData.append('_method', 'PUT');
+                    }
 
                     fetch(url, {
-                        method: method,
+                        method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
                             'Accept': 'application/json',
                             'X-CSRF-TOKEN': token
                         },
-                        body: JSON.stringify(this.formData)
+                        body: postData
                     })
                     .then(res => res.json().then(data => ({ status: res.status, body: data })))
                     .then(result => {

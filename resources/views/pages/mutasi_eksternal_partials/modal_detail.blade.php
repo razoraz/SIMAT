@@ -81,13 +81,31 @@
                 </div>
 
                 <!-- Dasar Hukum / Dokumen Mutasi BMD -->
-                <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                    <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Dasar Hukum & Dokumen Mutasi:</span>
-                    <p class="text-white font-semibold text-xs leading-relaxed" x-text="selectedMutasi.nomor_sk_dasar || '-'"></p>
+                <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div>
+                        <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Dasar Hukum & Dokumen Mutasi:</span>
+                        <p class="text-white font-semibold text-xs leading-relaxed mt-0.5" x-text="selectedMutasi.nomor_sk_dasar || '-'"></p>
+                    </div>
                     <template x-if="selectedMutasi.tgl_estimasi_kembali">
-                        <p class="text-amber-400 font-medium text-[11px] pt-1">
+                        <p class="text-amber-400 font-medium text-[11px]">
                             ⏱️ Jangka Waktu Pinjam Pakai: Sampai dengan tanggal <strong class="font-mono text-white" x-text="selectedMutasi.tgl_estimasi_kembali"></strong>
                         </p>
+                    </template>
+                    <template x-if="selectedMutasi.dokumen_lampiran_url">
+                        <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-rose-400 text-sm">📄</span>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-semibold">Berkas Scan BAST / SK:</span>
+                                    <span class="text-xs text-indigo-300 font-mono font-bold truncate max-w-xs block" x-text="(selectedMutasi.dokumen_lampiran || '').split('/').pop()"></span>
+                                </div>
+                            </div>
+                            <a :href="selectedMutasi.dokumen_lampiran_url" target="_blank"
+                                class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 hover:text-white border border-indigo-500/30 font-bold text-xs flex items-center space-x-1.5 transition-all">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                <span>Unduh Scan BAST</span>
+                            </a>
+                        </div>
                     </template>
                 </div>
 
@@ -118,7 +136,7 @@
                                         <td class="px-3 py-2.5 font-mono text-indigo-300 text-[11px]" x-text="it.nibar"></td>
                                         <td class="px-3 py-2.5 font-mono text-slate-400 text-center text-[10.5px]" x-text="it.kode_108"></td>
                                         <td class="px-3 py-2.5 text-center whitespace-nowrap">
-                                            <span class="px-2 py-0.5 rounded text-[9.5px] font-black border whitespace-nowrap inline-block"
+                                             <span class="px-2 py-0.5 rounded text-[9.5px] font-black border whitespace-nowrap inline-block"
                                                 :class="{
                                                     'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': it.kondisi === 'Baik',
                                                     'bg-rose-500/20 text-rose-300 border-rose-500/30':         it.kondisi === 'Rusak Berat',
@@ -134,7 +152,7 @@
 
                 <!-- Alasan & Maksud Penyerahan -->
                 <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-                    <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block mb-1">Maksud / Alasan Mutasi Antar-OPD:</span>
+                    <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block mb-1">Maksud / Alasan Pelimpahan Antar-OPD:</span>
                     <p class="text-slate-300 leading-relaxed text-xs" x-text="selectedMutasi.alasan_mutasi || '-'"></p>
                 </div>
             </div>
@@ -147,7 +165,7 @@
                 Tutup
             </button>
             <div class="flex items-center space-x-2">
-                <button type="button" @click="alert('Fitur Cetak Dokumen BAST Resmi akan menyusul!')"
+                <button type="button" @click="cetakBast(selectedMutasi)"
                     class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                     <span>Cetak BAST Resmi (PDF)</span>
