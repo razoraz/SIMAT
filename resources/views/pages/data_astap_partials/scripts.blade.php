@@ -6691,6 +6691,20 @@
                     }
                 },
 
+                formatRupiahInput(val) {
+                    if (val === undefined || val === null || val === '') return '';
+                    const num = Math.round(Number(val));
+                    if (isNaN(num)) return '';
+                    return num.toLocaleString('id-ID');
+                },
+
+                updateItemHargaSatuan(item, rawText) {
+                    const cleanDigits = String(rawText || '').replace(/[^0-9]/g, '');
+                    const num = cleanDigits ? parseInt(cleanDigits, 10) : 0;
+                    item.harga_satuan = num;
+                    this.onReklasItemPriceChanged();
+                },
+
                 onReklasItemPriceChanged() {
                     if (!this.selectedAstapReklas) return;
                     const baseVal = parseFloat(this.selectedAstapReklas.total_realisasi_num || this.selectedAstapReklas.harga_satuan || 0);
@@ -7142,29 +7156,7 @@
                         harga_satuan: 0,
                         kode_barang: this.selectedAstapReklas?.kode_barang || '',
                     });
-                },
-
-                removeExtracomItem(idx) {
-                    if (this.reklasExtracomItems.length > 1) {
-                        this.reklasExtracomItems.splice(idx, 1);
-                    }
-                },
-
-                getReklasNarasiPreview() {
-                    if (!this.selectedAstapReklas) return 'Pilih barang untuk melihat narasi...';
-                    const it = this.selectedAstapReklas;
-                    const subRek = it.sub_rincian_kode || it.kode_barang || '1.3.2.xx';
-                    const subNama = it.sub_rincian_nama || it.nama_barang || '';
-                    const cleanNo = (this.reklasNomorBa || '').trim();
-                    const buktiStr = (cleanNo && cleanNo !== '-') ? `atas dasar bukti belanja ${cleanNo}` : 'atas dasar bukti transaksi belanja';
-                    
-                    let tglStr = '';
-                    if (this.reklasTanggal) {
-                        const parts = this.reklasTanggal.split('-');
-                        tglStr = parts.length === 3 ? `tanggal ${parts[2]}/${parts[1]}/${parts[0]}` : `tanggal ${this.reklasTanggal}`;
-                    }
-                    const spacerTgl = tglStr ? ` ${tglStr}` : '';
-
+                               let narasi = '';
                     if (this.reklasJenis === 'extracom') {
                         const totalVal = this.getReklasExtracomTotal();
                         const valStr = 'Rp ' + Number(totalVal).toLocaleString('id-ID');
@@ -7187,7 +7179,7 @@
                             rincianBrgStr = `berupa ${kdBrg} ${nmBrg} (${vol})`;
                         }
 
-                        return `Reklasifikasi dari rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ke Extracompetable ${rincianBrgStr} karena sesuai dengan batas kapitalisasi Simda BMD 108.`;
+                        narasi = `Reklasifikasi dari rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke Extracompetable ${rincianBrgStr} karena sesuai dengan batas kapitalisasi Simda BMD 108.`;
                     } else if (this.reklasJenis === 'intracom') {
                         const totalVal = this.getReklasExtracomTotal();
                         const valStr = 'Rp ' + Number(totalVal).toLocaleString('id-ID');
@@ -7211,14 +7203,14 @@
                             rincianBrgStr = `berupa ${kdBrg} ${nmBrg} (${vol})`;
                         }
 
-                        return `Kapitalisasi dan reklasifikasi dari kelompok Extracompetable ke Aset Tetap ${tujuanKib} rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnadi ${rincianBrgStr} karena nilai riil perolehan telah memenuhi syarat kapitalisasi aset tetap.`;
+                        narasi = `Kapitalisasi dan reklasifikasi dari kelompok Extracompetable ke Aset Tetap ${tujuanKib} rekening ${subRek} ${subNama} senilai ${valStr} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ${rincianBrgStr} karena nilai riil perolehan telah memenuhi syarat kapitalisasi aset tetap.`;
                     } else if (this.reklasJenis === 'kdp') {
                         const val = it.jumlah_realisasi || 'Rp 0';
                         const kdBrg = it.kode_barang || '';
                         const nmBrg = it.nama_barang || '';
                         const vol = (it.jumlah_volume || 1) + ' Unit';
                         const tujuan = this.reklasTujuanKib || 'KIB C';
-                        return `Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
+                        narasi = `Kapitalisasi KDP selesai dari rekening ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi ke ${tujuan} berupa ${kdBrg} ${nmBrg} (${vol}) karena pekerjaan fisik telah selesai 100% dan terbit BAST.`;
                     } else if (this.reklasJenis === 'pindah_kib') {
                         const val = it.jumlah_realisasi || 'Rp 0';
                         const vol = (it.jumlah_volume || 1) + ' Unit';
@@ -7229,7 +7221,7 @@
                         if (kodeTarget) {
                             tujuanStr = ` ke rekening ${kodeTarget}` + (namaTarget ? ` (${namaTarget})` : '') + ` kelompok ${tujuanKib}`;
                         }
-                        return `Reklasifikasi dan koreksi rekening dari ${it.category || 'KIB Asal'} ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi${tujuanStr} berupa ${it.kode_barang || ''} ${it.nama_barang || ''} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
+                        narasi = `Reklasifikasi dan koreksi rekening dari ${it.category || 'KIB Asal'} ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi${tujuanStr} berupa ${it.kode_barang || ''} ${it.nama_barang || ''} (${vol}) karena penyesuaian klasifikasi wujud aset / kodefikasi Simda BMD 108.`;
                     } else if (this.reklasJenis === 'koreksi_nilai') {
                         const valAwal = it.jumlah_realisasi || ('Rp ' + Number(it.total_realisasi_num || 0).toLocaleString('id-ID'));
                         const selisihVal = 'Rp ' + Number(this.reklasNominalKoreksi || 0).toLocaleString('id-ID');
@@ -7237,15 +7229,21 @@
                         const tipeStr = this.reklasTipeKoreksiNilai === 'kurang' ? 'pengurangan nilai buku sebesar' : 'penambahan nilai buku sebesar';
                         const cleanDoc = (this.reklasNoDokumenKoreksi || this.reklasNomorBa || '').trim();
                         const docStr = cleanDoc ? ` berdasarkan dokumen/LHP ${cleanDoc}` : ' berdasarkan rekomendasi audit BPK / rekonsiliasi';
-                        return `Koreksi nilai aset tetap pada ${subRek} ${subNama} semula ${valAwal} disesuaikan menjadi ${valBaru} (${tipeStr} ${selisihVal})${docStr}${spacerTgl} pada RSUD dr.H.Koesnandi.`;
+                        narasi = `Koreksi nilai aset tetap pada ${subRek} ${subNama} semula ${valAwal} disesuaikan menjadi ${valBaru} (${tipeStr} ${selisihVal})${docStr}${spacerTgl} pada RSUD dr.H.Koesnandi.`;
                     } else {
                         const val = it.jumlah_realisasi || 'Rp 0';
                         const kdBrg = it.kode_barang || '';
                         const nmBrg = it.nama_barang || '';
                         const vol = (it.jumlah_volume || 1) + ' Unit';
                         const tujuanStr = this.reklasTujuanKode ? ` ke rekening ${this.reklasTujuanKode}` : ' ke rekening Simda BMD 108 yang sesuai';
-                        return `Koreksi kode rekening dari ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) untuk penyesuaian sub-rincian objek Simda BMD.`;
+                        narasi = `Koreksi kode rekening dari ${subRek} ${subNama} senilai ${val} ${buktiStr}${spacerTgl} pada RSUD dr.H.Koesnandi${tujuanStr} berupa ${kdBrg} ${nmBrg} (${vol}) untuk penyesuaian sub-rincian objek Simda BMD.`;
                     }
+
+                    const alasanClean = (this.reklasAlasan || '').trim();
+                    if (alasanClean) {
+                        narasi += ` Catatan/Alasan Reklas: ${alasanClean}.`;
+                    }
+                    return narasi;
                 },
 
                 async submitReklas() {
@@ -7355,6 +7353,7 @@
                             triwulan: tw,
                             tahun: thn,
                             nomor_ba_reklas: (this.reklasNoDokumenKoreksi || this.reklasNomorBa || '').trim() || null,
+                            alasan_reklas: (this.reklasAlasan || '').trim() || null,
                             keterangan: this.getReklasNarasiPreview(),
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? this.reklasNilaiAnggaran : (parseFloat(it.jumlah_anggaran) || null),
                             reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? this.reklasExtracomItems : null,
