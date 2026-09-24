@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class MutasiEksternalController extends Controller
 {
@@ -163,6 +164,7 @@ class MutasiEksternalController extends Controller
                 'alasan_mutasi'             => $m->alasan_mutasi ?: 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnadi.',
                 'tgl_estimasi_kembali'      => $m->tgl_estimasi_kembali ? $m->tgl_estimasi_kembali->format('Y-m-d') : null,
                 'dokumen_lampiran'          => $m->dokumen_lampiran,
+                'dokumen_lampiran_url'      => $m->dokumen_lampiran ? asset('storage/' . $m->dokumen_lampiran) : null,
                 'nilai_perolehan'           => $nilaiReal,
                 'nilai_perolehan_formatted' => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
             ];
@@ -205,8 +207,19 @@ class MutasiEksternalController extends Controller
             'kondisi'            => 'nullable|string|max:50',
             'jenis_mutasi'       => 'nullable|string|max:100',
             'nomor_sk_dasar'     => 'nullable|string|max:255',
+            'pj_asal_nama'       => 'nullable|string|max:255',
+            'pj_asal_nip'        => 'nullable|string|max:100',
+            'pj_asal_jabatan'    => 'nullable|string|max:255',
+            'dokumen_file'       => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'tgl_estimasi_kembali' => 'nullable',
         ]);
+
+        $dokumenPath = null;
+        if ($request->hasFile('dokumen_file')) {
+            $file = $request->file('dokumen_file');
+            $filename = 'BAST_' . time() . '_' . preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
+            $dokumenPath = $file->storeAs('dokumen_mutasi_eksternal', $filename, 'public');
+        }
 
         $totalRealisasi = (float) $data['total_realisasi'];
         $totalVolume    = max(1, (int) $data['jumlah_volume']);
@@ -249,8 +262,16 @@ class MutasiEksternalController extends Controller
                 'tanggal_bamb'    => $data['mutasi_tanggal'],
                 'kondisi'         => $kondisiItem,
                 'keterangan'      => $data['mutasi_keterangan'] ?? null,
+                'nomor_sk_dasar'  => $request->input('nomor_sk_dasar'),
+                'pj_asal_nama'    => $request->input('pj_asal_nama'),
+                'pj_asal_nip'     => $request->input('pj_asal_nip'),
+                'pj_asal_jabatan' => $request->input('pj_asal_jabatan'),
             ],
         ];
+
+        if ($dokumenPath) {
+            $astapPayload['spesifikasi_json']['dokumen_lampiran'] = $dokumenPath;
+        }
 
         if ($request->has('spesifikasi_json') && is_array($request->input('spesifikasi_json'))) {
             $astapPayload['spesifikasi_json'] = array_merge($astapPayload['spesifikasi_json'], $request->input('spesifikasi_json'));
@@ -259,23 +280,35 @@ class MutasiEksternalController extends Controller
         $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
         foreach ($repeaterKeys as $rk) {
             if ($request->has($rk) && !is_null($request->input($rk))) {
-                $astapPayload['spesifikasi_json'][$rk] = $request->input($rk);
+                $val = $request->input($rk);
+                if (is_string($val) && (str_starts_with(trim($val), '[') || str_starts_with(trim($val), '{'))) {
+                    $decoded = json_decode($val, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $val = $decoded;
+                    }
+                }
+                $astapPayload['spesifikasi_json'][$rk] = $val;
             }
         }
 
-        if ($request->has('tanah_items') && is_array($request->input('tanah_items')) && count($request->input('tanah_items')) > 0) {
+        if ($request->has('tanah_items')) {
             $tItems = $request->input('tanah_items');
-            $firstT = $tItems[0];
-            $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
-            $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
+            if (is_string($tItems)) {
+                $tItems = json_decode($tItems, true) ?: [];
+            }
+            if (is_array($tItems) && count($tItems) > 0) {
+                $firstT = $tItems[0];
+                $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+                $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
 
-            $astapPayload['spesifikasi_json']['tanah_items'] = $tItems;
-            $astapPayload['spesifikasi_json']['luas_m2'] = $totalLuas;
-            $astapPayload['spesifikasi_json']['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
-            $astapPayload['spesifikasi_json']['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
-            $astapPayload['spesifikasi_json']['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
-            $astapPayload['spesifikasi_json']['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
-            $astapPayload['spesifikasi_json']['tanah_jumlah_bidang'] = count($tItems);
+                $astapPayload['spesifikasi_json']['tanah_items'] = $tItems;
+                $astapPayload['spesifikasi_json']['luas_m2'] = $totalLuas;
+                $astapPayload['spesifikasi_json']['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+                $astapPayload['spesifikasi_json']['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
+                $astapPayload['spesifikasi_json']['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
+                $astapPayload['spesifikasi_json']['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+                $astapPayload['spesifikasi_json']['tanah_jumlah_bidang'] = count($tItems);
+            }
         }
 
         $ppkNama = $request->input('ppk_nama', 'dr. H. Yus Priyatna, Sp.P');
@@ -289,7 +322,7 @@ class MutasiEksternalController extends Controller
             $astapPayload['spesifikasi_json']['ppk_nip'] = $ppkNip;
         }
 
-        $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $request) {
+        $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
             // 1. Simpan ke tabel master astaps
             $item = Astap::create($astapPayload);
 
@@ -307,14 +340,15 @@ class MutasiEksternalController extends Controller
                 'opd_tujuan'          => 'RSUD dr. H. Koesnadi (' . $ruangNama . ')',
                 'unit_id'             => $data['unit_id'] ?? null,
                 'ruangan_tujuan'      => $ruangNama,
-                'pj_asal_nama'        => 'Pejabat Penyerah OPD Pengirim',
-                'pj_asal_nip'         => '-',
-                'pj_asal_jabatan'     => 'Pengurus Barang / PPK Asal',
+                'pj_asal_nama'        => $request->input('pj_asal_nama') ?: 'Pejabat Penyerah OPD Pengirim',
+                'pj_asal_nip'         => $request->input('pj_asal_nip') ?: '-',
+                'pj_asal_jabatan'     => $request->input('pj_asal_jabatan') ?: 'Pengurus Barang / PPK Asal',
                 'pj_tujuan_nama'      => $ppkNama,
                 'pj_tujuan_nip'       => $ppkNip,
                 'pj_tujuan_jabatan'   => 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi',
                 'nomor_sk_dasar'      => $request->input('nomor_sk_dasar', $data['mutasi_nomor_bamb']),
                 'tgl_estimasi_kembali'=> $request->input('tgl_estimasi_kembali'),
+                'dokumen_lampiran'    => $dokumenPath,
                 'status'              => 'Disahkan (Selesai)',
                 'jumlah_volume'       => $totalVolume,
                 'satuan'              => $data['satuan'],
@@ -438,8 +472,23 @@ class MutasiEksternalController extends Controller
             'kondisi'            => 'nullable|string|max:50',
             'jenis_mutasi'       => 'nullable|string|max:100',
             'nomor_sk_dasar'     => 'nullable|string|max:255',
+            'pj_asal_nama'       => 'nullable|string|max:255',
+            'pj_asal_nip'        => 'nullable|string|max:100',
+            'pj_asal_jabatan'    => 'nullable|string|max:255',
+            'dokumen_file'       => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'tgl_estimasi_kembali' => 'nullable',
         ]);
+
+        $dokumenPath = $item->mutasiEksternal?->dokumen_lampiran;
+        if ($request->hasFile('dokumen_file')) {
+            $file = $request->file('dokumen_file');
+            $filename = 'BAST_' . time() . '_' . preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $file->getClientOriginalName());
+            $newPath = $file->storeAs('dokumen_mutasi_eksternal', $filename, 'public');
+            if ($dokumenPath && Storage::disk('public')->exists($dokumenPath)) {
+                Storage::disk('public')->delete($dokumenPath);
+            }
+            $dokumenPath = $newPath;
+        }
 
         $totalRealisasi = (float) $data['total_realisasi'];
         $totalVolume    = max(1, (int) $data['jumlah_volume']);
@@ -476,11 +525,44 @@ class MutasiEksternalController extends Controller
         $specJson['tanggal_bamb'] = $data['mutasi_tanggal'];
         $specJson['kondisi'] = $kondisiItem;
         $specJson['keterangan'] = $data['mutasi_keterangan'] ?? null;
+        $specJson['nomor_sk_dasar'] = $request->input('nomor_sk_dasar');
+        $specJson['pj_asal_nama'] = $request->input('pj_asal_nama');
+        $specJson['pj_asal_nip'] = $request->input('pj_asal_nip');
+        $specJson['pj_asal_jabatan'] = $request->input('pj_asal_jabatan');
+        if ($dokumenPath) {
+            $specJson['dokumen_lampiran'] = $dokumenPath;
+        }
 
         $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
         foreach ($repeaterKeys as $rk) {
             if ($request->has($rk) && !is_null($request->input($rk))) {
-                $specJson[$rk] = $request->input($rk);
+                $val = $request->input($rk);
+                if (is_string($val) && (str_starts_with(trim($val), '[') || str_starts_with(trim($val), '{'))) {
+                    $decoded = json_decode($val, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $val = $decoded;
+                    }
+                }
+                $specJson[$rk] = $val;
+            }
+        }
+
+        if ($request->has('tanah_items')) {
+            $tItems = $request->input('tanah_items');
+            if (is_string($tItems)) {
+                $tItems = json_decode($tItems, true) ?: [];
+            }
+            if (is_array($tItems) && count($tItems) > 0) {
+                $specJson['tanah_items'] = $tItems;
+                $firstT = $tItems[0];
+                $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+                $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
+                $specJson['luas_m2'] = $totalLuas;
+                $specJson['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+                $specJson['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
+                $specJson['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
+                $specJson['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+                $specJson['tanah_jumlah_bidang'] = count($tItems);
             }
         }
 
@@ -496,7 +578,7 @@ class MutasiEksternalController extends Controller
         }
         $astapPayload['spesifikasi_json'] = $specJson;
 
-        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $request) {
+        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
             // 1. Update master Astap
             $item->update($astapPayload);
 
@@ -515,14 +597,15 @@ class MutasiEksternalController extends Controller
                     'opd_tujuan'          => 'RSUD dr. H. Koesnadi (' . $ruangNama . ')',
                     'unit_id'             => $data['unit_id'] ?? null,
                     'ruangan_tujuan'      => $ruangNama,
-                    'pj_asal_nama'        => 'Pejabat Penyerah OPD Pengirim',
-                    'pj_asal_nip'         => '-',
-                    'pj_asal_jabatan'     => 'Pengurus Barang / PPK Asal',
+                    'pj_asal_nama'        => $request->input('pj_asal_nama') ?: ($item->mutasiEksternal?->pj_asal_nama ?: 'Pejabat Penyerah OPD Pengirim'),
+                    'pj_asal_nip'         => $request->input('pj_asal_nip') ?: ($item->mutasiEksternal?->pj_asal_nip ?: '-'),
+                    'pj_asal_jabatan'     => $request->input('pj_asal_jabatan') ?: ($item->mutasiEksternal?->pj_asal_jabatan ?: 'Pengurus Barang / PPK Asal'),
                     'pj_tujuan_nama'      => $ppkNama,
                     'pj_tujuan_nip'       => $ppkNip,
                     'pj_tujuan_jabatan'   => 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi',
                     'nomor_sk_dasar'      => $request->input('nomor_sk_dasar', $data['mutasi_nomor_bamb']),
                     'tgl_estimasi_kembali'=> $request->input('tgl_estimasi_kembali'),
+                    'dokumen_lampiran'    => $dokumenPath,
                     'status'              => 'Disahkan (Selesai)',
                     'jumlah_volume'       => $totalVolume,
                     'satuan'              => $data['satuan'],
@@ -642,6 +725,19 @@ class MutasiEksternalController extends Controller
             'success' => true,
             'data'    => $mutasi
         ]);
+    }
+
+    /**
+     * Tampilkan lembar cetak resmi Berita Acara Serah Terima (BAST) Pelimpahan BMD dari OPD.
+     */
+    public function cetak($id)
+    {
+        $mutasi = MutasiEksternal::with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
+            ->where('astap_id', $id)
+            ->orWhere('id', $id)
+            ->firstOrFail();
+
+        return view('pages.cetak_bast_mutasi_eksternal', compact('mutasi'));
     }
 
     /**
