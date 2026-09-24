@@ -255,11 +255,11 @@
 
         <!-- TANDA TANGAN (3 KOLOM RESMI PEMKAB) -->
         <div class="grid grid-cols-2 gap-8 text-center text-[9.5pt] pt-2">
-            <!-- Pihak Pertama -->
+            <!-- Pihak Kesatu -->
             <div>
-                <p class="font-bold text-slate-800">PIHAK PERTAMA</p>
+                <p class="font-bold text-slate-800">PIHAK KESATU</p>
                 <p class="text-[9pt] text-slate-600">Yang Menyerahkan,</p>
-                <div class="h-24 flex items-center justify-center">
+                <div class="h-20 flex items-center justify-center">
                     <!-- Space for TTD / Stempel -->
                 </div>
                 <p class="font-bold underline text-[10pt] uppercase">{{ $mutasi->pj_asal_nama ?: 'Pejabat Penyerah OPD' }}</p>
@@ -270,23 +270,30 @@
             <div>
                 <p class="font-bold text-slate-800">PIHAK KEDUA</p>
                 <p class="text-[9pt] text-slate-600">Yang Menerima,</p>
-                <div class="h-24 flex items-center justify-center">
-                    <!-- Space for TTD / Stempel -->
+                <div class="h-20 flex items-center justify-center">
+                    <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ urlencode(url('/validasi-tte/' . ($mutasi->nomor_bamb ?: 'BSRE-PELIMPAHAN-BMD'))) }}" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
+                        <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
+                            <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
+                            <div style="color:#374151;">Pengurus Barang Aset</div>
+                            <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
+                        </div>
+                    </div>
                 </div>
-                <p class="font-bold underline text-[10pt] uppercase">{{ $mutasi->pj_tujuan_nama ?: 'dr. H. Yus Priyatna, Sp.P' }}</p>
-                <p class="font-mono text-[9pt]">NIP. {{ $mutasi->pj_tujuan_nip ?: '196904121999031004' }}</p>
+                <p class="font-bold underline text-[10pt] uppercase">{{ $mutasi->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos' }}</p>
+                <p class="font-mono text-[9pt]">NIP. {{ $mutasi->pj_tujuan_nip ?: '19760229 200801 1 010' }}</p>
             </div>
         </div>
 
         <!-- Mengetahui Direktur RSUD -->
-        <div class="mt-8 text-center text-[9.5pt]">
+        <div class="mt-6 text-center text-[9.5pt]">
             <p class="font-bold text-slate-800">Mengetahui,</p>
-            <p class="text-[9pt] text-slate-600">Direktur RSUD dr. H. Koesnadi Kabupaten Bondowoso</p>
-            <div class="h-24 flex items-center justify-center">
+            <p class="font-bold text-[9pt] text-slate-700">DIREKTUR RSUD dr. H. KOESNADI KABUPATEN BONDOWOSO</p>
+            <div class="h-20 flex items-center justify-center">
                 <!-- Space for TTD / Stempel -->
             </div>
-            <p class="font-bold underline text-[10pt] uppercase">dr. SUHARTONO, M.Kes</p>
-            <p class="font-mono text-[9pt]">Pembina Utama Muda (IV/c) • NIP. 19680510 199903 1 005</p>
+            <p class="font-bold underline text-[10pt] uppercase">dr. DIAN ARISANDI, M.Kes</p>
+            <p class="font-mono text-[9pt]">NIP. 19730514 200212 2 003</p>
         </div>
 
     </div>

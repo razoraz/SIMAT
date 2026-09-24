@@ -14,5 +14,31 @@
 
         <!-- MODAL DETAIL BAST ANTAR-OPD -->
         @include('pages.mutasi_eksternal_partials.modal_detail')
+
+        <!-- MODAL CETAK BAST PELIMPAHAN BMD (INTERAKTIF & LIVE EDIT) -->
+        @include('pages.mutasi_eksternal_partials.modal_print_bast')
     </div>
+
+    <!-- Print Media Query Styling untuk Cetak BAST Kertas Putih Sempurna -->
+    <style>
+    @media print {
+        body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .no-print, aside, header, nav, footer {
+            display: none !important;
+        }
+        #print-area-bast-eksternal {
+            display: block !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+    }
+    </style>
 </x-layout>

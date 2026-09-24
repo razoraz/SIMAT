@@ -10,6 +10,16 @@
             categoryFilter: 'all',
             showDetailModal: false,
             selectedMutasi: null,
+            showPrintModal: false,
+            showEditForm: false,
+            printDoc: null,
+
+            getQrCodeSvg(text) {
+                if (typeof window.getQrCodeSvg === 'function') {
+                    return window.getQrCodeSvg(text);
+                }
+                return 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(text || '');
+            },
 
             mutasiEksternals: {{ Js::from($mutasiEksternals) }},
 
@@ -206,10 +216,217 @@
                 window.location.href = `/astap?search=${encodeURIComponent(searchKey)}&open_reklas=${item.id}`;
             },
 
+            openPrintModal(item) {
+                if (!item) return;
+
+                const hariMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const bulanMap = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+                let dateObj = new Date();
+                if (item.tgl_raw) {
+                    const parsed = new Date(item.tgl_raw);
+                    if (!isNaN(parsed.getTime())) dateObj = parsed;
+                } else if (item.tgl) {
+                    const parts = String(item.tgl).split('/');
+                    if (parts.length === 3) {
+                        const d = parseInt(parts[0], 10);
+                        const m = parseInt(parts[1], 10) - 1;
+                        const y = parseInt(parts[2], 10);
+                        dateObj = new Date(y, m, d);
+                    }
+                }
+
+                const hari = hariMap[dateObj.getDay()] || 'Selasa';
+                const tglAngka = dateObj.getDate();
+                const bulan = bulanMap[dateObj.getMonth() + 1] || 'September';
+                const tahun = dateObj.getFullYear();
+
+                const id = item.mutasi_id || item.id || 1;
+                const nomorBast = item.kode || `000.2.3.2/PLP-${String(id).padStart(3, '0')}/430.10.7/${tahun}`;
+
+                let itemsList = [];
+                if (item.items && Array.isArray(item.items) && item.items.length > 0) {
+                    itemsList = item.items.map((it, idx) => ({
+                        no: idx + 1,
+                        nama_barang: it.nama_barang || item.nama_barang || item.nama || 'Barang Milik Daerah',
+                        spesifikasi: it.spesifikasi || it.merk || item.keterangan || '-',
+                        nibar: it.nibar || item.kode_barang || '-',
+                        kode_108: it.kode_108 || item.kode_108 || '-',
+                        volume: it.volume || it.qty || 1,
+                        satuan: it.satuan || item.satuan || 'Unit',
+                        kondisi: it.kondisi || item.kondisi || 'Baik',
+                        harga_satuan: it.harga_satuan || item.harga_satuan || 0,
+                        nilai_total: it.nilai_total || (it.volume ? (it.volume * (it.harga_satuan || item.harga_satuan || 0)) : (item.nilai_perolehan || 0))
+                    }));
+                } else {
+                    const vol = parseInt(item.jumlah_volume || 1, 10);
+                    const nilai = parseFloat(item.nilai_perolehan || item.total_realisasi_num || 0);
+                    itemsList = [{
+                        no: 1,
+                        nama_barang: item.nama_barang || item.nama || 'Barang Milik Daerah',
+                        spesifikasi: item.keterangan || item.spesifikasi || '-',
+                        nibar: item.kode_barang || '-',
+                        kode_108: item.kode_108 || '-',
+                        volume: vol,
+                        satuan: item.satuan || 'Unit',
+                        kondisi: item.kondisi || 'Baik',
+                        harga_satuan: item.harga_satuan || (vol > 0 ? (nilai / vol) : nilai),
+                        nilai_total: nilai
+                    }];
+                }
+
+                this.printDoc = {
+                    ...item,
+                    nomor_bast: nomorBast,
+                    hari: hari,
+                    tgl_angka: tglAngka,
+                    bulan: bulan,
+                    tahun: tahun,
+                    tahun_anggaran: String(item.tahun_perolehan || tahun),
+                    tgl_bast: `${tglAngka} ${bulan} ${tahun}`,
+
+                    // Pihak Kesatu (Yang Menyerahkan / SKPD Pengirim)
+                    opd_asal: item.opd_asal || 'Dinas Kesehatan Kabupaten Bondowoso',
+                    pj_asal_nama: item.pj_asal_nama || 'Pejabat Penyerah SKPD Pengirim',
+                    pj_asal_nip: item.pj_asal_nip || '-',
+                    pj_asal_jabatan: item.pj_asal_jabatan || 'Pengurus Barang / PPK Asal',
+
+                    // Pihak Kedua (Yang Menerima / RSUD Dr. H. Koesnandi)
+                    opd_tujuan: 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
+                    pj_tujuan_nama: item.pejabat_opd_tujuan || 'BUDI HARTONO, S.Sos',
+                    pj_tujuan_nip: item.nip_pejabat_opd_tujuan || '19760229 200801 1 010',
+                    pj_tujuan_jabatan: item.jabatan_opd_tujuan || 'Pengurus Barang Aset RSUD dr. H. Koesnandi',
+
+                    // Pejabat Pengesah (Direktur RSUD)
+                    direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
+                    direktur_nip: '19730514 200212 2 003',
+                    direktur_jabatan: 'Direktur RSUD dr. H. Koesnandi',
+
+                    signed: true,
+                    qr_hash: `BSRE-KOESNANDI-PLP-${id}-${tahun}`,
+                    items: itemsList
+                };
+
+                this.showPrintModal = true;
+                this.showEditForm = false;
+            },
+
+            toggleSign(doc) {
+                if (!doc) return;
+                doc.signed = !doc.signed;
+                if (doc.signed) {
+                    doc.qr_hash = doc.qr_hash || `BSRE-KOESNANDI-PLP-${doc.id || 1}-${doc.tahun || 2026}`;
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('✍️ BAST Pelimpahan berhasil disahkan secara digital (BSrE Aktif)!', 'success');
+                    } else {
+                        alert('✍️ BAST Pelimpahan berhasil disahkan secara digital (BSrE Aktif)!');
+                    }
+                } else {
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('↩️ Tanda tangan digital BSrE berhasil dibatalkan.', 'info');
+                    } else {
+                        alert('↩️ Tanda tangan digital BSrE berhasil dibatalkan.');
+                    }
+                }
+            },
+
+            printCurrent() {
+                const el = document.getElementById('print-area-bast-eksternal');
+                if (!el) {
+                    window.print();
+                    return;
+                }
+
+                let iframe = document.getElementById('simat-print-frame');
+                if (iframe) {
+                    iframe.remove();
+                }
+
+                iframe = document.createElement('iframe');
+                iframe.id = 'simat-print-frame';
+                iframe.style.position = 'fixed';
+                iframe.style.right = '0';
+                iframe.style.bottom = '0';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = '0';
+                document.body.appendChild(iframe);
+
+                const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                    .map(elem => elem.outerHTML)
+                    .join('\n');
+
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>BAST Pelimpahan BMD - ${this.printDoc?.nomor_bast || 'RSUD Dr. H. Koesnandi'}</title>
+    ${headStyles}
+    <style>
+        @page {
+            size: auto;
+            margin: 12mm 15mm 12mm 15mm;
+        }
+        *, *::before, *::after {
+            box-sizing: border-box !important;
+        }
+        html, body {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .print-container {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+        }
+        table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            table-layout: fixed !important;
+        }
+        th, td {
+            border: 1px solid #000000 !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+        tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .kop-section, .ttd-section {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+    </style>
+</head>
+<body style="background:#ffffff; color:#000000; padding:0; margin:0;">
+    <div style="width:100%; max-width:100%;">
+        ${el.innerHTML}
+    </div>
+</body>
+</html>`);
+                doc.close();
+
+                setTimeout(() => {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }, 350);
+            },
+
             cetakBast(item) {
                 if (!item) return;
-                const id = item.mutasi_id || item.id;
-                window.open(`/mutasi-eksternal/${id}/cetak`, '_blank');
+                this.openPrintModal(item);
             },
 
             deleteMutasi(item) {
