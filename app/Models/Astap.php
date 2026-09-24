@@ -438,6 +438,11 @@ class Astap extends Model
         return $this->hasMany(AstapHibah::class, 'astap_id')->orderBy('tanggal_bast', 'desc');
     }
 
+    public function kemitraan()
+    {
+        return $this->hasOne(AstapKemitraan::class, 'astap_id');
+    }
+
     public function getKode108Attribute(): string
     {
         return $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';

@@ -1394,6 +1394,25 @@ Route::middleware('auth')->group(function () {
                         ]);
                     }
 
+                    // Catat ke tabel master astap_kemitraans
+                    \App\Models\AstapKemitraan::create([
+                        'astap_id'         => $item->id,
+                        'mitra_nama'       => $data['mitra_nama'],
+                        'nomor_pks'        => $data['nomor_pks'],
+                        'tanggal_pks'      => $data['tanggal_pks'],
+                        'skema_kemitraan'  => $request->input('skema_kemitraan', 'KSO'),
+                        'tanggal_mulai'    => $data['tanggal_mulai'] ?? null,
+                        'tanggal_selesai'  => $data['tanggal_selesai'] ?? null,
+                        'status_konsesi'   => 'Aktif',
+                        'jumlah_volume'    => $totalVolume,
+                        'satuan'           => $data['satuan'],
+                        'nilai_aset'       => $totalRealisasi,
+                        'tahun'            => $tahun,
+                        'triwulan'         => $data['triwulan'],
+                        'keterangan'       => $data['kemitraan_keterangan'] ?? null,
+                        'user_id'          => auth()->id(),
+                    ]);
+
                     return $item;
                 });
 
@@ -1401,11 +1420,11 @@ Route::middleware('auth')->group(function () {
                     return response()->json([
                         'success' => true,
                         'message' => 'Data Aset Kemitraan "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
-                        'redirect' => route('astap.index')
+                        'redirect' => route('master.kemitraan')
                     ]);
                 }
 
-                return redirect()->route('astap.index')
+                return redirect()->route('master.kemitraan')
                     ->with('success', 'Data Aset Kemitraan "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_kemitraan');
 
@@ -4737,6 +4756,10 @@ Route::middleware('auth')->group(function () {
         Route::put('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'update'])->name('master.rekening_belanja.update');
         Route::delete('/master-data/rekening-belanja/{id}', [RekeningBelanjaController::class, 'destroy'])->name('master.rekening_belanja.destroy');
 
+    });
+
+    // Master Reklasifikasi, Hibah & Kemitraan Aset (Dapat diakses oleh wewenang ASTAP & Master Data)
+    Route::middleware('module:astap,master_data')->group(function () {
         // Master Reklasifikasi Aset (PMDN 108)
         Route::get('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'index'])->name('master.reklasifikasi');
         Route::post('/master-data/reklasifikasi', [\App\Http\Controllers\ReklasifikasiController::class, 'store'])->name('master.reklasifikasi.store');
@@ -4746,7 +4769,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/master-data/hibah', [\App\Http\Controllers\HibahController::class, 'index'])->name('master.hibah');
         Route::post('/master-data/hibah/keluar', [\App\Http\Controllers\HibahController::class, 'storeHibahKeluar'])->name('master.hibah.keluar');
         Route::delete('/master-data/hibah/{id}', [\App\Http\Controllers\HibahController::class, 'destroy'])->name('master.hibah.destroy');
+
+        // Master Kemitraan Aset (KSO, BGS, Sewa Akun 1.5.2)
+        Route::get('/master-data/kemitraan', [\App\Http\Controllers\KemitraanController::class, 'index'])->name('master.kemitraan');
+        Route::put('/master-data/kemitraan/{id}/status', [\App\Http\Controllers\KemitraanController::class, 'updateStatus'])->name('master.kemitraan.status');
+        Route::delete('/master-data/kemitraan/{id}', [\App\Http\Controllers\KemitraanController::class, 'destroy'])->name('master.kemitraan.destroy');
     });
+
 });
 });
 

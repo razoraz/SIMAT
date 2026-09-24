@@ -28,10 +28,14 @@ class CheckModulePermission
             return $next($request);
         }
 
+        $moduleList = array_map('trim', explode(',', $module));
+
         // 2. Admin Operasional: periksa izin modul
         if ($user->role === 'admin') {
-            if ($user->canAccess($module)) {
-                return $next($request);
+            foreach ($moduleList as $mod) {
+                if ($user->canAccess($mod)) {
+                    return $next($request);
+                }
             }
 
             $moduleLabels = [
@@ -43,7 +47,7 @@ class CheckModulePermission
                 'master_data' => 'Master Data SIPD',
                 'users'       => 'Manajemen Pengguna',
             ];
-            $modName = $moduleLabels[$module] ?? strtoupper($module);
+            $modName = $moduleLabels[$moduleList[0]] ?? strtoupper($moduleList[0]);
 
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
@@ -56,8 +60,14 @@ class CheckModulePermission
         }
 
         // 3. Sub Admin: hanya modul tertentu yang diizinkan untuk ruangan (misal: kir, pengajuan distribusi, mutasi ruangan)
-        // Jika modul khusus admin (seperti unit, master_data, users, bast), tolak sub_admin
-        if (in_array($module, ['unit', 'master_data', 'users', 'bast'])) {
+        $isRestricted = true;
+        foreach ($moduleList as $mod) {
+            if (!in_array($mod, ['unit', 'master_data', 'users', 'bast'])) {
+                $isRestricted = false;
+                break;
+            }
+        }
+        if ($isRestricted) {
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
