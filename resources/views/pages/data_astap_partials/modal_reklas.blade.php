@@ -386,13 +386,243 @@
                                 </div>
                             </div>
 
+                            <!-- Tingkat 4: Penyesuaian Spesifikasi Fisik Baru Sesuai KIB Tujuan -->
+                            <div x-show="reklasTujuanKib" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center shrink-0">4</span>
+                                        <span class="text-xs font-bold text-white uppercase tracking-wider">
+                                            📝 Spesifikasi Fisik Baru (<span class="text-cyan-300 font-extrabold" x-text="reklasTujuanKib"></span>):
+                                        </span>
+                                    </div>
+                                    <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/30 font-semibold">
+                                        Format Spek Dinamis
+                                    </span>
+                                </div>
+
+                                <div class="p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-[11px] text-cyan-200/90 leading-relaxed flex items-center gap-2">
+                                    <span>💡</span>
+                                    <span>Aset dialihkan ke kelompok <strong class="text-white" x-text="reklasTujuanKib"></strong>. Data spesifikasi lama akan diarsip ke riwayat audit, dan form di bawah otomatis disesuaikan agar register &amp; KIR terbit sesuai format fisik <strong class="text-white" x-text="reklasTujuanKib"></strong>.</span>
+                                </div>
+
+                                <!-- Form Spesifik: KIB A - Tanah -->
+                                <template x-if="reklasTujuanKib === 'KIB A'">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Tanah (m²):</label>
+                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.tanah_luas_m2" placeholder="Contoh: 1500"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status Hak Tanah:</label>
+                                                <select x-model="reklasSpekBaru.tanah_hak"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Hak Pakai">Hak Pakai</option>
+                                                    <option value="Hak Milik">Hak Milik</option>
+                                                    <option value="Hak Pengelolaan">Hak Pengelolaan</option>
+                                                    <option value="Hak Guna Bangunan">Hak Guna Bangunan (HGB)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Sertifikat Tanah:</label>
+                                                <input type="text" x-model="reklasSpekBaru.tanah_sertifikat_no" placeholder="Contoh: No. 12.04.05.001..."
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tanggal Sertifikat:</label>
+                                                <input type="date" x-model="reklasSpekBaru.tanah_sertifikat_tgl"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Penggunaan Bidang Tanah:</label>
+                                                <input type="text" x-model="reklasSpekBaru.tanah_penggunaan" placeholder="Contoh: Gedung Instalasi Farmasi & Rawat Inap RSUD"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Lokasi Fisik Tanah:</label>
+                                                <input type="text" x-model="reklasSpekBaru.tanah_alamat" placeholder="Contoh: Jl. Kapten Piere Tendean No. 1 Bondowoso"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB B - Peralatan & Mesin -->
+                                <template x-if="reklasTujuanKib === 'KIB B'">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Merk / Pabrikan:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_merk" placeholder="Contoh: GE Healthcare / Philips / Honda"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tipe / Model:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_type" placeholder="Contoh: Brivo XR575 / Veradius"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Pabrik / Seri:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_no_pabrik" placeholder="Contoh: SN-88291039"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Kapasitas:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_ukuran_cc" placeholder="Contoh: 500 mA / 2000 VA / 150 cc"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan / Material:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_bahan" placeholder="Contoh: Logam, Komponen Elektronik, Kaca Optik"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Rangka / Polisi (Opsional):</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_no_polisi" placeholder="Contoh: P 1234 AP (jika kendaraan dinas)"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB C - Gedung & Bangunan -->
+                                <template x-if="reklasTujuanKib === 'KIB C'">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Bertingkat:</label>
+                                                <select x-model="reklasSpekBaru.gedung_konstruksi_bertingkat"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Bertingkat">Bertingkat (2 Lantai atau lebih)</option>
+                                                    <option value="Tidak Bertingkat">Tidak Bertingkat (1 Lantai)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton / Baja:</label>
+                                                <select x-model="reklasSpekBaru.gedung_konstruksi_beton"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Beton">Konstruksi Beton Bertulang</option>
+                                                    <option value="Baja">Konstruksi Baja</option>
+                                                    <option value="Kayu">Konstruksi Kayu</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Lantai Gedung (m²):</label>
+                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.gedung_luas_lantai_m2" placeholder="Contoh: 450.5"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status Kepemilikan Tanah Gedung:</label>
+                                                <select x-model="reklasSpekBaru.gedung_status_tanah"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Tanah Pemda">Tanah Milik Pemda / RSUD</option>
+                                                    <option value="Hak Pakai">Hak Pakai</option>
+                                                    <option value="Sewa">Sewa / Pinjam Pakai</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Dokumen PBG / IMB:</label>
+                                                <input type="text" x-model="reklasSpekBaru.gedung_dokumen_nomor" placeholder="Contoh: 640/IMB/DPMPTSP/2026"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tanggal Dokumen IMB:</label>
+                                                <input type="date" x-model="reklasSpekBaru.gedung_dokumen_tgl"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Letak Gedung di RSUD:</label>
+                                                <input type="text" x-model="reklasSpekBaru.gedung_alamat" placeholder="Contoh: Sayap Barat RSUD Dr. H. Koesnandi"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB D - Jalan, Jaringan & Irigasi -->
+                                <template x-if="reklasTujuanKib === 'KIB D'">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Fisik Jaringan:</label>
+                                                <input type="text" x-model="reklasSpekBaru.jaringan_konstruksi" placeholder="Contoh: Aspal Hotmix / Paving Blok / Pipa HDPE"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Jaringan (m²):</label>
+                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.jaringan_luas_m2" placeholder="Contoh: 1200"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Panjang (m/km):</label>
+                                                <input type="text" x-model="reklasSpekBaru.jaringan_panjang_km" placeholder="Contoh: 350 Meter"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Lebar (Meter):</label>
+                                                <input type="text" x-model="reklasSpekBaru.jaringan_lebar_m" placeholder="Contoh: 6 Meter"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB E - Aset Tetap Lainnya -->
+                                <template x-if="reklasTujuanKib === 'KIB E'">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Judul / Pencipta / Spesifikasi:</label>
+                                                <input type="text" x-model="reklasSpekBaru.lainnya_judul_pencipta" placeholder="Judul buku, lukisan, atau instrumen musik..."
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan / Asal Usul:</label>
+                                                <input type="text" x-model="reklasSpekBaru.lainnya_bahan" placeholder="Contoh: Kanvas / Perunggu / Kayu Jati"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: ATB - Aset Tak Berwujud -->
+                                <template x-if="reklasTujuanKib === 'ATB'">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nama Software / Sistem Informasi:</label>
+                                                <input type="text" x-model="reklasSpekBaru.atb_nama_software" placeholder="Contoh: Modul SIMRS Radiologi & Bridging BPJS"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Vendor / Pengembang Software:</label>
+                                                <input type="text" x-model="reklasSpekBaru.atb_pengembang" placeholder="Contoh: PT Medika Teknologi Solusindo"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Estimasi Masa Manfaat (Tahun):</label>
+                                                <input type="number" min="1" max="20" x-model="reklasSpekBaru.atb_masa_manfaat" placeholder="4"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Registrasi Lisensi / HAKI:</label>
+                                                <input type="text" x-model="reklasSpekBaru.atb_nomor_lisensi" placeholder="Contoh: LIC-SIMRS-2026-009"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
                             <div class="p-2.5 rounded-xl bg-indigo-950/30 border border-indigo-500/20 flex items-start gap-2.5">
                                 <span class="text-sm shrink-0">💡</span>
                                 <p class="text-[11px] leading-relaxed text-slate-300">
-                                    <strong class="text-indigo-300 font-semibold">Petunjuk:</strong> Pilih <strong class="text-white">KIB tujuan</strong> terlebih dahulu, kemudian tentukan <strong class="text-white">Sub-Rincian</strong> dan <strong class="text-white">Nama Barang 108</strong> secara berjenjang persis seperti pada Formulir ASTAP Langkah 2.
+                                    <strong class="text-indigo-300 font-semibold">Petunjuk:</strong> Pilih <strong class="text-white">KIB tujuan</strong> terlebih dahulu, tentukan <strong class="text-white">Sub-Rincian</strong> &amp; <strong class="text-white">Nama Barang 108</strong>, serta sesuaikan rincian spesifikasi fisik di atas.
                                 </p>
                             </div>
                         </div>
+
 
                         <!-- Jika KDP: Pilihan KIB Tujuan Definitif -->
                         <div x-show="reklasJenis === 'kdp'" class="space-y-2">

@@ -14,11 +14,14 @@ class AstapReklas extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'nilai_reklas'   => 'decimal:2',
-        'tanggal_reklas' => 'date',
-        'triwulan'       => 'integer',
-        'tahun'          => 'integer',
+        'nilai_reklas'     => 'decimal:2',
+        'tanggal_reklas'   => 'date',
+        'triwulan'         => 'integer',
+        'tahun'            => 'integer',
+        'spesifikasi_lama' => 'array',
+        'spesifikasi_baru' => 'array',
     ];
+
 
     public function astap()
     {

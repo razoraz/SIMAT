@@ -6570,8 +6570,52 @@
                 reklasNilaiAnggaran: 0,
                 reklasNoDokumenKoreksi: '',
                 isSubmittingReklas: false,
+                reklasSpekBaru: {
+                    // KIB A - Tanah
+                    tanah_luas_m2: '',
+                    tanah_hak: 'Hak Pakai',
+                    tanah_sertifikat_no: '',
+                    tanah_sertifikat_tgl: '',
+                    tanah_penggunaan: '',
+                    tanah_asal_usul: 'Pengadaan APBD / BLUD',
+                    tanah_alamat: '',
+
+                    // KIB B - Mesin
+                    mesin_merk: '',
+                    mesin_type: '',
+                    mesin_no_pabrik: '',
+                    mesin_ukuran_cc: '',
+                    mesin_bahan: 'Logam / Komponen Elektronik',
+                    mesin_no_polisi: '',
+
+                    // KIB C - Gedung
+                    gedung_konstruksi_bertingkat: 'Bertingkat',
+                    gedung_konstruksi_beton: 'Beton',
+                    gedung_luas_lantai_m2: '',
+                    gedung_dokumen_nomor: '',
+                    gedung_dokumen_tgl: '',
+                    gedung_status_tanah: 'Tanah Pemda',
+                    gedung_alamat: '',
+
+                    // KIB D - Jaringan
+                    jaringan_konstruksi: 'Aspal / Beton',
+                    jaringan_panjang_km: '',
+                    jaringan_lebar_m: '',
+                    jaringan_luas_m2: '',
+
+                    // KIB E - Lainnya
+                    lainnya_judul_pencipta: '',
+                    lainnya_bahan: 'Kertas / Kanvas / Lainnya',
+
+                    // ATB - Aset Tak Berwujud
+                    atb_nama_software: '',
+                    atb_pengembang: '',
+                    atb_masa_manfaat: '4',
+                    atb_nomor_lisensi: '',
+                },
 
                 isCurrentAstapExtracom() {
+
                     if (!this.selectedAstapReklas) return false;
                     const it = this.selectedAstapReklas;
                     if (it.is_extracomtable === true || it.is_extracomtable === 1 || it.is_extracomtable === '1') return true;
@@ -7019,7 +7063,56 @@
                     }
                     this.reklasTujuanKode = this.reklasSubSubRincianKode || this.reklasSubRincianKode || '';
                     this.reklasTujuanNama = this.reklasSubSubRincianNama || this.reklasSubRincianNama || '';
+                    this.initReklasSpekBaru();
                 },
+
+                initReklasSpekBaru() {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return;
+                    const spec = (typeof it.spesifikasi_json === 'object' && it.spesifikasi_json !== null) ? it.spesifikasi_json : {};
+                    const target = this.reklasTujuanKib;
+                    const defaultAlamat = it.alamat_barang || spec.alamat || 'RSUD Dr. H. Koesnandi';
+
+                    if (target === 'KIB A') {
+                        this.reklasSpekBaru.tanah_luas_m2 = spec.luas_m2 || spec.tanah_luas_m2 || '';
+                        this.reklasSpekBaru.tanah_hak = spec.hak_tanah || spec.tanah_hak || 'Hak Pakai';
+                        this.reklasSpekBaru.tanah_sertifikat_no = spec.sertifikat_no || spec.tanah_sertifikat_no || '';
+                        this.reklasSpekBaru.tanah_sertifikat_tgl = spec.sertifikat_tgl || spec.tanah_sertifikat_tgl || '';
+                        this.reklasSpekBaru.tanah_penggunaan = spec.penggunaan || spec.tanah_penggunaan || it.nama_barang || 'Kompleks RSUD';
+                        this.reklasSpekBaru.tanah_asal_usul = spec.tanah_asal_usul || 'Pengadaan APBD / BLUD';
+                        this.reklasSpekBaru.tanah_alamat = defaultAlamat;
+                    } else if (target === 'KIB B') {
+                        this.reklasSpekBaru.mesin_merk = spec.merk || it.merk_type || '';
+                        this.reklasSpekBaru.mesin_type = spec.type || '';
+                        this.reklasSpekBaru.mesin_no_pabrik = spec.no_pabrik || '';
+                        this.reklasSpekBaru.mesin_ukuran_cc = spec.ukuran_cc || '';
+                        this.reklasSpekBaru.mesin_bahan = spec.bahan || 'Logam / Komponen Elektronik';
+                        this.reklasSpekBaru.mesin_no_polisi = spec.no_polisi || '';
+                    } else if (target === 'KIB C') {
+                        this.reklasSpekBaru.gedung_konstruksi_bertingkat = spec.konstruksi_bertingkat || spec.bertingkat || 'Bertingkat';
+                        this.reklasSpekBaru.gedung_konstruksi_beton = spec.konstruksi_beton || spec.beton || 'Beton';
+                        this.reklasSpekBaru.gedung_luas_lantai_m2 = spec.luas_lantai_m2 || '';
+                        this.reklasSpekBaru.gedung_dokumen_nomor = spec.dokumen_nomor || it.spk_nomor || '';
+                        this.reklasSpekBaru.gedung_dokumen_tgl = spec.dokumen_tgl || it.spk_tanggal || '';
+                        this.reklasSpekBaru.gedung_status_tanah = spec.status_tanah || 'Tanah Pemda';
+                        this.reklasSpekBaru.gedung_alamat = defaultAlamat;
+                    } else if (target === 'KIB D') {
+                        this.reklasSpekBaru.jaringan_konstruksi = spec.konstruksi || 'Aspal / Beton';
+                        this.reklasSpekBaru.jaringan_panjang_km = spec.panjang_km || '';
+                        this.reklasSpekBaru.jaringan_lebar_m = spec.lebar_m || '';
+                        this.reklasSpekBaru.jaringan_luas_m2 = spec.luas_m2 || '';
+                        this.reklasSpekBaru.jaringan_alamat = defaultAlamat;
+                    } else if (target === 'KIB E') {
+                        this.reklasSpekBaru.lainnya_judul_pencipta = spec.judul_pencipta || it.nama_barang || '';
+                        this.reklasSpekBaru.lainnya_bahan = spec.bahan || 'Kertas / Kanvas / Lainnya';
+                    } else if (target === 'ATB') {
+                        this.reklasSpekBaru.atb_nama_software = spec.nama_software || it.nama_barang || '';
+                        this.reklasSpekBaru.atb_pengembang = spec.pengembang || '';
+                        this.reklasSpekBaru.atb_masa_manfaat = spec.masa_manfaat || '4';
+                        this.reklasSpekBaru.atb_nomor_lisensi = spec.nomor_lisensi || '';
+                    }
+                },
+
 
                 getReklasExtracomTotal() {
                     if (!this.reklasExtracomItems || this.reklasExtracomItems.length === 0) {
@@ -7265,7 +7358,9 @@
                             keterangan: this.getReklasNarasiPreview(),
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? this.reklasNilaiAnggaran : (parseFloat(it.jumlah_anggaran) || null),
                             reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? this.reklasExtracomItems : null,
+                            spesifikasi_baru: (this.reklasJenis === 'pindah_kib' || this.reklasJenis === 'kdp') ? this.reklasSpekBaru : null,
                         };
+
 
                         const res = await fetch('{{ route("master.reklasifikasi.store") }}', {
                             method: 'POST',

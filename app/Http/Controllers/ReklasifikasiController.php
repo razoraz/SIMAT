@@ -541,27 +541,173 @@ class ReklasifikasiController extends Controller
                     }
                 }
             }
+
+            // Penyesuaian spesifikasi fisik sesuai KIB Tujuan (misal KIB B Mesin -> KIB A Tanah, atau KDP -> Gedung)
+            $specLama = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+            $specBaru = null;
+
+            if ($request->has('spesifikasi_baru') && is_array($request->input('spesifikasi_baru')) && !empty($targetKib)) {
+                $rawNew = $request->input('spesifikasi_baru');
+                
+                // Pertahankan metadata administrasi pengadaan (SPK, PPK, BAST, SP2D)
+                $newSpec = [];
+                $preserveKeys = [
+                    'spk_nomor', 'spk_tanggal', 'surat_pesanan_nomor', 'surat_pesanan_tanggal',
+                    'faktur_nomor', 'faktur_tanggal', 'kwitansi_nomor', 'kwitansi_tanggal',
+                    'sp2d_nomor', 'sp2d_tanggal', 'bast_dokumen_nomor', 'bast_dokumen_tanggal',
+                    'ppk_nama', 'ppk_nip', 'penyedia_nama', 'rekening_belanja', 'tahun_anggaran', 'triwulan'
+                ];
+                foreach ($preserveKeys as $pk) {
+                    if (isset($specLama[$pk])) {
+                        $newSpec[$pk] = $specLama[$pk];
+                    }
+                }
+
+                if ($targetKib === 'KIB A') {
+                    $tanahItem = [
+                        'tanah_hak'            => $rawNew['tanah_hak'] ?? 'Hak Pakai',
+                        'tanah_sertifikat_tgl' => $rawNew['tanah_sertifikat_tgl'] ?? null,
+                        'tanah_sertifikat_no'  => $rawNew['tanah_sertifikat_no'] ?? null,
+                        'tanah_penggunaan'     => $rawNew['tanah_penggunaan'] ?? ($astap->nama_barang ?: 'Gedung RSUD'),
+                        'tanah_asal_usul'      => $rawNew['tanah_asal_usul'] ?? 'Pengadaan APBD / BLUD',
+                        'tanah_luas_m2'        => (float) ($rawNew['tanah_luas_m2'] ?? 0),
+                        'tanah_nilai_fisik'    => (float) $astap->total_realisasi,
+                        'tanah_kondisi'        => 'Baik',
+                        'tanah_alamat'         => $rawNew['tanah_alamat'] ?? ($astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi'),
+                    ];
+                    $newSpec['tanah_items']     = [$tanahItem];
+                    $newSpec['luas_m2']         = $tanahItem['tanah_luas_m2'];
+                    $newSpec['hak_tanah']       = $tanahItem['tanah_hak'];
+                    $newSpec['sertifikat_no']   = $tanahItem['tanah_sertifikat_no'];
+                    $newSpec['sertifikat_tgl']  = $tanahItem['tanah_sertifikat_tgl'];
+                    $newSpec['penggunaan']      = $tanahItem['tanah_penggunaan'];
+                    $astap->satuan              = 'M2';
+                    $astap->alamat_barang       = $tanahItem['tanah_alamat'];
+
+                } elseif ($targetKib === 'KIB B') {
+                    $mesinItem = [
+                        'mesin_nama_barang'   => $astap->nama_barang,
+                        'mesin_merk'          => $rawNew['mesin_merk'] ?? '-',
+                        'mesin_type'          => $rawNew['mesin_type'] ?? '-',
+                        'mesin_ukuran_cc'     => $rawNew['mesin_ukuran_cc'] ?? '-',
+                        'mesin_bahan'         => $rawNew['mesin_bahan'] ?? 'Logam / Komponen Elektronik',
+                        'mesin_no_pabrik'     => $rawNew['mesin_no_pabrik'] ?? '-',
+                        'mesin_no_rangka'     => $rawNew['mesin_no_rangka'] ?? '-',
+                        'mesin_no_mesin'      => $rawNew['mesin_no_mesin'] ?? '-',
+                        'mesin_no_polisi'     => $rawNew['mesin_no_polisi'] ?? '-',
+                        'mesin_no_bpkb'       => $rawNew['mesin_no_bpkb'] ?? '-',
+                        'mesin_kondisi'       => 'Baik',
+                        'mesin_ruang_pemegang'=> $astap->registers->first()?->ruang_pemegang ?? 'Instalasi Perbekalan',
+                        'mesin_jumlah_barang' => max(1, (int) $astap->jumlah_volume),
+                        'mesin_satuan'        => $astap->satuan ?: 'Unit',
+                        'mesin_nilai_satuan'  => (float) $astap->harga_satuan,
+                        'mesin_total_nilai'   => (float) $astap->total_realisasi,
+                    ];
+                    $newSpec['mesin_items']     = [$mesinItem];
+                    $newSpec['merk']            = $mesinItem['mesin_merk'];
+                    $newSpec['type']            = $mesinItem['mesin_type'];
+                    $newSpec['no_pabrik']       = $mesinItem['mesin_no_pabrik'];
+                    $astap->merk_type           = trim($mesinItem['mesin_merk'] . ' ' . $mesinItem['mesin_type']);
+
+                } elseif ($targetKib === 'KIB C') {
+                    $gedungItem = [
+                        'gedung_nama_bangunan'        => $astap->nama_barang,
+                        'gedung_konstruksi_bertingkat'=> $rawNew['gedung_konstruksi_bertingkat'] ?? 'Bertingkat',
+                        'gedung_konstruksi_beton'     => $rawNew['gedung_konstruksi_beton'] ?? 'Beton',
+                        'gedung_luas_lantai_m2'       => (float) ($rawNew['gedung_luas_lantai_m2'] ?? 0),
+                        'gedung_alamat'               => $rawNew['gedung_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi'),
+                        'gedung_dokumen_tgl'          => $rawNew['gedung_dokumen_tgl'] ?? null,
+                        'gedung_dokumen_nomor'        => $rawNew['gedung_dokumen_nomor'] ?? null,
+                        'gedung_status_tanah'         => $rawNew['gedung_status_tanah'] ?? 'Tanah Pemda',
+                        'gedung_kondisi'              => 'Baik',
+                        'gedung_nilai_fisik'          => (float) $astap->total_realisasi,
+                    ];
+                    $newSpec['gedung_items']         = [$gedungItem];
+                    $newSpec['luas_lantai_m2']        = $gedungItem['gedung_luas_lantai_m2'];
+                    $newSpec['konstruksi_bertingkat'] = $gedungItem['gedung_konstruksi_bertingkat'];
+                    $newSpec['konstruksi_beton']      = $gedungItem['gedung_konstruksi_beton'];
+                    $newSpec['dokumen_nomor']         = $gedungItem['gedung_dokumen_nomor'];
+                    $newSpec['dokumen_tgl']           = $gedungItem['gedung_dokumen_tgl'];
+                    $astap->satuan                    = 'Gedung / Unit';
+                    $astap->alamat_barang             = $gedungItem['gedung_alamat'];
+
+                } elseif ($targetKib === 'KIB D') {
+                    $jaringanItem = [
+                        'jaringan_nama'          => $astap->nama_barang,
+                        'jaringan_konstruksi'    => $rawNew['jaringan_konstruksi'] ?? 'Aspal / Beton',
+                        'jaringan_panjang_km'    => $rawNew['jaringan_panjang_km'] ?? null,
+                        'jaringan_lebar_m'       => $rawNew['jaringan_lebar_m'] ?? null,
+                        'jaringan_luas_m2'       => (float) ($rawNew['jaringan_luas_m2'] ?? 0),
+                        'jaringan_alamat'        => $rawNew['jaringan_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD'),
+                        'jaringan_dokumen_nomor' => $rawNew['jaringan_dokumen_nomor'] ?? null,
+                        'jaringan_dokumen_tgl'   => $rawNew['jaringan_dokumen_tgl'] ?? null,
+                        'jaringan_status_tanah'  => 'Tanah Pemda',
+                        'jaringan_kondisi'       => 'Baik',
+                        'jaringan_nilai_fisik'   => (float) $astap->total_realisasi,
+                    ];
+                    $newSpec['jaringan_items']       = [$jaringanItem];
+                    $newSpec['konstruksi']           = $jaringanItem['jaringan_konstruksi'];
+                    $astap->satuan                   = 'Ruas / Titik';
+                    $astap->alamat_barang            = $jaringanItem['jaringan_alamat'];
+
+                } elseif ($targetKib === 'KIB E') {
+                    $lainnyaItem = [
+                        'lainnya_nama_barang'    => $astap->nama_barang,
+                        'lainnya_judul_pencipta' => $rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang,
+                        'lainnya_spesifikasi'    => $rawNew['lainnya_spesifikasi'] ?? '-',
+                        'lainnya_asal_daerah'    => $rawNew['lainnya_asal_daerah'] ?? '-',
+                        'lainnya_bahan'          => $rawNew['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya',
+                        'lainnya_ukuran'         => $rawNew['lainnya_ukuran'] ?? '-',
+                        'lainnya_kondisi'        => 'Baik',
+                        'lainnya_jumlah_barang'  => max(1, (int) $astap->jumlah_volume),
+                        'lainnya_satuan'         => $astap->satuan ?: 'Buah',
+                        'lainnya_nilai_satuan'   => (float) $astap->harga_satuan,
+                        'lainnya_total_nilai'    => (float) $astap->total_realisasi,
+                    ];
+                    $newSpec['lainnya_items']        = [$lainnyaItem];
+
+                } elseif ($targetKib === 'ATB') {
+                    $atbItem = [
+                        'atb_nama_software' => $rawNew['atb_nama_software'] ?? $astap->nama_barang,
+                        'atb_jenis'         => $rawNew['atb_jenis'] ?? 'Software Aplikasi SIMRS / Lisensi',
+                        'atb_masa_manfaat'  => (int) ($rawNew['atb_masa_manfaat'] ?? 4),
+                        'atb_versi'         => $rawNew['atb_versi'] ?? 'v1.0',
+                        'atb_pengembang'    => $rawNew['atb_pengembang'] ?? '-',
+                        'atb_nomor_lisensi' => $rawNew['atb_nomor_lisensi'] ?? '-',
+                        'atb_nilai_satuan'  => (float) $astap->total_realisasi,
+                    ];
+                    $newSpec['atb_items']   = [$atbItem];
+                    $astap->satuan          = 'Paket / Lisensi';
+                }
+
+                $astap->spesifikasi_json = $newSpec;
+                $specBaru = $newSpec;
+            }
+
             $astap->save();
 
             // Simpan audit log reklasifikasi
             $reklasData = [
-                'astap_id' => $validated['astap_id'],
-                'jenis_reklasifikasi_asal_id' => $validated['jenis_reklasifikasi_asal_id'] ?? null,
+                'astap_id'                      => $validated['astap_id'],
+                'jenis_reklasifikasi_asal_id'   => $validated['jenis_reklasifikasi_asal_id'] ?? null,
                 'jenis_reklasifikasi_tujuan_id' => $validated['jenis_reklasifikasi_tujuan_id'] ?? null,
-                'jenis_reklas' => $validated['jenis_reklas'],
-                'asal_kib' => $validated['asal_kib'] ?? null,
-                'tujuan_kib' => $validated['tujuan_kib'] ?? null,
-                'nilai_reklas' => $validated['nilai_reklas'],
-                'tanggal_reklas' => $validated['tanggal_reklas'],
-                'triwulan' => $validated['triwulan'],
-                'tahun' => $validated['tahun'],
-                'nomor_ba_reklas' => $validated['nomor_ba_reklas'] ?? null,
-                'keterangan' => $validated['keterangan'] ?? null,
-                'user_id' => Auth::id(),
+                'jenis_reklas'                  => $validated['jenis_reklas'],
+                'asal_kib'                      => $validated['asal_kib'] ?? null,
+                'tujuan_kib'                    => $validated['tujuan_kib'] ?? null,
+                'nilai_reklas'                  => $validated['nilai_reklas'],
+                'tanggal_reklas'                => $validated['tanggal_reklas'],
+                'triwulan'                      => $validated['triwulan'],
+                'tahun'                         => $validated['tahun'],
+                'nomor_ba_reklas'               => $validated['nomor_ba_reklas'] ?? null,
+                'keterangan'                    => $validated['keterangan'] ?? null,
+                'spesifikasi_lama'              => $specLama,
+                'spesifikasi_baru'              => $specBaru,
+                'user_id'                       => Auth::id(),
             ];
             $reklas = AstapReklas::create($reklasData);
 
             DB::commit();
+
 
             $astap->refresh();
 
