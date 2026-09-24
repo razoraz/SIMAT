@@ -47,8 +47,21 @@ class ReklasifikasiController extends Controller
             $startDate = sprintf('%04d-%02d-01', $selectedTahun, $startMonth);
             $endDate = date('Y-m-t', strtotime(sprintf('%04d-%02d-01', $selectedTahun, $endMonth)));
 
-            $astapQuery->where(function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('sp2d_tanggal', [$startDate, $endDate])
+            $triwulanValues = [
+                1 => ['1', 'TW1', 'TW 1', 'TW I', 'Triwulan I', 'Triwulan 1', 'Q1', 'I'],
+                2 => ['2', 'TW2', 'TW 2', 'TW II', 'Triwulan II', 'Triwulan 2', 'Q2', 'II'],
+                3 => ['3', 'TW3', 'TW 3', 'TW III', 'Triwulan III', 'Triwulan 3', 'Q3', 'III'],
+                4 => ['4', 'TW4', 'TW 4', 'TW IV', 'Triwulan IV', 'Triwulan 4', 'Q4', 'IV'],
+            ];
+            $twValues = $triwulanValues[$tw] ?? [(string) $tw];
+
+            $astapQuery->where(function ($q) use ($twValues, $startDate, $endDate) {
+                $q->whereIn('triwulan', $twValues)
+                  ->orWhereBetween('sp2d_tanggal', [$startDate, $endDate])
+                  ->orWhereHas('belanjaModal', function ($bm) use ($startDate, $endDate) {
+                      $bm->whereBetween('sp2d_tanggal', [$startDate, $endDate])
+                         ->orWhereBetween('bast_dokumen_tanggal', [$startDate, $endDate]);
+                  })
                   ->orWhere(function($sub) use ($startDate, $endDate) {
                       $sub->whereNull('sp2d_tanggal')
                           ->whereBetween('bast_dokumen_tanggal', [$startDate, $endDate]);
@@ -68,7 +81,14 @@ class ReklasifikasiController extends Controller
         if ($selectedTw !== 'all') {
             $reklasQuery->where('triwulan', (int) $selectedTw);
         }
-        $reklasMutasis = $reklasQuery->get();
+        $reklasMutasis = $reklasQuery->with(['astap.jenisAstap'])->get();
+
+        // Kumpulkan ID astap yang sudah memiliki transaksi reklas EKSTRAKOMPTABEL pada periode ini
+        $processedExtracomAstapIds = $reklasMutasis
+            ->where('jenis_reklas', 'EKSTRAKOMPTABEL')
+            ->pluck('astap_id')
+            ->filter()
+            ->toArray();
 
         // 3. Susun Matriks 5 Kolom: Uraian, Saldo Awal, Mutasi Tambah, Mutasi Kurang, Saldo Akhir
         $matriks = [];
@@ -93,36 +113,61 @@ class ReklasifikasiController extends Controller
         foreach ($templateRows as $row) {
             $prefix = $row->kode_prefix;
             $saldoAwal = 0;
+            $mutasiTambah = 0;
+            $mutasiKurang = 0;
 
-            // Hitung Saldo Awal Belanja Modal dari ASTAP berdasarkan Prefix PMDN 108
+            // 1. Hitung Saldo Awal Belanja Modal dari ASTAP berdasarkan Prefix PMDN 108
             if ($prefix && !str_starts_with($prefix, 'KOR_')) {
                 foreach ($astaps as $astap) {
-                    $subRincian = $astap->jenisAstap->sub_rincian_objek ?? '';
-                    $subSubRincian = $astap->jenisAstap->sub_sub_rincian_objek ?? '';
-                    $jenisKode = $astap->jenisAstap->jenis ?? '';
-
-                    // Cek kesesuaian prefix
-                    if (str_starts_with($subRincian, $prefix) || 
-                        str_starts_with($subSubRincian, $prefix) ||
-                        ($prefix === '1.5.2' && (str_starts_with($jenisKode, '1.5.2') || str_starts_with($subRincian, '1.5.2'))) ||
-                        ($prefix === '1.5.3' && (str_starts_with($jenisKode, '1.5.3') || str_starts_with($subRincian, '1.5.3'))) ||
-                        ($prefix === '1.5.4' && (str_starts_with($jenisKode, '1.5.4') || str_starts_with($subRincian, '1.5.4')))
-                    ) {
+                    $matchedRow = $this->matchAstapToRow($astap, $templateRows);
+                    if ($matchedRow && $matchedRow->id === $row->id) {
                         $saldoAwal += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
                     }
                 }
             }
 
-            // Hitung Mutasi Tambah (Baris ini sebagai Tujuan)
-            $mutasiTambah = (float) $reklasMutasis->where('jenis_reklasifikasi_tujuan_id', $row->id)->sum('nilai_reklas');
+            // 2. Hitung Mutasi dari Transaksi Reklasifikasi (AstapReklas)
+            foreach ($reklasMutasis as $reklas) {
+                $asalRowId = $this->resolveAsalRowId($reklas, $templateRows);
+                $tujuanRowId = $this->resolveTujuanRowId($reklas, $templateRows);
 
-            // Hitung Mutasi Kurang (Baris ini sebagai Asal)
-            $mutasiKurang = (float) $reklasMutasis->where('jenis_reklasifikasi_asal_id', $row->id)->sum('nilai_reklas');
+                // Baris ini sebagai ASAL => Mutasi Kurang (-)
+                if ($asalRowId === $row->id) {
+                    $mutasiKurang += (float) $reklas->nilai_reklas;
+                }
 
-            // Khusus baris Koreksi Ekstrakomptabel: Jika ada aset is_extracomtable, masukkan ke mutasi kurang koreksi
+                // Baris ini sebagai TUJUAN => Mutasi Tambah (+)
+                if ($tujuanRowId === $row->id) {
+                    $mutasiTambah += (float) $reklas->nilai_reklas;
+                }
+            }
+
+            // 3. Tangani aset dengan status is_extracomtable di ASTAP yang belum tercatat di log reklasifikasi
+            if ($prefix && !str_starts_with($prefix, 'KOR_')) {
+                foreach ($astaps as $astap) {
+                    if ($astap->is_extracomtable && !in_array($astap->id, $processedExtracomAstapIds)) {
+                        $matchedRow = $this->matchAstapToRow($astap, $templateRows);
+                        if ($matchedRow && $matchedRow->id === $row->id) {
+                            $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+                            $mutasiKurang += $val;
+                        }
+                    }
+                }
+            }
+
+            // 4. Khusus baris Koreksi Ekstrakomptabel (KOR_EXTRACOM)
+            // Rekap penyeimbang: menampung seluruh aset yang pindah/berstatus ekstrakomptabel
             if ($prefix === 'KOR_EXTRACOM') {
-                $extracomTotal = (float) $astaps->where('is_extracomtable', true)->sum('total_realisasi');
-                $mutasiKurang += $extracomTotal;
+                $totalExtracomAll = 0;
+                foreach ($astaps as $astap) {
+                    if ($astap->is_extracomtable) {
+                        $totalExtracomAll += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+                    }
+                }
+                // Catat di mutasi tambah penyeimbang jika belum terisi dari transaksi
+                if ($mutasiTambah == 0 && $totalExtracomAll > 0) {
+                    $mutasiTambah = $totalExtracomAll;
+                }
             }
 
             $saldoAkhir = $saldoAwal + $mutasiTambah - $mutasiKurang;
@@ -552,9 +597,24 @@ class ReklasifikasiController extends Controller
                 }
             }
 
-            // Auto-isi baris matriks tujuan jika kosong tapi targetKib tersedia
-            if (empty($validated['jenis_reklasifikasi_tujuan_id']) && $targetKib) {
-                $matchingTujuanRow = JenisReklasifikasi::where('kelompok_kib', $targetKib)->orderBy('urutan', 'asc')->first();
+            $allTemplateRows = JenisReklasifikasi::active()->get();
+
+            // Auto-isi baris matriks tujuan jika kosong tapi targetKib / jenis_reklas tersedia
+            if (empty($validated['jenis_reklasifikasi_tujuan_id'])) {
+                $matchingTujuanRow = null;
+                if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL' || $targetKib === 'EKSTRAKOMPTABEL') {
+                    $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM');
+                } elseif ($validated['jenis_reklas'] === 'DEFINITIF_TO_KDP') {
+                    $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', '1.3.6.01');
+                } elseif ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
+                    $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', '1.3.3.01');
+                } elseif ($targetKib) {
+                    if ($targetKib === 'ATB') {
+                        $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', '1.5.3');
+                    } else {
+                        $matchingTujuanRow = $allTemplateRows->where('kelompok_kib', $targetKib)->sortBy('urutan')->first();
+                    }
+                }
                 if ($matchingTujuanRow) {
                     $validated['jenis_reklasifikasi_tujuan_id'] = $matchingTujuanRow->id;
                 }
@@ -562,13 +622,18 @@ class ReklasifikasiController extends Controller
 
             // Auto-isi baris matriks asal jika kosong
             if (empty($validated['jenis_reklasifikasi_asal_id'])) {
-                $subPrefix = $astap->jenisAstap ? substr($astap->jenisAstap->sub_rincian_objek ?? '', 0, 8) : '';
                 $matchingAsalRow = null;
-                if ($subPrefix) {
-                    $matchingAsalRow = JenisReklasifikasi::where('kode_prefix', 'like', $subPrefix . '%')->first();
-                }
-                if (!$matchingAsalRow && $astap->category) {
-                    $matchingAsalRow = JenisReklasifikasi::where('kelompok_kib', $astap->category)->orderBy('urutan', 'asc')->first();
+                if ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM') {
+                    $matchingAsalRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM');
+                } elseif ($validated['jenis_reklas'] === 'HIBAH_MASUK') {
+                    $matchingAsalRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_HIBAH');
+                } elseif ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
+                    $matchingAsalRow = $allTemplateRows->firstWhere('kode_prefix', '1.3.6.01');
+                } else {
+                    $matchingAsalRow = $this->matchAstapToRow($astap, $allTemplateRows);
+                    if (!$matchingAsalRow && !empty($validated['asal_kib'])) {
+                        $matchingAsalRow = $allTemplateRows->where('kelompok_kib', $validated['asal_kib'])->sortBy('urutan')->first();
+                    }
                 }
                 if ($matchingAsalRow) {
                     $validated['jenis_reklasifikasi_asal_id'] = $matchingAsalRow->id;
@@ -785,6 +850,7 @@ class ReklasifikasiController extends Controller
     {
         $reklas = AstapReklas::findOrFail($id);
         $astapId = $reklas->astap_id;
+        $isExtracom = ($reklas->jenis_reklas === 'EKSTRAKOMPTABEL');
 
         DB::beginTransaction();
         try {
@@ -793,10 +859,14 @@ class ReklasifikasiController extends Controller
             // Cek apakah astap masih memiliki transaksi reklas lain
             $remaining = AstapReklas::where('astap_id', $astapId)->count();
             if ($remaining === 0) {
-                Astap::where('id', $astapId)->update([
+                $updateData = [
                     'is_reklas' => false,
                     'jenis_reklas' => null,
-                ]);
+                ];
+                if ($isExtracom) {
+                    $updateData['is_extracomtable'] = false;
+                }
+                Astap::where('id', $astapId)->update($updateData);
             }
 
             DB::commit();
@@ -819,5 +889,159 @@ class ReklasifikasiController extends Controller
             }
             return redirect()->back()->with('error', 'Gagal menghapus reklasifikasi: ' . $th->getMessage());
         }
+    }
+
+    /**
+     * Mencocokkan data ASTAP ke salah satu baris dari 42 baris master template PMDN 108
+     */
+    private function matchAstapToRow(Astap $astap, $templateRows)
+    {
+        $subRincian = $astap->jenisAstap->sub_rincian_objek ?? '';
+        $subSubRincian = $astap->jenisAstap->sub_sub_rincian_objek ?? '';
+        $jenisKode = $astap->jenisAstap->jenis ?? '';
+
+        // 1. Cek kecocokan prefix spesifik kode 108
+        if ($subRincian || $subSubRincian || $jenisKode) {
+            foreach ($templateRows as $row) {
+                $p = $row->kode_prefix;
+                if (!$p || str_starts_with($p, 'KOR_')) continue;
+
+                if (str_starts_with($subRincian, $p) ||
+                    str_starts_with($subSubRincian, $p) ||
+                    str_starts_with($jenisKode, $p) ||
+                    str_starts_with($p, substr($subRincian, 0, 8))
+                ) {
+                    return $row;
+                }
+            }
+        }
+
+        // 2. Fallback berdasarkan kategori KIB aset atau nama barang
+        $category = strtoupper(trim((string) ($astap->category ?? '')));
+        if ($category === 'EXTRACOM' && !empty($astap->asal_kib)) {
+            $category = strtoupper(trim((string) $astap->asal_kib));
+        }
+
+        // KIB A
+        if ($category === 'KIB A') {
+            return $templateRows->firstWhere('kode_prefix', '1.3.1.01');
+        }
+
+        // KIB B (Peralatan & Mesin)
+        if ($category === 'KIB B') {
+            $nama = strtoupper(trim((string) $astap->nama_barang));
+            if (str_contains($nama, 'KOMPUTER') || str_contains($nama, 'LAPTOP') || str_contains($nama, 'PC')) {
+                return $templateRows->firstWhere('kode_prefix', '1.3.2.10') ?? $templateRows->firstWhere('kelompok_kib', 'KIB B');
+            }
+            if (str_contains($nama, 'KEDOKTERAN') || str_contains($nama, 'MEDIS') || str_contains($nama, 'STETOSKOP') || str_contains($nama, 'TENSIMETER')) {
+                return $templateRows->firstWhere('kode_prefix', '1.3.2.07') ?? $templateRows->firstWhere('kelompok_kib', 'KIB B');
+            }
+            if (str_contains($nama, 'KANTOR') || str_contains($nama, 'MEJA') || str_contains($nama, 'KURSI') || str_contains($nama, 'LEMARI')) {
+                return $templateRows->firstWhere('kode_prefix', '1.3.2.05') ?? $templateRows->firstWhere('kelompok_kib', 'KIB B');
+            }
+            if (str_contains($nama, 'ANGKUTAN') || str_contains($nama, 'MOBIL') || str_contains($nama, 'MOTOR') || str_contains($nama, 'AMBULANCE')) {
+                return $templateRows->firstWhere('kode_prefix', '1.3.2.02') ?? $templateRows->firstWhere('kelompok_kib', 'KIB B');
+            }
+            return $templateRows->firstWhere('kode_prefix', '1.3.2.01') ?? $templateRows->firstWhere('kelompok_kib', 'KIB B');
+        }
+
+        // KIB C
+        if ($category === 'KIB C') {
+            return $templateRows->firstWhere('kode_prefix', '1.3.3.01');
+        }
+
+        // KIB D
+        if ($category === 'KIB D') {
+            return $templateRows->firstWhere('kode_prefix', '1.3.4.01');
+        }
+
+        // KIB E
+        if ($category === 'KIB E') {
+            return $templateRows->firstWhere('kode_prefix', '1.3.5.01') ?? $templateRows->firstWhere('kelompok_kib', 'KIB E');
+        }
+
+        // KIB F
+        if ($category === 'KIB F') {
+            return $templateRows->firstWhere('kode_prefix', '1.3.6.01');
+        }
+
+        // ATB
+        if ($category === 'ATB') {
+            return $templateRows->firstWhere('kode_prefix', '1.5.3');
+        }
+
+        // Default jika KIB B atau terindikasi barang modal
+        return $templateRows->firstWhere('kode_prefix', '1.3.2.05') ?? $templateRows->firstWhere('kelompok_kib', 'KIB B');
+    }
+
+    /**
+     * Resolusi ID baris asal transaksi reklasifikasi (Mutasi Kurang -)
+     */
+    private function resolveAsalRowId(AstapReklas $reklas, $templateRows): ?int
+    {
+        if ($reklas->jenis_reklasifikasi_asal_id) {
+            return (int) $reklas->jenis_reklasifikasi_asal_id;
+        }
+
+        if ($reklas->jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+            return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM')?->id);
+        }
+
+        if ($reklas->jenis_reklas === 'HIBAH_MASUK') {
+            return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_HIBAH')?->id);
+        }
+
+        if ($reklas->jenis_reklas === 'KDP_TO_DEFINITIF') {
+            return (int) ($templateRows->firstWhere('kode_prefix', '1.3.6.01')?->id);
+        }
+
+        // Cek dari ASTAP terkait
+        if ($reklas->astap) {
+            $row = $this->matchAstapToRow($reklas->astap, $templateRows);
+            if ($row) return (int) $row->id;
+        }
+
+        // Fallback dari asal_kib
+        if ($reklas->asal_kib) {
+            $row = $templateRows->firstWhere('kelompok_kib', $reklas->asal_kib);
+            if ($row) return (int) $row->id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolusi ID baris tujuan transaksi reklasifikasi (Mutasi Tambah +)
+     */
+    private function resolveTujuanRowId(AstapReklas $reklas, $templateRows): ?int
+    {
+        if ($reklas->jenis_reklasifikasi_tujuan_id) {
+            return (int) $reklas->jenis_reklasifikasi_tujuan_id;
+        }
+
+        if ($reklas->jenis_reklas === 'EKSTRAKOMPTABEL' || $reklas->tujuan_kib === 'EKSTRAKOMPTABEL') {
+            return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM')?->id);
+        }
+
+        if ($reklas->jenis_reklas === 'DEFINITIF_TO_KDP') {
+            return (int) ($templateRows->firstWhere('kode_prefix', '1.3.6.01')?->id);
+        }
+
+        if ($reklas->jenis_reklas === 'KDP_TO_DEFINITIF') {
+            $targetKib = $reklas->tujuan_kib ?: 'KIB C';
+            if ($targetKib === 'KIB D') return (int) ($templateRows->firstWhere('kode_prefix', '1.3.4.01')?->id);
+            if ($targetKib === 'KIB B') return (int) ($templateRows->firstWhere('kode_prefix', '1.3.2.01')?->id);
+            return (int) ($templateRows->firstWhere('kode_prefix', '1.3.3.01')?->id);
+        }
+
+        if ($reklas->tujuan_kib) {
+            if ($reklas->tujuan_kib === 'ATB') {
+                return (int) ($templateRows->firstWhere('kode_prefix', '1.5.3')?->id);
+            }
+            $row = $templateRows->firstWhere('kelompok_kib', $reklas->tujuan_kib);
+            if ($row) return (int) $row->id;
+        }
+
+        return null;
     }
 }

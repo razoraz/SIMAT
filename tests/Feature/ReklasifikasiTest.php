@@ -761,6 +761,212 @@ class ReklasifikasiTest extends TestCase
         $this->assertArrayHasKey('gedung_items', $reklasRecord->spesifikasi_baru);
         $this->assertEquals(85.5, $reklasRecord->spesifikasi_baru['gedung_items'][0]['gedung_luas_lantai_m2']);
     }
+
+    public function test_reklas_extracom_records_mutasi_kurang_on_source_kib()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisAstap = JenisAstap::firstOrCreate(
+            ['sub_rincian_objek' => '1.3.2.05.01'],
+            [
+                'jenis' => '1.3.2.05',
+                'nama_jenis' => 'Alat Kantor dan Rumah Tangga',
+                'uraian_sub_rincian' => 'Alat Kantor',
+                'sub_sub_rincian_objek' => '1.3.2.05.01.01.001',
+                'uraian_sub_sub_rincian' => 'Kursi Kerja Besi',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Kursi Kerja Besi Ekonomis',
+            'tahun_perolehan' => 2026,
+            'triwulan' => 'TW I',
+            'sp2d_tanggal' => '2026-02-15',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 250000,
+            'total_realisasi' => 250000,
+            'jumlah_anggaran' => 250000,
+            'jenis_astap_id' => $jenisAstap->id,
+            'user_id' => $admin->id,
+        ]);
+
+        // Reklasifikasi ke Ekstrakomptabel
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => 250000,
+            'tanggal_reklas' => '2026-03-01',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/KURANG/001',
+            'reklas_items' => [
+                [
+                    'nama_barang' => 'Kursi Kerja Besi Ekonomis',
+                    'jumlah_volume' => 1,
+                    'satuan' => 'Buah',
+                    'harga_satuan' => 250000,
+                ]
+            ]
+        ];
+
+        $postRes = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $postRes->assertStatus(200);
+
+        // Buka halaman Reklasifikasi dan periksa matriks
+        $response = $this->actingAs($admin)->get(route('master.reklasifikasi', ['tahun' => 2026, 'triwulan' => 1]));
+        $response->assertStatus(200);
+
+        $matriks = $response->viewData('matriks');
+        $subtotals = $response->viewData('subtotals');
+        $grandTotal = $response->viewData('grandTotal');
+
+        // Cari baris ALAT KANTOR DAN RUMAH TANGGA (1.3.2.05)
+        $rowKantor = collect($matriks)->firstWhere('kode_prefix', '1.3.2.05');
+        $this->assertNotNull($rowKantor);
+        $this->assertEquals(250000, $rowKantor['saldo_awal']);
+        $this->assertEquals(250000, $rowKantor['mutasi_kurang'], 'Nilai extracom harus masuk ke Mutasi Kurang (-) pada baris KIB asalnya!');
+        $this->assertEquals(0, $rowKantor['saldo_akhir'], 'Saldo akhir KIB asal harus berkurang sebesar mutasi kurang!');
+
+        // Periksa subtotal KIB B
+        $this->assertEquals(250000, $subtotals['KIB B']['awal']);
+        $this->assertEquals(250000, $subtotals['KIB B']['kurang'], 'Subtotal KIB B harus mencatat mutasi kurang!');
+        $this->assertEquals(0, $subtotals['KIB B']['akhir']);
+
+        // Periksa Grand Total
+        $this->assertEquals(250000, $grandTotal['awal']);
+        $this->assertEquals(250000, $grandTotal['kurang'], 'Grand Total mutasi kurang harus mencatat Rp 250.000!');
+        $this->assertEquals(0, $grandTotal['akhir']);
+    }
+
+    public function test_reklas_inter_kib_records_mutasi_kurang_and_mutasi_tambah()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisAstap = JenisAstap::firstOrCreate(
+            ['sub_rincian_objek' => '1.3.2.01.01'],
+            [
+                'jenis' => '1.3.2.01',
+                'nama_jenis' => 'Alat Besar',
+                'uraian_sub_rincian' => 'Alat Besar Darat',
+                'sub_sub_rincian_objek' => '1.3.2.01.01.01.001',
+                'uraian_sub_sub_rincian' => 'Tractor',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Tractor Reklas Test',
+            'tahun_perolehan' => 2026,
+            'triwulan' => 'TW I',
+            'sp2d_tanggal' => '2026-02-10',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 10000000,
+            'total_realisasi' => 10000000,
+            'jumlah_anggaran' => 10000000,
+            'jenis_astap_id' => $jenisAstap->id,
+            'user_id' => $admin->id,
+        ]);
+
+        // Reklasifikasi dari KIB B ke KIB C
+        $asalRow = JenisReklasifikasi::where('kode_prefix', '1.3.2.01')->first();
+        $tujuanRow = JenisReklasifikasi::where('kode_prefix', '1.3.3.01')->first();
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'jenis_reklasifikasi_asal_id' => $asalRow->id,
+            'jenis_reklasifikasi_tujuan_id' => $tujuanRow->id,
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'KIB C',
+            'nilai_reklas' => 10000000,
+            'tanggal_reklas' => '2026-03-05',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/BC/001',
+        ];
+
+        $postRes = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $postRes->assertStatus(200);
+
+        // Buka halaman Reklasifikasi dan periksa matriks
+        $response = $this->actingAs($admin)->get(route('master.reklasifikasi', ['tahun' => 2026, 'triwulan' => 1]));
+        $response->assertStatus(200);
+
+        $matriks = $response->viewData('matriks');
+        $subtotals = $response->viewData('subtotals');
+        $grandTotal = $response->viewData('grandTotal');
+
+        // KIB B (Asal)
+        $rowB = collect($matriks)->firstWhere('kode_prefix', '1.3.2.01');
+        $this->assertEquals(10000000, $rowB['saldo_awal']);
+        $this->assertEquals(10000000, $rowB['mutasi_kurang'], 'KIB B harus mendapatkan Mutasi Kurang (-) Rp 10.000.000!');
+        $this->assertEquals(0, $rowB['saldo_akhir'], 'Saldo akhir KIB B harus 0 setelah reklas keluar!');
+
+        // KIB C (Tujuan)
+        $rowC = collect($matriks)->firstWhere('kode_prefix', '1.3.3.01');
+        $this->assertEquals(10000000, $rowC['mutasi_tambah'], 'KIB C harus mendapatkan Mutasi Tambah (+) Rp 10.000.000!');
+        $this->assertEquals(10000000, $rowC['saldo_akhir'], 'Saldo akhir KIB C harus bertambah Rp 10.000.000!');
+
+        // Subtotals
+        $this->assertEquals(10000000, $subtotals['KIB B']['kurang']);
+        $this->assertEquals(0, $subtotals['KIB B']['akhir']);
+        $this->assertEquals(10000000, $subtotals['KIB C']['tambah']);
+        $this->assertEquals(10000000, $subtotals['KIB C']['akhir']);
+
+        // Grand Total: Saldo Awal 10jt, Tambah 10jt, Kurang 10jt, Akhir 10jt
+        $this->assertEquals(10000000, $grandTotal['awal']);
+        $this->assertEquals(10000000, $grandTotal['tambah']);
+        $this->assertEquals(10000000, $grandTotal['kurang']);
+        $this->assertEquals(10000000, $grandTotal['akhir']);
+    }
+
+    public function test_astap_with_extracom_flag_directly_records_mutasi_kurang_on_source_kib()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenisAstap = JenisAstap::firstOrCreate(
+            ['sub_rincian_objek' => '1.3.2.10.01'],
+            [
+                'jenis' => '1.3.2.10',
+                'nama_jenis' => 'Komputer',
+                'uraian_sub_rincian' => 'Komputer Unit',
+                'sub_sub_rincian_objek' => '1.3.2.10.01.01.001',
+                'uraian_sub_sub_rincian' => 'Mouse USB Ekstrakomptabel',
+            ]
+        );
+
+        // Aset Belanja Modal tapi bertanda is_extracomtable = true (< 300rb) tanpa transaksi reklas manual
+        Astap::create([
+            'nama_barang' => 'Mouse Optik Komputer',
+            'tahun_perolehan' => 2026,
+            'triwulan' => 'TW I',
+            'jumlah_volume' => 2,
+            'harga_satuan' => 75000,
+            'total_realisasi' => 150000,
+            'jumlah_anggaran' => 150000,
+            'is_extracomtable' => true,
+            'jenis_astap_id' => $jenisAstap->id,
+            'user_id' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('master.reklasifikasi', ['tahun' => 2026, 'triwulan' => 1]));
+        $response->assertStatus(200);
+
+        $matriks = $response->viewData('matriks');
+        $subtotals = $response->viewData('subtotals');
+
+        // Cari baris KOMPUTER (1.3.2.10)
+        $rowKomputer = collect($matriks)->firstWhere('kode_prefix', '1.3.2.10');
+        $this->assertNotNull($rowKomputer);
+        $this->assertEquals(150000, $rowKomputer['saldo_awal']);
+        $this->assertEquals(150000, $rowKomputer['mutasi_kurang'], 'Aset bertanda is_extracomtable otomatis masuk ke Mutasi Kurang (-) pada baris KIB asalnya!');
+        $this->assertEquals(0, $rowKomputer['saldo_akhir'], 'Saldo akhir harus 0 karena aset berada di bawah batas kapitalisasi!');
+
+        $this->assertEquals(150000, $subtotals['KIB B']['kurang']);
+        $this->assertEquals(0, $subtotals['KIB B']['akhir']);
+    }
 }
+
 
 

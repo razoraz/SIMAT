@@ -468,16 +468,17 @@
 
                 // Auto-pilih baris asal berdasarkan prefix kode atau kategori KIB
                 const prefix = found.jenis_astap?.sub_rincian_objek ? found.jenis_astap.sub_rincian_objek.substring(0, 8) : '';
+                let asalRow = null;
                 if (prefix && window.templateRows) {
-                    const row = window.templateRows.find(r => r.kode_prefix && (r.kode_prefix.startsWith(prefix) || prefix.startsWith(r.kode_prefix)));
-                    if (row) {
-                        this.formData.jenis_reklasifikasi_asal_id = row.id;
-                    }
-                } else if (found.category && window.templateRows) {
-                    const row = window.templateRows.find(r => r.kelompok_kib === found.category);
-                    if (row) {
-                        this.formData.jenis_reklasifikasi_asal_id = row.id;
-                    }
+                    asalRow = window.templateRows.find(r => r.kode_prefix && (r.kode_prefix.startsWith(prefix) || prefix.startsWith(r.kode_prefix)));
+                }
+                if (!asalRow && window.templateRows) {
+                    const cat = found.category || found.asal_kib || 'KIB B';
+                    asalRow = window.templateRows.find(r => r.kelompok_kib === cat);
+                }
+                if (asalRow) {
+                    this.formData.jenis_reklasifikasi_asal_id = asalRow.id;
+                    this.formData.asal_kib = asalRow.kelompok_kib;
                 }
 
                 // Inisialisasi spek baru
@@ -486,14 +487,32 @@
 
             onJenisReklasChange() {
                 if (this.formData.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                    const kdpRow = (window.templateRows || []).find(r => r.kode_prefix === '1.3.6.01');
+                    if (kdpRow) this.formData.jenis_reklasifikasi_asal_id = kdpRow.id;
+                    this.formData.asal_kib = 'KIB F';
                     this.formData.tujuan_kib = 'KIB C';
                     this.onTujuanKibChange();
                 } else if (this.formData.jenis_reklas === 'EKSTRAKOMPTABEL') {
-                    // Cari baris Koreksi Ekstrakomptabel
+                    this.formData.tujuan_kib = 'EKSTRAKOMPTABEL';
+                    // Cari baris Koreksi Ekstrakomptabel untuk Tujuan
                     const extraRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_EXTRACOM');
                     if (extraRow) {
                         this.formData.jenis_reklasifikasi_tujuan_id = extraRow.id;
                     }
+                } else if (this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    const extraRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_EXTRACOM');
+                    if (extraRow) {
+                        this.formData.jenis_reklasifikasi_asal_id = extraRow.id;
+                    }
+                    this.formData.asal_kib = 'EKSTRAKOMPTABEL';
+                    this.formData.tujuan_kib = 'KIB B';
+                    this.onTujuanKibChange();
+                } else if (this.formData.jenis_reklas === 'HIBAH_MASUK') {
+                    const hibahRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_HIBAH');
+                    if (hibahRow) {
+                        this.formData.jenis_reklasifikasi_asal_id = hibahRow.id;
+                    }
+                    this.formData.asal_kib = 'HIBAH';
                 }
             },
 
