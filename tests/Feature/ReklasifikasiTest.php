@@ -668,6 +668,99 @@ class ReklasifikasiTest extends TestCase
             'nomor_ba_reklas' => 'LHP-BPK/2026/04/AUDIT',
         ]);
     }
+
+    public function test_master_reklasifikasi_with_spesifikasi_baru_and_audit_trail_snapshot()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        // 1. Buat Aset KIB B
+        $astap = Astap::create([
+            'nama_barang' => 'Kompresor Gas Medis Sentral',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 75000000,
+            'total_realisasi' => 75000000,
+            'jumlah_anggaran' => 75000000,
+            'satuan' => 'Unit',
+            'category' => 'KIB B',
+            'merk_type' => 'Atlas Copco GA-11',
+            'alamat_barang' => 'Instalasi Pemeliharaan Sarana RS (IPSRS)',
+            'spesifikasi_json' => [
+                'merk' => 'Atlas Copco',
+                'type' => 'GA-11',
+                'no_pabrik' => 'SN-COMP-2026-99',
+                'spk_nomor' => 'SPK-MEDIS-2026',
+            ],
+            'user_id' => $admin->id,
+        ]);
+
+        // Pastikan halaman Master Reklasifikasi memuat aset dan dbMaster108
+        $this->withoutExceptionHandling();
+        $pageResponse = $this->actingAs($admin)->get(route('master.reklasifikasi'));
+        $pageResponse->assertStatus(200);
+        $pageResponse->assertViewHas('dbMaster108');
+        $pageResponse->assertViewHas('kandidatAstaps');
+        $pageResponse->assertSee('Rincian Audit Reklasifikasi');
+        $pageResponse->assertSee('Perbandingan Spesifikasi Fisik');
+
+        // 2. Submit Reklasifikasi Baru dari Master dengan Spesifikasi Fisik Baru (KIB B -> KIB C Gedung)
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'tujuan_kib' => 'KIB C',
+            'tujuan_kode' => '1.3.3.01.01.01.001',
+            'tujuan_nama' => 'Bangunan Gedung Ruang Gas Medis',
+            'nilai_reklas' => 75000000,
+            'tanggal_reklas' => '2026-04-10',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => '000.2.3/BA-REKLAS/RSUD/IV/2026',
+            'keterangan' => 'Koreksi salah kamar dari peralatan mesin ke bangunan instalasi permanen gas medis',
+            'spesifikasi_baru' => [
+                'gedung_konstruksi_bertingkat' => 'Tidak Bertingkat',
+                'gedung_konstruksi_beton' => 'Beton',
+                'gedung_luas_lantai_m2' => 85.5,
+                'gedung_dokumen_nomor' => '640/PBG/2026/RSUD',
+                'gedung_dokumen_tgl' => '2026-04-01',
+                'gedung_status_tanah' => 'Tanah Pemda',
+                'gedung_alamat' => 'Kompleks Sentral Gas Medis RSUD dr. H. Koesnandi',
+            ],
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        // 3. Verifikasi Data ASTAP Terupdate
+        $astap->refresh();
+        $this->assertTrue((bool)$astap->is_reklas);
+        $this->assertEquals('KOREKSI_REKENING', $astap->jenis_reklas);
+        $this->assertEquals('Gedung / Unit', $astap->satuan);
+        $this->assertEquals('Kompleks Sentral Gas Medis RSUD dr. H. Koesnandi', $astap->alamat_barang);
+
+        $newAstapSpec = $astap->spesifikasi_json;
+        $this->assertArrayHasKey('gedung_items', $newAstapSpec);
+        $this->assertEquals(85.5, $newAstapSpec['gedung_items'][0]['gedung_luas_lantai_m2']);
+        $this->assertEquals('Beton', $newAstapSpec['gedung_items'][0]['gedung_konstruksi_beton']);
+        // Pastikan administrasi lama (SPK) dipertahankan
+        $this->assertEquals('SPK-MEDIS-2026', $newAstapSpec['spk_nomor']);
+
+        // 4. Verifikasi Audit Trail Snapshot di tabel astap_reklasis
+        $reklasRecord = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklasRecord);
+        $this->assertEquals('KIB C', $reklasRecord->tujuan_kib);
+        $this->assertEquals(75000000, (float)$reklasRecord->nilai_reklas);
+
+        // Snapshot Lama harus merekam data KIB B (Merk Atlas Copco)
+        $this->assertNotNull($reklasRecord->spesifikasi_lama);
+        $this->assertEquals('Atlas Copco', $reklasRecord->spesifikasi_lama['merk']);
+        $this->assertEquals('GA-11', $reklasRecord->spesifikasi_lama['type']);
+
+        // Snapshot Baru harus merekam data KIB C (Gedung)
+        $this->assertNotNull($reklasRecord->spesifikasi_baru);
+        $this->assertArrayHasKey('gedung_items', $reklasRecord->spesifikasi_baru);
+        $this->assertEquals(85.5, $reklasRecord->spesifikasi_baru['gedung_items'][0]['gedung_luas_lantai_m2']);
+    }
 }
 
 

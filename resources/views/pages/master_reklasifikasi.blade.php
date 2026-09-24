@@ -23,6 +23,7 @@
 
         <!-- MODAL TAMBAH REKLASIFIKASI DARI MASTER -->
         @include('pages.master_reklasifikasi_partials.modal_tambah')
+        @include('pages.master_reklasifikasi_partials.modal_detail')
         @include('pages.master_reklasifikasi_partials.modal_confirm')
         @include('pages.master_reklasifikasi_partials.modal_panduan')
     </div>

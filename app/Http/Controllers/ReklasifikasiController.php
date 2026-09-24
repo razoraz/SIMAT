@@ -183,8 +183,8 @@ class ReklasifikasiController extends Controller
         // 5. Ambil kandidat aset untuk modal tambah reklasifikasi
         $kandidatAstaps = Astap::where('is_deleted', 0)
             ->where('tahun_perolehan', $selectedTahun)
-            ->select('id', 'nama_barang', 'total_realisasi', 'tahun_perolehan', 'jenis_astap_id', 'is_reklas')
-            ->with('jenisAstap')
+            ->select('id', 'nama_barang', 'total_realisasi', 'tahun_perolehan', 'jenis_astap_id', 'is_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'category', 'is_extracomtable')
+            ->with(['jenisAstap', 'registers'])
             ->orderBy('nama_barang', 'asc')
             ->get();
 
@@ -200,6 +200,7 @@ class ReklasifikasiController extends Controller
             'selectedTw'        => $selectedTw,
             'templateRows'      => $templateRows,
             'kandidatAstaps'    => $kandidatAstaps,
+            'dbMaster108'       => JenisAstap::getNested108(),
         ]);
     }
 
@@ -225,6 +226,7 @@ class ReklasifikasiController extends Controller
             'nomor_ba_reklas' => 'nullable|string|max:150',
             'keterangan' => 'nullable|string',
             'reklas_items' => 'nullable|array',
+            'spesifikasi_baru' => 'nullable|array',
             'jumlah_anggaran' => 'nullable|numeric|min:0',
             'tipe_koreksi' => 'nullable|string|in:kurang,tambah',
         ]);
@@ -519,7 +521,6 @@ class ReklasifikasiController extends Controller
                     if ($matchingJenis) {
                         $astap->jenis_astap_id = $matchingJenis->id;
                     }
-                    $astap->kode_108 = $targetKode;
                     if ($targetNama && !empty($matchingJenis?->sub_sub_rincian_objek)) {
                         $astap->nama_barang = $targetNama;
                     }
@@ -539,6 +540,38 @@ class ReklasifikasiController extends Controller
                             $astap->jenis_astap_id = $matchingJenis->id;
                         }
                     }
+                }
+            }
+
+            // Defensif pastikan targetKib terdefinisi
+            $targetKib = $validated['tujuan_kib'] ?? ($targetKib ?? null);
+            if (!$targetKib && !empty($validated['jenis_reklasifikasi_tujuan_id'])) {
+                $tujuanRow = JenisReklasifikasi::find($validated['jenis_reklasifikasi_tujuan_id']);
+                if ($tujuanRow) {
+                    $targetKib = $tujuanRow->kelompok_kib;
+                }
+            }
+
+            // Auto-isi baris matriks tujuan jika kosong tapi targetKib tersedia
+            if (empty($validated['jenis_reklasifikasi_tujuan_id']) && $targetKib) {
+                $matchingTujuanRow = JenisReklasifikasi::where('kelompok_kib', $targetKib)->orderBy('urutan', 'asc')->first();
+                if ($matchingTujuanRow) {
+                    $validated['jenis_reklasifikasi_tujuan_id'] = $matchingTujuanRow->id;
+                }
+            }
+
+            // Auto-isi baris matriks asal jika kosong
+            if (empty($validated['jenis_reklasifikasi_asal_id'])) {
+                $subPrefix = $astap->jenisAstap ? substr($astap->jenisAstap->sub_rincian_objek ?? '', 0, 8) : '';
+                $matchingAsalRow = null;
+                if ($subPrefix) {
+                    $matchingAsalRow = JenisReklasifikasi::where('kode_prefix', 'like', $subPrefix . '%')->first();
+                }
+                if (!$matchingAsalRow && $astap->category) {
+                    $matchingAsalRow = JenisReklasifikasi::where('kelompok_kib', $astap->category)->orderBy('urutan', 'asc')->first();
+                }
+                if ($matchingAsalRow) {
+                    $validated['jenis_reklasifikasi_asal_id'] = $matchingAsalRow->id;
                 }
             }
 
