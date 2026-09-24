@@ -1228,23 +1228,33 @@ Route::middleware('auth')->group(function () {
                     ->with('success', 'Data Belanja Barang "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_rekening');
 
-            // ─── Form Mutasi Masuk / Pelimpahan SKPD (Create & Store) ─────
-            Route::get('/astap/create-mutasi-masuk', function () use ($getDistinctPejabats) {
+            // ─── Form Mutasi Eksternal / Pelimpahan SKPD (Create & Store) ─────
+            Route::get('/astap/create-mutasi-eksternal', function () use ($getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_mutasi_masuk', compact('dbMaster108', 'dbUnits', 'dbPejabats'));
+                return view('pages.form_mutasi_eksternal', compact('dbMaster108', 'dbUnits', 'dbPejabats'));
+            })->name('astap.create_mutasi_eksternal');
+
+            // Backward Compatibility Alias
+            Route::get('/astap/create-mutasi-masuk', function () {
+                return redirect()->route('astap.create_mutasi_eksternal', request()->all());
             })->name('astap.create_mutasi_masuk');
 
-            Route::get('/astap/{id}/edit-mutasi-masuk', function ($id) use ($getDistinctPejabats) {
+            Route::get('/astap/{id}/edit-mutasi-eksternal', function ($id) use ($getDistinctPejabats) {
                 $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'pelimpahanSkpd', 'unit'])->findOrFail($id);
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_mutasi_masuk', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats'));
+                return view('pages.form_mutasi_eksternal', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats'));
+            })->name('astap.edit_mutasi_eksternal');
+
+            // Backward Compatibility Alias
+            Route::get('/astap/{id}/edit-mutasi-masuk', function ($id) {
+                return redirect()->route('astap.edit_mutasi_eksternal', array_merge(['id' => $id], request()->all()));
             })->name('astap.edit_mutasi_masuk');
 
-            Route::post('/astap/store-mutasi-masuk', function (\Illuminate\Http\Request $request) {
+            $storeMutasiEksternalHandler = function (\Illuminate\Http\Request $request) {
                 $data = $request->validate([
                     'nama_barang'        => 'required|string|max:500',
                     'jenis_astap_id'     => 'required|integer|exists:jenis_astaps,id',
@@ -1400,16 +1410,19 @@ Route::middleware('auth')->group(function () {
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
+                        'message' => 'Data Mutasi Eksternal "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
                         'redirect' => $targetRedirect
                     ]);
                 }
 
                 return redirect()->to($targetRedirect)
-                    ->with('success', 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil ditambahkan.');
-            })->name('astap.store_mutasi_masuk');
+                    ->with('success', 'Data Mutasi Eksternal "' . $item->nama_barang . '" berhasil ditambahkan.');
+            };
 
-            Route::put('/astap/update-mutasi-masuk/{id}', function (\Illuminate\Http\Request $request, $id) {
+            Route::post('/astap/store-mutasi-eksternal', $storeMutasiEksternalHandler)->name('astap.store_mutasi_eksternal');
+            Route::post('/astap/store-mutasi-masuk', $storeMutasiEksternalHandler)->name('astap.store_mutasi_masuk');
+
+            $updateMutasiEksternalHandler = function (\Illuminate\Http\Request $request, $id) {
                 $item = \App\Models\Astap::with(['registers', 'pelimpahanSkpd'])->findOrFail($id);
                 $data = $request->validate([
                     'nama_barang'        => 'required|string|max:500',
@@ -1517,14 +1530,17 @@ Route::middleware('auth')->group(function () {
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
                         'success'  => true,
-                        'message'  => 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil diperbarui!',
+                        'message'  => 'Data Mutasi Eksternal "' . $item->nama_barang . '" berhasil diperbarui!',
                         'redirect' => $targetRedirect
                     ]);
                 }
 
                 return redirect()->to($targetRedirect)
-                    ->with('success', 'Data Pelimpahan SKPD "' . $item->nama_barang . '" berhasil diperbarui.');
-            })->name('astap.update_mutasi_masuk');
+                    ->with('success', 'Data Mutasi Eksternal "' . $item->nama_barang . '" berhasil diperbarui.');
+            };
+
+            Route::put('/astap/update-mutasi-eksternal/{id}', $updateMutasiEksternalHandler)->name('astap.update_mutasi_eksternal');
+            Route::put('/astap/update-mutasi-masuk/{id}', $updateMutasiEksternalHandler)->name('astap.update_mutasi_masuk');
 
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
@@ -1539,7 +1555,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->findOrFail($id);
                 if ($astap->sumber_dana === 'pelimpahan_skpd' || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
-                    return redirect()->route('astap.edit_mutasi_masuk', ['id' => $id, 'from' => request('from', 'eksternal')]);
+                    return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbJenisPengadaans = \App\Models\JenisPengadaan::all();

@@ -233,9 +233,9 @@
 
                 <!-- Tombol Action Penuh yang Rapi & Seragam -->
                 <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-2">
-                    <a href="{{ route('astap.create_mutasi_masuk') }}"
+                    <a href="{{ route('astap.create_mutasi_eksternal') }}"
                         class="w-full py-2.5 px-4 rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-300 hover:text-white font-bold text-xs transition-all duration-200 flex items-center justify-between border border-purple-500/30 group-hover:border-purple-500">
-                        <span>Input Pelimpahan SKPD</span>
+                        <span>Input Mutasi Eksternal</span>
                         <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>

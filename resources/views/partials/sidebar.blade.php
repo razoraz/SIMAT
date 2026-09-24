@@ -142,12 +142,18 @@
         @if ($role === 'sub_admin' || $user->canAccess('mutasi') || $user->canAccess('unit') || $user->canAccess('astap'))
             @php
                 $isMasterAsetActive = request()->routeIs('mutasi.*') 
+                    || request()->routeIs('astap.create_mutasi_eksternal')
+                    || request()->routeIs('astap.edit_mutasi_eksternal')
+                    || request()->routeIs('astap.create_mutasi_masuk')
                     || request()->routeIs('astap.edit_mutasi_masuk') 
                     || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') 
                     || request()->routeIs('master.reklasifikasi*') 
                     || request()->routeIs('master.hibah*')
                     || request()->routeIs('astap.create-hibah');
                 $isMutasiActive = request()->routeIs('mutasi.*') 
+                    || request()->routeIs('astap.create_mutasi_eksternal')
+                    || request()->routeIs('astap.edit_mutasi_eksternal')
+                    || request()->routeIs('astap.create_mutasi_masuk')
                     || request()->routeIs('astap.edit_mutasi_masuk') 
                     || (request()->routeIs('astap.edit*') && request('from') === 'eksternal');
             @endphp
@@ -213,9 +219,9 @@
 
                                     <!-- 2. Mutasi Eksternal (Antar-OPD) -->
                                     <a href="{{ route('mutasi.eksternal') }}" @click="if (isMobile) sidebarOpen = false"
-                                        class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                                        class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.create_mutasi_eksternal') || request()->routeIs('astap.edit_mutasi_eksternal') || request()->routeIs('astap.create_mutasi_masuk') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
                                         <div class="flex items-center space-x-2.5">
-                                            <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'bg-indigo-400 ring-2 ring-indigo-400/40' : 'bg-slate-600' }}"></span>
+                                            <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ request()->routeIs('mutasi.eksternal*') || request()->routeIs('astap.create_mutasi_eksternal') || request()->routeIs('astap.edit_mutasi_eksternal') || request()->routeIs('astap.create_mutasi_masuk') || request()->routeIs('astap.edit_mutasi_masuk') || (request()->routeIs('astap.edit*') && request('from') === 'eksternal') ? 'bg-indigo-400 ring-2 ring-indigo-400/40' : 'bg-slate-600' }}"></span>
                                             <span>Mutasi Eksternal</span>
                                         </div>
                                     </a>

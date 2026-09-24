@@ -192,6 +192,11 @@ class Astap extends Model
         return $this->isPelimpahanSkpd();
     }
 
+    public function isMutasiEksternal(): bool
+    {
+        return $this->isPelimpahanSkpd();
+    }
+
     public function getSumberDanaLabelAttribute(): string
     {
         return match ($this->sumber_dana) {
