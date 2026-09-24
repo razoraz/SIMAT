@@ -1542,6 +1542,166 @@ Route::middleware('auth')->group(function () {
             Route::put('/astap/update-mutasi-eksternal/{id}', $updateMutasiEksternalHandler)->name('astap.update_mutasi_eksternal');
             Route::put('/astap/update-mutasi-masuk/{id}', $updateMutasiEksternalHandler)->name('astap.update_mutasi_masuk');
 
+            // ─── Form Kemitraan Pihak Ketiga / KSO (Create & Store) ────────
+            Route::get('/astap/create-kemitraan', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
+                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbPenyedias = $getDistinctPenyedias();
+                $dbPejabats = $getDistinctPejabats();
+                return view('pages.form_kemitraan', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+            })->name('astap.create_kemitraan');
+
+            Route::post('/astap/store-kemitraan', function (\Illuminate\Http\Request $request) {
+                $data = $request->validate([
+                    'nama_barang'        => 'required|string|max:500',
+                    'jenis_astap_id'     => 'required|integer|exists:jenis_astaps,id',
+                    'tahun_perolehan'    => 'required|integer|min:1990|max:2100',
+                    'jumlah_volume'      => 'required|integer|min:1',
+                    'satuan'             => 'required|string|max:100',
+                    'total_realisasi'    => 'required|numeric|min:0',
+                    'triwulan'           => 'required|string|in:TW I,TW II,TW III,TW IV',
+                    'mitra_nama'         => 'required|string|max:500',
+                    'nomor_pks'          => 'required|string|max:255',
+                    'tanggal_pks'        => 'required',
+                    'tanggal_mulai'      => 'nullable',
+                    'tanggal_selesai'    => 'nullable',
+                    'kemitraan_keterangan' => 'nullable|string|max:2000',
+                    'unit_id'            => 'nullable|integer|exists:units,id',
+                    'alamat_barang'      => 'nullable|string|max:1000',
+                    'kondisi'            => 'nullable|string|max:50',
+                ]);
+
+                $totalRealisasi = (float) $data['total_realisasi'];
+                $totalVolume    = max(1, (int) $data['jumlah_volume']);
+                $hargaSatuan    = $totalRealisasi / $totalVolume;
+                $tahun          = (int) $data['tahun_perolehan'];
+                $kondisiItem    = $data['kondisi'] ?: 'Baik';
+
+                $astapPayload = [
+                    'nama_barang'               => $data['nama_barang'],
+                    'jenis_astap_id'            => $data['jenis_astap_id'],
+                    'tahun_perolehan'           => $tahun,
+                    'jumlah_volume'             => $totalVolume,
+                    'satuan'                    => $data['satuan'],
+                    'harga_satuan'              => $hargaSatuan,
+                    'jumlah_anggaran'           => 0,
+                    'jumlah_realisasi'          => $totalRealisasi,
+                    'total_realisasi'           => $totalRealisasi,
+                    'biaya_administrasi_proyek' => 0,
+                    'triwulan'                  => $data['triwulan'],
+                    'sumber_dana'               => 'kemitraan',
+                    'bast_dokumen_nomor'        => $data['nomor_pks'],
+                    'bast_dokumen_tanggal'      => $data['tanggal_pks'],
+                    'keterangan_tambahan'       => $data['kemitraan_keterangan'] ?? null,
+                    'unit_id'                   => $data['unit_id'] ?? null,
+                    'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
+                    'user_id'                   => auth()->id(),
+                    'is_extracomtable'          => false,
+                    'is_reklas'                 => false,
+                    'is_deleted'                => 0,
+                    'spesifikasi_json'          => [
+                        'sumber_dana'        => 'kemitraan',
+                        'mitra_nama'         => $data['mitra_nama'],
+                        'nomor_pks'          => $data['nomor_pks'],
+                        'tanggal_pks'        => $data['tanggal_pks'],
+                        'tanggal_mulai'      => $data['tanggal_mulai'] ?? null,
+                        'tanggal_selesai'    => $data['tanggal_selesai'] ?? null,
+                        'kondisi'            => $kondisiItem,
+                        'keterangan'         => $data['kemitraan_keterangan'] ?? null,
+                    ],
+                ];
+
+                if ($request->has('spesifikasi_json') && is_array($request->input('spesifikasi_json'))) {
+                    $astapPayload['spesifikasi_json'] = array_merge($astapPayload['spesifikasi_json'], $request->input('spesifikasi_json'));
+                }
+
+                $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
+                foreach ($repeaterKeys as $rk) {
+                    if ($request->has($rk) && !is_null($request->input($rk))) {
+                        $astapPayload['spesifikasi_json'][$rk] = $request->input($rk);
+                    }
+                }
+
+                if ($request->has('tanah_items') && is_array($request->input('tanah_items')) && count($request->input('tanah_items')) > 0) {
+                    $tItems = $request->input('tanah_items');
+                    $firstT = $tItems[0];
+                    $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+                    $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
+
+                    $astapPayload['spesifikasi_json']['tanah_items'] = $tItems;
+                    $astapPayload['spesifikasi_json']['luas_m2'] = $totalLuas;
+                    $astapPayload['spesifikasi_json']['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+                    $astapPayload['spesifikasi_json']['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
+                    $astapPayload['spesifikasi_json']['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
+                    $astapPayload['spesifikasi_json']['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+                    $astapPayload['spesifikasi_json']['tanah_jumlah_bidang'] = count($tItems);
+                }
+
+                if ($request->filled('ppk_nama')) {
+                    $astapPayload['ppk_nama'] = $request->input('ppk_nama');
+                    $astapPayload['spesifikasi_json']['ppk_nama'] = $request->input('ppk_nama');
+                }
+                if ($request->filled('ppk_nip')) {
+                    $astapPayload['ppk_nip'] = $request->input('ppk_nip');
+                    $astapPayload['spesifikasi_json']['ppk_nip'] = $request->input('ppk_nip');
+                }
+
+                $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem) {
+                    $item = \App\Models\Astap::create($astapPayload);
+
+                    // Buat AstapRegister untuk setiap unit barang kemitraan
+                    $ja = \App\Models\JenisAstap::find($data['jenis_astap_id']);
+                    $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.5.2.00.00.00';
+                    $kode108Clean = str_replace('.', '', $kode108Raw);
+
+                    $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
+                        ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
+                        ->max('no_register_int') ?? 0;
+
+                    $runningRegNum = (int) $maxRegInt;
+                    $unitModel = !empty($data['unit_id']) ? \App\Models\Unit::find($data['unit_id']) : null;
+                    $ruangPemegang = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi');
+
+                    for ($i = 0; $i < $totalVolume; $i++) {
+                        $runningRegNum++;
+                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            $runningRegNum++;
+                            $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                            $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                        }
+
+                        \App\Models\AstapRegister::create([
+                            'astap_id'        => $item->id,
+                            'unit_id'         => $data['unit_id'] ?? null,
+                            'tahun_perolehan' => $tahun,
+                            'no_register_int' => $runningRegNum,
+                            'no_register'     => $noRegStr,
+                            'nibar'           => $nibar,
+                            'ruang_pemegang'  => $ruangPemegang,
+                            'kondisi'         => $kondisiItem,
+                            'status'          => 'Aktif',
+                            'is_deleted'      => 0,
+                        ]);
+                    }
+
+                    return $item;
+                });
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Data Aset Kemitraan "' . $item->nama_barang . '" berhasil disimpan ke database SIMAT-RK!',
+                        'redirect' => route('astap.index')
+                    ]);
+                }
+
+                return redirect()->route('astap.index')
+                    ->with('success', 'Data Aset Kemitraan "' . $item->nama_barang . '" berhasil ditambahkan.');
+            })->name('astap.store_kemitraan');
+
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbJenisPengadaans = \App\Models\JenisPengadaan::all();

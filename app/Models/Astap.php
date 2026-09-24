@@ -55,6 +55,14 @@ class Astap extends Model
         'nomor_faktur',
         'tanggal_faktur',
         'total_pembelian',
+
+        // Kemitraan Pihak Ketiga (KSO)
+        'mitra_nama',
+        'nomor_pks',
+        'tanggal_pks',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'kemitraan_keterangan',
     ];
 
     protected $casts = [
@@ -197,12 +205,18 @@ class Astap extends Model
         return $this->isPelimpahanSkpd();
     }
 
+    public function isKemitraan(): bool
+    {
+        return $this->sumber_dana === 'kemitraan';
+    }
+
     public function getSumberDanaLabelAttribute(): string
     {
         return match ($this->sumber_dana) {
             'belanja_barang', 'belanja_rekening' => 'Belanja Barang (Perbekalan)',
-            'hibah'                             => 'Hibah Pihak Ketiga',
+            'hibah'                             => 'Hibah Masuk',
             'pelimpahan_skpd', 'mutasi_masuk'   => 'Pelimpahan SKPD Luar',
+            'kemitraan'                         => 'Kemitraan Pihak Ketiga (KSO)',
             default                             => 'Belanja Modal (APBD/BLUD)',
         };
     }

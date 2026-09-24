@@ -71,7 +71,7 @@
                 </div>
             </div>
             <div class="text-[10px] text-slate-500 mt-2 flex items-center justify-between border-t border-slate-800/80 pt-2">
-                <span>Hibah Pihak Ketiga</span>
+                <span>Penerimaan Hibah Masuk</span>
                 <span class="text-amber-400/80 font-bold">KIB A - F / ATB</span>
             </div>
         </div>

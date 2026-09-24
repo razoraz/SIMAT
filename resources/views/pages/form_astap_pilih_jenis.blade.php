@@ -32,11 +32,11 @@
             </div>
         </div>
 
-        <!-- 4 Option Cards Grid (Symmetric, Exact Same Height & Same Elements) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 5 Option Cards Grid (Symmetric, 6-col responsive layout: Row 1 2-cards 50-50, Row 2 3-cards 33-33-33) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
 
             <!-- Card 1: Belanja Modal (APBD / BLUD) -->
-            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-emerald-500/60 shadow-lg hover:shadow-emerald-500/5 transition-all duration-200 group">
+            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-emerald-500/60 shadow-lg hover:shadow-emerald-500/5 transition-all duration-200 group md:col-span-1 lg:col-span-3">
                 <div>
                     <!-- Header Kartu -->
                     <div class="flex items-center justify-between gap-2 mb-3">
@@ -87,8 +87,8 @@
                 </div>
             </div>
 
-            <!-- Card 2: Hibah / Bantuan Pihak Ketiga -->
-            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-amber-400/60 shadow-lg hover:shadow-amber-400/5 transition-all duration-200 group">
+            <!-- Card 2: Hibah / Bantuan Masuk -->
+            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-amber-400/60 shadow-lg hover:shadow-amber-400/5 transition-all duration-200 group md:col-span-1 lg:col-span-3">
                 <div>
                     <!-- Header Kartu -->
                     <div class="flex items-center justify-between gap-2 mb-3">
@@ -105,12 +105,12 @@
 
                     <!-- Judul -->
                     <h2 class="text-base font-bold text-white group-hover:text-amber-300 transition-colors">
-                        Hibah / Bantuan Pihak Ketiga
+                        Hibah / Bantuan Masuk
                     </h2>
 
                     <!-- Deskripsi (Kunci 2 baris seragam) -->
                     <p class="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2 h-9">
-                        Penerimaan barang dari Kemenkes RI, Dinkes, Pemprov, instansi luar, atau swasta berdasarkan dokumen BAST Hibah resmi.
+                        Penerimaan barang dari Kemenkes RI, Dinkes, Pemprov, instansi pemerintah, atau lembaga swasta berdasarkan BAST Hibah resmi.
                     </p>
 
                     <!-- Tags Seragam (3 Buah) -->
@@ -140,7 +140,7 @@
             </div>
 
             <!-- Card 3: Belanja Barang (Perbekalan / Operasional) -->
-            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-indigo-500/60 shadow-lg hover:shadow-indigo-500/5 transition-all duration-200 group">
+            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-indigo-500/60 shadow-lg hover:shadow-indigo-500/5 transition-all duration-200 group md:col-span-1 lg:col-span-2">
                 <div>
                     <!-- Header Kartu -->
                     <div class="flex items-center justify-between gap-2 mb-3">
@@ -192,7 +192,7 @@
             </div>
 
             <!-- Card 4: Pelimpahan SKPD (Dinas Luar) -->
-            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-purple-500/60 shadow-lg hover:shadow-purple-500/5 transition-all duration-200 group">
+            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-purple-500/60 shadow-lg hover:shadow-purple-500/5 transition-all duration-200 group md:col-span-1 lg:col-span-2">
                 <div>
                     <!-- Header Kartu -->
                     <div class="flex items-center justify-between gap-2 mb-3">
@@ -242,7 +242,64 @@
                     </a>
                     <div class="text-center">
                         <a href="{{ route('mutasi.index') }}" class="text-[10px] text-slate-500 hover:text-purple-400 transition-colors">
-                            Atau buka mutasi ruangan internal (antar unit) &rarr;
+                            Atau buka mutasi internal ruangan &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5: Kemitraan dengan Pihak Ketiga (KSO / Akun 1.5.2) -->
+            <div class="flex flex-col justify-between p-5 rounded-2xl bg-slate-900/95 border border-slate-800 hover:border-cyan-400/60 shadow-lg hover:shadow-cyan-400/5 transition-all duration-200 group md:col-span-2 lg:col-span-2">
+                <div>
+                    <!-- Header Kartu -->
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                            Aset Lainnya · Akun 1.5.2
+                        </span>
+                    </div>
+
+                    <!-- Judul -->
+                    <h2 class="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">
+                        Kemitraan Pihak Ketiga (KSO)
+                    </h2>
+
+                    <!-- Deskripsi (Kunci 2 baris seragam) -->
+                    <p class="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2 h-9">
+                        Pencatatan aset kerja sama operasional (KSO), sewa, atau pemanfaatan barang milik pihak ketiga berdasarkan Perjanjian Kerja Sama (PKS).
+                    </p>
+
+                    <!-- Tags Seragam (3 Buah) -->
+                    <div class="grid grid-cols-3 gap-2 mt-3 text-[10px] text-slate-300">
+                        <div class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-center font-medium truncate">
+                            ✓ Dokumen PKS
+                        </div>
+                        <div class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-center font-medium truncate">
+                            🏥 Akun 1.5.2
+                        </div>
+                        <div class="px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-center font-medium truncate">
+                            🤝 Mitra KSO
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Action Penuh yang Rapi & Seragam -->
+                <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-2">
+                    <a href="{{ route('astap.create_kemitraan') }}"
+                        class="w-full py-2.5 px-4 rounded-xl bg-cyan-500/15 hover:bg-cyan-500 text-cyan-300 hover:text-slate-950 font-bold text-xs transition-all duration-200 flex items-center justify-between border border-cyan-500/30 group-hover:border-cyan-400">
+                        <span>Input Aset Kemitraan</span>
+                        <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                    <div class="text-center">
+                        <a href="{{ route('master.reklasifikasi') }}" class="text-[10px] text-slate-500 hover:text-cyan-400 transition-colors">
+                            Buka matriks reklasifikasi neraca &rarr;
                         </a>
                     </div>
                 </div>
