@@ -288,7 +288,7 @@ class JenisReklasifikasiSeeder extends Seeder
             [
                 'urutan' => 37,
                 'kelompok_kib' => 'ASET LAINNYA',
-                'kode_prefix' => '1.5.1',
+                'kode_prefix' => '1.5.2',
                 'nama_sub_rincian' => 'KEMITRAAN DENGAN PIHAK KETIGA',
                 'tipe_baris' => 'ITEM',
             ],

@@ -175,7 +175,8 @@
                             <label class="block text-xs font-bold text-slate-200 mb-1.5">
                                 Tanggal Faktur / Pembelian <span class="text-rose-400">*</span>
                             </label>
-                            <input type="date" x-model="formData.rekening_tanggal_faktur" required
+                            <input type="text" x-datepicker x-model="formData.rekening_tanggal_faktur" required
+                                placeholder="dd/mm/yyyy"
                                 class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
                         </div>
                     </div>
@@ -436,8 +437,9 @@
                                                 </div>
                                                 <div>
                                                     <label class="block text-slate-400 text-[10px] mb-1">Sertifikat Tanggal</label>
-                                                    <input type="date" x-model="item.tanah_sertifikat_tgl" @change="syncTanahFields()"
-                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-amber-500">
+                                                    <input type="text" x-datepicker x-model="item.tanah_sertifikat_tgl" @change="syncTanahFields()"
+                                                           placeholder="dd/mm/yyyy"
+                                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500">
                                                 </div>
                                             </div>
                                         </div>

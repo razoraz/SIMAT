@@ -75,7 +75,8 @@
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
                     Tanggal BAST Hibah <span class="text-rose-400">*</span>
                 </label>
-                <input type="date" x-model="formData.hibah_tanggal_bast" required
+                <input type="text" x-datepicker x-model="formData.hibah_tanggal_bast" required
+                    placeholder="dd/mm/yyyy"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
             </div>
         </div>

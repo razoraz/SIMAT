@@ -118,7 +118,8 @@
                     <label class="block font-bold text-slate-200">
                         Tanggal BAST Hibah <span class="text-rose-400">*</span>
                     </label>
-                    <input type="date" x-model="keluarData.tanggal_bast" required
+                    <input type="text" x-datepicker x-model="keluarData.tanggal_bast" required
+                        placeholder="dd/mm/yyyy"
                         class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
                 </div>
             </div>

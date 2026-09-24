@@ -428,7 +428,9 @@ class Astap extends Model
         if (str_starts_with($jenisKode, '1.3.3')) return 'KIB C';
         if (str_starts_with($jenisKode, '1.3.4')) return 'KIB D';
         if (str_starts_with($jenisKode, '1.3.6')) return 'KIB F';
+        if (str_starts_with($jenisKode, '1.5.2')) return 'KEMITRAAN';
         if (str_starts_with($jenisKode, '1.5.3')) return 'ATB';
+        if (str_starts_with($jenisKode, '1.5.4')) return 'ASET LAIN';
 
         // Hanya KIB B (Peralatan & Mesin) atau KIB E (Aset Tetap Lainnya) yang bisa EXTRACOM
         if ($this->is_extracomtable) {

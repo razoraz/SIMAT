@@ -94,7 +94,7 @@
                             </span>
                         </div>
                         <div class="relative cursor-not-allowed select-none">
-                            <input type="date" x-model="reklasTanggal" readonly tabindex="-1"
+                            <input type="text" :value="reklasTanggal ? (reklasTanggal.includes('-') ? reklasTanggal.split('-').reverse().join('/') : reklasTanggal) : '-'" readonly tabindex="-1"
                                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-indigo-200 cursor-not-allowed select-none focus:outline-none pointer-events-none shadow-inner"
                                    title="Tanggal reklasifikasi terkunci otomatis pada tanggal hari ini">
                         </div>

@@ -115,13 +115,57 @@
                             {{ number_format($row['saldo_akhir'], 0, ',', '.') }}
                         </td>
                     </tr>
+
+                    @php $nextRow = $matriks[$index + 1] ?? null; @endphp
+
+                    {{-- SUBTOTAL: JUMLAH ASET TETAP (setelah baris terakhir KIB F) --}}
+                    @if ($row['kelompok_kib'] === 'KIB F' && ($nextRow === null || in_array($nextRow['kelompok_kib'], ['ASET LAINNYA', 'KOREKSI'])))
+                        <tr class="bg-blue-950/60 border-t-2 border-b-2 border-blue-500/40">
+                            <td colspan="3" class="py-3 px-4 text-right font-black text-blue-200 text-xs uppercase tracking-wider">
+                                JUMLAH ASET TETAP (KIB A s/d F)
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-blue-100">
+                                Rp {{ number_format($jumlahAsetTetap['awal'], 0, ',', '.') }}
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-emerald-300">
+                                Rp {{ number_format($jumlahAsetTetap['tambah'], 0, ',', '.') }}
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-rose-300">
+                                Rp {{ number_format($jumlahAsetTetap['kurang'], 0, ',', '.') }}
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-blue-200">
+                                Rp {{ number_format($jumlahAsetTetap['akhir'], 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    @endif
+
+                    {{-- SUBTOTAL: JUMLAH ASET LAINNYA (setelah baris terakhir ASET LAINNYA) --}}
+                    @if ($row['kelompok_kib'] === 'ASET LAINNYA' && ($nextRow === null || $nextRow['kelompok_kib'] === 'KOREKSI'))
+                        <tr class="bg-cyan-950/60 border-t-2 border-b-2 border-cyan-500/40">
+                            <td colspan="3" class="py-3 px-4 text-right font-black text-cyan-200 text-xs uppercase tracking-wider">
+                                JUMLAH ASET LAINNYA (1.5.2, 1.5.3, 1.5.4)
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-cyan-100">
+                                Rp {{ number_format($jumlahAsetLainnya['awal'], 0, ',', '.') }}
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-emerald-300">
+                                Rp {{ number_format($jumlahAsetLainnya['tambah'], 0, ',', '.') }}
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-rose-300">
+                                Rp {{ number_format($jumlahAsetLainnya['kurang'], 0, ',', '.') }}
+                            </td>
+                            <td class="py-3 px-4 text-right font-black font-mono text-cyan-200">
+                                Rp {{ number_format($jumlahAsetLainnya['akhir'], 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    @endif
                 @endforeach
             </tbody>
             <tfoot>
-                {{-- GRAND TOTAL KESELURUHAN --}}
+                {{-- GRAND TOTAL = JUMLAH ASET TETAP + JUMLAH ASET LAINNYA (tidak include KOREKSI) --}}
                 <tr class="bg-slate-950 border-t-2 border-indigo-500 font-black text-xs text-white">
                     <td colspan="3" class="py-4 px-4 text-right uppercase tracking-wider text-indigo-400">
-                        TOTAL KESELURUHAN ASET TETAP & KOREKSI
+                        JUMLAH ASET (ASET TETAP + ASET LAINNYA)
                     </td>
                     <td class="py-4 px-4 text-right font-mono text-white text-sm">
                         Rp {{ number_format($grandTotal['awal'], 0, ',', '.') }}

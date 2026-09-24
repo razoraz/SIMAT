@@ -106,7 +106,8 @@
                     </div>
                     <div class="space-y-1.5">
                         <label class="block text-[11px] font-semibold text-slate-300">Tanggal Cetak</label>
-                        <input type="date" x-model="exportConfig.tanggalCetak"
+                        <input type="text" x-datepicker x-model="exportConfig.tanggalCetak"
+                            placeholder="dd/mm/yyyy"
                             class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     </div>
                 </div>

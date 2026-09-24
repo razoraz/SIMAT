@@ -126,6 +126,14 @@
         .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
             color: #475569 !important;
         }
+        .flatpickr-custom-input {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 0.75rem center !important;
+            background-size: 1.1rem 1.1rem !important;
+            padding-right: 2.25rem !important;
+            cursor: pointer;
+        }
         .flatpickr-custom-input:disabled {
             opacity: 0.5 !important;
             cursor: not-allowed !important;
@@ -640,16 +648,24 @@
 
                 const initialOpts = getOpts();
 
+                let initVal = el.value;
+                if (!initVal && modelName) {
+                    try {
+                        const evaluated = Alpine.evaluate(el, modelName);
+                        if (evaluated) initVal = evaluated;
+                    } catch (e) {}
+                }
+
                 const fp = window.flatpickr(el, {
                     altInput: true,
-                    altFormat: "d/m/Y",
+                    altFormat: initialOpts.altFormat || "d/m/Y",
                     dateFormat: "Y-m-d",
                     allowInput: true,
                     locale: (window.flatpickr.l10ns && window.flatpickr.l10ns.id) ? window.flatpickr.l10ns.id : 'default',
                     altInputClass: (el.className || '') + ' flatpickr-custom-input',
                     minDate: initialOpts.minDate || el.getAttribute('min') || undefined,
                     maxDate: initialOpts.maxDate || el.getAttribute('max') || undefined,
-                    defaultDate: el.value || undefined,
+                    defaultDate: initVal || undefined,
                     onChange: function(selectedDates, dateStr) {
                         el.value = dateStr;
                         el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -669,7 +685,7 @@
                     fp.altInput.disabled = el.disabled;
                     fp.altInput.readOnly = el.readOnly;
 
-                    // Support typing dd/mm/yyyy or dd-mm-yyyy directly
+                    // Support typing dd/mm/yyyy, dd-mm-yyyy, dd mm yy directly
                     fp.altInput.addEventListener('blur', (e) => {
                         // Jangan proses jika focus berpindah ke dalam kalender flatpickr itu sendiri
                         if (fp.calendarContainer && (fp.calendarContainer === e.relatedTarget || fp.calendarContainer.contains(e.relatedTarget))) {
@@ -677,11 +693,19 @@
                         }
                         const raw = (fp.altInput.value || '').trim();
                         if (raw) {
-                            const match = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                            // Support dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy, dd mm yyyy, as well as 2-digit years (yy)
+                            let match = raw.match(/^(\d{1,2})[\/\-\s.](\d{1,2})[\/\-\s.](\d{2}|\d{4})$/);
+                            if (!match) {
+                                // Match continuous digits like 170926 or 17092026
+                                match = raw.match(/^(\d{2})(\d{2})(\d{2}|\d{4})$/);
+                            }
                             if (match) {
                                 const d = match[1].padStart(2, '0');
                                 const m = match[2].padStart(2, '0');
-                                const y = match[3];
+                                let y = match[3];
+                                if (y.length === 2) {
+                                    y = (parseInt(y, 10) < 50 ? '20' : '19') + y;
+                                }
                                 const iso = `${y}-${m}-${d}`;
                                 fp.setDate(iso, true);
                             }

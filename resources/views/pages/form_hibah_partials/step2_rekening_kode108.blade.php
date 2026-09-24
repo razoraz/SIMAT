@@ -349,38 +349,38 @@
             <span class="text-[10px] text-amber-400 font-mono">Format Pencatatan Aset Non-Belanja Modal</span>
         </div>
 
-        <div class="overflow-x-auto rounded-2xl border border-slate-700 shadow-xl">
-            <table class="w-full min-w-[760px] text-center text-xs border-collapse font-sans">
+        <div class="overflow-x-auto rounded-2xl border border-slate-700 bg-white p-0.5 shadow-2xl">
+            <table class="w-full min-w-[760px] text-center text-xs border-collapse font-sans rounded-xl overflow-hidden">
                 <!-- Header Atas: ASET HIBAH / BANTUAN PIHAK KETIGA -->
                 <thead>
-                    <tr class="bg-amber-100/90 text-slate-950 font-bold border-b border-slate-600 text-[11px]">
-                        <th colspan="6" class="py-2.5 border border-slate-600 tracking-wider uppercase">
+                    <tr class="bg-[#fde68a] text-[#78350f] font-black border-b border-amber-300 text-xs">
+                        <th colspan="6" class="py-2.5 px-3 border border-amber-300 tracking-wider uppercase bg-[#fde68a] text-[#78350f]" style="background-color: #fde68a !important; color: #78350f !important;">
                             🎁 PENCATATAN ASET HIBAH MASUK (NON-BELANJA MODAL APBD)
                         </th>
                     </tr>
-                    <tr class="bg-amber-50 text-slate-950 font-bold border-b-2 border-slate-700 text-[10px]">
-                        <th class="px-3 py-2 border border-slate-600">Kode 108</th>
-                        <th class="px-3 py-2 border border-slate-600">Nama Barang (Jenis 108)</th>
-                        <th class="px-3 py-2 border border-slate-600">Kode Sub Rincian</th>
-                        <th class="px-3 py-2 border border-slate-600">Sub Rincian Objek</th>
-                        <th class="px-3 py-2 border border-slate-600">Kategori Pencatatan</th>
-                        <th class="px-3 py-2 border border-slate-600">Periode Pembukuan</th>
+                    <tr class="bg-[#fef3c7] text-slate-800 font-bold border-b border-slate-300 text-[10.5px]">
+                        <th class="px-3 py-2 border border-slate-300 bg-[#fef3c7] text-slate-900 font-bold" style="background-color: #fef3c7 !important; color: #0f172a !important;">Kode 108</th>
+                        <th class="px-3 py-2 border border-slate-300 bg-[#fef3c7] text-slate-900 font-bold" style="background-color: #fef3c7 !important; color: #0f172a !important;">Nama Barang (Jenis 108)</th>
+                        <th class="px-3 py-2 border border-slate-300 bg-[#fef3c7] text-slate-900 font-bold" style="background-color: #fef3c7 !important; color: #0f172a !important;">Kode Sub Rincian</th>
+                        <th class="px-3 py-2 border border-slate-300 bg-[#fef3c7] text-slate-900 font-bold" style="background-color: #fef3c7 !important; color: #0f172a !important;">Sub Rincian Objek</th>
+                        <th class="px-3 py-2 border border-slate-300 bg-[#fef3c7] text-slate-900 font-bold" style="background-color: #fef3c7 !important; color: #0f172a !important;">Kategori Pencatatan</th>
+                        <th class="px-3 py-2 border border-slate-300 bg-[#fef3c7] text-slate-900 font-bold" style="background-color: #fef3c7 !important; color: #0f172a !important;">Periode Pembukuan</th>
                     </tr>
                 </thead>
                 <!-- Baris Data Isi Live Sesuai Input User -->
-                <tbody class="bg-white text-slate-950 font-medium text-[11px]">
-                    <tr>
-                        <td class="px-3 py-3 border border-slate-400 font-mono font-bold" x-text="formData.jenis_aset_kode || '-'"></td>
-                        <td class="px-3 py-3 border border-slate-400 text-left font-semibold uppercase" x-text="formData.jenis_aset_nama || '-'"></td>
-                        <td class="px-3 py-3 border border-slate-400 font-mono font-bold" x-text="formData.sub_rincian_kode || '-'"></td>
-                        <td class="px-3 py-3 border border-slate-400 text-left font-semibold uppercase" x-text="formData.sub_rincian_nama || '-'"></td>
-                        <td class="px-3 py-3 border border-slate-400 font-bold">
-                            <span class="px-2 py-0.5 rounded text-[10px]"
-                                  :class="formData.is_extracomtable ? 'bg-cyan-100 text-cyan-800' : 'bg-emerald-100 text-emerald-800'"
+                <tbody class="bg-white text-slate-900 font-medium text-[11px]" style="background-color: #ffffff !important; color: #0f172a !important;">
+                    <tr class="hover:bg-amber-50/40 transition-colors">
+                        <td class="px-3 py-3 border border-slate-300 font-mono font-bold text-slate-900" style="background-color: #ffffff !important; color: #0f172a !important;" x-text="formData.jenis_aset_kode || '-'"></td>
+                        <td class="px-3 py-3 border border-slate-300 text-left font-semibold uppercase text-slate-800" style="background-color: #ffffff !important; color: #1e293b !important;" x-text="formData.jenis_aset_nama || '-'"></td>
+                        <td class="px-3 py-3 border border-slate-300 font-mono font-bold text-slate-900" style="background-color: #ffffff !important; color: #0f172a !important;" x-text="formData.sub_rincian_kode || '-'"></td>
+                        <td class="px-3 py-3 border border-slate-300 text-left font-semibold uppercase text-slate-800" style="background-color: #ffffff !important; color: #1e293b !important;" x-text="formData.sub_rincian_nama || '-'"></td>
+                        <td class="px-3 py-3 border border-slate-300 font-bold" style="background-color: #ffffff !important;">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold border inline-block"
+                                  :class="formData.is_extracomtable ? 'bg-cyan-100 text-cyan-800 border-cyan-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'"
                                   x-text="formData.is_extracomtable ? 'Ekstrakomtabel (≤ 300rb)' : 'Aset Reguler (Kapitalisasi)'">
                             </span>
                         </td>
-                        <td class="px-3 py-3 border border-slate-400 font-mono font-bold text-amber-800" x-text="(formData.triwulan || 'TW I') + ' / ' + (formData.tahun_perolehan || '')"></td>
+                        <td class="px-3 py-3 border border-slate-300 font-mono font-bold text-amber-900" style="background-color: #ffffff !important; color: #78350f !important;" x-text="(formData.triwulan || 'TW I') + ' / ' + (formData.tahun_perolehan || '')"></td>
                     </tr>
                 </tbody>
             </table>

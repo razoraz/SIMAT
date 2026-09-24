@@ -84,6 +84,11 @@ class ReklasifikasiController extends Controller
         ];
 
         $grandTotal = ['awal' => 0, 'tambah' => 0, 'kurang' => 0, 'akhir' => 0];
+        $jumlahAsetTetap  = ['awal' => 0, 'tambah' => 0, 'kurang' => 0, 'akhir' => 0];
+        $jumlahAsetLainnya = ['awal' => 0, 'tambah' => 0, 'kurang' => 0, 'akhir' => 0];
+
+        $kibAsetTetap   = ['KIB A', 'KIB B', 'KIB C', 'KIB D', 'KIB E', 'KIB F'];
+        $kibAsetLainnya = ['ASET LAINNYA'];
 
         foreach ($templateRows as $row) {
             $prefix = $row->kode_prefix;
@@ -99,9 +104,9 @@ class ReklasifikasiController extends Controller
                     // Cek kesesuaian prefix
                     if (str_starts_with($subRincian, $prefix) || 
                         str_starts_with($subSubRincian, $prefix) ||
-                        ($prefix === '1.5.1' && str_starts_with($jenisKode, '1.5.1')) ||
-                        ($prefix === '1.5.3' && str_starts_with($jenisKode, '1.5.3')) ||
-                        ($prefix === '1.5.4' && str_starts_with($jenisKode, '1.5.4'))
+                        ($prefix === '1.5.2' && (str_starts_with($jenisKode, '1.5.2') || str_starts_with($subRincian, '1.5.2'))) ||
+                        ($prefix === '1.5.3' && (str_starts_with($jenisKode, '1.5.3') || str_starts_with($subRincian, '1.5.3'))) ||
+                        ($prefix === '1.5.4' && (str_starts_with($jenisKode, '1.5.4') || str_starts_with($subRincian, '1.5.4')))
                     ) {
                         $saldoAwal += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
                     }
@@ -124,16 +129,35 @@ class ReklasifikasiController extends Controller
 
             $kib = $row->kelompok_kib;
             if (isset($subtotals[$kib])) {
-                $subtotals[$kib]['awal'] += $saldoAwal;
+                $subtotals[$kib]['awal']   += $saldoAwal;
                 $subtotals[$kib]['tambah'] += $mutasiTambah;
                 $subtotals[$kib]['kurang'] += $mutasiKurang;
-                $subtotals[$kib]['akhir'] += $saldoAkhir;
+                $subtotals[$kib]['akhir']  += $saldoAkhir;
             }
 
-            $grandTotal['awal'] += $saldoAwal;
-            $grandTotal['tambah'] += $mutasiTambah;
-            $grandTotal['kurang'] += $mutasiKurang;
-            $grandTotal['akhir'] += $saldoAkhir;
+            // Akumulasi Jumlah Aset Tetap (KIB A-F)
+            if (in_array($kib, $kibAsetTetap)) {
+                $jumlahAsetTetap['awal']   += $saldoAwal;
+                $jumlahAsetTetap['tambah'] += $mutasiTambah;
+                $jumlahAsetTetap['kurang'] += $mutasiKurang;
+                $jumlahAsetTetap['akhir']  += $saldoAkhir;
+            }
+
+            // Akumulasi Jumlah Aset Lainnya (1.5.x)
+            if (in_array($kib, $kibAsetLainnya)) {
+                $jumlahAsetLainnya['awal']   += $saldoAwal;
+                $jumlahAsetLainnya['tambah'] += $mutasiTambah;
+                $jumlahAsetLainnya['kurang'] += $mutasiKurang;
+                $jumlahAsetLainnya['akhir']  += $saldoAkhir;
+            }
+
+            // Grand Total = Aset Tetap + Aset Lainnya (TIDAK termasuk baris KOREKSI)
+            if ($kib !== 'KOREKSI') {
+                $grandTotal['awal']   += $saldoAwal;
+                $grandTotal['tambah'] += $mutasiTambah;
+                $grandTotal['kurang'] += $mutasiKurang;
+                $grandTotal['akhir']  += $saldoAkhir;
+            }
 
             $matriks[] = [
                 'id' => $row->id,
@@ -165,15 +189,17 @@ class ReklasifikasiController extends Controller
             ->get();
 
         return view('pages.master_reklasifikasi', [
-            'matriks' => $matriks,
-            'subtotals' => $subtotals,
-            'grandTotal' => $grandTotal,
-            'logReklas' => $logReklas,
-            'tahunList' => $tahunList,
-            'selectedTahun' => $selectedTahun,
-            'selectedTw' => $selectedTw,
-            'templateRows' => $templateRows,
-            'kandidatAstaps' => $kandidatAstaps,
+            'matriks'           => $matriks,
+            'subtotals'         => $subtotals,
+            'grandTotal'        => $grandTotal,
+            'jumlahAsetTetap'   => $jumlahAsetTetap,
+            'jumlahAsetLainnya' => $jumlahAsetLainnya,
+            'logReklas'         => $logReklas,
+            'tahunList'         => $tahunList,
+            'selectedTahun'     => $selectedTahun,
+            'selectedTw'        => $selectedTw,
+            'templateRows'      => $templateRows,
+            'kandidatAstaps'    => $kandidatAstaps,
         ]);
     }
 

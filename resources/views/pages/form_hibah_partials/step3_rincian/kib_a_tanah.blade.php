@@ -83,8 +83,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-[10px] mb-1">Sertifikat Tanggal</label>
-                                        <input type="date" x-model="item.tanah_sertifikat_tgl"
-                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-amber-500">
+                                        <input type="text" x-datepicker x-model="item.tanah_sertifikat_tgl" placeholder="dd/mm/yyyy"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500">
                                     </div>
                                 </div>
                             </div>
