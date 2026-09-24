@@ -111,7 +111,13 @@
                                 Rp {{ number_format($item->nilai_reklas, 0, ',', '.') }}
                             </td>
                             <td class="py-3.5 px-4 text-slate-400 text-xs">
-                                <span class="line-clamp-2" title="{{ $item->keterangan }}">
+                                @if (!empty($item->alasan_reklas))
+                                    <div class="text-amber-300 font-semibold mb-1 flex items-center gap-1 text-[11px] truncate max-w-[220px]" title="{{ $item->alasan_reklas }}">
+                                        <span>💡</span>
+                                        <span class="truncate">{{ $item->alasan_reklas }}</span>
+                                    </div>
+                                @endif
+                                <span class="line-clamp-2 text-slate-400 text-[11px]" title="{{ $item->keterangan }}">
                                     {{ $item->keterangan ?: '-' }}
                                 </span>
                             </td>

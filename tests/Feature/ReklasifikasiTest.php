@@ -60,6 +60,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/REKLAS/TEST/001',
+            'alasan_reklas' => 'Salah input rekening saat pengadaan barang',
             'keterangan' => 'Pengujian Reklasifikasi Otomatis',
         ];
 
@@ -70,6 +71,7 @@ class ReklasifikasiTest extends TestCase
         $this->assertDatabaseHas('astap_reklasis', [
             'astap_id' => $astap->id,
             'nomor_ba_reklas' => 'BA/REKLAS/TEST/001',
+            'alasan_reklas' => 'Salah input rekening saat pengadaan barang',
         ]);
 
         $astap->refresh();

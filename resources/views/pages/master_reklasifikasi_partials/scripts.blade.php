@@ -416,6 +416,7 @@
                     triwulan: {{ $selectedTw === 'all' ? 1 : (int)$selectedTw }},
                     tahun: {{ $selectedTahun }},
                     nomor_ba_reklas: '',
+                    alasan_reklas: '',
                     keterangan: '',
                     spekBaru: {
                         tanah_luas_m2: '',
@@ -701,6 +702,8 @@
                 try {
                     const payload = {
                         ...this.formData,
+                        alasan_reklas: (this.formData.alasan_reklas || '').trim() || (this.formData.keterangan || '').trim() || null,
+                        keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),
                         spesifikasi_baru: (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) ? this.formData.spekBaru : null,
                     };
 

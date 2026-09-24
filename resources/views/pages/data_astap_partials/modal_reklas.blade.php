@@ -704,51 +704,68 @@
                             </div>
 
                             <!-- 3. Rincian Barang & Nilai Kapitalisasi (Barang 1, Barang 2, dst) -->
-                            <div class="space-y-2 pt-1">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider">📦 Rincian Nilai Kapitalisasi Barang:</span>
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                            <div class="space-y-3 pt-2">
+                                <div class="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
+                                    <div class="flex items-center space-x-2.5">
+                                        <span class="text-xs font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span>📦</span>
+                                            <span>Rincian Nilai Kapitalisasi Barang:</span>
+                                        </span>
+                                        <span class="px-2.5 py-0.5 rounded-lg text-[10.5px] font-mono font-extrabold bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-cyan-300 border border-cyan-500/30 shadow-xs"
                                               x-text="reklasExtracomItems.length + ' Item Terdaftar'"></span>
                                     </div>
-                                    <span class="text-[10px] text-slate-400">Ubah nilai per unit barang temuan</span>
+                                    <span class="text-[11px] text-slate-400 font-medium">Ubah nilai per unit barang temuan</span>
                                 </div>
 
                                 <!-- Cards Container Barang 1 & 2 -->
-                                <div class="space-y-2.5 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
+                                <div class="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
                                     <template x-for="(item, idx) in reklasExtracomItems" :key="idx">
-                                        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all space-y-2">
-                                            <!-- Baris Atas Item: Badge Nomor & Nama Barang -->
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center space-x-2 min-w-0">
-                                                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-slate-800 text-cyan-300 border border-slate-700 shrink-0"
+                                        <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/90 hover:border-cyan-500/40 transition-all space-y-3 shadow-lg group backdrop-blur-sm">
+                                            <!-- Baris Atas Item: Badge Nomor & Nama Barang & Volume -->
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="flex items-center space-x-2.5 min-w-0">
+                                                    <span class="px-2.5 py-1 rounded-lg text-[11px] font-mono font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/35 shrink-0 shadow-xs"
                                                           x-text="'Barang #' + (idx + 1)"></span>
-                                                    <span class="text-xs font-bold text-white truncate" x-text="item.nama_barang || ('Barang #' + (idx + 1))"></span>
+                                                    <span class="text-xs sm:text-sm font-extrabold text-white truncate" 
+                                                          :title="item.nama_barang || ('Barang #' + (idx + 1))"
+                                                          x-text="item.nama_barang || ('Barang #' + (idx + 1))"></span>
                                                 </div>
-                                                <span class="text-[10.5px] font-mono text-slate-400 shrink-0"
-                                                      x-text="(item.jumlah_volume || 1) + ' ' + (item.satuan || 'Unit')"></span>
+                                                <div class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-mono font-semibold shrink-0 shadow-inner flex items-center gap-1.5">
+                                                    <span class="text-slate-500 text-[10px]">Qty:</span>
+                                                    <span class="text-cyan-300 font-bold" x-text="item.jumlah_volume || 1"></span>
+                                                    <span class="text-slate-400 text-[10px]" x-text="item.satuan || 'Unit'"></span>
+                                                </div>
                                             </div>
 
                                             <!-- Grid Input: Nilai Kapitalisasi Satuan & Subtotal -->
-                                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center pt-1.5 border-t border-slate-800/80">
-                                                <div class="sm:col-span-7">
-                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-1">
-                                                        Nilai Kapitalisasi Satuan (Rp):
+                                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center pt-2.5 border-t border-slate-800/80">
+                                                <div class="sm:col-span-7 space-y-1">
+                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                                                        <span>🏷️</span>
+                                                        <span>Nilai Kapitalisasi Satuan (Rp):</span>
                                                     </label>
-                                                    <div class="relative">
-                                                        <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs font-mono font-bold">Rp</span>
-                                                        <input type="number" step="100" min="0" x-model.number="item.harga_satuan"
-                                                               @input="onReklasItemPriceChanged()"
+                                                    <div class="relative flex items-center rounded-xl bg-slate-900/90 border border-cyan-500/40 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 shadow-inner transition-all overflow-hidden">
+                                                        <span class="px-3 py-2 bg-slate-950/80 border-r border-slate-800 text-cyan-400 font-mono font-bold text-xs select-none">
+                                                            Rp
+                                                        </span>
+                                                        <input type="text"
+                                                               inputmode="numeric"
+                                                               :value="formatRupiahInput(item.harga_satuan)"
+                                                               @input="updateItemHargaSatuan(item, $event.target.value)"
+                                                               @focus="$event.target.select()"
                                                                placeholder="0"
-                                                               class="w-full pl-8 pr-3.5 py-1.5 bg-slate-950 border border-cyan-500/40 rounded-lg text-xs font-mono font-bold text-cyan-200 focus:outline-none focus:border-cyan-400 text-right no-spinner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                                               class="w-full bg-transparent px-3.5 py-2 text-xs font-mono font-extrabold text-cyan-200 focus:outline-none text-right placeholder-slate-600">
                                                     </div>
                                                 </div>
-                                                <div class="sm:col-span-5 text-right">
-                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-1">
+                                                <div class="sm:col-span-5 space-y-1 sm:text-right">
+                                                    <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider">
                                                         Subtotal Barang:
                                                     </label>
-                                                    <div class="text-xs font-mono font-extrabold text-emerald-400 py-1.5"
-                                                         x-text="'Rp ' + Number((item.jumlah_volume || 1) * (parseFloat(item.harga_satuan) || 0)).toLocaleString('id-ID')">
+                                                    <div class="p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex flex-col items-end justify-center shadow-inner">
+                                                        <span class="text-[9.5px] font-extrabold text-emerald-400/80 uppercase tracking-wider hidden sm:block">Subtotal Item</span>
+                                                        <div class="text-xs sm:text-sm font-mono font-black text-emerald-400"
+                                                             x-text="'Rp ' + Number((item.jumlah_volume || 1) * (parseFloat(item.harga_satuan) || 0)).toLocaleString('id-ID')">
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -833,14 +850,23 @@
                                                     <label class="block font-bold text-[10px] uppercase tracking-wider"
                                                            :class="reklasJenis === 'intracom' ? 'text-emerald-300' : 'text-amber-300'">Harga Satuan (Rp):</label>
                                                 </div>
-                                                <div class="relative">
-                                                    <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs font-mono font-bold">Rp</span>
-                                                    <input type="number" step="100" min="0" x-model.number="item.harga_satuan"
+                                                <div class="relative flex items-center rounded-xl bg-slate-950 border focus-within:ring-2 shadow-inner transition-all overflow-hidden"
+                                                     :class="reklasJenis === 'intracom'
+                                                         ? (parseFloat(item.harga_satuan) <= 300000 ? 'border-rose-500 text-rose-300 focus-within:border-rose-400 focus-within:ring-rose-500/20' : 'border-slate-700 text-emerald-400 focus-within:border-emerald-500 focus-within:ring-emerald-500/20')
+                                                         : (parseFloat(item.harga_satuan) > 300000 ? 'border-rose-500 text-rose-300 focus-within:border-rose-400 focus-within:ring-rose-500/20' : (parseFloat(item.harga_satuan) <= 0 ? 'border-amber-500/60 text-amber-300 focus-within:border-amber-400 focus-within:ring-amber-500/20' : 'border-slate-700 text-emerald-400 focus-within:border-emerald-500 focus-within:ring-emerald-500/20'))">
+                                                    <span class="px-3 py-2 bg-slate-900 border-r border-slate-800 text-slate-400 font-mono font-bold text-xs select-none">
+                                                        Rp
+                                                    </span>
+                                                    <input type="text"
+                                                           inputmode="numeric"
+                                                           :value="formatRupiahInput(item.harga_satuan)"
+                                                           @input="updateItemHargaSatuan(item, $event.target.value)"
+                                                           @focus="$event.target.select()"
                                                            placeholder="0"
-                                                           class="w-full pl-8 pr-3.5 py-1.5 bg-slate-950 border rounded-lg text-xs font-mono font-extrabold focus:outline-none transition-colors text-right no-spinner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                           class="w-full bg-transparent px-3 py-2 text-xs font-mono font-extrabold focus:outline-none text-right transition-colors"
                                                            :class="reklasJenis === 'intracom'
-                                                                ? (parseFloat(item.harga_satuan) <= 300000 ? 'border-rose-500 text-rose-300 focus:border-rose-400' : 'border-slate-700 text-emerald-400 focus:border-emerald-500')
-                                                                : (parseFloat(item.harga_satuan) > 300000 ? 'border-rose-500 text-rose-300 focus:border-rose-400' : (parseFloat(item.harga_satuan) <= 0 ? 'border-amber-500/50 text-amber-300 focus:border-amber-400' : 'border-slate-700 text-emerald-400 focus:border-emerald-500'))">
+                                                                ? (parseFloat(item.harga_satuan) <= 300000 ? 'text-rose-300 placeholder-rose-700' : 'text-emerald-400 placeholder-slate-600')
+                                                                : (parseFloat(item.harga_satuan) > 300000 ? 'text-rose-300 placeholder-rose-700' : (parseFloat(item.harga_satuan) <= 0 ? 'text-amber-300 placeholder-amber-700' : 'text-emerald-400 placeholder-slate-600'))">
                                                 </div>
                                             </div>
                                         </div>

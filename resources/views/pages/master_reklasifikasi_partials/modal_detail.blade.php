@@ -84,11 +84,17 @@
                         </div>
 
                         <!-- Keterangan / Alasan Reklasifikasi -->
-                        <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-start gap-2.5">
+                        <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-start gap-2.5">
                             <span class="text-base text-indigo-400 shrink-0">📝</span>
-                            <div class="text-xs text-slate-300 leading-relaxed">
-                                <span class="font-bold text-white">Alasan / Catatan Rekonsiliasi:</span>
-                                <p class="mt-0.5 italic text-slate-300" x-text="detailItem.keterangan || 'Tidak ada catatan tambahan.'"></p>
+                            <div class="text-xs text-slate-300 leading-relaxed flex-1">
+                                <span class="font-bold text-white block mb-1">Alasan &amp; Catatan Rekonsiliasi:</span>
+                                <template x-if="detailItem.alasan_reklas">
+                                    <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 font-semibold mb-1.5 flex items-center gap-1.5">
+                                        <span>💡</span>
+                                        <span x-text="detailItem.alasan_reklas"></span>
+                                    </div>
+                                </template>
+                                <p class="italic text-slate-300" x-text="detailItem.keterangan || 'Tidak ada catatan narasi tambahan.'"></p>
                             </div>
                         </div>
                     </div>

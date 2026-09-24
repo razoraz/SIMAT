@@ -540,20 +540,27 @@
                 </div>
             </div>
 
-            <!-- 6. Nomor Berita Acara & Keterangan -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- 6. Nomor Berita Acara, Alasan Reklasifikasi & Keterangan -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1.5">
-                        Nomor Berita Acara (BA) Reklasifikasi
+                        Nomor BA Reklasifikasi
                     </label>
                     <input type="text" x-model="formData.nomor_ba_reklas" placeholder="000.2.3.2/.../430.10.7/2026"
                         class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1.5">
-                        Keterangan / Alasan Rekonsiliasi
+                        📝 Alasan Reklasifikasi
                     </label>
-                    <input type="text" x-model="formData.keterangan" placeholder="Alasan pemindahan bukuan..."
+                    <input type="text" x-model="formData.alasan_reklas" placeholder="Contoh: Salah kode rekening pengadaan..."
+                        class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">
+                        Keterangan Tambahan
+                    </label>
+                    <input type="text" x-model="formData.keterangan" placeholder="Catatan tambahan jika ada..."
                         class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500">
                 </div>
             </div>
