@@ -100,10 +100,15 @@ class BeritaAcaraController extends Controller
             ];
             $twValues = $triwulanValues[$key] ?? [];
 
+            $isSqlite = DB::connection()->getDriverName() === 'sqlite';
+            $monthExprSp2d = $isSqlite ? "CAST(strftime('%m', sp2d_tanggal) AS INTEGER)" : "MONTH(sp2d_tanggal)";
+            $monthExprBast = $isSqlite ? "CAST(strftime('%m', bast_dokumen_tanggal) AS INTEGER)" : "MONTH(bast_dokumen_tanggal)";
+            $monthExprCreated = $isSqlite ? "CAST(strftime('%m', created_at) AS INTEGER)" : "MONTH(created_at)";
+
             $astaps = Astap::where('is_deleted', 0)
-                ->with(['jenisAstap', 'rekeningBelanja', 'registers'])
+                ->with(['jenisAstap', 'rekeningBelanja', 'registers', 'belanjaModal'])
                 ->where('tahun_perolehan', $tahun)
-                ->where(function ($q) use ($months, $tahun, $key, $twValues) {
+                ->where(function ($q) use ($months, $tahun, $twValues, $monthExprSp2d, $monthExprBast, $monthExprCreated) {
                     // Prioritas 1: kolom triwulan sudah diisi dan sesuai
                     $q->where(function ($sub) use ($twValues) {
                         $sub->whereNotNull('triwulan')
@@ -111,25 +116,31 @@ class BeritaAcaraController extends Controller
                             ->whereIn('triwulan', $twValues);
                     });
 
-                    // Fallback: kolom triwulan kosong/null — filter via bulan SP2D atau BAST dokumen
-                    $q->orWhere(function ($sub) use ($months, $tahun, $twValues) {
+                    // Fallback: kolom triwulan kosong/null — filter via relasi belanjaModal atau created_at
+                    $q->orWhere(function ($sub) use ($months, $tahun, $twValues, $monthExprSp2d, $monthExprBast, $monthExprCreated) {
                         $sub->where(function ($noTw) use ($twValues) {
                             $noTw->whereNull('triwulan')
                                  ->orWhere('triwulan', '')
                                  ->orWhereNotIn('triwulan', $twValues);
-                        })->where(function ($byDate) use ($months, $tahun) {
-                            $byDate->where(function ($sp2d) use ($months, $tahun) {
-                                $sp2d->whereYear('sp2d_tanggal', $tahun)
-                                     ->whereIn(DB::raw("CAST(strftime('%m', sp2d_tanggal) AS INTEGER)"), $months);
-                            })->orWhere(function ($bast) use ($months, $tahun) {
-                                $bast->whereNull('sp2d_tanggal')
-                                     ->whereYear('bast_dokumen_tanggal', $tahun)
-                                     ->whereIn(DB::raw("CAST(strftime('%m', bast_dokumen_tanggal) AS INTEGER)"), $months);
+                        })->where(function ($byDate) use ($months, $tahun, $monthExprSp2d, $monthExprBast, $monthExprCreated) {
+                            $byDate->whereHas('belanjaModal', function ($bm) use ($months, $tahun, $monthExprSp2d, $monthExprBast) {
+                                $bm->where(function ($sp2d) use ($months, $tahun, $monthExprSp2d) {
+                                    $sp2d->whereYear('sp2d_tanggal', $tahun)
+                                         ->whereIn(DB::raw($monthExprSp2d), $months);
+                                })->orWhere(function ($bast) use ($months, $tahun, $monthExprBast) {
+                                    $bast->whereNull('sp2d_tanggal')
+                                         ->whereYear('bast_dokumen_tanggal', $tahun)
+                                         ->whereIn(DB::raw($monthExprBast), $months);
+                                });
+                            })->orWhere(function ($fallback) use ($months, $tahun, $monthExprCreated) {
+                                $fallback->whereDoesntHave('belanjaModal')
+                                         ->whereYear('created_at', $tahun)
+                                         ->whereIn(DB::raw($monthExprCreated), $months);
                             });
                         });
                     });
                 })
-                ->orderBy('sp2d_tanggal')
+                ->latest('id')
                 ->get();
 
             // Hitung Rekapitulasi 8 Kategori KIB
@@ -178,11 +189,28 @@ class BeritaAcaraController extends Controller
                     $rekap['peralatan']['nilai'] += $totalNilai;
                 }
 
+                $tglSp2dFormatted = '-';
+                if ($ast->sp2d_tanggal) {
+                    try {
+                        $tglSp2dFormatted = $ast->sp2d_tanggal instanceof \DateTimeInterface
+                            ? $ast->sp2d_tanggal->format('d/m/Y')
+                            : Carbon::parse($ast->sp2d_tanggal)->format('d/m/Y');
+                    } catch (\Throwable $e) {
+                        $tglSp2dFormatted = (string) $ast->sp2d_tanggal;
+                    }
+                } elseif ($ast->bast_dokumen_tanggal) {
+                    try {
+                        $tglSp2dFormatted = $ast->bast_dokumen_tanggal instanceof \DateTimeInterface
+                            ? $ast->bast_dokumen_tanggal->format('d/m/Y')
+                            : Carbon::parse($ast->bast_dokumen_tanggal)->format('d/m/Y');
+                    } catch (\Throwable $e) {
+                        $tglSp2dFormatted = (string) $ast->bast_dokumen_tanggal;
+                    }
+                }
+
                 $detailBarang[] = [
                     'no'                 => $no++,
-                    'tanggal_sp2d'       => $ast->sp2d_tanggal
-                                              ? $ast->sp2d_tanggal->format('d/m/Y')
-                                              : ($ast->bast_dokumen_tanggal ? $ast->bast_dokumen_tanggal->format('d/m/Y') : '-'),
+                    'tanggal_sp2d'       => $tglSp2dFormatted,
                     'nomor_spk'          => $ast->spk_nomor ?: ($ast->sp2d_nomor ?: '-'),
                     'nomor_sp2d'         => $ast->sp2d_nomor ?: '-',
                     'nomor_bast_dokumen' => $ast->bast_dokumen_nomor ?: '-',

@@ -37,7 +37,7 @@ class ReklasifikasiController extends Controller
         // 1. Ambil data perolehan belanja modal ASTAP untuk tahun terpilih
         $astapQuery = Astap::where('is_deleted', 0)
             ->where('tahun_perolehan', $selectedTahun)
-            ->with(['jenisAstap']);
+            ->with(['jenisAstap', 'belanjaModal']);
 
         // Filter triwulan berdasarkan sp2d_tanggal atau bast_dokumen_tanggal atau created_at jika ada
         if ($selectedTw !== 'all') {
@@ -57,18 +57,17 @@ class ReklasifikasiController extends Controller
 
             $astapQuery->where(function ($q) use ($twValues, $startDate, $endDate) {
                 $q->whereIn('triwulan', $twValues)
-                  ->orWhereBetween('sp2d_tanggal', [$startDate, $endDate])
                   ->orWhereHas('belanjaModal', function ($bm) use ($startDate, $endDate) {
-                      $bm->whereBetween('sp2d_tanggal', [$startDate, $endDate])
-                         ->orWhereBetween('bast_dokumen_tanggal', [$startDate, $endDate]);
+                      $bm->where(function ($bmSub) use ($startDate, $endDate) {
+                          $bmSub->whereBetween('sp2d_tanggal', [$startDate, $endDate])
+                                ->orWhere(function ($bast) use ($startDate, $endDate) {
+                                    $bast->whereNull('sp2d_tanggal')
+                                         ->whereBetween('bast_dokumen_tanggal', [$startDate, $endDate]);
+                                });
+                      });
                   })
-                  ->orWhere(function($sub) use ($startDate, $endDate) {
-                      $sub->whereNull('sp2d_tanggal')
-                          ->whereBetween('bast_dokumen_tanggal', [$startDate, $endDate]);
-                  })
-                  ->orWhere(function($sub2) use ($startDate, $endDate) {
-                      $sub2->whereNull('sp2d_tanggal')
-                           ->whereNull('bast_dokumen_tanggal')
+                  ->orWhere(function ($sub2) use ($startDate, $endDate) {
+                      $sub2->whereDoesntHave('belanjaModal')
                            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
                   });
             });
