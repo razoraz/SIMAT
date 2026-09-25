@@ -63,31 +63,48 @@ class HibahController extends Controller
         $totalKeluarUnit = $allHibahs->where('tipe_hibah', 'keluar')->sum('jumlah_volume');
         $totalKeluarNominal = $allHibahs->where('tipe_hibah', 'keluar')->sum('nilai_aset');
 
-        // Daftar Aset Aktif yang dapat dihibahkan (untuk Modal Hibah Keluar)
+        // Daftar Aset Aktif yang berstatus 'Tersedia' & belum ditempatkan (Modal Hibah Keluar)
         $activeAstaps = Astap::where('is_deleted', 0)
+            ->whereHas('registers', function ($q) {
+                $q->where('is_deleted', 0)
+                  ->where('status', 'Tersedia')
+                  ->where(function ($sq) {
+                      $sq->whereNull('ruang_pemegang')
+                         ->orWhereIn('ruang_pemegang', ['', '-', 'Belum Ditempatkan / Di Gudang', 'Gudang Aset']);
+                  });
+            })
             ->with(['registers' => function ($q) {
-                $q->where('is_deleted', 0);
+                $q->where('is_deleted', 0)
+                  ->where('status', 'Tersedia')
+                  ->where(function ($sq) {
+                      $sq->whereNull('ruang_pemegang')
+                         ->orWhereIn('ruang_pemegang', ['', '-', 'Belum Ditempatkan / Di Gudang', 'Gudang Aset']);
+                  });
             }, 'jenisAstap'])
             ->orderBy('nama_barang', 'asc')
             ->get()
             ->map(function ($a) {
-                $firstReg = $a->registers->first();
+                $availRegisters = $a->registers;
+                $availCount = $availRegisters->count();
+                $originalVol = max(1, (int) $a->jumlah_volume);
+
                 return [
                     'id' => $a->id,
                     'nama_barang' => $a->nama_barang,
                     'kode_barang' => $a->kode_108 ?: ($a->jenisAstap ? $a->jenisAstap->sub_sub_rincian_objek : '-'),
                     'category' => $a->category,
                     'tahun_perolehan' => $a->tahun_perolehan,
-                    'jumlah_volume' => $a->registers->count(),
+                    'jumlah_volume' => $availCount,
                     'satuan' => $a->satuan ?: 'Unit',
-                    'harga_satuan' => (float) ($a->harga_satuan ?: ($a->total_realisasi / max(1, $a->jumlah_volume))),
+                    'harga_satuan' => (float) ($a->harga_satuan ?: ($a->total_realisasi / $originalVol)),
                     'total_realisasi' => (float) $a->total_realisasi,
-                    'registers' => $a->registers->map(function ($r) {
+                    'registers' => $availRegisters->map(function ($r) {
                         return [
                             'id' => $r->id,
                             'nibar' => $r->nibar ?: $r->no_register,
                             'ruang' => $r->ruang_pemegang ?: '-',
                             'kondisi' => $r->kondisi ?: 'Baik',
+                            'status' => $r->status,
                         ];
                     })->values()->toArray(),
                 ];
@@ -124,6 +141,16 @@ class HibahController extends Controller
      */
     public function storeHibahKeluar(Request $request)
     {
+        // Normalisasi tanggal_bast jika format dd/mm/yyyy
+        if ($request->has('tanggal_bast') && is_string($request->tanggal_bast)) {
+            $rawDate = trim($request->tanggal_bast);
+            if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $rawDate, $m)) {
+                $request->merge([
+                    'tanggal_bast' => sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1])
+                ]);
+            }
+        }
+
         $data = $request->validate([
             'astap_id'        => 'required|integer|exists:astaps,id',
             'register_ids'    => 'nullable|array',
@@ -141,6 +168,14 @@ class HibahController extends Controller
         $astap = Astap::with('registers')->findOrFail($data['astap_id']);
 
         $selectedRegisterIds = $data['register_ids'] ?? [];
+        if (count($selectedRegisterIds) > 0) {
+            $selectedRegisterIds = AstapRegister::whereIn('id', $selectedRegisterIds)
+                ->where('astap_id', $astap->id)
+                ->where('status', 'Tersedia')
+                ->where('is_deleted', 0)
+                ->pluck('id')
+                ->toArray();
+        }
         $volumeKeluar = count($selectedRegisterIds) > 0 ? count($selectedRegisterIds) : max(1, (int) $astap->jumlah_volume);
 
         DB::transaction(function () use ($data, $user, $astap, $selectedRegisterIds, $volumeKeluar) {

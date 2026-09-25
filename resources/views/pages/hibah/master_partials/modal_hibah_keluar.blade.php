@@ -32,64 +32,97 @@
                 <label class="block font-bold text-slate-200">
                     Pilih Barang Inventaris RSUD <span class="text-rose-400">*</span>
                 </label>
-                <div class="relative">
-                    <input type="text" x-model="searchAsetKeluar"
-                        @focus="isAsetKeluarDropdownOpen = true"
-                        placeholder="Ketik untuk mencari nama barang atau kode..."
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none">
+                
+                <!-- Search Input with Dropdown (Visible when no asset selected) -->
+                <div x-show="!selectedAstapForKeluar" class="relative" @click.outside="isAsetKeluarDropdownOpen = false">
+                    <div class="relative">
+                        <input type="text" x-model="searchAsetKeluar"
+                            @focus="isAsetKeluarDropdownOpen = true"
+                            @click="isAsetKeluarDropdownOpen = true"
+                            @input="isAsetKeluarDropdownOpen = true"
+                            placeholder="Ketik untuk mencari nama barang atau kode..."
+                            class="w-full bg-slate-950 border border-slate-700 focus:border-rose-400 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none">
+                        <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
                     
-                    <!-- Dropdown List Hasil Cari -->
-                    <div x-show="isAsetKeluarDropdownOpen" @click.away="isAsetKeluarDropdownOpen = false"
-                        class="absolute z-20 mt-1 w-full max-h-52 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 custom-scrollbar">
+                    <!-- Dropdown List Hasil Cari (Maksimal 5 item terlihat, selebihnya scroll) -->
+                    <div x-show="isAsetKeluarDropdownOpen"
+                        style="max-height: 260px; overflow-y: auto;"
+                        class="absolute z-30 mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl shadow-2xl p-1.5 space-y-1 custom-scrollbar">
                         <template x-for="a in filteredActiveAstaps" :key="a.id">
                             <div @click="selectAstapForKeluar(a)"
                                 class="p-2.5 rounded-lg bg-slate-900 hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/40 cursor-pointer transition-all flex items-center justify-between group">
-                                <div class="min-w-0 pr-3">
+                                <div class="min-w-0 pr-3 space-y-0.5">
                                     <div class="font-bold text-white group-hover:text-rose-300 truncate" x-text="a.nama_barang"></div>
-                                    <div class="text-[10px] text-slate-400" x-text="a.kode_barang + ' • ' + a.jumlah_volume + ' ' + a.satuan + ' • TA ' + a.tahun_perolehan"></div>
+                                    <div class="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400">
+                                        <span class="font-mono text-slate-300" x-text="a.kode_barang"></span>
+                                        <span>•</span>
+                                        <span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20" x-text="'Tersedia: ' + (a.registers?.length || a.jumlah_volume) + ' ' + a.satuan"></span>
+                                        <span>•</span>
+                                        <span x-text="'TA ' + a.tahun_perolehan"></span>
+                                    </div>
                                 </div>
                                 <span class="text-[11px] font-bold text-rose-400 shrink-0">Pilih →</span>
                             </div>
                         </template>
+
+                        <!-- Indikator Gulir jika aset lebih dari 5 -->
+                        <div x-show="filteredActiveAstaps.length > 5"
+                            class="sticky bottom-0 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800/80 -mx-1.5 -mb-1.5 px-3 py-1.5 text-center text-[10px] text-slate-400 font-medium flex items-center justify-center space-x-1.5 rounded-b-xl">
+                            <span>↕️</span>
+                            <span>Gulir untuk melihat <strong class="text-rose-400 font-bold" x-text="filteredActiveAstaps.length - 5"></strong> aset lainnya (<span x-text="filteredActiveAstaps.length"></span> total tersedia)</span>
+                        </div>
+
                         <template x-if="filteredActiveAstaps.length === 0">
-                            <div class="p-3 text-center text-slate-500 text-[11px]">
-                                Tidak ada aset aktif yang cocok.
+                            <div class="p-4 text-center text-slate-500 text-[11px]">
+                                Tidak ada aset inventaris berstatus <span class="font-bold text-emerald-400">"Tersedia"</span> yang cocok.
                             </div>
                         </template>
                     </div>
                 </div>
 
-                <!-- Selected Aset Preview Card -->
-                <div x-show="selectedAstapForKeluar" class="p-3 rounded-xl bg-rose-500/5 border border-rose-500/20 flex items-center justify-between">
-                    <div>
-                        <span class="text-slate-400 text-[10px] uppercase font-bold block">Aset Terpilih:</span>
-                        <div class="font-bold text-white text-xs" x-text="selectedAstapForKeluar?.nama_barang"></div>
-                        <div class="text-[10px] text-slate-400" x-text="selectedAstapForKeluar?.kode_barang + ' • Tersedia: ' + (selectedAstapForKeluar?.registers?.length || selectedAstapForKeluar?.jumlah_volume) + ' ' + selectedAstapForKeluar?.satuan"></div>
+                <!-- Selected Aset Preview Card (Visible when asset selected) -->
+                <div x-show="selectedAstapForKeluar" class="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between shadow-sm">
+                    <div class="space-y-0.5">
+                        <span class="text-rose-400 text-[10px] uppercase font-extrabold tracking-wider block">✓ Aset Terpilih:</span>
+                        <div class="font-bold text-white text-sm" x-text="selectedAstapForKeluar?.nama_barang"></div>
+                        <div class="text-[10px] text-slate-300 font-mono" x-text="(selectedAstapForKeluar?.kode_barang || '-') + ' • Tersedia: ' + (availableRegisters.length || selectedAstapForKeluar?.jumlah_volume) + ' ' + (selectedAstapForKeluar?.satuan || 'Unit')"></div>
                     </div>
-                    <button type="button" @click="selectedAstapForKeluar = null; searchAsetKeluar = ''" class="text-[11px] font-bold text-rose-400 hover:underline">
-                        ✕ Ganti
+                    <button type="button" @click="clearAstapSelection()" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-xs font-bold transition flex items-center space-x-1 cursor-pointer">
+                        <span>✕</span>
+                        <span>Ganti Barang</span>
                     </button>
                 </div>
             </div>
 
-            <!-- 2. Pilihan Register Tertentu (Jika Multi-Unit) -->
-            <div x-show="selectedAstapForKeluar && selectedAstapForKeluar.registers && selectedAstapForKeluar.registers.length > 1" class="space-y-1.5 p-3 rounded-xl bg-slate-950 border border-slate-800">
+            <!-- 2. Pilihan Register Tertentu (Hanya yang Berstatus Tersedia) -->
+            <div x-show="selectedAstapForKeluar && availableRegisters.length > 1" class="space-y-1.5 p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
                 <label class="block font-bold text-slate-300 text-[11px] flex items-center justify-between">
-                    <span>Pilih Unit Register NIBAR yang Dihibahkan:</span>
-                    <button type="button" @click="toggleSelectAllRegisters()" class="text-[10px] text-amber-400 hover:underline">
-                        <span x-text="keluarData.register_ids.length === selectedAstapForKeluar?.registers?.length ? 'Batal Pilih Semua' : 'Pilih Semua'"></span>
+                    <span class="flex items-center space-x-1.5">
+                        <span>Pilih Unit Register NIBAR yang Dihibahkan:</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Status: Tersedia</span>
+                    </span>
+                    <button type="button" @click="toggleSelectAllRegisters()" class="text-[10px] text-amber-400 hover:underline cursor-pointer">
+                        <span x-text="keluarData.register_ids.length === availableRegisters.length ? 'Batal Pilih Semua' : 'Pilih Semua'"></span>
                     </button>
                 </label>
-                <div class="max-h-36 overflow-y-auto space-y-1 custom-scrollbar pr-1">
-                    <template x-for="reg in (selectedAstapForKeluar?.registers || [])" :key="reg.id">
-                        <label class="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between hover:border-slate-700 cursor-pointer">
+                <div style="max-height: 195px; overflow-y: auto;" class="space-y-1.5 custom-scrollbar pr-1.5">
+                    <template x-for="reg in availableRegisters" :key="reg.id">
+                        <label class="p-2 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between hover:border-slate-700 cursor-pointer transition">
                             <div class="flex items-center space-x-2">
                                 <input type="checkbox" :value="reg.id" x-model="keluarData.register_ids" @change="recomputeKeluarValue()" class="rounded border-slate-700 text-rose-500 focus:ring-rose-400">
                                 <span class="font-mono text-[10px] font-bold text-emerald-400" x-text="reg.nibar"></span>
+                                <span class="px-1.5 py-0.5 rounded text-[8.5px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Tersedia</span>
                             </div>
-                            <span class="text-[10px] text-slate-400" x-text="reg.ruang + ' (' + reg.kondisi + ')'"></span>
+                            <span class="text-[10px] text-slate-400" x-text="(reg.ruang || '-') + ' (' + (reg.kondisi || 'Baik') + ')'"></span>
                         </label>
                     </template>
+                </div>
+                <!-- Indikator gulir jika NIBAR lebih dari 5 unit -->
+                <div x-show="availableRegisters.length > 5"
+                    class="pt-1.5 text-center text-[10px] text-slate-400 border-t border-slate-800/60 flex items-center justify-center space-x-1.5">
+                    <span>↕️</span>
+                    <span>Gulir untuk melihat unit register lainnya (<span class="font-bold text-amber-400" x-text="keluarData.register_ids.length"></span> dari <span x-text="availableRegisters.length"></span> unit terpilih)</span>
                 </div>
             </div>
 

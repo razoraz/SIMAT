@@ -146,6 +146,14 @@
             openModalHibahKeluar() {
                 this.selectedAstapForKeluar = null;
                 this.searchAsetKeluar = '';
+                this.isAsetKeluarDropdownOpen = false;
+
+                const m = new Date().getMonth() + 1;
+                let currentTw = 'TW I';
+                if (m >= 4 && m <= 6) currentTw = 'TW II';
+                else if (m >= 7 && m <= 9) currentTw = 'TW III';
+                else if (m >= 10) currentTw = 'TW IV';
+
                 this.keluarData = {
                     astap_id: '',
                     register_ids: [],
@@ -154,46 +162,68 @@
                     tanggal_bast: new Date().toISOString().split('T')[0],
                     nilai_aset: 0,
                     tahun: new Date().getFullYear(),
-                    triwulan: 'TW I',
+                    triwulan: currentTw,
                     keterangan: ''
                 };
                 this.showModalHibahKeluar = true;
+            },
+
+            clearAstapSelection() {
+                this.selectedAstapForKeluar = null;
+                this.searchAsetKeluar = '';
+                this.keluarData.astap_id = '';
+                this.keluarData.register_ids = [];
+                this.keluarData.nilai_aset = 0;
+                this.isAsetKeluarDropdownOpen = false;
+            },
+
+            get availableRegisters() {
+                if (!this.selectedAstapForKeluar || !this.selectedAstapForKeluar.registers) return [];
+                return this.selectedAstapForKeluar.registers.filter(r => 
+                    r.status === 'Tersedia' && 
+                    (!r.ruang || r.ruang === '-' || r.ruang === 'Belum Ditempatkan / Di Gudang' || r.ruang === 'Gudang Aset')
+                );
             },
 
             selectAstapForKeluar(a) {
                 this.selectedAstapForKeluar = a;
                 this.keluarData.astap_id = a.id;
                 this.isAsetKeluarDropdownOpen = false;
-                this.searchAsetKeluar = a.nama_barang;
+                this.searchAsetKeluar = '';
 
-                // Default pilih semua register jika ada
-                if (a.registers && a.registers.length > 0) {
-                    this.keluarData.register_ids = a.registers.map(r => r.id);
-                } else {
-                    this.keluarData.register_ids = [];
-                }
+                // Default pilih semua register yang berstatus 'Tersedia' dan belum ditempatkan
+                const availableRegs = this.availableRegisters;
+                this.keluarData.register_ids = availableRegs.map(r => r.id);
                 this.recomputeKeluarValue();
             },
 
             toggleSelectAllRegisters() {
-                if (!this.selectedAstapForKeluar || !this.selectedAstapForKeluar.registers) return;
-                if (this.keluarData.register_ids.length === this.selectedAstapForKeluar.registers.length) {
+                const availableRegs = this.availableRegisters;
+                if (!availableRegs || availableRegs.length === 0) return;
+
+                if (this.keluarData.register_ids.length === availableRegs.length) {
                     this.keluarData.register_ids = [];
                 } else {
-                    this.keluarData.register_ids = this.selectedAstapForKeluar.registers.map(r => r.id);
+                    this.keluarData.register_ids = availableRegs.map(r => r.id);
                 }
                 this.recomputeKeluarValue();
             },
 
             recomputeKeluarValue() {
                 if (!this.selectedAstapForKeluar) return;
-                const totalRegs = (this.selectedAstapForKeluar.registers && this.selectedAstapForKeluar.registers.length > 0)
-                    ? this.selectedAstapForKeluar.registers.length
-                    : Math.max(1, this.selectedAstapForKeluar.jumlah_volume || 1);
+                const availableRegs = this.availableRegisters;
+                const totalRegs = (availableRegs && availableRegs.length > 0)
+                    ? availableRegs.length
+                    : Math.max(1, parseInt(this.selectedAstapForKeluar.jumlah_volume) || 1);
                 
-                const unitPrice = parseFloat(this.selectedAstapForKeluar.harga_satuan) || (parseFloat(this.selectedAstapForKeluar.total_realisasi) / totalRegs);
+                let unitPrice = parseFloat(this.selectedAstapForKeluar.harga_satuan) || 0;
+                if (!unitPrice && this.selectedAstapForKeluar.total_realisasi) {
+                    unitPrice = (parseFloat(this.selectedAstapForKeluar.total_realisasi) || 0) / totalRegs;
+                }
                 
-                const selectedCount = this.keluarData.register_ids.length > 0 ? this.keluarData.register_ids.length : totalRegs;
+                const selectedCount = this.keluarData.register_ids.length > 0 
+                    ? this.keluarData.register_ids.length 
+                    : totalRegs;
                 this.keluarData.nilai_aset = Math.round(unitPrice * selectedCount);
             },
 
