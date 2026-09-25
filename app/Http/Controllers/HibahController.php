@@ -25,8 +25,9 @@ class HibahController extends Controller
         $filterTw = $request->query('triwulan', 'all');
         $search = trim($request->query('search', ''));
 
-        // Query utama riwayat hibah
-        $query = AstapHibah::with(['astap.jenisAstap', 'astap.registers', 'register', 'user'])
+        // Query utama riwayat hibah (Hanya data aktif / belum dihapus)
+        $query = AstapHibah::active()
+            ->with(['astap.jenisAstap', 'astap.registers', 'register', 'user'])
             ->orderBy('tanggal_bast', 'desc')
             ->orderBy('id', 'desc');
 
@@ -56,8 +57,8 @@ class HibahController extends Controller
 
         $hibahRecords = $query->get();
 
-        // Hitung Statistik KPI
-        $allHibahs = AstapHibah::with('astap')->get();
+        // Hitung Statistik KPI dari data aktif
+        $allHibahs = AstapHibah::active()->with('astap')->get();
         $totalMasukUnit = $allHibahs->where('tipe_hibah', 'masuk')->sum('jumlah_volume');
         $totalMasukNominal = $allHibahs->where('tipe_hibah', 'masuk')->sum('nilai_aset');
         $totalKeluarUnit = $allHibahs->where('tipe_hibah', 'keluar')->sum('jumlah_volume');
@@ -103,7 +104,7 @@ class HibahController extends Controller
             });
 
         // Daftar Tahun Unik untuk Filter
-        $availableYears = AstapHibah::select('tahun')
+        $availableYears = AstapHibah::active()->select('tahun')
             ->distinct()
             ->orderBy('tahun', 'desc')
             ->pluck('tahun')
@@ -254,13 +255,16 @@ class HibahController extends Controller
     }
 
     /**
-     * Batalkan / Hapus Transaksi Hibah
+     * Batalkan / Hapus Transaksi Hibah (Trackable Soft Delete ke Pusat Data Terhapus)
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $hibah = AstapHibah::findOrFail($id);
 
-        DB::transaction(function () use ($hibah) {
+        DB::transaction(function () use ($hibah, $request) {
+            $user = Auth::user();
+            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+
             // Jika hibah keluar dibatalkan/dihapus, pulihkan unit barang di ASTAP & register
             if ($hibah->tipe_hibah === 'keluar') {
                 $astap = Astap::find($hibah->astap_id);
@@ -302,13 +306,19 @@ class HibahController extends Controller
                 }
             }
 
-            // Hapus record riwayat transaksi hibah (Hard Delete pada tabel astap_hibahs)
-            $hibah->delete();
+            // Tandai transaksi hibah terhapus secara aman (Soft Delete ke Pusat Recycle Bin)
+            $hibah->update([
+                'is_deleted'    => 1,
+                'deleted_at'    => now(),
+                'deleted_by'    => $deleterName,
+                'deleted_by_id' => $user?->id,
+                'alasan_hapus'  => $request->input('alasan_hapus') ?: 'Dihapus oleh ' . $deleterName,
+            ]);
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Catatan riwayat hibah berhasil dihapus.',
+            'message' => 'Catatan riwayat hibah berhasil dipindahkan ke Pusat Data Terhapus (Recycle Bin).',
         ]);
     }
 

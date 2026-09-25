@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\TrackableSoftDelete;
 
 class AstapHibah extends Model
 {
-    use HasFactory;
+    use HasFactory, TrackableSoftDelete;
 
     protected $table = 'astap_hibahs';
 
@@ -18,6 +19,8 @@ class AstapHibah extends Model
         'nilai_aset'   => 'decimal:2',
         'jumlah_volume'=> 'integer',
         'tahun'        => 'integer',
+        'is_deleted'   => 'integer',
+        'deleted_at'   => 'datetime',
     ];
 
     public function astap()

@@ -6,6 +6,7 @@ use App\Models\AstapMutasi;
 use App\Models\AstapMutasiRegister;
 use App\Models\Astap;
 use App\Models\AstapRegister;
+use App\Models\AstapHibah;
 use App\Models\Distribusi;
 use App\Models\Unit;
 use App\Models\User;
@@ -208,7 +209,43 @@ class RecycleBinController extends Controller
             ];
         });
 
+        // =========================================================================
+        // 4. DATA TERHAPUS: HIBAH ASET (MASUK & KELUAR)
+        // =========================================================================
+        $rawDeletedHibahs = AstapHibah::onlyDeleted()
+            ->with(['astap.jenisAstap', 'register', 'user'])
+            ->latest('deleted_at')
+            ->latest('id')
+            ->get();
 
+        $deletedHibahs = $rawDeletedHibahs->map(function ($h) {
+            $deletedAt = $h->deleted_at ? Carbon::parse($h->deleted_at)->timezone('Asia/Jakarta') : null;
+            $tglBast = $h->tanggal_bast ? Carbon::parse($h->tanggal_bast)->timezone('Asia/Jakarta') : null;
+
+            $namaBarang = $h->astap?->nama_barang ?: ($h->nama_barang ?: 'Barang Hibah');
+            $kodeBarang = $h->astap?->kode_108 ?: ($h->astap?->jenisAstap?->sub_sub_rincian_objek ?: '-');
+
+            return [
+                'id'                  => $h->id,
+                'nomor_bast'          => $h->nomor_bast,
+                'tipe_hibah'          => $h->tipe_hibah, // 'masuk' atau 'keluar'
+                'pihak_hibah'         => $h->pihak_hibah,
+                'nama_barang'         => $namaBarang,
+                'kode_barang'         => $kodeBarang,
+                'volume'              => $h->jumlah_volume . ' ' . ($h->satuan ?: 'Unit'),
+                'nilai_aset'          => (float) $h->nilai_aset,
+                'nilai_aset_rp'       => 'Rp ' . number_format($h->nilai_aset ?: 0, 0, ',', '.'),
+                'tanggal_bast'        => $tglBast ? $tglBast->locale('id')->translatedFormat('d M Y') : '-',
+                'tahun'               => $h->tahun ?: '-',
+                'triwulan'            => $h->triwulan ?: '-',
+                'keterangan'          => $h->keterangan ?: '-',
+                'alasan_hapus'        => $h->alasan_hapus ?: 'Dibatalkan',
+                'deleted_by'          => $h->deleted_by ?: 'Administrator',
+                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
+                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+            ];
+        });
 
         // =========================================================================
         // 5. DATA TERHAPUS: UNIT & PAVILIUN
@@ -279,10 +316,11 @@ class RecycleBinController extends Controller
         $astapCount      = $deletedAstaps->count();
         $nibarCount      = $deletedNibars->count();
         $distribusiCount = $deletedDistribusis->count();
+        $hibahCount      = $deletedHibahs->count();
         $unitCount       = $deletedUnits->count();
         $userCount       = $deletedUsers->count();
 
-        $totalAllDeleted = $mutasiCount + $astapCount + $nibarCount + $distribusiCount + $unitCount + $userCount;
+        $totalAllDeleted = $mutasiCount + $astapCount + $nibarCount + $distribusiCount + $hibahCount + $unitCount + $userCount;
 
         // Hitung 30 hari terakhir
         $filterMonth = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($thirtyDaysAgo))->count();
@@ -290,6 +328,7 @@ class RecycleBinController extends Controller
             + $filterMonth($rawDeletedAstaps)
             + $filterMonth($rawDeletedNibars)
             + $filterMonth($rawDeletedDistribusis)
+            + $filterMonth($rawDeletedHibahs)
             + $filterMonth($rawDeletedUnits)
             + $filterMonth($rawDeletedUsers);
 
@@ -299,6 +338,7 @@ class RecycleBinController extends Controller
             + $filterWeek($rawDeletedAstaps)
             + $filterWeek($rawDeletedNibars)
             + $filterWeek($rawDeletedDistribusis)
+            + $filterWeek($rawDeletedHibahs)
             + $filterWeek($rawDeletedUnits)
             + $filterWeek($rawDeletedUsers);
 
@@ -325,6 +365,13 @@ class RecycleBinController extends Controller
                 'color' => 'teal',
                 'ready' => true,
             ],
+            'hibah' => [
+                'name'  => 'Hibah Aset',
+                'icon'  => '🎁',
+                'count' => $hibahCount,
+                'color' => 'purple',
+                'ready' => true,
+            ],
             'unit' => [
                 'name'  => 'Unit & Paviliun',
                 'icon'  => '🏥',
@@ -346,6 +393,7 @@ class RecycleBinController extends Controller
             'deletedAstaps',
             'deletedNibars',
             'deletedDistribusis',
+            'deletedHibahs',
             'deletedUnits',
             'deletedUsers',
             'activeTab',
@@ -437,7 +485,51 @@ class RecycleBinController extends Controller
                 $msg = "Transaksi Distribusi Aset {$kode} berhasil dipulihkan ke status aktif.";
                 break;
 
+            case 'hibah':
+                $hibah = AstapHibah::findOrFail($id);
+                $nomorBast = $hibah->nomor_bast;
+                DB::transaction(function () use ($hibah) {
+                    $hibah->restoreData();
 
+                    // Jika yang dipulihkan adalah hibah KELUAR, tandai kembali unit register & astap sebagai dihibahkan
+                    if ($hibah->tipe_hibah === 'keluar') {
+                        $user = Auth::user();
+                        $alasan = 'Dihibahkan ke ' . $hibah->pihak_hibah . ' (BAST: ' . $hibah->nomor_bast . ')';
+
+                        if ($hibah->astap_register_id) {
+                            AstapRegister::where('id', $hibah->astap_register_id)->update([
+                                'status'     => 'Dihibahkan',
+                                'is_deleted' => 1,
+                                'deleted_at' => now(),
+                                'deleted_by' => $user?->name ?: 'Administrator',
+                            ]);
+                        } else {
+                            AstapRegister::where('astap_id', $hibah->astap_id)->update([
+                                'status'     => 'Dihibahkan',
+                                'is_deleted' => 1,
+                                'deleted_at' => now(),
+                                'deleted_by' => $user?->name ?: 'Administrator',
+                            ]);
+                        }
+
+                        $astap = Astap::find($hibah->astap_id);
+                        if ($astap) {
+                            $sisaAktif = AstapRegister::where('astap_id', $astap->id)->where('is_deleted', 0)->count();
+                            if ($sisaAktif === 0) {
+                                $astap->update([
+                                    'is_deleted'          => 1,
+                                    'deleted_at'          => now(),
+                                    'deleted_by'          => $user?->name ?: 'Administrator',
+                                    'keterangan_tambahan' => $alasan,
+                                ]);
+                            } else {
+                                $astap->update(['jumlah_volume' => $sisaAktif]);
+                            }
+                        }
+                    }
+                });
+                $msg = "Catatan Transaksi Hibah {$nomorBast} berhasil dipulihkan ke daftar aktif.";
+                break;
 
             case 'unit':
                 $unit = Unit::findOrFail($id);
@@ -561,7 +653,49 @@ class RecycleBinController extends Controller
                 $msg = "Sebanyak {$restoredCount} transaksi distribusi berhasil dipulihkan ke status aktif.";
                 break;
 
-
+            case 'hibah':
+                $hibahs = AstapHibah::whereIn('id', $ids)->get();
+                DB::transaction(function () use ($hibahs, &$restoredCount) {
+                    $user = Auth::user();
+                    foreach ($hibahs as $hibah) {
+                        $hibah->restoreData();
+                        if ($hibah->tipe_hibah === 'keluar') {
+                            $alasan = 'Dihibahkan ke ' . $hibah->pihak_hibah . ' (BAST: ' . $hibah->nomor_bast . ')';
+                            if ($hibah->astap_register_id) {
+                                AstapRegister::where('id', $hibah->astap_register_id)->update([
+                                    'status'     => 'Dihibahkan',
+                                    'is_deleted' => 1,
+                                    'deleted_at' => now(),
+                                    'deleted_by' => $user?->name ?: 'Administrator',
+                                ]);
+                            } else {
+                                AstapRegister::where('astap_id', $hibah->astap_id)->update([
+                                    'status'     => 'Dihibahkan',
+                                    'is_deleted' => 1,
+                                    'deleted_at' => now(),
+                                    'deleted_by' => $user?->name ?: 'Administrator',
+                                ]);
+                            }
+                            $astap = Astap::find($hibah->astap_id);
+                            if ($astap) {
+                                $sisaAktif = AstapRegister::where('astap_id', $astap->id)->where('is_deleted', 0)->count();
+                                if ($sisaAktif === 0) {
+                                    $astap->update([
+                                        'is_deleted'          => 1,
+                                        'deleted_at'          => now(),
+                                        'deleted_by'          => $user?->name ?: 'Administrator',
+                                        'keterangan_tambahan' => $alasan,
+                                    ]);
+                                } else {
+                                    $astap->update(['jumlah_volume' => $sisaAktif]);
+                                }
+                            }
+                        }
+                        $restoredCount++;
+                    }
+                });
+                $msg = "Sebanyak {$restoredCount} transaksi hibah aset berhasil dipulihkan ke daftar aktif.";
+                break;
 
             case 'unit':
                 $units = Unit::whereIn('id', $ids)->get();
@@ -708,6 +842,15 @@ class RecycleBinController extends Controller
                     }
                 });
                 $msg = "Sebanyak {$deletedCount} transaksi distribusi telah dihapus permanen dari database.";
+                break;
+
+            case 'hibah':
+                $hibahs = AstapHibah::whereIn('id', $ids)->get();
+                foreach ($hibahs as $h) {
+                    $h->delete();
+                    $deletedCount++;
+                }
+                $msg = "Sebanyak {$deletedCount} data transaksi hibah aset telah dihapus permanen dari database.";
                 break;
 
             case 'unit':
@@ -887,7 +1030,12 @@ class RecycleBinController extends Controller
                 $msg = "Transaksi Distribusi {$kode} telah dihapus secara permanen dari database.";
                 break;
 
-
+            case 'hibah':
+                $hibah = AstapHibah::findOrFail($id);
+                $bast = $hibah->nomor_bast;
+                $hibah->delete();
+                $msg = "Data transaksi hibah BAST {$bast} telah dihapus secara permanen dari database.";
+                break;
 
             case 'unit':
                 $unit = Unit::findOrFail($id);
