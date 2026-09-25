@@ -60,7 +60,7 @@ class RekeningBelanjaController extends Controller
 
         $totalCount = RekeningBelanja::count();
 
-        return view('pages.master_rekening_belanja', compact('rekeningList', 'uniqueKelompok', 'totalCount'));
+        return view('pages.master.rekening_belanja.index', compact('rekeningList', 'uniqueKelompok', 'totalCount'));
     }
 
     public function store(Request $request)

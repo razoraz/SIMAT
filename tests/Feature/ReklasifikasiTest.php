@@ -968,6 +968,127 @@ class ReklasifikasiTest extends TestCase
         $this->assertEquals(150000, $subtotals['KIB B']['kurang']);
         $this->assertEquals(0, $subtotals['KIB B']['akhir']);
     }
+
+    public function test_koreksi_rekening_stores_asal_and_tujuan_metadata()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $asalJenis = JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.2.02.01.01.001'],
+            [
+                'jenis' => '1.3.2.02',
+                'nama_jenis' => 'Alat Angkutan',
+                'sub_rincian_objek' => '1.3.2.02.01',
+                'uraian_sub_rincian' => 'Kendaraan Bermotor Penumpang',
+                'uraian_sub_sub_rincian' => 'Mobil Sedan Operasional',
+            ]
+        );
+
+        $tujuanJenis = JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.2.02.01.02.001'],
+            [
+                'jenis' => '1.3.2.02',
+                'nama_jenis' => 'Alat Angkutan',
+                'sub_rincian_objek' => '1.3.2.02.01',
+                'uraian_sub_rincian' => 'Kendaraan Bermotor Khusus',
+                'uraian_sub_sub_rincian' => 'Mobil Ambulans Emergency 118',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Mobil Operasional Medis',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 350000000,
+            'total_realisasi' => 350000000,
+            'jumlah_anggaran' => 350000000,
+            'jenis_astap_id' => $asalJenis->id,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'KIB B',
+            'tujuan_kode' => '1.3.2.02.01.02.001',
+            'tujuan_nama' => 'Mobil Ambulans Emergency 118',
+            'nilai_reklas' => 350000000,
+            'tanggal_reklas' => '2026-04-10',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/REKLAS/AMB/2026',
+            'alasan_reklas' => 'Penyesuaian peruntukan mobil menjadi ambulans gawat darurat',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('astap_reklasis', [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kode' => '1.3.2.02.01.01.001',
+            'tujuan_kode' => '1.3.2.02.01.02.001',
+            'tujuan_nama' => 'Mobil Ambulans Emergency 118',
+        ]);
+    }
+
+    public function test_koreksi_nilai_perubahan_total_dana_updates_astap_and_stores_balance()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $jenis = JenisAstap::firstOrCreate(
+            ['sub_sub_rincian_objek' => '1.3.2.07.01.01.001'],
+            [
+                'jenis' => '1.3.2.07',
+                'nama_jenis' => 'Alat Kedokteran',
+                'sub_rincian_objek' => '1.3.2.07.01',
+                'uraian_sub_rincian' => 'Alat Kedokteran Umum',
+                'uraian_sub_sub_rincian' => 'Mesin Rontgen X-Ray',
+            ]
+        );
+
+        $astap = Astap::create([
+            'nama_barang' => 'Mesin Rontgen Digital',
+            'tahun_perolehan' => 2026,
+            'triwulan' => 'TW I',
+            'jumlah_volume' => 1,
+            'harga_satuan' => 500000000,
+            'total_realisasi' => 500000000,
+            'jumlah_anggaran' => 500000000,
+            'jenis_astap_id' => $jenis->id,
+            'user_id' => $admin->id,
+        ]);
+
+        // Uji Koreksi Kurang (-) (misal audit BPK memotong nilai Rp 50.000.000 jadi Rp 450.000.000)
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'tipe_koreksi' => 'kurang',
+            'nilai_realisasi_baru' => 450000000,
+            'nilai_reklas' => 50000000,
+            'tanggal_reklas' => '2026-05-15',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BA/KOR/BPK/2026',
+            'alasan_reklas' => 'Penyesuaian temuan audit BPK perihal diskon pengadaan rontgen',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals(450000000, (float)$astap->total_realisasi);
+
+        $this->assertDatabaseHas('astap_reklasis', [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'nilai_reklas' => 50000000,
+            'tujuan_kode' => 'KOR_LAIN',
+        ]);
+    }
 }
 
 

@@ -290,7 +290,7 @@ class DistribusiController extends Controller
                 ];
             });
 
-        return view('pages.distribusi', compact('distribusis', 'units'));
+        return view('pages.distribusi.index', compact('distribusis', 'units'));
     }
 
     /**
@@ -372,7 +372,7 @@ class DistribusiController extends Controller
         $nextKode = self::generateNextKode((int)$tahunIni);
         $nextBastNomor = self::generateNextBastNomor((int)$tahunIni);
 
-        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'nextKode', 'nextBastNomor'));
+        return view('pages.distribusi.form', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'nextKode', 'nextBastNomor'));
     }
 
     /**
@@ -494,7 +494,7 @@ class DistribusiController extends Controller
         $tahunIni = $distribusiData?->tanggal_distribusi ? date('Y', strtotime($distribusiData->tanggal_distribusi)) : date('Y');
         $nextBastNomor = self::generateNextBastNomor((int)$tahunIni, $distribusiData?->id);
 
-        return view('pages.form_distribusi', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'id', 'distribusiData', 'nextBastNomor'));
+        return view('pages.distribusi.form', compact('units', 'jenisAstapList', 'astapList', 'nibarList', 'id', 'distribusiData', 'nextBastNomor'));
     }
 
     /**

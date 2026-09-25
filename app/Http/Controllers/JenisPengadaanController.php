@@ -52,7 +52,7 @@ class JenisPengadaanController extends Controller
             ->get();
         $totalCount   = JenisPengadaan::count();
 
-        return view('pages.master_jenis_pengadaan', compact('sipdList', 'uniquePrograms', 'uniqueKegiatan', 'totalCount'));
+        return view('pages.master.jenis_pengadaan.index', compact('sipdList', 'uniquePrograms', 'uniqueKegiatan', 'totalCount'));
     }
 
     public function store(Request $request)

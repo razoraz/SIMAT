@@ -82,63 +82,145 @@
                                 <span class="font-bold text-white mt-1 inline-block" x-text="formatDateIndo(detailItem.tanggal_reklas)"></span>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Keterangan / Alasan Reklasifikasi -->
-                        <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-start gap-2.5">
-                            <span class="text-base text-indigo-400 shrink-0">📝</span>
-                            <div class="text-xs text-slate-300 leading-relaxed flex-1">
-                                <span class="font-bold text-white block mb-1">Alasan &amp; Catatan Rekonsiliasi:</span>
-                                <template x-if="detailItem.alasan_reklas">
-                                    <div class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 font-semibold mb-1.5 flex items-center gap-1.5">
-                                        <span>💡</span>
-                                        <span x-text="detailItem.alasan_reklas"></span>
-                                    </div>
-                                </template>
-                                <p class="italic text-slate-300" x-text="detailItem.keterangan || 'Tidak ada catatan narasi tambahan.'"></p>
+                    <!-- 2. Keterangan & Narasi Berita Acara Reklasifikasi (Audit Trail & Dasar Mutasi) -->
+                    <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-indigo-500/30 space-y-3.5 shadow-xl shadow-indigo-500/5">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-sm">
+                                    📝
+                                </div>
+                                <div>
+                                    <h5 class="text-xs font-bold text-white uppercase tracking-wider">
+                                        Keterangan &amp; Narasi Berita Acara Reklasifikasi
+                                    </h5>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Penjelasan resmi dasar pertimbangan pemindahan bukuan &amp; rekonsiliasi</p>
+                                </div>
                             </div>
+                            <div x-data="{ copied: false }">
+                                <button type="button" 
+                                    @click="navigator.clipboard.writeText((detailItem.alasan_reklas ? 'Alasan: ' + detailItem.alasan_reklas + '\n\n' : '') + (detailItem.keterangan || '')); copied = true; setTimeout(() => copied = false, 2000)"
+                                    class="text-[11px] text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm">
+                                    <template x-if="!copied">
+                                        <span class="flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                            </svg>
+                                            <span>Salin Teks</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="copied">
+                                        <span class="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            <span>Tersalin!</span>
+                                        </span>
+                                    </template>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Alasan Reklasifikasi (Jika Ada) -->
+                        <template x-if="detailItem.alasan_reklas">
+                            <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 shadow-inner">
+                                <span class="text-base text-amber-400 shrink-0 mt-0.5">💡</span>
+                                <div class="text-xs">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300 block mb-0.5">
+                                        Alasan Reklasifikasi:
+                                    </span>
+                                    <div class="text-amber-200 font-semibold leading-relaxed" x-text="detailItem.alasan_reklas"></div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Narasi Lengkap Berita Acara -->
+                        <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-xs leading-relaxed">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                                Narasi / Uraian Berita Acara:
+                            </span>
+                            <div class="font-sans leading-relaxed text-slate-200 whitespace-pre-wrap select-text text-xs" 
+                                 x-text="detailItem.keterangan || 'Tidak ada catatan narasi berita acara tambahan.'"></div>
                         </div>
                     </div>
 
-                    <!-- 2. Perpindahan Rekening / Kelompok KIB -->
+                    <!-- 3. Perpindahan Rekening / Kelompok KIB atau Posisi Aset -->
                     <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-950/90 to-slate-900/90 border border-slate-800 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                <span>🔄</span> Perpindahan Kelompok &amp; Rekening Akuntansi PMDN 108
-                            </h5>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-stretch">
-                            <!-- Rekening Asal (Mutasi Kurang) -->
-                            <div class="p-3.5 rounded-xl bg-rose-500/5 border border-rose-500/25 space-y-2">
+                        <template x-if="detailItem.jenis_reklas === 'KOREKSI_LAIN'">
+                            <div class="space-y-3">
                                 <div class="flex items-center justify-between">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                                        ASAL (MUTASI KURANG -)
+                                    <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                        <span>⚖️</span> Posisi Rekening &amp; Penyesuaian Nilai (Audit BPK)
+                                    </h5>
+                                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                        Rekening Tetap (Tanpa Pindah KIB)
                                     </span>
-                                    <span class="text-[11px] font-mono font-bold text-rose-300" x-text="detailItem.asal_kib || detailItem.jenis_reklas_asal?.kelompok_kib || '-'"></span>
                                 </div>
-                                <div class="text-xs font-extrabold text-white mt-1"
-                                     x-text="detailItem.jenis_reklas_asal?.nama_sub_rincian || detailItem.astap?.jenis_astap?.uraian_sub_rincian || '-'"></div>
-                                <div class="text-[11px] font-mono text-rose-200/70"
-                                     x-text="'Kode: ' + (detailItem.jenis_reklas_asal?.kode_prefix || detailItem.astap?.jenis_astap?.sub_rincian_objek || '-')"></div>
+                                <div class="p-3.5 rounded-xl bg-cyan-950/20 border border-cyan-500/25 flex items-start gap-3">
+                                    <span class="text-lg shrink-0 mt-0.5">💡</span>
+                                    <div class="text-xs text-cyan-200/90 leading-relaxed">
+                                        <strong class="text-white">Aset Tetap pada Kelompok &amp; Rekening Semula:</strong><br>
+                                        Aset ini <span class="text-cyan-300 font-bold">tidak mengalami pemindahan kamar KIB ataupun kode rekening 108</span>. Transaksi ini murni penyesuaian nominal nilai buku realisasi belanja modal hasil pemeriksaan BPK RI / rekonsiliasi LKD.
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                    <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kelompok KIB &amp; Akun 108:</span>
+                                        <div class="font-bold text-white mt-1" x-text="(detailItem.asal_kib === 'KOREKSI' ? detailItem.tujuan_kib : detailItem.asal_kib) || detailItem.astap?.category || 'KIB B'"></div>
+                                        <div class="text-[11px] font-mono text-cyan-400 mt-0.5" x-text="detailItem.astap?.kode_108 || detailItem.tujuan_kode || detailItem.asal_kode || '-'"></div>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nominal Penyesuaian Nilai:</span>
+                                        <div class="font-bold font-mono text-emerald-400 mt-1" x-text="'Rp ' + Number(detailItem.nilai_reklas || 0).toLocaleString('id-ID')"></div>
+                                        <div class="text-[11px] text-slate-400 mt-0.5">Penyeimbang Neraca: Baris 42 (Koreksi Lain-lain)</div>
+                                    </div>
+                                </div>
                             </div>
+                        </template>
 
-                            <!-- Rekening Tujuan (Mutasi Tambah) -->
-                            <div class="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/25 space-y-2">
+                        <template x-if="detailItem.jenis_reklas !== 'KOREKSI_LAIN'">
+                            <div class="space-y-3">
                                 <div class="flex items-center justify-between">
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                        TUJUAN (MUTASI TAMBAH +)
-                                    </span>
-                                    <span class="text-[11px] font-mono font-bold text-emerald-300" x-text="detailItem.tujuan_kib || detailItem.jenis_reklas_tujuan?.kelompok_kib || '-'"></span>
+                                    <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                        <span>🔄</span> Perpindahan Kelompok &amp; Rekening Akuntansi PMDN 108
+                                    </h5>
                                 </div>
-                                <div class="text-xs font-extrabold text-white mt-1"
-                                     x-text="detailItem.jenis_reklas_tujuan?.nama_sub_rincian || detailItem.tujuan_nama || '-'"></div>
-                                <div class="text-[11px] font-mono text-emerald-200/70"
-                                     x-text="'Kode: ' + (detailItem.jenis_reklas_tujuan?.kode_prefix || detailItem.tujuan_kode || detailItem.astap?.kode_108 || '-')"></div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-stretch">
+                                    <!-- Rekening Asal (Mutasi Kurang) -->
+                                    <div class="p-3.5 rounded-xl bg-rose-500/5 border border-rose-500/25 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                                ASAL (MUTASI KURANG -)
+                                            </span>
+                                            <span class="text-[11px] font-mono font-bold text-rose-300" x-text="detailItem.asal_kib || detailItem.jenis_reklas_asal?.kelompok_kib || '-'"></span>
+                                        </div>
+                                        <div class="text-xs font-extrabold text-white mt-1"
+                                             x-text="detailItem.jenis_reklas_asal?.nama_sub_rincian || detailItem.astap?.jenis_astap?.uraian_sub_rincian || '-'"></div>
+                                        <div class="text-[11px] font-mono text-rose-200/70"
+                                             x-text="'Kode: ' + (detailItem.jenis_reklas_asal?.kode_prefix || detailItem.astap?.jenis_astap?.sub_rincian_objek || '-')"></div>
+                                    </div>
+
+                                    <!-- Rekening Tujuan (Mutasi Tambah) -->
+                                    <div class="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/25 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                                TUJUAN (MUTASI TAMBAH +)
+                                            </span>
+                                            <span class="text-[11px] font-mono font-bold text-emerald-300" x-text="detailItem.tujuan_kib || detailItem.jenis_reklas_tujuan?.kelompok_kib || '-'"></span>
+                                        </div>
+                                        <div class="text-xs font-extrabold text-white mt-1"
+                                             x-text="detailItem.jenis_reklas_tujuan?.nama_sub_rincian || detailItem.tujuan_nama || '-'"></div>
+                                        <div class="text-[11px] font-mono text-emerald-200/70"
+                                             x-text="'Kode: ' + (detailItem.jenis_reklas_tujuan?.kode_prefix || detailItem.tujuan_kode || detailItem.astap?.kode_108 || '-')"></div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </template>
                     </div>
 
-                    <!-- 3. Perbandingan Spesifikasi Fisik (Audit Trail Snapshot) -->
+                    <!-- 4. Perbandingan Spesifikasi Fisik (Audit Trail Snapshot) -->
                     <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3.5 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                             <div class="flex items-center gap-2">
@@ -205,7 +287,7 @@
                         </div>
                     </div>
 
-                    <!-- 4. Petugas & Validitas Audit -->
+                    <!-- 5. Petugas & Validitas Audit -->
                     <div class="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
                         <div class="flex items-center gap-2">
                             <span>👤 Petugas Operator:</span>

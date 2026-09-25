@@ -80,7 +80,13 @@ class ReklasifikasiController extends Controller
         if ($selectedTw !== 'all') {
             $reklasQuery->where('triwulan', (int) $selectedTw);
         }
-        $reklasMutasis = $reklasQuery->with(['astap.jenisAstap'])->get();
+        $reklasMutasis = $reklasQuery->with(['astap.jenisAstap', 'jenisReklasAsal', 'jenisReklasTujuan'])->get();
+
+        // Kumpulkan riwayat seluruh reklasifikasi per astap pada tahun bersangkutan
+        $allReklasByAstap = AstapReklas::where('tahun', $selectedTahun)
+            ->orderBy('id', 'asc')
+            ->get()
+            ->groupBy('astap_id');
 
         // Kumpulkan ID astap yang sudah memiliki transaksi reklas EKSTRAKOMPTABEL pada periode ini
         $processedExtracomAstapIds = $reklasMutasis
@@ -116,10 +122,11 @@ class ReklasifikasiController extends Controller
             $mutasiKurang = 0;
 
             // 1. Hitung Saldo Awal Belanja Modal dari ASTAP berdasarkan Prefix PMDN 108
+            // Catatan: Aset yang direklasifikasi ditempatkan saldo awalnya pada rekening asal pengadaan
             if ($prefix && !str_starts_with($prefix, 'KOR_')) {
                 foreach ($astaps as $astap) {
-                    $matchedRow = $this->matchAstapToRow($astap, $templateRows);
-                    if ($matchedRow && $matchedRow->id === $row->id) {
+                    $matchedRowId = $this->resolveAstapSaldoAwalRowId($astap, $templateRows, $allReklasByAstap);
+                    if ($matchedRowId === $row->id) {
                         $saldoAwal += (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
                     }
                 }
@@ -227,12 +234,12 @@ class ReklasifikasiController extends Controller
         // 5. Ambil kandidat aset untuk modal tambah reklasifikasi
         $kandidatAstaps = Astap::where('is_deleted', 0)
             ->where('tahun_perolehan', $selectedTahun)
-            ->select('id', 'nama_barang', 'total_realisasi', 'tahun_perolehan', 'jenis_astap_id', 'is_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'category', 'is_extracomtable')
+            ->select('id', 'nama_barang', 'total_realisasi', 'tahun_perolehan', 'jenis_astap_id', 'is_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
             ->with(['jenisAstap', 'registers'])
             ->orderBy('nama_barang', 'asc')
             ->get();
 
-        return view('pages.master_reklasifikasi', [
+        return view('pages.reklasifikasi.index', [
             'matriks'           => $matriks,
             'subtotals'         => $subtotals,
             'grandTotal'        => $grandTotal,
@@ -312,6 +319,13 @@ class ReklasifikasiController extends Controller
         DB::beginTransaction();
         try {
             $astap = Astap::findOrFail($validated['astap_id']);
+
+            // Catat identitas rekening & KIB asal sebelum aset dimodifikasi
+            $asalKibAset = ($validated['asal_kib'] ?? null) ?: ($astap->category ?: 'KIB B');
+            $asalKodeAset = $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: $astap->jenisAstap?->jenis);
+            $asalNamaAset = $astap->jenisAstap?->uraian_sub_sub_rincian ?: ($astap->jenisAstap?->uraian_sub_rincian ?: ($astap->jenisAstap?->nama_jenis ?: $astap->nama_barang));
+            $tujuanKodeAset = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
+            $tujuanNamaAset = $request->input('tujuan_nama');
 
             if (($isExtracom || $isIntracom) && !empty($request->reklas_items) && is_array($request->reklas_items)) {
                 $totalBaru = 0;
@@ -402,8 +416,12 @@ class ReklasifikasiController extends Controller
             $astap->jenis_reklas = $validated['jenis_reklas'];
             if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL') {
                 $astap->is_extracomtable = true;
+                $tujuanKodeAset = 'KOR_EXTRACOM';
+                $tujuanNamaAset = 'Koreksi Di Bawah Batas Kapitalisasi (Ekstrakomptabel)';
             } elseif ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM') {
                 $astap->is_extracomtable = false;
+                $asalKodeAset = 'KOR_EXTRACOM';
+                $asalNamaAset = 'Aset Ekstrakomptabel (≤ Rp 300.000)';
                 $targetKib = $validated['tujuan_kib'] ?: 'KIB B';
                 if ($targetKib === 'KIB E') {
                     if (!$astap->jenisAstap || !str_starts_with($astap->jenisAstap->jenis, '1.3.5')) {
@@ -416,6 +434,8 @@ class ReklasifikasiController extends Controller
                         if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
                     }
                 }
+                $tujuanKodeAset = $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: $astap->jenisAstap?->jenis);
+                $tujuanNamaAset = $astap->jenisAstap?->uraian_sub_sub_rincian ?: ($astap->jenisAstap?->uraian_sub_rincian ?: ($astap->jenisAstap?->nama_jenis ?: $astap->nama_barang));
             } elseif ($validated['jenis_reklas'] === 'DEFINITIF_TO_KDP') {
                 $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.6%')->first();
                 if (!$matchingJenis) {
@@ -431,7 +451,11 @@ class ReklasifikasiController extends Controller
                     );
                 }
                 if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
+                $tujuanKodeAset = '1.3.6.01.01';
+                $tujuanNamaAset = 'Konstruksi Dalam Pengerjaan';
             } elseif ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
+                $asalKodeAset = '1.3.6.01.01';
+                $asalNamaAset = 'Konstruksi Dalam Pengerjaan (KIB F)';
                 $targetKib = $validated['tujuan_kib'] ?: 'KIB C';
                 if ($targetKib === 'KIB D') {
                     $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.4%')->first();
@@ -479,6 +503,8 @@ class ReklasifikasiController extends Controller
                     }
                     if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
                 }
+                $tujuanKodeAset = $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: '1.3.3.01.01');
+                $tujuanNamaAset = $astap->jenisAstap?->uraian_sub_sub_rincian ?: ($astap->jenisAstap?->uraian_sub_rincian ?: 'Bangunan Gedung Definitif');
             } elseif ($validated['jenis_reklas'] === 'KOREKSI_LAIN') {
                 $selisih = (float) $validated['nilai_reklas'];
                 $tipe = $request->input('tipe_koreksi', 'kurang');
@@ -542,16 +568,51 @@ class ReklasifikasiController extends Controller
                         }
                         $selisih = abs($totalBaru - $oldRealisasi);
                         $validated['nilai_reklas'] = $selisih;
+                        $tipe = ($totalBaru >= $oldRealisasi) ? 'tambah' : 'kurang';
                     }
                 } else {
-                    if ($tipe === 'kurang') {
-                        $astap->total_realisasi = max(0, (float) $astap->total_realisasi - $selisih);
+                    $oldRealisasi = (float) $astap->total_realisasi;
+                    if ($request->filled('nilai_realisasi_baru')) {
+                        $totalBaru = (float) $request->input('nilai_realisasi_baru');
+                        $selisih = abs($totalBaru - $oldRealisasi);
+                        $tipe = ($totalBaru >= $oldRealisasi) ? 'tambah' : 'kurang';
+                        $astap->total_realisasi = $totalBaru;
                     } else {
-                        $astap->total_realisasi = (float) $astap->total_realisasi + $selisih;
+                        if ($tipe === 'kurang') {
+                            $astap->total_realisasi = max(0, (float) $astap->total_realisasi - $selisih);
+                        } else {
+                            $astap->total_realisasi = (float) $astap->total_realisasi + $selisih;
+                        }
                     }
+                    $validated['nilai_reklas'] = $selisih;
                     if ($astap->jumlah_volume > 0) {
                         $astap->harga_satuan = $astap->total_realisasi / $astap->jumlah_volume;
                     }
+                }
+
+                // Tentukan baris penyeimbang di neraca untuk KOREKSI_LAIN
+                $allTemplateRows = JenisReklasifikasi::active()->get();
+                $korLainRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_LAIN');
+                $astapRow = $this->matchAstapToRow($astap, $allTemplateRows);
+
+                if ($tipe === 'tambah') {
+                    // Nilai aset bertambah: Penyeimbang (Asal) -> Akun Aset Tetap (Tujuan)
+                    $validated['jenis_reklasifikasi_asal_id'] = $korLainRow?->id;
+                    $validated['jenis_reklasifikasi_tujuan_id'] = $astapRow?->id;
+                    $validated['asal_kib'] = 'KOREKSI';
+                    $validated['tujuan_kib'] = $astap->category ?: ($astapRow?->kelompok_kib ?: 'KIB B');
+                    $tujuanKodeAset = $asalKodeAset;
+                    $tujuanNamaAset = $asalNamaAset;
+                    $asalKodeAset = 'KOR_LAIN';
+                    $asalNamaAset = 'Koreksi Lain-Lain (Penambahan Nilai)';
+                } else {
+                    // Nilai aset berkurang: Akun Aset Tetap (Asal) -> Penyeimbang (Tujuan)
+                    $validated['jenis_reklasifikasi_asal_id'] = $astapRow?->id;
+                    $validated['jenis_reklasifikasi_tujuan_id'] = $korLainRow?->id;
+                    $validated['asal_kib'] = $astap->category ?: ($astapRow?->kelompok_kib ?: 'KIB B');
+                    $validated['tujuan_kib'] = 'KOREKSI';
+                    $tujuanKodeAset = 'KOR_LAIN';
+                    $tujuanNamaAset = 'Koreksi Lain-Lain (Pengurangan Nilai / Audit BPK)';
                 }
             } elseif ($validated['jenis_reklas'] === 'KOREKSI_REKENING') {
                 $targetKib = $validated['tujuan_kib'] ?? null;
@@ -565,6 +626,8 @@ class ReklasifikasiController extends Controller
                         ->first();
                     if ($matchingJenis) {
                         $astap->jenis_astap_id = $matchingJenis->id;
+                        $tujuanKodeAset = $targetKode;
+                        $tujuanNamaAset = $targetNama ?: ($matchingJenis->uraian_sub_sub_rincian ?: ($matchingJenis->uraian_sub_rincian ?: $matchingJenis->nama_jenis));
                     }
                     if ($targetNama && !empty($matchingJenis?->sub_sub_rincian_objek)) {
                         $astap->nama_barang = $targetNama;
@@ -583,6 +646,8 @@ class ReklasifikasiController extends Controller
                         $matchingJenis = JenisAstap::where('jenis', 'like', $prefix . '%')->first();
                         if ($matchingJenis) {
                             $astap->jenis_astap_id = $matchingJenis->id;
+                            $tujuanKodeAset = $matchingJenis->sub_sub_rincian_objek ?: ($matchingJenis->sub_rincian_objek ?: $matchingJenis->jenis);
+                            $tujuanNamaAset = $targetNama ?: ($matchingJenis->uraian_sub_sub_rincian ?: ($matchingJenis->uraian_sub_rincian ?: $matchingJenis->nama_jenis));
                         }
                     }
                 }
@@ -784,14 +849,34 @@ class ReklasifikasiController extends Controller
 
             $astap->save();
 
+            // Pastikan fallback nama dan kode asal/tujuan jika masih kosong
+            if (empty($tujuanNamaAset) && !empty($validated['jenis_reklasifikasi_tujuan_id'])) {
+                $tRow = $allTemplateRows->firstWhere('id', $validated['jenis_reklasifikasi_tujuan_id']);
+                if ($tRow) {
+                    $tujuanNamaAset = $tRow->nama_sub_rincian;
+                    $tujuanKodeAset = $tujuanKodeAset ?: $tRow->kode_prefix;
+                }
+            }
+            if (empty($asalNamaAset) && !empty($validated['jenis_reklasifikasi_asal_id'])) {
+                $aRow = $allTemplateRows->firstWhere('id', $validated['jenis_reklasifikasi_asal_id']);
+                if ($aRow) {
+                    $asalNamaAset = $aRow->nama_sub_rincian;
+                    $asalKodeAset = $asalKodeAset ?: $aRow->kode_prefix;
+                }
+            }
+
             // Simpan audit log reklasifikasi
             $reklasData = [
                 'astap_id'                      => $validated['astap_id'],
                 'jenis_reklasifikasi_asal_id'   => $validated['jenis_reklasifikasi_asal_id'] ?? null,
                 'jenis_reklasifikasi_tujuan_id' => $validated['jenis_reklasifikasi_tujuan_id'] ?? null,
                 'jenis_reklas'                  => $validated['jenis_reklas'],
-                'asal_kib'                      => $validated['asal_kib'] ?? null,
+                'asal_kib'                      => $validated['asal_kib'] ?? ($asalKibAset ?? null),
+                'asal_kode'                     => $asalKodeAset ?? null,
+                'asal_nama'                     => $asalNamaAset ?? null,
                 'tujuan_kib'                    => $validated['tujuan_kib'] ?? null,
+                'tujuan_kode'                   => $tujuanKodeAset ?? null,
+                'tujuan_nama'                   => $tujuanNamaAset ?? null,
                 'nilai_reklas'                  => $validated['nilai_reklas'],
                 'tanggal_reklas'                => $validated['tanggal_reklas'],
                 'triwulan'                      => $validated['triwulan'],
@@ -1044,5 +1129,40 @@ class ReklasifikasiController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Menentukan ID baris template matriks untuk Saldo Awal Belanja Modal suatu aset.
+     * Jika aset pernah direklasifikasi (misal Koreksi Rekening atau Ekstrakomptabel),
+     * Saldo Awal ditempatkan pada rekening/baris ASAL pengadaan semula agar neraca balance.
+     */
+    private function resolveAstapSaldoAwalRowId(Astap $astap, $templateRows, $allReklasByAstap): ?int
+    {
+        $history = $allReklasByAstap[$astap->id] ?? null;
+        if ($history && $history->isNotEmpty()) {
+            $firstReklas = $history->first();
+
+            // Aset yang masuk dari Kapitalisasi Intrakomptabel atau Hibah Masuk
+            // bukan belanja modal aset tetap tahun berjalan => tidak memiliki saldo awal
+            if (in_array($firstReklas->jenis_reklas, ['KAPITALISASI_INTRAKOM', 'HIBAH_MASUK'])) {
+                return null;
+            }
+
+            // Aset yang direklasifikasi/pindah kamar: tempatkan saldo awal di rekening asal pengadaan
+            $asalId = $firstReklas->jenis_reklasifikasi_asal_id;
+            if ($asalId) {
+                return (int) $asalId;
+            }
+
+            if ($firstReklas->asal_kib) {
+                $row = $templateRows->firstWhere('kelompok_kib', $firstReklas->asal_kib);
+                if ($row) return (int) $row->id;
+            }
+        }
+
+        // Jika aset berasal dari pengadaan belanja modal tahun berjalan tapi ditandai extracom tanpa log reklas
+        // Saldo awal tetap dicatat di akun belanjanya semula agar mutasi kurang penyeimbang tidak membuat minus
+        $row = $this->matchAstapToRow($astap, $templateRows);
+        return $row ? (int) $row->id : null;
     }
 }

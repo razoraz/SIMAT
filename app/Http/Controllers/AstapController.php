@@ -456,7 +456,7 @@ class AstapController extends Controller
         $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
         $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
-        return view('pages.data_astap', compact('astaps', 'deletedAstaps', 'dbMaster108'));
+        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108'));
     }
 
     /**
@@ -531,7 +531,7 @@ class AstapController extends Controller
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
             $dbUnits = \App\Models\Unit::orderBy('nama')->get();
-            return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits'));
+            return view('pages.astap.form', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits'));
     }
 
     /**
@@ -544,7 +544,7 @@ class AstapController extends Controller
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
             $dbUnits = \App\Models\Unit::orderBy('nama')->get();
             $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->find($id);
-            return view('pages.form_astap', [
+            return view('pages.astap.form', [
                 'id' => $id, 
                 'astap' => $astap,
                 'dbMaster108' => $dbMaster108,

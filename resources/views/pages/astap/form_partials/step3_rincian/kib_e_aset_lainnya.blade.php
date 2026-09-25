@@ -20,8 +20,8 @@
                                 </a>
                             </div>
 
-                            @include('pages.form_astap_partials.step3_rincian.extracom_dokumen')
-                            @include('pages.form_astap_partials.step3_rincian.extracom_form')
+                            @include('pages.astap.form_partials.step3_rincian.extracom_dokumen')
+                            @include('pages.astap.form_partials.step3_rincian.extracom_form')
                         </div>
 
                         <!-- MODE REGULER: FORM KIB E ASLI -->

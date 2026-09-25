@@ -170,7 +170,7 @@ class MutasiEksternalController extends Controller
             ];
         })->values()->toArray();
 
-        return view('pages.mutasi_eksternal', compact('mutasiEksternals'));
+        return view('pages.mutasi_eksternal.index', compact('mutasiEksternals'));
     }
 
     /**
@@ -182,7 +182,7 @@ class MutasiEksternalController extends Controller
         $dbUnits = Unit::orderBy('nama')->get();
         $dbPejabats = self::getDistinctPejabats();
 
-        return view('pages.form_mutasi_eksternal', compact('dbMaster108', 'dbUnits', 'dbPejabats'));
+        return view('pages.mutasi_eksternal.form', compact('dbMaster108', 'dbUnits', 'dbPejabats'));
     }
 
     /**
@@ -445,7 +445,7 @@ class MutasiEksternalController extends Controller
         $dbUnits = Unit::orderBy('nama')->get();
         $dbPejabats = self::getDistinctPejabats();
 
-        return view('pages.form_mutasi_eksternal', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats'));
+        return view('pages.mutasi_eksternal.form', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats'));
     }
 
     /**
@@ -737,7 +737,7 @@ class MutasiEksternalController extends Controller
             ->orWhere('id', $id)
             ->firstOrFail();
 
-        return view('pages.cetak_bast_mutasi_eksternal', compact('mutasi'));
+        return view('pages.mutasi_eksternal.cetak_bast', compact('mutasi'));
     }
 
     /**

@@ -29,7 +29,7 @@ class UserController extends Controller
         $units = Unit::pluck('nama')->toArray();
         $availablePermissions = User::AVAILABLE_PERMISSIONS;
 
-        return view('pages.master_users', compact('users', 'units', 'currentUser', 'availablePermissions'));
+        return view('pages.master.users.index', compact('users', 'units', 'currentUser', 'availablePermissions'));
     }
 
     /**

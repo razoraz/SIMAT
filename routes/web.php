@@ -671,7 +671,7 @@ Route::middleware('auth')->group(function () {
         $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
         $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
-        return view('pages.data_astap', compact('astaps', 'deletedAstaps', 'dbMaster108'));
+        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108'));
     })->name('astap.index')->middleware('module:astap');
 
     // API: Ambil riwayat mutasi spesifik unit register NIBAR
@@ -870,7 +870,7 @@ Route::middleware('auth')->group(function () {
 
             // ─── Pilih Jenis Input (Belanja Modal / Hibah) ───────────────
             Route::get('/astap/pilih-jenis', function () {
-                return view('pages.form_astap_pilih_jenis');
+                return view('pages.astap.pilih_jenis');
             })->name('astap.pilih_jenis');
 
             // ─── Form Hibah (Create & Store) ──────────────────────────────
@@ -880,7 +880,7 @@ Route::middleware('auth')->group(function () {
                 $dbRekeningBelanjas = \App\Models\RekeningBelanja::orderBy('kode_rek')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_hibah', compact('dbMaster108', 'dbUnits', 'dbRekeningBelanjas', 'dbPenyedias', 'dbPejabats'));
+                return view('pages.hibah.form', compact('dbMaster108', 'dbUnits', 'dbRekeningBelanjas', 'dbPenyedias', 'dbPejabats'));
             })->name('astap.create_hibah');
 
             Route::post('/astap/store-hibah', function (\Illuminate\Http\Request $request) {
@@ -1063,7 +1063,7 @@ Route::middleware('auth')->group(function () {
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_rekening', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+                return view('pages.astap.form_rekening', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
             })->name('astap.create_rekening');
 
             Route::post('/astap/store-rekening', function (\Illuminate\Http\Request $request) {
@@ -1256,7 +1256,7 @@ Route::middleware('auth')->group(function () {
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_kemitraan', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+                return view('pages.kemitraan.form', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
             })->name('astap.create_kemitraan');
 
             Route::post('/astap/store-kemitraan', function (\Illuminate\Http\Request $request) {
@@ -1436,7 +1436,7 @@ Route::middleware('auth')->group(function () {
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_astap', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+                return view('pages.astap.form', compact('dbMaster108', 'dbJenisPengadaans', 'dbRekeningBelanjas', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
             })->name('astap.create');
 
             Route::get('/astap/{id}/edit', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
@@ -1450,7 +1450,7 @@ Route::middleware('auth')->group(function () {
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.form_astap', [
+                return view('pages.astap.form', [
                     'id' => $id, 
                     'astap' => $astap,
                     'dbMaster108' => $dbMaster108,

@@ -100,7 +100,7 @@ class UnitController extends Controller
             ];
         });
 
-        return view('pages.unit_paviliun', compact('units'));
+        return view('pages.unit_paviliun.index', compact('units'));
     }
 
     /**
@@ -109,7 +109,7 @@ class UnitController extends Controller
     public function create()
     {
         $nextKode = Unit::generateNextKode();
-        return view('pages.form_unit_paviliun', compact('nextKode'));
+        return view('pages.unit_paviliun.form', compact('nextKode'));
     }
 
     /**
@@ -155,7 +155,7 @@ class UnitController extends Controller
     public function edit($id)
     {
         $unit = Unit::findOrFail($id);
-        return view('pages.form_unit_paviliun', compact('unit', 'id'));
+        return view('pages.unit_paviliun.form', compact('unit', 'id'));
     }
 
     /**
@@ -383,7 +383,7 @@ class UnitController extends Controller
         $totalNilaiFmt = 'Rp ' . number_format($totalNilaiSum, 0, ',', '.');
         $totalRusak = $kondisiKurangBaik + $kondisiRusakBerat;
 
-        return view('pages.lembar_kir', [
+        return view('pages.unit_paviliun.lembar_kir', [
             'units'              => $units,
             'currentUnit'        => $currentUnit,
             'assets'             => $assets,

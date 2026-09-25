@@ -104,7 +104,7 @@ class KemitraanController extends Controller
         $dbUnits = Unit::orderBy('nama')->get();
         $dbMaster108 = JenisAstap::getNested108();
 
-        return view('pages.master_kemitraan', compact(
+        return view('pages.kemitraan.index', compact(
             'kemitraanRecords',
             'totalNilaiKemitraan',
             'totalVolumeUnit',

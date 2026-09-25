@@ -149,7 +149,7 @@ class MutasiController extends Controller
 
         $units = Unit::orderBy('nama')->get();
 
-        return view('pages.mutasi_aset', compact('mutasis', 'units'));
+        return view('pages.mutasi_aset.index', compact('mutasis', 'units'));
     }
 
     /**
@@ -200,7 +200,7 @@ class MutasiController extends Controller
             }
         }
 
-        return view('pages.form_mutasi_aset', compact('units', 'registers', 'lockedCountByUnit'));
+        return view('pages.mutasi_aset.form', compact('units', 'registers', 'lockedCountByUnit'));
     }
 
     /**
@@ -443,7 +443,7 @@ class MutasiController extends Controller
             }
         }
 
-        return view('pages.form_mutasi_aset', compact('mutasi', 'units', 'registers', 'relatedRegisterIds', 'lockedCountByUnit'));
+        return view('pages.mutasi_aset.form', compact('mutasi', 'units', 'registers', 'relatedRegisterIds', 'lockedCountByUnit'));
     }
 
     /**

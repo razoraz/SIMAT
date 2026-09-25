@@ -42,14 +42,14 @@
 
     <!-- 2. Rincian Spesifikasi Fisik Barang Sesuai Kategori KIB (Langsung Mulai Rincian Fisik) -->
     <div class="space-y-6">
-        @include('pages.form_hibah_partials.step3_rincian.kib_a_tanah')
-        @include('pages.form_hibah_partials.step3_rincian.kib_b_peralatan_mesin')
-        @include('pages.form_hibah_partials.step3_rincian.kib_c_gedung_bangunan')
-        @include('pages.form_hibah_partials.step3_rincian.kib_d_jaringan_irigasi')
-        @include('pages.form_hibah_partials.step3_rincian.kib_e_aset_lainnya')
-        @include('pages.form_hibah_partials.step3_rincian.atb_aset_tak_berwujud')
-        @include('pages.form_hibah_partials.step3_rincian.kib_f_kdp')
-        @include('pages.form_hibah_partials.step3_rincian.kategori_lainnya')
+        @include('pages.hibah.form_partials.step3_rincian.kib_a_tanah')
+        @include('pages.hibah.form_partials.step3_rincian.kib_b_peralatan_mesin')
+        @include('pages.hibah.form_partials.step3_rincian.kib_c_gedung_bangunan')
+        @include('pages.hibah.form_partials.step3_rincian.kib_d_jaringan_irigasi')
+        @include('pages.hibah.form_partials.step3_rincian.kib_e_aset_lainnya')
+        @include('pages.hibah.form_partials.step3_rincian.atb_aset_tak_berwujud')
+        @include('pages.hibah.form_partials.step3_rincian.kib_f_kdp')
+        @include('pages.hibah.form_partials.step3_rincian.kategori_lainnya')
     </div>
 
     <!-- 3. Bagian Penempatan Ruangan & PPK RSUD -->

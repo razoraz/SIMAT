@@ -53,7 +53,7 @@ class JenisAstapController extends Controller
             ->get();
         $totalCount = JenisAstap::count();
 
-        return view('pages.master_jenis_astap', compact('kode108List', 'uniqueJenis', 'uniqueSubRincian', 'totalCount'));
+        return view('pages.master.jenis_astap.index', compact('kode108List', 'uniqueJenis', 'uniqueSubRincian', 'totalCount'));
     }
 
     public function searchSubSub(Request $request)

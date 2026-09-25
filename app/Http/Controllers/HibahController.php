@@ -104,7 +104,7 @@ class HibahController extends Controller
             array_unshift($availableYears, (int) date('Y'));
         }
 
-        return view('pages.master_hibah', compact(
+        return view('pages.hibah.index', compact(
             'hibahRecords',
             'totalMasukUnit',
             'totalMasukNominal',

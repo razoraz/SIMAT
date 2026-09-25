@@ -573,7 +573,7 @@ class BeritaAcaraController extends Controller
             ];
         });
 
-        return view('pages.berita_acara', [
+        return view('pages.berita_acara.index', [
             'tahun'              => $tahun,
             'availableYears'     => $availableYears,
             'triwulanDataJson'   => json_encode($triwulanData),

@@ -418,6 +418,8 @@
                     nomor_ba_reklas: '',
                     alasan_reklas: '',
                     keterangan: '',
+                    tipe_koreksi: 'kurang',
+                    nilai_realisasi_baru: 0,
                     spekBaru: {
                         tanah_luas_m2: '',
                         tanah_hak: 'Hak Pakai',
@@ -464,8 +466,14 @@
                 if (!found) return;
 
                 this.selectedAstap = found;
-                this.formData.nilai_reklas = parseFloat(found.total_realisasi || 0);
                 this.formData.nama_barang = found.nama_barang || '';
+                this.formData.nilai_realisasi_baru = parseFloat(found.total_realisasi || 0);
+
+                if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
+                    this.formData.nilai_reklas = 0;
+                } else {
+                    this.formData.nilai_reklas = parseFloat(found.total_realisasi || 0);
+                }
 
                 // Auto-pilih baris asal berdasarkan prefix kode atau kategori KIB
                 const prefix = found.jenis_astap?.sub_rincian_objek ? found.jenis_astap.sub_rincian_objek.substring(0, 8) : '';
@@ -480,6 +488,11 @@
                 if (asalRow) {
                     this.formData.jenis_reklasifikasi_asal_id = asalRow.id;
                     this.formData.asal_kib = asalRow.kelompok_kib;
+                }
+
+                // Sinkronkan baris jika jenis KOREKSI_LAIN
+                if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
+                    this.syncKorLainRows();
                 }
 
                 // Inisialisasi spek baru
@@ -514,6 +527,72 @@
                         this.formData.jenis_reklasifikasi_asal_id = hibahRow.id;
                     }
                     this.formData.asal_kib = 'HIBAH';
+                } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
+                    const currentTot = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                    if (!this.formData.nilai_realisasi_baru || this.formData.nilai_realisasi_baru === 0) {
+                        this.formData.nilai_realisasi_baru = currentTot;
+                    }
+                    this.formData.nilai_reklas = Math.abs(parseFloat(this.formData.nilai_realisasi_baru) - currentTot);
+                    this.syncKorLainRows();
+                }
+            },
+
+            onNilaiBaruInput() {
+                const lama = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                const baru = parseFloat(this.formData.nilai_realisasi_baru || 0);
+                const diff = Math.abs(baru - lama);
+                this.formData.nilai_reklas = diff;
+                this.formData.tipe_koreksi = (baru >= lama) ? 'tambah' : 'kurang';
+                this.syncKorLainRows();
+            },
+
+            onNominalSelisihInput() {
+                const lama = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                const selisih = parseFloat(this.formData.nilai_reklas || 0);
+                if (this.formData.tipe_koreksi === 'tambah') {
+                    this.formData.nilai_realisasi_baru = lama + selisih;
+                } else {
+                    this.formData.nilai_realisasi_baru = Math.max(0, lama - selisih);
+                }
+                this.syncKorLainRows();
+            },
+
+            onTipeKoreksiChange() {
+                const lama = parseFloat(this.selectedAstap?.total_realisasi || 0);
+                const selisih = parseFloat(this.formData.nilai_reklas || 0);
+                if (this.formData.tipe_koreksi === 'tambah') {
+                    this.formData.nilai_realisasi_baru = lama + selisih;
+                } else {
+                    this.formData.nilai_realisasi_baru = Math.max(0, lama - selisih);
+                }
+                this.syncKorLainRows();
+            },
+
+            syncKorLainRows() {
+                if (this.formData.jenis_reklas !== 'KOREKSI_LAIN') return;
+                const korLainRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_LAIN');
+                let astapRow = null;
+                const prefix = this.selectedAstap?.jenis_astap?.sub_rincian_objek ? this.selectedAstap.jenis_astap.sub_rincian_objek.substring(0, 8) : '';
+                if (prefix && window.templateRows) {
+                    astapRow = window.templateRows.find(r => r.kode_prefix && (r.kode_prefix.startsWith(prefix) || prefix.startsWith(r.kode_prefix)));
+                }
+                if (!astapRow && window.templateRows) {
+                    const cat = this.selectedAstap?.category || 'KIB B';
+                    astapRow = window.templateRows.find(r => r.kelompok_kib === cat);
+                }
+
+                if (this.formData.tipe_koreksi === 'tambah') {
+                    // Penambahan Nilai: Dari KOR_LAIN (+) ke Akun Aset Tetap
+                    if (korLainRow) this.formData.jenis_reklasifikasi_asal_id = korLainRow.id;
+                    if (astapRow) this.formData.jenis_reklasifikasi_tujuan_id = astapRow.id;
+                    this.formData.asal_kib = 'KOREKSI';
+                    this.formData.tujuan_kib = astapRow ? astapRow.kelompok_kib : 'KIB B';
+                } else {
+                    // Pengurangan Nilai: Dari Akun Aset Tetap (-) ke KOR_LAIN
+                    if (astapRow) this.formData.jenis_reklasifikasi_asal_id = astapRow.id;
+                    if (korLainRow) this.formData.jenis_reklasifikasi_tujuan_id = korLainRow.id;
+                    this.formData.asal_kib = astapRow ? astapRow.kelompok_kib : 'KIB B';
+                    this.formData.tujuan_kib = 'KOREKSI';
                 }
             },
 
@@ -690,6 +769,11 @@
                         return `Telah dilakukan koreksi pengalihan ke Ekstrakomptabel atas aset "${nama}" senilai Rp ${nilai}${noBa} karena nilai perolehan satuan berada di bawah batas kapitalisasi (≤ Rp 300.000).`;
                     case 'HIBAH_MASUK':
                         return `Telah dicatat penambahan aset tetap melalui reklasifikasi hibah/bantuan pemerintah atas barang "${nama}" senilai Rp ${nilai}${noBa}.`;
+                    case 'KOREKSI_LAIN':
+                        const tipeText = this.formData.tipe_koreksi === 'tambah' ? 'penambahan nilai buku (kapitalisasi susulan)' : 'pengurangan nilai buku (temuan audit BPK / penyesuaian dana)';
+                        const lamaFmt = new Intl.NumberFormat('id-ID').format(this.selectedAstap?.total_realisasi || 0);
+                        const baruFmt = new Intl.NumberFormat('id-ID').format(this.formData.nilai_realisasi_baru || 0);
+                        return `Telah dilakukan koreksi nilai / ${tipeText} atas aset "${nama}" sebesar penyesuaian Rp ${nilai}${noBa}, sehingga nilai buku aset disesuaikan dari semula Rp ${lamaFmt} menjadi Rp ${baruFmt}.`;
                     default:
                         return `Telah dilakukan reklasifikasi aset tetap atas barang "${nama}" senilai Rp ${nilai}${noBa}.`;
                 }
@@ -702,6 +786,8 @@
                 try {
                     const payload = {
                         ...this.formData,
+                        tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
+                        nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),
                         alasan_reklas: (this.formData.alasan_reklas || '').trim() || (this.formData.keterangan || '').trim() || null,
                         keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),
                         spesifikasi_baru: (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) ? this.formData.spekBaru : null,
