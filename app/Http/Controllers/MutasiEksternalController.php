@@ -38,6 +38,40 @@ class MutasiEksternalController extends Controller
     }
 
     /**
+     * Dapatkan daftar instansi/SKPD pengirim yang pernah tercatat di database.
+     */
+    public static function getDistinctSkpdAsals()
+    {
+        return MutasiEksternal::whereNotNull('opd_asal')
+            ->where('opd_asal', '!=', '')
+            ->distinct()
+            ->pluck('opd_asal')
+            ->merge(
+                AstapPelimpahanSkpd::whereNotNull('skpd_asal')
+                    ->where('skpd_asal', '!=', '')
+                    ->distinct()
+                    ->pluck('skpd_asal')
+            )
+            ->merge(
+                Astap::where('sumber_dana', 'pelimpahan_skpd')
+                    ->whereNotNull('mutasi_asal')
+                    ->where('mutasi_asal', '!=', '')
+                    ->distinct()
+                    ->pluck('mutasi_asal')
+            )
+            ->merge([
+                'Dinas Kesehatan Kabupaten Bondowoso',
+                'BPKAD Kabupaten Bondowoso',
+                'Pemerintah Kabupaten Bondowoso',
+                'Dinas Kesehatan Provinsi Jawa Timur',
+            ])
+            ->map(fn($v) => trim($v))
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
+    /**
      * Tampilkan katalog data Mutasi Eksternal (Transfer Antar-OPD / Pelimpahan SKPD).
      */
     public function index(Request $request)
@@ -181,8 +215,9 @@ class MutasiEksternalController extends Controller
         $dbMaster108 = JenisAstap::getNested108();
         $dbUnits = Unit::orderBy('nama')->get();
         $dbPejabats = self::getDistinctPejabats();
+        $dbSkpdAsals = self::getDistinctSkpdAsals();
 
-        return view('pages.mutasi_eksternal.form', compact('dbMaster108', 'dbUnits', 'dbPejabats'));
+        return view('pages.mutasi_eksternal.form', compact('dbMaster108', 'dbUnits', 'dbPejabats', 'dbSkpdAsals'));
     }
 
     /**
@@ -444,8 +479,9 @@ class MutasiEksternalController extends Controller
         $dbMaster108 = JenisAstap::getNested108();
         $dbUnits = Unit::orderBy('nama')->get();
         $dbPejabats = self::getDistinctPejabats();
+        $dbSkpdAsals = self::getDistinctSkpdAsals();
 
-        return view('pages.mutasi_eksternal.form', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats'));
+        return view('pages.mutasi_eksternal.form', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats', 'dbSkpdAsals'));
     }
 
     /**

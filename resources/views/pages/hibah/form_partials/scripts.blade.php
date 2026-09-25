@@ -4,6 +4,7 @@
     window.dbUnits = @json(!empty($dbUnits) ? $dbUnits : []);
     window.dbPenyedias = @json(!empty($dbPenyedias) ? $dbPenyedias : []);
     window.dbPejabats = @json(!empty($dbPejabats) ? $dbPejabats : []);
+    window.dbPemberiHibahs = @json(!empty($dbPemberiHibahs) ? $dbPemberiHibahs : []);
 
     function formHibah() {
         return {
@@ -17,6 +18,30 @@
             pejabatsList: window.dbPejabats || [],
             unitsList: window.dbUnits || [],
             masterUnits: window.dbUnits || [],
+
+            // Autocomplete Riwayat Instansi Pemberi Hibah
+            masterInstansiList: (window.dbPemberiHibahs && window.dbPemberiHibahs.length > 0)
+                ? window.dbPemberiHibahs
+                : [
+                    'Kementerian Kesehatan Republik Indonesia',
+                    'Dinas Kesehatan Provinsi Jawa Timur',
+                    'Pemerintah Kabupaten Bondowoso',
+                    'Donatur Swasta / Yayasan CSR'
+                ],
+            isInstansiDropdownOpen: false,
+
+            get filteredInstansiList() {
+                const q = (this.formData.hibah_pemberi || '').toLowerCase().trim();
+                if (!q) {
+                    return this.masterInstansiList.slice(0, 15);
+                }
+                return this.masterInstansiList.filter(inst => inst && inst.toLowerCase().includes(q));
+            },
+
+            selectInstansi(name) {
+                this.formData.hibah_pemberi = name;
+                this.isInstansiDropdownOpen = false;
+            },
 
             // Filter States (Sama Persis seperti Belanja Modal)
             searchRekening: '',

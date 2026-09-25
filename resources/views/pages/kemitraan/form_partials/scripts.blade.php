@@ -6,12 +6,38 @@
     window.dbUnits = @json(!empty($dbUnits) ? $dbUnits : []);
     window.dbPejabats = @json(!empty($dbPejabats) ? $dbPejabats : []);
     window.dbPenyedias = @json(!empty($dbPenyedias) ? $dbPenyedias : []);
+    window.dbMitraKemitraans = @json(!empty($dbMitraKemitraans) ? $dbMitraKemitraans : []);
 
     function formKemitraan() {
         return {
             currentStep: 1,
             totalSteps: 3,
             isSubmitting: false,
+
+            // Autocomplete Riwayat Mitra Kemitraan
+            masterMitraList: (window.dbMitraKemitraans && window.dbMitraKemitraans.length > 0)
+                ? window.dbMitraKemitraans
+                : [
+                    'PT. Roche Indonesia',
+                    'PT. Fresenius Medical Care Indonesia',
+                    'PT. Kimia Farma Diagnostika',
+                    'PT. Sysmex Indonesia',
+                    'Mitra Swasta Pengembang (BGS)'
+                ],
+            isMitraDropdownOpen: false,
+
+            get filteredMitraList() {
+                const q = (this.formData.mitra_nama || '').toLowerCase().trim();
+                if (!q) {
+                    return this.masterMitraList.slice(0, 15);
+                }
+                return this.masterMitraList.filter(m => m && m.toLowerCase().includes(q));
+            },
+
+            selectMitra(name) {
+                this.formData.mitra_nama = name;
+                this.isMitraDropdownOpen = false;
+            },
 
             // Toast State
             toast: {

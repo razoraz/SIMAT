@@ -527,7 +527,15 @@ class AstapController extends Controller
      */
     public function create()
     {
-            $dbMaster108 = \App\Models\JenisAstap::getNested108();
+            $rawMaster108 = \App\Models\JenisAstap::getNested108();
+            // Belanja modal ASTAP hanya Aset Tetap (1.3) dan ATB (1.5.3), tanpa Kemitraan (1.5.2) dan Aset Lain-Lain (1.5.4)
+            $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
+                $kode = (string) ($j['kode'] ?? '');
+                $nama = strtolower($j['nama'] ?? '');
+                if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
+                if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
+                return true;
+            }));
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
             $dbUnits = \App\Models\Unit::orderBy('nama')->get();
@@ -539,7 +547,15 @@ class AstapController extends Controller
      */
     public function edit($id)
     {
-            $dbMaster108 = \App\Models\JenisAstap::getNested108();
+            $rawMaster108 = \App\Models\JenisAstap::getNested108();
+            // Belanja modal ASTAP hanya Aset Tetap (1.3) dan ATB (1.5.3), tanpa Kemitraan (1.5.2) dan Aset Lain-Lain (1.5.4)
+            $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
+                $kode = (string) ($j['kode'] ?? '');
+                $nama = strtolower($j['nama'] ?? '');
+                if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
+                if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
+                return true;
+            }));
             $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
             $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
             $dbUnits = \App\Models\Unit::orderBy('nama')->get();

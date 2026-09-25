@@ -1,5 +1,13 @@
     <script>
-        window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : []);
+        window.dbMasterJenisAstap108 = (@json(!empty($dbMaster108) ? $dbMaster108 : [])).filter(j => {
+            if (!j || !j.kode) return false;
+            const k = (j.kode || '').toString();
+            const n = (j.nama || '').toLowerCase();
+            // Belanja modal ASTAP hanya Aset Tetap (1.3.x) dan ATB (1.5.3), tanpa Kemitraan (1.5.2) dan Aset Lain-Lain (1.5.4)
+            if (k.startsWith('1.5.2') || k.startsWith('1.4') || n.includes('kemitraan')) return false;
+            if (k.startsWith('1.5.4') || n.includes('aset lain-lain')) return false;
+            return true;
+        });
         window.dbJenisPengadaans = @json(!empty($dbJenisPengadaans) ? $dbJenisPengadaans : []);
         window.dbRekeningBelanjas = @json(!empty($dbRekeningBelanjas) ? $dbRekeningBelanjas : []);
         window.dbUnits = @json(!empty($dbUnits) ? $dbUnits : []);
@@ -2186,11 +2194,15 @@
                         return [];
                     }
                     let list = (this.masterJenisAstap108 || []).filter(j => j && j.kode && j.nama && j.nama.trim() !== '');
-                    // Exclude "Aset Tetap Dalam Renovasi" (1.3.5.07)
-                    list = list.filter(j => 
-                        !(j.kode && j.kode.includes('1.3.5.07')) && 
-                        !(j.nama && j.nama.toLowerCase().includes('dalam renovasi'))
-                    );
+                    // Exclude "Aset Tetap Dalam Renovasi" (1.3.5.07), "Kemitraan Dengan Pihak Ketiga" (1.5.2), dan "Aset Lain-Lain" (1.5.4)
+                    list = list.filter(j => {
+                        const k = (j.kode || '').toString();
+                        const n = (j.nama || '').toLowerCase();
+                        if (k.includes('1.3.5.07') || n.includes('dalam renovasi')) return false;
+                        if (k.startsWith('1.5.2') || k.startsWith('1.4') || n.includes('kemitraan')) return false;
+                        if (k.startsWith('1.5.4') || n.includes('aset lain-lain')) return false;
+                        return true;
+                    });
                     const q = (this.searchJenis108 || '').toLowerCase().trim();
                     if (!q) {
                         return list;

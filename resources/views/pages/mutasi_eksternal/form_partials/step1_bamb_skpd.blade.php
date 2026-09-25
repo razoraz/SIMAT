@@ -50,31 +50,104 @@
             </span>
         </div>
 
-        <!-- SKPD Asal Pelimpahan -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Instansi / SKPD Asal Pelimpahan <span class="text-rose-400">*</span>
-            </label>
-            <input type="text" x-model="formData.mutasi_asal" required
-                placeholder="Contoh: Dinas Kesehatan Kabupaten Bondowoso, BPKAD Bondowoso, RSUD Besuki..."
-                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none font-bold">
+        <!-- SKPD Asal Pelimpahan (Combobox / Filter Riwayat & Bebas Ketik) -->
+        <div class="relative space-y-1.5" @click.away="isSkpdDropdownOpen = false">
+            <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-slate-200">
+                    Instansi / SKPD Asal Pelimpahan <span class="text-rose-400">*</span>
+                </label>
+                <template x-if="masterSkpdList && masterSkpdList.length > 0">
+                    <span class="text-[10px] text-purple-400 font-mono font-normal flex items-center gap-1 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                        <span>⚡</span>
+                        <span>Riwayat Tersimpan</span>
+                    </span>
+                </template>
+            </div>
+
+            <!-- Input Box dengan Ikon dan Clear Button -->
+            <div class="relative">
+                <input type="text" 
+                    x-model="formData.mutasi_asal" 
+                    @focus="isSkpdDropdownOpen = true"
+                    @input="isSkpdDropdownOpen = true"
+                    @keydown.escape="isSkpdDropdownOpen = false"
+                    required
+                    autocomplete="off"
+                    placeholder="Ketik atau pilih nama instansi/SKPD asal (contoh: Dinas Kesehatan, BPKAD...)"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
+                
+                <!-- Ikon Instansi -->
+                <svg class="w-4 h-4 text-purple-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+
+                <!-- Tombol Kosongkan Input -->
+                <template x-if="formData.mutasi_asal">
+                    <button type="button" 
+                        @click="formData.mutasi_asal = ''; isSkpdDropdownOpen = true" 
+                        title="Kosongkan instansi SKPD"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition-colors">
+                        ✕
+                    </button>
+                </template>
+            </div>
+
+            <!-- Floating Dropdown Saran / Filter Instansi SKPD (Muncul saat fokus/diketik) -->
+            <div x-show="isSkpdDropdownOpen" 
+                x-cloak
+                x-transition:enter="transition ease-out duration-100"
+                x-transition:enter-start="opacity-0 translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-75"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 translate-y-1"
+                style="max-height: 220px !important; overflow-y: auto !important;"
+                class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-purple-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
+                
+                <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                    <span>Pilih Riwayat / Ketik SKPD Baru</span>
+                    <span class="font-mono text-slate-400" x-text="filteredSkpdList.length + ' saran'"></span>
+                </div>
+
+                <template x-for="(skpd, sIdx) in filteredSkpdList" :key="sIdx">
+                    <div @click="selectSkpd(skpd)"
+                        class="px-4 py-2.5 hover:bg-purple-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
+                        :class="formData.mutasi_asal === skpd ? 'bg-purple-500/20 text-purple-200' : 'text-slate-200'">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="text-xs text-purple-400/80">🏛️</span>
+                            <span class="text-xs font-bold group-hover:text-purple-300 truncate" x-text="skpd"></span>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-bold shrink-0 group-hover:bg-purple-500/25">
+                            Pilih ↵
+                        </span>
+                    </div>
+                </template>
+
+                <!-- Notifikasi jika mengetik SKPD baru -->
+                <template x-if="formData.mutasi_asal && filteredSkpdList.length === 0">
+                    <div class="p-3 text-center text-xs text-slate-400 bg-slate-950/50">
+                        <span class="text-purple-300 font-semibold" x-text="'➕ Gunakan SKPD Baru: &quot;' + formData.mutasi_asal + '&quot;'"></span>
+                        <p class="text-[10px] text-slate-500 mt-0.5">Instansi ini akan otomatis tersimpan ke riwayat pelimpahan setelah formulir disimpan.</p>
+                    </div>
+                </template>
+            </div>
             
-            <!-- Rekomendasi Cepat SKPD -->
-            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+            <!-- Rekomendasi Cepat SKPD (Badge Shortcut) -->
+            <div class="pt-1 flex flex-wrap items-center gap-1.5">
                 <span class="text-[10px] text-slate-500 font-semibold mr-1">Rekomendasi Cepat:</span>
-                <button type="button" @click="formData.mutasi_asal = 'Dinas Kesehatan Kabupaten Bondowoso'"
+                <button type="button" @click="selectSkpd('Dinas Kesehatan Kabupaten Bondowoso')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
                     Dinkes Bondowoso
                 </button>
-                <button type="button" @click="formData.mutasi_asal = 'BPKAD Kabupaten Bondowoso'"
+                <button type="button" @click="selectSkpd('BPKAD Kabupaten Bondowoso')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
                     BPKAD Bondowoso
                 </button>
-                <button type="button" @click="formData.mutasi_asal = 'Pemerintah Kabupaten Bondowoso'"
+                <button type="button" @click="selectSkpd('Pemerintah Kabupaten Bondowoso')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
                     Setda / Pemkab
                 </button>
-                <button type="button" @click="formData.mutasi_asal = 'Dinas Kesehatan Provinsi Jawa Timur'"
+                <button type="button" @click="selectSkpd('Dinas Kesehatan Provinsi Jawa Timur')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
                     Dinkes Prov. Jatim
                 </button>

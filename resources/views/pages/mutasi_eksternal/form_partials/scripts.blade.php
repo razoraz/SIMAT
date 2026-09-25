@@ -9,6 +9,26 @@
                 initialAstap: {{ Js::from($initialAstap) }},
                 master108: @json($dbMaster108 ?? []),
                 pejabatsList: @json($dbPejabats ?? []),
+                masterSkpdList: @json(!empty($dbSkpdAsals) ? $dbSkpdAsals : [
+                    'Dinas Kesehatan Kabupaten Bondowoso',
+                    'BPKAD Kabupaten Bondowoso',
+                    'Pemerintah Kabupaten Bondowoso',
+                    'Dinas Kesehatan Provinsi Jawa Timur'
+                ]),
+                isSkpdDropdownOpen: false,
+
+                get filteredSkpdList() {
+                    const q = (this.formData.mutasi_asal || '').toLowerCase().trim();
+                    if (!q) {
+                        return this.masterSkpdList.slice(0, 15);
+                    }
+                    return this.masterSkpdList.filter(skpd => skpd && skpd.toLowerCase().includes(q));
+                },
+
+                selectSkpd(name) {
+                    this.formData.mutasi_asal = name;
+                    this.isSkpdDropdownOpen = false;
+                },
 
                 // Form State
                 formData: {

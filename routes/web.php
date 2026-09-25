@@ -894,7 +894,28 @@ Route::middleware('auth')->group(function () {
                 $dbRekeningBelanjas = \App\Models\RekeningBelanja::orderBy('kode_rek')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.hibah.form', compact('dbMaster108', 'dbUnits', 'dbRekeningBelanjas', 'dbPenyedias', 'dbPejabats'));
+                $dbPemberiHibahs = \App\Models\AstapHibah::whereNotNull('pihak_hibah')
+                    ->where('pihak_hibah', '!=', '')
+                    ->distinct()
+                    ->pluck('pihak_hibah')
+                    ->merge(
+                        \App\Models\Astap::where('sumber_dana', 'hibah')
+                            ->whereNotNull('hibah_pemberi')
+                            ->where('hibah_pemberi', '!=', '')
+                            ->distinct()
+                            ->pluck('hibah_pemberi')
+                    )
+                    ->merge([
+                        'Kementerian Kesehatan Republik Indonesia',
+                        'Dinas Kesehatan Provinsi Jawa Timur',
+                        'Pemerintah Kabupaten Bondowoso',
+                        'Donatur Swasta / Yayasan CSR',
+                    ])
+                    ->map(fn($v) => trim($v))
+                    ->filter()
+                    ->unique()
+                    ->values();
+                return view('pages.hibah.form', compact('dbMaster108', 'dbUnits', 'dbRekeningBelanjas', 'dbPenyedias', 'dbPejabats', 'dbPemberiHibahs'));
             })->name('astap.create_hibah');
 
             Route::post('/astap/store-hibah', function (\Illuminate\Http\Request $request) {
@@ -1270,7 +1291,28 @@ Route::middleware('auth')->group(function () {
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-                return view('pages.kemitraan.form', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats'));
+                $dbMitraKemitraans = \App\Models\AstapKemitraan::whereNotNull('mitra_nama')
+                    ->where('mitra_nama', '!=', '')
+                    ->distinct()
+                    ->pluck('mitra_nama')
+                    ->merge(
+                        \App\Models\Astap::where('sumber_dana', 'kemitraan')
+                            ->get()
+                            ->map(fn($a) => $a->spesifikasi_json['mitra_nama'] ?? null)
+                            ->filter()
+                    )
+                    ->merge([
+                        'PT. Roche Indonesia',
+                        'PT. Fresenius Medical Care Indonesia',
+                        'PT. Kimia Farma Diagnostika',
+                        'PT. Sysmex Indonesia',
+                        'Mitra Swasta Pengembang (BGS)',
+                    ])
+                    ->map(fn($v) => trim($v))
+                    ->filter()
+                    ->unique()
+                    ->values();
+                return view('pages.kemitraan.form', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats', 'dbMitraKemitraans'));
             })->name('astap.create_kemitraan');
 
             Route::post('/astap/store-kemitraan', function (\Illuminate\Http\Request $request) {
@@ -1444,7 +1486,14 @@ Route::middleware('auth')->group(function () {
             })->name('astap.store_kemitraan');
 
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
-                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $rawMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
+                    $kode = (string) ($j['kode'] ?? '');
+                    $nama = strtolower($j['nama'] ?? '');
+                    if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
+                    if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
+                    return true;
+                }));
                 $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
                 $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
@@ -1458,7 +1507,14 @@ Route::middleware('auth')->group(function () {
                 if ($astap->sumber_dana === 'pelimpahan_skpd' || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
                 }
-                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $rawMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
+                    $kode = (string) ($j['kode'] ?? '');
+                    $nama = strtolower($j['nama'] ?? '');
+                    if (str_starts_with($kode, '1.5.2') || str_starts_with($kode, '1.4') || str_contains($nama, 'kemitraan')) return false;
+                    if (str_starts_with($kode, '1.5.4') || str_contains($nama, 'aset lain-lain')) return false;
+                    return true;
+                }));
                 $dbJenisPengadaans = \App\Models\JenisPengadaan::all();
                 $dbRekeningBelanjas = \App\Models\RekeningBelanja::all();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
