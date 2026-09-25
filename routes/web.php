@@ -4782,6 +4782,7 @@ Route::middleware('auth')->group(function () {
 
         // Master Hibah Aset (Hibah Masuk & Hibah Keluar)
         Route::get('/master-data/hibah', [\App\Http\Controllers\HibahController::class, 'index'])->name('master.hibah');
+        Route::get('/master-data/hibah/{id}/cetak', [\App\Http\Controllers\HibahController::class, 'cetak'])->name('master.hibah.cetak');
         Route::post('/master-data/hibah/keluar', [\App\Http\Controllers\HibahController::class, 'storeHibahKeluar'])->name('master.hibah.keluar');
         Route::delete('/master-data/hibah/{id}', [\App\Http\Controllers\HibahController::class, 'destroy'])->name('master.hibah.destroy');
 
