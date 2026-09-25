@@ -1,5 +1,5 @@
 <!-- ========================================================================= -->
-<!-- HEADER BANNER & STEPPER NAVIGATION BAR (BELANJA BARANG 5.1.02)            -->
+<!-- HEADER BANNER & STEPPER NAVIGATION BAR (BELANJA BARANG PERBEKALAN)        -->
 <!-- ========================================================================= -->
 <div class="space-y-4">
     <!-- Top Header & Back -->

@@ -54,11 +54,11 @@
             },
             {
                 id: 'perbekalan',
-                title: 'Belanja Barang (Instalasi Perbekalan / Gudang)',
+                title: 'Belanja Barang (Perbekalan)',
                 shortTitle: '3. Belanja Barang',
-                subLabel: 'Beli Mandiri Gudang · Bukan Belanja Modal',
-                badge: 'Perbekalan / Gudang Sendiri',
-                account: 'Akun 5.1.02 · Non-Belanja Modal',
+                subLabel: 'Beli Mandiri Gudang',
+                badge: 'Instalasi Perbekalan / Gudang RSDK',
+                account: 'Bukan Belanja Modal',
                 icon: '📦',
                 theme: 'indigo',
                 route: '{{ route('astap.create_belanja_barang') }}',
@@ -98,10 +98,10 @@
             },
             {
                 id: 'kemitraan',
-                title: 'Kemitraan Pihak Ketiga (KSO / BGS / Sewa)',
+                title: 'Kemitraan Pihak Ketiga (KSO)',
                 shortTitle: '5. Kemitraan (KSO)',
                 subLabel: 'Akun 1.5.2 · Konsesi Mitra',
-                badge: 'Aset Lainnya · Akun 1.5.2',
+                badge: 'Aset KSO / BGS Rekanan',
                 account: 'Akun 1.5.2 · Konsesi Mitra',
                 icon: '🤝',
                 theme: 'cyan',
@@ -231,9 +231,9 @@
                         <span x-text="getType(selectedType)?.icon"></span>
                     </div>
                     <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h2 class="text-lg sm:text-xl font-black text-white" x-text="getType(selectedType)?.title"></h2>
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider"
+                        <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                            <h2 class="text-lg sm:text-xl font-black text-white shrink-0" x-text="getType(selectedType)?.title"></h2>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0"
                                   :class="{
                                       'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30': selectedType === 'modal',
                                       'bg-amber-400/10 text-amber-300 border border-amber-400/30': selectedType === 'hibah',

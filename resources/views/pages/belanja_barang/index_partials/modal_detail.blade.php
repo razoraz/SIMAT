@@ -37,7 +37,7 @@
                             Detail Perolehan Belanja Barang
                         </h3>
                         <p class="text-xs text-slate-400 mt-0.5">
-                            Akun 5.1.02 · Pengawasan Fisik Ruangan (Ekstrakomptabel)
+                            Pengadaan Mandiri Gudang · Pengawasan Fisik Ruangan (KIR)
                         </p>
                     </div>
                 </div>

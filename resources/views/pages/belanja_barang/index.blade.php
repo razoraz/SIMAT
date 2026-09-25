@@ -1,5 +1,5 @@
-<x-layout title="Kelola Belanja Barang (Akun 5.1.02) - SIMAT-RK">
-    @section('page-title', 'Kelola Data Belanja Barang & Perbekalan (Akun 5.1.02)')
+<x-layout title="Kelola Belanja Barang (Instalasi Perbekalan / Gudang) - SIMAT-RK">
+    @section('page-title', 'Kelola Belanja Barang (Instalasi Perbekalan / Gudang)')
     @section('breadcrumb', 'Master Aset / Kelola Belanja Barang')
 
     @include('pages.belanja_barang.index_partials.scripts')

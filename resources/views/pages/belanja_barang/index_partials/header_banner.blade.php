@@ -1,5 +1,5 @@
 <!-- ========================================================================= -->
-<!-- HEADER BANNER & 4 STATISTIK KPI MASTER BELANJA BARANG (AKUN 5.1.02)        -->
+<!-- HEADER BANNER & 4 STATISTIK KPI MASTER BELANJA BARANG                     -->
 <!-- ========================================================================= -->
 <div class="space-y-4">
     <!-- Top Header Banner -->
@@ -14,7 +14,7 @@
                         Kelola Belanja Barang (Instalasi Perbekalan / Gudang)
                     </h1>
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                        Akun 5.1.02 · Non-Belanja Modal
+                        Pengadaan Mandiri · Non-Belanja Modal
                     </span>
                 </div>
                 <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
@@ -55,7 +55,7 @@
                 <span class="text-xs font-bold text-slate-500 font-mono">Rp</span>
                 <span class="text-lg sm:text-xl font-black text-white font-mono truncate" x-text="formatRupiah({{ $totalNilaiBelanja ?? 0 }})"></span>
             </div>
-            <p class="text-[10px] text-indigo-400/80 mt-1">Akun 5.1.02 Belanja Barang Jasa</p>
+            <p class="text-[10px] text-indigo-400/80 mt-1">Dana Operasional Perbekalan / Gudang</p>
         </div>
 
         <!-- KPI 2: Total Fisik Unit -->

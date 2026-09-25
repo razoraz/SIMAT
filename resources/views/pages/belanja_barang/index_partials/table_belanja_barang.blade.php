@@ -1,5 +1,5 @@
 <!-- ========================================================================= -->
-<!-- TABEL DATA MASTER BELANJA BARANG (AKUN 5.1.02)                             -->
+<!-- TABEL DATA MASTER BELANJA BARANG (INSTALASI PERBEKALAN / GUDANG)          -->
 <!-- ========================================================================= -->
 <div class="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl overflow-hidden">
     <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -13,7 +13,7 @@
         </div>
 
         <span class="text-[11px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-xl border border-indigo-500/30">
-            Akun 5.1.02 Ekstrakomptabel
+            Inventaris Ekstrakomptabel
         </span>
     </div>
 
@@ -93,7 +93,7 @@
                                 {{ $astap?->nama_barang ?: 'Barang Perbekalan' }}
                             </div>
                             <div class="text-[11px] font-mono text-indigo-400 mt-0.5">
-                                {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '5.1.02.x') }}
+                                {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '-') }}
                             </div>
                             <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
                                 <span>Vol: <strong>{{ $vol }} {{ $sat }}</strong></span>
@@ -171,7 +171,7 @@
                             </div>
                             <p class="text-sm font-bold text-white">Belum ada data Belanja Barang</p>
                             <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                                Belum ada aset perolehan belanja barang (akun 5.1.02) yang dicatat atau sesuai dengan filter pencarian.
+                                Belum ada aset perolehan belanja barang perbekalan yang dicatat atau sesuai dengan filter pencarian.
                             </p>
                             <div class="mt-4">
                                 <a href="{{ route('astap.create_belanja_barang') }}"

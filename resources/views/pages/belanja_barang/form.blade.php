@@ -1,4 +1,4 @@
-<x-layout title="Form Input Belanja Barang (Akun 5.1.02) - SIMAT-RK">
+<x-layout title="Form Input Belanja Barang (Instalasi Perbekalan / Gudang) - SIMAT-RK">
     @section('page-title', 'Pencatatan Belanja Barang')
     @section('breadcrumb', 'Master Aset / Kelola Belanja Barang / Tambah Belanja Barang')
 

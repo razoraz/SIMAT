@@ -1,5 +1,5 @@
 <!-- ========================================================================= -->
-<!-- SCRIPT ALPINE.JS & LOGIKA FORM INPUT BELANJA BARANG (5.1.02)              -->
+<!-- SCRIPT ALPINE.JS & LOGIKA FORM INPUT BELANJA BARANG PERBEKALAN            -->
 <!-- ========================================================================= -->
 <script>
     function formBelanjaBarang() {
