@@ -63,23 +63,15 @@ class HibahController extends Controller
         $totalKeluarUnit = $allHibahs->where('tipe_hibah', 'keluar')->sum('jumlah_volume');
         $totalKeluarNominal = $allHibahs->where('tipe_hibah', 'keluar')->sum('nilai_aset');
 
-        // Daftar Aset Aktif yang berstatus 'Tersedia' & belum ditempatkan (Modal Hibah Keluar)
+        // Daftar Aset Aktif yang dapat dihibahkan keluar (berstatus 'Tersedia' atau 'Aktif', belum dihibahkan/dihapus)
         $activeAstaps = Astap::where('is_deleted', 0)
             ->whereHas('registers', function ($q) {
                 $q->where('is_deleted', 0)
-                  ->where('status', 'Tersedia')
-                  ->where(function ($sq) {
-                      $sq->whereNull('ruang_pemegang')
-                         ->orWhereIn('ruang_pemegang', ['', '-', 'Belum Ditempatkan / Di Gudang', 'Gudang Aset']);
-                  });
+                  ->whereIn('status', ['Tersedia', 'Aktif']);
             })
             ->with(['registers' => function ($q) {
                 $q->where('is_deleted', 0)
-                  ->where('status', 'Tersedia')
-                  ->where(function ($sq) {
-                      $sq->whereNull('ruang_pemegang')
-                         ->orWhereIn('ruang_pemegang', ['', '-', 'Belum Ditempatkan / Di Gudang', 'Gudang Aset']);
-                  });
+                  ->whereIn('status', ['Tersedia', 'Aktif']);
             }, 'jenisAstap'])
             ->orderBy('nama_barang', 'asc')
             ->get()
@@ -269,34 +261,48 @@ class HibahController extends Controller
         $hibah = AstapHibah::findOrFail($id);
 
         DB::transaction(function () use ($hibah) {
-            // Jika hibah keluar dibatalkan, kembalikan status register dan astap menjadi aktif
+            // Jika hibah keluar dibatalkan/dihapus, pulihkan unit barang di ASTAP & register
             if ($hibah->tipe_hibah === 'keluar') {
                 $astap = Astap::find($hibah->astap_id);
-                if ($astap) {
-                    $astap->update([
+
+                // Ambil register yang dihibahkan
+                if ($hibah->astap_register_id) {
+                    $regs = AstapRegister::where('id', $hibah->astap_register_id)->get();
+                } else {
+                    $regs = AstapRegister::where('astap_id', $hibah->astap_id)
+                        ->where('status', 'Dihibahkan')
+                        ->get();
+                }
+
+                foreach ($regs as $reg) {
+                    $statusBalik = (!empty($reg->ruang_pemegang) && !in_array($reg->ruang_pemegang, ['-', 'Belum Ditempatkan / Di Gudang', 'Gudang Aset']))
+                        ? 'Aktif'
+                        : 'Tersedia';
+
+                    $reg->update([
+                        'status'       => $statusBalik,
                         'is_deleted'   => 0,
                         'deleted_at'   => null,
                         'deleted_by'   => null,
                     ]);
                 }
 
-                if ($hibah->astap_register_id) {
-                    AstapRegister::where('id', $hibah->astap_register_id)->update([
-                        'status'       => 'Aktif',
-                        'is_deleted'   => 0,
-                        'deleted_at'   => null,
-                        'deleted_by'   => null,
-                    ]);
-                } else {
-                    AstapRegister::where('astap_id', $hibah->astap_id)->update([
-                        'status'       => 'Aktif',
-                        'is_deleted'   => 0,
-                        'deleted_at'   => null,
-                        'deleted_by'   => null,
+                if ($astap) {
+                    $sisaAktif = AstapRegister::where('astap_id', $astap->id)
+                        ->where('is_deleted', 0)
+                        ->count();
+
+                    $astap->update([
+                        'is_deleted'          => 0,
+                        'deleted_at'          => null,
+                        'deleted_by'          => null,
+                        'keterangan_tambahan' => null,
+                        'jumlah_volume'       => max(1, $sisaAktif),
                     ]);
                 }
             }
 
+            // Hapus record riwayat transaksi hibah (Hard Delete pada tabel astap_hibahs)
             $hibah->delete();
         });
 
