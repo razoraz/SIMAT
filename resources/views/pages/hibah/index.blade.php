@@ -22,5 +22,11 @@
 
         <!-- MODAL EKSPOR EXCEL MULTI-SHEET SIPENERBANG -->
         @include('pages.hibah.master_partials.modal_export_excel')
+
+        <!-- MODAL CETAK RESMI BAST HIBAH ASET -->
+        @include('pages.hibah.master_partials.modal_print_bast')
+
+        <!-- MODAL KONFIRMASI BESPOKE (Z-INDEX TINGGI z-[60]) -->
+        @include('pages.hibah.master_partials.modal_confirm_hibah')
     </div>
 </x-layout>

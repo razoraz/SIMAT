@@ -94,9 +94,18 @@
         </template>
 
         <!-- Footer -->
-        <div class="pt-4 border-t border-slate-800 flex items-center justify-end">
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+            <template x-if="selectedDetail">
+                <button type="button" @click="showModalDetail = false; openPrintBast(selectedDetail);"
+                    class="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs transition-all flex items-center space-x-1.5 active:scale-95 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>🖨️ Cetak Lembar BAST Resmi</span>
+                </button>
+            </template>
             <button type="button" @click="showModalDetail = false"
-                class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors">
+                class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors ml-auto">
                 Tutup
             </button>
         </div>

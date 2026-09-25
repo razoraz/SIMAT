@@ -145,9 +145,11 @@ class HibahController extends Controller
         if ($request->has('tanggal_bast') && is_string($request->tanggal_bast)) {
             $rawDate = trim($request->tanggal_bast);
             if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $rawDate, $m)) {
-                $request->merge([
-                    'tanggal_bast' => sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1])
-                ]);
+                $isoDate = sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
+                $request->merge(['tanggal_bast' => $isoDate]);
+                if ($request->isJson()) {
+                    $request->json()->set('tanggal_bast', $isoDate);
+                }
             }
         }
 
@@ -171,7 +173,11 @@ class HibahController extends Controller
         if (count($selectedRegisterIds) > 0) {
             $selectedRegisterIds = AstapRegister::whereIn('id', $selectedRegisterIds)
                 ->where('astap_id', $astap->id)
-                ->where('status', 'Tersedia')
+                ->where(function ($q) {
+                    $q->where('status', 'Tersedia')
+                      ->orWhere('status', 'Aktif')
+                      ->orWhereNull('status');
+                })
                 ->where('is_deleted', 0)
                 ->pluck('id')
                 ->toArray();
@@ -299,4 +305,22 @@ class HibahController extends Controller
             'message' => 'Catatan riwayat hibah berhasil dihapus.',
         ]);
     }
+
+    /**
+     * Cetak Lembar Berita Acara Serah Terima (BAST) Hibah Aset Resmi
+     */
+    public function cetak($id)
+    {
+        Carbon::setLocale('id');
+
+        $hibah = AstapHibah::with([
+            'astap.jenisAstap',
+            'astap.registers',
+            'register',
+            'user',
+        ])->findOrFail($id);
+
+        return view('pages.hibah.cetak_bast', compact('hibah'));
+    }
 }
+

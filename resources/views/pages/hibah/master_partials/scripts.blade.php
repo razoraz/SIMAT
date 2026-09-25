@@ -19,6 +19,17 @@
             showModalDetail: false,
             selectedDetail: null,
 
+            // Cetak BAST States
+            showModalPrintBast: false,
+            printBastDoc: null,
+            showEditBastForm: false,
+
+            // Modal Konfirmasi Bespoke (z-[60] di atas modal form)
+            showConfirmKeluarModal: false,
+            showConfirmDeleteModal: false,
+            itemToDelete: null,
+            isDeleting: false,
+
             showModalHibahKeluar: false,
             searchAsetKeluar: '',
             isAsetKeluarDropdownOpen: false,
@@ -132,6 +143,199 @@
                 }
             },
 
+            getQrCodeSvg(text) {
+                if (typeof window.getQrCodeSvg === 'function') {
+                    return window.getQrCodeSvg(text);
+                }
+                return 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(text || '');
+            },
+
+            // =========================================================================
+            // CETAK BAST HIBAH ASET (RESMI)
+            // =========================================================================
+            openPrintBast(item) {
+                if (!item) return;
+
+                const hariMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const bulanMap = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+                let dateObj = new Date();
+                if (item.tanggal_bast) {
+                    const parsed = new Date(item.tanggal_bast);
+                    if (!isNaN(parsed.getTime())) dateObj = parsed;
+                }
+
+                const hari = hariMap[dateObj.getDay()] || 'Selasa';
+                const tglAngka = String(dateObj.getDate()).padStart(2, '0');
+                const bulan = bulanMap[dateObj.getMonth() + 1] || 'September';
+                const tahun = dateObj.getFullYear() || item.tahun || 2026;
+
+                const id = item.id || 1;
+                const nomorBast = item.nomor_bast || `000.2.3.2/BAST-HB-${String(id).padStart(3, '0')}/430.10.7/${tahun}`;
+
+                const namaBarang = item.astap ? item.astap.nama_barang : (item.nama_barang || 'Barang Hibah Aset Daerah');
+                const kode108 = item.astap?.kode_108 || item.kode_108 || (item.astap?.jenis_astap?.sub_sub_rincian_objek || '1.3.2.00.00.00');
+                const satuan = item.satuan || item.astap?.satuan || 'Unit';
+                const vol = parseInt(item.jumlah_volume || 1);
+                const nilaiTotal = parseFloat(item.nilai_aset || 0);
+                const hargaSat = vol > 0 ? (nilaiTotal / vol) : nilaiTotal;
+
+                let itemsList = [];
+                if (item.register) {
+                    itemsList.push({
+                        nama: namaBarang,
+                        kode_108: kode108,
+                        nibar: item.register.nibar || item.register.no_register || '-',
+                        volume: 1,
+                        satuan: satuan,
+                        kondisi: item.register.kondisi || 'Baik',
+                        harga_satuan: hargaSat,
+                        nilai_total: hargaSat,
+                    });
+                } else if (item.astap && item.astap.registers && Array.isArray(item.astap.registers) && item.astap.registers.length > 0) {
+                    const regs = item.astap.registers.slice(0, vol);
+                    regs.forEach((r) => {
+                        itemsList.push({
+                            nama: namaBarang,
+                            kode_108: kode108,
+                            nibar: r.nibar || r.no_register || '-',
+                            volume: 1,
+                            satuan: satuan,
+                            kondisi: r.kondisi || 'Baik',
+                            harga_satuan: hargaSat,
+                            nilai_total: hargaSat,
+                        });
+                    });
+                }
+
+                if (itemsList.length === 0) {
+                    itemsList.push({
+                        nama: namaBarang,
+                        kode_108: kode108,
+                        nibar: '-',
+                        volume: vol,
+                        satuan: satuan,
+                        kondisi: 'Baik',
+                        harga_satuan: hargaSat,
+                        nilai_total: nilaiTotal,
+                    });
+                }
+
+                const isMasuk = item.tipe_hibah === 'masuk';
+
+                this.printBastDoc = {
+                    id: item.id,
+                    tipe_hibah: item.tipe_hibah || 'masuk',
+                    nomor_bast: nomorBast,
+                    hari: hari,
+                    tgl_angka: tglAngka,
+                    bulan: bulan,
+                    tahun: tahun,
+                    jumlah_volume: vol,
+                    satuan: satuan,
+                    nilai_aset: nilaiTotal,
+                    keterangan: item.keterangan || '',
+
+                    // Pihak 1 (Yang Menyerahkan)
+                    pihak_1_nama: isMasuk ? (item.pihak_hibah || 'Pemberi Hibah') : 'BUDI HARTONO, S.Sos',
+                    pihak_1_nip: isMasuk ? '-' : '19760229 200801 1 010',
+                    pihak_1_jabatan: isMasuk ? 'Pemberi Hibah' : 'Pengurus Barang Pengguna Aset',
+                    pihak_1_instansi: isMasuk ? (item.pihak_hibah || '-') : 'RSUD dr. H. Koesnadi Kabupaten Bondowoso',
+
+                    // Pihak 2 (Yang Menerima)
+                    pihak_2_nama: isMasuk ? 'BUDI HARTONO, S.Sos' : (item.pihak_hibah || 'Penerima Hibah'),
+                    pihak_2_nip: isMasuk ? '19760229 200801 1 010' : '-',
+                    pihak_2_jabatan: isMasuk ? 'Pengurus Barang Pengguna Aset' : 'Penerima Hibah',
+                    pihak_2_instansi: isMasuk ? 'RSUD dr. H. Koesnadi Kabupaten Bondowoso' : (item.pihak_hibah || '-'),
+
+                    // Mengetahui Direktur
+                    direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
+                    direktur_nip: '19730514 200212 2 003',
+                    direktur_jabatan: 'Direktur RSUD dr. H. Koesnadi',
+
+                    signed: true,
+                    qr_hash: `BSRE-KOESNANDI-HIBAH-${id}-${tahun}`,
+                    items: itemsList,
+                };
+
+                this.showModalPrintBast = true;
+                this.showEditBastForm = false;
+            },
+
+            toggleSignBast() {
+                if (!this.printBastDoc) return;
+                this.printBastDoc.signed = !this.printBastDoc.signed;
+                if (this.printBastDoc.signed) {
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('✍️ BAST Hibah berhasil disahkan secara elektronik (BSrE Aktif)!', 'success');
+                    }
+                } else {
+                    if (typeof window.showSimatToast === 'function') {
+                        window.showSimatToast('↩️ Tanda tangan elektronik BSrE dinonaktifkan.', 'info');
+                    }
+                }
+            },
+
+            printCurrentBast() {
+                const el = document.getElementById('print-area-bast-hibah');
+                if (!el) {
+                    window.print();
+                    return;
+                }
+
+                let iframe = document.getElementById('simat-hibah-print-frame');
+                if (iframe) {
+                    iframe.remove();
+                }
+
+                iframe = document.createElement('iframe');
+                iframe.id = 'simat-hibah-print-frame';
+                iframe.style.position = 'fixed';
+                iframe.style.right = '0';
+                iframe.style.bottom = '0';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = '0';
+                document.body.appendChild(iframe);
+
+                const headStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+                    .map(elem => elem.outerHTML)
+                    .join('\n');
+
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>BAST Hibah Aset - ${this.printBastDoc?.nomor_bast || 'RSUD Dr. H. Koesnadi'}</title>
+    ${headStyles}
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm 15mm 12mm 15mm;
+        }
+        body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .no-print { display: none !important; }
+    </style>
+</head>
+<body style="background:#ffffff; color:#000000;">
+    ${el.outerHTML}
+</body>
+</html>`);
+                doc.close();
+
+                setTimeout(() => {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }, 400);
+            },
+
             // =========================================================================
             // MODAL DETAIL
             // =========================================================================
@@ -229,20 +433,35 @@
 
             submitHibahKeluar() {
                 if (!this.keluarData.astap_id) {
-                    alert('⚠️ Mohon pilih barang yang akan dihibahkan.');
+                    alert('⚠️ Mohon pilih barang inventaris yang akan dihibahkan.');
                     return;
                 }
-                if (!this.keluarData.penerima_hibah.trim()) {
-                    alert('⚠️ Mohon isi nama instansi penerima hibah.');
+                if (!(this.keluarData.penerima_hibah || '').trim()) {
+                    alert('⚠️ Mohon isi instansi / pihak penerima hibah.');
                     return;
                 }
-                if (!this.keluarData.nomor_bast.trim()) {
+                if (!(this.keluarData.nomor_bast || '').trim()) {
                     alert('⚠️ Mohon isi nomor BAST hibah keluar.');
                     return;
                 }
-
-                if (!confirm(`Konfirmasi penyerahan hibah barang "${this.selectedAstapForKeluar.nama_barang}" ke ${this.keluarData.penerima_hibah}?\n\nBarang ini akan dicatat sebagai Pengurangan Aset Tetap.`)) {
+                if (!(this.keluarData.tanggal_bast || '').trim()) {
+                    alert('⚠️ Mohon tentukan tanggal BAST hibah.');
                     return;
+                }
+
+                // Sembunyikan modal form hibah keluar sementara agar tidak menumpuk, lalu buka modal konfirmasi
+                this.showModalHibahKeluar = false;
+                this.showConfirmKeluarModal = true;
+            },
+
+            executeSubmitHibahKeluar() {
+                // Normalisasi tanggal_bast jika berformat dd/mm/yyyy menjadi YYYY-MM-DD
+                let payload = Object.assign({}, this.keluarData);
+                if (payload.tanggal_bast && typeof payload.tanggal_bast === 'string' && payload.tanggal_bast.includes('/')) {
+                    const parts = payload.tanggal_bast.split('/');
+                    if (parts.length === 3) {
+                        payload.tanggal_bast = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    }
                 }
 
                 this.isSubmittingKeluar = true;
@@ -255,33 +474,54 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': token
                     },
-                    body: JSON.stringify(this.keluarData)
+                    body: JSON.stringify(payload)
                 })
                 .then(res => res.json().then(data => ({ status: res.status, body: data })))
                 .then(result => {
                     this.isSubmittingKeluar = false;
                     if (result.status === 200 && result.body.success) {
-                        alert('🎉 ' + result.body.message);
-                        window.location.reload();
+                        this.showConfirmKeluarModal = false;
+                        this.showModalHibahKeluar = false;
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(result.body.message, 'success');
+                        } else {
+                            alert('🎉 ' + result.body.message);
+                        }
+                        setTimeout(() => window.location.reload(), 600);
                     } else {
-                        alert('❌ Gagal: ' + (result.body.message || 'Terjadi kesalahan saat memproses hibah keluar.'));
+                        // Jika ada kesalahan atau validasi gagal, kembalikan tampilan form
+                        this.showConfirmKeluarModal = false;
+                        this.showModalHibahKeluar = true;
+
+                        let errMsg = result.body.message || 'Terjadi kesalahan saat memproses hibah keluar.';
+                        if (result.body.errors) {
+                            const errList = Object.values(result.body.errors).flat().join('\n• ');
+                            errMsg += '\n\nDetail:\n• ' + errList;
+                        }
+                        alert('❌ Gagal: ' + errMsg);
                     }
                 })
                 .catch(err => {
                     this.isSubmittingKeluar = false;
+                    this.showConfirmKeluarModal = false;
+                    this.showModalHibahKeluar = true;
                     console.error(err);
-                    alert('❌ Gagal menghubungi server. Silakan coba kembali.');
+                    alert('❌ Gagal menghubungi server. Silakan muat ulang halaman dan coba kembali.');
                 });
             },
 
             confirmDelete(item) {
-                const jenisText = item.tipe_hibah === 'masuk' ? 'Hibah Masuk' : 'Hibah Keluar (Pengurangan)';
-                if (!confirm(`Apakah Anda yakin ingin membatalkan / menghapus catatan ${jenisText} ini?\n\nNo. BAST: ${item.nomor_bast}\nPihak: ${item.pihak_hibah}`)) {
-                    return;
-                }
+                if (!item) return;
+                this.itemToDelete = item;
+                this.showConfirmDeleteModal = true;
+            },
+
+            executeDeleteHibah() {
+                if (!this.itemToDelete) return;
+                this.isDeleting = true;
 
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-                fetch("{{ url('/master/hibah') }}/" + item.id, {
+                fetch("{{ url('/master-data/hibah') }}/" + this.itemToDelete.id, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -291,16 +531,24 @@
                 })
                 .then(res => res.json())
                 .then(result => {
+                    this.isDeleting = false;
+                    this.showConfirmDeleteModal = false;
                     if (result.success) {
-                        alert('✓ ' + result.message);
-                        this.hibahList = this.hibahList.filter(h => h.id !== item.id);
+                        if (typeof window.showSimatToast === 'function') {
+                            window.showSimatToast(result.message || 'Catatan transaksi hibah berhasil dihapus.', 'success');
+                        } else {
+                            alert('✓ ' + result.message);
+                        }
+                        this.hibahList = this.hibahList.filter(h => h.id !== this.itemToDelete.id);
+                        this.itemToDelete = null;
                     } else {
-                        alert('❌ Gagal: ' + (result.message || 'Tidak dapat menghapus.'));
+                        alert('❌ Gagal: ' + (result.message || 'Tidak dapat menghapus transaksi.'));
                     }
                 })
                 .catch(err => {
+                    this.isDeleting = false;
                     console.error(err);
-                    alert('❌ Terjadi kesalahan.');
+                    alert('❌ Terjadi kesalahan saat menghapus data transaksi.');
                 });
             },
 
