@@ -676,6 +676,10 @@ class ReklasifikasiController extends Controller
                 } elseif ($targetKib) {
                     if ($targetKib === 'ATB') {
                         $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', '1.5.3');
+                    } elseif ($targetKib === 'ASET LAIN' || $targetKib === 'ASET LAIN-LAIN' || $targetKib === 'ASET LAINNYA') {
+                        $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', '1.5.4');
+                    } elseif ($targetKib === 'KEMITRAAN') {
+                        $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', '1.5.2');
                     } else {
                         $matchingTujuanRow = $allTemplateRows->where('kelompok_kib', $targetKib)->sortBy('urutan')->first();
                     }

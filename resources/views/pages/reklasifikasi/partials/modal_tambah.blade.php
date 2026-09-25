@@ -279,6 +279,8 @@
                         <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (1.3.4)</option>
                         <option value="KIB E">KIB E - Aset Tetap Lainnya (1.3.5)</option>
                         <option value="ATB">ATB - Aset Tidak Berwujud (1.5.3)</option>
+                        <option value="ASET LAIN">Aset Lain-Lain (1.5.4)</option>
+                        <option value="KEMITRAAN">Kemitraan Pihak Ketiga (1.5.2)</option>
                     </select>
                 </div>
 
@@ -622,6 +624,58 @@
                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Registrasi Lisensi / HAKI:</label>
                                 <input type="text" x-model="formData.spekBaru.atb_nomor_lisensi" placeholder="Contoh: LIC-SIMRS-2026-009"
                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Form Spesifik: ASET LAIN - Aset Lain-Lain (1.5.4) -->
+                <template x-if="formData.tujuan_kib === 'ASET LAIN' || formData.tujuan_kib === 'ASET LAIN-LAIN'">
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
+                                <select x-model="formData.spekBaru.aset_lain_kondisi"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                    <option value="Rusak Berat">Rusak Berat (Tidak Dapat Dimanfaatkan)</option>
+                                    <option value="Tidak Digunakan Operasional">Tidak Digunakan dalam Operasional Pemerintah</option>
+                                    <option value="Akan Dihapuskan">Dalam Proses Usulan Penghapusan (SK)</option>
+                                    <option value="Aset Hilang">Aset Hilang (TGR / Penelusuran)</option>
+                                    <option value="Lainnya">Kondisi Sebab Lainnya</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Lokasi Penyimpanan / Gudang:</label>
+                                <input type="text" x-model="formData.spekBaru.aset_lain_lokasi" placeholder="Contoh: Gudang Penampungan Aset Rusak RSUD"
+                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alasan Pengalihan ke Aset Lain-Lain:</label>
+                                <input type="text" x-model="formData.spekBaru.aset_lain_alasan" placeholder="Contoh: Rusak berat akibat usia pemakaian dan tidak ekonomis untuk diperbaiki"
+                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Form Spesifik: KEMITRAAN - Kemitraan Pihak Ketiga (1.5.2) -->
+                <template x-if="formData.tujuan_kib === 'KEMITRAAN'">
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nama Mitra / Pihak Ketiga:</label>
+                                <input type="text" x-model="formData.spekBaru.kemitraan_mitra" placeholder="Contoh: PT Kerjasama Medika Indonesia"
+                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Dokumen Perjanjian (KSO/BSG):</label>
+                                <input type="text" x-model="formData.spekBaru.kemitraan_perjanjian_no" placeholder="Contoh: 020/KSO-RSUD/2026"
+                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Jangka Waktu Kerjasama:</label>
+                                <input type="text" x-model="formData.spekBaru.kemitraan_jangka_waktu" placeholder="Contoh: 5 Tahun (2026 s/d 2031)"
+                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                             </div>
                         </div>
                     </div>
