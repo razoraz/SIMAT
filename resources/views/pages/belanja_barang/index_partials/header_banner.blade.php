@@ -11,14 +11,14 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
-                        Kelola Belanja Barang (Perbekalan Ruangan)
+                        Kelola Belanja Barang (Instalasi Perbekalan / Gudang)
                     </h1>
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                        Akun 5.1.02 · Ekstrakomptabel
+                        Akun 5.1.02 · Non-Belanja Modal
                     </span>
                 </div>
                 <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                    Pusat penatausahaan dan inventarisasi perbekalan operasional dari belanja barang &amp; jasa untuk pengawasan fisik inventaris ruangan (KIR) tanpa membebani neraca kapitalisasi aset tetap.
+                    Pusat penatausahaan dan inventarisasi aset yang dibeli langsung oleh Instalasi Perbekalan / Gudang menggunakan anggaran perbekalan sendiri (bukan belanja modal) untuk pengawasan fisik inventaris ruangan (KIR).
                 </p>
             </div>
         </div>

@@ -14,14 +14,14 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h1 class="text-2xl font-black text-white tracking-tight">
-                        Pencatatan Belanja Barang (Perbekalan)
+                        Pencatatan Belanja Barang (Instalasi Perbekalan / Gudang)
                     </h1>
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                        📦 PUSAT PERBEKALAN / BARANG &amp; JASA
+                        📦 BELI MANDIRI PERBEKALAN · BUKAN BELANJA MODAL
                     </span>
                 </div>
                 <p class="text-xs text-slate-400 mt-0.5">
-                    Pendaftaran barang perbekalan / operasional dari pusat perbekalan (rekening 5.1.02) untuk pengawasan fisik inventaris ruangan (KIR).
+                    Pengadaan langsung oleh Instalasi Perbekalan / Bagian Gudang menggunakan anggaran operasional sendiri (bukan belanja modal) untuk inventarisasi fisik &amp; Kartu Inventaris Ruangan (KIR).
                 </p>
             </div>
         </div>
