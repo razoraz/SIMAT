@@ -5,7 +5,7 @@
     <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <h2 class="text-base font-extrabold text-white flex items-center gap-2">
-                <span>📋 Daftar Aset Kemitraan (KSO, BGS, Sewa)</span>
+                <span>📋 Daftar Aset Kemitraan (KSO, KSP, Sewa)</span>
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">
                 Total {{ count($kemitraanRecords ?? []) }} data aset kerja sama tercatat dalam sistem SIMAT-RK.
@@ -180,7 +180,7 @@
                             <div class="text-3xl mb-2">🤝</div>
                             <p class="text-sm font-bold text-white">Belum Ada Aset Kemitraan Tercatat</p>
                             <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                                Belum ada aset dengan skema KSO, BGS, atau sewa pihak ketiga yang tercatat pada periode ini.
+                                Belum ada aset dengan skema KSO, KSP, atau sewa pihak ketiga yang tercatat pada periode ini.
                             </p>
                             <div class="mt-4">
                                 <a href="{{ route('astap.create_kemitraan') }}"

@@ -42,7 +42,7 @@
             </button>
             <button type="button" @click="quickSelectKemitraan('1.5.2.03')"
                 class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer">
-                1.5.2.03 BGS Bangunan
+                1.5.2.03 KSO Operasional Alkes
             </button>
         </div>
     </div>

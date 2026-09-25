@@ -18,7 +18,7 @@
                     </span>
                 </div>
                 <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                    Pusat monitoring aset kerja sama operasional (KSO), sewa, dan Bangun Guna Serah (BGS) dengan rekanan swasta sebelum direklasifikasi definitif ke Aset Tetap.
+                    Pusat monitoring aset kerja sama operasional (KSO), sewa, dan pemanfaatan (KSP) dengan rekanan swasta sebelum direklasifikasi definitif ke Aset Tetap.
                 </p>
             </div>
         </div>

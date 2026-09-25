@@ -1,5 +1,5 @@
 <x-layout title="Kelola Data Aset Kemitraan (Akun 1.5.2) - SIMAT-RK">
-    @section('page-title', 'Kelola Data Aset Kemitraan Pihak Ketiga (KSO, BGS, Sewa)')
+    @section('page-title', 'Kelola Data Aset Kemitraan Pihak Ketiga (KSO, KSP, Sewa)')
     @section('breadcrumb', 'Master Aset / Kelola Kemitraan Aset')
 
     @include('pages.kemitraan.master_partials.scripts')

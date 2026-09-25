@@ -101,7 +101,7 @@
                 title: 'Kemitraan Pihak Ketiga (KSO)',
                 shortTitle: '5. Kemitraan (KSO)',
                 subLabel: 'Akun 1.5.2 · Konsesi Mitra',
-                badge: 'Aset KSO / BGS Rekanan',
+                badge: 'Aset KSO / Kemitraan Rekanan',
                 account: 'Akun 1.5.2 · Konsesi Mitra',
                 icon: '🤝',
                 theme: 'cyan',
@@ -109,7 +109,7 @@
                 actionLabel: 'Buka Form Aset Kemitraan',
                 stepCount: 'Form 3-Langkah PKS',
                 purpose: 'Pencatatan perolehan dan pemanfaatan aset melalui perjanjian kerja sama komersial / operasional dengan vendor swasta dengan masa konsesi tertentu (bukan hibah dan bukan belanja modal).',
-                cases: 'Penempatan alat laboratorium otomatis (KSO Reagen dengan PT. Roche/Sysmex), KSO mesin Hemodialisis, sewa alat medis canggih, atau pembangunan gedung parkir/fasilitas dengan skema Bangun Guna Serah (BGS).',
+                cases: 'Penempatan alat laboratorium otomatis (KSO Reagen dengan PT. Roche/Sysmex), KSO mesin Hemodialisis, sewa alat medis canggih, atau kerja sama operasional fasilitas rumah sakit dengan pihak ketiga.',
                 docs: [
                     'Surat Perjanjian Kerja Sama (PKS / MoU) dengan Mitra',
                     'Jangka Waktu Konsesi (Tanggal Mulai & Tanggal Selesai)',

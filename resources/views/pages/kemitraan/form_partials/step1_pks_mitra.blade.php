@@ -129,9 +129,9 @@
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors">
                     PT. Sysmex Indonesia
                 </button>
-                <button type="button" @click="selectMitra('Mitra Swasta Pengembang (BGS)')"
+                <button type="button" @click="selectMitra('CV. Penyedia Sarana Medika')"
                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors">
-                    Mitra Pengembang (BGS)
+                    CV. Penyedia Sarana Medika
                 </button>
             </div>
         </div>
@@ -161,18 +161,12 @@
             <label class="block text-xs font-bold text-slate-200 mb-1.5">
                 Bentuk Skema Kemitraan Sesuai Permendagri 108 / SAP
             </label>
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <button type="button" @click="formData.skema_kemitraan = 'KSO'"
                     class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
                     :class="formData.skema_kemitraan === 'KSO' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
                     <span class="block text-xs font-bold">KSO</span>
                     <span class="block text-[9px] text-slate-400 mt-0.5">Kerja Sama Operasi</span>
-                </button>
-                <button type="button" @click="formData.skema_kemitraan = 'BGS'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'BGS' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">BGS</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Bangun Guna Serah</span>
                 </button>
                 <button type="button" @click="formData.skema_kemitraan = 'KSP'"
                     class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"

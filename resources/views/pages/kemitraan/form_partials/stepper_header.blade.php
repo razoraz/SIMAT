@@ -11,13 +11,13 @@
             </a>
             <div class="min-w-0 flex-1">
                 <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-cyan-400/15 text-cyan-300 border border-cyan-400/30 text-[9px] sm:text-[10px] font-bold mb-1">
-                    <span>🤝 PENCATATAN ASET KEMITRAAN PIHAK KETIGA (KSO / BGS)</span>
+                    <span>🤝 PENCATATAN ASET KEMITRAAN PIHAK KETIGA (KSO / KEMITRAAN)</span>
                 </div>
                 <h1 class="text-base sm:text-xl md:text-2xl font-extrabold text-white tracking-tight truncate">
                     Pencatatan Aset Kemitraan (SIMAT-RK)
                 </h1>
                 <p class="text-xs text-slate-400 mt-0.5 hidden sm:block">
-                    Pendaftaran perolehan aset kerja sama pihak ketiga (Akun 1.5.2 PMDN 108: KSO, KSP, BGS, Sewa) terintegrasi ke inventaris ruangan RSUD.
+                    Pendaftaran perolehan aset kerja sama pihak ketiga (Akun 1.5.2: KSO, KSP, Sewa) terintegrasi ke inventaris ruangan RSUD.
                 </p>
             </div>
         </div>

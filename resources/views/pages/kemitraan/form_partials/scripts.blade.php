@@ -22,7 +22,7 @@
                     'PT. Fresenius Medical Care Indonesia',
                     'PT. Kimia Farma Diagnostika',
                     'PT. Sysmex Indonesia',
-                    'Mitra Swasta Pengembang (BGS)'
+                    'CV. Penyedia Sarana Medika'
                 ],
             isMitraDropdownOpen: false,
 

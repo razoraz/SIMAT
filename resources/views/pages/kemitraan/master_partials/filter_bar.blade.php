@@ -11,9 +11,8 @@
                 class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                 <option value="all" {{ ($filterSkema ?? 'all') === 'all' ? 'selected' : '' }}>-- Semua Skema --</option>
                 <option value="KSO" {{ ($filterSkema ?? '') === 'KSO' ? 'selected' : '' }}>KSO (Kerja Sama Operasi)</option>
-                <option value="BGS" {{ ($filterSkema ?? '') === 'BGS' ? 'selected' : '' }}>BGS (Bangun Guna Serah)</option>
-                <option value="BSG" {{ ($filterSkema ?? '') === 'BSG' ? 'selected' : '' }}>BSG (Bangun Serah Guna)</option>
                 <option value="KSP" {{ ($filterSkema ?? '') === 'KSP' ? 'selected' : '' }}>KSP (Kerja Sama Pemanfaatan)</option>
+                <option value="BSG" {{ ($filterSkema ?? '') === 'BSG' ? 'selected' : '' }}>BSG (Bangun Serah Guna)</option>
                 <option value="Sewa" {{ ($filterSkema ?? '') === 'Sewa' ? 'selected' : '' }}>Sewa Fasilitas / Alkes</option>
             </select>
         </div>
