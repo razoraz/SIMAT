@@ -122,10 +122,10 @@
                 </div>
                 <div class="space-y-1 min-w-0 flex-1">
                     <h3 class="text-base sm:text-lg font-black text-white leading-snug tracking-tight">
-                        Hapus Transaksi Hibah?
+                        Pindahkan ke Pusat Data Terhapus?
                     </h3>
                     <p class="text-slate-300 text-xs leading-relaxed">
-                        Apakah Anda yakin ingin membatalkan / menghapus catatan transaksi hibah ini?
+                        Catatan hibah akan dipindahkan ke <strong class="text-amber-300">Pusat Data Terhapus (Recycle Bin)</strong>. Jika ini hibah keluar, unit barang akan otomatis dipulihkan ke inventaris aktif dan data transaksi dapat dipulihkan sewaktu-waktu.
                     </p>
                 </div>
             </div>
