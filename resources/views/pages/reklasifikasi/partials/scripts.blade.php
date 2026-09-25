@@ -1,3 +1,6 @@
+<!-- PUSTAKA EXCEL DENGAN STYLING DUKUNGAN FULL -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
 <!-- ALPINE.JS SCRIPTS MASTER REKLASIFIKASI (PMDN 108 & SPEK DINAMIS) -->
 <script>
     window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : \App\Models\JenisAstap::getNested108());
