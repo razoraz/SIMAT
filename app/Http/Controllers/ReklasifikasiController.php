@@ -1056,6 +1056,16 @@ class ReklasifikasiController extends Controller
             return $templateRows->firstWhere('kode_prefix', '1.5.3');
         }
 
+        // Kemitraan Pihak Ketiga
+        if ($category === 'KEMITRAAN') {
+            return $templateRows->firstWhere('kode_prefix', '1.5.2') ?? $templateRows->firstWhere('kode_prefix', '1.5.1');
+        }
+
+        // Aset Lain-Lain (Rusak Berat / Menunggu Penghapusan)
+        if ($category === 'ASET LAIN') {
+            return $templateRows->firstWhere('kode_prefix', '1.5.4');
+        }
+
         // Default jika KIB B atau terindikasi barang modal
         return $templateRows->firstWhere('kode_prefix', '1.3.2.05') ?? $templateRows->firstWhere('kelompok_kib', 'KIB B');
     }

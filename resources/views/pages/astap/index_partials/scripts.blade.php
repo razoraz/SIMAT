@@ -4742,15 +4742,156 @@
                     align = "center";
                     border = thinBorder;
                 }
-                // 3. Baris Induk ASET TETAP, JUMLAH ASET, REALISASI BELANJA [TAHUN]
+                // 3. Baris Induk ASET TETAP & ASET LAINNYA (Double Bottom Border, Fill D9D9D9)
                 else if (meta.highlightRows && meta.highlightRows.includes(r)) {
                     fill = "D9D9D9";
                     bold = true;
                     fontSize = 10;
                     border = doubleBottomBorder;
-                    if (typeof cell.v === 'number') {
+                    if (c > 0) {
                         align = "right";
                         numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 3b. Baris JUMLAH ASET (Gambar 2: Fill D9D9D9 Abu-Abu, Bold, Double Bottom Border, numFmt #,##0.00)
+                else if (meta.jumlahAsetRows && meta.jumlahAsetRows.includes(r)) {
+                    fill = "D9D9D9";
+                    bold = true;
+                    fontSize = 10;
+                    border = doubleBottomBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 3c. Baris Header Koreksi Atas Aset Tetap (Gambar 2: Fill D9D9D9 Abu-Abu, Bold, Thin Border, numFmt #,##0.00)
+                else if (meta.koreksiHeaderRows && meta.koreksiHeaderRows.includes(r)) {
+                    fill = "D9D9D9";
+                    bold = true;
+                    fontSize = 10;
+                    border = thinBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 3c-item. Baris Rincian Koreksi (Hibah, Dibawah Kapitalisasi, Koreksi Lain-Lain - Gambar 2)
+                else if (meta.koreksiItemRows && meta.koreksiItemRows.includes(r)) {
+                    fill = "FFFFFF";
+                    bold = false;
+                    fontSize = 9.5;
+                    const isLastKoreksi = meta.koreksiItemRows && (meta.koreksiItemRows[meta.koreksiItemRows.length - 1] === r);
+                    border = {
+                        top: { style: "hair", color: { rgb: "000000" } },
+                        bottom: isLastKoreksi ? { style: "thin", color: { rgb: "000000" } } : { style: "hair", color: { rgb: "000000" } },
+                        left: { style: "thin", color: { rgb: "000000" } },
+                        right: { style: "thin", color: { rgb: "000000" } }
+                    };
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 3d. Baris REALISASI BELANJA MODAL (Gambar 2: Fill FFFFFF Putih, Bold, Thin Border, numFmt #,##0.00)
+                else if (meta.realisasiModalRows && meta.realisasiModalRows.includes(r)) {
+                    fill = "FFFFFF";
+                    bold = true;
+                    fontSize = 10;
+                    border = thinBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 3e. Baris Perencanaan/DED/SPV/AP (Gambar 2: Fill D9D9D9 Abu-Abu Penuh Seluruh Kolom, Thin Border, Kolom 4 TRUE)
+                else if (meta.perencanaanRows && meta.perencanaanRows.includes(r)) {
+                    fill = "D9D9D9";
+                    fontSize = 10;
+                    border = thinBorder;
+                    if (c === 4 && cell.v === 'TRUE') {
+                        align = "center";
+                        bold = false;
+                        fontColor = "7F7F7F";
+                    } else if (c === 0) {
+                        align = "left";
+                        bold = false;
+                    } else {
+                        align = "center";
+                    }
+                }
+                // 3f. Baris REALISASI BELANJA [TAHUN] (Gambar 2: Fill FFFFFF Putih, Bold, Double Bottom Border, numFmt #,##0.00)
+                else if (meta.realisasiTahunRows && meta.realisasiTahunRows.includes(r)) {
+                    fill = "FFFFFF";
+                    bold = true;
+                    fontSize = 10;
+                    border = doubleBottomBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
                     } else {
                         align = "left";
                     }
@@ -4768,7 +4909,7 @@
                         align = "left";
                     }
                 }
-                // 5. Baris Koreksi Header & REALISASI BELANJA MODAL
+                // 5. Baris Koreksi Header & REALISASI BELANJA MODAL (Fallback SubHeader)
                 else if (meta.subHeaderRows && meta.subHeaderRows.includes(r)) {
                     fill = "D9D9D9";
                     bold = true;
@@ -4781,8 +4922,8 @@
                         align = "left";
                     }
                 }
-                // 6. Baris Sub-Rincian & Koreksi Items (Isi Data Biasa)
-                else if (meta.dataRows && meta.dataRows.includes(r)) {
+                // 6. Baris Sub-Rincian & Koreksi Items (Isi Data Biasa: border putus-putus)
+                else if ((meta.dataRows && meta.dataRows.includes(r)) || (meta.koreksiItemRows && meta.koreksiItemRows.includes(r))) {
                     fill = "FFFFFF";
                     bold = false;
                     fontSize = 9.5;
@@ -4833,6 +4974,204 @@
                         fontSize = 10.5;
                     } else {
                         bold = (r === meta.signStartRow || r === meta.signStartRow + 1 || r === meta.signStartRow + 2);
+                        fontSize = 9.5;
+                    }
+                }
+
+                cell.s = {
+                    font: { name: "Calibri", sz: fontSize, bold: bold, italic: italic, underline: underline, color: { rgb: fontColor } },
+                    alignment: { horizontal: align, vertical: "center", wrapText: true },
+                    fill: { fgColor: { rgb: fill } },
+                    border: border
+                };
+                if (numFmt) cell.z = numFmt;
+            }
+        }
+    }
+
+    // =========================================================================
+    // STYLING ENGINE KHUSUS SHEET 4: RMB (REKAPITULASI MUTASI BARANG) ASET TETAP
+    // 23 KOLOM RESMI RSUD dr. H. KOESNANDI / BPK DENGAN WARNA PASTEL BLUE, GREEN, PINK
+    // =========================================================================
+    function applyRmbSheetStyling(ws, rowCount, colCount = 23, meta = {}) {
+        if (!ws) return;
+
+        const thinBorder = {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        };
+
+        const dottedBorder = {
+            top: { style: "hair", color: { rgb: "94A3B8" } },
+            bottom: { style: "hair", color: { rgb: "94A3B8" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        };
+
+        const doubleBottomBorder = {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "double", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        };
+
+        for (let r = 0; r < rowCount; r++) {
+            for (let c = 0; c < colCount; c++) {
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+                if (!ws[cellRef]) ws[cellRef] = { t: 's', v: '' };
+                const cell = ws[cellRef];
+
+                let align = "left";
+                let bold = false;
+                let italic = false;
+                let underline = false;
+                let fill = "FFFFFF";
+                let fontColor = "000000";
+                let fontSize = 9;
+                let numFmt = null;
+                let border = null;
+
+                // 1. Judul Laporan (Baris 0 - 3)
+                if (r >= 0 && r <= 3) {
+                    bold = true;
+                    fontSize = (r === 1) ? 12 : 11;
+                    align = "center";
+                    fill = "FFFFFF";
+                    border = null;
+                }
+                // 2. Baris Spasi Kosong (Baris 4)
+                else if (r === 4) {
+                    border = null;
+                    fill = "FFFFFF";
+                }
+                // 3. Header Tabel (Baris 5 & 6)
+                else if (r === 5 || r === 6) {
+                    bold = true;
+                    align = "center";
+                    border = thinBorder;
+                    fontSize = 9;
+
+                    // Col 0 (REKENING) & Col 22 (TOTAL ASET TETAP) -> Biru Muda #D9E1F2
+                    if (c === 0 || c === 22) {
+                        fill = "D9E1F2";
+                        fontSize = 9.5;
+                    } else {
+                        // Col 1 (Saldo Awal), Cols 2-10 (PENAMBAHAN), Cols 11-21 (PENGURANGAN) -> Soft Olive / Khaki Green #E2EFDA
+                        fill = "E2EFDA";
+                        if (r === 5) fontSize = 10;
+                        else fontSize = (c >= 11 && c <= 21) ? 8.5 : 9;
+                    }
+                }
+                // 4. Baris Nomor Kolom (Baris 7 - Pink/Rose #FCE4D6)
+                else if (r === 7) {
+                    fill = "FCE4D6";
+                    bold = true;
+                    italic = true;
+                    fontSize = 8.5;
+                    align = "center";
+                    border = thinBorder;
+                }
+                // 5. Baris Induk Utama: ASET TETAP (meta.asetTetapRow) -> Biru Muda #D9E1F2
+                else if (r === meta.asetTetapRow) {
+                    fill = "D9E1F2";
+                    bold = true;
+                    fontSize = 10;
+                    border = thinBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 6. Baris Sub-Induk Kelompok KIB (meta.groupHeaderRows: Tanah, Peralatan & Mesin, dst) -> Soft Olive #E2EFDA
+                else if (meta.groupHeaderRows && meta.groupHeaderRows.includes(r)) {
+                    fill = "E2EFDA";
+                    bold = true;
+                    fontSize = 9.5;
+                    border = thinBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 7. Baris Sub-Rincian Akun (meta.subRincianRows) -> Putih #FFFFFF dengan garis dotted
+                else if (meta.subRincianRows && meta.subRincianRows.includes(r)) {
+                    fill = "FFFFFF";
+                    bold = false;
+                    fontSize = 9;
+                    border = dottedBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 8. Baris Grand Total: JUMLAH ASET TETAP (meta.jumlahAsetTetapRow) -> Biru Muda #D9E1F2 dengan Double Bottom Border
+                else if (r === meta.jumlahAsetTetapRow) {
+                    fill = "D9E1F2";
+                    bold = true;
+                    fontSize = 10.5;
+                    border = doubleBottomBorder;
+                    if (c > 0) {
+                        align = "right";
+                        numFmt = "#,##0.00";
+                        if (typeof cell.v === 'string' && !isNaN(cell.v) && cell.v.trim() !== '') {
+                            cell.v = parseFloat(cell.v);
+                            cell.t = 'n';
+                        } else if (typeof cell.v === 'number') {
+                            cell.t = 'n';
+                        } else if (cell.v == null || cell.v === '') {
+                            cell.v = 0;
+                            cell.t = 'n';
+                        }
+                    } else {
+                        align = "left";
+                    }
+                }
+                // 9. Area Tanda Tangan (r >= meta.signStartRow)
+                else if (meta.signStartRow && r >= meta.signStartRow) {
+                    fill = "FFFFFF";
+                    align = "center";
+                    border = null;
+                    if (meta.signBoldUnderlineRows && meta.signBoldUnderlineRows.includes(r)) {
+                        bold = true;
+                        underline = true;
+                        fontSize = 10.5;
+                    } else {
+                        bold = (r === meta.signStartRow + 1 || r === meta.signStartRow + 2);
                         fontSize = 9.5;
                     }
                 }
@@ -5766,7 +6105,7 @@
             const cat = String(item.category || '').toUpperCase();
             const nama = String(item.sub_rincian_nama || item.nama_barang || '').toUpperCase();
 
-            const matchedDef = reklasDefs.find(d => code && code.startsWith(d.prefix));
+            const matchedDef = reklasDefs.find(d => code && (code.startsWith(d.prefix) || (d.code === '1.4.01' && (code.startsWith('1.5.2') || code.startsWith('1.5.1')))));
             if (matchedDef) {
                 targetCode = matchedDef.code;
             } else if (cat === 'KIB A') {
@@ -5784,6 +6123,10 @@
                 targetCode = '1.3.6.01';
             } else if (cat === 'ATB') {
                 targetCode = '1.5.03';
+            } else if (cat === 'KEMITRAAN' || item.sumber_dana === 'kemitraan') {
+                targetCode = '1.4.01';
+            } else if (cat === 'ASET LAIN') {
+                targetCode = '1.5.04';
             }
 
             if (rowVals[targetCode]) {
@@ -5874,6 +6217,12 @@
             groupHeaderRows: [],
             subHeaderRows: [],
             dataRows: [],
+            jumlahAsetRows: [],
+            koreksiHeaderRows: [],
+            koreksiItemRows: [],
+            realisasiModalRows: [],
+            perencanaanRows: [],
+            realisasiTahunRows: [],
             keteranganHeaderRow: -1,
             keteranganItemRows: [],
             signStartRow: -1,
@@ -5974,7 +6323,7 @@
             s3Meta.dataRows.push(sheet3Rows.length - 1);
         });
 
-        // 4. JUMLAH ASET
+        // 4. JUMLAH ASET (Gambar 2: Abu-abu D9D9D9, Bold, Double Bottom Border, numFmt #,##0.00)
         sheet3Rows.push([
             "JUMLAH ASET",
             jumlahAset.saldo_awal,
@@ -5982,6 +6331,8 @@
             jumlahAset.kurang,
             jumlahAset.akhir
         ]);
+        s3Meta.jumlahAsetRows.push(sheet3Rows.length - 1);
+
         let totalHibahVal = 0;
         let totalExtracomVal = 0;
         let totalKoreksiLainVal = 0;
@@ -6014,7 +6365,7 @@
 
         const totalKoreksiPenyeimbang = totalHibahVal + totalExtracomVal + totalKoreksiLainVal;
 
-        // 5. Bagian Koreksi Penyeimbang
+        // 5. Bagian Koreksi Penyeimbang (Gambar 2: Header Abu-abu D9D9D9, Thin Border)
         sheet3Rows.push([
             "Koreksi Atas Aset Tetap",
             0,
@@ -6022,18 +6373,18 @@
             0,
             totalKoreksiPenyeimbang
         ]);
-        s3Meta.subHeaderRows.push(sheet3Rows.length - 1);
+        s3Meta.koreksiHeaderRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["  Hibah", 0, totalHibahVal, 0, totalHibahVal]);
-        s3Meta.dataRows.push(sheet3Rows.length - 1);
+        sheet3Rows.push(["Hibah", 0, totalHibahVal, 0, totalHibahVal]);
+        s3Meta.koreksiItemRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["  Dibawah Kapitalisasi (Extra Comptable)", 0, totalExtracomVal, 0, totalExtracomVal]);
-        s3Meta.dataRows.push(sheet3Rows.length - 1);
+        sheet3Rows.push(["Dibawah Kapitalisasi (Extra Comptable)", 0, totalExtracomVal, 0, totalExtracomVal]);
+        s3Meta.koreksiItemRows.push(sheet3Rows.length - 1);
 
-        sheet3Rows.push(["  Koreksi Lain-Lain", 0, totalKoreksiLainVal, 0, totalKoreksiLainVal]);
-        s3Meta.dataRows.push(sheet3Rows.length - 1);
+        sheet3Rows.push(["Koreksi Lain-Lain", 0, totalKoreksiLainVal, 0, totalKoreksiLainVal]);
+        s3Meta.koreksiItemRows.push(sheet3Rows.length - 1);
 
-        // 6. REALISASI BELANJA MODAL
+        // 6. REALISASI BELANJA MODAL (Gambar 2: Putih FFFFFF, Bold, Thin Border)
         sheet3Rows.push([
             "REALISASI BELANJA MODAL",
             jumlahAset.saldo_awal,
@@ -6041,27 +6392,27 @@
             jumlahAset.kurang,
             jumlahAset.akhir
         ]);
-        s3Meta.subHeaderRows.push(sheet3Rows.length - 1);
+        s3Meta.realisasiModalRows.push(sheet3Rows.length - 1);
 
-        // 7. Perencanaan/DED/SPV/AP
+        // 7. Perencanaan/DED/SPV/AP (Gambar 2: Abu-abu D9D9D9 Penuh, Thin Border, Kolom 4: TRUE)
         sheet3Rows.push([
             "Perencanaan/DED/SPV/AP",
             "",
             "",
-            "TRUE",
-            ""
+            "",
+            "TRUE"
         ]);
-        s3Meta.dataRows.push(sheet3Rows.length - 1);
+        s3Meta.perencanaanRows.push(sheet3Rows.length - 1);
 
-        // 8. REALISASI BELANJA [TAHUN]
+        // 8. REALISASI BELANJA [TAHUN] (Gambar 2: Putih FFFFFF, Bold, Double Bottom Border)
         sheet3Rows.push([
             "REALISASI BELANJA " + yearLabel,
             jumlahAset.saldo_awal,
-            totalExtracomVal,
-            totalExtracomVal,
+            totalKoreksiPenyeimbang,
+            totalKoreksiPenyeimbang,
             jumlahAset.saldo_awal
         ]);
-        s3Meta.highlightRows.push(sheet3Rows.length - 1);
+        s3Meta.realisasiTahunRows.push(sheet3Rows.length - 1);
 
         // 9. KETERANGAN Narasi Reklasifikasi
         sheet3Rows.push(["", "", "", "", ""]);
@@ -6170,6 +6521,18 @@
                 s3RowHeights.push({ hpt: 19 });
             } else if (s3Meta.dataRows && s3Meta.dataRows.includes(r)) {
                 s3RowHeights.push({ hpt: 18.5 });
+            } else if (s3Meta.jumlahAsetRows && s3Meta.jumlahAsetRows.includes(r)) {
+                s3RowHeights.push({ hpt: 21 });
+            } else if (s3Meta.koreksiHeaderRows && s3Meta.koreksiHeaderRows.includes(r)) {
+                s3RowHeights.push({ hpt: 20 });
+            } else if (s3Meta.koreksiItemRows && s3Meta.koreksiItemRows.includes(r)) {
+                s3RowHeights.push({ hpt: 18.5 });
+            } else if (s3Meta.realisasiModalRows && s3Meta.realisasiModalRows.includes(r)) {
+                s3RowHeights.push({ hpt: 20 });
+            } else if (s3Meta.perencanaanRows && s3Meta.perencanaanRows.includes(r)) {
+                s3RowHeights.push({ hpt: 19 });
+            } else if (s3Meta.realisasiTahunRows && s3Meta.realisasiTahunRows.includes(r)) {
+                s3RowHeights.push({ hpt: 21 });
             } else if (r === s3Meta.keteranganHeaderRow) {
                 s3RowHeights.push({ hpt: 24 });
             } else if (s3Meta.keteranganItemRows && s3Meta.keteranganItemRows.includes(r)) {
@@ -6206,186 +6569,559 @@
         }
 
         // =========================================================================
-        // SHEET 4: 4. RMB (excel) RSDK (REKAPITULASI MUTASI BARANG)
+        // SHEET 4: 4. RMB (excel) RSDK (REKAPITULASI MUTASI BARANG ASET TETAP)
+        // FORMAT RESMI RSUD dr. H. KOESNANDI / BPK (23 KOLOM PENAMBAHAN & PENGURANGAN)
         // =========================================================================
-        const kibReal = {
-            'KIB A': 0, 'KIB B': 0, 'KIB C': 0, 'KIB D': 0,
-            'KIB E': 0, 'KIB F': 0, 'ATB': 0, 'EXTRACOM': 0
-        };
-        const kibUnits = {
-            'KIB A': 0, 'KIB B': 0, 'KIB C': 0, 'KIB D': 0,
-            'KIB E': 0, 'KIB F': 0, 'ATB': 0, 'EXTRACOM': 0
-        };
+        const astapRmbDefs = [
+            // KIB A - TANAH
+            { code: '1.3.1.01', group: 'Tanah', label: 'TANAH', prefix: '1.3.1' },
 
-        filteredAstaps.forEach(item => {
-            const cat = resolveItemCategory(item);
-            const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
-            const vol = parseInt(item.jumlah_volume) || 1;
-            if (kibReal[cat] !== undefined) {
-                kibReal[cat] += val;
-                kibUnits[cat] += vol;
-            } else {
-                kibReal['KIB B'] += val;
-                kibUnits['KIB B'] += vol;
+            // KIB B - PERALATAN DAN MESIN (19 Sub Rincian Baku)
+            { code: '1.3.2.01', group: 'Peralatan dan Mesin', label: 'ALAT BESAR', prefix: '1.3.2.01' },
+            { code: '1.3.2.02', group: 'Peralatan dan Mesin', label: 'ALAT ANGKUTAN', prefix: '1.3.2.02' },
+            { code: '1.3.2.03', group: 'Peralatan dan Mesin', label: 'ALAT BENGKEL DAN ALAT UKUR', prefix: '1.3.2.03' },
+            { code: '1.3.2.04', group: 'Peralatan dan Mesin', label: 'ALAT PERTANIAN', prefix: '1.3.2.04' },
+            { code: '1.3.2.05', group: 'Peralatan dan Mesin', label: 'ALAT KANTOR DAN RUMAH TANGGA', prefix: '1.3.2.05' },
+            { code: '1.3.2.06', group: 'Peralatan dan Mesin', label: 'ALAT STUDIO, KOMUNIKASI DAN PEMANCAR', prefix: '1.3.2.06' },
+            { code: '1.3.2.07', group: 'Peralatan dan Mesin', label: 'ALAT KEDOKTERAN DAN KESEHATAN', prefix: '1.3.2.07' },
+            { code: '1.3.2.08', group: 'Peralatan dan Mesin', label: 'ALAT LABORATORIUM', prefix: '1.3.2.08' },
+            { code: '1.3.2.09', group: 'Peralatan dan Mesin', label: 'ALAT PERSENJATAAN', prefix: '1.3.2.09' },
+            { code: '1.3.2.10', group: 'Peralatan dan Mesin', label: 'KOMPUTER', prefix: '1.3.2.10' },
+            { code: '1.3.2.11', group: 'Peralatan dan Mesin', label: 'ALAT EKSPLORASI', prefix: '1.3.2.11' },
+            { code: '1.3.2.12', group: 'Peralatan dan Mesin', label: 'ALAT PENGEBORAN', prefix: '1.3.2.12' },
+            { code: '1.3.2.13', group: 'Peralatan dan Mesin', label: 'ALAT PRODUKSI, PENGOLAHAN DAN PEMURNIAN', prefix: '1.3.2.13' },
+            { code: '1.3.2.14', group: 'Peralatan dan Mesin', label: 'ALAT BANTU EKSPLORASI', prefix: '1.3.2.14' },
+            { code: '1.3.2.15', group: 'Peralatan dan Mesin', label: 'ALAT KESELAMATAN KERJA', prefix: '1.3.2.15' },
+            { code: '1.3.2.16', group: 'Peralatan dan Mesin', label: 'ALAT PERAGA', prefix: '1.3.2.16' },
+            { code: '1.3.2.17', group: 'Peralatan dan Mesin', label: 'PERALATAN PROSES/PRODUKSI', prefix: '1.3.2.17' },
+            { code: '1.3.2.18', group: 'Peralatan dan Mesin', label: 'RAMBU - RAMBU', prefix: '1.3.2.18' },
+            { code: '1.3.2.19', group: 'Peralatan dan Mesin', label: 'PERALATAN OLAH RAGA', prefix: '1.3.2.19' },
+
+            // KIB C - GEDUNG DAN BANGUNAN (4 Sub Rincian Baku)
+            { code: '1.3.3.01', group: 'Gedung dan Bangunan', label: 'BANGUNAN GEDUNG', prefix: '1.3.3.01' },
+            { code: '1.3.3.02', group: 'Gedung dan Bangunan', label: 'MONUMEN', prefix: '1.3.3.02' },
+            { code: '1.3.3.03', group: 'Gedung dan Bangunan', label: 'BANGUNAN MENARA', prefix: '1.3.3.03' },
+            { code: '1.3.3.04', group: 'Gedung dan Bangunan', label: 'TUGU TITIK KONTROL/PASTI', prefix: '1.3.3.04' },
+
+            // KIB D - JALAN, JARINGAN DAN IRIGASI (4 Sub Rincian Baku)
+            { code: '1.3.4.01', group: 'Jalan, Jaringan dan Irigasi', label: 'JALAN DAN JEMBATAN', prefix: '1.3.4.01' },
+            { code: '1.3.4.02', group: 'Jalan, Jaringan dan Irigasi', label: 'BANGUNAN AIR', prefix: '1.3.4.02' },
+            { code: '1.3.4.03', group: 'Jalan, Jaringan dan Irigasi', label: 'INSTALASI', prefix: '1.3.4.03' },
+            { code: '1.3.4.04', group: 'Jalan, Jaringan dan Irigasi', label: 'JARINGAN', prefix: '1.3.4.04' },
+
+            // KIB E - ASET TETAP LAINNYA (7 Sub Rincian Baku)
+            { code: '1.3.5.01', group: 'Aset Tetap Lainnya', label: 'BAHAN PERPUSTAKAAN', prefix: '1.3.5.01' },
+            { code: '1.3.5.02', group: 'Aset Tetap Lainnya', label: 'BARANG BERCORAK KESENIAN/KEBUDAYAAN/OLAHRAGA', prefix: '1.3.5.02' },
+            { code: '1.3.5.03', group: 'Aset Tetap Lainnya', label: 'HEWAN', prefix: '1.3.5.03' },
+            { code: '1.3.5.04', group: 'Aset Tetap Lainnya', label: 'BIOTA PERAIRAN', prefix: '1.3.5.04' },
+            { code: '1.3.5.05', group: 'Aset Tetap Lainnya', label: 'TANAMAN', prefix: '1.3.5.05' },
+            { code: '1.3.5.06', group: 'Aset Tetap Lainnya', label: 'ASET TETAP LAINNYA', prefix: '1.3.5.06' },
+            { code: '1.3.5.07', group: 'Aset Tetap Lainnya', label: 'ASET TETAP DALAM RENOVASI', prefix: '1.3.5.07' },
+
+            // KIB F - KONSTRUKSI DALAM PENGERJAAN (1 Sub Rincian Baku)
+            { code: '1.3.6.01', group: 'Konstruksi Dalam Pengerjaan', label: 'KONSTRUKSI DALAM PENGERJAAN', prefix: '1.3.6' }
+        ];
+
+        const rmbGroups = [
+            {
+                name: 'Tanah',
+                codes: ['1.3.1.01']
+            },
+            {
+                name: 'Peralatan dan Mesin',
+                codes: [
+                    '1.3.2.01', '1.3.2.02', '1.3.2.03', '1.3.2.04', '1.3.2.05',
+                    '1.3.2.06', '1.3.2.07', '1.3.2.08', '1.3.2.09', '1.3.2.10',
+                    '1.3.2.11', '1.3.2.12', '1.3.2.13', '1.3.2.14', '1.3.2.15',
+                    '1.3.2.16', '1.3.2.17', '1.3.2.18', '1.3.2.19'
+                ]
+            },
+            {
+                name: 'Gedung dan Bangunan',
+                codes: ['1.3.3.01', '1.3.3.02', '1.3.3.03', '1.3.3.04']
+            },
+            {
+                name: 'Jalan, Jaringan dan Irigasi',
+                codes: ['1.3.4.01', '1.3.4.02', '1.3.4.03', '1.3.4.04']
+            },
+            {
+                name: 'Aset Tetap Lainnya',
+                codes: ['1.3.5.01', '1.3.5.02', '1.3.5.03', '1.3.5.04', '1.3.5.05', '1.3.5.06', '1.3.5.07']
+            },
+            {
+                name: 'Konstruksi Dalam Pengerjaan',
+                codes: ['1.3.6.01']
+            }
+        ];
+
+        function resolveRmbCode(item) {
+            if (!item) return null;
+            const code = String(item.kode_barang || item.sub_rincian_kode || item.jenis_aset_kode || '').trim();
+            const cat = String(item.category || resolveItemCategory(item) || '').toUpperCase();
+            const nama = String(item.sub_rincian_nama || item.nama_barang || '').toUpperCase();
+
+            if (code) {
+                const found = astapRmbDefs.find(d => code.startsWith(d.prefix));
+                if (found) return found.code;
+            }
+            if (cat === 'KIB A') return '1.3.1.01';
+            if (cat === 'KIB B') {
+                const found = astapRmbDefs.filter(d => d.group === 'Peralatan dan Mesin').find(d => nama.includes(d.label));
+                return found ? found.code : '1.3.2.05';
+            }
+            if (cat === 'KIB C') return '1.3.3.01';
+            if (cat === 'KIB D') return '1.3.4.01';
+            if (cat === 'KIB E') return '1.3.5.01';
+            if (cat === 'KIB F') return '1.3.6.01';
+            return null; // Aset non-Aset Tetap (ATB / Kemitraan / Lain-Lain) tidak dimasukkan ke baris RMB
+        }
+
+        // Struktur penampung 22 kolom data per sub-rincian
+        const rmbVals = {};
+        astapRmbDefs.forEach(d => {
+            rmbVals[d.code] = {
+                c1_saldo_awal: 0,
+                c2_belanja_modal: 0,
+                c3_hibah: 0,
+                c4_belanja_barang: 0,
+                c5_mutasi_tambah: 0,
+                c6_koreksi_rek_tambah: 0,
+                c7_koreksi_lkd_tambah: 0,
+                c8_koreksi_manset_tambah: 0,
+                c9_kdp_tambah: 0,
+                c10_total_tambah: 0,
+                c11_sk_penghapusan: 0,
+                c12_dihibahkan: 0,
+                c13_mutasi_kurang: 0,
+                c14_kapitalisasi_kurang: 0,
+                c15_direklas_aset_lain: 0,
+                c16_hilang: 0,
+                c17_koreksi_kurang: 0,
+                c18_koreksi_lkd_kurang: 0,
+                c19_koreksi_manset_kurang: 0,
+                c20_kdp_kurang: 0,
+                c21_total_kurang: 0,
+                c22_total_akhir: 0
+            };
+        });
+
+        // 1. Akumulasi Saldo Awal (Tahun Sebelumnya jika ada di rawAstaps)
+        rawAstaps.forEach(item => {
+            const itemYear = parseInt(item.tahun_perolehan) || parseInt(yearLabel);
+            const isPriorYear = (filterYear !== 'all') && (itemYear < parseInt(yearLabel));
+            if (isPriorYear) {
+                const code = resolveRmbCode(item);
+                if (code && rmbVals[code]) {
+                    const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
+                    rmbVals[code].c1_saldo_awal += val;
+                }
             }
         });
 
+        // 2. Akumulasi Data Penambahan & Pengurangan Tahun/Periode Berjalan (filteredAstaps)
+        filteredAstaps.forEach(item => {
+            const code = resolveRmbCode(item);
+            if (!code || !rmbVals[code]) return;
+
+            const val = parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0;
+            const isExtracom = Boolean(item.is_extracomtable || resolveItemCategory(item) === 'EXTRACOM');
+
+            // Penambahan Kolom 2 - 9
+            if (item.sumber_dana === 'hibah') {
+                rmbVals[code].c3_hibah += val;
+            } else if (item.sumber_dana === 'belanja_barang' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'))) {
+                rmbVals[code].c4_belanja_barang += val;
+            } else if (item.jenis_pengadaan === 'mutasi_masuk' || item.sumber_dana === 'mutasi') {
+                rmbVals[code].c5_mutasi_tambah += val;
+            } else if (item.is_reklas && item.jenis_reklas === 'KOREKSI_REKENING' && item.tujuan_kib) {
+                rmbVals[code].c6_koreksi_rek_tambah += val;
+            } else if (item.is_reklas && item.jenis_reklas === 'KDP_TO_DEFINITIF' && item.tujuan_kib) {
+                rmbVals[code].c9_kdp_tambah += val;
+            } else {
+                // Standar Belanja Modal
+                rmbVals[code].c2_belanja_modal += val;
+            }
+
+            // Pengurangan Kolom 11 - 20 dari Reklasifikasi & Ekstrakomptabel
+            if (item.is_reklas) {
+                if (item.jenis_reklas === 'EKSTRAKOMPTABEL') {
+                    rmbVals[code].c14_kapitalisasi_kurang += val;
+                } else if (item.jenis_reklas === 'KOREKSI_REKENING') {
+                    rmbVals[code].c17_koreksi_kurang += val;
+                    // Tambah pada rekening tujuan
+                    const tujuanCode = resolveRmbCode({ category: item.tujuan_kib, kode_barang: item.tujuan_kode_barang, nama_barang: item.tujuan_sub_rincian });
+                    if (tujuanCode && rmbVals[tujuanCode]) {
+                        rmbVals[tujuanCode].c6_koreksi_rek_tambah += val;
+                    }
+                } else if (item.jenis_reklas === 'KDP_TO_DEFINITIF') {
+                    if (rmbVals['1.3.6.01']) rmbVals['1.3.6.01'].c20_kdp_kurang += val;
+                    const tujuanCode = resolveRmbCode({ category: item.tujuan_kib || 'KIB C' });
+                    if (tujuanCode && rmbVals[tujuanCode]) {
+                        rmbVals[tujuanCode].c9_kdp_tambah += val;
+                    }
+                } else if (item.jenis_reklas === 'ASET_LAIN_LAIN') {
+                    rmbVals[code].c15_direklas_aset_lain += val;
+                } else if (item.jenis_reklas === 'KOREKSI_LAIN') {
+                    rmbVals[code].c17_koreksi_kurang += val;
+                }
+            } else if (isExtracom) {
+                // Ekstrakomptabel dicatat belanja modal di penambahan, lalu dikurangi via kapitalisasi (-)
+                rmbVals[code].c14_kapitalisasi_kurang += val;
+            }
+        });
+
+        // 3. Akumulasi Pengurangan dari Recycle Bin (filteredDeletedAstaps)
+        filteredDeletedAstaps.forEach(delItem => {
+            const code = resolveRmbCode(delItem);
+            if (!code || !rmbVals[code]) return;
+
+            const val = parseFloat(delItem.total_realisasi_num) || parseFloat(delItem.total_realisasi) || 0;
+            const reason = String(delItem.alasan_hapus || delItem.keterangan || '').toLowerCase();
+
+            if (reason.includes('hibah') || reason.includes('dihibahkan')) {
+                rmbVals[code].c12_dihibahkan += val;
+            } else if (reason.includes('mutasi')) {
+                rmbVals[code].c13_mutasi_kurang += val;
+            } else if (reason.includes('ekstra') || reason.includes('kapitalisasi')) {
+                rmbVals[code].c14_kapitalisasi_kurang += val;
+            } else if (reason.includes('reklas') || reason.includes('aset lain')) {
+                rmbVals[code].c15_direklas_aset_lain += val;
+            } else if (reason.includes('hilang')) {
+                rmbVals[code].c16_hilang += val;
+            } else {
+                // SK Penghapusan
+                rmbVals[code].c11_sk_penghapusan += val;
+            }
+        });
+
+        // 4. Hitung Total Penambahan (Col 10), Total Pengurangan (Col 21), & Saldo Akhir (Col 22)
+        astapRmbDefs.forEach(d => {
+            const v = rmbVals[d.code];
+            v.c10_total_tambah = v.c2_belanja_modal + v.c3_hibah + v.c4_belanja_barang + v.c5_mutasi_tambah +
+                                 v.c6_koreksi_rek_tambah + v.c7_koreksi_lkd_tambah + v.c8_koreksi_manset_tambah + v.c9_kdp_tambah;
+
+            v.c21_total_kurang = v.c11_sk_penghapusan + v.c12_dihibahkan + v.c13_mutasi_kurang + v.c14_kapitalisasi_kurang +
+                                 v.c15_direklas_aset_lain + v.c16_hilang + v.c17_koreksi_kurang + v.c18_koreksi_lkd_kurang +
+                                 v.c19_koreksi_manset_kurang + v.c20_kdp_kurang;
+
+            v.c22_total_akhir = v.c1_saldo_awal + v.c10_total_tambah - v.c21_total_kurang;
+        });
+
+        // 5. Agregasi per Kelompok KIB
+        function makeEmptyCols() {
+            return {
+                c1: 0, c2: 0, c3: 0, c4: 0, c5: 0, c6: 0, c7: 0, c8: 0, c9: 0, c10: 0,
+                c11: 0, c12: 0, c13: 0, c14: 0, c15: 0, c16: 0, c17: 0, c18: 0, c19: 0, c20: 0,
+                c21: 0, c22: 0
+            };
+        }
+
+        const rmbGroupSums = {};
+        rmbGroups.forEach(grp => {
+            rmbGroupSums[grp.name] = makeEmptyCols();
+            grp.codes.forEach(code => {
+                const v = rmbVals[code];
+                if (v) {
+                    rmbGroupSums[grp.name].c1 += v.c1_saldo_awal;
+                    rmbGroupSums[grp.name].c2 += v.c2_belanja_modal;
+                    rmbGroupSums[grp.name].c3 += v.c3_hibah;
+                    rmbGroupSums[grp.name].c4 += v.c4_belanja_barang;
+                    rmbGroupSums[grp.name].c5 += v.c5_mutasi_tambah;
+                    rmbGroupSums[grp.name].c6 += v.c6_koreksi_rek_tambah;
+                    rmbGroupSums[grp.name].c7 += v.c7_koreksi_lkd_tambah;
+                    rmbGroupSums[grp.name].c8 += v.c8_koreksi_manset_tambah;
+                    rmbGroupSums[grp.name].c9 += v.c9_kdp_tambah;
+                    rmbGroupSums[grp.name].c10 += v.c10_total_tambah;
+                    rmbGroupSums[grp.name].c11 += v.c11_sk_penghapusan;
+                    rmbGroupSums[grp.name].c12 += v.c12_dihibahkan;
+                    rmbGroupSums[grp.name].c13 += v.c13_mutasi_kurang;
+                    rmbGroupSums[grp.name].c14 += v.c14_kapitalisasi_kurang;
+                    rmbGroupSums[grp.name].c15 += v.c15_direklas_aset_lain;
+                    rmbGroupSums[grp.name].c16 += v.c16_hilang;
+                    rmbGroupSums[grp.name].c17 += v.c17_koreksi_kurang;
+                    rmbGroupSums[grp.name].c18 += v.c18_koreksi_lkd_kurang;
+                    rmbGroupSums[grp.name].c19 += v.c19_koreksi_manset_kurang;
+                    rmbGroupSums[grp.name].c20 += v.c20_kdp_kurang;
+                    rmbGroupSums[grp.name].c21 += v.c21_total_kurang;
+                    rmbGroupSums[grp.name].c22 += v.c22_total_akhir;
+                }
+            });
+        });
+
+        // Grand Total Seluruh Aset Tetap
+        const rmbTotalAsetTetap = makeEmptyCols();
+        rmbGroups.forEach(grp => {
+            const s = rmbGroupSums[grp.name];
+            for (let i = 1; i <= 22; i++) {
+                rmbTotalAsetTetap['c' + i] += s['c' + i];
+            }
+        });
+
+        // Header Label Tanggal Dinamis
+        const prevYear = parseInt(yearLabel) - 1;
+        const saldoAwalHeader = "Audited " + prevYear + " / Saldo\nPer 31 Desember " + prevYear;
+
+        let saldoAkhirDateStr = "31 DESEMBER " + yearLabel;
+        const s4TwKey = String(filterTw || '').replace(/[\s_]/g, '').toUpperCase();
+        if (s4TwKey === 'TWI' || s4TwKey === 'TW1') saldoAkhirDateStr = "31 MARET " + yearLabel;
+        else if (s4TwKey === 'TWII' || s4TwKey === 'TW2') saldoAkhirDateStr = "30 JUNI " + yearLabel;
+        else if (s4TwKey === 'TWIII' || s4TwKey === 'TW3') saldoAkhirDateStr = "30 SEPTEMBER " + yearLabel;
+        else if (s4TwKey === 'TWIV' || s4TwKey === 'TW4') saldoAkhirDateStr = "31 DESEMBER " + yearLabel;
+        const saldoAkhirHeader = "TOTAL ASET TETAP\nPER " + saldoAkhirDateStr;
+
+        // Bangun Baris Sheet 4 RMB
         let sheet4Rows = [
             ["PEMERINTAH KABUPATEN BONDOWOSO"],
             ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
             ["REKAPITULASI MUTASI BARANG (RMB) ASET TETAP TAHUN ANGGARAN " + yearLabel],
             ["PERIODE: " + bannerTw],
             [""],
+            // Row 5: Superheader
             [
-                "NO",
-                "KODE AKUN / KELOMPOK ASET",
-                "SALDO AWAL", "",
-                "MUTASI BERTAMBAH", "", "",
-                "MUTASI BERKURANG", "",
-                "SALDO AKHIR", "",
-                "KETERANGAN"
+                "REKENING",
+                saldoAwalHeader,
+                "PENAMBAHAN", "", "", "", "", "", "", "", "",
+                "PENGURANGAN", "", "", "", "", "", "", "", "", "", "",
+                saldoAkhirHeader
             ],
+            // Row 6: Subheader
             [
                 "",
                 "",
-                "JUMLAH BARANG",
-                "NILAI (Rp)",
-                "BELANJA MODAL (Rp)",
-                "REKLAS MASUK (Rp)",
-                "TOTAL TAMBAH (Rp)",
-                "PENGHAPUSAN (Rp)",
-                "TOTAL KURANG (Rp)",
-                "JUMLAH BARANG",
-                "NILAI (Rp)",
+                "BELANJA MODAL",
+                "HIBAH",
+                "BELANJA BARANG",
+                "MUTASI (+)",
+                "KOREKSI REKENING",
+                "KOREKSI LKD",
+                "KOREKSI MANSET",
+                "KDP",
+                "TOTAL",
+                "SK PENGHAPUSAN",
+                "DIHIBAHKAN",
+                "MUTASI (-)",
+                "KAPITALISASI (-)",
+                "DIREKLAS KE ASET LAIN",
+                "HILANG",
+                "KOREKSI (-)",
+                "KOREKSI LKD",
+                "KOREKSI MANSET",
+                "KDP",
+                "TOTAL",
                 ""
+            ],
+            // Row 7: Penomoran Kolom Pink
+            [
+                "",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10 = 2+3+4+5+6+7+8+9",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16",
+                "17",
+                "18",
+                "19",
+                "20",
+                "21 = 11+12+13+14+15+16+17+18+19+20",
+                "22 = 1 + 10 - 21"
             ]
         ];
 
-        const rmbCategories = [
-            { no: 1, kode: "1.3.1 - TANAH", name: "A. Tanah (KIB A)", cat: "KIB A" },
-            { no: 2, kode: "1.3.2 - PERALATAN DAN MESIN", name: "B. Peralatan & Mesin (KIB B >= Rp 300.000)", cat: "KIB B" },
-            { no: 3, kode: "1.3.3 - GEDUNG DAN BANGUNAN", name: "C. Gedung & Bangunan (KIB C)", cat: "KIB C" },
-            { no: 4, kode: "1.3.4 - JALAN, IRIGASI DAN JARINGAN", name: "D. Jalan, Irigasi & Jaringan (KIB D)", cat: "KIB D" },
-            { no: 5, kode: "1.3.5 - ASET TETAP LAINNYA", name: "E. Aset Tetap Lainnya (KIB E)", cat: "KIB E" },
-            { no: 6, kode: "1.3.6 - KONSTRUKSI DALAM PENGERJAAN", name: "F. Konstruksi KDP (KIB F)", cat: "KIB F" },
-            { no: 7, kode: "1.5.3 - ASET TIDAK BERWUJUD", name: "ATB. Aset Tidak Berwujud", cat: "ATB" },
-            { no: 8, kode: "1.5.4 - EKSTRAKOMTABEL", name: "Extracom (< Rp 300.000)", cat: "EXTRACOM" }
-        ];
+        const s4Meta = {
+            asetTetapRow: sheet4Rows.length, // Row 8
+            groupHeaderRows: [],
+            subRincianRows: [],
+            jumlahAsetTetapRow: -1,
+            signStartRow: -1,
+            signBoldUnderlineRows: []
+        };
 
-        let grandBelanjaModal = 0;
-        let grandTambah = 0;
-        let grandKurang = 0;
-        let grandAkhirNilai = 0;
-        let grandAkhirUnit = 0;
-
-        rmbCategories.forEach(item => {
-            const belanja = kibReal[item.cat] || 0;
-            const unit = kibUnits[item.cat] || 0;
-            let reklasIn = 0;
-            let totKurang = 0;
-
-            // Agregasi dinamis reklasifikasi & mutasi per KIB
-            filteredAstaps.forEach(astap => {
-                const val = parseFloat(astap.total_realisasi_num) || parseFloat(astap.total_realisasi) || 0;
-                const cat = astap.category || '';
-                const isExtracom = Boolean(astap.is_extracomtable || resolveItemCategory(astap) === 'EXTRACOM');
-
-                if (astap.is_reklas) {
-                    if (astap.jenis_reklas === 'EKSTRAKOMPTABEL') {
-                        if (item.cat === 'EXTRACOM') reklasIn += val;
-                        if (item.cat === cat) totKurang += val;
-                    } else if (astap.jenis_reklas === 'KDP_TO_DEFINITIF') {
-                        if (item.cat === 'KIB F') totKurang += val;
-                        if (item.cat === (astap.tujuan_kib || 'KIB C')) reklasIn += val;
-                    } else if (astap.jenis_reklas === 'KOREKSI_REKENING') {
-                        if (item.cat === cat) totKurang += val;
-                        if (item.cat === (astap.tujuan_kib || 'KIB B')) reklasIn += val;
-                    } else if (astap.jenis_reklas === 'KOREKSI_LAIN') {
-                        if (item.cat === cat) totKurang += val;
-                    }
-                } else if (isExtracom) {
-                    if (item.cat === 'EXTRACOM') reklasIn += val;
-                    if (item.cat === cat && cat !== 'EXTRACOM') totKurang += val;
-                }
-            });
-
-            const totTambah = belanja + reklasIn;
-            const saldoAwalNilai = 0;
-            const saldoAwalUnit = 0;
-            const saldoAkhirNilai = saldoAwalNilai + totTambah - totKurang;
-            const saldoAkhirUnit = saldoAwalUnit + unit;
-
-            grandBelanjaModal += belanja;
-            grandTambah += totTambah;
-            grandKurang += totKurang;
-            grandAkhirNilai += saldoAkhirNilai;
-            grandAkhirUnit += saldoAkhirUnit;
-
-            sheet4Rows.push([
-                item.no,
-                item.name,
-                saldoAwalUnit,
-                saldoAwalNilai,
-                belanja,
-                reklasIn,
-                totTambah,
-                totKurang,
-                totKurang,
-                saldoAkhirUnit,
-                saldoAkhirNilai,
-                item.kode
-            ]);
-        });
-
-        const s4TotalRowIdx = sheet4Rows.length;
+        // Row 8: ASET TETAP (Baris Induk Pertama - Biru Muda #D9E1F2)
         sheet4Rows.push([
-            "JUMLAH TOTAL REKAPITULASI MUTASI BARANG (RMB)", "",
-            0, 0,
-            grandBelanjaModal, 0, grandTambah,
-            grandKurang, grandKurang,
-            grandAkhirUnit, grandAkhirNilai,
-            "Laporan Realisasi " + yearLabel
+            "ASET TETAP",
+            rmbTotalAsetTetap.c1,
+            rmbTotalAsetTetap.c2,
+            rmbTotalAsetTetap.c3,
+            rmbTotalAsetTetap.c4,
+            rmbTotalAsetTetap.c5,
+            rmbTotalAsetTetap.c6,
+            rmbTotalAsetTetap.c7,
+            rmbTotalAsetTetap.c8,
+            rmbTotalAsetTetap.c9,
+            rmbTotalAsetTetap.c10,
+            rmbTotalAsetTetap.c11,
+            rmbTotalAsetTetap.c12,
+            rmbTotalAsetTetap.c13,
+            rmbTotalAsetTetap.c14,
+            rmbTotalAsetTetap.c15,
+            rmbTotalAsetTetap.c16,
+            rmbTotalAsetTetap.c17,
+            rmbTotalAsetTetap.c18,
+            rmbTotalAsetTetap.c19,
+            rmbTotalAsetTetap.c20,
+            rmbTotalAsetTetap.c21,
+            rmbTotalAsetTetap.c22
         ]);
 
-        // Tanda Tangan Sheet 4 (Format Baku RSUD Koesnadi)
-        const s4SignStartRow = sheet4Rows.length;
-        const s4SignRows = buildKibSignatureRows(12, 8, ppkNama, ppkNip, signDate, 1);
+        // 6 Kelompok KIB & 36 Sub-Rincian (Hanya Aset Tetap, Tanpa Aset Lain-Lain sesuai instruksi)
+        rmbGroups.forEach(grp => {
+            const s = rmbGroupSums[grp.name];
+            s4Meta.groupHeaderRows.push(sheet4Rows.length);
+            sheet4Rows.push([
+                grp.name,
+                s.c1, s.c2, s.c3, s.c4, s.c5, s.c6, s.c7, s.c8, s.c9, s.c10,
+                s.c11, s.c12, s.c13, s.c14, s.c15, s.c16, s.c17, s.c18, s.c19, s.c20,
+                s.c21, s.c22
+            ]);
+
+            grp.codes.forEach(code => {
+                const d = astapRmbDefs.find(def => def.code === code);
+                const v = rmbVals[code];
+                if (d && v) {
+                    s4Meta.subRincianRows.push(sheet4Rows.length);
+                    sheet4Rows.push([
+                        "  " + d.label,
+                        v.c1_saldo_awal,
+                        v.c2_belanja_modal,
+                        v.c3_hibah,
+                        v.c4_belanja_barang,
+                        v.c5_mutasi_tambah,
+                        v.c6_koreksi_rek_tambah,
+                        v.c7_koreksi_lkd_tambah,
+                        v.c8_koreksi_manset_tambah,
+                        v.c9_kdp_tambah,
+                        v.c10_total_tambah,
+                        v.c11_sk_penghapusan,
+                        v.c12_dihibahkan,
+                        v.c13_mutasi_kurang,
+                        v.c14_kapitalisasi_kurang,
+                        v.c15_direklas_aset_lain,
+                        v.c16_hilang,
+                        v.c17_koreksi_kurang,
+                        v.c18_koreksi_lkd_kurang,
+                        v.c19_koreksi_manset_kurang,
+                        v.c20_kdp_kurang,
+                        v.c21_total_kurang,
+                        v.c22_total_akhir
+                    ]);
+                }
+            });
+        });
+
+        // Baris Grand Total: JUMLAH ASET TETAP (Double Bottom Border)
+        s4Meta.jumlahAsetTetapRow = sheet4Rows.length;
+        sheet4Rows.push([
+            "JUMLAH ASET TETAP",
+            rmbTotalAsetTetap.c1,
+            rmbTotalAsetTetap.c2,
+            rmbTotalAsetTetap.c3,
+            rmbTotalAsetTetap.c4,
+            rmbTotalAsetTetap.c5,
+            rmbTotalAsetTetap.c6,
+            rmbTotalAsetTetap.c7,
+            rmbTotalAsetTetap.c8,
+            rmbTotalAsetTetap.c9,
+            rmbTotalAsetTetap.c10,
+            rmbTotalAsetTetap.c11,
+            rmbTotalAsetTetap.c12,
+            rmbTotalAsetTetap.c13,
+            rmbTotalAsetTetap.c14,
+            rmbTotalAsetTetap.c15,
+            rmbTotalAsetTetap.c16,
+            rmbTotalAsetTetap.c17,
+            rmbTotalAsetTetap.c18,
+            rmbTotalAsetTetap.c19,
+            rmbTotalAsetTetap.c20,
+            rmbTotalAsetTetap.c21,
+            rmbTotalAsetTetap.c22
+        ]);
+
+        // Tanda Tangan Sheet 4 (Format Baku RSUD dr. H. Koesnandi)
+        s4Meta.signStartRow = sheet4Rows.length;
+        s4Meta.signBoldUnderlineRows = [s4Meta.signStartRow + 6];
+        const s4SignRows = buildKibSignatureRows(23, 16, ppkNama, ppkNip, signDate, 1);
         s4SignRows.forEach(r => sheet4Rows.push(r));
 
         const wsSheet4 = XLSX.utils.aoa_to_sheet(sheet4Rows);
         wsSheet4['!cols'] = [
-            {wch: 6},   // NO
-            {wch: 38},  // KELOMPOK ASET
-            {wch: 16},  // SALDO AWAL JML
-            {wch: 22},  // SALDO AWAL NILAI
-            {wch: 22},  // BELANJA MODAL
-            {wch: 20},  // REKLAS MASUK
-            {wch: 22},  // TOTAL TAMBAH
-            {wch: 20},  // PENGHAPUSAN
-            {wch: 20},  // TOTAL KURANG
-            {wch: 16},  // SALDO AKHIR JML
-            {wch: 22},  // SALDO AKHIR NILAI
-            {wch: 30}   // KET
+            { wch: 44 }, // Col 0: REKENING
+            { wch: 24 }, // Col 1: Audited 2025 / Saldo Per 31 Desember
+            { wch: 18 }, // Col 2: BELANJA MODAL
+            { wch: 16 }, // Col 3: HIBAH
+            { wch: 18 }, // Col 4: BELANJA BARANG
+            { wch: 16 }, // Col 5: MUTASI (+)
+            { wch: 18 }, // Col 6: KOREKSI REKENING
+            { wch: 16 }, // Col 7: KOREKSI LKD
+            { wch: 16 }, // Col 8: KOREKSI MANSET
+            { wch: 16 }, // Col 9: KDP
+            { wch: 22 }, // Col 10: TOTAL (PENAMBAHAN)
+            { wch: 18 }, // Col 11: SK PENGHAPUSAN
+            { wch: 16 }, // Col 12: DIHIBAHKAN
+            { wch: 16 }, // Col 13: MUTASI (-)
+            { wch: 18 }, // Col 14: KAPITALISASI (-)
+            { wch: 22 }, // Col 15: DIREKLAS KE ASET LAIN
+            { wch: 16 }, // Col 16: HILANG
+            { wch: 18 }, // Col 17: KOREKSI (-)
+            { wch: 16 }, // Col 18: KOREKSI LKD
+            { wch: 16 }, // Col 19: KOREKSI MANSET
+            { wch: 16 }, // Col 20: KDP
+            { wch: 22 }, // Col 21: TOTAL (PENGURANGAN)
+            { wch: 24 }  // Col 22: TOTAL ASET TETAP PER ...
         ];
-        wsSheet4['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } },
-            { s: { r: 2, c: 0 }, e: { r: 2, c: 11 } },
-            { s: { r: 3, c: 0 }, e: { r: 3, c: 11 } },
-            { s: { r: 5, c: 0 }, e: { r: 6, c: 0 } },
-            { s: { r: 5, c: 1 }, e: { r: 6, c: 1 } },
-            { s: { r: 5, c: 2 }, e: { r: 5, c: 3 } },
-            { s: { r: 5, c: 4 }, e: { r: 5, c: 6 } },
-            { s: { r: 5, c: 7 }, e: { r: 5, c: 8 } },
-            { s: { r: 5, c: 9 }, e: { r: 5, c: 10 } },
-            { s: { r: 5, c: 11 }, e: { r: 6, c: 11 } },
-            { s: { r: s4TotalRowIdx, c: 0 }, e: { r: s4TotalRowIdx, c: 1 } },
 
-            // Tanda Tangan Sheet 4 (c1 s/d c4 kiri, c8 s/d c11 kanan)
-            ...getKibSignatureMerges(s4SignStartRow, 12, 8, 1, 4, 11)
+        const s4RowHeights = [
+            { hpt: 20 }, // 0
+            { hpt: 22 }, // 1
+            { hpt: 22 }, // 2
+            { hpt: 20 }, // 3
+            { hpt: 12 }, // 4
+            { hpt: 26 }, // 5: Superheader
+            { hpt: 30 }, // 6: Subheader
+            { hpt: 20 }  // 7: Baris Angka Pink
         ];
-        applyCleanReportStyling(wsSheet4, sheet4Rows.length, 12, 5, 2, s4TotalRowIdx);
-        applySignatureBlockStyling(wsSheet4, s4SignStartRow, 12);
+        for (let rIdx = 8; rIdx < sheet4Rows.length; rIdx++) {
+            if (rIdx === s4Meta.asetTetapRow) s4RowHeights.push({ hpt: 22 });
+            else if (s4Meta.groupHeaderRows.includes(rIdx)) s4RowHeights.push({ hpt: 20 });
+            else if (rIdx === s4Meta.jumlahAsetTetapRow) s4RowHeights.push({ hpt: 24 });
+            else if (rIdx >= s4Meta.signStartRow) s4RowHeights.push({ hpt: 20 });
+            else s4RowHeights.push({ hpt: 18 });
+        }
+
+        const s4Merges = [
+            // Banner Judul
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 22 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 22 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 22 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 22 } },
+
+            // Header Tabel
+            { s: { r: 5, c: 0 }, e: { r: 6, c: 0 } },   // Col 0: REKENING
+            { s: { r: 5, c: 1 }, e: { r: 6, c: 1 } },   // Col 1: Audited / Saldo Awal
+            { s: { r: 5, c: 2 }, e: { r: 5, c: 10 } },  // Col 2-10: PENAMBAHAN
+            { s: { r: 5, c: 11 }, e: { r: 5, c: 21 } }, // Col 11-21: PENGURANGAN
+            { s: { r: 5, c: 22 }, e: { r: 6, c: 22 } }, // Col 22: TOTAL ASET TETAP PER ...
+
+            // Tanda Tangan: Col 1-5 kiri (Direktur), Col 16-21 kanan (Pengurus Barang Aset Tetap)
+            ...getKibSignatureMerges(s4Meta.signStartRow, 23, 16, 1, 5, 21)
+        ];
+
+        wsSheet4['!merges'] = s4Merges;
+        wsSheet4['!rows'] = s4RowHeights;
+        wsSheet4['!views'] = [{ showGridLines: true }];
+
+        applyRmbSheetStyling(wsSheet4, sheet4Rows.length, 23, s4Meta);
+
         if (filterSheet === 'all' || filterSheet === 'sheet4') {
             XLSX.utils.book_append_sheet(wb, wsSheet4, filterSheet === 'sheet4' ? "RMB (excel) RSDK" : "4. RMB (excel) RSDK");
         }
@@ -6511,8 +7247,8 @@
         if (filterSheet === 'sheet1') sheetSlug = 'DAFTAR_AT';
         else if (filterSheet === 'sheet2') sheetSlug = 'PENGURANGAN_AT';
         else if (filterSheet === 'sheet3') sheetSlug = 'REKLAS';
-        else if (filterSheet === 'sheet4') sheetSlug = 'RMB_RSDK';
-        else if (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') sheetSlug = 'HIBAH_RSDK';
+        else if (filterSheet === 'sheet4') sheetSlug = 'RMB';
+        else if (filterSheet === 'sheet5' || filterSheet === 'sheet5_hibah') sheetSlug = 'HIBAH';
 
         const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
         const fileName = "LAPORAN_REKAP_TRIWULAN_" + sheetSlug + "_RSDK_" + yearLabel + "_" + twSlug + ".xlsx";
@@ -7156,7 +7892,18 @@
                         harga_satuan: 0,
                         kode_barang: this.selectedAstapReklas?.kode_barang || '',
                     });
-                               let narasi = '';
+                },
+
+                getReklasNarasiPreview() {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return 'Pilih aset terlebih dahulu untuk melihat pratinjau narasi...';
+
+                    const subRek = it.sub_rincian_objek || it.kode_barang || '';
+                    const subNama = it.nama_barang || '';
+                    const buktiStr = it.sp2d_nomor ? `(SP2D: ${it.sp2d_nomor})` : (it.bast_dokumen_nomor ? `(BAST: ${it.bast_dokumen_nomor})` : '');
+                    const spacerTgl = it.sp2d_tanggal ? ` tgl ${it.sp2d_tanggal}` : '';
+
+                    let narasi = '';
                     if (this.reklasJenis === 'extracom') {
                         const totalVal = this.getReklasExtracomTotal();
                         const valStr = 'Rp ' + Number(totalVal).toLocaleString('id-ID');

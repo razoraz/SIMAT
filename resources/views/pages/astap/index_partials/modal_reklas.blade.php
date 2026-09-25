@@ -1,14 +1,16 @@
         <!-- ========================================================================= -->
         <!-- MODAL DIALOG: REKLASIFIKASI ASET TETAP (RSDK)                             -->
         <!-- ========================================================================= -->
-        <div x-show="showReklasModal" x-cloak id="modalReklasDialog"
-             class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0">
+        <template x-teleport="body">
+            <div x-show="showReklasModal" x-cloak id="modalReklasDialog"
+                 class="fixed inset-0 overflow-y-auto flex items-center justify-center p-3 sm:p-4"
+                 style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 99999;"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0">
 
             <style>
                 /* Hilangkan spinner scroller angka bawaan browser agar tidak menutupi digit nominal */
@@ -1022,3 +1024,4 @@
 
             </div>
         </div>
+    </template>
