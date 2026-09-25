@@ -54,25 +54,25 @@
             },
             {
                 id: 'perbekalan',
-                title: 'Belanja Barang (Perbekalan / Operasional)',
+                title: 'Belanja Barang (Instalasi Perbekalan / Gudang)',
                 shortTitle: '3. Belanja Barang',
-                subLabel: 'Kode 5.1.02 · Ekstrakom',
-                badge: 'Perbekalan / Operasional',
-                account: 'Akun 5.1.02 · Ekstrakomptabel',
-                icon: '📋',
+                subLabel: 'Beli Mandiri Gudang · Bukan Belanja Modal',
+                badge: 'Perbekalan / Gudang Sendiri',
+                account: 'Akun 5.1.02 · Non-Belanja Modal',
+                icon: '📦',
                 theme: 'indigo',
-                route: '{{ route('astap.create_rekening') }}',
+                route: '{{ route('astap.create_belanja_barang') }}',
                 actionLabel: 'Buka Form Belanja Barang',
                 stepCount: 'Form Ekstrakomptabel',
-                purpose: 'Pencatatan perbekalan & barang operasional dari pusat perbekalan atau belanja barang jasa (Akun 5.1.02) untuk pengawasan fisik inventaris ruangan (KIR).',
-                cases: 'Tensimeter ruangan, kursi roda, timbangan pasien, perabot kantor kecil, atau alat perbekalan medis yang nilainya di bawah pagu minimum kapitalisasi aset tetap.',
+                purpose: 'Pencatatan barang/aset inventaris yang dibeli langsung oleh Instalasi Perbekalan atau Bagian Gudang menggunakan anggaran perbekalan sendiri (bukan belanja modal) agar memiliki NIBAR, QR code, dan diawasi di KIR Ruangan.',
+                cases: 'Tensimeter ruangan, kursi roda, timbangan pasien, perabot perbekalan, atau alat operasional medis yang dibeli mandiri dengan nota/faktur toko oleh perbekalan.',
                 docs: [
-                    'Faktur / Kuitansi Belanja Barang Jasa (5.1.02)',
-                    'Bukti Penerimaan Barang dari Bagian Gudang/Perbekalan',
+                    'Nota / Faktur Pembelian Toko Rekanan',
+                    'Bukti Penerimaan / Kuitansi Gudang Perbekalan',
                     'Lembar Kartu Inventaris Ruangan (KIR)'
                 ],
-                accounting: 'Masuk dalam pengawasan Aset Ekstrakomptabel (KIR Ruangan) tanpa dikapitalisasi ke Neraca Aset Tetap 1.3.',
-                tags: ['🏷️ Kode 5.1.02', '🔍 Kontrol KIR', '📦 Ekstrakom']
+                accounting: 'Dicatat untuk pengawasan fisik inventaris ruangan (KIR) secara ekstrakomptabel tanpa dikapitalisasi ke Neraca Belanja Modal.',
+                tags: ['🏷️ Dana Perbekalan', '📦 Bukan Belanja Modal', '🔍 Pengawasan KIR']
             },
             {
                 id: 'mutasi',
