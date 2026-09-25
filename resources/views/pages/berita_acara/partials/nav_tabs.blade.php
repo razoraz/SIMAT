@@ -34,18 +34,18 @@
                     </div>
                 </button>
 
-                <!-- Tab 3 Button -->
+                <!-- Tab 3 Button: Mutasi Aset (Internal & Eksternal) -->
                 <button type="button" @click="activeTab = 'mutasi'"
                     class="p-4 rounded-2xl transition-all flex items-center space-x-3 text-left"
-                    :class="activeTab === 'mutasi' ? 'bg-rose-500/20 text-rose-300 border-2 border-rose-500/50 shadow-lg shadow-rose-500/10' : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800/80'">
+                    :class="activeTab === 'mutasi' ? 'bg-indigo-500/20 text-indigo-300 border-2 border-indigo-500/50 shadow-lg shadow-indigo-500/10' : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800/80'">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold shrink-0"
-                         :class="activeTab === 'mutasi' ? 'bg-rose-500 text-slate-950 shadow-md shadow-rose-500/30' : 'bg-slate-900 text-slate-400 border border-slate-800'">
+                         :class="activeTab === 'mutasi' ? 'bg-indigo-500 text-slate-950 shadow-md shadow-indigo-500/30' : 'bg-slate-900 text-slate-400 border border-slate-800'">
                         <span>🔄</span>
                     </div>
                     <div class="min-w-0">
-                        <span class="text-[10px] font-bold uppercase tracking-wider block" :class="activeTab === 'mutasi' ? 'text-rose-400' : 'text-slate-500'">Pemindahan Ruangan</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider block" :class="activeTab === 'mutasi' ? 'text-indigo-400' : 'text-slate-500'">Internal & Eksternal</span>
                         <span class="text-xs sm:text-sm font-extrabold block text-white truncate">3. BAST Mutasi Aset</span>
-                        <span class="text-[10px] text-slate-400 block truncate">Pemindahan Barang Ruang Asal &rarr; Tujuan</span>
+                        <span class="text-[10px] text-slate-400 block truncate">Mutasi Internal & Eksternal</span>
                     </div>
                 </button>
 

@@ -16,6 +16,7 @@
         {{-- Detail Popups --}}
         @include('pages.berita_acara.partials.modal_detail_distribusi')
         @include('pages.berita_acara.partials.modal_detail_mutasi')
+        @include('pages.berita_acara.partials.modal_detail_mutasi_eksternal')
 
         {{-- Print Document Modals --}}
         @include('pages.berita_acara.partials.modal_print_triwulan')

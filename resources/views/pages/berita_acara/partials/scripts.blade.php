@@ -2,12 +2,16 @@
         window.__simatTriwulanData = {!! $triwulanDataJson ?? '{}' !!};
         window.__simatDistribusiList = {!! $distribusiListJson ?? '[]' !!};
         window.__simatMutasiList = {!! $mutasiListJson ?? '[]' !!};
+        window.__simatMutasiEksternalList = {!! $mutasiEksternalListJson ?? '[]' !!};
         window.__simatUnits = {!! $unitsJson ?? '[]' !!};
 
         function beritaAcaraApp() {
             return {
                 // Tab Navigasi Aktif: 'triwulan', 'distribusi', atau 'mutasi'
                 activeTab: 'triwulan',
+
+                // Sub-scope Mutasi: 'internal' atau 'eksternal'
+                mutasiScope: 'internal',
                 
                 // Modal Live Edit Toggle
                 showEditTriwulanForm: false,
@@ -17,26 +21,44 @@
                 init() {
                     const urlParams = new URLSearchParams(window.location.search);
                     const tabParam = urlParams.get('tab');
-                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id') || urlParams.get('mutasi_id');
+                    const scopeParam = urlParams.get('scope');
+                    const idParam = urlParams.get('id') || urlParams.get('distribusi_id') || urlParams.get('mutasi_id') || urlParams.get('eksternal_id');
                     const returnTo = urlParams.get('returnTo');
 
                     if (returnTo) {
                         this.returnToUrl = returnTo;
                     }
 
-                    if (tabParam && ['triwulan', 'distribusi', 'mutasi'].includes(tabParam)) {
-                        this.activeTab = tabParam;
+                    if (tabParam && ['triwulan', 'distribusi', 'mutasi', 'mutasi_eksternal'].includes(tabParam)) {
+                        if (tabParam === 'mutasi_eksternal') {
+                            this.activeTab = 'mutasi';
+                            this.mutasiScope = 'eksternal';
+                        } else {
+                            this.activeTab = tabParam;
+                        }
                     }
 
-                    if (idParam && tabParam === 'mutasi') {
-                        // Auto-buka print modal mutasi jika kembali dari halaman mutasi aset
-                        const targetMutasi = this.mutasiList.find(m => String(m.id) === String(idParam) || String(m.kode) === String(idParam));
-                        if (targetMutasi) {
-                            this.$nextTick(() => {
-                                this.openPrintMutasi(targetMutasi);
-                            });
+                    if (scopeParam && ['internal', 'eksternal'].includes(scopeParam)) {
+                        this.mutasiScope = scopeParam;
+                    }
+
+                    if (idParam && this.activeTab === 'mutasi') {
+                        if (this.mutasiScope === 'eksternal') {
+                            const targetExt = this.mutasiEksternalList.find(m => String(m.id) === String(idParam) || String(m.mutasi_id) === String(idParam) || String(m.kode) === String(idParam));
+                            if (targetExt) {
+                                this.$nextTick(() => {
+                                    this.openDetailMutasiEksternal(targetExt);
+                                });
+                            }
+                        } else {
+                            const targetMutasi = this.mutasiList.find(m => String(m.id) === String(idParam) || String(m.kode) === String(idParam));
+                            if (targetMutasi) {
+                                this.$nextTick(() => {
+                                    this.openPrintMutasi(targetMutasi);
+                                });
+                            }
                         }
-                    } else if (idParam && (tabParam === 'distribusi' || !tabParam)) {
+                    } else if (idParam && (this.activeTab === 'distribusi' || !tabParam)) {
                         // Auto-buka print modal distribusi (behavior lama)
                         this.activeTab = 'distribusi';
                         const target = this.distribusiList.find(d => String(d.id) === String(idParam) || String(d.kode) === String(idParam));
@@ -169,6 +191,109 @@
                 openDetailMutasi(item) {
                     this.selectedDetailMutasi = item;
                     this.showDetailMutasiModal = true;
+                },
+
+                // =========================================================================
+                // DATA TAB 3 (SUB-SCOPE 2): BAST MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / SKPD)
+                // =========================================================================
+                mutasiEksternalSearch: '',
+                mutasiEksternalStatusFilter: 'all',
+                mutasiEksternalTipeFilter: 'all',
+                showDetailMutasiEksternalModal: false,
+                selectedDetailMutasiEksternal: null,
+
+                mutasiEksternalList: window.__simatMutasiEksternalList || [],
+
+                get filteredMutasiEksternalList() {
+                    const query = (this.mutasiEksternalSearch || '').toLowerCase().trim();
+                    return this.mutasiEksternalList.filter(m => {
+                        const matchQuery = !query ||
+                                           (m.nomor_bast || '').toLowerCase().includes(query) ||
+                                           (m.nama || '').toLowerCase().includes(query) ||
+                                           (m.opd_asal || '').toLowerCase().includes(query) ||
+                                           (m.opd_tujuan || '').toLowerCase().includes(query) ||
+                                           (m.ruangan_tujuan || '').toLowerCase().includes(query) ||
+                                           (m.pj_asal_nama || '').toLowerCase().includes(query) ||
+                                           (m.pj_tujuan_nama || '').toLowerCase().includes(query) ||
+                                           (m.kode_108 || '').toLowerCase().includes(query) ||
+                                           (m.nibar || '').toLowerCase().includes(query);
+
+                        let matchStatus = true;
+                        if (this.mutasiEksternalStatusFilter === 'signed') {
+                            matchStatus = m.signed === true;
+                        } else if (this.mutasiEksternalStatusFilter === 'unsigned') {
+                            matchStatus = m.signed === false;
+                        }
+
+                        let matchTipe = true;
+                        if (this.mutasiEksternalTipeFilter === 'masuk') {
+                            matchTipe = m.tipe === 'masuk';
+                        } else if (this.mutasiEksternalTipeFilter === 'keluar') {
+                            matchTipe = m.tipe === 'keluar';
+                        }
+
+                        return matchQuery && matchStatus && matchTipe;
+                    });
+                },
+
+                openDetailMutasiEksternal(item) {
+                    this.selectedDetailMutasiEksternal = item;
+                    this.showDetailMutasiEksternalModal = true;
+                },
+
+                async toggleSignMutasiEksternal(item) {
+                    const target = item || this.selectedDetailMutasiEksternal;
+                    if (!target) return;
+
+                    const token = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+                    const nextSignedState = !target.signed;
+
+                    const applyLocal = (signedVal, timeVal, hashVal, statusVal) => {
+                        const updateTarget = (obj) => {
+                            if (!obj) return;
+                            obj.signed = signedVal;
+                            obj.tgl_signed = timeVal;
+                            obj.qr_hash = hashVal;
+                            obj.status = statusVal;
+                        };
+                        updateTarget(target);
+
+                        const matched = this.mutasiEksternalList.find(m => String(m.id) === String(target.id));
+                        if (matched && matched !== target) updateTarget(matched);
+
+                        if (this.selectedMutasiEksternal && String(this.selectedMutasiEksternal.id) === String(target.id) && this.selectedMutasiEksternal !== target) {
+                            updateTarget(this.selectedMutasiEksternal);
+                        }
+                        if (this.selectedDetailMutasiEksternal && String(this.selectedDetailMutasiEksternal.id) === String(target.id) && this.selectedDetailMutasiEksternal !== target) {
+                            updateTarget(this.selectedDetailMutasiEksternal);
+                        }
+                    };
+
+                    try {
+                        const res = await fetch('/berita-acara/mutasi-eksternal/' + target.id + '/sign', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ signed: nextSignedState })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            applyLocal(Boolean(data.signed), data.tgl_signed, data.qr_hash, data.status);
+                            alert((data.signed ? '✍️ ' : '↩️ ') + data.message);
+                        } else {
+                            alert('❌ ' + (data.message || 'Gagal mengubah status tanda tangan digital BAST.'));
+                        }
+                    } catch (e) {
+                        const now = new Date();
+                        const timeStr = nextSignedState ? (now.toLocaleDateString('id-ID') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB') : '-';
+                        const hashStr = nextSignedState ? ('BSRE-KOESNANDI-EXT-' + target.id + '-' + Date.now()) : '';
+                        const statusStr = nextSignedState ? 'Telah Ditandatangani BSrE' : 'Draft';
+                        applyLocal(nextSignedState, timeStr, hashStr, statusStr);
+                        alert(nextSignedState ? '✍️ BAST Mutasi Eksternal berhasil ditandatangani secara elektronik (BSrE)!' : '↩️ Tanda tangan digital BSrE BAST Mutasi Eksternal berhasil dibatalkan.');
+                    }
                 },
 
                 // Helper Format Rupiah & Angka

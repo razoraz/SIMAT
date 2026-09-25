@@ -8,6 +8,7 @@ use App\Models\AstapBastTriwulan;
 use App\Models\Astap;
 use App\Models\Distribusi;
 use App\Models\AstapMutasi;
+use App\Models\MutasiEksternal;
 use App\Models\Unit;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -563,6 +564,126 @@ class BeritaAcaraController extends Controller
             ];
         }
 
+        // =========================================================================
+        // 4. DATA MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / PELIMPAHAN SKPD)
+        // =========================================================================
+        $mutasiEksternals = MutasiEksternal::with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
+            ->where('is_deleted', 0)
+            ->latest('tanggal_mutasi')
+            ->latest('id')
+            ->get();
+
+        $mutasiEksternalList = [];
+        foreach ($mutasiEksternals as $m) {
+            $astap = $m->astap;
+            $tgl = $m->tanggal_mutasi ? Carbon::parse($m->tanggal_mutasi) : ($astap?->created_at ? Carbon::parse($astap->created_at) : Carbon::now());
+            $hariStr = $hariIndo[$tgl->format('l')] ?? 'Kamis';
+            $tglAngka = $tgl->format('d');
+            $bulanStr = $bulanIndo[(int)$tgl->format('m')] ?? 'September';
+            $tahunStr = $tgl->format('Y');
+
+            $nomorBamb = $m->nomor_bamb ?: ($astap?->bast_dokumen_nomor ?: ('BAST-EXT-' . str_pad($m->id, 4, '0', STR_PAD_LEFT) . '/430.10.7/' . $tahunStr));
+            $opdAsal = $m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar');
+            $ruangRSUD = $m->unit?->nama ?: ($m->ruangan_tujuan ?: ($astap?->alamat_barang ?: 'Gudang/Ruangan RSUD'));
+            $opdTujuan = $m->opd_tujuan ?: ('RSUD dr. H. Koesnandi (' . $ruangRSUD . ')');
+
+            $kode108 = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($astap?->jenisAstap?->jenis ?: '1.3.2.00.00.00'));
+
+            $itemsData = [];
+            $registers = $astap?->registers ?? collect();
+            $nilaiTotal = (float) ($m->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
+            $volTotal = (int) ($m->jumlah_volume ?: ($registers->count() ?: 1));
+            $hargaSatuan = $volTotal > 0 ? ($nilaiTotal / $volTotal) : $nilaiTotal;
+
+            if ($registers->isNotEmpty()) {
+                foreach ($registers as $idx => $reg) {
+                    $itemsData[] = [
+                        'no'           => $idx + 1,
+                        'nama_barang'  => $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
+                        'nibar'        => $reg->nibar ?: ($reg->no_register ?: '-'),
+                        'kode_108'     => $kode108,
+                        'kondisi'      => $reg->kondisi ?: ($m->kondisi ?: 'Baik'),
+                        'satuan'       => $astap?->satuan ?: ($m->satuan ?: 'Unit'),
+                        'volume'       => 1,
+                        'harga_satuan' => (float) $hargaSatuan,
+                        'nilai_aset'   => (float) $hargaSatuan,
+                    ];
+                }
+            } else {
+                $itemsData[] = [
+                    'no'           => 1,
+                    'nama_barang'  => $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
+                    'nibar'        => '-',
+                    'kode_108'     => $kode108,
+                    'kondisi'      => $m->kondisi ?: 'Baik',
+                    'satuan'       => $m->satuan ?: ($astap?->satuan ?: 'Unit'),
+                    'volume'       => $volTotal,
+                    'harga_satuan' => (float) $hargaSatuan,
+                    'nilai_aset'   => (float) $nilaiTotal,
+                ];
+            }
+
+            $firstItemNama = $astap?->nama_barang ?: 'Barang Pelimpahan BMD';
+            $itemCount = count($itemsData);
+            $namaLabel = $firstItemNama . ($itemCount > 1 ? " (+{$itemCount} unit)" : '');
+
+            $isSigned = (bool) $m->signed;
+            $qrHash = $m->qr_hash ?: ('BSRE-KOESNANDI-EXT-' . $m->id . '-' . $tahunStr);
+
+            $mutasiEksternalList[] = [
+                'id'                     => $m->id,
+                'mutasi_id'              => $m->id,
+                'astap_id'               => $astap?->id,
+                'kode'                   => $nomorBamb,
+                'nomor_bast'             => $nomorBamb,
+                'nomor_bamb'             => $nomorBamb,
+                'tgl_bast'               => $hariStr . ', ' . $tglAngka . ' ' . $bulanStr . ' ' . $tahunStr,
+                'hari'                   => $hariStr,
+                'tanggal_angka'          => $tglAngka,
+                'bulan'                  => $bulanStr,
+                'tahun'                  => $tahunStr,
+                'tahun_anggaran'         => $tahunStr,
+                'tanggal_mutasi'         => $tgl->format('Y-m-d'),
+                'jenis_mutasi'           => $m->jenis_mutasi ?: 'Transfer Antar-OPD',
+                'tipe'                   => $m->tipe ?: 'masuk',
+                'tipe_label'             => $m->tipe === 'keluar' ? 'Mutasi Keluar' : 'Pelimpahan Masuk',
+                'nama'                   => $namaLabel,
+                'nama_barang'            => $firstItemNama,
+                'kode_barang'            => $kode108,
+                'kode_108'               => $kode108,
+                'nibar'                  => $itemsData[0]['nibar'] ?? '-',
+                'spesifikasi'            => $astap?->keterangan_tambahan ?: ($astap?->satuan . ' Pelimpahan ' . $tahunStr),
+                'qty'                    => $volTotal,
+                'vol'                    => $volTotal,
+                'satuan'                 => $m->satuan ?: ($astap?->satuan ?: 'Unit'),
+                'kondisi'                => $m->kondisi ?: ($itemsData[0]['kondisi'] ?? 'Baik'),
+                'nilai_perolehan'        => $nilaiTotal,
+                'nilai_perolehan_format' => 'Rp ' . number_format($nilaiTotal, 0, ',', '.'),
+                'harga_satuan'           => $hargaSatuan,
+                'opd_asal'               => $opdAsal,
+                'ruangan_asal'           => $opdAsal,
+                'pj_asal_nama'           => $m->pj_asal_nama ?: 'Pejabat Penyerah OPD Pengirim',
+                'pj_asal_nip'            => $m->pj_asal_nip ?: '-',
+                'pj_asal_jabatan'        => $m->pj_asal_jabatan ?: 'Pengurus Barang / PPK Asal',
+                'opd_tujuan'             => $opdTujuan,
+                'ruangan_tujuan'         => $ruangRSUD,
+                'pj_tujuan_nama'         => $m->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos',
+                'pj_tujuan_nip'          => $m->pj_tujuan_nip ?: '19760229 200801 1 010',
+                'pj_tujuan_jabatan'      => $m->pj_tujuan_jabatan ?: 'Pengurus Barang / PPK RSUD Dr. H. Koesnandi',
+                'direktur_nama'          => 'dr. DIAN ARISANDI, M.Kes',
+                'direktur_nip'           => '19730514 200212 2 003',
+                'nomor_sk_dasar'         => $m->nomor_sk_dasar ?: ('SK-BUPATI-BONDOWOSO/' . $tahunStr),
+                'alasan_mutasi'          => $m->alasan_mutasi ?: 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnandi.',
+                'status'                 => $isSigned ? 'Telah Ditandatangani BSrE' : ($m->status ?: 'Draft'),
+                'signed'                 => $isSigned,
+                'tgl_signed'             => $m->tgl_signed ?: ($isSigned ? ($m->updated_at ? $m->updated_at->format('d/m/Y H:i') . ' WIB' : $tgl->format('d/m/Y H:i') . ' WIB') : '-'),
+                'qr_hash'                => $qrHash,
+                'dokumen_lampiran'       => $m->dokumen_lampiran,
+                'dokumen_lampiran_url'   => $m->dokumen_lampiran ? asset('storage/' . $m->dokumen_lampiran) : null,
+                'items'                  => $itemsData,
+            ];
+        }
+
         $units = Unit::orderBy('nama', 'asc')->get()->map(function($u) {
             return [
                 'id'     => $u->id,
@@ -574,12 +695,13 @@ class BeritaAcaraController extends Controller
         });
 
         return view('pages.berita_acara.index', [
-            'tahun'              => $tahun,
-            'availableYears'     => $availableYears,
-            'triwulanDataJson'   => json_encode($triwulanData),
-            'distribusiListJson' => json_encode($distribusiList),
-            'mutasiListJson'     => json_encode($mutasiList),
-            'unitsJson'          => json_encode($units),
+            'tahun'                  => $tahun,
+            'availableYears'         => $availableYears,
+            'triwulanDataJson'       => json_encode($triwulanData),
+            'distribusiListJson'     => json_encode($distribusiList),
+            'mutasiListJson'         => json_encode($mutasiList),
+            'mutasiEksternalListJson'=> json_encode($mutasiEksternalList),
+            'unitsJson'              => json_encode($units),
         ]);
     }
 
@@ -660,6 +782,48 @@ class BeritaAcaraController extends Controller
     }
 
     /**
+     * Tanda Tangan Digital BSrE Dokumen BAST Mutasi Eksternal (Toggle TTD & Batalkan TTD)
+     */
+    public function signMutasiEksternal(Request $request, $id)
+    {
+        $mutasi = MutasiEksternal::where('is_deleted', 0)->findOrFail($id);
+
+        $newSigned = $request->has('signed')
+            ? filter_var($request->input('signed'), FILTER_VALIDATE_BOOLEAN)
+            : !$mutasi->signed;
+
+        if ($newSigned) {
+            $timeStr = date('d/m/Y H:i') . ' WIB';
+            $qrHash = 'BSRE-KOESNANDI-EXT-' . $mutasi->id . '-' . date('Y') . '-' . rand(1000, 9999);
+            $status = 'Telah Ditandatangani BSrE';
+            $message = 'Dokumen BAST Mutasi Eksternal (' . ($mutasi->nomor_bamb ?: ('ID: ' . $mutasi->id)) . ') berhasil ditandatangani secara elektronik (BSrE)!';
+        } else {
+            $timeStr = '-';
+            $qrHash = null;
+            $status = 'Draft';
+            $message = 'Tanda tangan digital BSrE Dokumen BAST Mutasi Eksternal (' . ($mutasi->nomor_bamb ?: ('ID: ' . $mutasi->id)) . ') berhasil dibatalkan.';
+        }
+
+        DB::transaction(function () use ($mutasi, $newSigned, $status, $timeStr, $qrHash) {
+            $mutasi->update([
+                'signed'     => $newSigned,
+                'status'     => $status,
+                'tgl_signed' => $newSigned ? $timeStr : null,
+                'qr_hash'    => $qrHash,
+            ]);
+        });
+
+        return response()->json([
+            'success'    => true,
+            'signed'     => $newSigned,
+            'tgl_signed' => $timeStr,
+            'qr_hash'    => $qrHash ?? '',
+            'status'     => $status,
+            'message'    => $message
+        ]);
+    }
+
+    /**
      * Halaman Publik Validasi Sertifikat TTE BSrE (Tanpa Perlu Login)
      */
     public function validasiTte($hash)
@@ -693,7 +857,7 @@ class BeritaAcaraController extends Controller
             $tgl = $dst->tgl_signed ?: ($dst->tanggal_distribusi ? date('d/m/Y', strtotime($dst->tanggal_distribusi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
         }
 
-        // 3. Cek tabel Mutasi
+        // 3. Cek tabel Mutasi Internal
         $mts = \App\Models\AstapMutasi::where('nomor_bamb', $hash)->where('is_deleted', 0)->first();
         if ($mts) {
             $judul = 'Berita Acara Mutasi Barang (BAMB)';
@@ -702,6 +866,19 @@ class BeritaAcaraController extends Controller
             $nip = '-';
             $jabatan = 'Penanggung Jawab Ruangan ' . ($mts->ruangan_asal ?? '');
             $tgl = $mts->tgl_persetujuan_admin ?: ($mts->tanggal_mutasi ? date('d/m/Y', strtotime($mts->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
+        }
+
+        // 4. Cek tabel Mutasi Eksternal (Pelimpahan BMD / Transfer OPD)
+        $ext = \App\Models\MutasiEksternal::where(function($q) use ($hash) {
+            $q->where('qr_hash', $hash)->orWhere('nomor_bamb', $hash);
+        })->where('is_deleted', 0)->first();
+        if ($ext) {
+            $judul = 'Berita Acara Serah Terima (BAST) Pelimpahan BMD';
+            $nomor = $ext->nomor_bamb ?: ('BAST-EXT-' . $ext->id);
+            $nama = $ext->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos';
+            $nip = $ext->pj_tujuan_nip ?: '19760229 200801 1 010';
+            $jabatan = $ext->pj_tujuan_jabatan ?: 'Pengurus Barang / PPK RSUD Dr. H. Koesnandi';
+            $tgl = $ext->tgl_signed ?: ($ext->tanggal_mutasi ? date('d/m/Y', strtotime($ext->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
         }
 
         // Fallback parser jika hash mengandung kata kunci PPK

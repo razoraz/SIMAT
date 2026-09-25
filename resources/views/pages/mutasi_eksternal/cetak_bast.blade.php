@@ -37,10 +37,10 @@
     <!-- Action Toolbar (Hidden when printing) -->
     <div class="no-print w-full max-w-4xl bg-slate-950/90 border border-slate-800 rounded-2xl p-4 mb-6 flex items-center justify-between shadow-xl">
         <div class="flex items-center space-x-3">
-            <a href="{{ route('mutasi.eksternal') }}"
+            <a href="{{ request('returnTo') ?: route('mutasi.eksternal') }}"
                class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer">
                 <span>&larr;</span>
-                <span>Kembali ke Katalog</span>
+                <span>{{ request('returnTo') ? 'Kembali ke BAST' : 'Kembali ke Katalog' }}</span>
             </a>
             <div>
                 <h2 class="text-sm font-bold text-white">Lembar Cetak Resmi BAST Pelimpahan BMD</h2>
@@ -271,14 +271,24 @@
                 <p class="font-bold text-slate-800">PIHAK KEDUA</p>
                 <p class="text-[9pt] text-slate-600">Yang Menerima,</p>
                 <div class="h-20 flex items-center justify-center">
+                    @if($mutasi->signed)
                     <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ urlencode(url('/validasi-tte/' . ($mutasi->nomor_bamb ?: 'BSRE-PELIMPAHAN-BMD'))) }}" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
+                        @php
+                            $qrHash = $mutasi->qr_hash ?: md5($mutasi->nomor_bamb ?: ('ME-' . $mutasi->id));
+                            $qrUrl = url('/validasi-tte/' . $qrHash);
+                        @endphp
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data={{ urlencode($qrUrl) }}" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                         <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
                             <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
                             <div style="color:#374151;">Pengurus Barang Aset</div>
                             <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                         </div>
                     </div>
+                    @else
+                    <div class="h-16 flex items-center justify-center text-[8.5pt] italic text-slate-400 border border-dashed border-slate-300 rounded px-3">
+                        (Belum Disahkan TTE BSrE)
+                    </div>
+                    @endif
                 </div>
                 <p class="font-bold underline text-[10pt] uppercase">{{ $mutasi->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos' }}</p>
                 <p class="font-mono text-[9pt]">NIP. {{ $mutasi->pj_tujuan_nip ?: '19760229 200801 1 010' }}</p>

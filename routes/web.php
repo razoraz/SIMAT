@@ -84,6 +84,19 @@ Route::get('/validasi-tte/{hash}', function ($hash) {
         $tgl = $mts->tgl_persetujuan_admin ?: ($mts->tanggal_mutasi ? date('d/m/Y', strtotime($mts->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
     }
 
+    // 4. Cek tabel Mutasi Eksternal (Pelimpahan BMD / Transfer OPD)
+    $ext = \App\Models\MutasiEksternal::where(function($q) use ($hash) {
+        $q->where('qr_hash', $hash)->orWhere('nomor_bamb', $hash);
+    })->where('is_deleted', 0)->first();
+    if ($ext) {
+        $judul = 'Berita Acara Serah Terima (BAST) Pelimpahan BMD';
+        $nomor = $ext->nomor_bamb ?: ('BAST-EXT-' . $ext->id);
+        $nama = $ext->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos';
+        $nip = $ext->pj_tujuan_nip ?: '19760229 200801 1 010';
+        $jabatan = $ext->pj_tujuan_jabatan ?: 'Pengurus Barang / PPK RSUD Dr. H. Koesnandi';
+        $tgl = $ext->tgl_signed ?: ($ext->tanggal_mutasi ? date('d/m/Y', strtotime($ext->tanggal_mutasi)) . ' WIB' : date('d/m/Y H:i') . ' WIB');
+    }
+
     // Fallback parser jika hash mengandung kata kunci PPK
     if (str_contains($hash, 'PPK')) {
         $nama = 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR';
@@ -828,6 +841,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/berita-acara', [\App\Http\Controllers\BeritaAcaraController::class, 'index'])->name('bast.index');
             Route::post('/berita-acara/triwulan/{key}', [\App\Http\Controllers\BeritaAcaraController::class, 'saveTriwulan'])->name('bast.save_triwulan');
             Route::post('/berita-acara/triwulan/{key}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signTriwulan'])->name('bast.sign_triwulan');
+            Route::post('/berita-acara/mutasi-eksternal/{id}/sign', [\App\Http\Controllers\BeritaAcaraController::class, 'signMutasiEksternal'])->name('bast.sign_mutasi_eksternal');
         });
 
         // Form Tambah, Edit, Simpan, Update & Hapus ASTAP

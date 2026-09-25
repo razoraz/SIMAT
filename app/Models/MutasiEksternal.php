@@ -19,6 +19,7 @@ class MutasiEksternal extends Model
         'tgl_estimasi_kembali' => 'date',
         'nilai_perolehan'      => 'decimal:2',
         'jumlah_volume'        => 'integer',
+        'signed'               => 'boolean',
         'is_deleted'           => 'integer',
         'deleted_at'           => 'datetime',
     ];

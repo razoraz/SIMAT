@@ -12,11 +12,18 @@
             </p>
         </div>
         
-        <a href="{{ route('astap.create_mutasi_eksternal', ['from' => 'eksternal']) }}"
-            class="px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-500/25 transition-all flex items-center space-x-2 shrink-0 active:scale-95 cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            <span>Pelimpahan Aset Baru</span>
-        </a>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a href="{{ route('bast.index', ['tab' => 'mutasi', 'scope' => 'eksternal']) }}"
+                class="px-4 py-3 rounded-2xl bg-slate-950/80 hover:bg-slate-800 text-cyan-300 hover:text-white border border-cyan-500/30 font-extrabold text-xs shadow-md transition-all flex items-center space-x-2 shrink-0 active:scale-95 cursor-pointer">
+                <span>📑</span>
+                <span>Semua BAST Mutasi</span>
+            </a>
+            <a href="{{ route('astap.create_mutasi_eksternal', ['from' => 'eksternal']) }}"
+                class="px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-extrabold text-xs shadow-lg shadow-indigo-500/25 transition-all flex items-center space-x-2 shrink-0 active:scale-95 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Pelimpahan Aset Baru</span>
+            </a>
+        </div>
     </div>
 
     <!-- Mini Summary KPI Cards Strip (4 Kartu Elegan & Fokus Pelimpahan OPD) -->
