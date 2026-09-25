@@ -250,6 +250,12 @@
                     atb_pengembang: '',
                     atb_masa_manfaat: 4,
                     atb_nomor_lisensi: '',
+                    aset_lain_kondisi: 'Rusak Berat',
+                    aset_lain_alasan: 'Tidak digunakan lagi dalam operasional RSUD / Menunggu Penghapusan',
+                    aset_lain_lokasi: '',
+                    kemitraan_mitra: '',
+                    kemitraan_perjanjian_no: '',
+                    kemitraan_jangka_waktu: '5 Tahun',
                 },
             },
 
@@ -261,14 +267,18 @@
                     'KIB C': '1.3.3',
                     'KIB D': '1.3.4',
                     'KIB E': '1.3.5',
+                    'KIB F': '1.3.6',
                     'ATB':   '1.5.3',
+                    'ASET LAIN': '1.5.4',
+                    'ASET LAIN-LAIN': '1.5.4',
+                    'KEMITRAAN': '1.5.2',
                 };
                 return map[this.formData.tujuan_kib] || '';
             },
 
             get targetJenisAstap() {
                 if (!window.dbMasterJenisAstap108 || !this.targetGroupPrefix) return null;
-                return window.dbMasterJenisAstap108.find(j => j.kode === this.targetGroupPrefix) || null;
+                return window.dbMasterJenisAstap108.find(j => j.kode === this.targetGroupPrefix || j.kode.startsWith(this.targetGroupPrefix)) || null;
             },
 
             get availableSubRincian108() {

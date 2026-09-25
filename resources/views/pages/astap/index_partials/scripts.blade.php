@@ -6084,9 +6084,9 @@
             { code: '1.3.6.01', group: 'KONSTRUKSI DALAM PENGERJAAN', label: 'KONSTRUKSI DALAM PENGERJAAN', prefix: '1.3.6' },
 
             // ASET LAINNYA
-            { code: '1.4.01', group: 'ASET LAINNYA', subGroup: 'KEMITRAAN DENGAN PIHAK KETIGA', label: 'KEMITRAAN DENGAN PIHAK KETIGA', prefix: '1.4' },
-            { code: '1.5.03', group: 'ASET LAINNYA', subGroup: 'ASET TIDAK BERWUJUD', label: 'ASET TIDAK BERWUJUD', prefix: '1.5.3' },
-            { code: '1.5.04', group: 'ASET LAINNYA', subGroup: 'ASET LAIN-LAIN', label: 'ASET LAIN-LAIN', prefix: '1.5.4' }
+            { code: '1.5.2', group: 'ASET LAINNYA', subGroup: 'KEMITRAAN DENGAN PIHAK KETIGA', label: 'KEMITRAAN DENGAN PIHAK KETIGA', prefix: '1.5.2' },
+            { code: '1.5.3', group: 'ASET LAINNYA', subGroup: 'ASET TIDAK BERWUJUD', label: 'ASET TIDAK BERWUJUD', prefix: '1.5.3' },
+            { code: '1.5.4', group: 'ASET LAINNYA', subGroup: 'ASET LAIN-LAIN', label: 'ASET LAIN-LAIN', prefix: '1.5.4' }
         ];
 
         const rowVals = {};
@@ -6105,7 +6105,7 @@
             const cat = String(item.category || '').toUpperCase();
             const nama = String(item.sub_rincian_nama || item.nama_barang || '').toUpperCase();
 
-            const matchedDef = reklasDefs.find(d => code && (code.startsWith(d.prefix) || (d.code === '1.4.01' && (code.startsWith('1.5.2') || code.startsWith('1.5.1')))));
+            const matchedDef = reklasDefs.find(d => code && (code.startsWith(d.prefix) || (d.code === '1.5.2' && (code.startsWith('1.4') || code.startsWith('1.5.2') || code.startsWith('1.5.1')))));
             if (matchedDef) {
                 targetCode = matchedDef.code;
             } else if (cat === 'KIB A') {
@@ -6122,11 +6122,11 @@
             } else if (cat === 'KIB F') {
                 targetCode = '1.3.6.01';
             } else if (cat === 'ATB') {
-                targetCode = '1.5.03';
+                targetCode = '1.5.3';
             } else if (cat === 'KEMITRAAN' || item.sumber_dana === 'kemitraan') {
-                targetCode = '1.4.01';
-            } else if (cat === 'ASET LAIN') {
-                targetCode = '1.5.04';
+                targetCode = '1.5.2';
+            } else if (cat === 'ASET LAIN' || cat === 'ASET LAIN-LAIN') {
+                targetCode = '1.5.4';
             }
 
             if (rowVals[targetCode]) {
@@ -6145,6 +6145,33 @@
                     });
                 } else if (isKoreksiRek) {
                     rowVals[targetCode].kurang += val;
+
+                    // Akumulasi tambah pada rekening tujuan reklasifikasi
+                    let destCode = null;
+                    const destCat = String(item.tujuan_kib || '').toUpperCase();
+                    const destBarangCode = String(item.tujuan_kode_barang || '').trim();
+                    if (destCat === 'ASET LAIN' || destCat.includes('ASET LAIN') || destBarangCode.startsWith('1.5.4')) {
+                        destCode = '1.5.4';
+                    } else if (destCat === 'ATB' || destCat.includes('BERWUJUD') || destBarangCode.startsWith('1.5.3')) {
+                        destCode = '1.5.3';
+                    } else if (destCat === 'KEMITRAAN' || destBarangCode.startsWith('1.4') || destBarangCode.startsWith('1.5.2') || destBarangCode.startsWith('1.5.1')) {
+                        destCode = '1.5.2';
+                    } else if (destBarangCode) {
+                        const matchedDest = reklasDefs.find(d => destBarangCode.startsWith(d.prefix));
+                        if (matchedDest) destCode = matchedDest.code;
+                    }
+                    if (!destCode && destCat) {
+                        if (destCat === 'KIB A') destCode = '1.3.1.01';
+                        else if (destCat === 'KIB B') destCode = '1.3.2.05';
+                        else if (destCat === 'KIB C') destCode = '1.3.3.01';
+                        else if (destCat === 'KIB D') destCode = '1.3.4.01';
+                        else if (destCat === 'KIB E') destCode = '1.3.5.01';
+                        else if (destCat === 'KIB F') destCode = '1.3.6.01';
+                    }
+                    if (destCode && rowVals[destCode]) {
+                        rowVals[destCode].tambah += val;
+                    }
+
                     reklasNotesItems.push({
                         item: item,
                         val: val,
@@ -6733,10 +6760,6 @@
                 rmbVals[code].c4_belanja_barang += val;
             } else if (item.jenis_pengadaan === 'mutasi_masuk' || item.sumber_dana === 'mutasi') {
                 rmbVals[code].c5_mutasi_tambah += val;
-            } else if (item.is_reklas && item.jenis_reklas === 'KOREKSI_REKENING' && item.tujuan_kib) {
-                rmbVals[code].c6_koreksi_rek_tambah += val;
-            } else if (item.is_reklas && item.jenis_reklas === 'KDP_TO_DEFINITIF' && item.tujuan_kib) {
-                rmbVals[code].c9_kdp_tambah += val;
             } else {
                 // Standar Belanja Modal
                 rmbVals[code].c2_belanja_modal += val;
@@ -6747,11 +6770,19 @@
                 if (item.jenis_reklas === 'EKSTRAKOMPTABEL') {
                     rmbVals[code].c14_kapitalisasi_kurang += val;
                 } else if (item.jenis_reklas === 'KOREKSI_REKENING') {
-                    rmbVals[code].c17_koreksi_kurang += val;
-                    // Tambah pada rekening tujuan
-                    const tujuanCode = resolveRmbCode({ category: item.tujuan_kib, kode_barang: item.tujuan_kode_barang, nama_barang: item.tujuan_sub_rincian });
-                    if (tujuanCode && rmbVals[tujuanCode]) {
-                        rmbVals[tujuanCode].c6_koreksi_rek_tambah += val;
+                    const destCat = String(item.tujuan_kib || '').toUpperCase();
+                    const destBarangCode = String(item.tujuan_kode_barang || '').trim();
+                    const isTujuanAsetLain = (destCat === 'ASET LAIN' || destCat.includes('ASET LAIN') || destBarangCode.startsWith('1.5.4') || destBarangCode.startsWith('1.5.04'));
+
+                    if (isTujuanAsetLain) {
+                        rmbVals[code].c15_direklas_aset_lain += val;
+                    } else {
+                        rmbVals[code].c17_koreksi_kurang += val;
+                        // Tambah pada rekening tujuan jika masih dalam kelompok Aset Tetap
+                        const tujuanCode = resolveRmbCode({ category: item.tujuan_kib, kode_barang: item.tujuan_kode_barang, nama_barang: item.tujuan_sub_rincian });
+                        if (tujuanCode && rmbVals[tujuanCode]) {
+                            rmbVals[tujuanCode].c6_koreksi_rek_tambah += val;
+                        }
                     }
                 } else if (item.jenis_reklas === 'KDP_TO_DEFINITIF') {
                     if (rmbVals['1.3.6.01']) rmbVals['1.3.6.01'].c20_kdp_kurang += val;
@@ -7348,6 +7379,16 @@
                     atb_pengembang: '',
                     atb_masa_manfaat: '4',
                     atb_nomor_lisensi: '',
+
+                    // ASET LAIN - Aset Lain-Lain (1.5.4)
+                    aset_lain_kondisi: 'Rusak Berat',
+                    aset_lain_alasan: 'Tidak digunakan lagi dalam operasional RSUD / Menunggu Penghapusan',
+                    aset_lain_lokasi: '',
+
+                    // KEMITRAAN - Kemitraan Pihak Ketiga (1.5.2)
+                    kemitraan_mitra: '',
+                    kemitraan_perjanjian_no: '',
+                    kemitraan_jangka_waktu: '5 Tahun',
                 },
 
                 isCurrentAstapExtracom() {
@@ -7652,6 +7693,9 @@
                         'KIB E': '1.3.5',
                         'KIB F': '1.3.6',
                         'ATB': '1.5.3',
+                        'ASET LAIN': '1.5.4',
+                        'ASET LAIN-LAIN': '1.5.4',
+                        'KEMITRAAN': '1.5.2',
                     };
                     return kibMap[this.reklasTujuanKib] || '';
                 },
@@ -7660,7 +7704,7 @@
                     if (!window.dbMasterJenisAstap108 || !this.reklasTujuanKib) return null;
                     const prefix = this.reklasTargetJenisKode;
                     if (!prefix) return null;
-                    return window.dbMasterJenisAstap108.find(j => j.kode === prefix) || null;
+                    return window.dbMasterJenisAstap108.find(j => j.kode === prefix || j.kode.startsWith(prefix)) || null;
                 },
 
                 get availableReklasSubRincian108() {
@@ -7777,7 +7821,10 @@
                                             '1.3.4': 'KIB D',
                                             '1.3.5': 'KIB E',
                                             '1.3.6': 'KIB F',
+                                            '1.3.6.01': 'KIB F',
                                             '1.5.3': 'ATB',
+                                            '1.5.4': 'ASET LAIN',
+                                            '1.5.2': 'KEMITRAAN',
                                         };
                                         this.reklasTujuanKib = reverseKibMap[j.kode] || '';
                                     }
@@ -7860,6 +7907,14 @@
                         this.reklasSpekBaru.atb_pengembang = spec.pengembang || '';
                         this.reklasSpekBaru.atb_masa_manfaat = spec.masa_manfaat || '4';
                         this.reklasSpekBaru.atb_nomor_lisensi = spec.nomor_lisensi || '';
+                    } else if (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN') {
+                        this.reklasSpekBaru.aset_lain_kondisi = spec.kondisi || spec.aset_lain_kondisi || 'Rusak Berat';
+                        this.reklasSpekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Tidak digunakan lagi dalam operasional RSUD / Menunggu Penghapusan';
+                        this.reklasSpekBaru.aset_lain_lokasi = spec.lokasi || it.lokasi_barang || defaultAlamat;
+                    } else if (target === 'KEMITRAAN') {
+                        this.reklasSpekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
+                        this.reklasSpekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.kemitraan_perjanjian_no || '';
+                        this.reklasSpekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
                     }
                 },
 
