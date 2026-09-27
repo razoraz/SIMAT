@@ -939,23 +939,45 @@ class ReklasifikasiController extends Controller
     public function destroy(Request $request, $id)
     {
         $reklas = AstapReklas::findOrFail($id);
-        $astapId = $reklas->astap_id;
-        $isExtracom = ($reklas->jenis_reklas === 'EKSTRAKOMPTABEL');
+        $astapId  = $reklas->astap_id;
+        $jenisReklas = $reklas->jenis_reklas;
 
         DB::beginTransaction();
         try {
             $reklas->delete();
 
-            // Cek apakah astap masih memiliki transaksi reklas lain
-            $remaining = AstapReklas::where('astap_id', $astapId)->count();
-            if ($remaining === 0) {
+            // Ambil sisa transaksi reklas untuk astap ini (setelah dihapus)
+            $remainingReklas = AstapReklas::where('astap_id', $astapId)
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            $updateData = [];
+
+            if ($remainingReklas->isEmpty()) {
+                // Tidak ada transaksi tersisa — reset semua flag reklas
                 $updateData = [
-                    'is_reklas' => false,
-                    'jenis_reklas' => null,
+                    'is_reklas'       => false,
+                    'jenis_reklas'    => null,
+                    'is_extracomtable' => false,
                 ];
-                if ($isExtracom) {
-                    $updateData['is_extracomtable'] = false;
+            } else {
+                // Masih ada transaksi lain — cek status ekstrakomptabel dari sisa log
+                if ($jenisReklas === 'EKSTRAKOMPTABEL') {
+                    // Dihapus: EKSTRAKOMPTABEL → cek apakah masih ada KAPITALISASI_INTRAKOM di log
+                    // Jika tidak ada, aset kembali ke intrakomptabel (is_extracomtable = false)
+                    $hasIntrakom = $remainingReklas->contains('jenis_reklas', 'KAPITALISASI_INTRAKOM');
+                    if (! $hasIntrakom) {
+                        $updateData['is_extracomtable'] = false;
+                    }
+                } elseif ($jenisReklas === 'KAPITALISASI_INTRAKOM') {
+                    // Dihapus: KAPITALISASI_INTRAKOM → aset kembali ke status ekstrakomptabel
+                    // jika masih ada EKSTRAKOMPTABEL di log
+                    $hasExtracom = $remainingReklas->contains('jenis_reklas', 'EKSTRAKOMPTABEL');
+                    $updateData['is_extracomtable'] = $hasExtracom;
                 }
+            }
+
+            if (! empty($updateData)) {
                 Astap::where('id', $astapId)->update($updateData);
             }
 

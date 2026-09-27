@@ -72,7 +72,7 @@
                 tanggal_mulai: '',
                 tanggal_selesai: '',
                 tahun_perolehan: {{ date('Y') }},
-                triwulan: 'TW I',
+                triwulan: '{{ (date('n') <= 3) ? 'TW I' : ((date('n') <= 6) ? 'TW II' : ((date('n') <= 9) ? 'TW III' : 'TW IV')) }}',
                 kemitraan_keterangan: '',
 
                 // Step 2: Klasifikasi 108 & Nilai Aset
@@ -111,6 +111,71 @@
 
             init() {
                 this.prepareMaster108();
+                this.syncTahunTriwulanFromPks();
+
+                this.$watch('formData.tanggal_pks', (newVal) => {
+                    this.syncTahunTriwulanFromPks(newVal);
+                });
+            },
+
+            // Sinkronisasi otomatis Tahun Pembukuan dan Triwulan dari Tanggal Penandatanganan PKS
+            syncTahunTriwulanFromPks(explicitVal = null) {
+                let val = explicitVal;
+                if (typeof val !== 'string' || !val) {
+                    val = this.formData.tanggal_pks;
+                }
+                if (!val) return;
+                val = String(val).trim();
+
+                if (val.includes('T')) {
+                    val = val.split('T')[0];
+                }
+
+                let year = null;
+                let month = null;
+
+                // Format DD/MM/YYYY atau D/M/YYYY
+                if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(val)) {
+                    const parts = val.split('/');
+                    month = parseInt(parts[1], 10);
+                    year = parseInt(parts[2], 10);
+                } 
+                // Format YYYY-MM-DD atau YYYY-M-D
+                else if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(val)) {
+                    const parts = val.split('-');
+                    year = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10);
+                }
+                // Format DD-MM-YYYY atau D-M-YYYY
+                else if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(val)) {
+                    const parts = val.split('-');
+                    month = parseInt(parts[1], 10);
+                    year = parseInt(parts[2], 10);
+                }
+                // Fallback standard Date parsing
+                else {
+                    const d = new Date(val);
+                    if (!isNaN(d.getTime())) {
+                        year = d.getFullYear();
+                        month = d.getMonth() + 1;
+                    }
+                }
+
+                if (year && year >= 1990 && year <= 2100) {
+                    this.formData.tahun_perolehan = year;
+                }
+
+                if (month && month >= 1 && month <= 12) {
+                    if (month <= 3) {
+                        this.formData.triwulan = 'TW I';
+                    } else if (month <= 6) {
+                        this.formData.triwulan = 'TW II';
+                    } else if (month <= 9) {
+                        this.formData.triwulan = 'TW III';
+                    } else {
+                        this.formData.triwulan = 'TW IV';
+                    }
+                }
             },
 
             prepareMaster108() {

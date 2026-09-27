@@ -257,6 +257,10 @@
                     kemitraan_perjanjian_no: '',
                     kemitraan_jangka_waktu: '5 Tahun',
                 },
+                // Fields tambahan (wajib ada di default agar tidak undefined)
+                alasan_reklas: '',
+                tipe_koreksi: 'kurang',
+                nilai_realisasi_baru: 0,
             },
 
             // 108 Hierarchy Getters
@@ -534,6 +538,21 @@
                     this.formData.asal_kib = 'EKSTRAKOMPTABEL';
                     this.formData.tujuan_kib = 'KIB B';
                     this.onTujuanKibChange();
+                } else if (this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
+                    const extraRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_EXTRACOM');
+                    if (extraRow) {
+                        this.formData.jenis_reklasifikasi_asal_id = extraRow.id;
+                    }
+                    this.formData.asal_kib = 'EKSTRAKOMPTABEL';
+                    // Default tujuan KIB B, bisa diubah user
+                    if (!this.formData.tujuan_kib) {
+                        this.formData.tujuan_kib = 'KIB B';
+                    }
+                    this.onTujuanKibChange();
+                    // Pre-fill nilai reklas dari aset terpilih
+                    if (this.selectedAstap) {
+                        this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
+                    }
                 } else if (this.formData.jenis_reklas === 'HIBAH_MASUK') {
                     const hibahRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_HIBAH');
                     if (hibahRow) {
@@ -689,7 +708,9 @@
                 const map = {
                     'KOREKSI_REKENING': 'Koreksi Rekening / Pindah KIB',
                     'KDP_TO_DEFINITIF': 'KDP Selesai ➔ Definitif',
+                    'DEFINITIF_TO_KDP': 'Definitif ➔ KDP (Reversi)',
                     'EKSTRAKOMPTABEL': 'Ekstrakomptabel (Nilai ≤ Rp 300.000)',
+                    'KAPITALISASI_INTRAKOM': 'Kapitalisasi Intrakomptabel',
                     'HIBAH_MASUK': 'Hibah / Bantuan Masuk',
                     'KOREKSI_LAIN': 'Koreksi Nilai / Audit BPK',
                 };
@@ -901,7 +922,17 @@
                     return;
                 }
 
-                const table = document.querySelector('table');
+                // Pilih tabel sesuai tab aktif
+                let table = null;
+                if (this.activeTab === 'log') {
+                    // Tabel log transaksi (tabel kedua di DOM)
+                    const tables = document.querySelectorAll('table');
+                    table = tables.length >= 2 ? tables[1] : tables[0];
+                } else {
+                    // Tabel matriks neraca (tabel pertama)
+                    table = document.querySelector('table');
+                }
+
                 if (!table) {
                     alert('⚠️ Tabel tidak ditemukan.');
                     return;
@@ -909,9 +940,11 @@
 
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.table_to_sheet(table);
-                XLSX.utils.book_append_sheet(wb, ws, "Sheet3_REKLAS");
+                const sheetName = this.activeTab === 'log' ? 'Log_Transaksi' : 'Sheet3_REKLAS';
+                XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-                const filename = `REKLAS_ASET_RSUD_KOESNANDI_{{ $selectedTahun }}_TW{{ $selectedTw }}.xlsx`;
+                const suffix = this.activeTab === 'log' ? 'LOG' : 'MATRIKS';
+                const filename = `REKLAS_${suffix}_RSUD_KOESNANDI_{{ $selectedTahun }}_TW{{ $selectedTw }}.xlsx`;
                 XLSX.writeFile(wb, filename);
             }
         };

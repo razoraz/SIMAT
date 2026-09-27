@@ -150,7 +150,10 @@
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
                     Tanggal Penandatanganan PKS <span class="text-rose-400">*</span>
                 </label>
-                <input type="text" x-datepicker x-model="formData.tanggal_pks" required
+                <input type="text" x-datepicker x-model="formData.tanggal_pks"
+                    @input="syncTahunTriwulanFromPks($event.target.value)"
+                    @change="syncTahunTriwulanFromPks($event.target.value)"
+                    required
                     placeholder="dd/mm/yyyy"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
             </div>
@@ -220,15 +223,27 @@
         <!-- Tahun Perolehan & Triwulan -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Tahun Pembukuan / Mulai Operasional <span class="text-rose-400">*</span>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span>Tahun Pembukuan / Mulai Operasional <span class="text-rose-400">*</span></span>
+                    <span class="inline-flex items-center gap-1 text-[10px] text-cyan-400/90 font-medium bg-cyan-950/40 px-2 py-0.5 rounded-md border border-cyan-800/40">
+                        <svg class="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Sinkron PKS
+                    </span>
                 </label>
                 <input type="number" x-model.number="formData.tahun_perolehan" required min="1990" max="2100"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Periode Triwulan Pembukuan <span class="text-rose-400">*</span>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span>Periode Triwulan Pembukuan <span class="text-rose-400">*</span></span>
+                    <span class="inline-flex items-center gap-1 text-[10px] text-cyan-400/90 font-medium bg-cyan-950/40 px-2 py-0.5 rounded-md border border-cyan-800/40">
+                        <svg class="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Sinkron PKS
+                    </span>
                 </label>
                 <select x-model="formData.triwulan" required
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold">

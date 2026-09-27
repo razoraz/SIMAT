@@ -121,6 +121,15 @@
                     </label>
 
                     <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
+                        :class="formData.jenis_reklas === 'KAPITALISASI_INTRAKOM' ? 'border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10' : ''">
+                        <input type="radio" x-model="formData.jenis_reklas" value="KAPITALISASI_INTRAKOM" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0">
+                        <div>
+                            <p class="text-xs font-bold text-white">Kapitalisasi Intrakomptabel</p>
+                            <p class="text-[10px] text-slate-400">Naikkan aset ekstrakomptabel → Aset Tetap (nilai sudah > Rp 300.000)</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
                         :class="formData.jenis_reklas === 'HIBAH_MASUK' ? 'border-amber-500 bg-amber-500/10 shadow-sm shadow-amber-500/10' : ''">
                         <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_MASUK" @change="onJenisReklasChange()" class="text-amber-600 focus:ring-0">
                         <div>
@@ -252,7 +261,7 @@
             </div>
 
             <!-- 3. Klasifikasi KIB Tujuan & Rekening PMDN 108 -->
-            <div x-show="formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF'"
+            <div x-show="formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM'"
                  x-transition.duration.200ms
                  class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4">
                 
@@ -399,7 +408,7 @@
             </div>
 
             <!-- 4. Form Spesifikasi Fisik Baru Dinamis Sesuai KIB Tujuan -->
-            <div x-show="formData.tujuan_kib && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF')"
+            <div x-show="formData.tujuan_kib && (formData.jenis_reklas === 'KOREKSI_REKENING' || formData.jenis_reklas === 'KDP_TO_DEFINITIF' || formData.jenis_reklas === 'KAPITALISASI_INTRAKOM')"
                  x-transition.duration.300ms
                  class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
                 
