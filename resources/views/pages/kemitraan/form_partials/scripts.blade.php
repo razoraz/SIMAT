@@ -96,6 +96,7 @@
                 tanah_sertifikat_no: '',
                 tanah_sertifikat_tgl: '',
                 tanah_penggunaan: '',
+                tanah_kondisi: 'Baik',
                 tanah_batas: '',
                 tanah_alamat: '',
                 tanah_items: [],
@@ -109,12 +110,14 @@
                 tahun_pembuatan: null,
                 no_rangka: '',
                 no_mesin: '',
+                no_bpkb: '',
                 no_polisi: '',
 
                 // Sheet KIB C: Gedung & Bangunan
                 gedung_bertingkat: 'Tidak',
                 gedung_beton: 'Beton Bertulang',
                 gedung_luas_lantai: null,
+                gedung_kondisi: 'Baik',
                 gedung_dokumen_no: '',
                 gedung_dokumen_tgl: '',
                 gedung_status_tanah: 'Tanah Milik RSUD',
@@ -125,11 +128,18 @@
                 jaringan_luas: null,
                 jaringan_panjang: null,
                 jaringan_lebar: null,
+                jaringan_kondisi: 'Baik',
                 jaringan_dokumen_no: '',
                 jaringan_dokumen_tgl: '',
 
                 // Sheet KIB E: Aset Tetap Lainnya
+                kib_e_type: 'buku',
                 lainnya_judul: '',
+                lainnya_pencipta: '',
+                lainnya_spesifikasi: '',
+                lainnya_penerbit: '',
+                lainnya_tahun: null,
+                lainnya_asal_daerah: '',
                 lainnya_jenis: '',
                 lainnya_ukuran: '',
                 lainnya_bahan: '',
@@ -733,6 +743,7 @@
                         hak_tanah: this.formData.tanah_hak || 'Hak Pakai',
                         sertifikat_no: this.formData.tanah_sertifikat_no || '',
                         sertifikat_tgl: this.formData.tanah_sertifikat_tgl || '',
+                        kondisi: this.formData.tanah_kondisi || this.formData.kondisi || 'Baik',
                         penggunaan: this.formData.tanah_penggunaan || '',
                         batas_wilayah: this.formData.tanah_batas || '',
                         alamat_lahan: this.formData.tanah_alamat || this.formData.alamat_barang || '',
@@ -747,8 +758,10 @@
                         bahan: this.formData.bahan || '',
                         ukuran: this.formData.ukuran || '',
                         tahun_pembuatan: this.formData.tahun_pembuatan || null,
+                        kondisi: this.formData.kondisi || 'Baik',
                         no_rangka: this.formData.no_rangka || '',
                         no_mesin: this.formData.no_mesin || '',
+                        no_bpkb: this.formData.no_bpkb || '',
                         no_polisi: this.formData.no_polisi || ''
                     };
                 } else if (this.isGedung) {
@@ -757,6 +770,7 @@
                         bertingkat: this.formData.gedung_bertingkat || 'Tidak',
                         beton: this.formData.gedung_beton || 'Beton Bertulang',
                         luas_lantai_m2: parseFloat(this.formData.gedung_luas_lantai) || 0,
+                        kondisi: this.formData.gedung_kondisi || this.formData.kondisi || 'Baik',
                         dokumen_no: this.formData.gedung_dokumen_no || '',
                         dokumen_tgl: this.formData.gedung_dokumen_tgl || '',
                         status_tanah: this.formData.gedung_status_tanah || 'Tanah Milik RSUD',
@@ -769,14 +783,20 @@
                         luas_m2: parseFloat(this.formData.jaringan_luas) || 0,
                         panjang_m: parseFloat(this.formData.jaringan_panjang) || 0,
                         lebar_m: parseFloat(this.formData.jaringan_lebar) || 0,
+                        kondisi: this.formData.jaringan_kondisi || this.formData.kondisi || 'Baik',
                         dokumen_no: this.formData.jaringan_dokumen_no || '',
                         dokumen_tgl: this.formData.jaringan_dokumen_tgl || ''
                     };
                 } else if (this.isLainnya) {
                     specJson = {
                         kategori_kib: 'KIB E (Aset Tetap Lainnya)',
+                        kib_e_type: this.formData.kib_e_type || 'buku',
                         judul: this.formData.lainnya_judul || '',
-                        jenis: this.formData.lainnya_jenis || '',
+                        pencipta: this.formData.lainnya_pencipta || '',
+                        spesifikasi: this.formData.lainnya_spesifikasi || '',
+                        penerbit: this.formData.lainnya_penerbit || '',
+                        tahun: this.formData.lainnya_tahun || null,
+                        asal_daerah: this.formData.lainnya_asal_daerah || '',
                         ukuran: this.formData.lainnya_ukuran || '',
                         bahan: this.formData.lainnya_bahan || '',
                         asal_usul: this.formData.lainnya_asal || ''
