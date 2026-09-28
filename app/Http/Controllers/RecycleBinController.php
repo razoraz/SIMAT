@@ -428,6 +428,9 @@ class RecycleBinController extends Controller
                         'deleted_by_id' => null,
                         'deleted_at'    => null,
                     ]);
+                    if ($astap->mutasiEksternal) {
+                        $astap->mutasiEksternal->restoreData();
+                    }
                     // Sinkronkan jumlah volume paket dengan total register aktif
                     $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
                     $astap->save();
@@ -549,6 +552,9 @@ class RecycleBinController extends Controller
                     // Jika paket induk sedang berstatus terhapus, ikut pulihkan paket induk agar data tidak menjadi orphan
                     if ($astap && $astap->is_deleted) {
                         $astap->restoreData();
+                        if ($astap->mutasiEksternal) {
+                            $astap->mutasiEksternal->restoreData();
+                        }
                         $astapRestored = true;
                     }
                     if ($astap) {
@@ -634,6 +640,9 @@ class RecycleBinController extends Controller
                             'deleted_by_id' => null,
                             'deleted_at'    => null,
                         ]);
+                        if ($a->mutasiEksternal) {
+                            $a->mutasiEksternal->restoreData();
+                        }
                         $a->jumlah_volume = max(1, $a->registers()->where('is_deleted', 0)->count());
                         $a->save();
                         $restoredCount++;
