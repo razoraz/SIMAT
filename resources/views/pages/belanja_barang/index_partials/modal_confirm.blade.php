@@ -32,19 +32,31 @@
                 </div>
                 <div>
                     <h3 class="text-base font-extrabold text-white">
-                        Hapus Data Belanja Barang?
+                        Pindahkan ke Pusat Pemulihan?
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        Tindakan ini akan membatalkan pencatatan aset inventaris.
+                        Menonaktifkan transaksi belanja barang dan inventaris terkait.
                     </p>
                 </div>
             </div>
 
-            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 mb-5">
-                <span class="text-[10px] uppercase font-bold text-slate-500 block">Barang yang akan dihapus:</span>
-                <span class="text-sm font-bold text-white block mt-0.5" x-text="deleteTitle"></span>
-                <p class="text-[11px] text-rose-400/90 mt-2">
-                    Unit fisik NIBAR yang terdaftar pada KIR ruangan juga akan dinonaktifkan dari sistem.
+            <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 mb-4 space-y-2">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-500 block">Barang Belanja:</span>
+                    <span class="text-sm font-bold text-teal-300 block mt-0.5" x-text="deleteTitle"></span>
+                </div>
+                
+                <div class="pt-2 border-t border-slate-800/80">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        Alasan Penghapusan (Opsional):
+                    </label>
+                    <input type="text" x-model="deleteReason" placeholder="Misal: Salah input faktur, dibatalkan, barang retur..."
+                        class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-colors">
+                </div>
+
+                <p class="text-[11px] text-teal-400/90 pt-1.5 flex items-start gap-1.5">
+                    <span class="text-sm leading-none">♻️</span>
+                    <span><strong>Sistem Soft Delete:</strong> Data faktur toko dan register NIBAR akan dipindahkan ke <strong>Pusat Pemulihan Data (Recycle Bin)</strong> dan dapat Anda pulihkan kembali sewaktu-waktu.</span>
                 </p>
             </div>
 
@@ -57,13 +69,13 @@
                 <button type="button" @click="executeDelete()"
                     :disabled="isDeleting"
                     class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/20 transition-all flex items-center gap-1.5 disabled:opacity-50">
-                    <span x-show="!isDeleting">Ya, Hapus Data</span>
+                    <span x-show="!isDeleting">Ya, Pindahkan ke Sampah</span>
                     <span x-show="isDeleting" class="flex items-center gap-1.5">
                         <svg class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Menghapus...
+                        Memproses...
                     </span>
                 </button>
             </div>

@@ -162,6 +162,25 @@
                             <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('kemitraan') > 0 ? getModuleCount('kemitraan') + ' data terhapus' : 'Tidak ada data'"></span>
                         </div>
 
+                        <!-- 7. Belanja Barang (Akun 5.1.02 / Perbekalan Ruangan) -->
+                        <div @click="changeTab('belanja_barang')" 
+                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
+                            :style="activeModule === 'belanja_barang' ? 'border-color: #10b981; box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);' : ''"
+                            :class="activeModule === 'belanja_barang' 
+                                ? 'bg-emerald-500/15 border-emerald-500 shadow-lg shadow-emerald-500' 
+                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-base p-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">🛒</span>
+                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
+                                    :class="getModuleCount('belanja_barang') > 0 
+                                        ? 'bg-emerald-500 text-slate-950 font-black shadow-sm' 
+                                        : 'bg-slate-800/80 text-slate-400'"
+                                    x-text="getModuleCount('belanja_barang')">0</span>
+                            </div>
+                            <span class="text-xs font-bold text-white block truncate group-hover:text-emerald-300 transition-colors">Belanja Barang</span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('belanja_barang') > 0 ? getModuleCount('belanja_barang') + ' data terhapus' : 'Tidak ada data'"></span>
+                        </div>
+
                         <!-- 6. Akun Pengguna -->
                         <div @click="changeTab('users')" 
                             class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
@@ -1068,7 +1087,105 @@
         </template>
 
         <!-- ========================================================================= -->
-        <!-- TAB 7: AKUN PENGGUNA (USERS) TABLE -->
+        <!-- TAB 7: BELANJA BARANG (AKUN 5.1.02 / PERBEKALAN RUANGAN) TABLE            -->
+        <!-- ========================================================================= -->
+        <template x-if="activeModule === 'belanja_barang'">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
+                <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
+                                <tr>
+                                    <th class="px-4 py-3.5 w-10 text-center">
+                                        <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected"
+                                            class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
+                                    </th>
+                                    <th class="px-4 py-3.5">Nomor & Tanggal Faktur</th>
+                                    <th class="px-4 py-3.5">Toko / Rekanan Penyedia</th>
+                                    <th class="px-4 py-3.5">Nama Barang & Kode 108</th>
+                                    <th class="px-4 py-3.5">Total Pembelian</th>
+                                    <th class="px-4 py-3.5">Ruangan Pemegang</th>
+                                    <th class="px-4 py-3.5">Dihapus Oleh</th>
+                                    <th class="px-4 py-3.5">Waktu Penghapusan</th>
+                                    <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+                                <template x-for="(item, idx) in filteredItems" :key="item.id">
+                                    <tr class="hover:bg-slate-800/30 transition-colors">
+                                        <td class="px-4 py-4 text-center">
+                                            <input type="checkbox" :value="item.id" x-model="selectedIds"
+                                                class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="font-mono font-bold text-teal-300 block" x-text="item.nomor_faktur"></span>
+                                            <span class="text-[10px] text-slate-400" x-text="'Tanggal: ' + item.tanggal_faktur"></span>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <span class="font-bold text-white block" x-text="item.toko_penyedia"></span>
+                                            <span class="text-[10px] text-slate-400" x-text="'Tahun: ' + item.tahun + ' (' + item.triwulan + ')'"></span>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <span class="font-bold text-slate-200 block" x-text="item.nama_barang"></span>
+                                            <span class="text-[10px] font-mono text-cyan-400/80" x-text="'Kode 108: ' + item.kode_barang"></span>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="font-mono font-bold text-emerald-400 block" x-text="item.total_pembelian_rp"></span>
+                                            <span class="text-[10px] text-teal-300 font-mono font-semibold" x-text="item.volume"></span>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="text-indigo-300 font-semibold block" x-text="item.ruangan"></span>
+                                            <span class="text-[10px] text-slate-500 block">KIR Ruangan RSUD</span>
+                                        </td>
+                                        <td class="px-4 py-4">
+                                            <span class="font-bold text-red-300 block" x-text="item.deleted_by"></span>
+                                            <span class="text-[10px] text-slate-400 block truncate max-w-[140px]" :title="item.alasan_hapus" x-text="item.alasan_hapus"></span>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
+                                            <span class="text-[10px] text-slate-500" x-text="item.deleted_at_relative"></span>
+                                        </td>
+                                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
+                                            style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                            <div class="flex items-center justify-center gap-1.5">
+                                                <button type="button" @click="openDetail(item)" title="Lihat Detail Belanja Barang"
+                                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                    <span>👁️ Detail</span>
+                                                </button>
+                                                <button type="button" @click="restoreSingle('belanja_barang', item)" title="Pulihkan Belanja Barang ke Daftar Aktif"
+                                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                    <span>Pulihkan</span>
+                                                </button>
+                                                <button type="button" @click="forceDeleteSingle('belanja_barang', item)" title="Hapus Permanen dari Database"
+                                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    <span>Hapus</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="filteredItems.length === 0">
+                                    <tr>
+                                        <td colspan="9" class="py-14 text-center">
+                                            <div class="flex flex-col items-center justify-center space-y-2">
+                                                <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl text-emerald-400 shadow-inner">🛒</div>
+                                                <p class="text-sm font-bold text-slate-200">Tong Sampah Belanja Barang Kosong</p>
+                                                <p class="text-xs text-slate-500 max-w-sm">Tidak ada transaksi belanja barang atau perbekalan ruangan yang berstatus terhapus.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 8: AKUN PENGGUNA (USERS) TABLE -->
         <!-- ========================================================================= -->
         <template x-if="activeModule === 'users'">
             <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
@@ -1583,6 +1700,79 @@
                             </div>
                         </template>
 
+                        <!-- DETAIL KHUSUS BELANJA BARANG -->
+                        <template x-if="activeModule === 'belanja_barang'">
+                            <div class="space-y-3">
+                                <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                                    <div>
+                                        <span class="text-slate-500 text-[10px] uppercase font-bold block">Nomor Faktur Pembelian:</span>
+                                        <span class="font-mono font-bold text-teal-300 text-sm tracking-wide" x-text="selectedItem.nomor_faktur"></span>
+                                        <span class="text-xs text-slate-400 block mt-1" x-text="'Tanggal Faktur: ' + selectedItem.tanggal_faktur"></span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-slate-500 text-[10px] uppercase font-bold block">Sumber Belanja:</span>
+                                        <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 inline-block">
+                                            🛒 Akun 5.1.02
+                                        </span>
+                                        <span class="text-xs text-slate-400 block mt-1" x-text="'Tahun: ' + selectedItem.tahun + ' (' + selectedItem.triwulan + ')'"></span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="text-slate-500 text-[10px] block">Toko / Rekanan Penyedia:</span>
+                                        <span class="font-bold text-white text-sm" x-text="selectedItem.toko_penyedia"></span>
+                                        <span class="text-[10px] text-indigo-300 block" x-text="'Lokasi Penempatan: ' + selectedItem.ruangan"></span>
+                                    </div>
+                                    <div class="mt-2 text-right">
+                                        <span class="text-slate-500 text-[10px] block">Total Pembelian:</span>
+                                        <span class="font-mono font-bold text-emerald-400" x-text="selectedItem.total_pembelian_rp"></span>
+                                        <span class="text-xs text-teal-300 font-mono block" x-text="'Volume: ' + selectedItem.volume"></span>
+                                    </div>
+                                </div>
+
+                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                                    <span class="text-[10px] text-slate-500 block uppercase font-bold">Barang Belanja / Perbekalan:</span>
+                                    <p class="font-bold text-white text-xs" x-text="selectedItem.nama_barang"></p>
+                                    <p class="font-mono text-[10px] text-cyan-400" x-text="'Kode 108: ' + selectedItem.kode_barang"></p>
+                                </div>
+
+                                <!-- TABEL REGISTER UNIT BARANG BELANJA -->
+                                <template x-if="selectedItem.registers && selectedItem.registers.length > 0">
+                                    <div class="space-y-1.5">
+                                        <span class="text-slate-400 text-[10.5px] font-bold uppercase tracking-wider block">Rincian Register NIBAR Terkait:</span>
+                                        <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-inner max-h-40 overflow-y-auto">
+                                            <table class="w-full text-left text-xs">
+                                                <thead class="bg-slate-900 text-slate-400 text-[10px] uppercase font-bold border-b border-slate-800 sticky top-0">
+                                                    <tr>
+                                                        <th class="px-3 py-2 text-center w-8">No</th>
+                                                        <th class="px-3 py-2">NIBAR</th>
+                                                        <th class="px-3 py-2">Ruangan</th>
+                                                        <th class="px-3 py-2 text-center">Kondisi</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-800/60">
+                                                    <template x-for="(reg, rIdx) in selectedItem.registers" :key="rIdx">
+                                                        <tr class="hover:bg-slate-900/40">
+                                                            <td class="px-3 py-2 text-center text-slate-500 font-bold" x-text="reg.no"></td>
+                                                            <td class="px-3 py-2 font-mono font-bold text-teal-300" x-text="reg.nibar"></td>
+                                                            <td class="px-3 py-2 text-slate-200" x-text="reg.ruangan"></td>
+                                                            <td class="px-3 py-2 text-center">
+                                                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30" x-text="reg.kondisi"></span>
+                                                            </td>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                                    <span class="text-[10px] text-slate-500 block uppercase font-bold">Alasan Penghapusan:</span>
+                                    <p class="text-xs text-rose-300 font-semibold" x-text="selectedItem.alasan_hapus"></p>
+                                    <p class="text-[11px] text-slate-400 mt-1" x-show="selectedItem.keterangan && selectedItem.keterangan !== '-'" x-text="'Catatan Belanja: ' + selectedItem.keterangan"></p>
+                                </div>
+                            </div>
+                        </template>
+
                         <!-- DETAIL PENGGUNA -->
                         <template x-if="activeModule === 'users'">
                             <div class="space-y-3">
@@ -1644,6 +1834,7 @@
                 users: {{ Js::from($deletedUsers ?? []) }},
                 hibahs: {{ Js::from($deletedHibahs ?? []) }},
                 kemitraans: {{ Js::from($deletedKemitraans ?? []) }},
+                belanjaBarangs: {{ Js::from($deletedBelanjaBarangs ?? []) }},
                 totalThisMonth: {{ (int) $totalThisMonth }},
                 astapSubTab: 'packet',
 
@@ -1681,7 +1872,7 @@
                 },
 
                 get totalCount() {
-                    return this.mutasis.length + this.mutasiEksternals.length + this.astaps.length + this.nibars.length + this.distribusis.length + this.units.length + this.users.length + this.hibahs.length + this.kemitraans.length;
+                    return this.mutasis.length + this.mutasiEksternals.length + this.astaps.length + this.nibars.length + this.distribusis.length + this.units.length + this.users.length + this.hibahs.length + this.kemitraans.length + this.belanjaBarangs.length;
                 },
 
                 getModuleCount(mod) {
@@ -1692,6 +1883,7 @@
                     if (mod === 'users') return this.users.length;
                     if (mod === 'hibah') return this.hibahs.length;
                     if (mod === 'kemitraan') return this.kemitraans.length;
+                    if (mod === 'belanja_barang') return this.belanjaBarangs.length;
                     return 0;
                 },
 
@@ -1707,7 +1899,8 @@
                         unit: 'Unit & Paviliun',
                         users: 'Akun Pengguna',
                         hibah: 'Hibah Aset',
-                        kemitraan: 'Kemitraan Aset'
+                        kemitraan: 'Kemitraan Aset',
+                        belanja_barang: 'Belanja Barang (Akun 5.1.02)'
                     };
                     return map[this.activeModule] || 'Modul';
                 },
@@ -1729,6 +1922,7 @@
                     if (this.activeModule === 'users') return 'Cari nama pengguna / email / NIP / role / unit penugasan / penghapus...';
                     if (this.activeModule === 'hibah') return 'Cari nomor BAST / nama barang / pihak hibah / tahun / penghapus...';
                     if (this.activeModule === 'kemitraan') return 'Cari nomor PKS / nama mitra / nama barang / skema / ruangan / penghapus...';
+                    if (this.activeModule === 'belanja_barang') return 'Cari nomor faktur / toko penyedia / nama barang / ruangan / penghapus...';
                     return 'Cari data terhapus...';
                 },
 
@@ -1744,6 +1938,7 @@
                     if (this.activeModule === 'users') return this.users;
                     if (this.activeModule === 'hibah') return this.hibahs;
                     if (this.activeModule === 'kemitraan') return this.kemitraans;
+                    if (this.activeModule === 'belanja_barang') return this.belanjaBarangs;
                     return [];
                 },
 
@@ -1821,6 +2016,18 @@
                         // Jika ada astap_id terkait yang dipulihkan, singkirkan juga dari astaps & nibars
                         const astapIds = ids.map(id => {
                             const found = this.kemitraans.find(k => Number(k.id) === Number(id));
+                            return found ? Number(found.astap_id) : null;
+                        }).filter(Boolean);
+                        if (astapIds.length > 0) {
+                            const astapIdSet = new Set(astapIds);
+                            this.astaps = this.astaps.filter(a => !astapIdSet.has(Number(a.id)));
+                            this.nibars = this.nibars.filter(n => !astapIdSet.has(Number(n.astap_id)));
+                        }
+                    } else if (targetMod === 'belanja_barang') {
+                        this.belanjaBarangs = this.belanjaBarangs.filter(i => !idSet.has(Number(i.id)));
+                        // Jika ada astap_id terkait yang dipulihkan, singkirkan juga dari astaps & nibars
+                        const astapIds = ids.map(id => {
+                            const found = this.belanjaBarangs.find(b => Number(b.id) === Number(id));
                             return found ? Number(found.astap_id) : null;
                         }).filter(Boolean);
                         if (astapIds.length > 0) {

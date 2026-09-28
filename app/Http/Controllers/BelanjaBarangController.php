@@ -44,8 +44,9 @@ class BelanjaBarangController extends Controller
         $filterTw    = $request->query('triwulan', 'all');
         $search      = trim($request->query('search', ''));
 
-        // Query utama data Belanja Barang
+        // Query utama data Belanja Barang (hanya yang aktif)
         $query = AstapBelanjaBarang::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit'])
+            ->where('is_deleted', 0)
             ->whereHas('astap', function ($q) {
                 $q->where('is_deleted', 0);
             })
@@ -84,8 +85,9 @@ class BelanjaBarangController extends Controller
 
         $belanjaBarangRecords = $query->get();
 
-        // Hitung Statistik KPI
-        $allBelanja = AstapBelanjaBarang::whereHas('astap', fn($q) => $q->where('is_deleted', 0))
+        // Hitung Statistik KPI (hanya yang aktif)
+        $allBelanja = AstapBelanjaBarang::where('is_deleted', 0)
+            ->whereHas('astap', fn($q) => $q->where('is_deleted', 0))
             ->with('astap')
             ->get();
 
@@ -315,31 +317,49 @@ class BelanjaBarangController extends Controller
     }
 
     /**
-     * Hapus / Batalkan Catatan Belanja Barang
+     * Hapus / Pindahkan Catatan Belanja Barang ke Pusat Pemulihan Data (Soft Delete)
      */
     public function destroy(Request $request, $id)
     {
         $belanja = AstapBelanjaBarang::findOrFail($id);
+        $alasanHapus = $request->input('alasan_hapus', 'Dihapus dari Kelola Belanja Barang');
 
-        DB::transaction(function () use ($belanja) {
+        DB::transaction(function () use ($belanja, $alasanHapus) {
+            $user = Auth::user();
+            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+            $deleterId = $user?->id;
+            $now = now();
+
+            // 1. Soft delete catatan belanja barang
+            $belanja->softDelete($alasanHapus);
+
+            // 2. Soft delete paket aset induk dan register unitnya
             $astap = $belanja->astap;
             if ($astap) {
-                // Soft delete registers
-                AstapRegister::where('astap_id', $astap->id)->update(['is_deleted' => 1]);
-                // Soft delete astap
-                $astap->update(['is_deleted' => 1]);
+                AstapRegister::where('astap_id', $astap->id)->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $deleterId,
+                    'deleted_at'    => $now,
+                ]);
+
+                $astap->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $deleterId,
+                    'deleted_at'    => $now,
+                ]);
             }
-            $belanja->delete();
         });
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Data Belanja Barang berhasil dihapus dari SIMAT-RK.'
+                'message' => 'Data Belanja Barang berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).'
             ]);
         }
 
         return redirect()->route('master.belanja_barang')
-            ->with('success', 'Data Belanja Barang berhasil dihapus.');
+            ->with('success', 'Data Belanja Barang berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).');
     }
 }

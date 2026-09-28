@@ -8,6 +8,7 @@ use App\Models\Astap;
 use App\Models\AstapRegister;
 use App\Models\AstapHibah;
 use App\Models\AstapKemitraan;
+use App\Models\AstapBelanjaBarang;
 use App\Models\Distribusi;
 use App\Models\Unit;
 use App\Models\User;
@@ -435,7 +436,60 @@ class RecycleBinController extends Controller
         });
 
         // =========================================================================
-        // 8. STATISTIK TERPUSAT SELURUH MODUL
+        // 8. DATA TERHAPUS: BELANJA BARANG (AKUN 5.1.02 / PERBEKALAN RUANGAN)
+        // =========================================================================
+        $rawDeletedBelanjaBarangs = AstapBelanjaBarang::onlyDeleted()
+            ->with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit'])
+            ->latest('deleted_at')
+            ->latest('id')
+            ->get();
+
+        $deletedBelanjaBarangs = $rawDeletedBelanjaBarangs->map(function ($b) {
+            $deletedAt  = $b->deleted_at ? Carbon::parse($b->deleted_at)->timezone('Asia/Jakarta') : null;
+            $tglFaktur  = $b->tanggal_faktur ? Carbon::parse($b->tanggal_faktur)->timezone('Asia/Jakarta') : null;
+
+            $namaBarang = $b->astap?->nama_barang ?: 'Barang Belanja';
+            $kodeBarang = $b->astap?->kode_108 ?: ($b->astap?->jenisAstap?->sub_sub_rincian_objek ?: '-');
+            $ruangan    = $b->astap?->unit?->nama ?: '-';
+            $totalBeli  = (float) ($b->total_pembelian ?: ($b->astap?->total_realisasi ?? 0));
+            $volume     = max(1, (int) ($b->astap?->jumlah_volume ?? 1)) . ' ' . ($b->astap?->satuan ?: 'Unit');
+
+            $registersMapped = $b->astap?->registers?->map(function ($r, $idx) {
+                return [
+                    'no'          => $idx + 1,
+                    'nibar'       => $r->nibar ?: '-',
+                    'nama_barang' => $r->nama_barang ?: '-',
+                    'ruangan'     => $r->unit?->nama ?: ($r->ruang_pemegang ?: '-'),
+                    'kondisi'     => $r->kondisi ?: 'Baik',
+                ];
+            })->toArray() ?? [];
+
+            return [
+                'id'                  => $b->id,
+                'astap_id'            => $b->astap_id,
+                'nomor_faktur'        => $b->nomor_faktur ?: '-',
+                'toko_penyedia'       => $b->toko_penyedia ?: 'Pusat Perbekalan RSUD',
+                'nama_barang'         => $namaBarang,
+                'kode_barang'         => $kodeBarang,
+                'volume'              => $volume,
+                'total_pembelian'     => $totalBeli,
+                'total_pembelian_rp'  => 'Rp ' . number_format($totalBeli, 0, ',', '.'),
+                'tanggal_faktur'      => $tglFaktur ? $tglFaktur->locale('id')->translatedFormat('d M Y') : '-',
+                'ruangan'             => $ruangan,
+                'tahun'               => $b->astap?->tahun_perolehan ?: '-',
+                'triwulan'            => $b->astap?->triwulan ?: '-',
+                'keterangan'          => $b->keterangan ?: '-',
+                'alasan_hapus'        => $b->alasan_hapus ?: 'Dihapus dari Kelola Belanja Barang',
+                'registers'           => $registersMapped,
+                'deleted_by'          => $b->deleted_by ?: 'Administrator',
+                'deleted_at'          => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative' => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
+                'deleted_at_raw'      => $deletedAt ? $deletedAt->toIso8601String() : null,
+            ];
+        });
+
+        // =========================================================================
+        // 9. STATISTIK TERPUSAT SELURUH MODUL
         // =========================================================================
         $now = now();
         $thirtyDaysAgo = $now->copy()->subDays(30);
@@ -444,15 +498,16 @@ class RecycleBinController extends Controller
         $mutasiInternalCount  = $deletedMutasis->count();
         $mutasiEksternalCount = $deletedMutasiEksternals->count();
         $mutasiCount          = $mutasiInternalCount + $mutasiEksternalCount;
-        $astapCount      = $deletedAstaps->count();
-        $nibarCount      = $deletedNibars->count();
-        $distribusiCount = $deletedDistribusis->count();
-        $hibahCount      = $deletedHibahs->count();
-        $kemitraanCount  = $deletedKemitraans->count();
-        $unitCount       = $deletedUnits->count();
-        $userCount       = $deletedUsers->count();
+        $astapCount         = $deletedAstaps->count();
+        $nibarCount         = $deletedNibars->count();
+        $distribusiCount    = $deletedDistribusis->count();
+        $hibahCount         = $deletedHibahs->count();
+        $kemitraanCount     = $deletedKemitraans->count();
+        $belanjaBarangCount = $deletedBelanjaBarangs->count();
+        $unitCount          = $deletedUnits->count();
+        $userCount          = $deletedUsers->count();
 
-        $totalAllDeleted = $mutasiCount + $astapCount + $nibarCount + $distribusiCount + $hibahCount + $kemitraanCount + $unitCount + $userCount;
+        $totalAllDeleted = $mutasiCount + $astapCount + $nibarCount + $distribusiCount + $hibahCount + $kemitraanCount + $belanjaBarangCount + $unitCount + $userCount;
 
         // Hitung 30 hari terakhir
         $filterMonth = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($thirtyDaysAgo))->count();
@@ -463,6 +518,7 @@ class RecycleBinController extends Controller
             + $filterMonth($rawDeletedDistribusis)
             + $filterMonth($rawDeletedHibahs)
             + $filterMonth($rawDeletedKemitraans)
+            + $filterMonth($rawDeletedBelanjaBarangs)
             + $filterMonth($rawDeletedUnits)
             + $filterMonth($rawDeletedUsers);
 
@@ -475,6 +531,7 @@ class RecycleBinController extends Controller
             + $filterWeek($rawDeletedDistribusis)
             + $filterWeek($rawDeletedHibahs)
             + $filterWeek($rawDeletedKemitraans)
+            + $filterWeek($rawDeletedBelanjaBarangs)
             + $filterWeek($rawDeletedUnits)
             + $filterWeek($rawDeletedUsers);
 
@@ -517,6 +574,13 @@ class RecycleBinController extends Controller
                 'color' => 'cyan',
                 'ready' => true,
             ],
+            'belanja_barang' => [
+                'name'  => 'Belanja Barang',
+                'icon'  => '🛒',
+                'count' => $belanjaBarangCount,
+                'color' => 'emerald',
+                'ready' => true,
+            ],
             'unit' => [
                 'name'  => 'Unit & Paviliun',
                 'icon'  => '🏥',
@@ -541,6 +605,7 @@ class RecycleBinController extends Controller
             'deletedDistribusis',
             'deletedHibahs',
             'deletedKemitraans',
+            'deletedBelanjaBarangs',
             'deletedUnits',
             'deletedUsers',
             'activeTab',
@@ -720,6 +785,26 @@ class RecycleBinController extends Controller
                     }
                 });
                 $msg = "Data Kerja Sama Kemitraan PKS {$nomorPks} beserta aset terkait berhasil dipulihkan ke daftar aktif.";
+                break;
+
+            case 'belanja_barang':
+                $belanja = AstapBelanjaBarang::findOrFail($id);
+                $faktur = $belanja->nomor_faktur ?: 'Faktur Belanja';
+                DB::transaction(function () use ($belanja) {
+                    $belanja->restoreData();
+                    if ($belanja->astap) {
+                        $belanja->astap->restoreData();
+                        $belanja->astap->registers()->update([
+                            'is_deleted'    => 0,
+                            'deleted_by'    => null,
+                            'deleted_by_id' => null,
+                            'deleted_at'    => null,
+                        ]);
+                        $belanja->astap->jumlah_volume = max(1, $belanja->astap->registers()->where('is_deleted', 0)->count());
+                        $belanja->astap->save();
+                    }
+                });
+                $msg = "Data Belanja Barang {$faktur} beserta aset terkait berhasil dipulihkan ke daftar aktif.";
                 break;
 
             case 'unit':
@@ -939,6 +1024,28 @@ class RecycleBinController extends Controller
                 $msg = "Sebanyak {$restoredCount} dokumen kemitraan aset berhasil dipulihkan ke status aktif.";
                 break;
 
+            case 'belanja_barang':
+                $belanjas = AstapBelanjaBarang::whereIn('id', $ids)->get();
+                DB::transaction(function () use ($belanjas, &$restoredCount) {
+                    foreach ($belanjas as $b) {
+                        $b->restoreData();
+                        if ($b->astap) {
+                            $b->astap->restoreData();
+                            $b->astap->registers()->update([
+                                'is_deleted'    => 0,
+                                'deleted_by'    => null,
+                                'deleted_by_id' => null,
+                                'deleted_at'    => null,
+                            ]);
+                            $b->astap->jumlah_volume = max(1, $b->astap->registers()->where('is_deleted', 0)->count());
+                            $b->astap->save();
+                        }
+                        $restoredCount++;
+                    }
+                });
+                $msg = "Sebanyak {$restoredCount} dokumen belanja barang berhasil dipulihkan ke status aktif.";
+                break;
+
             case 'unit':
                 $units = Unit::whereIn('id', $ids)->get();
                 foreach ($units as $u) {
@@ -1076,6 +1183,24 @@ class RecycleBinController extends Controller
                 $msg = "Sebanyak {$deletedCount} data kemitraan aset telah dihapus permanen dari database.";
                 break;
 
+            case 'belanja_barang':
+                $belanjas = AstapBelanjaBarang::whereIn('id', $ids)->get();
+                DB::transaction(function () use ($belanjas, &$deletedCount) {
+                    foreach ($belanjas as $b) {
+                        $astap = $b->astap;
+                        if ($astap) {
+                            $astap->registers()->delete();
+                            $b->delete();
+                            $astap->delete();
+                        } else {
+                            $b->delete();
+                        }
+                        $deletedCount++;
+                    }
+                });
+                $msg = "Sebanyak {$deletedCount} data belanja barang telah dihapus permanen dari database.";
+                break;
+
             case 'astap':
                 $astaps = Astap::whereIn('id', $ids)->get();
                 $blockedAstaps = [];
@@ -1133,6 +1258,42 @@ class RecycleBinController extends Controller
                     $deletedCount++;
                 }
                 $msg = "Sebanyak {$deletedCount} data transaksi hibah aset telah dihapus permanen dari database.";
+                break;
+
+            case 'kemitraan':
+                $kemitraans = AstapKemitraan::whereIn('id', $ids)->get();
+                DB::transaction(function () use ($kemitraans, &$deletedCount) {
+                    foreach ($kemitraans as $k) {
+                        $astap = $k->astap;
+                        if ($astap) {
+                            $astap->registers()->delete();
+                            $k->delete();
+                            $astap->delete();
+                        } else {
+                            $k->delete();
+                        }
+                        $deletedCount++;
+                    }
+                });
+                $msg = "Sebanyak {$deletedCount} data Kemitraan PKS beserta aset terkait telah dihapus permanen dari database.";
+                break;
+
+            case 'belanja_barang':
+                $belanjas = AstapBelanjaBarang::whereIn('id', $ids)->get();
+                DB::transaction(function () use ($belanjas, &$deletedCount) {
+                    foreach ($belanjas as $b) {
+                        $astap = $b->astap;
+                        if ($astap) {
+                            $astap->registers()->delete();
+                            $b->delete();
+                            $astap->delete();
+                        } else {
+                            $b->delete();
+                        }
+                        $deletedCount++;
+                    }
+                });
+                $msg = "Sebanyak {$deletedCount} data Belanja Barang beserta aset terkait telah dihapus permanen dari database.";
                 break;
 
             case 'unit':
@@ -1353,6 +1514,22 @@ class RecycleBinController extends Controller
                     }
                 });
                 $msg = "Data Kemitraan PKS {$pks} beserta aset register terkait telah dihapus secara permanen dari database.";
+                break;
+
+            case 'belanja_barang':
+                $belanja = AstapBelanjaBarang::findOrFail($id);
+                $faktur = $belanja->nomor_faktur ?: 'Belanja Barang';
+                DB::transaction(function () use ($belanja) {
+                    $astap = $belanja->astap;
+                    if ($astap) {
+                        $astap->registers()->delete();
+                        $belanja->delete();
+                        $astap->delete();
+                    } else {
+                        $belanja->delete();
+                    }
+                });
+                $msg = "Data Belanja Barang {$faktur} beserta aset register terkait telah dihapus secara permanen dari database.";
                 break;
 
             case 'unit':

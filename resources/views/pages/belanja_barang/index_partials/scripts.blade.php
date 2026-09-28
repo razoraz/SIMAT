@@ -6,6 +6,7 @@
             confirmDeleteModalOpen: false,
             deleteId: null,
             deleteTitle: '',
+            deleteReason: '',
             isDeleting: false,
 
             openDetailModal(item) {
@@ -23,6 +24,7 @@
             openConfirmDelete(id, title) {
                 this.deleteId = id;
                 this.deleteTitle = title;
+                this.deleteReason = '';
                 this.confirmDeleteModalOpen = true;
             },
 
@@ -30,6 +32,7 @@
                 this.confirmDeleteModalOpen = false;
                 this.deleteId = null;
                 this.deleteTitle = '';
+                this.deleteReason = '';
                 this.isDeleting = false;
             },
 
@@ -45,7 +48,10 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': token,
                             'Accept': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({
+                            alasan_hapus: this.deleteReason || 'Dihapus dari Kelola Belanja Barang'
+                        })
                     });
 
                     const data = await res.json();

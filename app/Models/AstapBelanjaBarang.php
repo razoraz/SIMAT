@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\TrackableSoftDelete;
 
 class AstapBelanjaBarang extends Model
 {
-    use HasFactory;
+    use HasFactory, TrackableSoftDelete;
 
     protected $table = 'astap_belanja_barangs';
 
@@ -16,6 +17,8 @@ class AstapBelanjaBarang extends Model
     protected $casts = [
         'tanggal_faktur'  => 'date:d/m/Y',
         'total_pembelian' => 'decimal:2',
+        'is_deleted'      => 'integer',
+        'deleted_at'      => 'datetime',
     ];
 
     public function setTanggalFakturAttribute($value)
