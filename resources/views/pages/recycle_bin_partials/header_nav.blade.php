@@ -1,3 +1,16 @@
+@php
+    $modulesList = [
+        ['id' => 'astap', 'name' => 'Master ASTAP', 'icon' => '📦', 'desc' => 'Paket Pengadaan & Register NIBAR Individual'],
+        ['id' => 'unit', 'name' => 'Unit & Paviliun', 'icon' => '🏥', 'desc' => 'Ruangan, Paviliun & Lokasi Penempatan RSUD'],
+        ['id' => 'distribusi', 'name' => 'Distribusi Aset', 'icon' => '🚚', 'desc' => 'Pengajuan & Dokumen BAST Distribusi Antar-Ruang'],
+        ['id' => 'mutasi', 'name' => 'Mutasi Aset', 'icon' => '🔄', 'desc' => 'Mutasi Internal (Ruangan) & Eksternal (OPD)'],
+        ['id' => 'hibah', 'name' => 'Hibah Aset', 'icon' => '🎁', 'desc' => 'Arsip BAST Hibah Masuk & Hibah Keluar'],
+        ['id' => 'kemitraan', 'name' => 'Kemitraan Aset', 'icon' => '🤝', 'desc' => 'Kerja Sama Operasi (KSO) & PKS Akun 1.5.2'],
+        ['id' => 'belanja_barang', 'name' => 'Belanja Barang', 'icon' => '🛒', 'desc' => 'Faktur Belanja & Perbekalan Akun 5.1.02'],
+        ['id' => 'users', 'name' => 'Akun Pengguna', 'icon' => '👥', 'desc' => 'Akun Staf, Pegawai, & Otorisasi Sistem'],
+    ];
+@endphp
+
 <!-- EXECUTIVE AUDIT HEADER & STREAMLINED SUMMARY -->
 <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 p-5 md:p-6 shadow-2xl">
     <div class="absolute -right-12 -top-12 w-64 h-64 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -23,14 +36,14 @@
                 <span class="text-[9.5px] uppercase tracking-wider font-bold text-slate-400 block">Total Terhapus</span>
                 <div class="flex items-baseline gap-1 mt-0.5">
                     <span class="text-xl font-black text-white font-mono" x-text="totalCount">0</span>
-                    <span class="text-[10px] text-slate-500 font-medium">data</span>
+                    <span class="text-[10px] text-slate-400">item</span>
                 </div>
             </div>
-            <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[120px]">
-                <span class="text-[9.5px] uppercase tracking-wider font-bold text-rose-400 block">30 Hari Terakhir</span>
+            <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[130px]">
+                <span class="text-[9.5px] uppercase tracking-wider font-bold text-slate-400 block">Aktivitas 30 Hari</span>
                 <div class="flex items-baseline gap-1 mt-0.5">
-                    <span class="text-xl font-black text-rose-300 font-mono" x-text="totalThisMonth">{{ $totalThisMonth }}</span>
-                    <span class="text-[10px] text-slate-500 font-medium">aktivitas</span>
+                    <span class="text-xl font-black text-amber-400 font-mono" x-text="totalThisMonth">0</span>
+                    <span class="text-[10px] text-amber-500/80">arsip</span>
                 </div>
             </div>
             <div class="px-3.5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2">
@@ -42,165 +55,168 @@
             </div>
         </div>
     </div>
-
-    <!-- COMPACT SEGMENTED PILL NAVIGATION BAR -->
-    <div class="mt-5 pt-4 border-t border-slate-800/80">
-        <div class="flex items-center justify-between mb-2.5">
-            <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
-                Kategori Modul Data:
-            </span>
-            <span class="text-[10px] text-slate-500 font-medium" x-text="'Sedang melihat: ' + activeModuleName"></span>
-        </div>
-
-        <div class="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-            <!-- 1. Master ASTAP -->
-            <button type="button" @click="changeTab('astap')"
-                :style="activeModule === 'astap' ? 'border-color: #3b82f6; box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);' : ''"
-                :class="activeModule === 'astap' 
-                    ? 'bg-blue-500/20 border-blue-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>📦 Master ASTAP</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'astap' ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('astap')">0</span>
-            </button>
-
-            <!-- 2. Unit & Paviliun -->
-            <button type="button" @click="changeTab('unit')"
-                :style="activeModule === 'unit' ? 'border-color: #06b6d4; box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);' : ''"
-                :class="activeModule === 'unit' 
-                    ? 'bg-cyan-500/20 border-cyan-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>🏥 Unit & Paviliun</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'unit' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('unit')">0</span>
-            </button>
-
-            <!-- 3. Distribusi Aset -->
-            <button type="button" @click="changeTab('distribusi')"
-                :style="activeModule === 'distribusi' ? 'border-color: #10b981; box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);' : ''"
-                :class="activeModule === 'distribusi' 
-                    ? 'bg-emerald-500/20 border-emerald-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>🚚 Distribusi Aset</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'distribusi' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('distribusi')">0</span>
-            </button>
-
-            <!-- 4. Mutasi Aset -->
-            <button type="button" @click="changeTab('mutasi')"
-                :style="activeModule === 'mutasi' ? 'border-color: #f59e0b; box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);' : ''"
-                :class="activeModule === 'mutasi' 
-                    ? 'bg-amber-500/20 border-amber-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>🔄 Mutasi Aset</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'mutasi' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('mutasi')">0</span>
-            </button>
-
-            <!-- 5. Hibah Aset -->
-            <button type="button" @click="changeTab('hibah')"
-                :style="activeModule === 'hibah' ? 'border-color: #a855f7; box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);' : ''"
-                :class="activeModule === 'hibah' 
-                    ? 'bg-purple-500/20 border-purple-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>🎁 Hibah Aset</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'hibah' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('hibah')">0</span>
-            </button>
-
-            <!-- 6. Kemitraan Aset -->
-            <button type="button" @click="changeTab('kemitraan')"
-                :style="activeModule === 'kemitraan' ? 'border-color: #06b6d4; box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);' : ''"
-                :class="activeModule === 'kemitraan' 
-                    ? 'bg-cyan-500/20 border-cyan-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>🤝 Kemitraan Aset</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'kemitraan' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('kemitraan')">0</span>
-            </button>
-
-            <!-- 7. Belanja Barang -->
-            <button type="button" @click="changeTab('belanja_barang')"
-                :style="activeModule === 'belanja_barang' ? 'border-color: #10b981; box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);' : ''"
-                :class="activeModule === 'belanja_barang' 
-                    ? 'bg-emerald-500/20 border-emerald-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>🛒 Belanja Barang</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'belanja_barang' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('belanja_barang')">0</span>
-            </button>
-
-            <!-- 8. Akun Pengguna -->
-            <button type="button" @click="changeTab('users')"
-                :style="activeModule === 'users' ? 'border-color: #f43f5e; box-shadow: 0 0 14px rgba(244, 63, 94, 0.35);' : ''"
-                :class="activeModule === 'users' 
-                    ? 'bg-rose-500/20 border-rose-500 text-white font-bold' 
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
-                <span>👥 Akun Pengguna</span>
-                <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
-                    :class="activeModule === 'users' ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-400'"
-                    x-text="getModuleCount('users')">0</span>
-            </button>
-        </div>
-    </div>
 </div>
 
-<!-- TOOLBAR: SEARCH & QUICK TIME FILTER RIBBON -->
-<div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-    <!-- PENCARIAN TEKS BEBAS -->
-    <div class="relative flex-1 w-full">
-        <input type="text" x-model="searchQuery" :placeholder="searchPlaceholder"
-            class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all">
-        <svg class="w-4 h-4 text-red-400 absolute left-4 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-2.5 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
-    </div>
+<!-- UNIFIED CONTROL TOOLBAR: MODULE DROPDOWN + SEARCH + QUICK TIME FILTERS -->
+<div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl space-y-4">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- 1. BESPOKE MODULE DROPDOWN SELECTOR (CUSTOM LUXURY POPOVER, NEVER CLIPPED) -->
+        <div class="relative w-full lg:w-96 shrink-0" x-data="{ openModDropdown: false }" @click.outside="openModDropdown = false" @keydown.escape.window="openModDropdown = false">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                    Kategori Modul:
+                </span>
+                <span class="text-[10px] text-slate-500 font-mono">8 Kategori Tersedia</span>
+            </div>
 
-    <!-- QUICK TIME FILTER PRESETS & INFO -->
-    <div class="flex items-center gap-2 shrink-0 w-full md:w-auto justify-between md:justify-end flex-wrap">
-        <!-- Group Tombol Filter Waktu -->
-        <div class="flex items-center p-1 bg-slate-950 rounded-2xl border border-slate-800/80">
-            <button type="button" @click="setTimeFilter('all')"
-                :class="timeFilter === 'all' 
-                    ? 'bg-slate-800 text-white font-bold shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-200'"
-                class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer">
-                Semua Waktu
+            <!-- TRIGGER BUTTON -->
+            <button type="button" @click="openModDropdown = !openModDropdown"
+                class="w-full bg-slate-950 border border-slate-700/80 hover:border-cyan-500/80 rounded-2xl p-2.5 px-3.5 shadow-lg transition-all flex items-center justify-between gap-3 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-cyan-500/40 text-left">
+                
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+                        <span x-show="activeModule === 'astap'">📦</span>
+                        <span x-show="activeModule === 'unit'">🏥</span>
+                        <span x-show="activeModule === 'distribusi'">🚚</span>
+                        <span x-show="activeModule === 'mutasi'">🔄</span>
+                        <span x-show="activeModule === 'hibah'">🎁</span>
+                        <span x-show="activeModule === 'kemitraan'">🤝</span>
+                        <span x-show="activeModule === 'belanja_barang'">🛒</span>
+                        <span x-show="activeModule === 'users'">👥</span>
+                    </div>
+                    <div class="min-w-0">
+                        <span class="text-xs font-black text-white group-hover:text-cyan-300 transition-colors block truncate" x-text="activeModuleName"></span>
+                        <span class="text-[10px] text-slate-400 block truncate" x-text="getModuleCount(activeModule) + ' data terhapus'"></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold"
+                        :class="getModuleCount(activeModule) > 0 ? 'bg-red-500/20 text-red-300 border border-red-500/30' : 'bg-slate-800 text-slate-400'"
+                        x-text="getModuleCount(activeModule)">0</span>
+                    <svg class="w-4 h-4 text-cyan-400 transition-transform duration-200" :class="openModDropdown ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
             </button>
-            <button type="button" @click="setTimeFilter('7d')"
-                :class="timeFilter === '7d' 
-                    ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-200 border border-transparent'"
-                class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
-                <span>⚡ 7 Hari</span>
-            </button>
-            <button type="button" @click="setTimeFilter('30d')"
-                :class="timeFilter === '30d' 
-                    ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40 shadow-sm' 
-                    : 'text-slate-400 hover:text-slate-200 border border-transparent'"
-                class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
-                <span>📅 30 Hari</span>
-            </button>
+
+            <!-- FLOATING POPOVER (ABSOLUTE, Z-50, UNCLIPPED!) -->
+            <div x-show="openModDropdown"
+                 x-transition:enter="transition ease-out duration-150 transform"
+                 x-transition:enter-start="opacity-0 translate-y-2 scale-98"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave="transition ease-in duration-100 transform"
+                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-2 scale-98"
+                 class="absolute left-0 top-full mt-2 w-full sm:w-[480px] z-50 bg-slate-950/98 backdrop-blur-2xl border border-slate-700 rounded-3xl p-3 shadow-2xl shadow-black ring-1 ring-white/10"
+                 style="display: none;">
+                
+                <div class="p-2 pb-2 mb-2 border-b border-slate-800/80 flex items-center justify-between">
+                    <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Pilih Kategori Inventaris</span>
+                    <span class="text-[10px] text-slate-500">8 Modul</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[360px] overflow-y-auto">
+                    @foreach($modulesList as $mod)
+                        <button type="button" @click="changeTab('{{ $mod['id'] }}'); openModDropdown = false;"
+                            class="p-2 rounded-xl border text-left transition-all flex items-center justify-between gap-2.5 cursor-pointer group/item"
+                            :class="activeModule === '{{ $mod['id'] }}'
+                                ? 'bg-slate-900 border-cyan-500/80 shadow-md shadow-cyan-500/10'
+                                : 'bg-slate-900/40 hover:bg-slate-900 border-slate-800/80 hover:border-slate-700'">
+                            
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
+                                    :class="activeModule === '{{ $mod['id'] }}' ? 'bg-cyan-500/20 border border-cyan-500/40' : 'bg-slate-950 border border-slate-800'">
+                                    <span>{{ $mod['icon'] }}</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-xs font-bold truncate"
+                                            :class="activeModule === '{{ $mod['id'] }}' ? 'text-cyan-300' : 'text-slate-200 group-hover/item:text-white'">
+                                            {{ $mod['name'] }}
+                                        </span>
+                                        <template x-if="activeModule === '{{ $mod['id'] }}'">
+                                            <span class="text-cyan-400 text-[10px] font-black">✓</span>
+                                        </template>
+                                    </div>
+                                    <span class="text-[9.5px] text-slate-400 truncate block">{{ $mod['desc'] }}</span>
+                                </div>
+                            </div>
+
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold shrink-0"
+                                :class="{
+                                    'bg-red-500 text-white shadow-sm': getModuleCount('{{ $mod['id'] }}') > 0,
+                                    'bg-slate-800 text-slate-500': getModuleCount('{{ $mod['id'] }}') === 0
+                                }"
+                                x-text="getModuleCount('{{ $mod['id'] }}')">0</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
-        <!-- Info Hasil Pencarian / Filter -->
-        <div class="text-[11px] text-slate-400 px-2 font-medium hidden sm:block">
-            Menampilkan <span class="font-bold text-white font-mono" x-text="filteredItems.length"></span> dari <span class="font-mono" x-text="currentList.length"></span> data
+        <!-- 2. SEARCH INPUT -->
+        <div class="relative flex-1 w-full pt-1 lg:pt-0">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                    Pencarian Data:
+                </span>
+                <span class="text-[10px] text-slate-500 hidden sm:inline" x-text="'Cari di ' + activeModuleName"></span>
+            </div>
+            <div class="relative">
+                <input type="text" x-model="searchQuery" :placeholder="searchPlaceholder"
+                    class="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-2xl px-4 py-2.5 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all">
+                <svg class="w-4 h-4 text-red-400 absolute left-4 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-2.5 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
+            </div>
+        </div>
+
+        <!-- 3. QUICK TIME FILTER PRESETS -->
+        <div class="shrink-0 w-full lg:w-auto pt-1 lg:pt-0">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Filter Waktu:
+                </span>
+                <span class="text-[10px] text-slate-500 font-mono" x-text="timeFilter === 'all' ? 'Semua Waktu' : (timeFilter === '7d' ? '7 Hari Terakhir' : '30 Hari Terakhir')"></span>
+            </div>
+            <div class="flex items-center p-1 bg-slate-950 rounded-2xl border border-slate-800/80">
+                <button type="button" @click="setTimeFilter('all')"
+                    :class="timeFilter === 'all' 
+                        ? 'bg-slate-800 text-white font-bold shadow-sm' 
+                        : 'text-slate-400 hover:text-slate-200'"
+                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer">
+                    Semua
+                </button>
+                <button type="button" @click="setTimeFilter('7d')"
+                    :class="timeFilter === '7d' 
+                        ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm' 
+                        : 'text-slate-400 hover:text-slate-200 border border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                    <span>⚡ 7 Hari</span>
+                </button>
+                <button type="button" @click="setTimeFilter('30d')"
+                    :class="timeFilter === '30d' 
+                        ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40 shadow-sm' 
+                        : 'text-slate-400 hover:text-slate-200 border border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                    <span>📅 30 Hari</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- STATUS INFO BARIS BAWAH -->
+    <div class="pt-3 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+        <div>
+            Kategori saat ini: <strong class="text-white" x-text="activeModuleName"></strong>
+        </div>
+        <div>
+            Menampilkan <span class="font-bold text-white font-mono" x-text="filteredItems.length"></span> dari <span class="font-mono text-cyan-300 font-bold" x-text="currentList.length"></span> data terhapus
         </div>
     </div>
 </div>
