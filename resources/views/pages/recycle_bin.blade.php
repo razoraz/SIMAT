@@ -121,7 +121,7 @@
                                     x-text="getModuleCount('mutasi')">0</span>
                             </div>
                             <span class="text-xs font-bold text-white block truncate group-hover:text-amber-300 transition-colors">Mutasi Aset</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('mutasi') > 0 ? getModuleCount('mutasi') + ' data terhapus' : 'Tidak ada data'"></span>
+                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('mutasi') > 0 ? (mutasis.length + ' Internal · ' + mutasiEksternals.length + ' Eksternal') : 'Tidak ada data'"></span>
                         </div>
 
                         <!-- 5. Hibah Aset (Masuk & Keluar) -->
@@ -197,98 +197,225 @@
         </div>
 
         <!-- ========================================================================= -->
-        <!-- TAB 1: MUTASI ASET TABLE -->
+        <!-- TAB 1: MUTASI ASET TABLE (INTERNAL & EKSTERNAL) -->
         <!-- ========================================================================= -->
         <template x-if="activeModule === 'mutasi'">
             <div class="bg-slate-900/90 border border-slate-800 rounded-3xl shadow-xl p-6">
-                <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
-                                <tr>
-                                    <th class="px-4 py-3.5 w-10 text-center">
-                                        <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected"
-                                            class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
-                                    </th>
-                                    <th class="px-4 py-3.5">Nomor BAMB</th>
-                                    <th class="px-4 py-3.5">Nama Aset / Barang</th>
-                                    <th class="px-4 py-3.5">Ruangan Asal & PJ</th>
-                                    <th class="px-4 py-3.5">Ruangan Tujuan & PJ</th>
-                                    <th class="px-4 py-3.5">Status Terakhir</th>
-                                    <th class="px-4 py-3.5">Dihapus Oleh</th>
-                                    <th class="px-4 py-3.5">Waktu Penghapusan</th>
-                                    <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
-                                <template x-for="(item, idx) in filteredItems" :key="item.id">
-                                    <tr class="hover:bg-slate-800/30 transition-colors">
-                                        <td class="px-4 py-4 text-center">
-                                            <input type="checkbox" :value="item.id" x-model="selectedIds"
-                                                class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="font-mono font-bold text-cyan-300 block" x-text="item.kode"></span>
-                                            <span class="text-[10px] text-slate-500" x-text="item.jenis"></span>
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="font-bold text-white block" x-text="item.nama"></span>
-                                            <span class="text-[10px] font-mono text-slate-400" x-text="'NIBAR: ' + item.kode_barang"></span>
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="text-slate-200 block" x-text="item.asal"></span>
-                                            <span class="text-[10px] text-slate-500" x-text="'PJ: ' + (item.pemohon || '-')"></span>
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="text-indigo-300 font-semibold block" x-text="item.tujuan"></span>
-                                            <span class="text-[10px] text-slate-500" x-text="'PJ: ' + (item.penerima_pj || '-')"></span>
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="item.status_terakhir"></span>
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="font-bold text-red-300 block" x-text="item.deleted_by"></span>
-                                            <span class="text-[10px] text-slate-500">Label: 1 (Soft Delete)</span>
-                                        </td>
-                                        <td class="px-4 py-4">
-                                            <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
-                                            <span class="text-[10px] text-slate-500" x-text="item.deleted_at_relative"></span>
-                                        </td>
-                                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
-                                            style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
-                                            <div class="flex items-center justify-center gap-1.5">
-                                                <button type="button" @click="openDetail(item)" title="Lihat Detail Transaksi"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                    <span>👁️ Detail</span>
-                                                </button>
-                                                <button type="button" @click="restoreSingle('mutasi', item)" title="Pulihkan Data ke Status Aktif (Label 0)"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                                    <span>Pulihkan</span>
-                                                </button>
-                                                <button type="button" @click="forceDeleteSingle('mutasi', item)" title="Hapus Permanen dari Database"
-                                                    class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
-                                                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                                <template x-if="filteredItems.length === 0">
-                                    <tr>
-                                        <td colspan="9" class="py-14 text-center">
-                                            <div class="flex flex-col items-center justify-center space-y-2">
-                                                <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl text-emerald-400 shadow-inner">✨</div>
-                                                <p class="text-sm font-bold text-slate-200">Tong Sampah Mutasi Kosong</p>
-                                                <p class="text-xs text-slate-500 max-w-sm">Tidak ada transaksi mutasi aset yang berstatus terhapus dalam sistem.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                <!-- SUB-TAB SWITCHER MUTASI (Internal Antar-Ruangan vs Eksternal Antar-OPD) -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-5 mb-5 border-b border-slate-800/80 gap-3">
+                    <div class="flex items-center space-x-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
+                        <button type="button" @click="changeMutasiSubTab('internal')"
+                            :style="mutasiSubTab === 'internal' ? 'border-color: #f59e0b; box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);' : ''"
+                            :class="mutasiSubTab === 'internal' 
+                                ? 'bg-amber-500/15 border border-amber-500 text-amber-300 shadow-lg' 
+                                : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
+                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer">
+                            <span>🏢 Mutasi Internal (Antar-Ruangan)</span>
+                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors"
+                                :class="mutasis.length > 0 ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                                x-text="mutasis.length">0</span>
+                        </button>
+
+                        <button type="button" @click="changeMutasiSubTab('eksternal')"
+                            :style="mutasiSubTab === 'eksternal' ? 'border-color: #06b6d4; box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);' : ''"
+                            :class="mutasiSubTab === 'eksternal' 
+                                ? 'bg-cyan-500/15 border border-cyan-500 text-cyan-300 shadow-lg' 
+                                : 'border border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'"
+                            class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer">
+                            <span>🌐 Mutasi Eksternal (Transfer Antar-OPD)</span>
+                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black transition-colors"
+                                :class="mutasiEksternals.length > 0 ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                                x-text="mutasiEksternals.length">0</span>
+                        </button>
+                    </div>
+
+                    <div class="text-xs text-slate-400 flex items-center space-x-2">
+                        <span class="inline-block w-2 h-2 rounded-full" :class="mutasiSubTab === 'internal' ? 'bg-amber-400 animate-pulse' : 'bg-cyan-400 animate-pulse'"></span>
+                        <span class="text-[11px] font-medium" x-text="mutasiSubTab === 'internal' ? 'Ruang Lingkup: Arsip Mutasi Antar-Ruangan Internal RSUD' : 'Ruang Lingkup: Arsip Pelimpahan / Mutasi Aset Antar-OPD Pemkab'"></span>
                     </div>
                 </div>
+
+                <!-- SUB-KONTEN 1: MUTASI INTERNAL TABLE -->
+                <template x-if="mutasiSubTab === 'internal'">
+                    <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
+                                    <tr>
+                                        <th class="px-4 py-3.5 w-10 text-center">
+                                            <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected"
+                                                class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
+                                        </th>
+                                        <th class="px-4 py-3.5">Nomor BAMB</th>
+                                        <th class="px-4 py-3.5">Nama Aset / Barang</th>
+                                        <th class="px-4 py-3.5">Ruangan Asal & PJ</th>
+                                        <th class="px-4 py-3.5">Ruangan Tujuan & PJ</th>
+                                        <th class="px-4 py-3.5">Status Terakhir</th>
+                                        <th class="px-4 py-3.5">Dihapus Oleh</th>
+                                        <th class="px-4 py-3.5">Waktu Penghapusan</th>
+                                        <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+                                    <template x-for="(item, idx) in filteredItems" :key="item.id">
+                                        <tr class="hover:bg-slate-800/30 transition-colors">
+                                            <td class="px-4 py-4 text-center">
+                                                <input type="checkbox" :value="item.id" x-model="selectedIds"
+                                                    class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-mono font-bold text-amber-300 block" x-text="item.kode"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="item.jenis"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-bold text-white block" x-text="item.nama"></span>
+                                                <span class="text-[10px] font-mono text-slate-400" x-text="'NIBAR: ' + item.kode_barang"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="text-slate-200 block" x-text="item.asal"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="'PJ: ' + (item.pemohon || '-')"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="text-indigo-300 font-semibold block" x-text="item.tujuan"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="'PJ: ' + (item.penerima_pj || '-')"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="item.status_terakhir"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-bold text-red-300 block" x-text="item.deleted_by"></span>
+                                                <span class="text-[10px] text-slate-500">Label: 1 (Soft Delete)</span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="item.deleted_at_relative"></span>
+                                            </td>
+                                            <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
+                                                style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <button type="button" @click="openDetail(item)" title="Lihat Detail Transaksi"
+                                                        class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                        <span>👁️ Detail</span>
+                                                    </button>
+                                                    <button type="button" @click="restoreSingle('mutasi', item)" title="Pulihkan Data ke Status Aktif (Label 0)"
+                                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                        <span>Pulihkan</span>
+                                                    </button>
+                                                    <button type="button" @click="forceDeleteSingle('mutasi', item)" title="Hapus Permanen dari Database"
+                                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="filteredItems.length === 0">
+                                        <tr>
+                                            <td colspan="9" class="py-14 text-center">
+                                                <div class="flex flex-col items-center justify-center space-y-2">
+                                                    <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl text-amber-400 shadow-inner">🏢</div>
+                                                    <p class="text-sm font-bold text-slate-200">Tong Sampah Mutasi Internal Kosong</p>
+                                                    <p class="text-xs text-slate-500 max-w-sm">Tidak ada transaksi mutasi internal antar-ruangan yang berstatus terhapus.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- SUB-KONTEN 2: MUTASI EKSTERNAL TABLE -->
+                <template x-if="mutasiSubTab === 'eksternal'">
+                    <div class="rounded-2xl border border-slate-800/80 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-950/80 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
+                                    <tr>
+                                        <th class="px-4 py-3.5 w-10 text-center">
+                                            <input type="checkbox" @change="toggleSelectAll($event)" :checked="isAllSelected"
+                                                class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
+                                        </th>
+                                        <th class="px-4 py-3.5">Nomor BAMB / BAST</th>
+                                        <th class="px-4 py-3.5">Nama Barang / Aset</th>
+                                        <th class="px-4 py-3.5">Nilai Perolehan</th>
+                                        <th class="px-4 py-3.5">OPD Asal & Penyerah</th>
+                                        <th class="px-4 py-3.5">Ruangan RSUD & Penerima</th>
+                                        <th class="px-4 py-3.5">Dihapus Oleh</th>
+                                        <th class="px-4 py-3.5">Waktu Penghapusan</th>
+                                        <th class="px-4 py-3.5 text-center shrink-0 min-w-[220px] w-[220px]" style="position: sticky; right: 0; z-index: 10; background-color: #020617;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60 bg-slate-900/40">
+                                    <template x-for="(item, idx) in filteredItems" :key="item.id">
+                                        <tr class="hover:bg-slate-800/30 transition-colors">
+                                            <td class="px-4 py-4 text-center">
+                                                <input type="checkbox" :value="item.id" x-model="selectedIds"
+                                                    class="rounded border-slate-700 bg-slate-900 text-red-600 focus:ring-red-500 cursor-pointer">
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-mono font-bold text-cyan-300 block" x-text="item.kode"></span>
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-cyan-950/70 border border-cyan-800/50 text-cyan-300 inline-block mt-0.5" x-text="item.jenis"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-bold text-white block" x-text="item.nama"></span>
+                                                <span class="text-[10px] font-mono text-slate-400" x-text="'Kode 108: ' + item.kode_barang"></span>
+                                            </td>
+                                            <td class="px-4 py-4 font-mono font-bold text-emerald-400" x-text="item.nilai_perolehan_formatted"></td>
+                                            <td class="px-4 py-4">
+                                                <span class="text-slate-200 block" x-text="item.asal"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="'PJ: ' + (item.pemohon || '-')"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="text-cyan-300 font-semibold block" x-text="item.tujuan"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="'PJ: ' + (item.penerima_pj || '-')"></span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-bold text-red-300 block" x-text="item.deleted_by"></span>
+                                                <span class="text-[10px] text-slate-500">Label: 1 (Soft Delete)</span>
+                                            </td>
+                                            <td class="px-4 py-4">
+                                                <span class="font-mono text-slate-200 block text-[11px]" x-text="item.deleted_at"></span>
+                                                <span class="text-[10px] text-slate-500" x-text="item.deleted_at_relative"></span>
+                                            </td>
+                                            <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[220px] w-[220px]"
+                                                style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <button type="button" @click="openDetail(item)" title="Lihat Detail Mutasi Eksternal"
+                                                        class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                        <span>👁️ Detail</span>
+                                                    </button>
+                                                    <button type="button" @click="restoreSingle('mutasi_eksternal', item)" title="Pulihkan Data ke Status Aktif (Label 0)"
+                                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                        <span>Pulihkan</span>
+                                                    </button>
+                                                    <button type="button" @click="forceDeleteSingle('mutasi_eksternal', item)" title="Hapus Permanen dari Database"
+                                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all inline-flex items-center space-x-1 shadow-sm active:scale-95 cursor-pointer">
+                                                        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="filteredItems.length === 0">
+                                        <tr>
+                                            <td colspan="9" class="py-14 text-center">
+                                                <div class="flex flex-col items-center justify-center space-y-2">
+                                                    <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl text-cyan-400 shadow-inner">🌐</div>
+                                                    <p class="text-sm font-bold text-slate-200">Tong Sampah Mutasi Eksternal Kosong</p>
+                                                    <p class="text-xs text-slate-500 max-w-sm">Tidak ada transaksi mutasi eksternal antar-OPD yang berstatus terhapus.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </template>
             </div>
         </template>
 
@@ -958,29 +1085,66 @@
                             </div>
                         </div>
 
-                        <!-- 1. DETAIL KHUSUS MUTASI -->
+                        <!-- 1. DETAIL KHUSUS MUTASI (INTERNAL & EKSTERNAL) -->
                         <template x-if="activeModule === 'mutasi'">
                             <div class="space-y-3">
-                                <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                                    <div>
-                                        <span class="text-slate-500 text-[10px] uppercase font-bold block">Nomor BAMB:</span>
-                                        <span class="font-mono font-bold text-cyan-300 text-sm" x-text="selectedItem.kode"></span>
+                                <!-- Mode 1: Eksternal -->
+                                <template x-if="selectedItem && (selectedItem.is_eksternal || mutasiSubTab === 'eksternal')">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                                            <div>
+                                                <span class="text-slate-500 text-[10px] uppercase font-bold block">Nomor BAST Eksternal:</span>
+                                                <span class="font-mono font-bold text-cyan-300 text-sm" x-text="selectedItem.kode"></span>
+                                                <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-cyan-950/70 border border-cyan-800/50 text-cyan-300 inline-block mt-1" x-text="selectedItem.jenis"></span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-slate-500 text-[10px] uppercase font-bold block">Nilai Perolehan:</span>
+                                                <span class="font-mono font-bold text-emerald-300 text-sm" x-text="selectedItem.nilai_perolehan_formatted || '-'"></span>
+                                                <span class="text-[10.5px] text-slate-400 block" x-text="(selectedItem.item_count || 1) + ' Unit Barang'"></span>
+                                            </div>
+                                            <div class="mt-2">
+                                                <span class="text-slate-500 text-[10px] block">Instansi / OPD Asal:</span>
+                                                <span class="font-semibold text-slate-200" x-text="selectedItem.asal"></span>
+                                                <span class="text-slate-500 text-[10px] block" x-text="'PJ: ' + (selectedItem.pemohon || '-')"></span>
+                                            </div>
+                                            <div class="mt-2 text-right">
+                                                <span class="text-slate-500 text-[10px] block">Ruangan Tujuan di RSUD:</span>
+                                                <span class="font-semibold text-cyan-300" x-text="selectedItem.tujuan"></span>
+                                                <span class="text-slate-500 text-[10px] block" x-text="'PJ: ' + (selectedItem.penerima_pj || '-')"></span>
+                                            </div>
+                                            <div class="col-span-2 pt-2 border-t border-slate-800/80">
+                                                <span class="text-slate-500 text-[10px] block">Alasan / Catatan Pelimpahan:</span>
+                                                <span class="text-xs text-slate-300 italic" x-text="selectedItem.alasan_mutasi || '-'"></span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="text-slate-500 text-[10px] uppercase font-bold block">Jenis Mutasi:</span>
-                                        <span class="font-bold text-white" x-text="selectedItem.jenis"></span>
+                                </template>
+
+                                <!-- Mode 2: Internal -->
+                                <template x-if="selectedItem && !selectedItem.is_eksternal && mutasiSubTab !== 'eksternal'">
+                                    <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                                        <div>
+                                            <span class="text-slate-500 text-[10px] uppercase font-bold block">Nomor BAMB:</span>
+                                            <span class="font-mono font-bold text-amber-300 text-sm" x-text="selectedItem.kode"></span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-slate-500 text-[10px] uppercase font-bold block">Jenis Mutasi:</span>
+                                            <span class="font-bold text-white" x-text="selectedItem.jenis"></span>
+                                        </div>
+                                        <div class="mt-2">
+                                            <span class="text-slate-500 text-[10px] block">Ruangan Asal:</span>
+                                            <span class="font-semibold text-slate-200" x-text="selectedItem.asal"></span>
+                                            <span class="text-slate-500 text-[10px] block" x-text="'PJ: ' + (selectedItem.pemohon || '-')"></span>
+                                        </div>
+                                        <div class="mt-2 text-right">
+                                            <span class="text-slate-500 text-[10px] block">Ruangan Tujuan:</span>
+                                            <span class="font-semibold text-indigo-300" x-text="selectedItem.tujuan"></span>
+                                            <span class="text-slate-500 text-[10px] block" x-text="'PJ: ' + (selectedItem.penerima_pj || '-')"></span>
+                                        </div>
                                     </div>
-                                    <div class="mt-2">
-                                        <span class="text-slate-500 text-[10px] block">Ruangan Asal:</span>
-                                        <span class="font-semibold text-slate-200" x-text="selectedItem.asal"></span>
-                                        <span class="text-slate-500 text-[10px] block" x-text="'PJ: ' + (selectedItem.pemohon || '-')"></span>
-                                    </div>
-                                    <div class="mt-2 text-right">
-                                        <span class="text-slate-500 text-[10px] block">Ruangan Tujuan:</span>
-                                        <span class="font-semibold text-indigo-300" x-text="selectedItem.tujuan"></span>
-                                        <span class="text-slate-500 text-[10px] block" x-text="'PJ: ' + (selectedItem.penerima_pj || '-')"></span>
-                                    </div>
-                                </div>
+                                </template>
+
+                                <!-- Tabel Rincian Barang -->
                                 <div class="space-y-1.5">
                                     <span class="text-slate-400 text-[10.5px] font-bold uppercase tracking-wider block">Rincian Barang Terkait:</span>
                                     <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-inner max-h-44 overflow-y-auto">
@@ -1274,7 +1438,9 @@
         function recycleBinApp() {
             return {
                 activeModule: '{{ $activeTab }}',
+                mutasiSubTab: 'internal',
                 mutasis: {{ Js::from($deletedMutasis) }},
+                mutasiEksternals: {{ Js::from($deletedMutasiEksternals ?? []) }},
                 astaps: {{ Js::from($deletedAstaps) }},
                 nibars: {{ Js::from($deletedNibars) }},
                 distribusis: {{ Js::from($deletedDistribusis) }},
@@ -1295,6 +1461,12 @@
                     this.searchQuery = '';
                 },
 
+                changeMutasiSubTab(subTab) {
+                    this.mutasiSubTab = subTab;
+                    this.selectedIds = [];
+                    this.searchQuery = '';
+                },
+
                 changeAstapSubTab(subTab) {
                     this.astapSubTab = subTab;
                     this.selectedIds = [];
@@ -1302,6 +1474,9 @@
                 },
 
                 get currentTargetModule() {
+                    if (this.activeModule === 'mutasi') {
+                        return this.mutasiSubTab === 'eksternal' ? 'mutasi_eksternal' : 'mutasi';
+                    }
                     if (this.activeModule === 'astap' && this.astapSubTab === 'nibar') {
                         return 'nibar';
                     }
@@ -1309,11 +1484,11 @@
                 },
 
                 get totalCount() {
-                    return this.mutasis.length + this.astaps.length + this.nibars.length + this.distribusis.length + this.units.length + this.users.length + this.hibahs.length;
+                    return this.mutasis.length + this.mutasiEksternals.length + this.astaps.length + this.nibars.length + this.distribusis.length + this.units.length + this.users.length + this.hibahs.length;
                 },
 
                 getModuleCount(mod) {
-                    if (mod === 'mutasi') return this.mutasis.length;
+                    if (mod === 'mutasi') return this.mutasis.length + this.mutasiEksternals.length;
                     if (mod === 'astap') return this.astaps.length + this.nibars.length;
                     if (mod === 'distribusi') return this.distribusis.length;
                     if (mod === 'unit') return this.units.length;
@@ -1323,11 +1498,13 @@
                 },
 
                 get activeModuleName() {
+                    if (this.activeModule === 'mutasi') {
+                        return this.mutasiSubTab === 'eksternal' ? 'Mutasi Eksternal (Antar-OPD)' : 'Mutasi Internal (Antar-Ruangan)';
+                    }
                     if (this.activeModule === 'astap') {
                         return this.astapSubTab === 'nibar' ? 'Register NIBAR' : 'Paket Master ASTAP';
                     }
                     const map = {
-                        mutasi: 'Mutasi Aset',
                         distribusi: 'Distribusi Aset',
                         unit: 'Unit & Paviliun',
                         users: 'Akun Pengguna',
@@ -1337,7 +1514,11 @@
                 },
 
                 get searchPlaceholder() {
-                    if (this.activeModule === 'mutasi') return 'Cari BAMB / nama aset / NIBAR / ruangan asal / tujuan / penghapus...';
+                    if (this.activeModule === 'mutasi') {
+                        return this.mutasiSubTab === 'eksternal' 
+                            ? 'Cari BAST / OPD asal / ruangan tujuan / nama aset / penghapus...' 
+                            : 'Cari BAMB / nama aset / NIBAR / ruangan asal / tujuan / penghapus...';
+                    }
                     if (this.activeModule === 'astap') {
                         if (this.astapSubTab === 'nibar') {
                             return 'Cari NIBAR (45-digit) / nama aset / kode 108 / ruangan / kondisi / penghapus...';
@@ -1352,7 +1533,9 @@
                 },
 
                 get currentList() {
-                    if (this.activeModule === 'mutasi') return this.mutasis;
+                    if (this.activeModule === 'mutasi') {
+                        return this.mutasiSubTab === 'eksternal' ? this.mutasiEksternals : this.mutasis;
+                    }
                     if (this.activeModule === 'astap') {
                         return this.astapSubTab === 'nibar' ? this.nibars : this.astaps;
                     }
@@ -1397,8 +1580,20 @@
                     }
                     const idSet = new Set(ids.map(id => Number(id)));
 
-                    if (targetMod === 'mutasi') {
+                    if (targetMod === 'mutasi' || targetMod === 'mutasi_internal') {
                         this.mutasis = this.mutasis.filter(i => !idSet.has(Number(i.id)));
+                    } else if (targetMod === 'mutasi_eksternal') {
+                        this.mutasiEksternals = this.mutasiEksternals.filter(i => !idSet.has(Number(i.id)));
+                        // Jika ada astap_id terkait yang dipulihkan, singkirkan juga dari astaps & nibars
+                        const astapIds = ids.map(id => {
+                            const found = this.mutasiEksternals.find(m => Number(m.id) === Number(id));
+                            return found ? Number(found.astap_id) : null;
+                        }).filter(Boolean);
+                        if (astapIds.length > 0) {
+                            const astapIdSet = new Set(astapIds);
+                            this.astaps = this.astaps.filter(a => !astapIdSet.has(Number(a.id)));
+                            this.nibars = this.nibars.filter(n => !astapIdSet.has(Number(n.astap_id)));
+                        }
                     } else if (targetMod === 'nibar') {
                         this.nibars = this.nibars.filter(i => !idSet.has(Number(i.id)));
                         if (extra && extra.astap_id && extra.astap_restored) {
@@ -1411,6 +1606,7 @@
                     } else if (targetMod === 'astap') {
                         this.astaps = this.astaps.filter(i => !idSet.has(Number(i.id)));
                         this.nibars = this.nibars.filter(n => !idSet.has(Number(n.astap_id)));
+                        this.mutasiEksternals = this.mutasiEksternals.filter(m => !idSet.has(Number(m.astap_id)));
                     } else if (targetMod === 'distribusi') {
                         this.distribusis = this.distribusis.filter(i => !idSet.has(Number(i.id)));
                     } else if (targetMod === 'unit') {

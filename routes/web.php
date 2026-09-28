@@ -4356,6 +4356,9 @@ Route::middleware('auth')->group(function () {
                     'deleted_by_id' => $user?->id,
                     'deleted_at'    => now(),
                 ]);
+                if ($astap->mutasiEksternal) {
+                    $astap->mutasiEksternal->softDelete();
+                }
             });
 
             // Kirim Notifikasi Sistem saat Terjadi Penghapusan ASTAP
@@ -4385,6 +4388,9 @@ Route::middleware('auth')->group(function () {
                     'deleted_by_id' => null,
                     'deleted_at'    => null,
                 ]);
+                if ($astap->mutasiEksternal) {
+                    $astap->mutasiEksternal->restoreData();
+                }
                 $astap->jumlah_volume = max(1, $astap->registers()->where('is_deleted', 0)->count());
                 $astap->save();
             });
@@ -4508,6 +4514,9 @@ Route::middleware('auth')->group(function () {
                     // Jika register terakhir habis → soft delete master ASTAP sekalian
                     if ($newCount === 0) {
                         $astap->softDelete('Semua unit register NIBAR telah dihapus — master ASTAP otomatis dipindahkan ke Recycle Bin.');
+                        if ($astap->mutasiEksternal) {
+                            $astap->mutasiEksternal->softDelete();
+                        }
                         $astapAutoDeleted = true;
                         $spec = $astap->spesifikasi_json ?? [];
                     } else {
