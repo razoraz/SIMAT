@@ -10,10 +10,11 @@
             <select name="skema" onchange="this.form.submit()"
                 class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                 <option value="all" {{ ($filterSkema ?? 'all') === 'all' ? 'selected' : '' }}>-- Semua Skema --</option>
+                <option value="Sewa" {{ ($filterSkema ?? '') === 'Sewa' ? 'selected' : '' }}>Sewa (1.5.2.01.01.01)</option>
+                <option value="KSP" {{ ($filterSkema ?? '') === 'KSP' ? 'selected' : '' }}>KSP - Kerja Sama Pemanfaatan (1.5.2.01.01.02)</option>
+                <option value="BGS/BSG" {{ ($filterSkema ?? '') === 'BGS/BSG' || ($filterSkema ?? '') === 'BSG' ? 'selected' : '' }}>BGS / BSG - Bangun Guna Serah / Serah Guna (1.5.2.01.01.03)</option>
+                <option value="KSPI" {{ ($filterSkema ?? '') === 'KSPI' ? 'selected' : '' }}>KSPI - Penyediaan Infrastruktur (1.5.2.01.01.04)</option>
                 <option value="KSO" {{ ($filterSkema ?? '') === 'KSO' ? 'selected' : '' }}>KSO (Kerja Sama Operasi)</option>
-                <option value="KSP" {{ ($filterSkema ?? '') === 'KSP' ? 'selected' : '' }}>KSP (Kerja Sama Pemanfaatan)</option>
-                <option value="BSG" {{ ($filterSkema ?? '') === 'BSG' ? 'selected' : '' }}>BSG (Bangun Serah Guna)</option>
-                <option value="Sewa" {{ ($filterSkema ?? '') === 'Sewa' ? 'selected' : '' }}>Sewa Fasilitas / Alkes</option>
             </select>
         </div>
 

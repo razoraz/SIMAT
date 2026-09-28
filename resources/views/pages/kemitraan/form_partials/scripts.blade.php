@@ -68,7 +68,7 @@
                 mitra_nama: '',
                 nomor_pks: '',
                 tanggal_pks: '{{ date('d/m/Y') }}',
-                skema_kemitraan: 'KSO',
+                skema_kemitraan: 'Sewa',
                 tanggal_mulai: '',
                 tanggal_selesai: '',
                 tahun_perolehan: {{ date('Y') }},
@@ -112,9 +112,14 @@
             init() {
                 this.prepareMaster108();
                 this.syncTahunTriwulanFromPks();
+                this.syncCascadingToActiveSkema();
 
                 this.$watch('formData.tanggal_pks', (newVal) => {
                     this.syncTahunTriwulanFromPks(newVal);
+                });
+
+                this.$watch('formData.skema_kemitraan', (newVal) => {
+                    this.syncCascadingToActiveSkema();
                 });
             },
 
@@ -179,43 +184,197 @@
             },
 
             prepareMaster108() {
+                const raw = this.master108Raw || [];
                 const parsed = [];
                 const flat = [];
 
-                Object.entries(this.master108Raw || {}).forEach(([jenisKode, jObj]) => {
-                    if (!jObj || typeof jObj !== 'object') return;
-                    const subList = [];
-                    Object.entries(jObj).forEach(([subKode, sObj]) => {
-                        if (!sObj || !Array.isArray(sObj)) return;
-                        const ssList = [];
-                        sObj.forEach(item => {
-                            const entry = {
-                                id: item.id,
-                                kode: item.kode,
-                                nama: item.nama
-                            };
-                            ssList.push(entry);
-                            flat.push({
-                                ...entry,
-                                jenisKode: jenisKode,
-                                subKode: subKode
+                if (Array.isArray(raw)) {
+                    raw.forEach(j => {
+                        if (!j || !j.kode) return;
+                        const subList = [];
+                        const subs = j.subRincian || j.subs || [];
+                        subs.forEach(s => {
+                            if (!s || !s.kode) return;
+                            const ssList = [];
+                            const subSubs = s.subSubRincian || s.subSubs || [];
+                            subSubs.forEach(ss => {
+                                if (!ss || !ss.id) return;
+                                const entry = {
+                                    id: ss.id,
+                                    kode: ss.kode,
+                                    nama: ss.nama
+                                };
+                                ssList.push(entry);
+                                flat.push({
+                                    ...entry,
+                                    jenisKode: j.kode,
+                                    subKode: s.kode
+                                });
+                            });
+                            subList.push({
+                                kode: s.kode,
+                                nama: s.nama,
+                                subSubs: ssList
                             });
                         });
-                        subList.push({
-                            kode: subKode,
-                            nama: sObj[0]?.nama_sub || subKode,
-                            subSubs: ssList
+                        parsed.push({
+                            kode: j.kode,
+                            nama: j.nama,
+                            subs: subList
                         });
                     });
-                    parsed.push({
-                        kode: jenisKode,
-                        nama: jObj[Object.keys(jObj)[0]]?.[0]?.nama_jenis || ('Kelompok ' + jenisKode),
-                        subs: subList
+                } else if (typeof raw === 'object') {
+                    Object.entries(raw).forEach(([jenisKode, jObj]) => {
+                        if (!jObj || typeof jObj !== 'object') return;
+                        const subList = [];
+                        Object.entries(jObj).forEach(([subKode, sObj]) => {
+                            if (!sObj) return;
+                            const ssList = [];
+                            const arr = Array.isArray(sObj) ? sObj : (sObj.subSubRincian || sObj.subSubs || []);
+                            arr.forEach(item => {
+                                if (!item || !item.id) return;
+                                const entry = {
+                                    id: item.id,
+                                    kode: item.kode,
+                                    nama: item.nama
+                                };
+                                ssList.push(entry);
+                                flat.push({
+                                    ...entry,
+                                    jenisKode: jenisKode,
+                                    subKode: subKode
+                                });
+                            });
+                            subList.push({
+                                kode: subKode,
+                                nama: arr[0]?.nama_sub || subKode,
+                                subSubs: ssList
+                            });
+                        });
+                        parsed.push({
+                            kode: jenisKode,
+                            nama: ('Kelompok ' + jenisKode),
+                            subs: subList
+                        });
                     });
-                });
+                }
 
                 this.master108 = parsed;
                 this.flat108 = flat;
+            },
+
+            // Getter: Kode sub-rincian akun 1.5.2 berdasarkan skema kemitraan aktif di Langkah 1
+            get activeSkemaKode() {
+                const skema = (this.formData.skema_kemitraan || 'Sewa').toUpperCase();
+                if (skema.includes('KSP')) return '1.5.2.01.01.02';
+                if (skema.includes('BGS') || skema.includes('BSG')) return '1.5.2.01.01.03';
+                if (skema.includes('KSPI') || skema.includes('KSO')) return '1.5.2.01.01.04';
+                return '1.5.2.01.01.01'; // Default Sewa
+            },
+
+            // Getter: Label nama skema aktif
+            get activeSkemaLabel() {
+                const code = this.activeSkemaKode;
+                if (code === '1.5.2.01.01.02') return 'KSP (Kerja Sama Pemanfaatan)';
+                if (code === '1.5.2.01.01.03') return 'BGS / BSG (Bangun Guna / Serah Guna)';
+                if (code === '1.5.2.01.01.04') return 'KSPI (Penyediaan Infrastruktur)';
+                return 'Sewa (Sewa Barang / Alat)';
+            },
+
+            // Getter: Daftar 5 Sub-Sub Rincian Objek Permendagri 108 sesuai skema aktif
+            get currentSubSubRecommendations() {
+                const prefix = this.activeSkemaKode;
+                let items = this.flat108.filter(it => it.kode && it.kode.startsWith(prefix));
+                
+                // Fallback otomatis jika data master flat108 belum termuat
+                if (!items || items.length === 0) {
+                    const fallbackData = {
+                        '1.5.2.01.01.01': [
+                            { id: 14972, kode: '1.5.2.01.01.01.001', nama: 'Sewa Tanah' },
+                            { id: 14973, kode: '1.5.2.01.01.01.002', nama: 'Sewa Peralatan dan Mesin' },
+                            { id: 14974, kode: '1.5.2.01.01.01.003', nama: 'Sewa Gedung dan Bangunan' },
+                            { id: 14975, kode: '1.5.2.01.01.01.004', nama: 'Sewa Jalam, Irigasi dan Jaringan' },
+                            { id: 14976, kode: '1.5.2.01.01.01.005', nama: 'Sewa Aset Tetap lainnya' }
+                        ],
+                        '1.5.2.01.01.02': [
+                            { id: 14977, kode: '1.5.2.01.01.02.001', nama: 'Kerja Sama Pemanfaatan Tanah' },
+                            { id: 14978, kode: '1.5.2.01.01.02.002', nama: 'Kerja Sama Pemanfaatan Peralatan dan Mesin' },
+                            { id: 14979, kode: '1.5.2.01.01.02.003', nama: 'Kerja Sama Pemanfaatan Gedung dan Bangunan' },
+                            { id: 14980, kode: '1.5.2.01.01.02.004', nama: 'Kerja Sama Pemanfaatan Jalan, Irigasi dan Jaringan' },
+                            { id: 14981, kode: '1.5.2.01.01.02.005', nama: 'Kerja Sama Pemanfaatan Aset Tetap Lainnya' }
+                        ],
+                        '1.5.2.01.01.03': [
+                            { id: 14982, kode: '1.5.2.01.01.03.001', nama: 'Bangun Guna Serah/Bangun Serah Guna (BGS/BSG) Tanah' },
+                            { id: 14983, kode: '1.5.2.01.01.03.002', nama: 'Bangun Serah Guna (BSG) Peralatan dan Mesin' },
+                            { id: 14984, kode: '1.5.2.01.01.03.003', nama: 'Bangun Serah Guna (BSG) Gedung dan Bangunan' },
+                            { id: 14985, kode: '1.5.2.01.01.03.004', nama: 'Bangun Serah Guna (BSG) Jalan, Irigasi dan Jaringan' },
+                            { id: 14986, kode: '1.5.2.01.01.03.005', nama: 'Bangun Serah Guna (BSG) Aset Tetap Lainnya' }
+                        ],
+                        '1.5.2.01.01.04': [
+                            { id: 14987, kode: '1.5.2.01.01.04.001', nama: 'Kerja Sama Penyediaan Infrastruktur Tanah' },
+                            { id: 14988, kode: '1.5.2.01.01.04.002', nama: 'Kerja Sama Penyediaan Infrastruktur Peralatan dan Mesin' },
+                            { id: 14989, kode: '1.5.2.01.01.04.003', nama: 'Kerja Sama Penyediaan Infrastruktur Bangunan dan Gedung' },
+                            { id: 14990, kode: '1.5.2.01.01.04.004', nama: 'Kerja Sama Penyediaan Infrastruktur Jalan, Irigasi dan Jaringan' },
+                            { id: 14991, kode: '1.5.2.01.01.04.005', nama: 'Kerja Sama Penyediaan Infrastruktur Aset Tetap Lainnya' }
+                        ]
+                    };
+                    items = (fallbackData[prefix] || []).map(f => ({
+                        ...f,
+                        jenisKode: '1.5.2',
+                        subKode: prefix
+                    }));
+                }
+
+                return items.sort((a, b) => a.kode.localeCompare(b.kode));
+            },
+
+            // Helper Icon per Kategori Objek
+            getSubSubIcon(kode) {
+                if (!kode) return '📦';
+                if (kode.endsWith('.001')) return '🏞️'; // Tanah
+                if (kode.endsWith('.002')) return '⚙️'; // Peralatan dan Mesin
+                if (kode.endsWith('.003')) return '🏢'; // Gedung dan Bangunan
+                if (kode.endsWith('.004')) return '🌐'; // Jalan, Irigasi dan Jaringan
+                if (kode.endsWith('.005')) return '📦'; // Aset Tetap Lainnya
+                return '📑';
+            },
+
+            // Helper Nama Pendek Objek
+            getSubSubShortLabel(kode, rawNama) {
+                if (!kode) return rawNama || 'Objek Aset';
+                if (kode.endsWith('.001')) return 'Tanah';
+                if (kode.endsWith('.002')) return 'Peralatan & Mesin';
+                if (kode.endsWith('.003')) return 'Gedung & Bangunan';
+                if (kode.endsWith('.004')) return 'Jalan, Irigasi & Jaringan';
+                if (kode.endsWith('.005')) return 'Aset Tetap Lainnya';
+                return rawNama;
+            },
+
+            // Ganti Skema Kemitraan dari Langkah 2
+            setSkemaFromStep2(skemaName) {
+                this.formData.skema_kemitraan = skemaName;
+                this.syncCascadingToActiveSkema();
+                this.showToast('Skema Diganti', `Menampilkan 5 sub-sub rincian untuk ${skemaName}`, 'info');
+            },
+
+            // Klik salah satu kartu Sub-Sub Rincian Objek
+            selectSubSubItem(item) {
+                this.selectFromSearch(item);
+            },
+
+            // Sinkronisasi dropdown cascading ke akun 1.5.2 dan sub-rincian skema aktif
+            syncCascadingToActiveSkema() {
+                const subKode = this.activeSkemaKode;
+                const jIdx = this.master108.findIndex(j => j.kode === '1.5.2');
+                if (jIdx !== -1) {
+                    this.selectedJenisIdx = jIdx;
+                    this.currentSubList = this.master108[jIdx].subs || [];
+                    const sIdx = this.currentSubList.findIndex(s => s.kode === subKode);
+                    if (sIdx !== -1) {
+                        this.selectedSubIdx = sIdx;
+                        this.currentSubSubList = this.currentSubList[sIdx].subSubs || [];
+                    }
+                }
             },
 
             // Live Search 108
@@ -238,22 +397,49 @@
                 }
                 this.search108 = '';
                 this.searchResults108 = [];
+
+                // Sinkronkan dropdown cascading
+                if (item.jenisKode && this.master108) {
+                    const jIdx = this.master108.findIndex(j => j.kode === item.jenisKode);
+                    if (jIdx !== -1) {
+                        this.selectedJenisIdx = jIdx;
+                        this.currentSubList = this.master108[jIdx].subs || [];
+                        if (item.subKode) {
+                            const sIdx = this.currentSubList.findIndex(s => s.kode === item.subKode);
+                            if (sIdx !== -1) {
+                                this.selectedSubIdx = sIdx;
+                                this.currentSubSubList = this.currentSubList[sIdx].subSubs || [];
+                            }
+                        }
+                    }
+                }
+
+                // Sinkronkan skema bentuk kemitraan di Langkah 1 sesuai kode akun 1.5.2
+                if (item.kode) {
+                    if (item.kode.startsWith('1.5.2.01.01.01')) {
+                        this.formData.skema_kemitraan = 'Sewa';
+                    } else if (item.kode.startsWith('1.5.2.01.01.02')) {
+                        this.formData.skema_kemitraan = 'KSP';
+                    } else if (item.kode.startsWith('1.5.2.01.01.03')) {
+                        this.formData.skema_kemitraan = 'BGS/BSG';
+                    } else if (item.kode.startsWith('1.5.2.01.01.04')) {
+                        this.formData.skema_kemitraan = 'KSPI';
+                    }
+                }
+
                 this.showToast('Klasifikasi Terpilih', `${item.kode} • ${item.nama}`, 'info');
             },
 
-            // Quick select shortcut Akun 1.5.2
-            quickSelectKemitraan(prefixKode) {
-                const found = this.flat108.find(it => it.kode.startsWith(prefixKode));
-                if (found) {
-                    this.selectFromSearch(found);
-                } else {
-                    // Fallback: cari yang ada kode 1.5.2 atau kata kemitraan
-                    const fallback = this.flat108.find(it => it.kode.startsWith('1.5.2') || it.nama.toLowerCase().includes('kemitraan'));
-                    if (fallback) {
-                        this.selectFromSearch(fallback);
-                    } else {
-                        this.showToast('Informasi', `Kode akun ${prefixKode} belum terdaftar di master jenis astap, silakan cari manual.`, 'warning');
-                    }
+            // Quick select shortcut Akun 1.5.2 (Sesuai Permendagri 108 Gambar 2 & 3)
+            quickSelectKemitraan(subKode) {
+                if (subKode === '1.5.2.01.01.01') {
+                    this.setSkemaFromStep2('Sewa');
+                } else if (subKode === '1.5.2.01.01.02') {
+                    this.setSkemaFromStep2('KSP');
+                } else if (subKode === '1.5.2.01.01.03') {
+                    this.setSkemaFromStep2('BGS/BSG');
+                } else if (subKode === '1.5.2.01.01.04') {
+                    this.setSkemaFromStep2('KSPI');
                 }
             },
 
@@ -302,12 +488,18 @@
                     }
                 }
                 this.currentStep = s;
+                if (s === 2) {
+                    this.syncCascadingToActiveSkema();
+                }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
             nextStep() {
                 if (this.validateStep(this.currentStep)) {
                     this.currentStep++;
+                    if (this.currentStep === 2) {
+                        this.syncCascadingToActiveSkema();
+                    }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             },

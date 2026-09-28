@@ -59,15 +59,15 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                 </svg>
 
-                <!-- Tombol Kosongkan Input -->
-                <template x-if="formData.mitra_nama">
-                    <button type="button" 
-                        @click="formData.mitra_nama = ''; isMitraDropdownOpen = true" 
-                        title="Kosongkan nama mitra"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition-colors">
-                        ✕
-                    </button>
-                </template>
+                <!-- Tombol Kosongkan Input (Diposisikan di kanan input dengan inline style pasti) -->
+                <button type="button" 
+                    x-show="formData.mitra_nama"
+                    @click="formData.mitra_nama = ''; isMitraDropdownOpen = true" 
+                    title="Kosongkan nama mitra"
+                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                    class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                    ✕
+                </button>
             </div>
 
             <!-- Floating Dropdown Saran / Filter Mitra (Muncul saat fokus/diketik) -->
@@ -159,35 +159,47 @@
             </div>
         </div>
 
-        <!-- Skema Bentuk Kemitraan (Radio Badges) -->
+        <!-- Skema Bentuk Kemitraan Sesuai Permendagri 108 Akun 1.5.2 (Gambar 2 & Gambar 3) -->
         <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Bentuk Skema Kemitraan Sesuai Permendagri 108 / SAP
+            <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                <span>Bentuk Skema Kemitraan Sesuai Permendagri 108 / SAP <span class="text-rose-400">*</span></span>
+                <span class="text-[10px] text-cyan-400/90 font-mono">Akun Neraca 1.5.2</span>
             </label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <button type="button" @click="formData.skema_kemitraan = 'KSO'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'KSO' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">KSO</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Kerja Sama Operasi</span>
-                </button>
-                <button type="button" @click="formData.skema_kemitraan = 'KSP'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'KSP' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">KSP</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Kerja Sama Pemanfaatan</span>
-                </button>
-                <button type="button" @click="formData.skema_kemitraan = 'BSG'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'BSG' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">BSG</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Bangun Serah Guna</span>
-                </button>
+                <!-- 1. Sewa (1.5.2.01.01.01) -->
                 <button type="button" @click="formData.skema_kemitraan = 'Sewa'"
                     class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'Sewa' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    :class="formData.skema_kemitraan === 'Sewa' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
                     <span class="block text-xs font-bold">Sewa</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Sewa Barang/Alat</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Sewa Barang / Alat</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.01</span>
+                </button>
+
+                <!-- 2. KSP (1.5.2.01.01.02) -->
+                <button type="button" @click="formData.skema_kemitraan = 'KSP'"
+                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+                    :class="formData.skema_kemitraan === 'KSP' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    <span class="block text-xs font-bold">KSP</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Kerja Sama Pemanfaatan</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.02</span>
+                </button>
+
+                <!-- 3. BGS / BSG (1.5.2.01.01.03) -->
+                <button type="button" @click="formData.skema_kemitraan = 'BGS/BSG'"
+                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+                    :class="(formData.skema_kemitraan === 'BGS/BSG' || formData.skema_kemitraan === 'BSG' || formData.skema_kemitraan === 'BGS') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    <span class="block text-xs font-bold">BGS / BSG</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Bangun Guna / Serah Guna</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.03</span>
+                </button>
+
+                <!-- 4. KSPI (1.5.2.01.01.04) -->
+                <button type="button" @click="formData.skema_kemitraan = 'KSPI'"
+                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+                    :class="(formData.skema_kemitraan === 'KSPI' || formData.skema_kemitraan === 'KSO') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    <span class="block text-xs font-bold">KSPI</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Penyediaan Infrastruktur</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.04</span>
                 </button>
             </div>
         </div>

@@ -16,128 +16,86 @@
         </p>
     </div>
 
-    <!-- Quick Action / Shortcut Akun 1.5.2 -->
-    <div class="p-4 sm:p-5 rounded-3xl bg-cyan-950/30 border border-cyan-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg font-bold shrink-0 border border-cyan-500/30">
-                ⚡
+    <!-- Quick Action / Shortcut Akun 1.5.2 (Rekomendasi Sub-Sub Rincian Kemitraan) -->
+    <div class="p-5 rounded-3xl bg-slate-900/80 border border-cyan-500/30 backdrop-blur-md shadow-xl space-y-4 relative overflow-hidden">
+        <!-- Subtle Glow Effect -->
+        <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+        <!-- Header Card: Info Skema Aktif -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400/20 to-cyan-600/10 text-cyan-400 flex items-center justify-center text-lg font-bold shrink-0 border border-cyan-500/30 shadow-inner">
+                    ⚡
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="text-xs font-extrabold text-white tracking-wide">Pilih Objek Akun 1.5.2 Kemitraan</h3>
+                        <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[10px] font-bold border border-cyan-500/20">Permendagri 108</span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-800 text-cyan-400 text-[10px] font-bold border border-slate-700 font-mono" x-text="activeSkemaKode"></span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                        Skema Aktif: <span class="font-bold text-cyan-300" x-text="activeSkemaLabel"></span> &mdash; Klik salah satu kartu objek di bawah:
+                    </p>
+                </div>
             </div>
-            <div>
-                <p class="text-xs font-extrabold text-white">Rekomendasi Akun Neraca 1.5.2 (Permendagri 108)</p>
-                <p class="text-[11px] text-cyan-300/80">Klik tombol cepat di samping untuk memilih klasifikasi standar kemitraan secara instan:</p>
+
+            <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+                <span x-show="selectedSubSub" class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30 inline-flex items-center gap-1.5 shadow-sm">
+                    ✓ Terpilih: <span class="font-mono" x-text="selectedSubSub?.kode"></span>
+                </span>
+                <span x-show="!selectedSubSub" class="text-[11px] font-semibold text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 inline-flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                    Pilih salah satu objek di bawah
+                </span>
             </div>
         </div>
-        <div class="flex flex-wrap items-center gap-1.5 shrink-0">
-            <button type="button" @click="quickSelectKemitraan('1.5.2.05')"
-                class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer">
-                1.5.2.05 KSO Alat Medis
-            </button>
-            <button type="button" @click="quickSelectKemitraan('1.5.2.01')"
-                class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer">
-                1.5.2.01 Sewa Mesin/Alat
-            </button>
-            <button type="button" @click="quickSelectKemitraan('1.5.2.02')"
-                class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer">
-                1.5.2.02 KSP Gedung/Ruangan
-            </button>
-            <button type="button" @click="quickSelectKemitraan('1.5.2.03')"
-                class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer">
-                1.5.2.03 KSO Operasional Alkes
-            </button>
+
+        <!-- Buttons Grid: 5 Sub-Sub Rincian Objek Permendagri 108 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <template x-for="item in currentSubSubRecommendations" :key="item.id">
+                <button type="button" @click="selectSubSubItem(item)"
+                    class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
+                    :class="selectedSubSub?.id === item.id 
+                        ? 'bg-cyan-500/20 border-cyan-400 text-white shadow-xl shadow-cyan-500/20 ring-2 ring-cyan-400' 
+                        : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
+                    
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xl" x-text="getSubSubIcon(item.kode)"></span>
+                        <span class="font-mono text-[10px] font-black text-cyan-400 group-hover:text-cyan-300" x-text="item.kode"></span>
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                        <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate" x-text="getSubSubShortLabel(item.kode, item.nama)"></span>
+                        <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug" x-text="item.nama"></span>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                        <span class="text-[9px] font-mono text-slate-500" x-text="'ID: ' + item.id"></span>
+                        <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] transition-colors font-bold"
+                            :class="selectedSubSub?.id === item.id ? 'bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-400/30' : 'bg-slate-800 text-slate-400 group-hover:bg-cyan-400 group-hover:text-slate-950'">
+                            <span x-show="selectedSubSub?.id === item.id">✓</span>
+                            <span x-show="selectedSubSub?.id !== item.id">&rarr;</span>
+                        </div>
+                    </div>
+                </button>
+            </template>
         </div>
     </div>
 
-    <!-- Bagian Filter Kode Barang 108 -->
+    <!-- Rincian Spesifik Barang & Nilai Aset -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-cyan-500/30 space-y-5 shadow-2xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🔍 Pemilihan Kode Barang Permendagri 108</span>
+                <span>📝 Rincian Spesifik &amp; Nilai Taksiran Aset</span>
                 <span class="text-rose-400">*</span>
             </span>
-            <span x-show="selectedSubSub" class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">
-                ✓ Terpilih: <span class="font-mono" x-text="selectedSubSub?.kode"></span>
-            </span>
+            <template x-if="selectedSubSub">
+                <span class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 font-mono" x-text="selectedSubSub.kode + ' • ' + selectedSubSub.nama">
+                </span>
+            </template>
         </div>
 
-        <!-- Live Search Box Kode 108 -->
-        <div class="relative">
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Pencarian Cepat Kode / Nama Barang 108
-            </label>
-            <div class="relative">
-                <input type="text"
-                    x-model="search108"
-                    @input="performSearch108()"
-                    placeholder="Ketik kata kunci atau kode 108 (contoh: 1.5.2, Kemitraan, Sewa, Hemodialisa, USG, Laboratorium, Analyzer, Gedung Parkir)..."
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 pl-10 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors">
-                <svg class="w-4 h-4 text-cyan-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <button type="button" x-show="search108" @click="search108 = ''; searchResults108 = []"
-                    class="absolute right-3.5 top-3 text-xs text-slate-400 hover:text-white cursor-pointer">✕</button>
-            </div>
-
-            <!-- Hasil Live Search Dropdown -->
-            <div x-show="searchResults108.length > 0" class="absolute z-20 mt-1.5 w-full max-h-56 overflow-y-auto space-y-1 p-2 bg-slate-900/95 border border-cyan-500/40 rounded-2xl shadow-2xl backdrop-blur-xl custom-scrollbar">
-                <template x-for="item in searchResults108" :key="item.id">
-                    <button type="button" @click="selectFromSearch(item)"
-                        class="w-full text-left p-2.5 rounded-xl hover:bg-cyan-500/20 text-xs flex items-center justify-between group transition-colors cursor-pointer">
-                        <div class="truncate mr-3">
-                            <span class="font-mono text-cyan-300 font-bold" x-text="item.kode"></span>
-                            <span class="text-white ml-2" x-text="item.nama"></span>
-                        </div>
-                        <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md group-hover:bg-cyan-500 group-hover:text-slate-950 font-bold shrink-0">
-                            Pilih &rarr;
-                        </span>
-                    </button>
-                </template>
-            </div>
-        </div>
-
-        <!-- Cascading Dropdowns 108 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    1. Kelompok Aset / Akun 108
-                </label>
-                <select x-model="selectedJenisIdx" @change="onJenisChange()"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400">
-                    <option value="">-- Pilih Kelompok Akun --</option>
-                    <template x-for="(j, idx) in master108" :key="j.kode">
-                        <option :value="idx" x-text="j.kode + ' - ' + j.nama"></option>
-                    </template>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    2. Objek Barang 108
-                </label>
-                <select x-model="selectedSubIdx" @change="onSubChange()" :disabled="!currentSubList.length"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 disabled:opacity-40">
-                    <option value="">-- Pilih Objek Barang --</option>
-                    <template x-for="(s, idx) in currentSubList" :key="s.kode">
-                        <option :value="idx" x-text="s.kode + ' - ' + s.nama"></option>
-                    </template>
-                </select>
-            </div>
-
-            <div class="sm:col-span-2">
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    3. Sub-Sub Rincian Objek (Detail Kode Barang 108) <span class="text-rose-400">*</span>
-                </label>
-                <select @change="onSubSubChange($event)" :disabled="!currentSubSubList.length"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 disabled:opacity-40 font-mono">
-                    <option value="">-- Pilih Sub-Sub Rincian Objek --</option>
-                    <template x-for="ss in currentSubSubList" :key="ss.id">
-                        <option :value="ss.id" :selected="selectedSubSub && selectedSubSub.id === ss.id" x-text="ss.kode + ' - ' + ss.nama"></option>
-                    </template>
-                </select>
-            </div>
-        </div>
-
-        <!-- Nama Barang, Volume, Satuan, Total Taksiran Nilai Wajar -->
-        <div class="pt-3 border-t border-slate-800 space-y-4">
+        <div class="space-y-4">
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
                     Nama Spesifik Barang Aset Kemitraan <span class="text-rose-400">*</span>

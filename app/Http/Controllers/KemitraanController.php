@@ -63,7 +63,13 @@ class KemitraanController extends Controller
             ->orderBy('id', 'desc');
 
         if ($filterSkema !== 'all') {
-            $query->where('skema_kemitraan', $filterSkema);
+            if ($filterSkema === 'BGS/BSG') {
+                $query->whereIn('skema_kemitraan', ['BGS/BSG', 'BSG', 'BGS']);
+            } elseif ($filterSkema === 'KSPI') {
+                $query->whereIn('skema_kemitraan', ['KSPI', 'KSO']);
+            } else {
+                $query->where('skema_kemitraan', $filterSkema);
+            }
         }
 
         if ($filterTahun !== 'all') {

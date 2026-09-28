@@ -49,13 +49,12 @@
                         <td class="py-4 px-4">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider
-                                    {{ $row->skema_kemitraan === 'KSO' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : '' }}
-                                    {{ $row->skema_kemitraan === 'BGS' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
-                                    {{ $row->skema_kemitraan === 'BSG' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                    {{ $row->skema_kemitraan === 'KSO' || $row->skema_kemitraan === 'KSPI' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : '' }}
+                                    {{ $row->skema_kemitraan === 'BGS' || $row->skema_kemitraan === 'BSG' || $row->skema_kemitraan === 'BGS/BSG' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
                                     {{ $row->skema_kemitraan === 'Sewa' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : '' }}
                                     {{ $row->skema_kemitraan === 'KSP' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : '' }}
                                 ">
-                                    {{ $row->skema_kemitraan ?: 'KSO' }}
+                                    {{ $row->skema_kemitraan ?: 'Sewa' }}
                                 </span>
                                 <span class="text-xs font-bold text-white truncate max-w-[180px]" title="{{ $row->mitra_nama }}">
                                     {{ $row->mitra_nama }}
