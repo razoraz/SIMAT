@@ -39,14 +39,15 @@
                     
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 gap-2">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 font-mono font-extrabold text-xs border border-emerald-500/40 flex items-center space-x-1.5">
+                            <span class="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 font-mono font-extrabold text-xs border border-emerald-500/40 flex items-center space-x-1.5 shadow-sm">
                                 <span>🌾 Bidang Tanah #<span x-text="idx + 1"></span></span>
                             </span>
-                            <span class="text-[11px] text-slate-400 font-mono">
+                            <span class="text-xs text-white font-bold" x-show="item.tanah_nama_barang" x-text="item.tanah_nama_barang"></span>
+                            <span class="text-[11px] text-slate-400 font-mono" x-show="item.tanah_luas_m2">
                                 • Luas: <strong class="text-cyan-300" x-text="(item.tanah_luas_m2 || 0).toLocaleString('id-ID') + ' m²'"></strong>
                             </span>
                             <span class="text-[11px] text-slate-400 font-mono">
-                                • Taksiran: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getTanahSubtotal(item))"></strong>
+                                • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getTanahSubtotal(item))"></strong>
                             </span>
                         </div>
 
@@ -56,6 +57,16 @@
                                 class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold transition-all flex items-center space-x-1 self-start sm:self-auto cursor-pointer">
                             <span>🗑️ Hapus Bidang Ini</span>
                         </button>
+                    </div>
+
+                    <!-- Input Nama Bidang Tanah -->
+                    <div>
+                        <label class="block text-slate-400 text-[10.5px] mb-1 font-semibold">
+                            Nama Spesifik / Identitas Bidang Tanah #<span x-text="idx + 1"></span> <span class="text-rose-400">*</span>
+                        </label>
+                        <input type="text" x-model="item.tanah_nama_barang" @input="syncTotalsFromItems()"
+                            placeholder="Contoh: Tanah Kompleks RSUD Dr. H. Koesnandi / Lahan Parkir Paviliun Barat"
+                            class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-xs text-white font-bold focus:outline-none transition-all">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -119,11 +130,11 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas Tanah (m²) <span class="text-rose-400">*</span></label>
-                                    <div class="relative">
+                                    <div class="flex items-center rounded-xl bg-slate-950 border border-emerald-500/40 focus-within:border-emerald-400 overflow-hidden transition-all">
                                         <input type="number" step="0.01" min="0" x-model.number="item.tanah_luas_m2" @input="syncTotalsFromItems()"
                                             placeholder="Contoh: 1500"
-                                            class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:border-emerald-400 focus:outline-none transition-all">
-                                        <span class="absolute right-3 top-2 text-[10px] font-mono font-bold text-slate-500">m²</span>
+                                            class="w-full bg-transparent px-3 py-2 text-xs text-emerald-300 font-mono font-bold focus:outline-none">
+                                        <span class="px-2.5 py-2 text-[10px] font-mono font-bold text-emerald-400/80 bg-slate-900 border-l border-slate-800 shrink-0">m²</span>
                                     </div>
                                 </div>
                             </div>
@@ -150,23 +161,54 @@
                                 placeholder="Contoh: Kompleks RSUD Dr. H. Koesnandi, Jl. Piere Tendean No. 1, Bondowoso"
                                 class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none transition-all">
                         </div>
+                    </div>
 
-                        <!-- 4. Nilai Taksiran Wajar Per Bidang -->
-                        <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2 md:col-span-2 shadow-md">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-emerald-400 font-bold text-xs uppercase tracking-wider">💰 Taksiran Nilai Wajar Bidang Ini (Rp):</label>
-                                <span class="text-xs font-mono font-black text-emerald-400" x-text="'Rp ' + Number(getTanahSubtotal(item)).toLocaleString('id-ID')"></span>
+                    <!-- 4. Volume & Taksiran Nilai Wajar Bidang Tanah -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5 shadow-md">
+                        <div class="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>💰 Volume &amp; Taksiran Nilai Wajar Tanah (Rp):</span>
+                            </span>
+                            <div class="flex items-center space-x-1.5 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
+                                <span class="text-[10px] text-slate-300 font-semibold">Sub Total Bidang #<span x-text="idx + 1"></span>:</span>
+                                <span class="text-xs font-black text-emerald-400 font-mono" x-text="'Rp ' + Number(getTanahSubtotal(item)).toLocaleString('id-ID')"></span>
                             </div>
-                            <input type="text"
-                                :value="item.tanah_nilai_satuan ? Number(item.tanah_nilai_satuan).toLocaleString('id-ID') : ''"
-                                @input="
-                                    let raw = $event.target.value.replace(/\D/g, '');
-                                    item.tanah_nilai_satuan = raw ? parseInt(raw, 10) : 0;
-                                    $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                    syncTotalsFromItems();
-                                "
-                                placeholder="0"
-                                class="w-full bg-slate-950 border border-slate-700 text-emerald-300 font-mono font-bold rounded-xl px-3.5 py-2 text-xs focus:border-emerald-500 focus:outline-none transition-all">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Volume / Bidang <span class="text-rose-400">*</span></label>
+                                <input type="number" min="1" x-model.number="item.tanah_jumlah_barang" @input="syncTotalsFromItems()" placeholder="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Satuan <span class="text-rose-400">*</span></label>
+                                <input type="text" x-model="item.tanah_satuan" @input="syncTotalsFromItems()" placeholder="Bidang"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                    <span>Taksiran Nilai Wajar Tanah (Rp) <span class="text-rose-400">*</span></span>
+                                    <span class="text-[9px] font-bold text-emerald-400">Nilai Tanah</span>
+                                </label>
+                                <input type="text" 
+                                       :value="item.tanah_nilai_satuan ? Number(item.tanah_nilai_satuan).toLocaleString('id-ID') : ''"
+                                       @input="
+                                           let raw = $event.target.value.replace(/\D/g, '');
+                                           item.tanah_nilai_satuan = raw ? parseInt(raw, 10) : 0;
+                                           $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                           syncTotalsFromItems();
+                                       "
+                                       placeholder="Contoh: 500.000.000"
+                                       class="w-full bg-slate-950 border border-slate-700 text-emerald-300 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-emerald-400 text-[10px] mb-1 font-bold">Sub Total Bidang #<span x-text="idx + 1"></span> (Rp)</label>
+                                <div class="w-full bg-slate-950/90 border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-black flex items-center justify-between shadow-inner">
+                                    <span class="text-emerald-500 text-[10px]">Rp</span>
+                                    <span x-text="Number(getTanahSubtotal(item)).toLocaleString('id-ID')"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -177,8 +219,8 @@
         <!-- Tombol Tambah Bidang Tanah Baru -->
         <div class="flex items-center justify-between pt-2 border-t border-slate-800">
             <button type="button" @click="addTanahItem()"
-                class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 border border-emerald-400/40 flex items-center space-x-2 transition-all cursor-pointer">
-                <span>➕</span>
+                class="px-5 py-2.5 rounded-full bg-slate-950/90 hover:bg-slate-900 text-white font-bold text-xs border border-white/80 hover:border-white shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
+                <span class="text-base font-light leading-none">+</span>
                 <span>Tambah Bidang Tanah Baru</span>
             </button>
             <div class="text-right text-xs">

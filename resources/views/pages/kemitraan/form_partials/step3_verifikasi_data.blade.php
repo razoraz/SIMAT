@@ -14,7 +14,7 @@
                 <span>Langkah 3: Lembar Verifikasi Data Aset Kemitraan</span>
             </h2>
             <p class="text-xs text-slate-400 mt-1">
-                Tinjau kembali seluruh data legalitas PKS, klasifikasi akun 1.5.2, spesifikasi fisik, unit penempatan KIR, serta simulasi NIBAR sebelum disimpan resmi ke database SIMAT-RK.
+                Tinjau kembali seluruh data legalitas PKS, klasifikasi akun 1.5.2, rincian fisik aset, serta estimasi nilai wajar sebelum disimpan resmi ke database SIMAT-RK.
             </p>
         </div>
 
@@ -26,36 +26,36 @@
         </div>
     </div>
 
-    <!-- 2. Quick Health Check Status (Grid 4 Kolom Indikator Kelayakan) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <!-- 2. Quick Health Check Status (Grid 3 Kolom Indikator Utama) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         <!-- Status 1: Mitra & Dokumen PKS -->
         <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 shadow-lg space-y-1 relative overflow-hidden group">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">1. PKS &amp; MITRA</span>
-                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    ✓ Terdaftar
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">1. PKS &amp; MITRA REKANAN</span>
+                <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" x-text="formData.skema_kemitraan || 'Sewa'">
                 </span>
             </div>
-            <div class="text-xs font-black font-mono text-white truncate" x-text="formData.nomor_pks || '-'"></div>
-            <div class="text-[11px] text-cyan-400 truncate font-semibold" x-text="formData.mitra_nama || 'Mitra belum diisi'"></div>
+            <div class="text-xs font-black font-mono text-cyan-300 truncate" x-text="formData.nomor_pks || '-'"></div>
+            <div class="text-[11px] text-white truncate font-bold" x-text="formData.mitra_nama || 'Mitra belum diisi'"></div>
         </div>
 
-        <!-- Status 2: Klasifikasi 108 & Skema -->
-        <div class="p-4 rounded-2xl bg-slate-950/80 border border-cyan-500/30 shadow-lg space-y-1 relative overflow-hidden group">
+        <!-- Status 2: Klasifikasi 108 & Akun 1.5.2 -->
+        <div class="p-4 rounded-2xl bg-slate-950/80 border border-purple-500/30 shadow-lg space-y-1 relative overflow-hidden group">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">2. AKUN 1.5.2</span>
-                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20" x-text="formData.skema_kemitraan">
+                <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">2. KLASIFIKASI AKUN 1.5.2</span>
+                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 font-mono">
+                    Permendagri 108
                 </span>
             </div>
-            <div class="text-xs font-black font-mono text-cyan-300 truncate" x-text="selectedKode108 || '-'"></div>
-            <div class="text-[11px] text-slate-300 truncate font-semibold" x-text="formData.nama_barang || '-'"></div>
+            <div class="text-xs font-black font-mono text-purple-300 truncate" x-text="selectedKode108 || '-'"></div>
+            <div class="text-[11px] text-slate-200 truncate font-semibold" x-text="formData.nama_barang || '-'"></div>
         </div>
 
-        <!-- Status 3: Nilai Taksiran Wajar & Volume -->
+        <!-- Status 3: Nilai Taksiran Wajar & Volume Fisik -->
         <div class="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 shadow-lg space-y-1 relative overflow-hidden group">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">3. NILAI &amp; VOLUME</span>
-                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
+                <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">3. NILAI &amp; VOLUME TOTAL</span>
+                <span class="text-[9px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
                     <span x-text="formData.jumlah_volume"></span> <span x-text="formData.satuan"></span>
                 </span>
             </div>
@@ -63,17 +63,6 @@
             <div class="text-[10.5px] text-slate-400 truncate">
                 Taksiran per <span x-text="formData.satuan || 'Unit'"></span>: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / (formData.jumlah_volume || 1)))"></span>
             </div>
-        </div>
-
-        <!-- Status 4: Skema & Status Konsesi Kemitraan -->
-        <div class="p-4 rounded-2xl bg-slate-950/80 border border-indigo-500/30 shadow-lg space-y-1 relative overflow-hidden group">
-            <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">4. SKEMA &amp; KONSESI</span>
-                <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20" x-text="formData.skema_kemitraan || 'Sewa'">
-                </span>
-            </div>
-            <div class="text-xs font-black text-white truncate">Status Konsesi: Aktif</div>
-            <div class="text-[10.5px] text-slate-400 truncate" x-text="formData.tanggal_mulai && formData.tanggal_selesai ? (formData.tanggal_mulai + ' s/d ' + formData.tanggal_selesai) : 'Sesuai masa PKS'"></div>
         </div>
     </div>
 
@@ -99,27 +88,38 @@
             <div class="grid grid-cols-2 gap-3 text-xs">
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama Perusahaan Mitra:</span>
-                    <span class="font-extrabold text-white block" x-text="formData.mitra_nama || '-'"></span>
+                    <span class="font-extrabold text-white block truncate" x-text="formData.mitra_nama || '-'"></span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nomor Perjanjian (PKS):</span>
-                    <span class="font-mono font-bold text-cyan-300 block" x-text="formData.nomor_pks || '-'"></span>
+                    <span class="font-mono font-bold text-cyan-300 block truncate" x-text="formData.nomor_pks || '-'"></span>
                 </div>
                 <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tanggal PKS:</span>
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tanggal Dokumen PKS:</span>
                     <span class="font-semibold text-white block" x-text="formData.tanggal_pks || '-'"></span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Bentuk / Skema Kemitraan:</span>
-                    <span class="px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold inline-block text-[11px]" x-text="formData.skema_kemitraan || 'Sewa'"></span>
+                    <span class="px-2.5 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold inline-block text-[11px]" x-text="formData.skema_kemitraan || 'Sewa'"></span>
+                </div>
+                <div>
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Pengelolaan Konsesi:</span>
+                    <span class="font-bold text-emerald-400 flex items-center gap-1.5 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Aktif Operasional</span>
+                    </span>
+                </div>
+                <div>
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Sub-Akun Neraca:</span>
+                    <span class="font-mono text-cyan-300 font-bold block text-xs">1.5.2 Kemitraan</span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Periode Berlaku Kerja Sama:</span>
-                    <span class="font-mono text-slate-200 block" x-text="formData.tanggal_mulai && formData.tanggal_selesai ? (formData.tanggal_mulai + ' s/d ' + formData.tanggal_selesai) : 'Sesuai masa operasional PKS'"></span>
+                    <span class="font-mono text-slate-200 block text-[11.5px]" x-text="formData.tanggal_mulai && formData.tanggal_selesai ? (formData.tanggal_mulai + ' s/d ' + formData.tanggal_selesai) : 'Sesuai masa operasional PKS'"></span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tahun Pembukuan &amp; Periode:</span>
-                    <span class="font-mono font-bold text-white block" x-text="(formData.tahun_perolehan || '{{ date('Y') }}') + ' • ' + (formData.triwulan || 'TW I')"></span>
+                    <span class="font-mono font-bold text-white block text-[11.5px]" x-text="(formData.tahun_perolehan || '{{ date('Y') }}') + ' • ' + (formData.triwulan || 'TW I')"></span>
                 </div>
                 <div class="col-span-2 pt-2 border-t border-slate-900">
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Catatan / Keterangan Tambahan:</span>
@@ -174,7 +174,7 @@
         <!-- ===================================================================== -->
         <!-- KARTU 3: SPESIFIKASI TEKNIS FISIK BARANG (MENYESUAIKAN LEMBAR KIB)    -->
         <!-- ===================================================================== -->
-        <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 relative">
+        <div class="lg:col-span-2 p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 relative">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
                     <span class="w-7 h-7 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold border border-purple-500/30">3</span>
@@ -540,53 +540,6 @@
                     </template>
                 </div>
             </template>
-        </div>
-
-        <!-- ===================================================================== -->
-        <!-- KARTU 4: SKEMA KEMITRAAN & STATUS KONSESI ASET                        -->
-        <!-- ===================================================================== -->
-        <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 relative">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center space-x-2">
-                    <span class="w-7 h-7 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-500/30">4</span>
-                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
-                        Skema Kemitraan &amp; Status Konsesi
-                    </h3>
-                </div>
-                <button type="button" @click="goToStep(1)" class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer">
-                    <span>Ubah</span> &rarr;
-                </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Bentuk / Skema Kerja Sama:</span>
-                    <span class="px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-bold inline-block text-[11px]" x-text="formData.skema_kemitraan || 'Sewa'"></span>
-                </div>
-                <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Pengelolaan Konsesi:</span>
-                    <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>Aktif Operasional</span>
-                    </span>
-                </div>
-                <div class="col-span-2">
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Periode Masa Konsesi / Sewa:</span>
-                    <span class="font-mono text-slate-200 block text-xs" x-text="formData.tanggal_mulai && formData.tanggal_selesai ? (formData.tanggal_mulai + ' sampai dengan ' + formData.tanggal_selesai) : 'Berjalan sesuai masa kontrak PKS'"></span>
-                </div>
-                <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Sub-Akun Neraca:</span>
-                    <span class="font-mono text-cyan-300 font-bold block">1.5.2 Kemitraan</span>
-                </div>
-                <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Rekanan Mitra Terikat:</span>
-                    <span class="font-semibold text-white block truncate" x-text="formData.mitra_nama || '-'"></span>
-                </div>
-                <div class="col-span-2 pt-2 border-t border-slate-900">
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Dasar Dokumen Perjanjian (PKS):</span>
-                    <span class="font-mono text-slate-300 text-[11px] block" x-text="(formData.nomor_pks || '-') + (formData.tanggal_pks ? (' • Tanggal: ' + formData.tanggal_pks) : '')"></span>
-                </div>
-            </div>
         </div>
 
     </div>

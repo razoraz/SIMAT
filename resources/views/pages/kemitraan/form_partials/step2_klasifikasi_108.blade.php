@@ -122,45 +122,42 @@
             </template>
         </div>
 
-        <div class="space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                    <span>Nama Ringkasan / Kelompok Barang Aset Kemitraan <span class="text-rose-400">*</span></span>
-                    <span class="text-[10px] text-slate-400" x-show="isMultiItemActive">
-                        Otomatis dirangkum dari spesifikasi teknis di Langkah 3
-                    </span>
-                </label>
-                <input type="text" x-model="formData.nama_barang" required
-                    placeholder="Contoh: Automated Clinical Chemistry Analyzer Cobas c311 / Mesin Hemodialisis..."
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none font-bold">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                        <span>Jumlah Total Volume / Unit <span class="text-rose-400">*</span></span>
-                        <span class="text-[10px] text-cyan-400 font-bold font-mono" x-show="isMultiItemActive">🔒 Akumulasi Rincian</span>
-                    </label>
-                    <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
-                        :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-cyan-300 cursor-not-allowed' : 'bg-slate-900 border-slate-700 text-white'"
-                        class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                        Satuan Barang <span class="text-rose-400">*</span>
-                    </label>
-                    <input type="text" x-model="formData.satuan" required
-                        placeholder="Unit / Set / Buah / Gedung / Paket"
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-                </div>
-            </div>
-
-            <!-- Nilai Taksiran Wajar Aset Kemitraan -->
-            <div class="p-5 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 1. Total Volume / Kuantitas Aset -->
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md">
                 <div class="flex items-center justify-between">
                     <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span>Total Taksiran Nilai Wajar Aset Kemitraan (Rp) <span class="text-rose-400">*</span></span>
+                        <span>Total Volume / Kuantitas Aset <span class="text-rose-400">*</span></span>
+                        <span class="text-[10px] text-cyan-400 font-bold font-mono" x-show="isMultiItemActive">🔒 Akumulasi Rincian</span>
+                    </label>
+                    <span class="text-xs font-mono text-cyan-300 font-extrabold" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="col-span-2 relative">
+                        <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
+                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-cyan-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
+                            class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
+                    </div>
+                    <div>
+                        <input type="text" x-model="formData.satuan" required placeholder="Unit"
+                            :readonly="isMultiItemActive"
+                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-slate-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
+                            class="w-full border focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-center font-bold focus:outline-none">
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-slate-400 pt-1 leading-relaxed">
+                    <span x-show="isMultiItemActive">💡 Total volume dihitung otomatis dari akumulasi rincian barang/unit di Langkah 3.</span>
+                    <span x-show="!isMultiItemActive">Kuantitas fisik unit aset yang dikerjasamakan dalam kemitraan.</span>
+                </p>
+            </div>
+
+            <!-- 2. Total Taksiran Nilai Wajar Aset (Rp) -->
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-2.5 shadow-md">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>Total Taksiran Nilai Wajar Aset (Rp) <span class="text-rose-400">*</span></span>
                         <span class="text-[10px] text-emerald-400 font-bold font-mono" x-show="isMultiItemActive && formData.total_realisasi > 0">🔒 Akumulasi Otomatis</span>
                     </label>
                     <span class="text-xs font-mono text-cyan-300 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
@@ -183,17 +180,16 @@
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-1">
                     <p>
-                        💡 <span x-show="isMultiItemActive">Total nilai wajar dihitung otomatis dari akumulasi rincian barang/unit spesifikasi teknis di Langkah 3.</span>
-                        <span x-show="!isMultiItemActive">Taksiran nilai wajar aset sesuai klausul kontrak PKS atau appraisal wajar untuk Akun 1.5.2.</span>
+                        <span x-show="isMultiItemActive">💡 Akumulasi otomatis dari taksiran nilai wajar barang di Langkah 3.</span>
+                        <span x-show="!isMultiItemActive">Sesuai klausul kontrak PKS atau taksiran appraisal.</span>
                     </p>
                     <template x-if="formData.jumlah_volume > 1 && formData.total_realisasi > 0">
                         <span class="text-cyan-400 font-mono font-semibold">
-                            Rata-rata/Unit: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span>
+                            Rata-rata: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span>
                         </span>
                     </template>
                 </div>
             </div>
-
         </div>
 
     </div>

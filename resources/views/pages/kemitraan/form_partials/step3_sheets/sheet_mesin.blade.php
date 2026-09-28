@@ -211,7 +211,7 @@
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                    <span>Taksiran Nilai Satuan (Rp) <span class="text-rose-400">*</span></span>
+                                    <span>Taksiran Nilai Wajar Unit (Rp) <span class="text-rose-400">*</span></span>
                                     <span class="text-[9px] font-bold text-emerald-400">Harga Wajar</span>
                                 </label>
                                 <input type="text" 
@@ -242,8 +242,8 @@
         <!-- Tombol Tambah Barang / Unit Baru -->
         <div class="flex items-center justify-between pt-2 border-t border-slate-800">
             <button type="button" @click="addMesinItem()"
-                class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 border border-purple-400/40 flex items-center space-x-2 transition-all cursor-pointer">
-                <span>➕</span>
+                class="px-5 py-2.5 rounded-full bg-slate-950/90 hover:bg-slate-900 text-white font-bold text-xs border border-white/80 hover:border-white shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
+                <span class="text-base font-light leading-none">+</span>
                 <span>Tambah Barang / Unit Baru</span>
             </button>
             <div class="text-right text-xs">

@@ -773,7 +773,7 @@
             },
 
             getTanahSubtotal(item) {
-                return Number(item.tanah_nilai_satuan || 0);
+                return (Number(item.tanah_jumlah_barang || 1) * Number(item.tanah_nilai_satuan || 0));
             },
 
             get totalNilaiTanah() {
@@ -785,7 +785,7 @@
 
             get totalVolumeTanah() {
                 if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
-                    return this.formData.tanah_items.length;
+                    return this.formData.tanah_items.reduce((sum, item) => sum + (parseInt(item.tanah_jumlah_barang) || 1), 0);
                 }
                 return parseInt(this.formData.jumlah_volume) || 1;
             },
@@ -978,6 +978,14 @@
                         this.formData.total_realisasi = this.totalNilaiTanah;
                     }
                     const first = this.formData.tanah_items[0];
+                    if (this.formData.tanah_items.length === 1) {
+                        if (first.tanah_nama_barang) this.formData.nama_barang = first.tanah_nama_barang;
+                        if (first.tanah_satuan) this.formData.satuan = first.tanah_satuan;
+                    } else {
+                        const names = this.formData.tanah_items.map(t => t.tanah_nama_barang).filter(Boolean);
+                        if (names.length > 0) this.formData.nama_barang = names.join(', ');
+                        this.formData.satuan = 'Bidang';
+                    }
                     if (first) {
                         this.formData.tanah_luas_m2 = first.tanah_luas_m2;
                         this.formData.tanah_hak = first.tanah_hak;

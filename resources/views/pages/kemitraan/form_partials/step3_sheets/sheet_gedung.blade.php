@@ -89,11 +89,11 @@
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
                                         Luas Lantai Gedung (m²) <span class="text-rose-400">*</span>
                                     </label>
-                                    <div class="relative">
+                                    <div class="flex items-center rounded-xl bg-slate-900 border border-slate-700 focus-within:border-amber-500 overflow-hidden transition-all">
                                         <input type="number" step="0.01" min="0" x-model.number="item.gedung_luas_lantai"
                                             placeholder="850"
-                                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-amber-500 focus:outline-none transition-all">
-                                        <span class="absolute right-3 top-2 text-[10px] font-mono font-bold text-slate-500">m²</span>
+                                            class="w-full bg-transparent px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none">
+                                        <span class="px-2.5 py-2 text-[10px] font-mono font-bold text-slate-400 bg-slate-800/80 border-l border-slate-700 shrink-0">m²</span>
                                     </div>
                                 </div>
 
@@ -186,55 +186,65 @@
                             </div>
                         </div>
 
-                        <!-- 3. Fungsi & Peruntukan Operasional -->
-                        <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5 md:col-span-2">
-                            <label class="block text-slate-400 text-[10px] font-semibold">
-                                Fungsi &amp; Peruntukan Operasional Gedung
-                            </label>
-                            <input type="text" x-model="item.gedung_fungsi"
-                                placeholder="Contoh: Gedung Rawat Inap Kelas VVIP / Kantin &amp; Pujasera Kemitraan"
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-medium focus:border-blue-500 focus:outline-none transition-all">
-                        </div>
+                    </div>
 
-                        <!-- 4. Volume, Satuan & Taksiran Nilai -->
-                        <div class="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 shadow-inner">
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Jumlah Volume / Bangunan <span class="text-rose-400">*</span>
-                                </label>
-                                <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Satuan <span class="text-rose-400">*</span>
-                                </label>
-                                <input type="text" x-model="item.gedung_satuan"
-                                    placeholder="Gedung / Unit / Bangunan"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class="block text-slate-400 text-[10px] font-semibold">
-                                        Taksiran Nilai Satuan (Rp) <span class="text-rose-400">*</span>
-                                    </label>
-                                    <span class="text-[9.5px] font-mono text-emerald-400 font-bold" x-text="'Rp ' + formatRupiah(getGedungSubtotal(item))"></span>
-                                </div>
-                                <div class="relative">
-                                    <span class="absolute left-2.5 top-2 text-[10px] font-mono text-slate-500">Rp</span>
-                                    <input type="text"
-                                        :value="item.gedung_nilai_satuan ? Number(item.gedung_nilai_satuan).toLocaleString('id-ID') : ''"
-                                        @input="
-                                            let raw = $event.target.value.replace(/\D/g, '');
-                                            item.gedung_nilai_satuan = raw ? parseInt(raw, 10) : 0;
-                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                        "
-                                        placeholder="0"
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 pl-8 text-xs text-emerald-400 font-mono font-bold focus:border-emerald-500 focus:outline-none">
-                                </div>
+                    <!-- 3. Fungsi & Peruntukan Operasional -->
+                    <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5 shadow-md">
+                        <label class="block text-slate-400 text-[10px] font-semibold">
+                            Fungsi &amp; Peruntukan Operasional Gedung
+                        </label>
+                        <input type="text" x-model="item.gedung_fungsi"
+                            placeholder="Contoh: Gedung Rawat Inap Kelas VVIP / Kantin &amp; Pujasera Kemitraan"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-medium focus:border-blue-500 focus:outline-none transition-all">
+                    </div>
+
+                    <!-- 4. Volume & Taksiran Nilai Wajar Bangunan -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5 shadow-md">
+                        <div class="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>💰 Volume &amp; Taksiran Nilai Wajar Bangunan (Rp):</span>
+                            </span>
+                            <div class="flex items-center space-x-1.5 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
+                                <span class="text-[10px] text-slate-300 font-semibold">Sub Total Gedung #<span x-text="idx + 1"></span>:</span>
+                                <span class="text-xs font-black text-emerald-400 font-mono" x-text="'Rp ' + Number(getGedungSubtotal(item)).toLocaleString('id-ID')"></span>
                             </div>
                         </div>
 
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Volume / Bangunan <span class="text-rose-400">*</span></label>
+                                <input type="number" min="1" x-model.number="item.gedung_jumlah_bangunan" @input="syncTotalsFromItems()" placeholder="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Satuan <span class="text-rose-400">*</span></label>
+                                <input type="text" x-model="item.gedung_satuan" @input="syncTotalsFromItems()" placeholder="Gedung / Unit / Bangunan"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                    <span>Taksiran Nilai Wajar Bangunan (Rp) <span class="text-rose-400">*</span></span>
+                                    <span class="text-[9px] font-bold text-emerald-400">Nilai Gedung</span>
+                                </label>
+                                <input type="text" 
+                                       :value="item.gedung_nilai_satuan ? Number(item.gedung_nilai_satuan).toLocaleString('id-ID') : ''"
+                                       @input="
+                                           let raw = $event.target.value.replace(/\D/g, '');
+                                           item.gedung_nilai_satuan = raw ? parseInt(raw, 10) : 0;
+                                           $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                           syncTotalsFromItems();
+                                       "
+                                       placeholder="Contoh: 1.500.000.000"
+                                       class="w-full bg-slate-950 border border-slate-700 text-emerald-300 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-emerald-400 text-[10px] mb-1 font-bold">Sub Total Gedung #<span x-text="idx + 1"></span> (Rp)</label>
+                                <div class="w-full bg-slate-950/90 border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-black flex items-center justify-between shadow-inner">
+                                    <span class="text-emerald-500 text-[10px]">Rp</span>
+                                    <span x-text="Number(getGedungSubtotal(item)).toLocaleString('id-ID')"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -244,8 +254,8 @@
         <!-- Tombol Tambah Gedung / Bangunan Baru -->
         <div class="flex items-center justify-between pt-2 border-t border-slate-800">
             <button type="button" @click="addGedungItem()"
-                class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 border border-blue-400/40 flex items-center space-x-2 transition-all cursor-pointer">
-                <span>➕</span>
+                class="px-5 py-2.5 rounded-full bg-slate-950/90 hover:bg-slate-900 text-white font-bold text-xs border border-white/80 hover:border-white shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
+                <span class="text-base font-light leading-none">+</span>
                 <span>Tambah Bangunan / Gedung Baru</span>
             </button>
             <div class="text-right text-xs">

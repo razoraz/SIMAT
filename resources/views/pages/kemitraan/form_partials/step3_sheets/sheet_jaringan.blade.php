@@ -119,9 +119,12 @@
                                 </div>
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas (m²)</label>
-                                    <input type="number" step="0.01" min="0" x-model.number="item.jaringan_luas"
-                                        placeholder="1575"
-                                        class="w-full bg-slate-900 border border-teal-500/40 rounded-xl px-2 py-2 text-xs text-teal-300 font-mono font-bold focus:border-teal-400 focus:outline-none transition-all">
+                                    <div class="flex items-center rounded-xl bg-slate-900 border border-teal-500/40 focus-within:border-teal-400 overflow-hidden transition-all">
+                                        <input type="number" step="0.01" min="0" x-model.number="item.jaringan_luas"
+                                            placeholder="1575"
+                                            class="w-full bg-transparent px-2.5 py-2 text-xs text-teal-300 font-mono font-bold focus:outline-none">
+                                        <span class="px-2 py-2 text-[10px] font-mono font-bold text-teal-400/80 bg-slate-800/80 border-l border-slate-700 shrink-0">m²</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -181,45 +184,55 @@
                             </div>
                         </div>
 
-                        <!-- 3. Volume, Satuan & Taksiran Nilai -->
-                        <div class="p-4 rounded-2xl bg-slate-950 border border-emerald-500/30 md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 shadow-inner">
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Jumlah Volume / Ruas <span class="text-rose-400">*</span>
-                                </label>
-                                <input type="number" min="1" x-model.number="item.jaringan_jumlah"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Satuan <span class="text-rose-400">*</span>
-                                </label>
-                                <input type="text" x-model="item.jaringan_satuan"
-                                    placeholder="Ruas / Paket / Meter / Unit"
-                                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-1">
-                                    <label class="block text-slate-400 text-[10px] font-semibold">
-                                        Taksiran Nilai Satuan (Rp) <span class="text-rose-400">*</span>
-                                    </label>
-                                    <span class="text-[9.5px] font-mono text-emerald-400 font-bold" x-text="'Rp ' + formatRupiah(getJaringanSubtotal(item))"></span>
-                                </div>
-                                <div class="relative">
-                                    <span class="absolute left-2.5 top-2 text-[10px] font-mono text-slate-500">Rp</span>
-                                    <input type="text"
-                                        :value="item.jaringan_nilai_satuan ? Number(item.jaringan_nilai_satuan).toLocaleString('id-ID') : ''"
-                                        @input="
-                                            let raw = $event.target.value.replace(/\D/g, '');
-                                            item.jaringan_nilai_satuan = raw ? parseInt(raw, 10) : 0;
-                                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                                        "
-                                        placeholder="0"
-                                        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 pl-8 text-xs text-emerald-400 font-mono font-bold focus:border-emerald-500 focus:outline-none">
-                                </div>
+                    </div>
+
+                    <!-- 3. Volume & Taksiran Nilai Wajar Ruas / Jaringan -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2.5 shadow-md">
+                        <div class="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+                            <span class="text-xs font-bold text-emerald-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>💰 Volume &amp; Taksiran Nilai Wajar Jaringan (Rp):</span>
+                            </span>
+                            <div class="flex items-center space-x-1.5 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
+                                <span class="text-[10px] text-slate-300 font-semibold">Sub Total Ruas #<span x-text="idx + 1"></span>:</span>
+                                <span class="text-xs font-black text-emerald-400 font-mono" x-text="'Rp ' + Number(getJaringanSubtotal(item)).toLocaleString('id-ID')"></span>
                             </div>
                         </div>
 
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Volume / Ruas <span class="text-rose-400">*</span></label>
+                                <input type="number" min="1" x-model.number="item.jaringan_jumlah" @input="syncTotalsFromItems()" placeholder="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Satuan <span class="text-rose-400">*</span></label>
+                                <input type="text" x-model="item.jaringan_satuan" @input="syncTotalsFromItems()" placeholder="Ruas / Paket / Meter"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                    <span>Taksiran Nilai Wajar Ruas (Rp) <span class="text-rose-400">*</span></span>
+                                    <span class="text-[9px] font-bold text-emerald-400">Nilai Ruas</span>
+                                </label>
+                                <input type="text" 
+                                       :value="item.jaringan_nilai_satuan ? Number(item.jaringan_nilai_satuan).toLocaleString('id-ID') : ''"
+                                       @input="
+                                           let raw = $event.target.value.replace(/\D/g, '');
+                                           item.jaringan_nilai_satuan = raw ? parseInt(raw, 10) : 0;
+                                           $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                                           syncTotalsFromItems();
+                                       "
+                                       placeholder="Contoh: 75.000.000"
+                                       class="w-full bg-slate-950 border border-slate-700 text-emerald-300 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-emerald-400 text-[10px] mb-1 font-bold">Sub Total Ruas #<span x-text="idx + 1"></span> (Rp)</label>
+                                <div class="w-full bg-slate-950/90 border border-emerald-500/50 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-black flex items-center justify-between shadow-inner">
+                                    <span class="text-emerald-500 text-[10px]">Rp</span>
+                                    <span x-text="Number(getJaringanSubtotal(item)).toLocaleString('id-ID')"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -229,8 +242,8 @@
         <!-- Tombol Tambah Ruas / Jaringan Baru -->
         <div class="flex items-center justify-between pt-2 border-t border-slate-800">
             <button type="button" @click="addJaringanItem()"
-                class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 border border-teal-400/40 flex items-center space-x-2 transition-all cursor-pointer">
-                <span>➕</span>
+                class="px-5 py-2.5 rounded-full bg-slate-950/90 hover:bg-slate-900 text-white font-bold text-xs border border-white/80 hover:border-white shadow-lg flex items-center space-x-2 transition-all cursor-pointer">
+                <span class="text-base font-light leading-none">+</span>
                 <span>Tambah Ruas / Jaringan Baru</span>
             </button>
             <div class="text-right text-xs">

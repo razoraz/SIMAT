@@ -36,6 +36,21 @@ class AstapKemitraan extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function setTanggalPksAttribute($value)
+    {
+        $this->attributes['tanggal_pks'] = Astap::parseDateInput($value);
+    }
+
+    public function setTanggalMulaiAttribute($value)
+    {
+        $this->attributes['tanggal_mulai'] = Astap::parseDateInput($value);
+    }
+
+    public function setTanggalSelesaiAttribute($value)
+    {
+        $this->attributes['tanggal_selesai'] = Astap::parseDateInput($value);
+    }
+
     /**
      * Hitung sisa hari konsesi kerjasama
      */
