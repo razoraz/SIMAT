@@ -13,6 +13,7 @@
             currentStep: 1,
             totalSteps: 3,
             isSubmitting: false,
+            isDataVerified: false,
 
             // Autocomplete Riwayat Mitra Kemitraan
             masterMitraList: (window.dbMitraKemitraans && window.dbMitraKemitraans.length > 0)
@@ -88,11 +89,54 @@
                 alamat_barang: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                 ppk_nama: '',
                 ppk_nip: '',
+
+                // Sheet KIB A: Tanah
+                tanah_luas_m2: null,
+                tanah_hak: 'Hak Pakai',
+                tanah_sertifikat_no: '',
+                tanah_sertifikat_tgl: '',
+                tanah_penggunaan: '',
+                tanah_batas: '',
+                tanah_alamat: '',
+                tanah_items: [],
+
+                // Sheet KIB B: Peralatan & Mesin
                 merk: '',
                 type: '',
                 no_pabrik: '',
                 bahan: '',
-                ukuran: ''
+                ukuran: '',
+                tahun_pembuatan: null,
+                no_rangka: '',
+                no_mesin: '',
+                no_polisi: '',
+
+                // Sheet KIB C: Gedung & Bangunan
+                gedung_bertingkat: 'Tidak',
+                gedung_beton: 'Beton Bertulang',
+                gedung_luas_lantai: null,
+                gedung_dokumen_no: '',
+                gedung_dokumen_tgl: '',
+                gedung_status_tanah: 'Tanah Milik RSUD',
+                gedung_fungsi: '',
+
+                // Sheet KIB D: Jalan, Irigasi & Jaringan
+                jaringan_konstruksi: '',
+                jaringan_luas: null,
+                jaringan_panjang: null,
+                jaringan_lebar: null,
+                jaringan_dokumen_no: '',
+                jaringan_dokumen_tgl: '',
+
+                // Sheet KIB E: Aset Tetap Lainnya
+                lainnya_judul: '',
+                lainnya_jenis: '',
+                lainnya_ukuran: '',
+                lainnya_bahan: '',
+                lainnya_asal: '',
+
+                // Spesifikasi JSON
+                spesifikasi_json: {}
             },
 
             // Master Data & Filtering
@@ -263,6 +307,95 @@
                 this.flat108 = flat;
             },
 
+            // Getter: Deteksi jenis objek aset berdasarkan kode 108 atau nama barang
+            get selectedKode108() {
+                if (this.selectedSubSub && this.selectedSubSub.kode) return this.selectedSubSub.kode;
+                if (this.formData.jenis_astap_id) {
+                    const found = this.flat108.find(x => x.id === this.formData.jenis_astap_id);
+                    if (found && found.kode) return found.kode;
+                }
+                return '';
+            },
+
+            get selectedObjekType() {
+                const kode = this.selectedKode108;
+                const nama = ((this.selectedSubSub?.nama || '') + ' ' + (this.formData.nama_barang || '')).toLowerCase();
+
+                // 1. Berdasarkan Kode 108 Permendagri:
+                // Akun 1.5.2 Kemitraan: .001 (Tanah), .002 (Mesin/Alat), .003 (Gedung), .004 (Jaringan), .005 (Lainnya)
+                // Akun 1.3 Belanja Modal: 1.3.1 (Tanah), 1.3.2 (Mesin), 1.3.3 (Gedung), 1.3.4 (Jaringan), 1.3.5 (Lainnya)
+                if (kode) {
+                    if (kode.endsWith('.001') || kode.startsWith('1.3.1')) return 'tanah';
+                    if (kode.endsWith('.002') || kode.startsWith('1.3.2')) return 'mesin';
+                    if (kode.endsWith('.003') || kode.startsWith('1.3.3')) return 'gedung';
+                    if (kode.endsWith('.004') || kode.startsWith('1.3.4')) return 'jaringan';
+                    if (kode.endsWith('.005') || kode.startsWith('1.3.5')) return 'lainnya';
+                }
+
+                // 2. Berdasarkan kecocokan teks nama
+                if (nama.includes('tanah') || nama.includes('lahan') || nama.includes('kavling')) return 'tanah';
+                if (nama.includes('gedung') || nama.includes('bangunan') || nama.includes('ruang') || nama.includes('paviliun') || nama.includes('rumah')) return 'gedung';
+                if (nama.includes('jalan') || nama.includes('irigasi') || nama.includes('jaringan') || nama.includes('pipa') || nama.includes('saluran') || nama.includes('kabel')) return 'jaringan';
+                if (nama.includes('lainnya') || nama.includes('buku') || nama.includes('seni') || nama.includes('hewan') || nama.includes('tanaman')) return 'lainnya';
+
+                // Default jenis kemitraan umum: Peralatan & Mesin (Alat medis / operasional)
+                return 'mesin';
+            },
+
+            get isTanah() {
+                return this.selectedObjekType === 'tanah';
+            },
+
+            get isMesin() {
+                return this.selectedObjekType === 'mesin';
+            },
+
+            get isGedung() {
+                return this.selectedObjekType === 'gedung';
+            },
+
+            get isJaringan() {
+                return this.selectedObjekType === 'jaringan';
+            },
+
+            get isLainnya() {
+                return this.selectedObjekType === 'lainnya';
+            },
+
+            get hasSelected108() {
+                return !!(this.selectedSubSub && this.selectedSubSub.kode) || !!this.formData.jenis_astap_id;
+            },
+
+            get kibLabel() {
+                if (this.isTanah) return 'Tanah (KIB A)';
+                if (this.isMesin) return 'Peralatan & Mesin (KIB B)';
+                if (this.isGedung) return 'Gedung & Bangunan (KIB C)';
+                if (this.isJaringan) return 'Jalan & Jaringan (KIB D)';
+                if (this.isLainnya) return 'Aset Tetap Lainnya (KIB E)';
+                return 'Spesifikasi Aset';
+            },
+
+            get kibStepTitle() {
+                return 'Spesifikasi Aset';
+            },
+
+            get kibStepSubtitle() {
+                return 'Penjelasan Aset (Spesifikasi JSON)';
+            },
+
+            getUnitName(id) {
+                if (!id) return 'Belum ditentukan';
+                const u = (window.dbUnits || []).find(item => String(item.id) === String(id));
+                return u ? (u.nama + (u.kode_unit ? ' (' + u.kode_unit + ')' : '')) : ('Unit ID #' + id);
+            },
+
+            get simulatedNibar() {
+                const tahun = this.formData.tahun_perolehan || '{{ date('Y') }}';
+                const rawKode = this.selectedKode108 || '1.5.2.01.01.01.001';
+                const kodeClean = rawKode.replace(/\./g, '');
+                return `1201351102000000280000${tahun}${kodeClean}0000001`;
+            },
+
             // Getter: Kode sub-rincian akun 1.5.2 berdasarkan skema kemitraan aktif di Langkah 1
             get activeSkemaKode() {
                 const skema = (this.formData.skema_kemitraan || 'Sewa').toUpperCase();
@@ -427,6 +560,15 @@
                     }
                 }
 
+                // Otomatis atur satuan default sesuai tipe objek aset jika masih default 'Unit'
+                if (this.isTanah && (!this.formData.satuan || this.formData.satuan === 'Unit')) {
+                    this.formData.satuan = 'Bidang';
+                } else if (this.isGedung && (!this.formData.satuan || this.formData.satuan === 'Unit')) {
+                    this.formData.satuan = 'Bangunan';
+                } else if (this.isJaringan && (!this.formData.satuan || this.formData.satuan === 'Unit')) {
+                    this.formData.satuan = 'Ruas / Titik';
+                }
+
                 this.showToast('Klasifikasi Terpilih', `${item.kode} • ${item.nama}`, 'info');
             },
 
@@ -550,19 +692,98 @@
                         this.showToast('Validasi Gagal', 'Mohon masukkan total taksiran nilai wajar aset kemitraan (Rp).', 'error');
                         return false;
                     }
+                    if (!this.formData.unit_id) {
+                        this.showToast('Validasi Gagal', 'Mohon pilih unit / ruangan penempatan barang di RSUD.', 'error');
+                        return false;
+                    }
+                    if (this.isTanah && (!this.formData.tanah_luas_m2 || this.formData.tanah_luas_m2 <= 0)) {
+                        this.showToast('Validasi Gagal', 'Mohon isi luas tanah (m²) pada spesifikasi KIB A.', 'error');
+                        return false;
+                    }
+                } else if (s === 3) {
+                    if (!this.isDataVerified) {
+                        this.showToast('Verifikasi Diperlukan', 'Mohon centang pernyataan bahwa data aset telah diverifikasi dengan benar sebelum disimpan.', 'warning');
+                        return false;
+                    }
                 }
                 return true;
             },
 
             // Submit Form via AJAX
             async submitForm() {
-                if (!this.validateStep(1) || !this.validateStep(2)) return;
+                if (!this.validateStep(1) || !this.validateStep(2) || !this.validateStep(3)) return;
 
-                if (!this.formData.unit_id) {
-                    this.showToast('Validasi Gagal', 'Mohon pilih unit / ruangan penempatan barang di RSUD.', 'error');
-                    return;
+                // Siapkan payload spesifikasi JSON terstruktur sesuai sheet KIB yang aktif
+                let specJson = {};
+
+                if (this.isTanah) {
+                    this.formData.tanah_items = [{
+                        tanah_luas_m2: parseFloat(this.formData.tanah_luas_m2) || 0,
+                        tanah_hak: this.formData.tanah_hak || 'Hak Pakai',
+                        tanah_sertifikat_no: this.formData.tanah_sertifikat_no || '',
+                        tanah_sertifikat_tgl: this.formData.tanah_sertifikat_tgl || '',
+                        tanah_penggunaan: this.formData.tanah_penggunaan || '',
+                        tanah_batas: this.formData.tanah_batas || '',
+                        tanah_alamat: this.formData.tanah_alamat || this.formData.alamat_barang || ''
+                    }];
+
+                    specJson = {
+                        kategori_kib: 'KIB A (Tanah)',
+                        luas_m2: parseFloat(this.formData.tanah_luas_m2) || 0,
+                        hak_tanah: this.formData.tanah_hak || 'Hak Pakai',
+                        sertifikat_no: this.formData.tanah_sertifikat_no || '',
+                        sertifikat_tgl: this.formData.tanah_sertifikat_tgl || '',
+                        penggunaan: this.formData.tanah_penggunaan || '',
+                        batas_wilayah: this.formData.tanah_batas || '',
+                        alamat_lahan: this.formData.tanah_alamat || this.formData.alamat_barang || '',
+                        tanah_items: this.formData.tanah_items
+                    };
+                } else if (this.isMesin) {
+                    specJson = {
+                        kategori_kib: 'KIB B (Peralatan & Mesin)',
+                        merk: this.formData.merk || '',
+                        type: this.formData.type || '',
+                        no_pabrik: this.formData.no_pabrik || '',
+                        bahan: this.formData.bahan || '',
+                        ukuran: this.formData.ukuran || '',
+                        tahun_pembuatan: this.formData.tahun_pembuatan || null,
+                        no_rangka: this.formData.no_rangka || '',
+                        no_mesin: this.formData.no_mesin || '',
+                        no_polisi: this.formData.no_polisi || ''
+                    };
+                } else if (this.isGedung) {
+                    specJson = {
+                        kategori_kib: 'KIB C (Gedung & Bangunan)',
+                        bertingkat: this.formData.gedung_bertingkat || 'Tidak',
+                        beton: this.formData.gedung_beton || 'Beton Bertulang',
+                        luas_lantai_m2: parseFloat(this.formData.gedung_luas_lantai) || 0,
+                        dokumen_no: this.formData.gedung_dokumen_no || '',
+                        dokumen_tgl: this.formData.gedung_dokumen_tgl || '',
+                        status_tanah: this.formData.gedung_status_tanah || 'Tanah Milik RSUD',
+                        fungsi_gedung: this.formData.gedung_fungsi || ''
+                    };
+                } else if (this.isJaringan) {
+                    specJson = {
+                        kategori_kib: 'KIB D (Jalan, Irigasi & Jaringan)',
+                        konstruksi: this.formData.jaringan_konstruksi || '',
+                        luas_m2: parseFloat(this.formData.jaringan_luas) || 0,
+                        panjang_m: parseFloat(this.formData.jaringan_panjang) || 0,
+                        lebar_m: parseFloat(this.formData.jaringan_lebar) || 0,
+                        dokumen_no: this.formData.jaringan_dokumen_no || '',
+                        dokumen_tgl: this.formData.jaringan_dokumen_tgl || ''
+                    };
+                } else if (this.isLainnya) {
+                    specJson = {
+                        kategori_kib: 'KIB E (Aset Tetap Lainnya)',
+                        judul: this.formData.lainnya_judul || '',
+                        jenis: this.formData.lainnya_jenis || '',
+                        ukuran: this.formData.lainnya_ukuran || '',
+                        bahan: this.formData.lainnya_bahan || '',
+                        asal_usul: this.formData.lainnya_asal || ''
+                    };
                 }
 
+                this.formData.spesifikasi_json = specJson;
                 this.isSubmitting = true;
 
                 try {

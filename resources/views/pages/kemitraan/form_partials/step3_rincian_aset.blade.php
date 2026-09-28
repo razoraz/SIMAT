@@ -5,14 +5,15 @@
     
     <div>
         <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-400/10 text-cyan-300 border border-cyan-400/20 text-xs font-bold mb-2">
-            <span>📦 LANGKAH 3 DARI 3: SPESIFIKASI FISIK &amp; PENEMPATAN RUANGAN RSUD</span>
+            <span>📦 LANGKAH 3 DARI 3: SPESIFIKASI ASET &amp; PENEMPATAN RUANGAN</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <span class="p-2 rounded-xl bg-cyan-400/10 text-cyan-400 text-sm">📋</span>
-            <span>Langkah 3: Rincian Spesifikasi Teknis &amp; Lokasi Penempatan Ruangan</span>
+            <span>Langkah 3: Spesifikasi Aset</span>
+            <span class="text-xs text-cyan-400 font-semibold px-2.5 py-0.5 rounded-lg bg-cyan-950/60 border border-cyan-500/30 font-mono" x-show="hasSelected108" x-text="kibLabel"></span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
-            Lengkapi rincian fisik alat/fasilitas kemitraan (merk, serial number), unit ruangan penempatan (KIR), kondisi fisik, dan pejabat penanggung jawab RSUD.
+            Lengkapi formulir penjelasan spesifikasi fisik aset sesuai lembar KIB yang dipilih pada Langkah 2 (otomatis tersimpan ke format spesifikasi JSON), unit penempatan (KIR), dan pejabat penanggung jawab RSUD.
         </p>
     </div>
 
@@ -39,62 +40,21 @@
         </div>
     </div>
 
-    <!-- 2. Form Rincian Spesifikasi Teknis Barang -->
-    <div class="p-6 rounded-3xl bg-slate-950/80 border border-cyan-500/30 space-y-5 shadow-xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                <span>🔧 Rincian Spesifikasi Fisik Barang / Mesin / Alkes</span>
-            </span>
-            <span class="text-[10px] text-slate-400 font-mono">Untuk Identitas Fisik &amp; Label Barcode</span>
-        </div>
+    <!-- 2. Form Rincian Penjelasan Spesifikasi Teknis (Dinamis Sesuai Lembar KIB: Tanah / Mesin / Gedung / Jaringan / Lainnya) -->
+    <!-- Sheet KIB A: Tanah -->
+    @include('pages.kemitraan.form_partials.step3_sheets.sheet_tanah')
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Merk / Brand Pabrikan
-                </label>
-                <input type="text" x-model="formData.merk"
-                    placeholder="Contoh: Roche / Siemens / Fresenius / GE Healthcare..."
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-            </div>
+    <!-- Sheet KIB B: Peralatan & Mesin / Alkes Medis -->
+    @include('pages.kemitraan.form_partials.step3_sheets.sheet_mesin')
 
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Tipe / Model Barang
-                </label>
-                <input type="text" x-model="formData.type"
-                    placeholder="Contoh: Cobas e411 / 4008S / Multix Select DR..."
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-            </div>
+    <!-- Sheet KIB C: Gedung & Bangunan -->
+    @include('pages.kemitraan.form_partials.step3_sheets.sheet_gedung')
 
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nomor Pabrik / Seri (Serial Number)
-                </label>
-                <input type="text" x-model="formData.no_pabrik"
-                    placeholder="Contoh: SN-892301982 / S/N-2026-X88..."
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none">
-            </div>
+    <!-- Sheet KIB D: Jalan, Irigasi & Jaringan -->
+    @include('pages.kemitraan.form_partials.step3_sheets.sheet_jaringan')
 
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Bahan / Material Utama
-                </label>
-                <input type="text" x-model="formData.bahan"
-                    placeholder="Contoh: Logam, Elektronik Medis, Beton, Kaca..."
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-            </div>
-
-            <div class="sm:col-span-2">
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Ukuran / Kapasitas / Spesifikasi Tambahan
-                </label>
-                <input type="text" x-model="formData.ukuran"
-                    placeholder="Contoh: 120 x 80 x 150 cm / Kapasitas 120 Tes/Jam / 3 Lantai Beton..."
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-            </div>
-        </div>
-    </div>
+    <!-- Sheet KIB E: Aset Tetap Lainnya -->
+    @include('pages.kemitraan.form_partials.step3_sheets.sheet_lainnya')
 
     <!-- 3. Bagian Penempatan Ruangan, Kondisi & PPK RSUD -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-cyan-500/30 space-y-5 shadow-xl">

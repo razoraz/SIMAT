@@ -62,7 +62,7 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 2 ? 'text-cyan-400' : 'text-slate-500'">Langkah 2</span>
-                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Klasifikasi 108 (Akun 1.5.2)</span>
+                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Klasifikasi &amp; Spesifikasi Aset</span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 2 ? 'bg-cyan-500' : 'bg-slate-950'"></div>
@@ -77,7 +77,7 @@
                     </div>
                     <div class="min-w-0">
                         <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 3 ? 'text-cyan-400' : 'text-slate-500'">Langkah 3</span>
-                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate" x-text="(kibLabel ? kibLabel : 'Spesifikasi') + ' & Penempatan'"></span>
+                        <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Verifikasi Data Aset</span>
                     </div>
                 </div>
                 <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 3 ? 'bg-cyan-500' : 'bg-slate-950'"></div>
