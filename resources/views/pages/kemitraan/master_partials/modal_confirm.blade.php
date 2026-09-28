@@ -20,16 +20,26 @@
 
         <div>
             <h3 class="text-base font-extrabold text-white">
-                Hapus Catatan Aset Kemitraan?
+                Pindahkan ke Pusat Pemulihan?
             </h3>
             <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                Anda akan menghapus data kemitraan untuk barang:
+                Anda akan menonaktifkan data kerja sama kemitraan untuk aset:
             </p>
             <p class="text-xs font-bold text-cyan-300 mt-1 font-mono bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800 mx-auto inline-block max-w-full truncate"
                x-text="deleteItem.nama || 'Aset Kemitraan'">
             </p>
-            <p class="text-[11px] text-rose-400/80 mt-2 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20 text-left">
-                ⚠️ <strong>Perhatian:</strong> Penghapusan ini akan menghapus catatan kemitraan dan nomor register barang terkait di SIMAT-RK.
+
+            <div class="mt-3 text-left">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    Alasan Penghapusan (Opsional):
+                </label>
+                <input type="text" x-model="deleteItem.alasan" placeholder="Misal: Dibatalkan, salah input, kontrak berakhir..."
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors">
+            </div>
+
+            <p class="text-[11px] text-cyan-400/90 mt-3 bg-cyan-950/30 p-2.5 rounded-xl border border-cyan-500/20 text-left flex items-start gap-2">
+                <span class="text-base leading-none">♻️</span>
+                <span><strong>Sistem Soft Delete:</strong> Data perjanjian kemitraan dan nomor register barang akan diarsipkan ke <strong>Pusat Pemulihan Data (Recycle Bin)</strong> dan dapat Anda pulihkan kembali sewaktu-waktu jika diperlukan.</span>
             </p>
         </div>
 
@@ -40,8 +50,8 @@
             </button>
             <button type="button" @click="executeDelete()" :disabled="isDeleting"
                 class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow-lg shadow-rose-600/30 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
-                <span x-show="!isDeleting">Ya, Hapus Data</span>
-                <span x-show="isDeleting">Menghapus...</span>
+                <span x-show="!isDeleting">Ya, Pindahkan ke Sampah</span>
+                <span x-show="isDeleting">Memproses...</span>
             </button>
         </div>
     </div>

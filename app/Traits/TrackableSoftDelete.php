@@ -58,7 +58,7 @@ trait TrackableSoftDelete
         ];
 
         // Jika model memiliki kolom alasan_hapus, simpan alasan
-        if ($reason && in_array('alasan_hapus', $this->getFillable())) {
+        if ($reason && ($this->isFillable('alasan_hapus') || in_array('alasan_hapus', $this->getFillable()))) {
             $payload['alasan_hapus'] = $reason;
         }
 
@@ -77,7 +77,7 @@ trait TrackableSoftDelete
             'deleted_at'    => null,
         ];
 
-        if (in_array('alasan_hapus', $this->getFillable())) {
+        if ($this->isFillable('alasan_hapus') || in_array('alasan_hapus', $this->getFillable())) {
             $payload['alasan_hapus'] = null;
         }
 

@@ -101,11 +101,11 @@
 
             // Konfirmasi Penghapusan
             confirmDelete(id, nama) {
-                this.deleteItem = { id: id, nama: nama || 'Aset Kemitraan' };
+                this.deleteItem = { id: id, nama: nama || 'Aset Kemitraan', alasan: '' };
                 this.showDeleteModal = true;
             },
 
-            // Eksekusi Penghapusan
+            // Eksekusi Penghapusan (Soft Delete)
             async executeDelete() {
                 if (!this.deleteItem.id) return;
                 this.isDeleting = true;
@@ -120,12 +120,15 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': csrf,
                             'Accept': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify({
+                            alasan_hapus: this.deleteItem.alasan || 'Dihapus dari Kelola Kemitraan Aset'
+                        })
                     });
 
                     const json = await res.json();
                     if (json.success) {
-                        alert(json.message || 'Data Aset Kemitraan berhasil dihapus.');
+                        alert(json.message || 'Data Aset Kemitraan berhasil dipindahkan ke Pusat Pemulihan Data.');
                         window.location.reload();
                     } else {
                         alert(json.message || 'Gagal menghapus data.');

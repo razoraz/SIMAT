@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\TrackableSoftDelete;
 use Carbon\Carbon;
 
 class AstapKemitraan extends Model
 {
-    use HasFactory;
+    use HasFactory, TrackableSoftDelete;
 
     protected $table = 'astap_kemitraans';
 
@@ -21,6 +22,8 @@ class AstapKemitraan extends Model
         'nilai_aset'      => 'decimal:2',
         'jumlah_volume'   => 'integer',
         'tahun'           => 'integer',
+        'is_deleted'      => 'integer',
+        'deleted_at'      => 'datetime',
     ];
 
     public function astap()

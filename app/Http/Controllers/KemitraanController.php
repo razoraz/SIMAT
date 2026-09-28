@@ -54,8 +54,9 @@ class KemitraanController extends Controller
         $filterStatus = $request->query('status', 'all');  // 'all', 'Aktif', 'Akan Berakhir', 'Selesai / Reklasifikasi'
         $search       = trim($request->query('search', ''));
 
-        // Query utama data kemitraan
+        // Query utama data kemitraan (hanya yang aktif / belum dihapus)
         $query = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'user'])
+            ->where('is_deleted', 0)
             ->whereHas('astap', function ($q) {
                 $q->where('is_deleted', 0);
             })
@@ -63,13 +64,7 @@ class KemitraanController extends Controller
             ->orderBy('id', 'desc');
 
         if ($filterSkema !== 'all') {
-            if ($filterSkema === 'BGS/BSG') {
-                $query->whereIn('skema_kemitraan', ['BGS/BSG', 'BSG', 'BGS']);
-            } elseif ($filterSkema === 'KSPI') {
-                $query->whereIn('skema_kemitraan', ['KSPI', 'KSO']);
-            } else {
-                $query->where('skema_kemitraan', $filterSkema);
-            }
+            $query->where('skema_kemitraan', $filterSkema);
         }
 
         if ($filterTahun !== 'all') {
@@ -99,8 +94,10 @@ class KemitraanController extends Controller
 
         $kemitraanRecords = $query->get();
 
-        // Hitung Statistik KPI
-        $allKemitraans = AstapKemitraan::whereHas('astap', fn($q) => $q->where('is_deleted', 0))->get();
+        // Hitung Statistik KPI (hanya yang aktif)
+        $allKemitraans = AstapKemitraan::where('is_deleted', 0)
+            ->whereHas('astap', fn($q) => $q->where('is_deleted', 0))
+            ->get();
         $totalNilaiKemitraan = $allKemitraans->sum('nilai_aset');
         $totalVolumeUnit = $allKemitraans->sum('jumlah_volume');
         $totalAktif = $allKemitraans->where('status_konsesi', 'Aktif')->count();
@@ -157,31 +154,49 @@ class KemitraanController extends Controller
     }
 
     /**
-     * Hapus / Batalkan Catatan Aset Kemitraan
+     * Hapus / Pindahkan Catatan Aset Kemitraan ke Pusat Pemulihan Data (Soft Delete)
      */
     public function destroy(Request $request, $id)
     {
         $kemitraan = AstapKemitraan::findOrFail($id);
+        $alasanHapus = $request->input('alasan_hapus', 'Dihapus dari Kelola Kemitraan Aset');
 
-        DB::transaction(function () use ($kemitraan) {
+        DB::transaction(function () use ($kemitraan, $alasanHapus) {
+            $user = Auth::user();
+            $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+            $deleterId = $user?->id;
+            $now = now();
+
+            // 1. Soft delete catatan kemitraan
+            $kemitraan->softDelete($alasanHapus);
+
+            // 2. Soft delete aset ASTAP dan unit registernya
             $astap = $kemitraan->astap;
             if ($astap) {
-                // Soft delete registers
-                AstapRegister::where('astap_id', $astap->id)->update(['is_deleted' => 1]);
-                // Soft delete astap
-                $astap->update(['is_deleted' => 1]);
+                AstapRegister::where('astap_id', $astap->id)->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $deleterId,
+                    'deleted_at'    => $now,
+                ]);
+
+                $astap->update([
+                    'is_deleted'    => 1,
+                    'deleted_by'    => $deleterName,
+                    'deleted_by_id' => $deleterId,
+                    'deleted_at'    => $now,
+                ]);
             }
-            $kemitraan->delete();
         });
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Data Aset Kemitraan berhasil dihapus dari SIMAT-RK.'
+                'message' => 'Data Aset Kemitraan berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).'
             ]);
         }
 
         return redirect()->route('master.kemitraan')
-            ->with('success', 'Data Aset Kemitraan berhasil dihapus.');
+            ->with('success', 'Data Aset Kemitraan berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).');
     }
 }
