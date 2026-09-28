@@ -19,8 +19,8 @@
             <!-- LANGKAH 2: Klasifikasi Kode Barang 108 (Akun 1.5.2) & Nilai Taksiran -->
             @include('pages.kemitraan.form_partials.step2_klasifikasi_108')
 
-            <!-- LANGKAH 3: Rincian Spesifikasi Teknis & Lokasi Penempatan Ruangan RSUD -->
-            @include('pages.kemitraan.form_partials.step3_rincian_aset')
+            <!-- LANGKAH 3: Lembar Verifikasi Data Aset Kemitraan & Konfirmasi -->
+            @include('pages.kemitraan.form_partials.step3_verifikasi_data')
 
             <!-- Stepper Bottom Navigation -->
             @include('pages.kemitraan.form_partials.stepper_navigation')
