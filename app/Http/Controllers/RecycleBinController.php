@@ -85,6 +85,77 @@ class RecycleBinController extends Controller
         });
 
         // =========================================================================
+        // 1B. DATA TERHAPUS: MUTASI EKSTERNAL (TRANSFER ANTAR-OPD / PELIMPAHAN SKPD)
+        // =========================================================================
+        $rawDeletedMutasiEksternals = \App\Models\MutasiEksternal::onlyDeleted()
+            ->with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
+            ->latest('deleted_at')
+            ->latest('id')
+            ->get();
+
+        $deletedMutasiEksternals = $rawDeletedMutasiEksternals->map(function ($m) {
+            $astap = $m->astap;
+            $nomorBamb = $m->nomor_bamb ?: ($astap?->bast_dokumen_nomor ?: 'BAMB-EXT-' . str_pad($m->id, 4, '0', STR_PAD_LEFT));
+            $kode108 = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($astap?->jenisAstap?->jenis ?: '-'));
+
+            $itemsMapped = [];
+            $registers = $astap?->registers ?? collect();
+            if ($registers->isNotEmpty()) {
+                foreach ($registers as $idx => $reg) {
+                    $itemsMapped[] = [
+                        'no'          => $idx + 1,
+                        'nama_barang' => $astap->nama_barang,
+                        'nibar'       => $reg->nibar ?: '-',
+                        'kode_108'    => $kode108,
+                        'kondisi'     => $reg->kondisi ?: ($m->kondisi ?: 'Baik'),
+                    ];
+                }
+            } else {
+                $itemsMapped[] = [
+                    'no'          => 1,
+                    'nama_barang' => $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
+                    'nibar'       => '-',
+                    'kode_108'    => $kode108,
+                    'kondisi'     => $m->kondisi ?: 'Baik',
+                ];
+            }
+
+            $itemCount = count($itemsMapped);
+            $deletedAt = $m->deleted_at ? Carbon::parse($m->deleted_at)->timezone('Asia/Jakarta') : null;
+            $nilaiReal = (float) ($m->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
+            $firstRegister = $registers->first();
+
+            return [
+                'id'                        => $m->id,
+                'astap_id'                  => $m->astap_id,
+                'kode'                      => $nomorBamb,
+                'nomor_bamb'                => $nomorBamb,
+                'jenis'                     => $m->jenis_mutasi ?: 'Transfer Antar-OPD',
+                'tipe'                      => $m->tipe ?: 'masuk',
+                'nama'                      => ($astap?->nama_barang ?: 'Barang Mutasi Eksternal') . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
+                'kode_barang'               => $firstRegister?->nibar ?: ($kode108 ?: '-'),
+                'item_count'                => $itemCount,
+                'items'                     => $itemsMapped,
+                'asal'                      => $m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar'),
+                'opd_asal'                  => $m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar'),
+                'tujuan'                    => $m->unit?->nama ?: ($m->ruangan_tujuan ?: 'RSUD dr. H. Koesnadi'),
+                'ruangan_tujuan'            => $m->unit?->nama ?: ($m->ruangan_tujuan ?: 'RSUD dr. H. Koesnadi'),
+                'pemohon'                   => $m->pj_asal_nama ?: 'Pejabat OPD Pengirim',
+                'penerima_pj'               => $m->pj_tujuan_nama ?: 'Pengurus Barang RSUD',
+                'status_terakhir'           => $m->status ?: 'Disahkan (Selesai)',
+                'alasan_mutasi'             => $m->alasan_mutasi ?: '-',
+                'nilai_perolehan'           => $nilaiReal,
+                'nilai_perolehan_formatted' => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
+                'dokumen_lampiran'          => $m->dokumen_lampiran,
+                'is_eksternal'              => true,
+                'deleted_by'                => $m->deleted_by ?: 'Administrator',
+                'deleted_at'                => $deletedAt ? $deletedAt->locale('id')->translatedFormat('d M Y, H:i') . ' WIB' : '-',
+                'deleted_at_relative'       => $deletedAt ? $deletedAt->locale('id')->diffForHumans() : '-',
+                'deleted_at_raw'            => $deletedAt ? $deletedAt->toIso8601String() : null,
+            ];
+        });
+
+        // =========================================================================
         // 2. DATA TERHAPUS: MASTER ASTAP
         // =========================================================================
         $rawDeletedAstaps = Astap::onlyDeleted()
@@ -312,7 +383,9 @@ class RecycleBinController extends Controller
         $thirtyDaysAgo = $now->copy()->subDays(30);
         $sevenDaysAgo  = $now->copy()->subDays(7);
 
-        $mutasiCount     = $deletedMutasis->count();
+        $mutasiInternalCount  = $deletedMutasis->count();
+        $mutasiEksternalCount = $deletedMutasiEksternals->count();
+        $mutasiCount          = $mutasiInternalCount + $mutasiEksternalCount;
         $astapCount      = $deletedAstaps->count();
         $nibarCount      = $deletedNibars->count();
         $distribusiCount = $deletedDistribusis->count();
@@ -325,6 +398,7 @@ class RecycleBinController extends Controller
         // Hitung 30 hari terakhir
         $filterMonth = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($thirtyDaysAgo))->count();
         $totalThisMonth = $filterMonth($rawDeletedMutasis)
+            + $filterMonth($rawDeletedMutasiEksternals)
             + $filterMonth($rawDeletedAstaps)
             + $filterMonth($rawDeletedNibars)
             + $filterMonth($rawDeletedDistribusis)
@@ -335,6 +409,7 @@ class RecycleBinController extends Controller
         // Hitung 7 hari terakhir
         $filterWeek = fn($col) => $col->filter(fn($m) => $m->deleted_at && Carbon::parse($m->deleted_at)->gte($sevenDaysAgo))->count();
         $totalThisWeek = $filterWeek($rawDeletedMutasis)
+            + $filterWeek($rawDeletedMutasiEksternals)
             + $filterWeek($rawDeletedAstaps)
             + $filterWeek($rawDeletedNibars)
             + $filterWeek($rawDeletedDistribusis)
@@ -344,11 +419,13 @@ class RecycleBinController extends Controller
 
         $moduleStats = [
             'mutasi' => [
-                'name'  => 'Mutasi Aset',
-                'icon'  => '🔄',
-                'count' => $mutasiCount,
-                'color' => 'amber',
-                'ready' => true,
+                'name'            => 'Mutasi Aset',
+                'icon'            => '🔄',
+                'count'           => $mutasiCount,
+                'internal_count'  => $mutasiInternalCount,
+                'eksternal_count' => $mutasiEksternalCount,
+                'color'           => 'amber',
+                'ready'           => true,
             ],
             'astap' => [
                 'name'        => 'Master ASTAP',
@@ -390,6 +467,7 @@ class RecycleBinController extends Controller
 
         return view('pages.recycle_bin', compact(
             'deletedMutasis',
+            'deletedMutasiEksternals',
             'deletedAstaps',
             'deletedNibars',
             'deletedDistribusis',
@@ -411,10 +489,31 @@ class RecycleBinController extends Controller
     {
         switch ($module) {
             case 'mutasi':
+            case 'mutasi_internal':
                 $mutasi = AstapMutasi::findOrFail($id);
                 $bamb = $mutasi->nomor_bamb;
                 $mutasi->restoreData();
                 $msg = "Data Berita Acara Mutasi {$bamb} berhasil dipulihkan ke status aktif.";
+                break;
+
+            case 'mutasi_eksternal':
+                $mEksternal = \App\Models\MutasiEksternal::findOrFail($id);
+                $bamb = $mEksternal->nomor_bamb;
+                DB::transaction(function () use ($mEksternal) {
+                    $mEksternal->restoreData();
+                    if ($mEksternal->astap) {
+                        $mEksternal->astap->restoreData();
+                        $mEksternal->astap->registers()->update([
+                            'is_deleted'    => 0,
+                            'deleted_by'    => null,
+                            'deleted_by_id' => null,
+                            'deleted_at'    => null,
+                        ]);
+                        $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
+                        $mEksternal->astap->save();
+                    }
+                });
+                $msg = "Data Berita Acara Mutasi Eksternal {$bamb} beserta aset terkait berhasil dipulihkan ke katalog aktif.";
                 break;
 
             case 'astap':
@@ -621,12 +720,35 @@ class RecycleBinController extends Controller
         $restoredCount = 0;
         switch ($module) {
             case 'mutasi':
+            case 'mutasi_internal':
                 $items = AstapMutasi::whereIn('id', $ids)->get();
                 foreach ($items as $item) {
                     $item->restoreData();
                     $restoredCount++;
                 }
-                $msg = "Sebanyak {$restoredCount} transaksi mutasi berhasil dipulihkan ke status aktif.";
+                $msg = "Sebanyak {$restoredCount} transaksi mutasi internal berhasil dipulihkan ke status aktif.";
+                break;
+
+            case 'mutasi_eksternal':
+                $items = \App\Models\MutasiEksternal::whereIn('id', $ids)->get();
+                DB::transaction(function () use ($items, &$restoredCount) {
+                    foreach ($items as $mEksternal) {
+                        $mEksternal->restoreData();
+                        if ($mEksternal->astap) {
+                            $mEksternal->astap->restoreData();
+                            $mEksternal->astap->registers()->update([
+                                'is_deleted'    => 0,
+                                'deleted_by'    => null,
+                                'deleted_by_id' => null,
+                                'deleted_at'    => null,
+                            ]);
+                            $mEksternal->astap->jumlah_volume = max(1, $mEksternal->astap->registers()->where('is_deleted', 0)->count());
+                            $mEksternal->astap->save();
+                        }
+                        $restoredCount++;
+                    }
+                });
+                $msg = "Sebanyak {$restoredCount} transaksi mutasi eksternal berhasil dipulihkan ke status aktif.";
                 break;
 
             case 'astap':
@@ -794,13 +916,35 @@ class RecycleBinController extends Controller
         $deletedCount = 0;
         switch ($module) {
             case 'mutasi':
+            case 'mutasi_internal':
                 $mutasis = AstapMutasi::whereIn('id', $ids)->get();
                 foreach ($mutasis as $m) {
                     AstapMutasiRegister::where('astap_mutasi_id', $m->id)->delete();
                     $m->delete();
                     $deletedCount++;
                 }
-                $msg = "Sebanyak {$deletedCount} data mutasi telah dihapus permanen dari database.";
+                $msg = "Sebanyak {$deletedCount} data mutasi internal telah dihapus permanen dari database.";
+                break;
+
+            case 'mutasi_eksternal':
+                $items = \App\Models\MutasiEksternal::whereIn('id', $ids)->get();
+                DB::transaction(function () use ($items, &$deletedCount) {
+                    foreach ($items as $mEksternal) {
+                        $astap = $mEksternal->astap;
+                        if ($astap) {
+                            $astap->registers()->delete();
+                            if ($astap->pelimpahanSkpd) {
+                                $astap->pelimpahanSkpd->delete();
+                            }
+                            $mEksternal->delete();
+                            $astap->delete();
+                        } else {
+                            $mEksternal->delete();
+                        }
+                        $deletedCount++;
+                    }
+                });
+                $msg = "Sebanyak {$deletedCount} data mutasi eksternal telah dihapus permanen dari database.";
                 break;
 
             case 'astap':
@@ -993,11 +1137,31 @@ class RecycleBinController extends Controller
 
         switch ($module) {
             case 'mutasi':
+            case 'mutasi_internal':
                 $mutasi = AstapMutasi::findOrFail($id);
                 $bamb = $mutasi->nomor_bamb;
                 AstapMutasiRegister::where('astap_mutasi_id', $mutasi->id)->delete();
                 $mutasi->delete();
                 $msg = "Data Berita Acara Mutasi {$bamb} telah dihapus secara permanen dari database.";
+                break;
+
+            case 'mutasi_eksternal':
+                $mEksternal = \App\Models\MutasiEksternal::findOrFail($id);
+                $bamb = $mEksternal->nomor_bamb;
+                DB::transaction(function () use ($mEksternal) {
+                    $astap = $mEksternal->astap;
+                    if ($astap) {
+                        $astap->registers()->delete();
+                        if ($astap->pelimpahanSkpd) {
+                            $astap->pelimpahanSkpd->delete();
+                        }
+                        $mEksternal->delete();
+                        $astap->delete();
+                    } else {
+                        $mEksternal->delete();
+                    }
+                });
+                $msg = "Data Berita Acara Mutasi Eksternal {$bamb} telah dihapus secara permanen dari database.";
                 break;
 
             case 'astap':
