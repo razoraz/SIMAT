@@ -190,6 +190,75 @@
                         </div>
                     </div>
 
+                    <!-- Keterangan / Catatan Khusus (Diletakkan di Atas Ruang Pemegang) -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 space-y-1.5 shadow-md transition-all">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <label class="block text-slate-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📝 KETERANGAN / CATATAN KHUSUS:</span>
+                            </label>
+                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-bold">Catatan Tambahan</span>
+                        </div>
+                        <input type="text" x-model="item.lainnya_keterangan"
+                            placeholder="Contoh: Koleksi literatur medis kemitraan / Aset tetap lainnya / Spesifikasi khusus"
+                            class="w-full bg-slate-950 border border-slate-700 hover:border-slate-600 focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all">
+                    </div>
+
+                    <!-- Ruang / Unit Pemegang (Penanggung Jawab & Lokasi Aset Lainnya) -->
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/40 space-y-2 relative shadow-md" @click.away="item.isRuangOpen = false">
+                        <div class="flex items-center justify-between border-b border-amber-500/30 pb-1.5">
+                            <label class="block text-amber-400 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📍 Ruang / Unit Pemegang &amp; Penempatan Aset:</span>
+                            </label>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold flex items-center space-x-1">
+                                    <span>🏥</span>
+                                    <span>Unit &amp; Paviliun RSUD</span>
+                                </span>
+                                <button type="button" 
+                                        x-show="item.ruang_pemegang" 
+                                        @click="item.ruang_pemegang = ''; item.searchRuang = ''; item.isRuangOpen = true; syncTotalsFromItems();" 
+                                        class="text-[10px] font-bold text-rose-400 hover:text-rose-300 transition-colors">
+                                    ✕ Reset
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="relative">
+                            <input type="text" 
+                                   :value="!item.isRuangOpen ? item.ruang_pemegang : item.searchRuang"
+                                   @input="item.ruang_pemegang = $event.target.value; item.searchRuang = $event.target.value; item.isRuangOpen = true; syncTotalsFromItems();"
+                                   @focus="item.isRuangOpen = true"
+                                   placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
+                                   class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-white font-semibold focus:outline-none transition-all">
+                            <svg class="w-3.5 h-3.5 text-amber-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        </div>
+
+                        <!-- Dropdown List Pilihan Unit & Paviliun -->
+                        <div x-show="item.isRuangOpen" x-transition x-cloak style="max-height: 180px;" class="absolute left-0 right-0 z-40 mt-1 w-full space-y-1 custom-scrollbar p-2 bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-y-auto divide-y divide-slate-800">
+                            <div class="px-2.5 py-1 bg-slate-950/80 rounded-lg text-[9.5px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                                <span>PILIH DARI DATA UNIT &amp; PAVILIUN RSUD:</span>
+                                <span class="text-slate-400 font-mono text-[9px]" x-text="filterUnitsForItem(item).length + ' Unit/Ruangan'"></span>
+                            </div>
+                            <template x-for="u in filterUnitsForItem(item)" :key="u.id || u.nama">
+                                <div @click="selectUnitForItem(item, u)" class="p-2 rounded-xl bg-slate-950/50 hover:bg-amber-500/15 border border-slate-800/60 hover:border-amber-500/40 cursor-pointer transition-all flex items-center justify-between group">
+                                    <div class="min-w-0 pr-2">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-xs font-bold text-white group-hover:text-amber-300 truncate" x-text="u.nama"></span>
+                                            <span class="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700" x-text="u.tipe || 'Unit'"></span>
+                                        </div>
+                                        <p class="text-[9.5px] text-slate-400 truncate mt-0.5" x-text="'Kepala/PJ: ' + (u.kepala || '-') + ' • Kode: ' + (u.kode || '-')"></p>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-lg bg-slate-900 text-amber-300 border border-amber-500/30 text-[9.5px] font-bold shrink-0">Pilih →</span>
+                                </div>
+                            </template>
+                            <template x-if="filterUnitsForItem(item).length === 0">
+                                <div class="p-2.5 text-center text-xs text-slate-400">
+                                    <span>Tidak ada unit yang cocok. Ketikkan nama secara manual jika tidak ada di daftar.</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                     <!-- Kondisi, Volume, Satuan & Taksiran Nilai -->
                     <div class="p-4 rounded-2xl bg-slate-900/80 border border-purple-500/30 space-y-2.5 shadow-md">
                         <div class="flex items-center justify-between border-b border-purple-500/20 pb-1.5">

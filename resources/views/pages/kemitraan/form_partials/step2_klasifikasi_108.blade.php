@@ -105,9 +105,6 @@
     <!-- ========================================================================= -->
     <!-- RINCIAN SPESIFIK BARANG & NILAI TAKSIRAN ASET (BAGIAN PALING BAWAH)       -->
     <!-- ========================================================================= -->
-    <!-- ========================================================================= -->
-    <!-- RINCIAN SPESIFIK BARANG & NILAI TAKSIRAN ASET (BAGIAN PALING BAWAH)       -->
-    <!-- ========================================================================= -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-cyan-500/30 space-y-5 shadow-2xl relative overflow-hidden">
         <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -148,7 +145,7 @@
                 </div>
 
                 <p class="text-[11px] text-slate-400 pt-1 leading-relaxed">
-                    <span x-show="isMultiItemActive">💡 Total volume dihitung otomatis dari akumulasi rincian barang/unit di Langkah 3.</span>
+                    <span x-show="isMultiItemActive">💡 Total volume dihitung otomatis dari akumulasi rincian barang/unit di atas.</span>
                     <span x-show="!isMultiItemActive">Kuantitas fisik unit aset yang dikerjasamakan dalam kemitraan.</span>
                 </p>
             </div>
@@ -180,10 +177,11 @@
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-1">
                     <p>
-                        <span x-show="isMultiItemActive">💡 Akumulasi otomatis dari taksiran nilai wajar barang di Langkah 3.</span>
+                        <span x-show="isMultiItemActive && (isTanah || isGedung || isJaringan)">💡 Total nilai wajar keseluruhan perolehan/appraisal (lump-sum per objek).</span>
+                        <span x-show="isMultiItemActive && (isMesin || isLainnya)">💡 Akumulasi otomatis dari taksiran nilai wajar barang di atas.</span>
                         <span x-show="!isMultiItemActive">Sesuai klausul kontrak PKS atau taksiran appraisal.</span>
                     </p>
-                    <template x-if="formData.jumlah_volume > 1 && formData.total_realisasi > 0">
+                    <template x-if="(isMesin || isLainnya) && formData.jumlah_volume > 1 && formData.total_realisasi > 0">
                         <span class="text-cyan-400 font-mono font-semibold">
                             Rata-rata: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span>
                         </span>

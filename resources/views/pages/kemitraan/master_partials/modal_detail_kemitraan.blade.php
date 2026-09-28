@@ -87,22 +87,87 @@
             </div>
         </div>
 
-        <!-- 3. Spesifikasi Fisik & Ruangan Penempatan -->
+        <!-- 3. Spesifikasi Fisik & Penempatan / Lokasi Fisik -->
         <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
             <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block">
-                3. Spesifikasi Fisik &amp; Penempatan (KIR)
+                3. Spesifikasi Fisik &amp; Penempatan Aset
             </span>
-            <div class="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                    <span class="text-slate-500 block text-[10px]">Merk / Model:</span>
-                    <span class="font-semibold text-white block mt-0.5" x-text="(activeDetail.astap?.spesifikasi_json?.merk || '-') + ' / ' + (activeDetail.astap?.spesifikasi_json?.type || '-')"></span>
+
+            {{-- Detil Spesifikasi Adaptif Berdasarkan Kategori Aset --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {{-- Spesifikasi Mesin / Alkes --}}
+                <template x-if="activeDetail.astap?.spesifikasi_json?.merk || activeDetail.astap?.spesifikasi_json?.type">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Merk / Model:</span>
+                        <span class="font-semibold text-white block mt-0.5" x-text="(activeDetail.astap?.spesifikasi_json?.merk || '-') + ' / ' + (activeDetail.astap?.spesifikasi_json?.type || '-')"></span>
+                    </div>
+                </template>
+                <template x-if="activeDetail.astap?.spesifikasi_json?.no_pabrik">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Nomor Seri / Pabrik (SN):</span>
+                        <span class="font-mono text-cyan-300 block mt-0.5" x-text="activeDetail.astap?.spesifikasi_json?.no_pabrik"></span>
+                    </div>
+                </template>
+
+                {{-- Spesifikasi Tanah --}}
+                <template x-if="activeDetail.astap?.spesifikasi_json?.hak_tanah || activeDetail.astap?.spesifikasi_json?.luas_m2">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Hak Tanah &amp; Luas Lahan:</span>
+                        <span class="font-semibold text-emerald-300 block mt-0.5" x-text="(activeDetail.astap?.spesifikasi_json?.hak_tanah || '-') + ' • ' + (activeDetail.astap?.spesifikasi_json?.luas_m2 ? (Number(activeDetail.astap?.spesifikasi_json?.luas_m2).toLocaleString('id-ID') + ' m²') : '-')"></span>
+                    </div>
+                </template>
+                <template x-if="activeDetail.astap?.spesifikasi_json?.sertifikat_no">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Nomor Sertifikat:</span>
+                        <span class="font-mono text-amber-300 block mt-0.5" x-text="activeDetail.astap?.spesifikasi_json?.sertifikat_no"></span>
+                    </div>
+                </template>
+
+                {{-- Spesifikasi Gedung & Bangunan --}}
+                <template x-if="activeDetail.astap?.spesifikasi_json?.luas_lantai_m2 || activeDetail.astap?.spesifikasi_json?.beton">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Konstruksi Gedung:</span>
+                        <span class="font-semibold text-white block mt-0.5" x-text="(activeDetail.astap?.spesifikasi_json?.beton || '-') + ' (' + (activeDetail.astap?.spesifikasi_json?.bertingkat || 'Tidak Bertingkat') + ')'"></span>
+                    </div>
+                </template>
+                <template x-if="activeDetail.astap?.spesifikasi_json?.status_tanah">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Status Penguasaan Tanah:</span>
+                        <span class="font-semibold text-cyan-300 block mt-0.5" x-text="activeDetail.astap?.spesifikasi_json?.status_tanah"></span>
+                    </div>
+                </template>
+
+                {{-- Spesifikasi Jalan, Irigasi & Jaringan --}}
+                <template x-if="activeDetail.astap?.spesifikasi_json?.konstruksi">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Konstruksi Jaringan:</span>
+                        <span class="font-semibold text-teal-300 block mt-0.5" x-text="activeDetail.astap?.spesifikasi_json?.konstruksi + (activeDetail.astap?.spesifikasi_json?.beton ? (' • ' + activeDetail.astap?.spesifikasi_json?.beton) : '')"></span>
+                    </div>
+                </template>
+                <template x-if="activeDetail.astap?.spesifikasi_json?.kode_aset_tanah">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Kode Aset Tanah:</span>
+                        <span class="font-mono text-emerald-400 block mt-0.5" x-text="activeDetail.astap?.spesifikasi_json?.kode_aset_tanah"></span>
+                    </div>
+                </template>
+
+                {{-- Spesifikasi Aset Tetap Lainnya --}}
+                <template x-if="activeDetail.astap?.spesifikasi_json?.judul || activeDetail.astap?.spesifikasi_json?.pencipta">
+                    <div>
+                        <span class="text-slate-500 block text-[10px]">Judul / Pencipta:</span>
+                        <span class="font-semibold text-purple-300 block mt-0.5" x-text="(activeDetail.astap?.spesifikasi_json?.judul || '-') + ' / ' + (activeDetail.astap?.spesifikasi_json?.pencipta || '-')"></span>
+                    </div>
+                </template>
+
+                {{-- Keterangan / Catatan Tambahan --}}
+                <div class="sm:col-span-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <span class="text-slate-500 block text-[10px] uppercase font-bold tracking-wider">📝 Keterangan / Catatan Khusus:</span>
+                    <span class="text-slate-200 block text-xs mt-0.5 font-medium" 
+                          x-text="activeDetail.astap?.spesifikasi_json?.keterangan || activeDetail.astap?.keterangan_tambahan || activeDetail.kemitraan?.keterangan || '-'"></span>
                 </div>
-                <div>
-                    <span class="text-slate-500 block text-[10px]">Nomor Seri / Pabrik:</span>
-                    <span class="font-mono text-slate-300 block mt-0.5" x-text="activeDetail.astap?.spesifikasi_json?.no_pabrik || '-'"></span>
-                </div>
-                <div class="col-span-2">
-                    <span class="text-slate-500 block text-[10px]">Ruangan Penempatan RSUD:</span>
+
+                <div class="sm:col-span-2">
+                    <span class="text-slate-500 block text-[10px]">Ruangan Penempatan / Lokasi Fisik RSUD:</span>
                     <span class="font-bold text-emerald-300 block mt-0.5" x-text="activeDetail.register?.ruang_pemegang || activeDetail.astap?.alamat_barang || '-'"></span>
                 </div>
             </div>

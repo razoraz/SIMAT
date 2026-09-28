@@ -1285,11 +1285,37 @@ Route::middleware('auth')->group(function () {
                     $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: ($ja->sub_rincian_objek ?: $ja->jenis)) : '1.5.2.00.00.00';
                     $kode108Clean = str_replace('.', '', $kode108Raw);
 
+                    // Pastikan nomor register NIBAR melanjutkan urutan jika tahun, triwulan, dan jenis barang sama
                     $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
-                        ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
+                        ->whereHas('astap', function ($sq) use ($data) {
+                            $sq->where('jenis_astap_id', $data['jenis_astap_id']);
+                            if (!empty($data['triwulan'])) {
+                                $sq->where('triwulan', $data['triwulan']);
+                            }
+                        })
                         ->max('no_register_int') ?? 0;
 
                     $runningRegNum = (int) $maxRegInt;
+
+                    // Periksa juga nomor register dari NIBAR tersimpan dengan prefix (tahun + kode 108) yang sama pada triwulan ini
+                    $nibarPrefix = "1201351102000000280000{$tahun}{$kode108Clean}";
+                    $latestNibar = \App\Models\AstapRegister::where('nibar', 'like', "{$nibarPrefix}%")
+                        ->whereHas('astap', function ($sq) use ($data) {
+                            $sq->where('jenis_astap_id', $data['jenis_astap_id']);
+                            if (!empty($data['triwulan'])) {
+                                $sq->where('triwulan', $data['triwulan']);
+                            }
+                        })
+                        ->orderBy('nibar', 'desc')
+                        ->value('nibar');
+
+                    if ($latestNibar && strlen($latestNibar) >= 7) {
+                        $lastNum = (int) substr($latestNibar, -7);
+                        if ($lastNum > $runningRegNum) {
+                            $runningRegNum = $lastNum;
+                        }
+                    }
+
                     $unitModel = !empty($data['unit_id']) ? \App\Models\Unit::find($data['unit_id']) : null;
                     $ruangPemegang = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi');
 
@@ -1367,7 +1393,7 @@ Route::middleware('auth')->group(function () {
                             $itemQty = max(1, (int)($gItem['gedung_jumlah_bangunan'] ?? 1));
                             $rawKondisi = strtoupper(trim((string)($gItem['gedung_kondisi'] ?? $kondisiItem)));
                             $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
-                            $itemRuang = !empty($gItem['ruang_pemegang']) ? $gItem['ruang_pemegang'] : $ruangPemegang;
+                            $itemRuang = !empty($gItem['ruang_pemegang']) ? $gItem['ruang_pemegang'] : (!empty($gItem['gedung_alamat']) ? $gItem['gedung_alamat'] : $ruangPemegang);
 
                             for ($q = 0; $q < $itemQty; $q++) {
                                 $runningRegNum++;
@@ -1401,7 +1427,7 @@ Route::middleware('auth')->group(function () {
                             $itemQty = max(1, (int)($jItem['jaringan_jumlah'] ?? 1));
                             $rawKondisi = strtoupper(trim((string)($jItem['jaringan_kondisi'] ?? $kondisiItem)));
                             $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
-                            $itemRuang = !empty($jItem['ruang_pemegang']) ? $jItem['ruang_pemegang'] : $ruangPemegang;
+                            $itemRuang = !empty($jItem['ruang_pemegang']) ? $jItem['ruang_pemegang'] : (!empty($jItem['jaringan_alamat']) ? $jItem['jaringan_alamat'] : $ruangPemegang);
 
                             for ($q = 0; $q < $itemQty; $q++) {
                                 $runningRegNum++;

@@ -1,6 +1,6 @@
 <x-layout title="Form Input Aset Kemitraan Pihak Ketiga (KSO) - SIMAT-RK">
     @section('page-title', 'Pencatatan Aset Kemitraan (KSO)')
-    @section('breadcrumb', 'Master Utama / Data ASTAP / Tambah Kemitraan Pihak Ketiga')
+    @section('breadcrumb', 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan')
 
     <!-- 1. Script Logika Form (Alpine.js & State Management) -->
     @include('pages.kemitraan.form_partials.scripts')
