@@ -4,233 +4,210 @@
 
     <div x-data="recycleBinApp()" x-cloak class="space-y-6">
 
-        <!-- HEADER BANNER & KPI CARDS -->
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-red-950/40 border border-slate-800 p-6 md:p-8 shadow-2xl">
+        <!-- EXECUTIVE AUDIT HEADER & STREAMLINED SUMMARY -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 p-5 md:p-6 shadow-2xl">
             <div class="absolute -right-12 -top-12 w-64 h-64 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute right-40 -bottom-10 w-48 h-48 bg-rose-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute right-40 -bottom-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-            <div class="relative z-10 space-y-6">
-                <!-- BARIS ATAS: JUDUL & STATISTIK GLOBAL AUDIT -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                    <div>
-                        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold mb-3 shadow-sm">
-                            <span>♻️ Audit Trail & Central Recycle Bin</span>
-                        </div>
-                        <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight">Pusat Data Terhapus</h1>
-                        <p class="text-slate-400 text-xs md:text-sm mt-1 max-w-2xl leading-relaxed">
-                            Arsip terpusat seluruh data transaksi dan inventaris aset SIMAT yang telah dinonaktifkan atau dihapus sementara. Anda dapat meninjau jejak audit penghapusan, memulihkan data aktif ke sistem, atau memusnahkannya secara permanen.
-                        </p>
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-300 text-xs font-bold mb-2 shadow-sm">
+                        <span>♻️ Audit Trail & Central Recycle Bin</span>
                     </div>
+                    <h1 class="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+                        <span>Pusat Data Terhapus</span>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80 font-normal">SIMAT-RK</span>
+                    </h1>
+                    <p class="text-slate-400 text-xs mt-1 max-w-xl leading-relaxed">
+                        Arsip terpusat seluruh inventaris dan dokumen transaksi yang dinonaktifkan sementara. Pulihkan data ke katalog aktif atau musnahkan secara permanen.
+                    </p>
+                </div>
 
-                    <!-- RINGKASAN AUDIT GLOBAL -->
-                    <div class="flex items-center gap-3 shrink-0">
-                        <div class="p-3.5 px-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 text-center shadow-inner min-w-[130px]">
-                            <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-0.5">Total Terhapus</span>
-                            <span class="text-2xl font-black text-white font-mono" x-text="totalCount"></span>
-                            <span class="text-[10px] text-slate-500 block">Semua Modul</span>
+                <!-- EXECUTIVE AUDIT SUMMARY (COMPACT DOCK) -->
+                <div class="flex items-center gap-2.5 sm:gap-3 shrink-0 flex-wrap">
+                    <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[120px]">
+                        <span class="text-[9.5px] uppercase tracking-wider font-bold text-slate-400 block">Total Terhapus</span>
+                        <div class="flex items-baseline gap-1 mt-0.5">
+                            <span class="text-xl font-black text-white font-mono" x-text="totalCount">0</span>
+                            <span class="text-[10px] text-slate-500 font-medium">data</span>
                         </div>
-                        <div class="p-3.5 px-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 text-center shadow-inner min-w-[130px]">
-                            <span class="text-[10px] uppercase tracking-wider font-bold text-rose-400 block mb-0.5">30 Hari Terakhir</span>
-                            <span class="text-2xl font-black text-rose-300 font-mono" x-text="totalThisMonth">{{ $totalThisMonth }}</span>
-                            <span class="text-[10px] text-slate-500 block">Aktivitas Hapus</span>
+                    </div>
+                    <div class="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-left shadow-inner min-w-[120px]">
+                        <span class="text-[9.5px] uppercase tracking-wider font-bold text-rose-400 block">30 Hari Terakhir</span>
+                        <div class="flex items-baseline gap-1 mt-0.5">
+                            <span class="text-xl font-black text-rose-300 font-mono" x-text="totalThisMonth">{{ $totalThisMonth }}</span>
+                            <span class="text-[10px] text-slate-500 font-medium">aktivitas</span>
+                        </div>
+                    </div>
+                    <div class="px-3.5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-emerald-300 block leading-tight">Audit Log</span>
+                            <span class="text-[10px] text-slate-400 block leading-tight">Terlindungi</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- BARIS BAWAH: KARTU INDIKATOR 4 MODUL (ASTAP, UNIT, DISTRIBUSI, MUTASI) -->
-                <div class="pt-5 border-t border-slate-800/80">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
-                            Rincian Data Terhapus Per Modul SIMAT:
-                        </span>
-                        <span class="text-[10.5px] text-slate-500 hidden sm:inline">Klik kartu untuk beralih tampilan modul</span>
-                    </div>
+            <!-- COMPACT SEGMENTED PILL NAVIGATION BAR -->
+            <div class="mt-5 pt-4 border-t border-slate-800/80">
+                <div class="flex items-center justify-between mb-2.5">
+                    <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                        Kategori Modul Data:
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-medium" x-text="'Sedang melihat: ' + activeModuleName"></span>
+                </div>
 
-                    <div class="flex flex-wrap gap-3">
-                        <!-- 1. Master ASTAP -->
-                        <div @click="changeTab('astap')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'astap' ? 'border-color: #3b82f6; box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);' : ''"
-                            :class="activeModule === 'astap' 
-                                ? 'bg-blue-500/15 border-blue-500 shadow-lg shadow-blue-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300">📦</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('astap') > 0 
-                                        ? 'bg-blue-500 text-white font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('astap')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-blue-300 transition-colors">Master ASTAP</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('astap') > 0 ? (astaps.length + ' Paket · ' + nibars.length + ' NIBAR') : 'Tidak ada data'"></span>
-                        </div>
+                <div class="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                    <!-- 1. Master ASTAP -->
+                    <button type="button" @click="changeTab('astap')"
+                        :style="activeModule === 'astap' ? 'border-color: #3b82f6; box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);' : ''"
+                        :class="activeModule === 'astap' 
+                            ? 'bg-blue-500/20 border-blue-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>📦 Master ASTAP</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'astap' ? 'bg-blue-500 text-white' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('astap')">0</span>
+                    </button>
 
-                        <!-- 2. Unit & Paviliun -->
-                        <div @click="changeTab('unit')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'unit' ? 'border-color: #06b6d4; box-shadow: 0 0 16px rgba(6, 182, 212, 0.35);' : ''"
-                            :class="activeModule === 'unit' 
-                                ? 'bg-cyan-500/15 border-cyan-500 shadow-lg shadow-cyan-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">🏥</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('unit') > 0 
-                                        ? 'bg-cyan-500 text-slate-950 font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('unit')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-cyan-300 transition-colors">Unit & Paviliun</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('unit') > 0 ? getModuleCount('unit') + ' data terhapus' : 'Tidak ada data'"></span>
-                        </div>
+                    <!-- 2. Unit & Paviliun -->
+                    <button type="button" @click="changeTab('unit')"
+                        :style="activeModule === 'unit' ? 'border-color: #06b6d4; box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);' : ''"
+                        :class="activeModule === 'unit' 
+                            ? 'bg-cyan-500/20 border-cyan-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>🏥 Unit & Paviliun</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'unit' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('unit')">0</span>
+                    </button>
 
-                        <!-- 3. Distribusi Aset -->
-                        <div @click="changeTab('distribusi')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'distribusi' ? 'border-color: #10b981; box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);' : ''"
-                            :class="activeModule === 'distribusi' 
-                                ? 'bg-emerald-500/15 border-emerald-500 shadow-lg shadow-emerald-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">🚚</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('distribusi') > 0 
-                                        ? 'bg-emerald-500 text-slate-950 font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('distribusi')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-emerald-300 transition-colors">Distribusi Aset</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('distribusi') > 0 ? getModuleCount('distribusi') + ' data terhapus' : 'Tidak ada data'"></span>
-                        </div>
+                    <!-- 3. Distribusi Aset -->
+                    <button type="button" @click="changeTab('distribusi')"
+                        :style="activeModule === 'distribusi' ? 'border-color: #10b981; box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);' : ''"
+                        :class="activeModule === 'distribusi' 
+                            ? 'bg-emerald-500/20 border-emerald-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>🚚 Distribusi Aset</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'distribusi' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('distribusi')">0</span>
+                    </button>
 
-                        <!-- 4. Mutasi Aset -->
-                        <div @click="changeTab('mutasi')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'mutasi' ? 'border-color: #f59e0b; box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);' : ''"
-                            :class="activeModule === 'mutasi' 
-                                ? 'bg-amber-500/15 border-amber-500 shadow-lg shadow-amber-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300">🔄</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('mutasi') > 0 
-                                        ? 'bg-amber-500 text-slate-950 font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('mutasi')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-amber-300 transition-colors">Mutasi Aset</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('mutasi') > 0 ? (mutasis.length + ' Internal · ' + mutasiEksternals.length + ' Eksternal') : 'Tidak ada data'"></span>
-                        </div>
+                    <!-- 4. Mutasi Aset -->
+                    <button type="button" @click="changeTab('mutasi')"
+                        :style="activeModule === 'mutasi' ? 'border-color: #f59e0b; box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);' : ''"
+                        :class="activeModule === 'mutasi' 
+                            ? 'bg-amber-500/20 border-amber-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>🔄 Mutasi Aset</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'mutasi' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('mutasi')">0</span>
+                    </button>
 
-                        <!-- 5. Hibah Aset (Masuk & Keluar) -->
-                        <div @click="changeTab('hibah')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'hibah' ? 'border-color: #a855f7; box-shadow: 0 0 16px rgba(168, 85, 247, 0.35);' : ''"
-                            :class="activeModule === 'hibah' 
-                                ? 'bg-purple-500/15 border-purple-500 shadow-lg shadow-purple-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-300">🎁</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('hibah') > 0 
-                                        ? 'bg-purple-500 text-white font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('hibah')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-purple-300 transition-colors">Hibah Aset</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('hibah') > 0 ? getModuleCount('hibah') + ' data terhapus' : 'Tidak ada data'"></span>
-                        </div>
+                    <!-- 5. Hibah Aset -->
+                    <button type="button" @click="changeTab('hibah')"
+                        :style="activeModule === 'hibah' ? 'border-color: #a855f7; box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);' : ''"
+                        :class="activeModule === 'hibah' 
+                            ? 'bg-purple-500/20 border-purple-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>🎁 Hibah Aset</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'hibah' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('hibah')">0</span>
+                    </button>
 
-                        <!-- 6. Kemitraan Aset (KSO / BGS / Sewa Akun 1.5.2) -->
-                        <div @click="changeTab('kemitraan')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'kemitraan' ? 'border-color: #06b6d4; box-shadow: 0 0 16px rgba(6, 182, 212, 0.35);' : ''"
-                            :class="activeModule === 'kemitraan' 
-                                ? 'bg-cyan-500/15 border-cyan-500 shadow-lg shadow-cyan-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">🤝</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('kemitraan') > 0 
-                                        ? 'bg-cyan-500 text-slate-950 font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('kemitraan')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-cyan-300 transition-colors">Kemitraan Aset</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('kemitraan') > 0 ? getModuleCount('kemitraan') + ' data terhapus' : 'Tidak ada data'"></span>
-                        </div>
+                    <!-- 6. Kemitraan Aset -->
+                    <button type="button" @click="changeTab('kemitraan')"
+                        :style="activeModule === 'kemitraan' ? 'border-color: #06b6d4; box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);' : ''"
+                        :class="activeModule === 'kemitraan' 
+                            ? 'bg-cyan-500/20 border-cyan-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>🤝 Kemitraan Aset</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'kemitraan' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('kemitraan')">0</span>
+                    </button>
 
-                        <!-- 7. Belanja Barang (Akun 5.1.02 / Perbekalan Ruangan) -->
-                        <div @click="changeTab('belanja_barang')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'belanja_barang' ? 'border-color: #10b981; box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);' : ''"
-                            :class="activeModule === 'belanja_barang' 
-                                ? 'bg-emerald-500/15 border-emerald-500 shadow-lg shadow-emerald-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">🛒</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('belanja_barang') > 0 
-                                        ? 'bg-emerald-500 text-slate-950 font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('belanja_barang')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-emerald-300 transition-colors">Belanja Barang</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('belanja_barang') > 0 ? getModuleCount('belanja_barang') + ' data terhapus' : 'Tidak ada data'"></span>
-                        </div>
+                    <!-- 7. Belanja Barang -->
+                    <button type="button" @click="changeTab('belanja_barang')"
+                        :style="activeModule === 'belanja_barang' ? 'border-color: #10b981; box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);' : ''"
+                        :class="activeModule === 'belanja_barang' 
+                            ? 'bg-emerald-500/20 border-emerald-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>🛒 Belanja Barang</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'belanja_barang' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('belanja_barang')">0</span>
+                    </button>
 
-                        <!-- 6. Akun Pengguna -->
-                        <div @click="changeTab('users')" 
-                            class="flex-1 min-w-[155px] cursor-pointer p-3.5 rounded-2xl border transition-all hover:scale-[1.02] relative group"
-                            :style="activeModule === 'users' ? 'border-color: #f43f5e; box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);' : ''"
-                            :class="activeModule === 'users' 
-                                ? 'bg-rose-500/15 border-rose-500 shadow-lg shadow-rose-500' 
-                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'">
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-base p-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300">👥</span>
-                                <span class="text-xs font-mono font-black px-2 py-0.5 rounded-lg transition-colors"
-                                    :class="getModuleCount('users') > 0 
-                                        ? 'bg-rose-500 text-white font-black shadow-sm' 
-                                        : 'bg-slate-800/80 text-slate-400'"
-                                    x-text="getModuleCount('users')">0</span>
-                            </div>
-                            <span class="text-xs font-bold text-white block truncate group-hover:text-rose-300 transition-colors">Akun Pengguna</span>
-                            <span class="text-[10px] text-slate-400 block mt-0.5" x-text="getModuleCount('users') > 0 ? getModuleCount('users') + ' akun terhapus' : 'Tidak ada data'"></span>
-                        </div>
-                    </div>
+                    <!-- 8. Akun Pengguna -->
+                    <button type="button" @click="changeTab('users')"
+                        :style="activeModule === 'users' ? 'border-color: #f43f5e; box-shadow: 0 0 14px rgba(244, 63, 94, 0.35);' : ''"
+                        :class="activeModule === 'users' 
+                            ? 'bg-rose-500/20 border-rose-500 text-white font-bold' 
+                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="px-3.5 py-2 rounded-xl border text-xs whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                        <span>👥 Akun Pengguna</span>
+                        <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold"
+                            :class="activeModule === 'users' ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-400'"
+                            x-text="getModuleCount('users')">0</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-
-
-        <!-- TOOLBAR: SEARCH & BULK ACTIONS -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- TOOLBAR: SEARCH & QUICK TIME FILTER RIBBON -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- PENCARIAN TEKS BEBAS -->
             <div class="relative flex-1 w-full">
                 <input type="text" x-model="searchQuery" :placeholder="searchPlaceholder"
-                    class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all">
-                <svg class="w-4 h-4 text-red-400 absolute left-4 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-3 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
+                    class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-2.5 pl-11 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 transition-all">
+                <svg class="w-4 h-4 text-red-400 absolute left-4 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3.5 top-2.5 text-slate-500 hover:text-white text-xs font-bold">&times;</button>
             </div>
 
-            <div class="flex items-center space-x-2.5 shrink-0 w-full md:w-auto justify-end flex-wrap gap-y-2">
-                {{-- Tombol Bulk Restore --}}
-                <button type="button" @click="bulkRestore(currentTargetModule)" :disabled="selectedIds.length === 0"
-                    :class="selectedIds.length > 0 ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer shadow-lg shadow-indigo-600/25' : 'bg-slate-800/50 text-slate-500 cursor-not-allowed border-slate-800'"
-                    class="px-4 py-2.5 rounded-2xl border border-indigo-500/40 text-xs font-bold transition-all flex items-center space-x-1.5 active:scale-95">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                    <span>Pulihkan Terpilih (<span x-text="selectedIds.length"></span>)</span>
-                </button>
+            <!-- QUICK TIME FILTER PRESETS & INFO -->
+            <div class="flex items-center gap-2 shrink-0 w-full md:w-auto justify-between md:justify-end flex-wrap">
+                <!-- Group Tombol Filter Waktu -->
+                <div class="flex items-center p-1 bg-slate-950 rounded-2xl border border-slate-800/80">
+                    <button type="button" @click="setTimeFilter('all')"
+                        :class="timeFilter === 'all' 
+                            ? 'bg-slate-800 text-white font-bold shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-200'"
+                        class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer">
+                        Semua Waktu
+                    </button>
+                    <button type="button" @click="setTimeFilter('7d')"
+                        :class="timeFilter === '7d' 
+                            ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-200 border border-transparent'"
+                        class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                        <span>⚡ 7 Hari</span>
+                    </button>
+                    <button type="button" @click="setTimeFilter('30d')"
+                        :class="timeFilter === '30d' 
+                            ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40 shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-200 border border-transparent'"
+                        class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">
+                        <span>📅 30 Hari</span>
+                    </button>
+                </div>
 
-                {{-- Tombol Bulk Force Delete (Hapus Terpilih) --}}
-                <button type="button" @click="bulkForceDelete(currentTargetModule)" :disabled="selectedIds.length === 0"
-                    :class="selectedIds.length > 0 ? 'bg-rose-600/25 hover:bg-rose-600/35 text-rose-300 border-rose-500/50 cursor-pointer shadow-lg shadow-rose-600/15' : 'bg-slate-800/30 text-slate-600 cursor-not-allowed border-slate-800/60'"
-                    class="px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all flex items-center space-x-1.5 active:scale-95">
-                    <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                    <span>Hapus Terpilih (<span x-text="selectedIds.length"></span>)</span>
-                </button>
+                <!-- Info Hasil Pencarian / Filter -->
+                <div class="text-[11px] text-slate-400 px-2 font-medium hidden sm:block">
+                    Menampilkan <span class="font-bold text-white font-mono" x-text="filteredItems.length"></span> dari <span class="font-mono" x-text="currentList.length"></span> data
+                </div>
             </div>
         </div>
 
@@ -1817,6 +1794,49 @@
             </div>
         </div>
 
+        <!-- FLOATING GLASSMORPHISM BULK ACTION DOCK -->
+        <div x-show="selectedIds.length > 0"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="opacity-0 translate-y-12 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200 transform"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-12 scale-95"
+             class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[92%] sm:w-auto"
+             style="display: none;">
+            <div class="bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl p-2.5 px-4 shadow-2xl shadow-black/80 flex items-center justify-between sm:justify-start gap-3.5 ring-1 ring-white/10">
+                <!-- Counter Badge -->
+                <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs font-bold text-white font-mono whitespace-nowrap">
+                        <span x-text="selectedIds.length" class="text-emerald-400 text-sm font-black"></span> item dipilih
+                    </span>
+                </div>
+
+                <!-- Tombol Aksi Massal -->
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="bulkRestore(currentTargetModule)"
+                        class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span>Pulihkan Terpilih</span>
+                    </button>
+
+                    <button type="button" @click="bulkForceDelete(currentTargetModule)"
+                        class="px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-bold text-xs transition-all shadow-sm active:scale-95 flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                        <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <span class="hidden sm:inline">Musnahkan Permanen</span>
+                        <span class="sm:hidden">Hapus</span>
+                    </button>
+
+                    <!-- Tombol Batal Centang -->
+                    <button type="button" @click="selectedIds = []" title="Batalkan pilihan"
+                        class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-xs font-bold cursor-pointer">
+                        ✕
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- SCRIPT LOGIC RECYCLE BIN APP -->
@@ -1840,25 +1860,34 @@
 
                 selectedIds: [],
                 searchQuery: '',
+                timeFilter: 'all',
                 showDetailModal: false,
                 selectedItem: null,
+
+                setTimeFilter(tf) {
+                    this.timeFilter = tf;
+                    this.selectedIds = [];
+                },
 
                 changeTab(tab) {
                     this.activeModule = tab;
                     this.selectedIds = [];
                     this.searchQuery = '';
+                    this.timeFilter = 'all';
                 },
 
                 changeMutasiSubTab(subTab) {
                     this.mutasiSubTab = subTab;
                     this.selectedIds = [];
                     this.searchQuery = '';
+                    this.timeFilter = 'all';
                 },
 
                 changeAstapSubTab(subTab) {
                     this.astapSubTab = subTab;
                     this.selectedIds = [];
                     this.searchQuery = '';
+                    this.timeFilter = 'all';
                 },
 
                 get currentTargetModule() {
@@ -1944,7 +1973,20 @@
 
                 get filteredItems() {
                     const q = (this.searchQuery || '').toLowerCase().trim();
-                    const list = this.currentList;
+                    let list = this.currentList;
+
+                    // Filter Waktu Cepat (Quick Preset Ribbon: 7 Hari / 30 Hari)
+                    if (this.timeFilter !== 'all') {
+                        const now = Date.now();
+                        const days = this.timeFilter === '7d' ? 7 : 30;
+                        const threshold = now - (days * 24 * 60 * 60 * 1000);
+                        list = list.filter(item => {
+                            if (!item.deleted_at_raw) return false;
+                            const itemTime = new Date(item.deleted_at_raw).getTime();
+                            return !isNaN(itemTime) && itemTime >= threshold;
+                        });
+                    }
+
                     if (!q) return list;
 
                     return list.filter(item => {
