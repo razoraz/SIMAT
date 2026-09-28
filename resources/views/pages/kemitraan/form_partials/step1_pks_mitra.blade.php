@@ -205,10 +205,19 @@
         </div>
 
         <!-- Masa Berlaku Kerja Sama (Mulai s.d. Selesai) -->
+        <!-- Masa Berlaku Kerja Sama (Mulai s.d. Selesai) -->
         <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-            <span class="text-xs font-bold text-slate-200 block">
-                🗓️ Jangka Waktu / Masa Berlaku Kerjasama (Konsesi)
-            </span>
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <span class="text-xs font-bold text-slate-200 block">
+                    🗓️ Jangka Waktu / Masa Berlaku Kerjasama (Konsesi)
+                </span>
+                <template x-if="durasiKonsesiText">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-950/70 text-cyan-300 border border-cyan-500/30">
+                        <span>⏳ Estimasi Durasi:</span>
+                        <span x-text="durasiKonsesiText"></span>
+                    </span>
+                </template>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-400 mb-1">
@@ -219,12 +228,28 @@
                         class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">
-                        Tanggal Berakhir Kerjasama (Konsesi Berakhir)
-                    </label>
-                    <input type="text" x-datepicker x-model="formData.tanggal_selesai"
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[11px] font-semibold text-slate-400">
+                            Tanggal Berakhir Kerjasama (Konsesi Berakhir)
+                        </label>
+                        <span x-show="formData.tanggal_mulai" class="text-[9.5px] font-mono text-cyan-400/90">
+                            Min: <span x-text="formatTanggalIndo(formData.tanggal_mulai)"></span>
+                        </span>
+                    </div>
+                    <input type="text" 
+                        x-datepicker="{ minDate: formData.tanggal_mulai || undefined }" 
+                        x-model="formData.tanggal_selesai"
                         placeholder="dd/mm/yyyy"
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
+                        :class="isTanggalSelesaiInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-950'"
+                        class="w-full border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors">
+                    
+                    <!-- Peringatan Visual Jika Tanggal Selesai Kurang dari Tanggal Mulai -->
+                    <template x-if="isTanggalSelesaiInvalid()">
+                        <div class="mt-1.5 flex items-center gap-1.5 text-[10.5px] text-rose-400 font-semibold animate-pulse">
+                            <span>⚠️</span>
+                            <span>Tanggal berakhir tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama!</span>
+                        </div>
+                    </template>
                 </div>
             </div>
             <p class="text-[10.5px] text-cyan-400/80 italic">

@@ -1174,6 +1174,17 @@ Route::middleware('auth')->group(function () {
                     'kondisi'            => 'nullable|string|max:50',
                 ]);
 
+                if (!empty($data['tanggal_mulai']) && !empty($data['tanggal_selesai'])) {
+                    $tMulai = strtotime(str_replace('/', '-', $data['tanggal_mulai']));
+                    $tSelesai = strtotime(str_replace('/', '-', $data['tanggal_selesai']));
+                    if ($tMulai && $tSelesai && $tSelesai < $tMulai) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.'
+                        ], 422);
+                    }
+                }
+
                 $totalRealisasi = (float) $data['total_realisasi'];
                 $totalVolume    = max(1, (int) $data['jumlah_volume']);
                 $hargaSatuan    = $totalRealisasi / $totalVolume;
@@ -1225,6 +1236,23 @@ Route::middleware('auth')->group(function () {
                     }
                 }
 
+                $mesinItems = $request->input('mesin_items') ?? ($astapPayload['spesifikasi_json']['mesin_items'] ?? null);
+                if (is_array($mesinItems) && count($mesinItems) > 0) {
+                    $astapPayload['spesifikasi_json']['mesin_items'] = $mesinItems;
+                    $firstM = $mesinItems[0];
+                    if (empty($astapPayload['spesifikasi_json']['merk'])) $astapPayload['spesifikasi_json']['merk'] = $firstM['mesin_merk'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['type'])) $astapPayload['spesifikasi_json']['type'] = $firstM['mesin_type'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['no_pabrik'])) $astapPayload['spesifikasi_json']['no_pabrik'] = $firstM['mesin_no_pabrik'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['bahan'])) $astapPayload['spesifikasi_json']['bahan'] = $firstM['mesin_bahan'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['ukuran'])) $astapPayload['spesifikasi_json']['ukuran'] = $firstM['mesin_ukuran'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['tahun_pembuatan'])) $astapPayload['spesifikasi_json']['tahun_pembuatan'] = $firstM['mesin_tahun_pembuatan'] ?? null;
+                    if (empty($astapPayload['spesifikasi_json']['kondisi'])) $astapPayload['spesifikasi_json']['kondisi'] = $firstM['mesin_kondisi'] ?? 'Baik';
+                    if (empty($astapPayload['spesifikasi_json']['no_rangka'])) $astapPayload['spesifikasi_json']['no_rangka'] = $firstM['mesin_no_rangka'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['no_mesin'])) $astapPayload['spesifikasi_json']['no_mesin'] = $firstM['mesin_no_mesin'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['no_bpkb'])) $astapPayload['spesifikasi_json']['no_bpkb'] = $firstM['mesin_no_bpkb'] ?? '';
+                    if (empty($astapPayload['spesifikasi_json']['no_polisi'])) $astapPayload['spesifikasi_json']['no_polisi'] = $firstM['mesin_no_polisi'] ?? '';
+                }
+
                 if ($request->has('tanah_items') && is_array($request->input('tanah_items')) && count($request->input('tanah_items')) > 0) {
                     $tItems = $request->input('tanah_items');
                     $firstT = $tItems[0];
@@ -1249,12 +1277,12 @@ Route::middleware('auth')->group(function () {
                     $astapPayload['spesifikasi_json']['ppk_nip'] = $request->input('ppk_nip');
                 }
 
-                $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem) {
+                $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $mesinItems, $request) {
                     $item = \App\Models\Astap::create($astapPayload);
 
                     // Buat AstapRegister untuk setiap unit barang kemitraan
                     $ja = \App\Models\JenisAstap::find($data['jenis_astap_id']);
-                    $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.5.2.00.00.00';
+                    $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: ($ja->sub_rincian_objek ?: $ja->jenis)) : '1.5.2.00.00.00';
                     $kode108Clean = str_replace('.', '', $kode108Raw);
 
                     $maxRegInt = \App\Models\AstapRegister::where('tahun_perolehan', $tahun)
@@ -1265,29 +1293,204 @@ Route::middleware('auth')->group(function () {
                     $unitModel = !empty($data['unit_id']) ? \App\Models\Unit::find($data['unit_id']) : null;
                     $ruangPemegang = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi');
 
-                    for ($i = 0; $i < $totalVolume; $i++) {
-                        $runningRegNum++;
-                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
-                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                    // Jika ada mesin_items (multi-item repeater)
+                    if (is_array($mesinItems) && count($mesinItems) > 0) {
+                        foreach ($mesinItems as $mItem) {
+                            $itemQty = max(1, (int)($mItem['mesin_jumlah_barang'] ?? 1));
+                            $rawKondisi = strtoupper(trim((string)($mItem['mesin_kondisi'] ?? $kondisiItem)));
+                            $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                            $itemRuang = !empty($mItem['ruang_pemegang']) ? $mItem['ruang_pemegang'] : $ruangPemegang;
 
-                        while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                            for ($q = 0; $q < $itemQty; $q++) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                                while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                    $runningRegNum++;
+                                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                                }
+
+                                $qrPath = "/scan/{$nibar}";
+                                \App\Models\AstapRegister::create([
+                                    'astap_id'        => $item->id,
+                                    'unit_id'         => $data['unit_id'] ?? null,
+                                    'tahun_perolehan' => $tahun,
+                                    'no_register_int' => $runningRegNum,
+                                    'no_register'     => $nibar,
+                                    'nibar'           => $nibar,
+                                    'qr_code_path'    => $qrPath,
+                                    'ruang_pemegang'  => $itemRuang,
+                                    'kondisi'         => $kondisiStr,
+                                    'status'          => 'Aktif',
+                                    'is_deleted'      => 0,
+                                ]);
+                            }
+                        }
+                    } elseif (isset($astapPayload['spesifikasi_json']['tanah_items']) && is_array($astapPayload['spesifikasi_json']['tanah_items']) && count($astapPayload['spesifikasi_json']['tanah_items']) > 0) {
+                        foreach ($astapPayload['spesifikasi_json']['tanah_items'] as $tItem) {
+                            $itemQty = max(1, (int)($tItem['tanah_jumlah_barang'] ?? 1));
+                            $rawKondisi = strtoupper(trim((string)($tItem['tanah_kondisi'] ?? $kondisiItem)));
+                            $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                            $itemRuang = !empty($tItem['tanah_alamat']) ? $tItem['tanah_alamat'] : $ruangPemegang;
+
+                            for ($q = 0; $q < $itemQty; $q++) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                                while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                    $runningRegNum++;
+                                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                                }
+
+                                $qrPath = "/scan/{$nibar}";
+                                \App\Models\AstapRegister::create([
+                                    'astap_id'        => $item->id,
+                                    'unit_id'         => $data['unit_id'] ?? null,
+                                    'tahun_perolehan' => $tahun,
+                                    'no_register_int' => $runningRegNum,
+                                    'no_register'     => $nibar,
+                                    'nibar'           => $nibar,
+                                    'qr_code_path'    => $qrPath,
+                                    'ruang_pemegang'  => $itemRuang,
+                                    'kondisi'         => $kondisiStr,
+                                    'status'          => 'Aktif',
+                                    'is_deleted'      => 0,
+                                ]);
+                            }
+                        }
+                    } elseif (isset($astapPayload['spesifikasi_json']['gedung_items']) && is_array($astapPayload['spesifikasi_json']['gedung_items']) && count($astapPayload['spesifikasi_json']['gedung_items']) > 0) {
+                        foreach ($astapPayload['spesifikasi_json']['gedung_items'] as $gItem) {
+                            $itemQty = max(1, (int)($gItem['gedung_jumlah_bangunan'] ?? 1));
+                            $rawKondisi = strtoupper(trim((string)($gItem['gedung_kondisi'] ?? $kondisiItem)));
+                            $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                            $itemRuang = !empty($gItem['ruang_pemegang']) ? $gItem['ruang_pemegang'] : $ruangPemegang;
+
+                            for ($q = 0; $q < $itemQty; $q++) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                                while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                    $runningRegNum++;
+                                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                                }
+
+                                $qrPath = "/scan/{$nibar}";
+                                \App\Models\AstapRegister::create([
+                                    'astap_id'        => $item->id,
+                                    'unit_id'         => $data['unit_id'] ?? null,
+                                    'tahun_perolehan' => $tahun,
+                                    'no_register_int' => $runningRegNum,
+                                    'no_register'     => $nibar,
+                                    'nibar'           => $nibar,
+                                    'qr_code_path'    => $qrPath,
+                                    'ruang_pemegang'  => $itemRuang,
+                                    'kondisi'         => $kondisiStr,
+                                    'status'          => 'Aktif',
+                                    'is_deleted'      => 0,
+                                ]);
+                            }
+                        }
+                    } elseif (isset($astapPayload['spesifikasi_json']['jaringan_items']) && is_array($astapPayload['spesifikasi_json']['jaringan_items']) && count($astapPayload['spesifikasi_json']['jaringan_items']) > 0) {
+                        foreach ($astapPayload['spesifikasi_json']['jaringan_items'] as $jItem) {
+                            $itemQty = max(1, (int)($jItem['jaringan_jumlah'] ?? 1));
+                            $rawKondisi = strtoupper(trim((string)($jItem['jaringan_kondisi'] ?? $kondisiItem)));
+                            $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                            $itemRuang = !empty($jItem['ruang_pemegang']) ? $jItem['ruang_pemegang'] : $ruangPemegang;
+
+                            for ($q = 0; $q < $itemQty; $q++) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                                while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                    $runningRegNum++;
+                                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                                }
+
+                                $qrPath = "/scan/{$nibar}";
+                                \App\Models\AstapRegister::create([
+                                    'astap_id'        => $item->id,
+                                    'unit_id'         => $data['unit_id'] ?? null,
+                                    'tahun_perolehan' => $tahun,
+                                    'no_register_int' => $runningRegNum,
+                                    'no_register'     => $nibar,
+                                    'nibar'           => $nibar,
+                                    'qr_code_path'    => $qrPath,
+                                    'ruang_pemegang'  => $itemRuang,
+                                    'kondisi'         => $kondisiStr,
+                                    'status'          => 'Aktif',
+                                    'is_deleted'      => 0,
+                                ]);
+                            }
+                        }
+                    } elseif (isset($astapPayload['spesifikasi_json']['lainnya_items']) && is_array($astapPayload['spesifikasi_json']['lainnya_items']) && count($astapPayload['spesifikasi_json']['lainnya_items']) > 0) {
+                        foreach ($astapPayload['spesifikasi_json']['lainnya_items'] as $lItem) {
+                            $itemQty = max(1, (int)($lItem['lainnya_jumlah'] ?? 1));
+                            $rawKondisi = strtoupper(trim((string)($lItem['lainnya_kondisi'] ?? $kondisiItem)));
+                            $kondisiStr = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                            $itemRuang = !empty($lItem['ruang_pemegang']) ? $lItem['ruang_pemegang'] : $ruangPemegang;
+
+                            for ($q = 0; $q < $itemQty; $q++) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                                while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                    $runningRegNum++;
+                                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                                }
+
+                                $qrPath = "/scan/{$nibar}";
+                                \App\Models\AstapRegister::create([
+                                    'astap_id'        => $item->id,
+                                    'unit_id'         => $data['unit_id'] ?? null,
+                                    'tahun_perolehan' => $tahun,
+                                    'no_register_int' => $runningRegNum,
+                                    'no_register'     => $nibar,
+                                    'nibar'           => $nibar,
+                                    'qr_code_path'    => $qrPath,
+                                    'ruang_pemegang'  => $itemRuang,
+                                    'kondisi'         => $kondisiStr,
+                                    'status'          => 'Aktif',
+                                    'is_deleted'      => 0,
+                                ]);
+                            }
+                        }
+                    } else {
+                        for ($i = 0; $i < $totalVolume; $i++) {
                             $runningRegNum++;
                             $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
                             $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
-                        }
 
-                        \App\Models\AstapRegister::create([
-                            'astap_id'        => $item->id,
-                            'unit_id'         => $data['unit_id'] ?? null,
-                            'tahun_perolehan' => $tahun,
-                            'no_register_int' => $runningRegNum,
-                            'no_register'     => $noRegStr,
-                            'nibar'           => $nibar,
-                            'ruang_pemegang'  => $ruangPemegang,
-                            'kondisi'         => $kondisiItem,
-                            'status'          => 'Aktif',
-                            'is_deleted'      => 0,
-                        ]);
+                            while (\App\Models\AstapRegister::where('nibar', $nibar)->exists()) {
+                                $runningRegNum++;
+                                $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                                $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                            }
+
+                            $qrPath = "/scan/{$nibar}";
+                            \App\Models\AstapRegister::create([
+                                'astap_id'        => $item->id,
+                                'unit_id'         => $data['unit_id'] ?? null,
+                                'tahun_perolehan' => $tahun,
+                                'no_register_int' => $runningRegNum,
+                                'no_register'     => $nibar,
+                                'nibar'           => $nibar,
+                                'qr_code_path'    => $qrPath,
+                                'ruang_pemegang'  => $ruangPemegang,
+                                'kondisi'         => $kondisiItem,
+                                'status'          => 'Aktif',
+                                'is_deleted'      => 0,
+                            ]);
+                        }
                     }
 
                     // Catat ke tabel master astap_kemitraans

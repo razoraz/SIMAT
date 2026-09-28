@@ -12,7 +12,7 @@
             <span>Langkah 2: Klasifikasi 108 &amp; Spesifikasi Fisik Aset</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
-            Pilih klasifikasi kode barang Permendagri No. 108/2016 (sub-akun <strong>1.5.2 Kemitraan Pihak Ketiga</strong>), formulir spesifikasi teknis barang sesuai KIB, lokasi penempatan ruangan (KIR), serta rincian taksiran nilai wajar aset di RSUD.
+            Pilih klasifikasi kode barang Permendagri No. 108/2016 (sub-akun <strong>1.5.2 Kemitraan Pihak Ketiga</strong>), formulir spesifikasi teknis barang sesuai KIB, serta rincian taksiran nilai wajar aset kemitraan.
         </p>
     </div>
 
@@ -100,72 +100,11 @@
     <!-- Sheet KIB E: Aset Tetap Lainnya -->
     @include('pages.kemitraan.form_partials.step3_sheets.sheet_lainnya')
 
+
+
     <!-- ========================================================================= -->
-    <!-- PENEMPATAN RUANGAN (KIR), KONDISI FISIK & PEJABAT RSUD (PPK)              -->
+    <!-- RINCIAN SPESIFIK BARANG & NILAI TAKSIRAN ASET (BAGIAN PALING BAWAH)       -->
     <!-- ========================================================================= -->
-    <div class="p-6 rounded-3xl bg-slate-950/80 border border-cyan-500/30 space-y-5 shadow-xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <span class="text-xs font-extrabold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                <span>🏢 Penempatan Ruangan (KIR), Kondisi Fisik &amp; Pejabat RSUD</span>
-                <span class="text-rose-400">*</span>
-            </span>
-            <span class="text-[10px] text-slate-400 font-mono">Pencatatan Kartu Inventaris Ruangan (KIR)</span>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Unit / Ruangan Penempatan -->
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Unit / Ruangan Penempatan Aset (KIR) <span class="text-rose-400">*</span>
-                </label>
-                <select x-model="formData.unit_id" required
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold">
-                    <option value="">-- Pilih Unit / Ruangan Penempatan --</option>
-                    @foreach($dbUnits ?? [] as $u)
-                        <option value="{{ $u->id }}">{{ $u->nama }} ({{ $u->kode_unit ?? 'Unit' }})</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Kondisi Fisik Saat Diterima -->
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Kondisi Fisik Saat Diterima <span class="text-rose-400">*</span>
-                </label>
-                <select x-model="formData.kondisi" required
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold">
-                    <option value="Baik">🟢 Baik (Operasional Normal / Siap Digunakan)</option>
-                    <option value="Rusak Ringan">🟡 Rusak Ringan (Perlu Kalibrasi / Setting)</option>
-                    <option value="Rusak Berat">🔴 Rusak Berat</option>
-                </select>
-            </div>
-
-            <!-- Alamat / Gedung Penempatan Fisik Barang -->
-            <div class="sm:col-span-2">
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Alamat / Gedung Penempatan Fisik Barang
-                </label>
-                <input type="text" x-model="formData.alamat_barang"
-                    placeholder="RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-            </div>
-
-            <!-- Pejabat Pembuat Komitmen (PPK) / Pengurus Barang RSUD -->
-            <div class="sm:col-span-2">
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Pejabat Penanggung Jawab RSUD (PPK / Pengurus Barang)
-                </label>
-                <select x-model="formData.ppk_nama" @change="onPpkSelect()"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none">
-                    <option value="">-- Pilih Pejabat Penanggung Jawab --</option>
-                    <template x-for="p in pejabatsList" :key="p.nama">
-                        <option :value="p.nama" x-text="p.nama + (p.nip ? ' (' + p.nip + ')' : '')"></option>
-                    </template>
-                </select>
-            </div>
-        </div>
-    </div>
-
     <!-- ========================================================================= -->
     <!-- RINCIAN SPESIFIK BARANG & NILAI TAKSIRAN ASET (BAGIAN PALING BAWAH)       -->
     <!-- ========================================================================= -->
@@ -185,21 +124,26 @@
 
         <div class="space-y-4">
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nama Spesifik Barang Aset Kemitraan <span class="text-rose-400">*</span>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span>Nama Ringkasan / Kelompok Barang Aset Kemitraan <span class="text-rose-400">*</span></span>
+                    <span class="text-[10px] text-slate-400" x-show="isMultiItemActive">
+                        Otomatis dirangkum dari spesifikasi teknis di Langkah 3
+                    </span>
                 </label>
                 <input type="text" x-model="formData.nama_barang" required
-                    placeholder="Contoh: Automated Clinical Chemistry Analyzer Cobas c311 / Mesin Hemodialisis / Gedung Parkir..."
+                    placeholder="Contoh: Automated Clinical Chemistry Analyzer Cobas c311 / Mesin Hemodialisis..."
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none font-bold">
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                        Jumlah Volume / Unit <span class="text-rose-400">*</span>
+                    <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                        <span>Jumlah Total Volume / Unit <span class="text-rose-400">*</span></span>
+                        <span class="text-[10px] text-cyan-400 font-bold font-mono" x-show="isMultiItemActive">🔒 Akumulasi Rincian</span>
                     </label>
-                    <input type="number" x-model.number="formData.jumlah_volume" required min="1"
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold">
+                    <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
+                        :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-cyan-300 cursor-not-allowed' : 'bg-slate-900 border-slate-700 text-white'"
+                        class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
                 </div>
 
                 <div>
@@ -215,8 +159,9 @@
             <!-- Nilai Taksiran Wajar Aset Kemitraan -->
             <div class="p-5 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-2">
                 <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-slate-200">
-                        Total Taksiran Nilai Wajar Aset Kemitraan (Rp) <span class="text-rose-400">*</span>
+                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>Total Taksiran Nilai Wajar Aset Kemitraan (Rp) <span class="text-rose-400">*</span></span>
+                        <span class="text-[10px] text-emerald-400 font-bold font-mono" x-show="isMultiItemActive && formData.total_realisasi > 0">🔒 Akumulasi Otomatis</span>
                     </label>
                     <span class="text-xs font-mono text-cyan-300 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
                 </div>
@@ -225,22 +170,25 @@
                     <span class="absolute left-3.5 top-2.5 text-slate-400 text-xs font-bold font-mono">Rp</span>
                     <input type="text"
                         :value="formData.total_realisasi ? Number(formData.total_realisasi).toLocaleString('id-ID') : ''"
+                        :readonly="isMultiItemActive"
                         @input="
                             let raw = $event.target.value.replace(/\D/g, '');
                             formData.total_realisasi = raw ? parseInt(raw, 10) : 0;
                             $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                         "
+                        :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-emerald-400 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-cyan-300'"
                         placeholder="0"
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 pl-10 text-xs text-cyan-300 font-bold font-mono focus:outline-none">
+                        class="w-full border focus:border-cyan-400 rounded-xl px-4 py-2.5 pl-10 text-xs font-bold font-mono focus:outline-none">
                 </div>
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-1">
                     <p>
-                        💡 Taksiran nilai wajar aset sesuai klausul kontrak PKS atau appraisal wajar untuk Akun 1.5.2.
+                        💡 <span x-show="isMultiItemActive">Total nilai wajar dihitung otomatis dari akumulasi rincian barang/unit spesifikasi teknis di Langkah 3.</span>
+                        <span x-show="!isMultiItemActive">Taksiran nilai wajar aset sesuai klausul kontrak PKS atau appraisal wajar untuk Akun 1.5.2.</span>
                     </p>
                     <template x-if="formData.jumlah_volume > 1 && formData.total_realisasi > 0">
                         <span class="text-cyan-400 font-mono font-semibold">
-                            Taksiran/Unit: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span>
+                            Rata-rata/Unit: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span>
                         </span>
                     </template>
                 </div>
