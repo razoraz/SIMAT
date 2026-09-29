@@ -1,63 +1,41 @@
 <!-- ========================================================================= -->
-<!-- LANGKAH 1: DOKUMEN BAMB & SKPD PENGIRIM                                  -->
+<!-- LANGKAH 1: DOKUMEN BAMB & SKPD PENGIRIM (PELIMPAHAN BMD SKPD)              -->
 <!-- ========================================================================= -->
-<div x-show="step === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
+<div x-show="currentStep === 1" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-6">
     
-    <div class="border-b border-slate-800 pb-4">
-        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 text-xs font-bold mb-2">
-            <span>Langkah 1 dari 3</span>
+    <div>
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-400/10 text-indigo-300 border border-indigo-400/20 text-xs font-bold mb-2">
+            <span>🔄 LANGKAH 1 DARI 3: LEGALITAS BERITA ACARA SERAH TERIMA (BAMB / BAST)</span>
         </div>
         <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-            <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) &amp; SKPD Asal</span>
+            <span class="p-2 rounded-xl bg-indigo-400/10 text-indigo-400 text-sm">📜</span>
+            <span>Langkah 1: Dokumen BAMB &amp; SKPD Pengirim</span>
         </h2>
-        <p class="text-xs text-slate-400 mt-0.5">
-            Lengkapi data legalitas serah terima pelimpahan Barang Milik Daerah (BMD) dari instansi atau SKPD luar ke RSUD Dr. H. Koesnadi.
+        <p class="text-xs text-slate-400 mt-1">
+            Lengkapi data legalitas Berita Acara Mutasi Barang (BAMB/BAST), instansi atau SKPD pengirim, pejabat penyerah dan penerima, serta dokumen berkas serah terima.
         </p>
     </div>
 
-    <!-- Periode Anggaran & Triwulan -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-950/70 border border-slate-800">
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Tahun Anggaran Pembukuan <span class="text-rose-400">*</span>
-            </label>
-            <input type="number" x-model.number="formData.tahun_perolehan" min="1990" max="2100" required
-                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-mono">
-        </div>
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Triwulan Pembukuan <span class="text-rose-400">*</span>
-            </label>
-            <select x-model="formData.triwulan" required
-                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
-                <option value="TW I">Triwulan I (Januari - Maret)</option>
-                <option value="TW II">Triwulan II (April - Juni)</option>
-                <option value="TW III">Triwulan III (Juli - September)</option>
-                <option value="TW IV">Triwulan IV (Oktober - Desember)</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Bagian BAMB & SKPD Asal -->
-    <div class="p-5 rounded-2xl bg-slate-950/70 border border-purple-500/30 space-y-5 shadow-xl">
-        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-            <span class="text-xs font-extrabold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🔄 Informasi SKPD Asal &amp; Berita Acara BAMB</span>
+    <!-- Bagian 1: Identitas SKPD Pengirim & Dokumen Berita Acara -->
+    <div class="p-6 rounded-3xl bg-slate-950/80 border border-indigo-500/30 space-y-5 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🏛️ Identitas SKPD Pengirim &amp; Dokumen BAMB</span>
                 <span class="text-rose-400">*</span>
             </span>
-            <span class="text-[10px] font-bold text-purple-300 bg-purple-500/10 px-2.5 py-0.5 rounded-lg border border-purple-500/20">
-                Pelimpahan Antar-SKPD
+            <span class="text-[10px] font-bold text-indigo-300 bg-indigo-400/10 px-2 py-0.5 rounded-lg border border-indigo-400/20">
+                Pelimpahan BMD · Antar-OPD
             </span>
         </div>
 
-        <!-- SKPD Asal Pelimpahan (Combobox / Filter Riwayat & Bebas Ketik) -->
+        <!-- Instansi / SKPD Pengirim (Combobox Autocomplete) -->
         <div class="relative space-y-1.5" @click.away="isSkpdDropdownOpen = false">
             <div class="flex items-center justify-between">
                 <label class="block text-xs font-bold text-slate-200">
-                    Instansi / SKPD Asal Pelimpahan <span class="text-rose-400">*</span>
+                    Instansi / SKPD Asal Pengirim BMD <span class="text-rose-400">*</span>
                 </label>
                 <template x-if="masterSkpdList && masterSkpdList.length > 0">
-                    <span class="text-[10px] text-purple-400 font-mono font-normal flex items-center gap-1 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+                    <span class="text-[10px] text-indigo-400 font-mono font-normal flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
                         <span>⚡</span>
                         <span>Riwayat Tersimpan</span>
                     </span>
@@ -73,26 +51,26 @@
                     @keydown.escape="isSkpdDropdownOpen = false"
                     required
                     autocomplete="off"
-                    placeholder="Ketik atau pilih nama instansi/SKPD asal (contoh: Dinas Kesehatan, BPKAD...)"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
+                    placeholder="Ketik atau pilih nama dinas/instansi pengirim (contoh: Dinas Kesehatan, BPKAD Bondowoso...)"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-3 pl-10 pr-10 text-xs text-white placeholder-slate-500 focus:outline-none font-bold transition-all shadow-inner">
                 
                 <!-- Ikon Instansi -->
-                <svg class="w-4 h-4 text-purple-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-indigo-400 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                 </svg>
 
                 <!-- Tombol Kosongkan Input -->
-                <template x-if="formData.mutasi_asal">
-                    <button type="button" 
-                        @click="formData.mutasi_asal = ''; isSkpdDropdownOpen = true" 
-                        title="Kosongkan instansi SKPD"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition-colors">
-                        ✕
-                    </button>
-                </template>
+                <button type="button" 
+                    x-show="formData.mutasi_asal"
+                    @click="formData.mutasi_asal = ''; isSkpdDropdownOpen = true" 
+                    title="Kosongkan nama instansi"
+                    style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                    class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                    ✕
+                </button>
             </div>
 
-            <!-- Floating Dropdown Saran / Filter Instansi SKPD (Muncul saat fokus/diketik) -->
+            <!-- Floating Dropdown Saran / Filter SKPD -->
             <div x-show="isSkpdDropdownOpen" 
                 x-cloak
                 x-transition:enter="transition ease-out duration-100"
@@ -102,167 +80,234 @@
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 translate-y-1"
                 style="max-height: 220px !important; overflow-y: auto !important;"
-                class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-purple-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
+                class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-indigo-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
                 
-                <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
                     <span>Pilih Riwayat / Ketik SKPD Baru</span>
-                    <span class="font-mono text-slate-400" x-text="filteredSkpdList.length + ' saran'"></span>
+                    <span class="font-mono text-slate-400" x-text="filteredSkpdList.length + ' instansi'"></span>
                 </div>
 
                 <template x-for="(skpd, sIdx) in filteredSkpdList" :key="sIdx">
                     <div @click="selectSkpd(skpd)"
-                        class="px-4 py-2.5 hover:bg-purple-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
-                        :class="formData.mutasi_asal === skpd ? 'bg-purple-500/20 text-purple-200' : 'text-slate-200'">
+                        class="px-4 py-2.5 hover:bg-indigo-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
+                        :class="formData.mutasi_asal === skpd ? 'bg-indigo-500/20 text-indigo-200' : 'text-slate-200'">
                         <div class="flex items-center gap-2.5 min-w-0">
-                            <span class="text-xs text-purple-400/80">🏛️</span>
-                            <span class="text-xs font-bold group-hover:text-purple-300 truncate" x-text="skpd"></span>
+                            <span class="text-xs text-indigo-400/80">🏛️</span>
+                            <span class="text-xs font-bold group-hover:text-indigo-300 truncate" x-text="skpd"></span>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-bold shrink-0 group-hover:bg-purple-500/25">
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/25 font-bold shrink-0 group-hover:bg-indigo-500/25">
                             Pilih ↵
                         </span>
                     </div>
                 </template>
-
-                <!-- Notifikasi jika mengetik SKPD baru -->
-                <template x-if="formData.mutasi_asal && filteredSkpdList.length === 0">
-                    <div class="p-3 text-center text-xs text-slate-400 bg-slate-950/50">
-                        <span class="text-purple-300 font-semibold" x-text="'➕ Gunakan SKPD Baru: &quot;' + formData.mutasi_asal + '&quot;'"></span>
-                        <p class="text-[10px] text-slate-500 mt-0.5">Instansi ini akan otomatis tersimpan ke riwayat pelimpahan setelah formulir disimpan.</p>
-                    </div>
-                </template>
-            </div>
-            
-            <!-- Rekomendasi Cepat SKPD (Badge Shortcut) -->
-            <div class="pt-1 flex flex-wrap items-center gap-1.5">
-                <span class="text-[10px] text-slate-500 font-semibold mr-1">Rekomendasi Cepat:</span>
-                <button type="button" @click="selectSkpd('Dinas Kesehatan Kabupaten Bondowoso')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
-                    Dinkes Bondowoso
-                </button>
-                <button type="button" @click="selectSkpd('BPKAD Kabupaten Bondowoso')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
-                    BPKAD Bondowoso
-                </button>
-                <button type="button" @click="selectSkpd('Pemerintah Kabupaten Bondowoso')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
-                    Setda / Pemkab
-                </button>
-                <button type="button" @click="selectSkpd('Dinas Kesehatan Provinsi Jawa Timur')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 transition cursor-pointer">
-                    Dinkes Prov. Jatim
-                </button>
             </div>
         </div>
 
-        <!-- Nomor & Tanggal BAMB + Nomor SK Bupati/Dasar Hukum -->
+        <!-- Grid Nomor BAMB, Tanggal, SK Dasar & Periode -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            <!-- Nomor Dokumen BAMB / BAST -->
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nomor Berita Acara BAMB / BAST <span class="text-rose-400">*</span>
+                    Nomor Berita Acara (BAMB / BAST) <span class="text-rose-400">*</span>
                 </label>
                 <input type="text" x-model="formData.mutasi_nomor_bamb" required
-                    placeholder="Contoh: 028/014/BAST-OPD/2026"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none">
+                    placeholder="Contoh: 028/123/BAMB/430.10.2/2026"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none shadow-inner">
             </div>
+
+            <!-- Tanggal Dokumen BAMB -->
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Tanggal BAMB / BAST <span class="text-rose-400">*</span>
+                    Tanggal Dokumen BAMB <span class="text-rose-400">*</span>
                 </label>
-                <input type="text" x-datepicker x-model="formData.mutasi_tanggal" required
-                    placeholder="dd/mm/yyyy"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-mono">
+                <input type="date" x-model="formData.mutasi_tanggal" required
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none shadow-inner">
             </div>
-            <div class="sm:col-span-2 lg:col-span-1">
+
+            <!-- Dasar Hukum / Nomor SK Kepala Daerah -->
+            <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nomor SK Penetapan / Dasar Hukum <span class="text-slate-400 font-normal text-[11px]">(Opsional)</span>
+                    Dasar Pelimpahan (SK Bupati / Surat Pengantar)
                 </label>
                 <input type="text" x-model="formData.nomor_sk_dasar"
-                    placeholder="Contoh: SK-BUPATI/028/2026"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none">
+                    placeholder="Nomor SK Bupati / Surat Tugas Pelimpahan"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none shadow-inner">
             </div>
-        </div>
 
-        <!-- Identitas Pejabat Penyerah (Pihak Pertama: SKPD Pengirim) -->
-        <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
-            <span class="text-[11px] font-extrabold text-amber-300 uppercase tracking-wider block flex items-center gap-1.5">
-                <span>👤 Pejabat yang Menyerahkan (Pihak Pertama / SKPD Pengirim)</span>
-            </span>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Nama Pejabat</label>
-                    <input type="text" x-model="formData.pj_asal_nama"
-                        placeholder="Nama Lengkap & Gelar Pejabat"
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">NIP Pejabat</label>
-                    <input type="text" x-model="formData.pj_asal_nip"
-                        placeholder="NIP: 19xxxxxxxxxxxx"
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">Jabatan di SKPD Asal</label>
-                    <input type="text" x-model="formData.pj_asal_jabatan"
-                        placeholder="Pengurus Barang / PPK Asal"
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                </div>
-            </div>
-        </div>
-
-        <!-- Nilai Buku / Taksiran Aset Mutasi Eksternal (Rp) -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                <span>Nilai Buku / Taksiran Perolehan Aset (Rp) <span class="text-slate-400 font-normal text-[11px]">(Boleh Rp 0 jika tanpa taksiran)</span></span>
-                <span class="text-[11px] font-mono text-purple-400 font-extrabold" x-text="formatRupiah(formData.total_realisasi)"></span>
-            </label>
-            <input type="number" x-model.number="formData.total_realisasi" min="0" step="any"
-                placeholder="0"
-                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-purple-300 font-bold font-mono focus:outline-none">
-        </div>
-
-        <!-- Upload File Lampiran BAST Fisik (PDF) -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                <span>📎 Berkas Scan Dokumen BAST / SK Pelimpahan (PDF) <span class="text-slate-400 font-normal text-[11px]">(Opsional, Maks. 10MB)</span></span>
-                <template x-if="formData.dokumen_lampiran_path">
-                    <span class="text-[10.5px] text-emerald-400 font-semibold flex items-center gap-1">
-                        <span>✓ Berkas sudah tersimpan</span>
-                    </span>
-                </template>
-            </label>
-            
-            <div class="flex flex-col sm:flex-row items-center gap-3">
-                <label class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-purple-300 border border-purple-500/30 hover:border-purple-400 text-xs font-bold transition flex items-center justify-center space-x-2 cursor-pointer shadow-sm">
-                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                    <span x-text="selectedFile ? 'Ganti File Dokumen' : 'Pilih File PDF BAST'"></span>
-                    <input type="file" @change="handleFileSelect($event)" accept=".pdf,.jpg,.jpeg,.png" class="hidden">
+            <!-- Tahun Perolehan BMD -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Tahun Perolehan BMD <span class="text-rose-400">*</span>
                 </label>
+                <input type="number" x-model.number="formData.tahun_perolehan" min="1990" max="2100" required
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none shadow-inner">
+            </div>
 
-                <template x-if="selectedFile">
-                    <div class="flex items-center space-x-2 text-xs bg-purple-950/40 border border-purple-500/30 px-3 py-1.5 rounded-xl">
-                        <span class="text-purple-300 font-medium truncate max-w-[280px]" x-text="selectedFile.name"></span>
-                        <span class="text-[10px] text-slate-400 font-mono" x-text="'(' + (selectedFile.size / 1024).toFixed(0) + ' KB)'"></span>
-                        <button type="button" @click="selectedFile = null" class="text-rose-400 hover:text-white font-bold ml-1 cursor-pointer" title="Batalkan file">&times;</button>
+            <!-- Triwulan Pembukuan -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Triwulan Pembukuan <span class="text-rose-400">*</span>
+                </label>
+                <select x-model="formData.triwulan" required
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none shadow-inner">
+                    <option value="TW I">Triwulan I (Jan - Mar)</option>
+                    <option value="TW II">Triwulan II (Apr - Jun)</option>
+                    <option value="TW III">Triwulan III (Jul - Sep)</option>
+                    <option value="TW IV">Triwulan IV (Okt - Des)</option>
+                </select>
+            </div>
+
+            <!-- Jenis Mutasi / Tipe Pelimpahan -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Tipe Mutasi Eksternal
+                </label>
+                <div class="px-3.5 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-indigo-300 font-bold flex items-center justify-between">
+                    <span>Transfer Antar-OPD / SKPD Masuk</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">BMD MASUK</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bagian 2: Pihak yang Terlibat dalam Berita Acara Serah Terima -->
+    <div class="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-5 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span class="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <span>👥 Pihak Penyerah (SKPD Asal) &amp; Pihak Penerima (RSUD)</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">Penandatangan Berita Acara</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            
+            <!-- Pihak Pertama (SKPD Pengirim) -->
+            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/90 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider">
+                        1. Pihak Pertama (Penyerah / SKPD Pengirim)
+                    </span>
+                    <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">OPD Asal</span>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] text-slate-400 font-semibold mb-1">Nama Pejabat Penyerah</label>
+                    <input type="text" x-model="formData.pj_asal_nama"
+                        placeholder="Nama Kepala Dinas / Pengurus Barang SKPD Asal"
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] text-slate-400 font-semibold mb-1">NIP Penyerah</label>
+                        <input type="text" x-model="formData.pj_asal_nip"
+                            placeholder="1980xxxx..."
+                            class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
                     </div>
-                </template>
+                    <div>
+                        <label class="block text-[10px] text-slate-400 font-semibold mb-1">Jabatan Penyerah</label>
+                        <input type="text" x-model="formData.pj_asal_jabatan"
+                            placeholder="Pengurus Barang / PPK Asal"
+                            class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                </div>
+            </div>
 
-                <template x-if="!selectedFile && formData.dokumen_lampiran_path">
-                    <div class="text-xs text-slate-400 flex items-center space-x-2">
-                        <span>File lampiran tersimpan:</span>
-                        <a :href="'/storage/' + formData.dokumen_lampiran_path" target="_blank" class="text-cyan-400 hover:underline font-mono text-[11px] font-bold">Lihat Berkas BAST</a>
+            <!-- Pihak Kedua (Penerima / RSUD Dr. H. Koesnandi) -->
+            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/90 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                    <span class="text-xs font-bold text-indigo-400 block uppercase tracking-wider">
+                        2. Pihak Kedua (Penerima / RSUD Dr. H. Koesnandi)
+                    </span>
+                    <span class="text-[9px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-bold">RSUD</span>
+                </div>
+
+                <!-- Pejabat RSUD dengan Autocomplete / Pilihan Pejabat -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[10px] text-slate-400 font-semibold">Pejabat Pembuat Komitmen / Pengurus Barang RSUD</label>
+                        <template x-if="pejabatsList && pejabatsList.length > 0">
+                            <span class="text-[9px] text-indigo-400 font-mono">Daftar Pejabat Aktif</span>
+                        </template>
+                    </div>
+                    <div class="relative">
+                        <input type="text" x-model="formData.ppk_nama"
+                            list="pejabat-rsud-list"
+                            placeholder="Ketik atau pilih pejabat RSUD..."
+                            class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-bold">
+                        <datalist id="pejabat-rsud-list">
+                            <template x-for="(pj, pIdx) in pejabatsList" :key="pIdx">
+                                <option :value="pj.nama" x-text="pj.nama + (pj.nip ? ' (' + pj.nip + ')' : '')"></option>
+                            </template>
+                        </datalist>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] text-slate-400 font-semibold mb-1">NIP Pejabat RSUD</label>
+                    <input type="text" x-model="formData.ppk_nip"
+                        placeholder="196904121999031004"
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bagian 3: Dokumen Berkas Lampiran & Keterangan Alasan Pelimpahan -->
+    <div class="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-4 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <span class="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <span>📎 Berkas Lampiran Berita Acara &amp; Keterangan</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-mono">Dokumen Pendukung (PDF/Gambar)</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            <!-- Upload Berkas Berita Acara -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Unggah Berkas Berita Acara (BAMB/BAST/SK)
+                </label>
+                
+                <div class="p-4 rounded-2xl bg-slate-900 border-2 border-dashed border-slate-700 hover:border-indigo-400/60 transition-all text-center relative group">
+                    <input type="file" @change="handleFileSelect" accept=".pdf,.jpg,.jpeg,.png"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    
+                    <div class="space-y-1.5 pointer-events-none">
+                        <div class="w-10 h-10 mx-auto rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-lg">
+                            📁
+                        </div>
+                        <p class="text-xs font-bold text-slate-300 group-hover:text-indigo-300 transition-colors">
+                            <span x-show="!selectedFile">Klik atau seret berkas BAMB ke sini</span>
+                            <span x-show="selectedFile" class="text-indigo-400 font-mono" x-text="selectedFile ? selectedFile.name : ''"></span>
+                        </p>
+                        <p class="text-[10.5px] text-slate-500">Maksimal 10 MB (Format: PDF, JPG, PNG)</p>
+                    </div>
+                </div>
+
+                <!-- Info Berkas yang Sudah Tersimpan (Mode Edit) -->
+                <template x-if="isEdit && formData.dokumen_lampiran_path">
+                    <div class="mt-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
+                        <span class="text-slate-300 truncate">📄 File Tersimpan: <strong class="text-indigo-300" x-text="formData.dokumen_lampiran_path.split('/').pop()"></strong></span>
+                        <a :href="'/storage/' + formData.dokumen_lampiran_path" target="_blank" class="text-indigo-400 hover:underline font-bold text-[11px] shrink-0 ml-2">Lihat File ↗</a>
                     </div>
                 </template>
             </div>
-        </div>
 
-        <!-- Catatan Pelimpahan -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Catatan / Uraian Pelimpahan Aset
-            </label>
-            <textarea x-model="formData.mutasi_keterangan" rows="2"
-                placeholder="Contoh: Pelimpahan sarana prasarana penunjang pelayanan rawat inap dari Dinas Kesehatan Bondowoso..."
-                class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl p-3 text-xs text-white focus:outline-none"></textarea>
+            <!-- Keterangan / Alasan Pelimpahan BMD -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Keterangan Tambahan / Alasan Pelimpahan Status
+                </label>
+                <textarea x-model="formData.mutasi_keterangan" rows="4"
+                    placeholder="Contoh: Pelimpahan status penggunaan aset peralatan kesehatan dari Dinas Kesehatan Bondowoso untuk pemenuhan sarana medis pelayanan RSUD dr. H. Koesnandi..."
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none shadow-inner leading-relaxed"></textarea>
+            </div>
+
         </div>
     </div>
 
