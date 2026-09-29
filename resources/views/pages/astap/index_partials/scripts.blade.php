@@ -7286,6 +7286,710 @@
         XLSX.writeFile(wb, fileName);
         setTimeout(() => { isExportingRekapTriwulan = false; }, 1500);
     }
+
+    // =========================================================================
+    // MODUL EKSPOR EXCEL BUKU INDUK ASET KEMITRAAN (AKUN 1.5.2) - MULTI-SHEET
+    // =========================================================================
+    let isExportingKemitraan = false;
+
+    function normalizeSkemaKemitraan(raw) {
+        if (!raw) return 'sewa';
+        const s = String(raw).toUpperCase().trim();
+        if (s.includes('SEWA')) return 'sewa';
+        if (s.includes('KSP') || s.includes('PEMANFAATAN')) return 'ksp';
+        if (s.includes('BGS') || s.includes('BSG') || s.includes('BANGUN')) return 'bgs_bsg';
+        if (s.includes('KSO') || s.includes('KSPI') || s.includes('INFRASTRUKTUR') || s.includes('OPERASIONAL')) return 'kso';
+        return 'kso';
+    }
+
+    function getSkemaLabelKemitraan(skemaKey) {
+        if (skemaKey === 'sewa') return 'SEWA (1.5.2.01.01.01)';
+        if (skemaKey === 'ksp') return 'KERJA SAMA PEMANFAATAN / KSP (1.5.2.01.01.02)';
+        if (skemaKey === 'bgs_bsg') return 'BANGUN GUNA SERAH / BSG (1.5.2.01.01.03)';
+        if (skemaKey === 'kso') return 'KERJA SAMA PENYEDIAAN INFRASTRUKTUR / KSO (1.5.2.01.01.04)';
+        return 'SEMUA SKEMA KEMITRAAN (AKUN 1.5.2)';
+    }
+
+    function exportKemitraanToExcel(params = {}) {
+        if (isExportingKemitraan) return;
+        isExportingKemitraan = true;
+
+        if (typeof XLSX === 'undefined') {
+            alert('⚠️ Pustaka Excel sedang dimuat, silakan coba 1 detik lagi...');
+            isExportingKemitraan = false;
+            return;
+        }
+
+        const rawAstaps = window.__simatAstaps || [];
+        const wb = XLSX.utils.book_new();
+
+        const filterYear = params.year || 'all';
+        const filterTw   = params.triwulan || 'all';
+        const filterSkema= params.skema || 'all';
+        const filterCat  = params.category || 'all';
+
+        const isTwMatch = (itemTw, targetTw) => {
+            if (targetTw === 'all') return true;
+            const targetKey = targetTw.replace(/[\s_]/g, '').toUpperCase();
+            const curTw = (itemTw || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+            return (curTw === targetKey) ||
+                   (targetKey === 'TWI' && curTw === 'TW1') || (targetKey === 'TW1' && curTw === 'TWI') ||
+                   (targetKey === 'TWII' && curTw === 'TW2') || (targetKey === 'TW2' && curTw === 'TWII') ||
+                   (targetKey === 'TWIII' && curTw === 'TW3') || (targetKey === 'TW3' && curTw === 'TWIII') ||
+                   (targetKey === 'TWIV' && curTw === 'TW4') || (targetKey === 'TW4' && curTw === 'TWIV');
+        };
+
+        // Filter data khusus kemitraan
+        let filteredKemitraans = rawAstaps.filter(item => {
+            const isKemitraan = item.sumber_dana === 'kemitraan' || !!item.kemitraan;
+            if (!isKemitraan) return false;
+
+            const itemYear = (item.kemitraan && item.kemitraan.tahun) || item.tahun_perolehan;
+            const matchYear = filterYear === 'all' || String(itemYear) === String(filterYear);
+
+            const itemTw = (item.kemitraan && item.kemitraan.triwulan) || item.triwulan || 'TWI';
+            const matchTw = isTwMatch(itemTw, filterTw);
+
+            let matchSkema = true;
+            if (filterSkema !== 'all') {
+                const rawSkema = (item.kemitraan && item.kemitraan.skema_kemitraan) 
+                    || (item.spesifikasi_json && item.spesifikasi_json.skema_kemitraan) 
+                    || '';
+                matchSkema = normalizeSkemaKemitraan(rawSkema) === filterSkema;
+            }
+
+            let matchCat = true;
+            if (filterCat !== 'all' && filterCat !== 'REKAP') {
+                const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                matchCat = (itemCat === filterCat);
+            }
+
+            return matchYear && matchTw && matchSkema && matchCat;
+        });
+
+        // Pengelompokan Data per Kategori KIB
+        const categories = {
+            'KIB A': [],
+            'KIB B': [],
+            'KIB C': [],
+            'KIB D': [],
+            'KIB E': []
+        };
+
+        filteredKemitraans.forEach(item => {
+            const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : (item.category || 'KIB B');
+            if (categories[cat]) {
+                categories[cat].push(item);
+            } else {
+                categories['KIB B'].push(item);
+            }
+        });
+
+        // Label Dinamis
+        let twLabel = "KESELURUHAN (TAHUNAN)";
+        if (filterTw === 'TW I' || filterTw === 'TW1') twLabel = "TRIWULAN I (JANUARI - MARET)";
+        else if (filterTw === 'TW II' || filterTw === 'TW2') twLabel = "TRIWULAN II (APRIL - JUNI)";
+        else if (filterTw === 'TW III' || filterTw === 'TW3') twLabel = "TRIWULAN III (JULI - SEPTEMBER)";
+        else if (filterTw === 'TW IV' || filterTw === 'TW4') twLabel = "TRIWULAN IV (OKTOBER - DESEMBER)";
+
+        const yearLabel = filterYear === 'all' ? (new Date().getFullYear()) : filterYear;
+        const skemaLabel = getSkemaLabelKemitraan(filterSkema);
+        const signDate = typeof getReportSignDate === 'function' ? getReportSignDate(filterTw, filterYear) : (new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
+
+        let sampleMitra = '';
+        for (const it of filteredKemitraans) {
+            const m = (it.kemitraan && it.kemitraan.mitra_nama) || (it.spesifikasi_json && it.spesifikasi_json.mitra_nama);
+            if (m && m !== '-' && m !== 'Mitra Pihak Ketiga') {
+                sampleMitra = m;
+                break;
+            }
+        }
+
+        function buildKemitraanSignRows(numCols, rightStartCol, leftStartCol = 1) {
+            const today = signDate || (new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
+            const mTitle = sampleMitra ? sampleMitra : 'MITRA / REKANAN KERJA SAMA';
+
+            function makeRow(leftVal, rightVal) {
+                const row = Array(numCols).fill('');
+                row[leftStartCol]  = leftVal;
+                row[rightStartCol] = rightVal;
+                return row;
+            }
+
+            return [
+                Array(numCols).fill(''),
+                makeRow('MENGETAHUI,',                      'Bondowoso, ' + today),
+                makeRow('PENGURUS BARANG PENGGUNA',         'PIHAK KETIGA / REKANAN'),
+                makeRow('RSUD dr. H. KOESNANDI BONDOWOSO',  mTitle),
+                Array(numCols).fill(''),
+                Array(numCols).fill(''),
+                makeRow('BUDI HARTONO, S.Sos',              '( .................................................. )'),
+                makeRow('NIP. 19760229 200801 1 010',       'Direktur / Pimpinan Rekanan'),
+                Array(numCols).fill('')
+            ];
+        }
+
+        function getKemitraanCatSummary(kibKey) {
+            const items = categories[kibKey] || [];
+            let totalVal = 0;
+            let totalUnits = 0;
+
+            items.forEach(it => {
+                const val = (it.kemitraan && typeof it.kemitraan.nilai_aset === 'number')
+                    ? it.kemitraan.nilai_aset
+                    : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+                totalVal += val;
+
+                const vol = (it.kemitraan && it.kemitraan.jumlah_volume)
+                    ? it.kemitraan.jumlah_volume
+                    : (parseInt(it.jumlah_volume) || 1);
+                totalUnits += vol;
+            });
+
+            return { totalVal, totalUnits, itemCount: items.length };
+        }
+
+        const sumA = getKemitraanCatSummary('KIB A');
+        const sumB = getKemitraanCatSummary('KIB B');
+        const sumC = getKemitraanCatSummary('KIB C');
+        const sumD = getKemitraanCatSummary('KIB D');
+        const sumE = getKemitraanCatSummary('KIB E');
+
+        const grandTotalVal = sumA.totalVal + sumB.totalVal + sumC.totalVal + sumD.totalVal + sumE.totalVal;
+        const grandTotalUnits = sumA.totalUnits + sumB.totalUnits + sumC.totalUnits + sumD.totalUnits + sumE.totalUnits;
+
+        // 1. REKAPITULASI KEMITRAAN (Sheet 1)
+        const rekapData = [
+            ["PEMERINTAH KABUPATEN BONDOWOSO"],
+            ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+            ["BUKU REKAPITULASI ASET KEMITRAAN DENGAN PIHAK KETIGA (AKUN 1.5.2)"],
+            [`SKEMA: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+            [""],
+            [
+                "NO",
+                "KLASIFIKASI KIB / AKUN 108 KEMITRAAN",
+                "KODE AKUN REKENING BMD",
+                "SKEMA KERJA SAMA",
+                "JUMLAH ITEM / UNIT",
+                "TOTAL TAKSIRAN NILAI ASET (Rp)",
+                "KETERANGAN / STATUS KONSESI"
+            ],
+            [
+                "1", "KIB A - TANAH KEMITRAAN", "1.5.2.01.01.xx.001",
+                "Sewa / KSP Lahan & Lapangan",
+                sumA.totalUnits + " Bidang", sumA.totalVal,
+                sumA.itemCount > 0 ? "Tercatat di Buku Tanah Akun 1.5.2" : "-"
+            ],
+            [
+                "2", "KIB B - PERALATAN DAN MESIN (KSO ALAT KESEHATAN)", "1.5.2.01.01.xx.002",
+                "KSO Alat Medis, Laboratorium & Radiologi",
+                sumB.totalUnits + " Unit", sumB.totalVal,
+                sumB.itemCount > 0 ? "Aktif Operasional Penunjang Medis" : "-"
+            ],
+            [
+                "3", "KIB C - GEDUNG DAN BANGUNAN (BGS/BSG)", "1.5.2.01.01.xx.003",
+                "Bangun Guna Serah Fasilitas Rekanan",
+                sumC.totalUnits + " Bangunan", sumC.totalVal,
+                sumC.itemCount > 0 ? "Fasilitas Bangunan Konsesi Mitra" : "-"
+            ],
+            [
+                "4", "KIB D - JALAN, IRIGASI DAN JARINGAN", "1.5.2.01.01.xx.004",
+                "Infrastruktur Server & Jaringan IT",
+                sumD.totalUnits + " Jaringan", sumD.totalVal,
+                sumD.itemCount > 0 ? "Jaringan & Utilitas Kerja Sama" : "-"
+            ],
+            [
+                "5", "KIB E - ASET TETAP LAINNYA", "1.5.2.01.01.xx.005",
+                "Aset Kerja Sama Lainnya",
+                sumE.totalUnits + " Unit/Item", sumE.totalVal,
+                sumE.itemCount > 0 ? "Aset Kemitraan Khusus Lainnya" : "-"
+            ],
+            [
+                "JUMLAH TOTAL NILAI ASET KEMITRAAN (AKUN 1.5.2)", "", "", "",
+                grandTotalUnits + " Unit Total",
+                grandTotalVal,
+                "Rekapitulasi " + twLabel + " " + yearLabel
+            ]
+        ];
+
+        const rekapSignStart = rekapData.length;
+        const rekapSigns = buildKemitraanSignRows(7, 4, 1);
+        rekapSigns.forEach(r => rekapData.push(r));
+
+        const wsRekap = XLSX.utils.aoa_to_sheet(rekapData);
+
+        wsRekap['!cols'] = [
+            { wch: 6 }, { wch: 38 }, { wch: 22 }, { wch: 36 }, { wch: 20 }, { wch: 28 }, { wch: 36 }
+        ];
+        wsRekap['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+            { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
+            { s: { r: 11, c: 0 }, e: { r: 11, c: 3 } },
+            ...getKibSignatureMerges(rekapSignStart, 7, 4, 1, 2, 6)
+        ];
+
+        applyRekapSheetStyling(wsRekap, rekapData.length, 7, 5, 11, rekapSignStart);
+        applySignatureBlockStyling(wsRekap, rekapSignStart, 7);
+
+        if (filterCat === 'all' || filterCat === 'REKAP') {
+            XLSX.utils.book_append_sheet(wb, wsRekap, filterCat === 'all' ? "1. Rekapitulasi" : "Rekapitulasi Kemitraan");
+        }
+
+        function applyKemitraanDetailStyling(ws, rowCount, colCount, totalRowIdx, signStartRow) {
+            const thinBorder = {
+                top: { style: "thin", color: { rgb: "64748B" } },
+                bottom: { style: "thin", color: { rgb: "64748B" } },
+                left: { style: "thin", color: { rgb: "64748B" } },
+                right: { style: "thin", color: { rgb: "64748B" } }
+            };
+            const doubleBottomBorder = {
+                top: { style: "thin", color: { rgb: "0F172A" } },
+                bottom: { style: "double", color: { rgb: "0F172A" } },
+                left: { style: "thin", color: { rgb: "64748B" } },
+                right: { style: "thin", color: { rgb: "64748B" } }
+            };
+
+            for (let r = 0; r < rowCount; r++) {
+                for (let c = 0; c < colCount; c++) {
+                    const cellRef = getColName(c) + (r + 1);
+                    if (!ws[cellRef]) ws[cellRef] = { v: "", t: "s" };
+                    const cell = ws[cellRef];
+
+                    let fill = "FFFFFF";
+                    let fontColor = "0F172A";
+                    let bold = false;
+                    let align = "left";
+                    let border = thinBorder;
+                    let fontSize = 9.5;
+                    let numFmt = null;
+
+                    if (r < 5) {
+                        fill = "FFFFFF";
+                        bold = true;
+                        align = "center";
+                        fontSize = (r === 0 || r === 1) ? 12 : 11;
+                        border = null;
+                    } else if (r === 5) {
+                        fill = "0E7490"; // Cyan 700 Header for Kemitraan
+                        fontColor = "FFFFFF";
+                        bold = true;
+                        fontSize = 10;
+                        align = "center";
+                        border = thinBorder;
+                    } else if (r === totalRowIdx) {
+                        fill = "A5F3FC"; // Soft Cyan
+                        fontColor = "0F172A";
+                        bold = true;
+                        fontSize = 10;
+                        border = doubleBottomBorder;
+                        align = (c === 0) ? "center" : "right";
+                        if (typeof cell.v === 'number') numFmt = "Rp #,##0.00";
+                    } else if (r >= signStartRow) {
+                        continue;
+                    } else {
+                        fill = (r % 2 === 0) ? "FFFFFF" : "F0FDFA";
+                        if (c === 0) align = "center";
+                        if (typeof cell.v === 'number') {
+                            align = "right";
+                            numFmt = "Rp #,##0.00";
+                        }
+                    }
+
+                    cell.s = {
+                        font: { name: "Calibri", sz: fontSize, bold: bold, color: { rgb: fontColor } },
+                        alignment: { horizontal: align, vertical: "center", wrapText: true },
+                        fill: { fgColor: { rgb: fill } },
+                        border: border
+                    };
+                    if (numFmt) cell.z = numFmt;
+                }
+            }
+            applySignatureBlockStyling(ws, signStartRow, colCount);
+        }
+
+        // 2. SHEET KIB B: PERALATAN & MESIN (KSO ALAT MEDIS)
+        if (filterCat === 'all' || filterCat === 'KIB B') {
+            const items = categories['KIB B'] || [];
+            let totalBVal = 0;
+
+            const kibBData = [
+                ["PEMERINTAH KABUPATEN BONDOWOSO"],
+                ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+                ["DAFTAR ASET KEMITRAAN PIHAK KETIGA (AKUN 1.5.2) - KIB B (PERALATAN DAN MESIN / KSO)"],
+                [`SKEMA: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+                [""],
+                [
+                    "NO", "NOMOR PKS", "TANGGAL PKS", "NAMA REKANAN / MITRA", "SKEMA KERJA SAMA",
+                    "KODE 108", "NAMA / JENIS BARANG", "MERK / MODEL", "NO. PABRIK / MESIN", "NIBAR / REGISTER",
+                    "VOL", "SATUAN", "RUANGAN PENEMPATAN", "TGL MULAI", "TGL BERAKHIR", "SISA HARI",
+                    "NILAI ASET WAJAR (Rp)", "KONDISI", "STATUS KONSESI", "KETERANGAN"
+                ]
+            ];
+
+            items.forEach((it, idx) => {
+                const k = it.kemitraan || {};
+                const spec = it.spesifikasi_json || {};
+                const reg = (it.registers && it.registers[0]) || {};
+                const val = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+                totalBVal += val;
+
+                const tMulai = k.tanggal_mulai ? new Date(k.tanggal_mulai).toLocaleDateString('id-ID') : (spec.tanggal_mulai || '-');
+                const tSelesai = k.tanggal_selesai ? new Date(k.tanggal_selesai).toLocaleDateString('id-ID') : (spec.tanggal_selesai || '-');
+                const sisa = k.sisa_hari != null ? (k.sisa_hari + ' Hari') : '-';
+
+                kibBData.push([
+                    idx + 1,
+                    k.nomor_pks || it.bast_dokumen_nomor || spec.nomor_pks || '-',
+                    k.tanggal_pks ? new Date(k.tanggal_pks).toLocaleDateString('id-ID') : (it.bast_dokumen_tanggal || '-'),
+                    k.mitra_nama || spec.mitra_nama || 'Mitra Rekanan',
+                    k.skema_kemitraan || spec.skema_kemitraan || 'KSO',
+                    it.kode_barang || '1.5.2.01.01.04.002',
+                    it.nama_barang || 'Alat Medis Kemitraan',
+                    spec.merk || it.merk || spec.type || '-',
+                    spec.no_pabrik || spec.no_mesin || '-',
+                    reg.nibar || reg.no_register || it.nibar || '-',
+                    k.jumlah_volume || it.jumlah_volume || 1,
+                    k.satuan || it.satuan || 'Unit',
+                    reg.ruang_pemegang || it.ruang_unit || 'RSUD Dr. H. Koesnandi',
+                    tMulai,
+                    tSelesai,
+                    sisa,
+                    val,
+                    reg.kondisi || it.kondisi || 'Baik',
+                    k.status_konsesi || 'Aktif',
+                    k.keterangan || it.keterangan_tambahan || '-'
+                ]);
+            });
+
+            const totalRowB = kibBData.length;
+            kibBData.push([
+                "TOTAL NILAI ASET PERALATAN & MESIN (KIB B KEMITRAAN)", "", "", "", "",
+                "", "", "", "", "", "", "", "", "", "", "",
+                totalBVal, "", "", ""
+            ]);
+
+            const signStartB = kibBData.length;
+            const signsB = buildKemitraanSignRows(20, 12, 2);
+            signsB.forEach(r => kibBData.push(r));
+
+            const wsB = XLSX.utils.aoa_to_sheet(kibBData);
+            wsB['!cols'] = [
+                { wch: 6 },  { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 18 },
+                { wch: 22 }, { wch: 32 }, { wch: 20 }, { wch: 18 }, { wch: 24 },
+                { wch: 8 },  { wch: 10 }, { wch: 25 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
+                { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 30 }
+            ];
+            wsB['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 19 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 19 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 19 } },
+                { s: { r: 3, c: 0 }, e: { r: 3, c: 19 } },
+                { s: { r: totalRowB, c: 0 }, e: { r: totalRowB, c: 15 } },
+                ...getKibSignatureMerges(signStartB, 20, 12, 2, 7, 18)
+            ];
+            applyKemitraanDetailStyling(wsB, kibBData.length, 20, totalRowB, signStartB);
+            XLSX.utils.book_append_sheet(wb, wsB, filterCat === 'all' ? "2. KIB B - Mesin & Alkes" : "KIB B - Peralatan & Mesin");
+        }
+
+        // 3. SHEET KIB A: TANAH KEMITRAAN
+        if (filterCat === 'all' || filterCat === 'KIB A') {
+            const items = categories['KIB A'] || [];
+            let totalAVal = 0;
+
+            const kibAData = [
+                ["PEMERINTAH KABUPATEN BONDOWOSO"],
+                ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+                ["DAFTAR ASET KEMITRAAN PIHAK KETIGA (AKUN 1.5.2) - KIB A (TANAH KEMITRAAN)"],
+                [`SKEMA: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+                [""],
+                [
+                    "NO", "NOMOR PKS", "TANGGAL PKS", "NAMA REKANAN / MITRA", "SKEMA KERJA SAMA",
+                    "KODE 108", "NAMA / IDENTITAS TANAH", "LUAS (M²)", "HAK TANAH", "NOMOR SERTIFIKAT",
+                    "LOKASI / PENGGUNAAN", "TGL MULAI", "TGL BERAKHIR", "NILAI ASET WAJAR (Rp)", "STATUS KONSESI", "KETERANGAN"
+                ]
+            ];
+
+            items.forEach((it, idx) => {
+                const k = it.kemitraan || {};
+                const spec = it.spesifikasi_json || {};
+                const val = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+                totalAVal += val;
+
+                kibAData.push([
+                    idx + 1,
+                    k.nomor_pks || it.bast_dokumen_nomor || spec.nomor_pks || '-',
+                    k.tanggal_pks ? new Date(k.tanggal_pks).toLocaleDateString('id-ID') : (it.bast_dokumen_tanggal || '-'),
+                    k.mitra_nama || spec.mitra_nama || 'Mitra Rekanan',
+                    k.skema_kemitraan || spec.skema_kemitraan || 'Sewa',
+                    it.kode_barang || '1.5.2.01.01.01.001',
+                    it.nama_barang || 'Tanah Kerja Sama',
+                    spec.luas_m2 || it.luas_m2 || 0,
+                    spec.hak_tanah || 'Hak Pakai',
+                    spec.sertifikat_nomor || '-',
+                    spec.penggunaan || 'Lahan RSUD Kerja Sama Mitra',
+                    k.tanggal_mulai ? new Date(k.tanggal_mulai).toLocaleDateString('id-ID') : (spec.tanggal_mulai || '-'),
+                    k.tanggal_selesai ? new Date(k.tanggal_selesai).toLocaleDateString('id-ID') : (spec.tanggal_selesai || '-'),
+                    val,
+                    k.status_konsesi || 'Aktif',
+                    k.keterangan || it.keterangan_tambahan || '-'
+                ]);
+            });
+
+            const totalRowA = kibAData.length;
+            kibAData.push([
+                "TOTAL NILAI ASET TANAH KEMITRAAN (KIB A)", "", "", "", "",
+                "", "", "", "", "", "", "", "",
+                totalAVal, "", ""
+            ]);
+
+            const signStartA = kibAData.length;
+            const signsA = buildKemitraanSignRows(16, 10, 1);
+            signsA.forEach(r => kibAData.push(r));
+
+            const wsA = XLSX.utils.aoa_to_sheet(kibAData);
+            wsA['!cols'] = [
+                { wch: 6 },  { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 18 },
+                { wch: 22 }, { wch: 32 }, { wch: 14 }, { wch: 16 }, { wch: 22 },
+                { wch: 30 }, { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 14 }, { wch: 30 }
+            ];
+            wsA['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 15 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 15 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 15 } },
+                { s: { r: 3, c: 0 }, e: { r: 3, c: 15 } },
+                { s: { r: totalRowA, c: 0 }, e: { r: totalRowA, c: 12 } },
+                ...getKibSignatureMerges(signStartA, 16, 10, 1, 5, 14)
+            ];
+            applyKemitraanDetailStyling(wsA, kibAData.length, 16, totalRowA, signStartA);
+            XLSX.utils.book_append_sheet(wb, wsA, filterCat === 'all' ? "3. KIB A - Tanah" : "KIB A - Tanah");
+        }
+
+        // 4. SHEET KIB C: GEDUNG & BANGUNAN KEMITRAAN (BGS/BSG)
+        if (filterCat === 'all' || filterCat === 'KIB C') {
+            const items = categories['KIB C'] || [];
+            let totalCVal = 0;
+
+            const kibCData = [
+                ["PEMERINTAH KABUPATEN BONDOWOSO"],
+                ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+                ["DAFTAR ASET KEMITRAAN PIHAK KETIGA (AKUN 1.5.2) - KIB C (GEDUNG DAN BANGUNAN / BGS)"],
+                [`SKEMA: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+                [""],
+                [
+                    "NO", "NOMOR PKS", "TANGGAL PKS", "NAMA REKANAN / MITRA", "SKEMA KERJA SAMA",
+                    "KODE 108", "NAMA BANGUNAN / FASILITAS", "KONSTRUKSI", "LUAS (M²)", "LOKASI PENEMPATAN",
+                    "TGL MULAI", "TGL BERAKHIR", "NILAI ASET WAJAR (Rp)", "STATUS KONSESI", "KETERANGAN"
+                ]
+            ];
+
+            items.forEach((it, idx) => {
+                const k = it.kemitraan || {};
+                const spec = it.spesifikasi_json || {};
+                const val = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+                totalCVal += val;
+
+                kibCData.push([
+                    idx + 1,
+                    k.nomor_pks || it.bast_dokumen_nomor || spec.nomor_pks || '-',
+                    k.tanggal_pks ? new Date(k.tanggal_pks).toLocaleDateString('id-ID') : (it.bast_dokumen_tanggal || '-'),
+                    k.mitra_nama || spec.mitra_nama || 'Mitra Rekanan',
+                    k.skema_kemitraan || spec.skema_kemitraan || 'BGS',
+                    it.kode_barang || '1.5.2.01.01.03.003',
+                    it.nama_barang || 'Bangunan Gedung Kemitraan',
+                    spec.gedung_beton || spec.konstruksi || 'Beton Bertingkat',
+                    spec.luas_m2 || it.luas_m2 || 0,
+                    spec.lokasi || it.alamat_barang || 'Kompleks RSUD Koesnandi',
+                    k.tanggal_mulai ? new Date(k.tanggal_mulai).toLocaleDateString('id-ID') : (spec.tanggal_mulai || '-'),
+                    k.tanggal_selesai ? new Date(k.tanggal_selesai).toLocaleDateString('id-ID') : (spec.tanggal_selesai || '-'),
+                    val,
+                    k.status_konsesi || 'Aktif',
+                    k.keterangan || it.keterangan_tambahan || '-'
+                ]);
+            });
+
+            const totalRowC = kibCData.length;
+            kibCData.push([
+                "TOTAL NILAI ASET GEDUNG KEMITRAAN (KIB C)", "", "", "", "",
+                "", "", "", "", "", "", "",
+                totalCVal, "", ""
+            ]);
+
+            const signStartC = kibCData.length;
+            const signsC = buildKemitraanSignRows(15, 9, 1);
+            signsC.forEach(r => kibCData.push(r));
+
+            const wsC = XLSX.utils.aoa_to_sheet(kibCData);
+            wsC['!cols'] = [
+                { wch: 6 },  { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 18 },
+                { wch: 22 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 28 },
+                { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 14 }, { wch: 30 }
+            ];
+            wsC['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 14 } },
+                { s: { r: 3, c: 0 }, e: { r: 3, c: 14 } },
+                { s: { r: totalRowC, c: 0 }, e: { r: totalRowC, c: 11 } },
+                ...getKibSignatureMerges(signStartC, 15, 9, 1, 4, 13)
+            ];
+            applyKemitraanDetailStyling(wsC, kibCData.length, 15, totalRowC, signStartC);
+            XLSX.utils.book_append_sheet(wb, wsC, filterCat === 'all' ? "4. KIB C - Bangunan" : "KIB C - Gedung & Bangunan");
+        }
+
+        // 5. SHEET KIB D: JALAN & JARINGAN KEMITRAAN
+        if (filterCat === 'all' || filterCat === 'KIB D') {
+            const items = categories['KIB D'] || [];
+            let totalDVal = 0;
+
+            const kibDData = [
+                ["PEMERINTAH KABUPATEN BONDOWOSO"],
+                ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+                ["DAFTAR ASET KEMITRAAN PIHAK KETIGA (AKUN 1.5.2) - KIB D (JARINGAN & UTILITAS)"],
+                [`SKEMA: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+                [""],
+                [
+                    "NO", "NOMOR PKS", "TANGGAL PKS", "NAMA REKANAN / MITRA", "SKEMA KERJA SAMA",
+                    "KODE 108", "NAMA JARINGAN / UTILITAS", "KONSTRUKSI / PANJANG", "LOKASI PENEMPATAN",
+                    "TGL MULAI", "TGL BERAKHIR", "NILAI ASET WAJAR (Rp)", "STATUS KONSESI", "KETERANGAN"
+                ]
+            ];
+
+            items.forEach((it, idx) => {
+                const k = it.kemitraan || {};
+                const spec = it.spesifikasi_json || {};
+                const val = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+                totalDVal += val;
+
+                kibDData.push([
+                    idx + 1,
+                    k.nomor_pks || it.bast_dokumen_nomor || spec.nomor_pks || '-',
+                    k.tanggal_pks ? new Date(k.tanggal_pks).toLocaleDateString('id-ID') : (it.bast_dokumen_tanggal || '-'),
+                    k.mitra_nama || spec.mitra_nama || 'Mitra Rekanan',
+                    k.skema_kemitraan || spec.skema_kemitraan || 'KSP',
+                    it.kode_barang || '1.5.2.01.01.02.004',
+                    it.nama_barang || 'Jaringan IT / Utilitas Mitra',
+                    spec.jaringan_konstruksi || spec.panjang_m || '-',
+                    spec.lokasi || it.alamat_barang || 'RSUD Dr. H. Koesnandi',
+                    k.tanggal_mulai ? new Date(k.tanggal_mulai).toLocaleDateString('id-ID') : (spec.tanggal_mulai || '-'),
+                    k.tanggal_selesai ? new Date(k.tanggal_selesai).toLocaleDateString('id-ID') : (spec.tanggal_selesai || '-'),
+                    val,
+                    k.status_konsesi || 'Aktif',
+                    k.keterangan || it.keterangan_tambahan || '-'
+                ]);
+            });
+
+            const totalRowD = kibDData.length;
+            kibDData.push([
+                "TOTAL NILAI ASET JARINGAN KEMITRAAN (KIB D)", "", "", "", "",
+                "", "", "", "", "", "",
+                totalDVal, "", ""
+            ]);
+
+            const signStartD = kibDData.length;
+            const signsD = buildKemitraanSignRows(14, 8, 1);
+            signsD.forEach(r => kibDData.push(r));
+
+            const wsD = XLSX.utils.aoa_to_sheet(kibDData);
+            wsD['!cols'] = [
+                { wch: 6 },  { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 18 },
+                { wch: 22 }, { wch: 32 }, { wch: 20 }, { wch: 28 },
+                { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 14 }, { wch: 30 }
+            ];
+            wsD['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 13 } },
+                { s: { r: 3, c: 0 }, e: { r: 3, c: 13 } },
+                { s: { r: totalRowD, c: 0 }, e: { r: totalRowD, c: 10 } },
+                ...getKibSignatureMerges(signStartD, 14, 8, 1, 4, 12)
+            ];
+            applyKemitraanDetailStyling(wsD, kibDData.length, 14, totalRowD, signStartD);
+            XLSX.utils.book_append_sheet(wb, wsD, filterCat === 'all' ? "5. KIB D - Jaringan" : "KIB D - Jalan & Jaringan");
+        }
+
+        // 6. SHEET KIB E: ASET TETAP LAINNYA KEMITRAAN
+        if (filterCat === 'all' || filterCat === 'KIB E') {
+            const items = categories['KIB E'] || [];
+            let totalEVal = 0;
+
+            const kibEData = [
+                ["PEMERINTAH KABUPATEN BONDOWOSO"],
+                ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
+                ["DAFTAR ASET KEMITRAAN PIHAK KETIGA (AKUN 1.5.2) - KIB E (ASET TETAP LAINNYA)"],
+                [`SKEMA: ${skemaLabel} · PERIODE: ${twLabel} TAHUN ANGGARAN ${yearLabel}`],
+                [""],
+                [
+                    "NO", "NOMOR PKS", "TANGGAL PKS", "NAMA REKANAN / MITRA", "SKEMA KERJA SAMA",
+                    "KODE 108", "NAMA / IDENTITAS BARANG", "SPESIFIKASI", "RUANGAN PENEMPATAN",
+                    "TGL MULAI", "TGL BERAKHIR", "NILAI ASET WAJAR (Rp)", "STATUS KONSESI", "KETERANGAN"
+                ]
+            ];
+
+            items.forEach((it, idx) => {
+                const k = it.kemitraan || {};
+                const spec = it.spesifikasi_json || {};
+                const reg = (it.registers && it.registers[0]) || {};
+                const val = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+                totalEVal += val;
+
+                kibEData.push([
+                    idx + 1,
+                    k.nomor_pks || it.bast_dokumen_nomor || spec.nomor_pks || '-',
+                    k.tanggal_pks ? new Date(k.tanggal_pks).toLocaleDateString('id-ID') : (it.bast_dokumen_tanggal || '-'),
+                    k.mitra_nama || spec.mitra_nama || 'Mitra Rekanan',
+                    k.skema_kemitraan || spec.skema_kemitraan || 'KSP',
+                    it.kode_barang || '1.5.2.01.01.02.005',
+                    it.nama_barang || 'Aset Kemitraan Lainnya',
+                    spec.spesifikasi || it.spesifikasi || '-',
+                    reg.ruang_pemegang || it.ruang_unit || 'RSUD Dr. H. Koesnandi',
+                    k.tanggal_mulai ? new Date(k.tanggal_mulai).toLocaleDateString('id-ID') : (spec.tanggal_mulai || '-'),
+                    k.tanggal_selesai ? new Date(k.tanggal_selesai).toLocaleDateString('id-ID') : (spec.tanggal_selesai || '-'),
+                    val,
+                    k.status_konsesi || 'Aktif',
+                    k.keterangan || it.keterangan_tambahan || '-'
+                ]);
+            });
+
+            const totalRowE = kibEData.length;
+            kibEData.push([
+                "TOTAL NILAI ASET LAINNYA KEMITRAAN (KIB E)", "", "", "", "",
+                "", "", "", "", "", "",
+                totalEVal, "", ""
+            ]);
+
+            const signStartE = kibEData.length;
+            const signsE = buildKemitraanSignRows(14, 8, 1);
+            signsE.forEach(r => kibEData.push(r));
+
+            const wsE = XLSX.utils.aoa_to_sheet(kibEData);
+            wsE['!cols'] = [
+                { wch: 6 },  { wch: 24 }, { wch: 14 }, { wch: 30 }, { wch: 18 },
+                { wch: 22 }, { wch: 32 }, { wch: 24 }, { wch: 25 },
+                { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 14 }, { wch: 30 }
+            ];
+            wsE['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 13 } },
+                { s: { r: 3, c: 0 }, e: { r: 3, c: 13 } },
+                { s: { r: totalRowE, c: 0 }, e: { r: totalRowE, c: 10 } },
+                ...getKibSignatureMerges(signStartE, 14, 8, 1, 4, 12)
+            ];
+            applyKemitraanDetailStyling(wsE, kibEData.length, 14, totalRowE, signStartE);
+            XLSX.utils.book_append_sheet(wb, wsE, filterCat === 'all' ? "6. KIB E - Aset Lainnya" : "KIB E - Aset Lainnya");
+        }
+
+        // Tulis Berkas Excel dan Simpan
+        const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
+        const skemaSlug = filterSkema === 'all' ? 'SEMUA_SKEMA' : filterSkema.toUpperCase();
+        const catSlug = filterCat === 'all' ? 'LENGKAP_6SHEET' : filterCat.replace(/[\s_]/g, '');
+        const fileName = `BUKU_ASET_KEMITRAAN_AKUN_152_RSDK_${skemaSlug}_${catSlug}_${yearLabel}_${twSlug}.xlsx`;
+
+        XLSX.writeFile(wb, fileName);
+        setTimeout(() => { isExportingKemitraan = false; }, 1500);
+    }
     </script>
 
     <script>
@@ -7299,11 +8003,14 @@
                 
                 // State Modal Export Excel Berita Acara / Laporan
                 showExportModal: false,
+                exportSumberDana: 'belanja_modal', // 'belanja_modal' | 'kemitraan' | 'hibah' | 'belanja_barang'
                 exportFormatType: 'sipenerbang', // 'sipenerbang' | 'rekap_triwulan'
                 exportYear: '2026',
                 exportTriwulan: 'all',
                 exportCategory: 'all',
                 exportRekapSheet: 'all', // 'all' | 'sheet1' | 'sheet2' | 'sheet3' | 'sheet4'
+                exportKemitraanSkema: 'all', // 'all' | 'sewa' | 'ksp' | 'bgs_bsg' | 'kso'
+                exportKemitraanCategory: 'all', // 'all' | 'REKAP' | 'KIB A' | 'KIB B' | 'KIB C' | 'KIB D' | 'KIB E'
                 isSubmittingExport: false,
 
                 // State Modal Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
@@ -8297,8 +9004,11 @@
                 },
 
                 openExportModal() {
+                    this.exportSumberDana = 'belanja_modal';
                     this.exportFormatType = 'sipenerbang';
                     this.exportRekapSheet = 'all';
+                    this.exportKemitraanSkema = 'all';
+                    this.exportKemitraanCategory = 'all';
                     this.exportYear = this.tahunFilter !== 'all' ? this.tahunFilter : (this.availableYears.length > 0 ? this.availableYears[0] : '2026');
                     this.exportTriwulan = this.triwulanFilter !== 'all' ? this.triwulanFilter : 'all';
                     this.exportCategory = this.categoryFilter !== 'all' ? this.categoryFilter : 'all';
@@ -8308,10 +9018,8 @@
                 get availableYears() {
                     const yearsSet = new Set();
                     (this.astaps || []).forEach(item => {
-                        if (item.tahun_perolehan) {
-                            const yr = parseInt(item.tahun_perolehan);
-                            if (!isNaN(yr)) yearsSet.add(yr);
-                        }
+                        const yr = parseInt(item.tahun_perolehan || (item.kemitraan && item.kemitraan.tahun));
+                        if (!isNaN(yr)) yearsSet.add(yr);
                     });
                     // Pastikan tahun sekarang selalu ada jika data masih kosong
                     yearsSet.add(new Date().getFullYear());
@@ -8319,8 +9027,64 @@
                 },
 
                 get exportFilteredCount() {
+                    const sDana = this.exportSumberDana;
                     const fYear = this.exportYear;
                     const fTw = this.exportTriwulan;
+
+                    const isTwMatch = (itemTw, targetTw) => {
+                        if (targetTw === 'all') return true;
+                        const targetKey = targetTw.replace(/[\s_]/g, '').toUpperCase();
+                        const curTw = (itemTw || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                        return (curTw === targetKey) ||
+                               (targetKey === 'TWI' && curTw === 'TW1') || (targetKey === 'TW1' && curTw === 'TWI') ||
+                               (targetKey === 'TWII' && curTw === 'TW2') || (targetKey === 'TW2' && curTw === 'TWII') ||
+                               (targetKey === 'TWIII' && curTw === 'TW3') || (targetKey === 'TW3' && curTw === 'TWIII') ||
+                               (targetKey === 'TWIV' && curTw === 'TW4') || (targetKey === 'TW4' && curTw === 'TWIV');
+                    };
+
+                    // KHUSUS KEMITRAAN (Akun 1.5.2)
+                    if (sDana === 'kemitraan') {
+                        const fSkema = this.exportKemitraanSkema;
+                        const fCat = this.exportKemitraanCategory;
+
+                        return (this.astaps || []).filter(item => {
+                            const isKemitraan = item.sumber_dana === 'kemitraan' || !!item.kemitraan;
+                            if (!isKemitraan) return false;
+
+                            const itemYear = (item.kemitraan && item.kemitraan.tahun) || item.tahun_perolehan;
+                            const matchYear = fYear === 'all' || String(itemYear) === String(fYear);
+
+                            const itemTw = (item.kemitraan && item.kemitraan.triwulan) || item.triwulan || 'TWI';
+                            const matchTw = isTwMatch(itemTw, fTw);
+
+                            let matchSkema = true;
+                            if (fSkema !== 'all') {
+                                const rawSkema = (item.kemitraan && item.kemitraan.skema_kemitraan) 
+                                    || (item.spesifikasi_json && item.spesifikasi_json.skema_kemitraan) 
+                                    || '';
+                                matchSkema = normalizeSkemaKemitraan(rawSkema) === fSkema;
+                            }
+
+                            let matchCat = true;
+                            if (fCat !== 'all' && fCat !== 'REKAP') {
+                                const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                                matchCat = (itemCat === fCat);
+                            }
+
+                            return matchYear && matchTw && matchSkema && matchCat;
+                        }).length;
+                    }
+
+                    // KHUSUS HIBAH
+                    if (sDana === 'hibah') {
+                        return (this.astaps || []).filter(item => {
+                            if (item.sumber_dana !== 'hibah') return false;
+                            const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
+                            return matchYear && isTwMatch(item.triwulan, fTw);
+                        }).length;
+                    }
+
+                    // KHUSUS BELANJA MODAL (Default)
                     const fCat = this.exportCategory;
                     const isRekap = this.exportFormatType === 'rekap_triwulan';
 
@@ -8328,17 +9092,8 @@
                         const deletedItems = window.__simatDeletedAstaps || [];
                         return deletedItems.filter(item => {
                             const matchYear = fYear === 'all' || String(item.deleted_year) === String(fYear) || String(item.tahun_perolehan) === String(fYear);
-                            let matchTw = true;
-                            if (fTw !== 'all') {
-                                const targetKey = fTw.replace(/[\s_]/g, '').toUpperCase();
-                                const itemTw = (item.deleted_tw || item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
-                                matchTw = (itemTw === targetKey) ||
-                                          (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
-                                          (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
-                                          (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
-                                          (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
-                            }
-                            return matchYear && matchTw;
+                            const itemTw = item.deleted_tw || item.triwulan || 'TWI';
+                            return matchYear && isTwMatch(itemTw, fTw);
                         }).length;
                     }
 
@@ -8346,17 +9101,7 @@
                         return (this.astaps || []).filter(item => {
                             if (item.sumber_dana !== 'hibah') return false;
                             const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
-                            let matchTw = true;
-                            if (fTw !== 'all') {
-                                const targetKey = fTw.replace(/[\s_]/g, '').toUpperCase();
-                                const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
-                                matchTw = (itemTw === targetKey) ||
-                                          (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
-                                          (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
-                                          (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
-                                          (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
-                            }
-                            return matchYear && matchTw;
+                            return matchYear && isTwMatch(item.triwulan, fTw);
                         }).length;
                     }
 
@@ -8366,16 +9111,8 @@
                             return false;
                         }
                         const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
-                        let matchTw = true;
-                        if (fTw !== 'all') {
-                            const targetKey = fTw.replace(/[\s_]/g, '').toUpperCase();
-                            const itemTw = (item.triwulan || 'TWI').replace(/[\s_]/g, '').toUpperCase();
-                            matchTw = (itemTw === targetKey) ||
-                                      (targetKey === 'TWI' && itemTw === 'TW1') || (targetKey === 'TW1' && itemTw === 'TWI') ||
-                                      (targetKey === 'TWII' && itemTw === 'TW2') || (targetKey === 'TW2' && itemTw === 'TWII') ||
-                                      (targetKey === 'TWIII' && itemTw === 'TW3') || (targetKey === 'TW3' && itemTw === 'TWIII') ||
-                                      (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
-                        }
+                        const matchTw = isTwMatch(item.triwulan, fTw);
+
                         if (isRekap) {
                             if (this.exportRekapSheet === 'sheet1' && item.sumber_dana && item.sumber_dana !== 'belanja_modal') {
                                 return false;
@@ -8391,6 +9128,32 @@
                 submitExport() {
                     this.isSubmittingExport = true;
                     try {
+                        if (this.exportSumberDana === 'kemitraan') {
+                            exportKemitraanToExcel({
+                                year: this.exportYear,
+                                triwulan: this.exportTriwulan,
+                                skema: this.exportKemitraanSkema,
+                                category: this.exportKemitraanCategory
+                            });
+                            setTimeout(() => {
+                                this.isSubmittingExport = false;
+                                this.showExportModal = false;
+                                const catLabel = this.exportKemitraanCategory === 'all'
+                                    ? 'Lengkap (6 Sheet)'
+                                    : (this.exportKemitraanCategory === 'REKAP' ? 'Rekapitulasi' : this.exportKemitraanCategory);
+                                this.showToast('Berhasil mengekspor Laporan Aset Kemitraan ' + catLabel + ' (' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ') ' + this.exportYear + '!', 'success');
+                            }, 800);
+                            return;
+                        }
+
+                        if (this.exportSumberDana === 'hibah') {
+                            this.isSubmittingExport = false;
+                            this.showExportModal = false;
+                            window.location.href = "{{ route('master.hibah') }}";
+                            return;
+                        }
+
+                        // Belanja Modal
                         if (this.exportFormatType === 'rekap_triwulan') {
                             exportRekapTriwulanToExcel({
                                 year: this.exportYear,
@@ -8428,6 +9191,7 @@
                         this.isSubmittingExport = false;
                         if (typeof isExportingAstap !== 'undefined') isExportingAstap = false;
                         if (typeof isExportingRekapTriwulan !== 'undefined') isExportingRekapTriwulan = false;
+                        if (typeof isExportingKemitraan !== 'undefined') isExportingKemitraan = false;
                         this.showToast('Gagal mengekspor file: ' + (err.message || 'Terjadi kesalahan sistem'), 'error');
                     }
                 },
@@ -9794,6 +10558,17 @@
                     const searchParam = params.get('search');
                     if (searchParam && typeof this.searchQuery !== 'undefined') {
                         this.searchQuery = decodeURIComponent(searchParam);
+                    }
+                    const exportParam = params.get('export');
+                    if (exportParam === 'kemitraan') {
+                        setTimeout(() => {
+                            this.openExportModal();
+                            this.exportSumberDana = 'kemitraan';
+                        }, 350);
+                    } else if (exportParam) {
+                        setTimeout(() => {
+                            this.openExportModal();
+                        }, 350);
                     }
                     if (openReklasId) {
                         const target = (this.astaps || []).find(a => String(a.id) === String(openReklasId));

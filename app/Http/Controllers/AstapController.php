@@ -22,7 +22,8 @@ class AstapController extends Controller
      */
     public function index()
     {
-        $astaps = \App\Models\Astap::with([
+        $astaps = \App\Models\Astap::where('is_deleted', 0)
+            ->with([
                 'registers.mutasis' => function($q) {
                     $q->where('status', 'Disetujui Admin (Selesai)');
                 }, 
@@ -30,7 +31,8 @@ class AstapController extends Controller
                 'rekeningBelanja', 
                 'jenisPengadaan', 
                 'unit',
-                'reklas'
+                'reklas',
+                'kemitraan'
             ])
             ->orderBy('id', 'desc')
             ->get()
@@ -106,8 +108,39 @@ class AstapController extends Controller
                     'is_reklas' => (bool) $a->is_reklas,
                     'jenis_reklas' => $a->jenis_reklas,
                     'asal_usul' => $jp ? ($jp->nama_pengadaan ?: '') : ($spec['asal_usul'] ?? ($spec['cara_perolehan'] ?? '')),
-                    'sumber_dana' => $a->sumber_dana === 'hibah' ? 'hibah' : ($rb ? ($rb->nama_belanja ?: '') : ($spec['sumber_dana'] ?? 'belanja_modal')),
+                    'sumber_dana' => $a->sumber_dana === 'kemitraan' ? 'kemitraan' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal'))),
                     'sumber_dana_raw' => $a->sumber_dana,
+                    'kemitraan' => $a->kemitraan ? [
+                        'id' => $a->kemitraan->id,
+                        'mitra_nama' => $a->kemitraan->mitra_nama,
+                        'nomor_pks' => $a->kemitraan->nomor_pks,
+                        'tanggal_pks' => $a->kemitraan->tanggal_pks ? $a->kemitraan->tanggal_pks->format('Y-m-d') : ($spec['tanggal_pks'] ?? null),
+                        'skema_kemitraan' => $a->kemitraan->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
+                        'tanggal_mulai' => $a->kemitraan->tanggal_mulai ? $a->kemitraan->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null),
+                        'tanggal_selesai' => $a->kemitraan->tanggal_selesai ? $a->kemitraan->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null),
+                        'status_konsesi' => $a->kemitraan->status_konsesi ?: 'Aktif',
+                        'jumlah_volume' => (int) ($a->kemitraan->jumlah_volume ?: ($a->jumlah_volume ?: 1)),
+                        'satuan' => $a->kemitraan->satuan ?: ($a->satuan ?: 'Unit'),
+                        'nilai_aset' => (float) ($a->kemitraan->nilai_aset ?: $a->total_realisasi),
+                        'sisa_hari' => $a->kemitraan->sisa_hari_konsesi,
+                        'keterangan' => $a->kemitraan->keterangan ?: ($spec['keterangan'] ?? null),
+                    ] : (
+                        $a->sumber_dana === 'kemitraan' ? [
+                            'id' => null,
+                            'mitra_nama' => $spec['mitra_nama'] ?? 'Mitra Pihak Ketiga',
+                            'nomor_pks' => $a->bast_dokumen_nomor ?? ($spec['nomor_pks'] ?? '-'),
+                            'tanggal_pks' => $a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ($spec['tanggal_pks'] ?? null),
+                            'skema_kemitraan' => $spec['skema_kemitraan'] ?? 'Sewa',
+                            'tanggal_mulai' => $spec['tanggal_mulai'] ?? null,
+                            'tanggal_selesai' => $spec['tanggal_selesai'] ?? null,
+                            'status_konsesi' => 'Aktif',
+                            'jumlah_volume' => (int) ($a->jumlah_volume ?: 1),
+                            'satuan' => $a->satuan ?: 'Unit',
+                            'nilai_aset' => (float) $a->total_realisasi,
+                            'sisa_hari' => null,
+                            'keterangan' => $a->keterangan_tambahan ?? ($spec['keterangan'] ?? null),
+                        ] : null
+                    ),
                     'hibah_pemberi' => $a->hibah_pemberi ?: ($spec['pemberi'] ?? ($spec['hibah_pemberi'] ?? '')),
                     'hibah_nomor_bast' => $a->hibah_nomor_bast ?: ($spec['nomor_bast'] ?? ($spec['hibah_nomor_bast'] ?? '')),
                     'hibah_tanggal_bast' => $a->hibah_tanggal_bast ? (is_string($a->hibah_tanggal_bast) ? $a->hibah_tanggal_bast : $a->hibah_tanggal_bast->format('Y-m-d')) : ($spec['tanggal_bast'] ?? ''),
