@@ -2,10 +2,10 @@
     $isFromEksternal = request('from') === 'eksternal';
     $isEdit = isset($astap);
     $backUrl = $isFromEksternal ? route('mutasi.eksternal') : ($isEdit ? route('astap.index') : route('astap.pilih_jenis'));
-    $pageTitle = $isEdit ? 'Ubah Data Mutasi Eksternal' : 'Pencatatan Mutasi Eksternal';
+    $pageTitle = $isEdit ? 'Ubah Data Pelimpahan Aset SKPD' : 'Pencatatan Pelimpahan Aset SKPD';
     $breadcrumb = $isEdit 
-        ? ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Ubah Data Mutasi Eksternal' : 'Master Utama / Data ASTAP / Ubah Data Mutasi Eksternal')
-        : ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Tambah Mutasi Eksternal' : 'Master Utama / Data ASTAP / Tambah Mutasi Eksternal');
+        ? ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Ubah Data Pelimpahan Aset' : 'Master Utama / Data ASTAP / Ubah Data Pelimpahan Aset')
+        : ($isFromEksternal ? 'Master Aset / Mutasi Eksternal / Tambah Pelimpahan Aset' : 'Master Utama / Data ASTAP / Tambah Pelimpahan Aset');
 
     $initialAstap = null;
     if ($isEdit) {
@@ -35,21 +35,13 @@
             'kondisi' => $firstReg?->kondisi ?: ($me?->kondisi ?: ($spec['kondisi'] ?? 'Baik')),
             'unit_id' => $me?->unit_id ?: ($astap->unit_id ?: ($firstReg?->unit_id ?: '')),
             'alamat_barang' => $astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
-            'ppk_nama' => $me?->pj_tujuan_nama ?: ($astap->ppk_nama ?: ($spec['ppk_nama'] ?? '')),
-            'ppk_nip' => $me?->pj_tujuan_nip ?: ($astap->ppk_nip ?: ($spec['ppk_nip'] ?? '')),
-            'tanah_items' => $spec['tanah_items'] ?? [
-                [
-                    'tanah_hak' => $spec['hak_tanah'] ?? 'Hak Pakai',
-                    'tanah_sertifikat_tgl' => $spec['sertifikat_tgl'] ?? '',
-                    'tanah_sertifikat_no' => $spec['sertifikat_no'] ?? ($spec['sertifikat_nomor'] ?? ''),
-                    'tanah_kondisi' => $spec['kondisi'] ?? 'Baik',
-                    'tanah_penggunaan' => $spec['penggunaan'] ?? 'Bangunan Fasilitas Kesehatan & Pelayanan Rumah Sakit',
-                    'tanah_jumlah_bidang' => 1,
-                    'tanah_luas_m2' => $spec['luas_m2'] ?? '',
-                    'tanah_alamat' => '',
-                    'tanah_nilai_fisik' => (float) ($astap->total_realisasi ?: 0),
-                ]
-            ],
+            'ppk_nama' => $me?->pj_tujuan_nama ?: ($astap->ppk_nama ?: ($spec['ppk_nama'] ?? 'dr. H. Yus Priyatna, Sp.P')),
+            'ppk_nip' => $me?->pj_tujuan_nip ?: ($astap->ppk_nip ?: ($spec['ppk_nip'] ?? '196904121999031004')),
+            'tanah_items' => $spec['tanah_items'] ?? [],
+            'mesin_items' => $spec['mesin_items'] ?? [],
+            'gedung_items' => $spec['gedung_items'] ?? [],
+            'jaringan_items' => $spec['jaringan_items'] ?? [],
+            'lainnya_items' => $spec['lainnya_items'] ?? [],
             'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['sertifikat_nomor'] ?? ''),
             'merk' => $spec['merk'] ?? '',
             'type' => $spec['type'] ?? '',
@@ -67,37 +59,37 @@
     }
 @endphp
 
-<x-layout :title="($isEdit ? 'Ubah Data Mutasi Eksternal: ' . $astap->nama_barang : 'Pencatatan Mutasi Eksternal (Antar-OPD / Pelimpahan SKPD)') . ' - SIMAT-RK'">
+<x-layout :title="($isEdit ? 'Ubah Data Pelimpahan Aset: ' . $astap->nama_barang : 'Pencatatan Pelimpahan Aset SKPD (Mutasi Eksternal)') . ' - SIMAT-RK'">
     @section('page-title', $pageTitle)
     @section('breadcrumb', $breadcrumb)
 
-    <div x-data="formMutasiEksternal()" x-cloak class="max-w-5xl mx-auto space-y-6 py-2">
+    <!-- 1. Script Logika Form (Alpine.js & State Management) -->
+    @include('pages.mutasi_eksternal.form_partials.scripts')
 
-        <!-- Top Header & Back -->
-        @include('pages.mutasi_eksternal.form_partials.header_card')
+    <div x-data="formMutasiEksternal()" x-cloak class="space-y-6">
 
-        <!-- Stepper Navigation Bar -->
-        @include('pages.mutasi_eksternal.form_partials.stepper_nav')
+        <!-- 2. Top Header Banner & Stepper Tabs Indicator -->
+        @include('pages.mutasi_eksternal.form_partials.stepper_header')
 
-        <!-- MAIN FORM CONTAINER -->
-        <form @submit.prevent="submitForm" class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-
-            <!-- LANGKAH 1: DOKUMEN BAMB & SKPD PENGIRIM -->
+        <!-- 3. Main Form Container -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+            
+            <!-- LANGKAH 1: Berita Acara (BAMB/BAST) & SKPD Pengirim -->
             @include('pages.mutasi_eksternal.form_partials.step1_bamb_skpd')
 
-            <!-- LANGKAH 2: KLASIFIKASI KODE BARANG 108 -->
-            @include('pages.mutasi_eksternal.form_partials.step2_kode108')
+            <!-- LANGKAH 2: Klasifikasi Kode Barang 108 & Spesifikasi Fisik KIB -->
+            @include('pages.mutasi_eksternal.form_partials.step2_klasifikasi_108')
 
-            <!-- LANGKAH 3: RINCIAN SPESIFIKASI KIB & PENEMPATAN RUANGAN RSUD -->
-            @include('pages.mutasi_eksternal.form_partials.step3_spesifikasi_penempatan')
+            <!-- LANGKAH 3: Lembar Verifikasi Data Pelimpahan & Register NIBAR -->
+            @include('pages.mutasi_eksternal.form_partials.step3_verifikasi_data')
 
-            <!-- BOTTOM NAVIGATION BUTTONS -->
+            <!-- Stepper Bottom Navigation -->
             @include('pages.mutasi_eksternal.form_partials.stepper_navigation')
 
-        </form>
+        </div>
+
+        <!-- 4. Global Floating Toast Notification -->
+        @include('pages.mutasi_eksternal.form_partials.dialogs_and_toast')
 
     </div>
-
-    <!-- Alpine.js Script Implementation -->
-    @include('pages.mutasi_eksternal.form_partials.scripts')
 </x-layout>
