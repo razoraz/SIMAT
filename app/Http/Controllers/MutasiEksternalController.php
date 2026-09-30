@@ -1145,11 +1145,7 @@ class MutasiEksternalController extends Controller
     private function syncLegacyAstapPelimpahan(): void
     {
         $legacyAstaps = Astap::where('is_deleted', 0)
-            ->where(function ($q) {
-                $q->whereIn('sumber_dana', ['pelimpahan_skpd', 'mutasi_masuk'])
-                  ->orWhereNotNull('mutasi_nomor_bamb')
-                  ->orWhereNotNull('mutasi_asal');
-            })
+            ->whereIn('sumber_dana', ['pelimpahan_skpd', 'mutasi_masuk'])
             ->whereDoesntHave('mutasiEksternal')
             ->with(['pelimpahanSkpd', 'unit'])
             ->get();
