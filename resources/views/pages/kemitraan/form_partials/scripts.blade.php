@@ -7,6 +7,7 @@
     window.dbPejabats = @json(!empty($dbPejabats) ? $dbPejabats : []);
     window.dbPenyedias = @json(!empty($dbPenyedias) ? $dbPenyedias : []);
     window.dbMitraKemitraans = @json(!empty($dbMitraKemitraans) ? $dbMitraKemitraans : []);
+    window.dbPpkKemitraans = @json(!empty($dbPpkKemitraans) ? $dbPpkKemitraans : []);
 
     function formKemitraan() {
         return {
@@ -15,29 +16,118 @@
             isSubmitting: false,
             isDataVerified: false,
 
-            // Autocomplete Riwayat Mitra Kemitraan
-            masterMitraList: (window.dbMitraKemitraans && window.dbMitraKemitraans.length > 0)
-                ? window.dbMitraKemitraans
-                : [
-                    'PT. Roche Indonesia',
-                    'PT. Fresenius Medical Care Indonesia',
-                    'PT. Kimia Farma Diagnostika',
-                    'PT. Sysmex Indonesia',
-                    'CV. Penyedia Sarana Medika'
-                ],
+            // Autocomplete Riwayat Mitra Kemitraan (object: {nama, pimpinan, alamat})
+            masterMitraList: (function() {
+                const list = (window.dbMitraKemitraans && Array.isArray(window.dbMitraKemitraans)) ? [...window.dbMitraKemitraans] : [];
+                const defaults = [
+                    { nama: 'PT. Roche Indonesia', pimpinan: '', alamat: '' },
+                    { nama: 'PT. Fresenius Medical Care Indonesia', pimpinan: '', alamat: '' },
+                    { nama: 'PT. Kimia Farma Diagnostika', pimpinan: '', alamat: '' },
+                    { nama: 'PT. Sysmex Indonesia', pimpinan: '', alamat: '' },
+                    { nama: 'CV. Penyedia Sarana Medika', pimpinan: '', alamat: '' },
+                ];
+                defaults.forEach(d => {
+                    if (!list.some(item => (item.nama || '').trim().toLowerCase() === d.nama.toLowerCase())) {
+                        list.push(d);
+                    }
+                });
+                return list;
+            })(),
             isMitraDropdownOpen: false,
+
+            // Daftar PPK dari riwayat kemitraan + pejabat RSUD (object: {nama, nip})
+            masterPpkList: (function() {
+                const list = (window.dbPpkKemitraans && Array.isArray(window.dbPpkKemitraans)) ? [...window.dbPpkKemitraans] : [];
+                if (window.dbPejabats && Array.isArray(window.dbPejabats)) {
+                    window.dbPejabats.forEach(p => {
+                        if (p && p.nama && !list.some(item => (item.nama || '').trim().toLowerCase() === p.nama.trim().toLowerCase())) {
+                            list.push({ nama: p.nama, nip: p.nip || '' });
+                        }
+                    });
+                }
+                if (!list.some(item => (item.nama || '').toLowerCase().includes('budi hartono'))) {
+                    list.unshift({ nama: 'BUDI HARTONO, S.Sos', nip: '19760229 200801 1 010' });
+                }
+                return list;
+            })(),
+            isPpkDropdownOpen: false,
+
+            get pejabatsList() {
+                return this.masterPpkList;
+            },
 
             get filteredMitraList() {
                 const q = (this.formData.mitra_nama || '').toLowerCase().trim();
-                if (!q) {
-                    return this.masterMitraList.slice(0, 15);
-                }
-                return this.masterMitraList.filter(m => m && m.toLowerCase().includes(q));
+                if (!q) return this.masterMitraList.slice(0, 15);
+                return this.masterMitraList.filter(m => m && m.nama && m.nama.toLowerCase().includes(q));
             },
 
-            selectMitra(name) {
-                this.formData.mitra_nama = name;
+            get filteredPpkList() {
+                const q = (this.formData.ppk_nama || '').toLowerCase().trim();
+                if (!q) return this.masterPpkList.slice(0, 15);
+                return this.masterPpkList.filter(p => p && p.nama && p.nama.toLowerCase().includes(q));
+            },
+
+            // Handler input manual nama mitra: jika nama cocok dengan riwayat, auto-fill pimpinan & alamat
+            onMitraInput(val) {
+                const q = (val !== undefined ? val : (this.formData.mitra_nama || '')).trim().toLowerCase();
+                if (!q) return;
+                const match = this.masterMitraList.find(m => m && m.nama && m.nama.trim().toLowerCase() === q);
+                if (match) {
+                    if (match.pimpinan) this.formData.mitra_pimpinan = match.pimpinan;
+                    if (match.alamat)   this.formData.mitra_alamat   = match.alamat;
+                }
+            },
+
+            // Pilih mitra dari dropdown atau tombol rekomendasi → autofill nama, pimpinan, alamat
+            selectMitra(mitra) {
+                let target = null;
+                if (typeof mitra === 'string') {
+                    this.formData.mitra_nama = mitra;
+                    target = this.masterMitraList.find(m => m && m.nama && m.nama.trim().toLowerCase() === mitra.trim().toLowerCase());
+                } else if (mitra && typeof mitra === 'object') {
+                    this.formData.mitra_nama = mitra.nama || '';
+                    target = mitra;
+                }
+                if (target) {
+                    if (target.pimpinan) this.formData.mitra_pimpinan = target.pimpinan;
+                    if (target.alamat)   this.formData.mitra_alamat   = target.alamat;
+                }
                 this.isMitraDropdownOpen = false;
+            },
+
+            // Handler input manual nama PPK: jika nama cocok dengan riwayat/datalist, auto-fill NIP
+            onPpkInput(val) {
+                const q = (val !== undefined ? val : (this.formData.ppk_nama || '')).trim().toLowerCase();
+                if (!q) return;
+                const match = this.masterPpkList.find(p => p && p.nama && p.nama.trim().toLowerCase() === q);
+                if (match && match.nip) {
+                    this.formData.ppk_nip = match.nip;
+                }
+            },
+
+            // Pilih PPK dari tombol rekomendasi / dropdown / history → autofill nama + NIP
+            selectPpk(namaOrObj, nip = null) {
+                if (typeof namaOrObj === 'object' && namaOrObj !== null) {
+                    this.formData.ppk_nama = namaOrObj.nama || '';
+                    this.formData.ppk_nip  = namaOrObj.nip  || '';
+                } else {
+                    const nama = namaOrObj || '';
+                    this.formData.ppk_nama = nama;
+                    if (nip) {
+                        this.formData.ppk_nip = nip;
+                    } else {
+                        const match = this.masterPpkList.find(p => p && p.nama && p.nama.trim().toLowerCase() === nama.trim().toLowerCase());
+                        if (match && match.nip) {
+                            this.formData.ppk_nip = match.nip;
+                        }
+                    }
+                }
+                this.isPpkDropdownOpen = false;
+            },
+
+            selectPpkFromHistory(ppk) {
+                this.selectPpk(ppk);
             },
 
             // Toast State
@@ -138,6 +228,9 @@
                 alamat_barang: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                 ppk_nama: 'BUDI HARTONO, S.Sos',
                 ppk_nip: '19760229 200801 1 010',
+                // BUG-10 FIX: deklarasikan is_extracomtable di state awal agar reaktivitas Alpine terjaga
+                is_extracomtable: false,
+                spesifikasi_json: {},
 
                 // Sheet KIB A: Tanah
                 tanah_luas_m2: null,
@@ -452,7 +545,8 @@
 
                 const currentYear = new Date().getFullYear();
                 if (year && year >= 1990) {
-                    this.formData.tahun_perolehan = Math.min(year, currentYear);
+                    // BUG-03 FIX: hapus Math.min agar tahun kontrak masa depan bisa disimpan
+                    this.formData.tahun_perolehan = (year <= currentYear + 2) ? year : currentYear;
                 }
 
                 if (month && month >= 1 && month <= 12) {
@@ -1270,7 +1364,8 @@
                             { id: 14972, kode: '1.5.2.01.01.01.001', nama: 'Sewa Tanah' },
                             { id: 14973, kode: '1.5.2.01.01.01.002', nama: 'Sewa Peralatan dan Mesin' },
                             { id: 14974, kode: '1.5.2.01.01.01.003', nama: 'Sewa Gedung dan Bangunan' },
-                            { id: 14975, kode: '1.5.2.01.01.01.004', nama: 'Sewa Jalam, Irigasi dan Jaringan' },
+                            // BUG-11 FIX: typo 'Jalam' → 'Jalan'
+                            { id: 14975, kode: '1.5.2.01.01.01.004', nama: 'Sewa Jalan, Irigasi dan Jaringan' },
                             { id: 14976, kode: '1.5.2.01.01.01.005', nama: 'Sewa Aset Tetap lainnya' }
                         ],
                         '1.5.2.01.01.02': [
@@ -1422,8 +1517,7 @@
                     }
                 }
 
-                // Sinkronkan langsung total volume, nilai wajar, dan satuan dari sheet aktif
-                this.syncTotalsFromItems();
+                // BUG-12 FIX: hapus redundant syncTotalsFromItems — nextTick saja sudah cukup
                 this.$nextTick(() => {
                     this.syncTotalsFromItems();
                 });
@@ -1511,7 +1605,10 @@
                 this.currentStep = s;
                 if (s === 2) {
                     this.syncCascadingToActiveSkema();
-                    if (!this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
+                    // BUG-13 FIX: hanya auto-select jika user benar-benar belum pernah memilih apapun
+                    // (cek jenis_astap_id kosong DAN nama_barang kosong, bukan hanya selectedSubSub)
+                    const belumDiisi = !this.formData.jenis_astap_id && !this.formData.nama_barang;
+                    if (belumDiisi && !this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
                         this.selectSubSubItem(this.currentSubSubRecommendations[0]);
                     }
                 }
@@ -1523,7 +1620,9 @@
                     this.currentStep++;
                     if (this.currentStep === 2) {
                         this.syncCascadingToActiveSkema();
-                        if (!this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
+                        // BUG-13 FIX: konsisten dengan goToStep — hanya auto-select jika belum diisi
+                        const belumDiisi = !this.formData.jenis_astap_id && !this.formData.nama_barang;
+                        if (belumDiisi && !this.selectedSubSub && this.currentSubSubRecommendations && this.currentSubSubRecommendations.length > 0) {
                             this.selectSubSubItem(this.currentSubSubRecommendations[0]);
                         }
                     }
@@ -1843,7 +1942,8 @@
                     if (res.ok && json.success) {
                         this.showToast('Berhasil Disimpan!', json.message || 'Data Aset Kemitraan berhasil dicatat ke SIMAT-RK.', 'success');
                         setTimeout(() => {
-                            window.location.href = json.redirect || '{{ route('astap.index') }}';
+                            // BUG-02 FIX: fallback redirect seharusnya ke master kemitraan, bukan astap.index
+                            window.location.href = json.redirect || '{{ route('master.kemitraan') }}';
                         }, 1200);
                     } else {
                         let errMsg = json.message || 'Terjadi kesalahan saat menyimpan data.';
@@ -1862,3 +1962,4 @@
         };
     }
 </script>
+

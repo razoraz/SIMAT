@@ -1,4 +1,4 @@
-<!-- ========================================================================= -->
+﻿<!-- ========================================================================= -->
 <!-- SHEET SPESIFIKASI: GEDUNG & BANGUNAN (KIB C / AKUN 1.5.2.01.01.xx.003)    -->
 <!-- MULTI-ITEM REPEATER (MODEL PERSIS KIB B PERALATAN & MESIN)                 -->
 <!-- ========================================================================= -->
@@ -82,8 +82,8 @@
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
                                        placeholder="Ketik untuk memfilter jenis PMDN 108 atau tulis rincian gedung / ruangan..."
-                                       class="w-full bg-slate-950 border border-slate-700 hover:border-blue-500 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9">
-                                <div class="absolute left-3 top-3 text-slate-400 pointer-events-none">
+                                       class="w-full bg-slate-950 border border-slate-700 hover:border-blue-500 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-8">
+                                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
@@ -91,7 +91,7 @@
                                 <button type="button" 
                                         x-show="item.gedung_nama_barang" 
                                         @click="item.gedung_nama_barang = ''; item.gedung_kode_barang = ''; item.isFilterOpen = true; syncTotalsFromItems();" 
-                                        class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
+                                        class="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
                             </div>
 
                             <!-- Dropdown Hasil Filter (Strict Max 5 Baris - Zero Lag) -->
@@ -341,3 +341,4 @@
     </div>
 
 </div>
+

@@ -27,25 +27,30 @@ class KemitraanController extends Controller
             ->whereDoesntHave('kemitraan')
             ->get();
 
-        foreach ($unlinkedKemitraans as $astap) {
-            $spec = $astap->spesifikasi_json ?? [];
-            AstapKemitraan::create([
-                'astap_id'         => $astap->id,
-                'mitra_nama'       => $spec['mitra_nama'] ?? 'Mitra Pihak Ketiga',
-                'nomor_pks'        => $astap->bast_dokumen_nomor ?? ($spec['nomor_pks'] ?? '-'),
-                'tanggal_pks'      => $astap->bast_dokumen_tanggal ?? ($spec['tanggal_pks'] ?? now()),
-                'skema_kemitraan'  => $spec['skema_kemitraan'] ?? 'KSO',
-                'tanggal_mulai'    => $spec['tanggal_mulai'] ?? null,
-                'tanggal_selesai'  => $spec['tanggal_selesai'] ?? null,
-                'status_konsesi'   => 'Aktif',
-                'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
-                'satuan'           => $astap->satuan ?: 'Unit',
-                'nilai_aset'       => (float) $astap->total_realisasi,
-                'tahun'            => (int) ($astap->tahun_perolehan ?: date('Y')),
-                'triwulan'         => $astap->triwulan ?: 'TW I',
-                'keterangan'       => $astap->keterangan_tambahan ?? ($spec['keterangan'] ?? null),
-                'user_id'          => $astap->user_id ?? Auth::id(),
-            ]);
+        // BUG-04 FIX: Bungkus auto-sync dalam DB::transaction agar tidak setengah tersinkronisasi
+        if ($unlinkedKemitraans->isNotEmpty()) {
+            DB::transaction(function () use ($unlinkedKemitraans) {
+                foreach ($unlinkedKemitraans as $astap) {
+                    $spec = $astap->spesifikasi_json ?? [];
+                    AstapKemitraan::create([
+                        'astap_id'         => $astap->id,
+                        'mitra_nama'       => $spec['mitra_nama'] ?? 'Mitra Pihak Ketiga',
+                        'nomor_pks'        => $astap->bast_dokumen_nomor ?? ($spec['nomor_pks'] ?? '-'),
+                        'tanggal_pks'      => $astap->bast_dokumen_tanggal ?? ($spec['tanggal_pks'] ?? now()),
+                        'skema_kemitraan'  => $spec['skema_kemitraan'] ?? 'KSO',
+                        'tanggal_mulai'    => $spec['tanggal_mulai'] ?? null,
+                        'tanggal_selesai'  => $spec['tanggal_selesai'] ?? null,
+                        'status_konsesi'   => 'Aktif',
+                        'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
+                        'satuan'           => $astap->satuan ?: 'Unit',
+                        'nilai_aset'       => (float) $astap->total_realisasi,
+                        'tahun'            => (int) ($astap->tahun_perolehan ?: date('Y')),
+                        'triwulan'         => $astap->triwulan ?: 'TW I',
+                        'keterangan'       => $astap->keterangan_tambahan ?? ($spec['keterangan'] ?? null),
+                        'user_id'          => $astap->user_id ?? Auth::id(),
+                    ]);
+                }
+            });
         }
 
         $filterSkema  = $request->query('skema', 'all');   // 'all', 'KSO', 'BGS', 'BSG', 'KSP', 'Sewa'
@@ -64,7 +69,15 @@ class KemitraanController extends Controller
             ->orderBy('id', 'desc');
 
         if ($filterSkema !== 'all') {
-            $query->where('skema_kemitraan', $filterSkema);
+            // BUG-05 FIX: support nilai 'BGS/BSG' dari form (yang difilter sebagai BGS atau BSG)
+            if ($filterSkema === 'BGS' || $filterSkema === 'BSG') {
+                $query->where(function ($q) use ($filterSkema) {
+                    $q->where('skema_kemitraan', $filterSkema)
+                      ->orWhere('skema_kemitraan', 'BGS/BSG');
+                });
+            } else {
+                $query->where('skema_kemitraan', $filterSkema);
+            }
         }
 
         if ($filterTahun !== 'all') {
@@ -94,14 +107,14 @@ class KemitraanController extends Controller
 
         $kemitraanRecords = $query->get();
 
-        // Hitung Statistik KPI (hanya yang aktif)
-        $allKemitraans = AstapKemitraan::where('is_deleted', 0)
-            ->whereHas('astap', fn($q) => $q->where('is_deleted', 0))
-            ->get();
-        $totalNilaiKemitraan = $allKemitraans->sum('nilai_aset');
-        $totalVolumeUnit = $allKemitraans->sum('jumlah_volume');
-        $totalAktif = $allKemitraans->where('status_konsesi', 'Aktif')->count();
-        $totalMitraUnik = $allKemitraans->pluck('mitra_nama')->unique()->count();
+        // BUG-14 FIX: Hitung KPI via query aggregate — hindari memuat seluruh collection ke RAM
+        $kpiBase = AstapKemitraan::where('is_deleted', 0)
+            ->whereHas('astap', fn($q) => $q->where('is_deleted', 0));
+
+        $totalNilaiKemitraan = (clone $kpiBase)->sum('nilai_aset');
+        $totalVolumeUnit     = (clone $kpiBase)->sum('jumlah_volume');
+        $totalAktif          = (clone $kpiBase)->where('status_konsesi', 'Aktif')->count();
+        $totalMitraUnik      = (clone $kpiBase)->distinct('mitra_nama')->count('mitra_nama');
 
         // Daftar Unit & Jenis 108 untuk modal atau filter
         $dbUnits = Unit::orderBy('nama')->get();

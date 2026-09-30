@@ -1130,52 +1130,93 @@ Route::middleware('auth')->group(function () {
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
+
+                // Mitra: ambil data terbaru per nama untuk autofill pimpinan & alamat
                 $dbMitraKemitraans = \App\Models\AstapKemitraan::whereNotNull('mitra_nama')
                     ->where('mitra_nama', '!=', '')
-                    ->distinct()
-                    ->pluck('mitra_nama')
-                    ->merge(
-                        \App\Models\Astap::where('sumber_dana', 'kemitraan')
-                            ->get()
-                            ->map(fn($a) => $a->spesifikasi_json['mitra_nama'] ?? null)
-                            ->filter()
-                    )
-                    ->merge([
-                        'PT. Roche Indonesia',
-                        'PT. Fresenius Medical Care Indonesia',
-                        'PT. Kimia Farma Diagnostika',
-                        'PT. Sysmex Indonesia',
-                        'Mitra Swasta Pengembang (BGS)',
-                    ])
-                    ->map(fn($v) => trim($v))
-                    ->filter()
-                    ->unique()
+                    ->where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get(['mitra_nama', 'mitra_pimpinan', 'mitra_alamat'])
+                    ->groupBy(function($item) {
+                        return strtolower(trim($item->mitra_nama));
+                    })
+                    ->map(function($group) {
+                        $latest = $group->first();
+                        $withPimpinan = $group->first(function($it) {
+                            return !empty(trim($it->mitra_pimpinan ?? ''));
+                        });
+                        $withAlamat = $group->first(function($it) {
+                            return !empty(trim($it->mitra_alamat ?? ''));
+                        });
+                        return [
+                            'nama'     => trim($latest->mitra_nama),
+                            'pimpinan' => trim($withPimpinan ? $withPimpinan->mitra_pimpinan : ($latest->mitra_pimpinan ?? '')),
+                            'alamat'   => trim($withAlamat ? $withAlamat->mitra_alamat : ($latest->mitra_alamat ?? '')),
+                        ];
+                    })
                     ->values();
-                return view('pages.kemitraan.form', compact('dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats', 'dbMitraKemitraans'));
+
+                // PPK: ambil seluruh riwayat Pejabat Pembuat Komitmen tersimpan di SIMAT-RK untuk autofill NIP
+                $dbPpkKemitraans = \App\Models\Astap::whereNotNull('ppk_nama')
+                    ->where('ppk_nama', '!=', '')
+                    ->where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get(['ppk_nama', 'ppk_nip'])
+                    ->groupBy(function($item) {
+                        return strtolower(trim($item->ppk_nama));
+                    })
+                    ->map(function($group) {
+                        $latest = $group->first();
+                        $withNip = $group->first(function($it) {
+                            return !empty(trim($it->ppk_nip ?? ''));
+                        });
+                        return [
+                            'nama' => trim($latest->ppk_nama),
+                            'nip'  => trim($withNip ? $withNip->ppk_nip : ($latest->ppk_nip ?? '')),
+                        ];
+                    })
+                    ->values();
+
+                // Pastikan PPK default (BUDI HARTONO, S.Sos) selalu tersedia jika belum ada di database
+                if ($dbPpkKemitraans->isEmpty() || !$dbPpkKemitraans->contains(fn($p) => stripos($p['nama'], 'BUDI HARTONO') !== false)) {
+                    $dbPpkKemitraans->prepend([
+                        'nama' => 'BUDI HARTONO, S.Sos',
+                        'nip'  => '19760229 200801 1 010'
+                    ]);
+                }
+
+                return view('pages.kemitraan.form', compact(
+                    'dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats',
+                    'dbMitraKemitraans', 'dbPpkKemitraans'
+                ));
             })->name('astap.create_kemitraan');
 
             Route::post('/astap/store-kemitraan', function (\Illuminate\Http\Request $request) {
                 $data = $request->validate([
-                    'nama_barang'        => 'required|string|max:500',
-                    'jenis_astap_id'     => 'required|integer|exists:jenis_astaps,id',
-                    'tahun_perolehan'    => 'required|integer|min:1990|max:2100',
-                    'jumlah_volume'      => 'required|integer|min:1',
-                    'satuan'             => 'required|string|max:100',
-                    'total_realisasi'    => 'required|numeric|min:0',
-                    'triwulan'           => 'required|string|in:TW I,TW II,TW III,TW IV',
-                    'mitra_nama'         => 'required|string|max:500',
-                    'mitra_pimpinan'     => 'nullable|string|max:255',
-                    'mitra_alamat'       => 'nullable|string|max:1000',
-                    'ppk_nama'           => 'nullable|string|max:255',
-                    'ppk_nip'            => 'nullable|string|max:100',
-                    'nomor_pks'          => 'required|string|max:255',
-                    'tanggal_pks'        => 'required',
-                    'tanggal_mulai'      => 'nullable',
-                    'tanggal_selesai'    => 'nullable',
+                    'nama_barang'          => 'required|string|max:500',
+                    'jenis_astap_id'       => 'required|integer|exists:jenis_astaps,id',
+                    'tahun_perolehan'      => 'required|integer|min:1990|max:2100',
+                    'jumlah_volume'        => 'required|integer|min:1',
+                    'satuan'               => 'required|string|max:100',
+                    'total_realisasi'      => 'required|numeric|min:0',
+                    'triwulan'             => 'required|string|in:TW I,TW II,TW III,TW IV',
+                    // BUG-01 FIX: validasi skema_kemitraan agar tidak bisa diinjeksi nilai bebas
+                    'skema_kemitraan'      => 'nullable|string|in:Sewa,KSO,KSP,BGS,BSG,BGS/BSG,KSPI,KSO/KSP',
+                    'mitra_nama'           => 'required|string|max:500',
+                    'mitra_pimpinan'       => 'nullable|string|max:255',
+                    'mitra_alamat'         => 'nullable|string|max:1000',
+                    'ppk_nama'             => 'nullable|string|max:255',
+                    'ppk_nip'              => 'nullable|string|max:100',
+                    'nomor_pks'            => 'required|string|max:255',
+                    // BUG-07/08 FIX: format DD/MM/YYYY — toleran 1-2 digit hari & bulan
+                    'tanggal_pks'          => ['required', 'string', 'regex:/^\d{1,2}\/\d{1,2}\/\d{4}$/'],
+                    // tanggal_mulai & selesai boleh kosong — diparse manual di bawah
+                    'tanggal_mulai'        => 'nullable|string|max:20',
+                    'tanggal_selesai'      => 'nullable|string|max:20',
                     'kemitraan_keterangan' => 'nullable|string|max:2000',
-                    'unit_id'            => 'nullable|integer|exists:units,id',
-                    'alamat_barang'      => 'nullable|string|max:1000',
-                    'kondisi'            => 'nullable|string|max:50',
+                    'unit_id'              => 'nullable|integer|exists:units,id',
+                    'alamat_barang'        => 'nullable|string|max:1000',
+                    'kondisi'              => 'nullable|string|in:Baik,Kurang Baik,Rusak Ringan,Rusak Berat',
                 ]);
 
                 if (!empty($data['tanggal_mulai']) && !empty($data['tanggal_selesai'])) {
@@ -1567,7 +1608,13 @@ Route::middleware('auth')->group(function () {
                         'mitra_alamat'     => $data['mitra_alamat'] ?? null,
                         'nomor_pks'        => $data['nomor_pks'],
                         'tanggal_pks'      => $data['tanggal_pks'],
-                        'skema_kemitraan'  => $request->input('skema_kemitraan', 'Sewa'),
+                        // BUG-05 FIX: normalisasi skema BGS/BSG → BGS agar konsisten dengan filter master
+                        'skema_kemitraan'  => (function($s) {
+                            $s = trim($s ?? 'Sewa');
+                            // Normalisasi: simpan 'BGS/BSG' tetapi filter master sudah diupdate
+                            $allowed = ['Sewa', 'KSO', 'KSP', 'BGS', 'BSG', 'BGS/BSG', 'KSPI', 'KSO/KSP'];
+                            return in_array($s, $allowed) ? $s : 'Sewa';
+                        })($data['skema_kemitraan'] ?? $request->input('skema_kemitraan', 'Sewa')),
                         'tanggal_mulai'    => $data['tanggal_mulai'] ?? null,
                         'tanggal_selesai'  => $data['tanggal_selesai'] ?? null,
                         'status_konsesi'   => 'Aktif',
@@ -4969,5 +5016,6 @@ Route::middleware('auth')->group(function () {
 
 });
 });
+
 
 

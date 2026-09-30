@@ -291,7 +291,8 @@
                             'mesin_items': 'mesin_jumlah_barang',
                             'gedung_items': 'gedung_jumlah_bangunan',
                             'jaringan_items': 'jaringan_jumlah',
-                            'lainnya_items': 'lainnya_jumlah_barang'
+                            // BUG-09 FIX: key yang disimpan form adalah 'lainnya_jumlah', bukan 'lainnya_jumlah_barang'
+                            'lainnya_items': 'lainnya_jumlah'
                         };
                         const qtyKey = qtyKeyMap[type] || 'jumlah';
                         
@@ -408,7 +409,8 @@
                             'mesin_items': 'mesin_jumlah_barang',
                             'gedung_items': 'gedung_jumlah_bangunan',
                             'jaringan_items': 'jaringan_jumlah',
-                            'lainnya_items': 'lainnya_jumlah_barang'
+                            // BUG-09 FIX: key yang disimpan form adalah 'lainnya_jumlah', bukan 'lainnya_jumlah_barang'
+                            'lainnya_items': 'lainnya_jumlah'
                         };
                         const qtyKey = qtyKeyMap[type] || 'jumlah';
 
