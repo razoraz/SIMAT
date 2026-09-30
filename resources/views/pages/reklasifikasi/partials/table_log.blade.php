@@ -217,7 +217,7 @@
                             <td class="py-3.5 px-4 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <!-- Tombol Rincian / Detail Audit & Komparasi Spek -->
-                                    <button type="button" @click="openDetailReklas({{ json_encode($item) }})"
+                                    <button type="button" @click="openDetailReklas({{ json_encode($item, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) }})"
                                         class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 hover:border-cyan-500/50 transition-all duration-200 cursor-pointer text-xs font-semibold shadow-sm group"
                                         title="Lihat Rincian &amp; Keterangan Lengkap">
                                         <svg class="w-3.5 h-3.5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">

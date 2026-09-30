@@ -234,7 +234,7 @@ class ReklasifikasiController extends Controller
         // 5. Ambil kandidat aset untuk modal tambah reklasifikasi
         $kandidatAstaps = Astap::where('is_deleted', 0)
             ->where('tahun_perolehan', $selectedTahun)
-            ->select('id', 'nama_barang', 'total_realisasi', 'tahun_perolehan', 'jenis_astap_id', 'is_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
+            ->select('id', 'nama_barang', 'total_realisasi', 'jumlah_anggaran', 'tahun_perolehan', 'category', 'asal_kib', 'jenis_astap_id', 'is_reklas', 'jenis_reklas', 'satuan', 'merk_type', 'alamat_barang', 'spesifikasi_json', 'jumlah_volume', 'harga_satuan', 'is_extracomtable')
             ->with(['jenisAstap', 'registers'])
             ->orderBy('nama_barang', 'asc')
             ->get();
@@ -394,6 +394,7 @@ class ReklasifikasiController extends Controller
                 if ($isIntracom) {
                     $astap->is_extracomtable = false;
                     $targetKib = $validated['tujuan_kib'] ?: 'KIB B';
+                    $astap->category = $targetKib;
                     if ($targetKib === 'KIB E') {
                         if (!$astap->jenisAstap || !str_starts_with($astap->jenisAstap->jenis, '1.3.5')) {
                             $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.5%')->first();
@@ -423,6 +424,7 @@ class ReklasifikasiController extends Controller
                 $asalKodeAset = 'KOR_EXTRACOM';
                 $asalNamaAset = 'Aset Ekstrakomptabel (≤ Rp 300.000)';
                 $targetKib = $validated['tujuan_kib'] ?: 'KIB B';
+                $astap->category = $targetKib;
                 if ($targetKib === 'KIB E') {
                     if (!$astap->jenisAstap || !str_starts_with($astap->jenisAstap->jenis, '1.3.5')) {
                         $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.5%')->first();
@@ -457,6 +459,7 @@ class ReklasifikasiController extends Controller
                 $asalKodeAset = '1.3.6.01.01';
                 $asalNamaAset = 'Konstruksi Dalam Pengerjaan (KIB F)';
                 $targetKib = $validated['tujuan_kib'] ?: 'KIB C';
+                $astap->category = $targetKib;
                 if ($targetKib === 'KIB D') {
                     $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.4%')->first();
                     if (!$matchingJenis) {
@@ -618,6 +621,10 @@ class ReklasifikasiController extends Controller
                 $targetKib = $validated['tujuan_kib'] ?? null;
                 $targetKode = $request->input('tujuan_kode') ?: ($request->input('kode_108') ?: null);
                 $targetNama = $request->input('tujuan_nama');
+
+                if ($targetKib) {
+                    $astap->category = $targetKib;
+                }
 
                 if ($targetKode) {
                     $matchingJenis = JenisAstap::where('sub_sub_rincian_objek', $targetKode)
@@ -845,6 +852,17 @@ class ReklasifikasiController extends Controller
                     ];
                     $newSpec['atb_items']   = [$atbItem];
                     $astap->satuan          = 'Paket / Lisensi';
+                } elseif ($targetKib === 'KEMITRAAN') {
+                    $kemitraanItem = [
+                        'mitra_nama'       => $rawNew['kemitraan_mitra'] ?? 'Pihak Ketiga Mitra RSUD',
+                        'perjanjian_nomor' => $rawNew['kemitraan_perjanjian_no'] ?? '-',
+                        'jangka_waktu'     => $rawNew['kemitraan_jangka_waktu'] ?? '5 Tahun',
+                        'kemitraan_nilai'  => (float) $astap->total_realisasi,
+                    ];
+                    $newSpec['kemitraan_items'] = [$kemitraanItem];
+                    $newSpec['mitra_nama']       = $kemitraanItem['mitra_nama'];
+                    $newSpec['perjanjian_nomor'] = $kemitraanItem['perjanjian_nomor'];
+                    $newSpec['jangka_waktu']     = $kemitraanItem['jangka_waktu'];
                 }
 
                 $astap->spesifikasi_json = $newSpec;
@@ -852,6 +870,18 @@ class ReklasifikasiController extends Controller
             }
 
             $astap->save();
+
+            // Sinkronkan data ke register jika ada perubahan
+            if ($astap->registers()->exists()) {
+                $regUpdate = [
+                    'nama_barang'  => $astap->nama_barang,
+                    'harga_satuan' => $astap->harga_satuan,
+                ];
+                if ($astap->category) {
+                    $regUpdate['kelompok_kib'] = $astap->category;
+                }
+                $astap->registers()->update($regUpdate);
+            }
 
             // Pastikan fallback nama dan kode asal/tujuan jika masih kosong
             if (empty($tujuanNamaAset) && !empty($validated['jenis_reklasifikasi_tujuan_id'])) {
@@ -956,10 +986,16 @@ class ReklasifikasiController extends Controller
             if ($remainingReklas->isEmpty()) {
                 // Tidak ada transaksi tersisa — reset semua flag reklas
                 $updateData = [
-                    'is_reklas'       => false,
-                    'jenis_reklas'    => null,
+                    'is_reklas'        => false,
+                    'jenis_reklas'     => null,
                     'is_extracomtable' => false,
                 ];
+                if ($reklas->asal_kib && !in_array($reklas->asal_kib, ['KOREKSI', 'KOR_LAIN', 'KOR_EXTRACOM', 'KOR_HIBAH'])) {
+                    $updateData['category'] = $reklas->asal_kib;
+                }
+                if (!empty($reklas->spesifikasi_lama) && is_array($reklas->spesifikasi_lama)) {
+                    $updateData['spesifikasi_json'] = $reklas->spesifikasi_lama;
+                }
             } else {
                 // Masih ada transaksi lain — cek status ekstrakomptabel dari sisa log
                 if ($jenisReklas === 'EKSTRAKOMPTABEL') {

@@ -108,7 +108,7 @@ class AstapController extends Controller
                     'is_reklas' => (bool) $a->is_reklas,
                     'jenis_reklas' => $a->jenis_reklas,
                     'asal_usul' => $jp ? ($jp->nama_pengadaan ?: '') : ($spec['asal_usul'] ?? ($spec['cara_perolehan'] ?? '')),
-                    'sumber_dana' => $a->sumber_dana === 'kemitraan' ? 'kemitraan' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal'))),
+                    'sumber_dana' => in_array($a->sumber_dana, ['pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'pelimpahan' : ($a->sumber_dana === 'kemitraan' ? 'kemitraan' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
                     'sumber_dana_raw' => $a->sumber_dana,
                     'kemitraan' => $a->kemitraan ? [
                         'id' => $a->kemitraan->id,
@@ -338,7 +338,7 @@ class AstapController extends Controller
             ->get();
 
         $deletedAstapsList = $rawDeletedAstaps->map(function ($a) {
-            $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
+            $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json ?? '', true) ?? []);
             $firstReg = $a->registers ? $a->registers->first() : null;
             $ja = $a->jenisAstap;
             $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');

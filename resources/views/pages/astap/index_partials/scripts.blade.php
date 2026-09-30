@@ -1,5 +1,12 @@
-    <!-- Library SheetJS dengan Dukungan Penuh Cell Styling (Warna, Font, Border & Alignment) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+
+    <!-- Library SheetJS dengan Dukungan Penuh Cell Styling (Offline Local First + CDN Fallback) -->
+    <script src="{{ asset('js/xlsx.bundle.js') }}"></script>
+    <script>
+        if (typeof XLSX === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"><\/script>');
+        }
+    </script>
     <!-- Library QR Code Generator Offline (Self-Hosted Standalone) -->
     <script src="{{ asset('js/qrcode.min.js') }}"></script>
 
@@ -7569,18 +7576,14 @@
             const spec = getSafeSpec(item);
             const mitraNama = k.mitra_nama || spec.mitra_nama || item.penyedia_nama || 'Mitra Rekanan';
             const mitraPimpinan = k.mitra_pimpinan || spec.mitra_pimpinan || item.penyedia_pemilik || '-';
-            const mitraBank = k.mitra_bank || item.penyedia_rekening_nama || mitraNama;
-            const mitraRek = k.mitra_rekening || item.penyedia_rekening_nomor || '-';
             const mitraAlamat = k.mitra_alamat || spec.mitra_alamat || item.penyedia_alamat || '-';
-            const ppkNama = item.ppk_nama || spec.ppk_nama || 'BUDI HARTONO, S.Sos';
-            const ppkNip = item.ppk_nip || spec.ppk_nip || '19760229 200801 1 010';
-            const ket = k.keterangan || item.keterangan_tambahan || (k.status_konsesi ? ('Konsesi: ' + k.status_konsesi) : '-');
+            const ppkNama = (item.ppk_nama && item.ppk_nama !== '-') ? item.ppk_nama : ((spec.ppk_nama && spec.ppk_nama !== '-') ? spec.ppk_nama : 'BUDI HARTONO, S.Sos');
+            const ppkNip = (item.ppk_nip && item.ppk_nip !== '-') ? item.ppk_nip : ((spec.ppk_nip && spec.ppk_nip !== '-') ? spec.ppk_nip : '19760229 200801 1 010');
+            const ket = (k.keterangan && k.keterangan !== '-') ? k.keterangan : (item.keterangan_tambahan && item.keterangan_tambahan !== '-' ? item.keterangan_tambahan : (k.status_konsesi ? ('Konsesi: ' + k.status_konsesi) : '-'));
 
             return [
                 mitraNama,
                 mitraPimpinan,
-                mitraBank,
-                mitraRek,
                 mitraAlamat,
                 ppkNama,
                 ppkNip,
@@ -7591,37 +7594,11 @@
         function getKemitraanKontrakCols(item) {
             const k = item.kemitraan || {};
             const spec = getSafeSpec(item);
-
             const spkNo = k.nomor_pks || spec.nomor_pks || item.bast_dokumen_nomor || item.spk_nomor || '-';
             const spkTgl = formatAstapDate(k.tanggal_pks || spec.tanggal_pks || item.bast_dokumen_tanggal || item.spk_tanggal);
 
-            const pesananNo = k.nomor_adendum || spec.nomor_adendum || item.surat_pesanan_nomor || '-';
-            const pesananTgl = formatAstapDate(k.tanggal_adendum || spec.tanggal_adendum || item.surat_pesanan_tanggal);
-
-            const kwiNo = item.kwitansi_nomor || k.nomor_ba || spec.nomor_ba || '-';
-            const kwiTgl = formatAstapDate(item.kwitansi_tanggal || k.tanggal_ba || spec.tanggal_ba);
-
-            const fakturNo = item.faktur_nomor || k.nomor_bast || spec.nomor_bast || '-';
-            const fakturTgl = formatAstapDate(item.faktur_tanggal || k.tanggal_bast || spec.tanggal_bast);
-
             return [
-                spkNo, spkTgl,
-                pesananNo, pesananTgl,
-                kwiNo, kwiTgl,
-                fakturNo, fakturTgl
-            ];
-        }
-
-        function getKemitraanDokumenCols(item) {
-            const k = item.kemitraan || {};
-            const sp2dNo = item.sp2d_nomor || '-';
-            const sp2dTgl = formatAstapDate(item.sp2d_tanggal);
-            const bastNo = item.bast_dokumen_nomor || k.nomor_bast || '-';
-            const bastTgl = formatAstapDate(item.bast_dokumen_tanggal || k.tanggal_bast);
-
-            return [
-                sp2dNo, sp2dTgl,
-                bastNo, bastTgl
+                spkNo, spkTgl
             ];
         }
 
@@ -7770,21 +7747,19 @@
         }
 
         // ========================================================================
-        // 2. KIB A (TANAH KEMITRAAN) - FORMAT KHUSUS MITRA (41 KOLOM)
+        // 2. KIB A (TANAH KEMITRAAN) - FORMAT MURNI MITRA (26 KOLOM)
         // ========================================================================
         const kibATitleRows = getKemitraanKibTitleRows("TANAH KEMITRAAN", yearLabel, filterTw, skemaLabel);
         const kibARows = [
             ...kibATitleRows,
-            // r3: Main Banner (41 kolom)
+            // r3: Main Banner (26 kolom)
             [
                 "NO",
                 "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
                 "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel,
                 "", "", "", "", "", "", "", "", "", "", "",
-                "", "", "", "", "", "", "", "", "", "", "",
-                "", "",
                 "LETAK / ALAMAT BARANG",
-                "PIHAK PENYEDIA / MITRA", "", "", "", "",
+                "PIHAK PENYEDIA / MITRA", "", "",
                 "Pejabat Pembuat Komitmen", "",
                 "KET."
             ],
@@ -7798,18 +7773,13 @@
                 "NAMA BARANG\n(Uraian Sub Sub Rincian Objek PMDN 108)",
                 "Kode Barang\n(Kode Sub Sub Rincian Objek PMDN 108)",
                 "Status Tanah", "", "",
-                "Riwayat Kerja Sama / PKS", "", "", "", "", "", "", "",
+                "Dokumen PKS / Kontrak", "",
                 "Kondisi\n(B/KB/RB)",
                 "Penggunaan",
                 "VOLUME", "",
-                "Nilai Barang (Rp)", "", "",
                 "Total Nilai Barang (Rp)",
-                "SP2D", "",
-                "BAST pada Dokumen PKS/Kemitraan", "",
                 "",
-                "", "",
-                "Rekening", "",
-                "",
+                "", "", "",
                 "", "",
                 ""
             ],
@@ -7823,18 +7793,13 @@
                 "",
                 "",
                 "Hak Tanah\n(Hak Pakai / Hak Pengelolaan)", "Sertifikat", "",
-                "PKS", "", "Surat Pesanan / Addendum", "", "Kwitansi / BA", "", "Invoice / Dokumen", "",
+                "", "",
                 "",
                 "",
                 "Jumlah Bidang Tanah", "Luas Tanah (m²)",
-                "Nilai Perencanaan (Rp)", "Nilai Fisik (Rp)", "Nilai Pengawasan",
                 "",
-                "", "",
-                "", "",
                 "",
-                "Nama Mitra Rekanan", "Pimpinan Mitra",
-                "", "",
-                "Alamat Mitra",
+                "Nama Mitra Rekanan", "Pimpinan Mitra", "Alamat Mitra",
                 "Nama", "NIP",
                 ""
             ],
@@ -7844,23 +7809,16 @@
                 "", "", "",
                 "Tanggal", "Nomor",
                 "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "", "", "", "",
+                "", "", "", "", "",
+                "",
                 "", "", "",
-                "",
-                "NOMOR", "TANGGAL",
-                "NOMOR", "TANGGAL",
-                "",
-                "", "", "Nama Rek", "Nomor Rek", "",
                 "", "",
                 ""
             ],
-            // r7: Column Numbers (1 s/d 41)
+            // r7: Column Numbers (1 s/d 26)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41"
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26"
             ]
         ];
 
@@ -7872,8 +7830,7 @@
         });
 
         let globalKibANo = 1;
-        let kibATotalAnggaran = 0, kibATotalRealisasi = 0, kibATotalUnit = 0, kibATotalLuas = 0;
-        let kibATotalPerencanaan = 0, kibATotalFisik = 0, kibATotalPengawasan = 0, kibATotalNilaiBarang = 0;
+        let kibATotalAnggaran = 0, kibATotalRealisasi = 0, kibATotalUnit = 0, kibATotalLuas = 0, kibATotalNilaiBarang = 0;
 
         Object.keys(kibAGroups).forEach(groupKey => {
             const groupItems = kibAGroups[groupKey];
@@ -7903,16 +7860,10 @@
                     subTanahItems.forEach((tItem) => {
                         const jumlahBidang = Math.max(1, parseInt(tItem.tanah_jumlah_barang) || 1);
                         const luasM2 = parseFloat(tItem.tanah_luas_m2) || 0;
-                        const nilaiFisik = parseFloat(tItem.tanah_nilai_satuan) || (parseFloat(k.nilai_aset) || parseFloat(item.total_realisasi) || 0);
-                        const nilaiPerencanaan = parseFloat(tItem.tanah_nilai_perencanaan) || 0;
-                        const nilaiPengawasan = parseFloat(tItem.tanah_nilai_pengawasan) || 0;
-                        const totalNilaiBidang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || nilaiFisik;
+                        const totalNilaiBidang = typeof tItem.tanah_nilai_satuan === 'number' ? tItem.tanah_nilai_satuan : (parseFloat(tItem.tanah_nilai_satuan) || (groupRealisasiTotal / subTanahItems.length) || 0);
 
                         kibATotalUnit += jumlahBidang;
                         kibATotalLuas += luasM2;
-                        kibATotalPerencanaan += nilaiPerencanaan;
-                        kibATotalFisik += nilaiFisik;
-                        kibATotalPengawasan += nilaiPengawasan;
                         kibATotalNilaiBarang += totalNilaiBidang;
 
                         const rawKondisi = tItem.tanah_kondisi || item.kondisi || 'Baik';
@@ -7935,29 +7886,19 @@
                             tItem.tanah_penggunaan || spec.penggunaan || 'Lahan RSUD Kerja Sama Mitra',
                             jumlahBidang,
                             luasM2,
-                            nilaiPerencanaan,
-                            nilaiFisik,
-                            nilaiPengawasan,
                             totalNilaiBidang,
-                            ...getKemitraanDokumenCols(item),
                             tItem.tanah_alamat || item.alamat_barang || '-',
                             ...getKemitraanStep4Cols(item)
                         ]);
                     });
                 } else {
                     const totalVal = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0);
-                    const nilaiPerencanaan = parseFloat(item.nilai_perencanaan) || 0;
-                    const nilaiFisik = parseFloat(item.nilai_fisik) || totalVal;
-                    const nilaiPengawasan = parseFloat(item.nilai_pengawasan) || 0;
-                    const totalNilaiBarang = (nilaiPerencanaan + nilaiFisik + nilaiPengawasan) || totalVal;
+                    const totalNilaiBarang = totalVal;
                     const jumlahBidang = parseInt(item.jumlah_bidang) || (parseInt(item.jumlah_volume) || 1);
                     const luasM2 = parseFloat(spec.luas_m2 || item.luas_m2) || 0;
 
                     kibATotalUnit += jumlahBidang;
                     kibATotalLuas += luasM2;
-                    kibATotalPerencanaan += nilaiPerencanaan;
-                    kibATotalFisik += nilaiFisik;
-                    kibATotalPengawasan += nilaiPengawasan;
                     kibATotalNilaiBarang += totalNilaiBarang;
 
                     const rawKondisi = item.kondisi || 'Baik';
@@ -7980,11 +7921,7 @@
                         spec.penggunaan || 'Lahan RSUD Kerja Sama Mitra',
                         jumlahBidang,
                         luasM2,
-                        nilaiPerencanaan,
-                        nilaiFisik,
-                        nilaiPengawasan,
                         totalNilaiBarang,
-                        ...getKemitraanDokumenCols(item),
                         item.alamat_barang || '-',
                         ...getKemitraanStep4Cols(item)
                     ]);
@@ -7992,46 +7929,36 @@
             });
         });
 
-        // Baris Footer Total KIB A (41 Kolom)
-        const kibAFooterRow = Array(41).fill("");
+        // Baris Footer Total KIB A (26 Kolom)
+        const kibAFooterRow = Array(26).fill("");
         kibAFooterRow[0] = "JUMLAH";
         kibAFooterRow[5] = kibATotalAnggaran;
         kibAFooterRow[6] = kibATotalRealisasi;
-        kibAFooterRow[22] = kibATotalUnit;
-        kibAFooterRow[23] = kibATotalLuas;
-        kibAFooterRow[24] = kibATotalPerencanaan;
-        kibAFooterRow[25] = kibATotalFisik;
-        kibAFooterRow[26] = kibATotalPengawasan;
-        kibAFooterRow[27] = kibATotalNilaiBarang;
+        kibAFooterRow[16] = kibATotalUnit;
+        kibAFooterRow[17] = kibATotalLuas;
+        kibAFooterRow[18] = kibATotalNilaiBarang;
         kibARows.push(kibAFooterRow);
 
         const kibASignStartRow = kibARows.length;
-        const kibASignRows = buildKemitraanSignRows(41, 27, 1);
+        const kibASignRows = buildKemitraanSignRows(26, 17, 1);
         kibASignRows.forEach(r => kibARows.push(r));
 
         const wsKibA = XLSX.utils.aoa_to_sheet(kibARows);
-        wsKibA['!cols'] = Array(41).fill({wch: 18});
+        wsKibA['!cols'] = Array(26).fill({wch: 18});
         wsKibA['!cols'][0] = {wch: 6};
         wsKibA['!cols'][1] = {wch: 14}; wsKibA['!cols'][2] = {wch: 26};
         wsKibA['!cols'][3] = {wch: 18}; wsKibA['!cols'][4] = {wch: 32};
         wsKibA['!cols'][5] = {wch: 22}; wsKibA['!cols'][6] = {wch: 22};
         wsKibA['!cols'][7] = {wch: 32}; wsKibA['!cols'][8] = {wch: 22};
-        wsKibA['!cols'][9] = {wch: 32}; wsKibA['!cols'][10] = {wch: 14};
-        wsKibA['!cols'][11] = {wch: 18}; wsKibA['!cols'][12] = {wch: 18};
-        wsKibA['!cols'][13] = {wch: 14}; wsKibA['!cols'][14] = {wch: 18};
-        wsKibA['!cols'][15] = {wch: 14}; wsKibA['!cols'][16] = {wch: 18};
-        wsKibA['!cols'][17] = {wch: 14}; wsKibA['!cols'][18] = {wch: 18};
-        wsKibA['!cols'][19] = {wch: 14}; wsKibA['!cols'][20] = {wch: 14};
-        wsKibA['!cols'][21] = {wch: 26}; wsKibA['!cols'][22] = {wch: 18};
-        wsKibA['!cols'][23] = {wch: 16}; wsKibA['!cols'][24] = {wch: 20};
-        wsKibA['!cols'][25] = {wch: 20}; wsKibA['!cols'][26] = {wch: 20};
-        wsKibA['!cols'][27] = {wch: 22}; wsKibA['!cols'][28] = {wch: 18};
-        wsKibA['!cols'][29] = {wch: 14}; wsKibA['!cols'][30] = {wch: 22};
-        wsKibA['!cols'][31] = {wch: 14}; wsKibA['!cols'][32] = {wch: 32};
-        wsKibA['!cols'][33] = {wch: 28}; wsKibA['!cols'][34] = {wch: 24};
-        wsKibA['!cols'][35] = {wch: 24}; wsKibA['!cols'][36] = {wch: 24};
-        wsKibA['!cols'][37] = {wch: 30}; wsKibA['!cols'][38] = {wch: 24};
-        wsKibA['!cols'][39] = {wch: 22}; wsKibA['!cols'][40] = {wch: 26};
+        wsKibA['!cols'][9] = {wch: 28}; wsKibA['!cols'][10] = {wch: 14};
+        wsKibA['!cols'][11] = {wch: 18}; wsKibA['!cols'][12] = {wch: 24};
+        wsKibA['!cols'][13] = {wch: 14}; wsKibA['!cols'][14] = {wch: 14};
+        wsKibA['!cols'][15] = {wch: 22}; wsKibA['!cols'][16] = {wch: 18};
+        wsKibA['!cols'][17] = {wch: 16}; wsKibA['!cols'][18] = {wch: 22};
+        wsKibA['!cols'][19] = {wch: 28}; wsKibA['!cols'][20] = {wch: 26};
+        wsKibA['!cols'][21] = {wch: 22}; wsKibA['!cols'][22] = {wch: 26};
+        wsKibA['!cols'][23] = {wch: 24}; wsKibA['!cols'][24] = {wch: 22};
+        wsKibA['!cols'][25] = {wch: 24};
 
         wsKibA['!merges'] = getKemitraanKibMerges([
             {s:{r:3,c:0}, e:{r:6,c:0}},
@@ -8044,44 +7971,33 @@
             {s:{r:5,c:4}, e:{r:6,c:4}},
             {s:{r:4,c:5}, e:{r:6,c:5}},
             {s:{r:4,c:6}, e:{r:6,c:6}},
-            {s:{r:3,c:7}, e:{r:3,c:31}},
+            {s:{r:3,c:7}, e:{r:3,c:18}},
             {s:{r:4,c:7}, e:{r:6,c:7}},
             {s:{r:4,c:8}, e:{r:6,c:8}},
             {s:{r:4,c:9}, e:{r:4,c:11}},
             {s:{r:5,c:9}, e:{r:6,c:9}},
             {s:{r:5,c:10}, e:{r:5,c:11}},
-            {s:{r:4,c:12}, e:{r:4,c:19}},
-            {s:{r:5,c:12}, e:{r:5,c:13}},
-            {s:{r:5,c:14}, e:{r:5,c:15}},
-            {s:{r:5,c:16}, e:{r:5,c:17}},
-            {s:{r:5,c:18}, e:{r:5,c:19}},
-            {s:{r:4,c:20}, e:{r:6,c:20}},
-            {s:{r:4,c:21}, e:{r:6,c:21}},
-            {s:{r:4,c:22}, e:{r:4,c:23}},
+            {s:{r:4,c:12}, e:{r:5,c:13}},
+            {s:{r:4,c:14}, e:{r:6,c:14}},
+            {s:{r:4,c:15}, e:{r:6,c:15}},
+            {s:{r:4,c:16}, e:{r:4,c:17}},
+            {s:{r:5,c:16}, e:{r:6,c:16}},
+            {s:{r:5,c:17}, e:{r:6,c:17}},
+            {s:{r:4,c:18}, e:{r:6,c:18}},
+            {s:{r:3,c:19}, e:{r:6,c:19}},
+            {s:{r:3,c:20}, e:{r:4,c:22}},
+            {s:{r:5,c:20}, e:{r:6,c:20}},
+            {s:{r:5,c:21}, e:{r:6,c:21}},
             {s:{r:5,c:22}, e:{r:6,c:22}},
+            {s:{r:3,c:23}, e:{r:4,c:24}},
             {s:{r:5,c:23}, e:{r:6,c:23}},
-            {s:{r:4,c:24}, e:{r:4,c:26}},
             {s:{r:5,c:24}, e:{r:6,c:24}},
-            {s:{r:5,c:25}, e:{r:6,c:25}},
-            {s:{r:5,c:26}, e:{r:6,c:26}},
-            {s:{r:4,c:27}, e:{r:6,c:27}},
-            {s:{r:4,c:28}, e:{r:5,c:29}},
-            {s:{r:4,c:30}, e:{r:5,c:31}},
-            {s:{r:3,c:32}, e:{r:6,c:32}},
-            {s:{r:3,c:33}, e:{r:4,c:37}},
-            {s:{r:5,c:33}, e:{r:6,c:33}},
-            {s:{r:5,c:34}, e:{r:6,c:34}},
-            {s:{r:5,c:35}, e:{r:5,c:36}},
-            {s:{r:5,c:37}, e:{r:6,c:37}},
-            {s:{r:3,c:38}, e:{r:4,c:39}},
-            {s:{r:5,c:38}, e:{r:6,c:38}},
-            {s:{r:5,c:39}, e:{r:6,c:39}},
-            {s:{r:3,c:40}, e:{r:6,c:40}}
-        ], 41, kibATitleRows.length, kibARows.length, true);
-        wsKibA['!merges'].push(...getKibSignatureMerges(kibASignStartRow, 41, 27, 1, 6, 40));
+            {s:{r:3,c:25}, e:{r:6,c:25}}
+        ], 26, kibATitleRows.length, kibARows.length, true);
+        wsKibA['!merges'].push(...getKibSignatureMerges(kibASignStartRow, 26, 17, 1, 6, 25));
 
-        applyKemitraanMasterSheetStyling(wsKibA, kibARows.length, 41, 25, kibATitleRows.length, true);
-        applySignatureBlockStyling(wsKibA, kibASignStartRow, 41);
+        applyKemitraanMasterSheetStyling(wsKibA, kibARows.length, 26, 12, kibATitleRows.length, true);
+        applySignatureBlockStyling(wsKibA, kibASignStartRow, 26);
         if (filterCat === 'all' || filterCat === 'KIB A') {
             XLSX.utils.book_append_sheet(wb, wsKibA, filterCat === 'all' ? "2. KIB A - Tanah" : "KIB A - Tanah");
         }
@@ -8092,16 +8008,15 @@
         const kibBTitleRows = getKemitraanKibTitleRows("PERALATAN DAN MESIN (KSO)", yearLabel, filterTw, skemaLabel);
         const kibBRows = [
             ...kibBTitleRows,
-            // r3: Main Banner (46 kolom)
+            // r3: Main Banner (33 kolom)
             [
                 "NO",
                 "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
                 "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel,
                 "", "", "", "", "", "", "", "", "", "", "",
-                "", "", "", "", "", "", "", "", "", "", "",
                 "", "", "", "", "", "", "",
                 "RUANG /\nPEMEGANG",
-                "PIHAK PENYEDIA / MITRA", "", "", "", "",
+                "PIHAK PENYEDIA / MITRA", "", "",
                 "Pejabat Pembuat Komitmen", "",
                 "KET."
             ],
@@ -8115,18 +8030,14 @@
                 "NAMA BARANG\n(Uraian Sub Sub Rincian Objek PMDN 108)",
                 "Kode Barang\n(Kode Sub Sub Rincian Objek PMDN 108)",
                 "Merk", "Type", "Ukuran / CC",
-                "No. Pabrik", "No. Rangka", "No. Mesin", "No. BTKB", "No. POLISI",
+                "No. Pabrik", "No. Rangka", "No. Mesin", "No. BPKB", "No. POLISI",
                 "BAHAN", "Tahun Perolehan",
-                "Riwayat Kerja Sama / PKS", "", "", "", "", "", "", "",
+                "Riwayat Kerja Sama / PKS", "",
                 "Kondisi\n(B,KB,RB)",
                 "VOLUME", "",
-                "Nilai Satuan Barang (Rp)",
-                "ADMINISTRASI PROYEK (Rp)",
-                "Total Nilai Barang\n(Rp) = 31+32",
-                "SP2D", "",
-                "BAST pada Dokumen PKS/Kemitraan", "",
+                "Nilai Barang (Rp)", "",
                 "",
-                "", "", "", "", "",
+                "", "", "",
                 "", "",
                 ""
             ],
@@ -8137,14 +8048,12 @@
                 "Kode", "Nama Uraian Sub Rincian Objek",
                 "", "",
                 "", "", "", "", "", "", "", "", "", "", "", "",
-                "PKS", "", "Surat Pesanan / Addendum", "", "Kwitansi / BA", "", "Invoice / Dokumen", "",
+                "PKS", "",
                 "",
                 "Jumlah Barang", "Nama Satuan Barang",
-                "", "", "",
-                "", "",
-                "", "",
+                "Nilai Satuan Barang (Rp)", "Total Nilai Barang (Rp)",
                 "",
-                "Nama Mitra Rekanan", "Pimpinan Mitra", "Rekening", "", "Alamat Mitra",
+                "Nama Mitra Rekanan", "Pimpinan Mitra", "Alamat Mitra",
                 "Nama", "NIP",
                 ""
             ],
@@ -8153,19 +8062,19 @@
                 "",
                 "", "", "", "", "", "",
                 "", "", "", "", "", "", "", "", "", "", "", "",
-                "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal", "Nomor", "Tanggal",
-                "", "", "", "", "", "",
-                "NOMOR", "TANGGAL",
-                "NOMOR", "TANGGAL",
+                "Nomor", "Tanggal",
                 "",
-                "", "", "Nama Rek", "No Rek", "",
+                "", "",
+                "", "",
+                "",
+                "", "", "",
                 "", "",
                 ""
             ],
-            // r7: Column Numbers (1 s/d 46)
+            // r7: Column Numbers (1 s/d 33)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33"
             ]
         ];
 
@@ -8177,7 +8086,7 @@
         });
 
         let globalKibBNo = 1;
-        let kibBTotalAnggaran = 0, kibBTotalRealisasi = 0, kibBTotalUnit = 0, kibBTotalAdminProyek = 0, kibBTotalNilaiBarang = 0;
+        let kibBTotalAnggaran = 0, kibBTotalRealisasi = 0, kibBTotalUnit = 0, kibBTotalNilaiBarang = 0;
 
         Object.keys(kibBGroups).forEach(groupKey => {
             const groupItems = kibBGroups[groupKey];
@@ -8211,7 +8120,6 @@
                         const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
 
                         kibBTotalUnit += qty;
-                        kibBTotalAdminProyek += adminProyek;
                         kibBTotalNilaiBarang += totalNilaiBarang;
 
                         const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
@@ -8242,9 +8150,7 @@
                             qty,
                             mItem.mesin_satuan || item.satuan || 'Unit',
                             nilaiSatuan,
-                            adminProyek,
                             totalNilaiBarang,
-                            ...getKemitraanDokumenCols(item),
                             ruangUnit,
                             ...getKemitraanStep4Cols(item)
                         ]);
@@ -8258,7 +8164,6 @@
                     const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : 'RSUD dr. H. Koesnandi');
 
                     kibBTotalUnit += jumlahBarang;
-                    kibBTotalAdminProyek += adminProyek;
                     kibBTotalNilaiBarang += totalNilaiBarang;
 
                     const rawKondisi = item.kondisi || 'Baik';
@@ -8288,9 +8193,7 @@
                         jumlahBarang,
                         item.satuan || 'Unit',
                         nilaiSatuan,
-                        adminProyek,
                         totalNilaiBarang,
-                        ...getKemitraanDokumenCols(item),
                         ruangUnit,
                         ...getKemitraanStep4Cols(item)
                     ]);
@@ -8298,22 +8201,21 @@
             });
         });
 
-        // Baris Footer Total KIB B (46 Kolom)
-        const kibBFooterRow = Array(46).fill("");
+        // Baris Footer Total KIB B (33 Kolom)
+        const kibBFooterRow = Array(33).fill("");
         kibBFooterRow[0] = "JUMLAH";
         kibBFooterRow[5] = kibBTotalAnggaran;
         kibBFooterRow[6] = kibBTotalRealisasi;
-        kibBFooterRow[28] = kibBTotalUnit;
-        kibBFooterRow[31] = kibBTotalAdminProyek;
-        kibBFooterRow[32] = kibBTotalNilaiBarang;
+        kibBFooterRow[22] = kibBTotalUnit;
+        kibBFooterRow[25] = kibBTotalNilaiBarang;
         kibBRows.push(kibBFooterRow);
 
         const kibBSignStartRow = kibBRows.length;
-        const kibBSignRows = buildKemitraanSignRows(46, 32, 1);
+        const kibBSignRows = buildKemitraanSignRows(33, 22, 1);
         kibBSignRows.forEach(r => kibBRows.push(r));
 
         const wsKibB = XLSX.utils.aoa_to_sheet(kibBRows);
-        wsKibB['!cols'] = Array(46).fill({wch: 18});
+        wsKibB['!cols'] = Array(33).fill({wch: 18});
         wsKibB['!cols'][0] = {wch: 6};
         wsKibB['!cols'][1] = {wch: 14}; wsKibB['!cols'][2] = {wch: 26};
         wsKibB['!cols'][3] = {wch: 18}; wsKibB['!cols'][4] = {wch: 32};
@@ -8325,19 +8227,12 @@
         wsKibB['!cols'][15] = {wch: 20}; wsKibB['!cols'][16] = {wch: 16};
         wsKibB['!cols'][17] = {wch: 16}; wsKibB['!cols'][18] = {wch: 14};
         wsKibB['!cols'][19] = {wch: 22}; wsKibB['!cols'][20] = {wch: 14};
-        wsKibB['!cols'][21] = {wch: 22}; wsKibB['!cols'][22] = {wch: 14};
-        wsKibB['!cols'][23] = {wch: 22}; wsKibB['!cols'][24] = {wch: 14};
-        wsKibB['!cols'][25] = {wch: 22}; wsKibB['!cols'][26] = {wch: 14};
-        wsKibB['!cols'][27] = {wch: 14}; wsKibB['!cols'][28] = {wch: 14};
-        wsKibB['!cols'][29] = {wch: 18}; wsKibB['!cols'][30] = {wch: 22};
-        wsKibB['!cols'][31] = {wch: 22}; wsKibB['!cols'][32] = {wch: 22};
-        wsKibB['!cols'][33] = {wch: 20}; wsKibB['!cols'][34] = {wch: 14};
-        wsKibB['!cols'][35] = {wch: 28}; wsKibB['!cols'][36] = {wch: 14};
-        wsKibB['!cols'][37] = {wch: 28}; wsKibB['!cols'][38] = {wch: 28};
-        wsKibB['!cols'][39] = {wch: 24}; wsKibB['!cols'][40] = {wch: 24};
-        wsKibB['!cols'][41] = {wch: 22}; wsKibB['!cols'][42] = {wch: 30};
-        wsKibB['!cols'][43] = {wch: 24}; wsKibB['!cols'][44] = {wch: 22};
-        wsKibB['!cols'][45] = {wch: 26};
+        wsKibB['!cols'][21] = {wch: 14}; wsKibB['!cols'][22] = {wch: 14};
+        wsKibB['!cols'][23] = {wch: 16}; wsKibB['!cols'][24] = {wch: 22};
+        wsKibB['!cols'][25] = {wch: 22}; wsKibB['!cols'][26] = {wch: 20};
+        wsKibB['!cols'][27] = {wch: 28}; wsKibB['!cols'][28] = {wch: 24};
+        wsKibB['!cols'][29] = {wch: 30}; wsKibB['!cols'][30] = {wch: 24};
+        wsKibB['!cols'][31] = {wch: 22}; wsKibB['!cols'][32] = {wch: 26};
 
         wsKibB['!merges'] = getKemitraanKibMerges([
             {s:{r:3,c:0}, e:{r:6,c:0}},
@@ -8350,7 +8245,7 @@
             {s:{r:5,c:4}, e:{r:6,c:4}},
             {s:{r:4,c:5}, e:{r:6,c:5}},
             {s:{r:4,c:6}, e:{r:6,c:6}},
-            {s:{r:3,c:7}, e:{r:3,c:36}},
+            {s:{r:3,c:7}, e:{r:3,c:25}},
             {s:{r:4,c:7}, e:{r:6,c:7}},
             {s:{r:4,c:8}, e:{r:6,c:8}},
             {s:{r:4,c:9}, e:{r:6,c:9}},
@@ -8363,35 +8258,29 @@
             {s:{r:4,c:16}, e:{r:6,c:16}},
             {s:{r:4,c:17}, e:{r:6,c:17}},
             {s:{r:4,c:18}, e:{r:6,c:18}},
-            {s:{r:4,c:19}, e:{r:4,c:26}},
+            {s:{r:4,c:19}, e:{r:4,c:20}},
             {s:{r:5,c:19}, e:{r:5,c:20}},
-            {s:{r:5,c:21}, e:{r:5,c:22}},
-            {s:{r:5,c:23}, e:{r:5,c:24}},
-            {s:{r:5,c:25}, e:{r:5,c:26}},
-            {s:{r:4,c:27}, e:{r:6,c:27}},
-            {s:{r:4,c:28}, e:{r:4,c:29}},
+            {s:{r:4,c:21}, e:{r:6,c:21}},
+            {s:{r:4,c:22}, e:{r:4,c:23}},
+            {s:{r:5,c:22}, e:{r:6,c:22}},
+            {s:{r:5,c:23}, e:{r:6,c:23}},
+            {s:{r:4,c:24}, e:{r:4,c:25}},
+            {s:{r:5,c:24}, e:{r:6,c:24}},
+            {s:{r:5,c:25}, e:{r:6,c:25}},
+            {s:{r:3,c:26}, e:{r:6,c:26}},
+            {s:{r:3,c:27}, e:{r:4,c:29}},
+            {s:{r:5,c:27}, e:{r:6,c:27}},
             {s:{r:5,c:28}, e:{r:6,c:28}},
             {s:{r:5,c:29}, e:{r:6,c:29}},
-            {s:{r:4,c:30}, e:{r:6,c:30}},
-            {s:{r:4,c:31}, e:{r:6,c:31}},
-            {s:{r:4,c:32}, e:{r:6,c:32}},
-            {s:{r:4,c:33}, e:{r:5,c:34}},
-            {s:{r:4,c:35}, e:{r:5,c:36}},
-            {s:{r:3,c:37}, e:{r:6,c:37}},
-            {s:{r:3,c:38}, e:{r:4,c:42}},
-            {s:{r:5,c:38}, e:{r:6,c:38}},
-            {s:{r:5,c:39}, e:{r:6,c:39}},
-            {s:{r:5,c:40}, e:{r:5,c:41}},
-            {s:{r:5,c:42}, e:{r:6,c:42}},
-            {s:{r:3,c:43}, e:{r:4,c:44}},
-            {s:{r:5,c:43}, e:{r:6,c:43}},
-            {s:{r:5,c:44}, e:{r:6,c:44}},
-            {s:{r:3,c:45}, e:{r:6,c:45}}
-        ], 46, kibBTitleRows.length, kibBRows.length, true);
-        wsKibB['!merges'].push(...getKibSignatureMerges(kibBSignStartRow, 46, 32, 1, 6, 45));
+            {s:{r:3,c:30}, e:{r:4,c:31}},
+            {s:{r:5,c:30}, e:{r:6,c:30}},
+            {s:{r:5,c:31}, e:{r:6,c:31}},
+            {s:{r:3,c:32}, e:{r:6,c:32}}
+        ], 33, kibBTitleRows.length, kibBRows.length, true);
+        wsKibB['!merges'].push(...getKibSignatureMerges(kibBSignStartRow, 33, 22, 1, 6, 32));
 
-        applyKemitraanMasterSheetStyling(wsKibB, kibBRows.length, 46, 31, kibBTitleRows.length, true);
-        applySignatureBlockStyling(wsKibB, kibBSignStartRow, 46);
+        applyKemitraanMasterSheetStyling(wsKibB, kibBRows.length, 33, 19, kibBTitleRows.length, true);
+        applySignatureBlockStyling(wsKibB, kibBSignStartRow, 33);
         if (filterCat === 'all' || filterCat === 'KIB B') {
             XLSX.utils.book_append_sheet(wb, wsKibB, filterCat === 'all' ? "3. KIB B - Mesin & Alkes" : "KIB B - Peralatan & Mesin");
         }
@@ -8402,13 +8291,13 @@
         const kibCTitleRows = getKemitraanKibTitleRows("GEDUNG DAN BANGUNAN (BGS/BSG)", yearLabel, filterTw, skemaLabel);
         const kibCRows = [
             ...kibCTitleRows,
-            // r3: Main Banner (47 kolom)
+            // r3: Main Banner (31 kolom)
             [
                 "NO",
                 "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
-                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
                 "Letak/ Alamat",
-                "PIHAK PENYEDIA / MITRA", "", "", "", "",
+                "PIHAK PENYEDIA / MITRA", "", "",
                 "Pejabat Pembuat Komitmen", "",
                 "KET."
             ],
@@ -8424,16 +8313,11 @@
                 "Luas Lantai (m²)",
                 "Kondisi / Spesifikasi", "", "",
                 "Jenis Bangunan", "", "", "", "", "",
-                "Riwayat Kerja Sama / PKS", "", "", "", "", "", "", "",
+                "Riwayat Kerja Sama / PKS", "",
                 "VOLUME", "",
-                "Nilai Barang (Rp)", "", "", "",
                 "Total Nilai Barang (Rp)",
-                "SP2D", "",
-                "BAST pada Dokumen PKS/Kemitraan", "",
                 "",
-                "", "",
-                "Rekening", "",
-                "",
+                "", "", "",
                 "", "",
                 ""
             ],
@@ -8453,18 +8337,10 @@
                 "Baru",
                 "Kapitalisasi", "", "",
                 "PKS", "",
-                "Surat Pesanan / Addendum", "",
-                "Kwitansi / BA", "",
-                "Invoice / Dokumen", "",
                 "Jumlah Bangunan", "Nama Satuan Barang",
-                "Nilai Perencanaan (Rp)", "Nilai Fisik (Rp)", "Nilai Pengawasan", "Nilai AP",
                 "",
-                "", "",
-                "", "",
                 "",
-                "Nama Mitra Rekanan", "Pimpinan Mitra",
-                "", "",
-                "Alamat Mitra",
+                "Nama Mitra Rekanan", "Pimpinan Mitra", "Alamat Mitra",
                 "Nama", "NIP",
                 ""
             ],
@@ -8475,23 +8351,17 @@
                 "", "", "",
                 "Nibar", "Tahun Induk", "Nilai Induk s/d " + (parseInt(yearLabel) - 1 || '2025'),
                 "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
                 "", "",
-                "", "", "", "",
                 "",
-                "NOMOR", "TANGGAL",
-                "NOMOR", "TANGGAL",
                 "",
-                "", "", "Nama Rek", "Nomor Rek", "",
+                "", "", "",
                 "", "",
                 ""
             ],
-            // r7: Column Numbers (1 s/d 47)
+            // r7: Column Numbers (1 s/d 31)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47"
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"
             ]
         ];
 
@@ -8504,7 +8374,7 @@
 
         let globalKibCNo = 1;
         let kibCTotalAnggaran = 0, kibCTotalRealisasi = 0, kibCTotalLuas = 0, kibCTotalUnit = 0;
-        let kibCTotalPerencanaan = 0, kibCTotalFisik = 0, kibCTotalPengawasan = 0, kibCTotalAp = 0, kibCTotalNilaiBarang = 0;
+        let kibCTotalNilaiBarang = 0;
 
         Object.keys(kibCGroups).forEach(groupKey => {
             const groupItems = kibCGroups[groupKey];
@@ -8542,10 +8412,6 @@
 
                         kibCTotalLuas += luasM2;
                         kibCTotalUnit += jumlahBangunan;
-                        kibCTotalPerencanaan += nilaiPerencanaan;
-                        kibCTotalFisik += nilaiFisik;
-                        kibCTotalPengawasan += nilaiPengawasan;
-                        kibCTotalAp += nilaiAp;
                         kibCTotalNilaiBarang += totalNilaiBarang;
 
                         const rawKondisi = gItem.gedung_kondisi || item.kondisi || 'Baik';
@@ -8575,12 +8441,7 @@
                             ...getKemitraanKontrakCols(item),
                             jumlahBangunan,
                             gItem.gedung_satuan || item.satuan || 'Gedung',
-                            nilaiPerencanaan,
-                            nilaiFisik,
-                            nilaiPengawasan,
-                            nilaiAp,
                             totalNilaiBarang,
-                            ...getKemitraanDokumenCols(item),
                             gItem.gedung_alamat || item.alamat_barang || '-',
                             ...getKemitraanStep4Cols(item)
                         ]);
@@ -8597,10 +8458,6 @@
 
                     kibCTotalLuas += luasM2;
                     kibCTotalUnit += jumlahBangunan;
-                    kibCTotalPerencanaan += nilaiPerencanaan;
-                    kibCTotalFisik += nilaiFisik;
-                    kibCTotalPengawasan += nilaiPengawasan;
-                    kibCTotalAp += nilaiAp;
                     kibCTotalNilaiBarang += totalNilaiBarang;
 
                     const rawKondisi = item.kondisi || 'Baik';
@@ -8630,12 +8487,7 @@
                         ...getKemitraanKontrakCols(item),
                         jumlahBangunan,
                         item.satuan || 'Gedung',
-                        nilaiPerencanaan,
-                        nilaiFisik,
-                        nilaiPengawasan,
-                        nilaiAp,
                         totalNilaiBarang,
-                        ...getKemitraanDokumenCols(item),
                         item.alamat_barang || '-',
                         ...getKemitraanStep4Cols(item)
                     ]);
@@ -8643,26 +8495,22 @@
             });
         });
 
-        // Baris Footer Total KIB C (47 Kolom)
-        const kibCFooterRow = Array(47).fill("");
+        // Baris Footer Total KIB C (31 Kolom)
+        const kibCFooterRow = Array(31).fill("");
         kibCFooterRow[0] = "JUMLAH";
         kibCFooterRow[5] = kibCTotalAnggaran;
         kibCFooterRow[6] = kibCTotalRealisasi;
         kibCFooterRow[9] = kibCTotalLuas;
-        kibCFooterRow[27] = kibCTotalUnit;
-        kibCFooterRow[29] = kibCTotalPerencanaan;
-        kibCFooterRow[30] = kibCTotalFisik;
-        kibCFooterRow[31] = kibCTotalPengawasan;
-        kibCFooterRow[32] = kibCTotalAp;
-        kibCFooterRow[33] = kibCTotalNilaiBarang;
+        kibCFooterRow[21] = kibCTotalUnit;
+        kibCFooterRow[23] = kibCTotalNilaiBarang;
         kibCRows.push(kibCFooterRow);
 
         const kibCSignStartRow = kibCRows.length;
-        const kibCSignRows = buildKemitraanSignRows(47, 33, 1);
+        const kibCSignRows = buildKemitraanSignRows(31, 21, 1);
         kibCSignRows.forEach(r => kibCRows.push(r));
 
         const wsKibC = XLSX.utils.aoa_to_sheet(kibCRows);
-        wsKibC['!cols'] = Array(47).fill({wch: 18});
+        wsKibC['!cols'] = Array(31).fill({wch: 18});
         wsKibC['!cols'][0] = {wch: 6};
         wsKibC['!cols'][1] = {wch: 14}; wsKibC['!cols'][2] = {wch: 26};
         wsKibC['!cols'][3] = {wch: 18}; wsKibC['!cols'][4] = {wch: 32};
@@ -8674,19 +8522,11 @@
         wsKibC['!cols'][15] = {wch: 14}; wsKibC['!cols'][16] = {wch: 22};
         wsKibC['!cols'][17] = {wch: 16}; wsKibC['!cols'][18] = {wch: 22};
         wsKibC['!cols'][19] = {wch: 22}; wsKibC['!cols'][20] = {wch: 14};
-        wsKibC['!cols'][21] = {wch: 22}; wsKibC['!cols'][22] = {wch: 14};
-        wsKibC['!cols'][23] = {wch: 22}; wsKibC['!cols'][24] = {wch: 14};
-        wsKibC['!cols'][25] = {wch: 22}; wsKibC['!cols'][26] = {wch: 14};
-        wsKibC['!cols'][27] = {wch: 18}; wsKibC['!cols'][28] = {wch: 20};
-        wsKibC['!cols'][29] = {wch: 22}; wsKibC['!cols'][30] = {wch: 22};
-        wsKibC['!cols'][31] = {wch: 22}; wsKibC['!cols'][32] = {wch: 20};
-        wsKibC['!cols'][33] = {wch: 22}; wsKibC['!cols'][34] = {wch: 20};
-        wsKibC['!cols'][35] = {wch: 14}; wsKibC['!cols'][36] = {wch: 28};
-        wsKibC['!cols'][37] = {wch: 14}; wsKibC['!cols'][38] = {wch: 32};
-        wsKibC['!cols'][39] = {wch: 28}; wsKibC['!cols'][40] = {wch: 24};
-        wsKibC['!cols'][41] = {wch: 24}; wsKibC['!cols'][42] = {wch: 22};
-        wsKibC['!cols'][43] = {wch: 30}; wsKibC['!cols'][44] = {wch: 24};
-        wsKibC['!cols'][45] = {wch: 22}; wsKibC['!cols'][46] = {wch: 26};
+        wsKibC['!cols'][21] = {wch: 18}; wsKibC['!cols'][22] = {wch: 20};
+        wsKibC['!cols'][23] = {wch: 22}; wsKibC['!cols'][24] = {wch: 24};
+        wsKibC['!cols'][25] = {wch: 28}; wsKibC['!cols'][26] = {wch: 24};
+        wsKibC['!cols'][27] = {wch: 30}; wsKibC['!cols'][28] = {wch: 24};
+        wsKibC['!cols'][29] = {wch: 22}; wsKibC['!cols'][30] = {wch: 26};
 
         wsKibC['!merges'] = getKemitraanKibMerges([
             {s:{r:3,c:0}, e:{r:6,c:0}},
@@ -8699,7 +8539,7 @@
             {s:{r:5,c:4}, e:{r:6,c:4}},
             {s:{r:4,c:5}, e:{r:6,c:5}},
             {s:{r:4,c:6}, e:{r:6,c:6}},
-            {s:{r:3,c:7}, e:{r:3,c:37}},
+            {s:{r:3,c:7}, e:{r:3,c:23}},
             {s:{r:4,c:7}, e:{r:6,c:7}},
             {s:{r:4,c:8}, e:{r:6,c:8}},
             {s:{r:4,c:9}, e:{r:6,c:9}},
@@ -8712,37 +8552,26 @@
             {s:{r:5,c:14}, e:{r:6,c:14}},
             {s:{r:5,c:15}, e:{r:6,c:15}},
             {s:{r:5,c:16}, e:{r:5,c:18}},
-            {s:{r:4,c:19}, e:{r:4,c:26}},
+            {s:{r:4,c:19}, e:{r:4,c:20}},
             {s:{r:5,c:19}, e:{r:5,c:20}},
-            {s:{r:5,c:21}, e:{r:5,c:22}},
-            {s:{r:5,c:23}, e:{r:5,c:24}},
-            {s:{r:5,c:25}, e:{r:5,c:26}},
-            {s:{r:4,c:27}, e:{r:4,c:28}},
+            {s:{r:4,c:21}, e:{r:4,c:22}},
+            {s:{r:5,c:21}, e:{r:6,c:21}},
+            {s:{r:5,c:22}, e:{r:6,c:22}},
+            {s:{r:4,c:23}, e:{r:6,c:23}},
+            {s:{r:3,c:24}, e:{r:6,c:24}},
+            {s:{r:3,c:25}, e:{r:4,c:27}},
+            {s:{r:5,c:25}, e:{r:6,c:25}},
+            {s:{r:5,c:26}, e:{r:6,c:26}},
             {s:{r:5,c:27}, e:{r:6,c:27}},
+            {s:{r:3,c:28}, e:{r:4,c:29}},
             {s:{r:5,c:28}, e:{r:6,c:28}},
-            {s:{r:4,c:29}, e:{r:4,c:32}},
             {s:{r:5,c:29}, e:{r:6,c:29}},
-            {s:{r:5,c:30}, e:{r:6,c:30}},
-            {s:{r:5,c:31}, e:{r:6,c:31}},
-            {s:{r:5,c:32}, e:{r:6,c:32}},
-            {s:{r:4,c:33}, e:{r:6,c:33}},
-            {s:{r:4,c:34}, e:{r:5,c:35}},
-            {s:{r:4,c:36}, e:{r:5,c:37}},
-            {s:{r:3,c:38}, e:{r:6,c:38}},
-            {s:{r:3,c:39}, e:{r:4,c:43}},
-            {s:{r:5,c:39}, e:{r:6,c:39}},
-            {s:{r:5,c:40}, e:{r:6,c:40}},
-            {s:{r:5,c:41}, e:{r:5,c:42}},
-            {s:{r:5,c:43}, e:{r:6,c:43}},
-            {s:{r:3,c:44}, e:{r:4,c:45}},
-            {s:{r:5,c:44}, e:{r:6,c:44}},
-            {s:{r:5,c:45}, e:{r:6,c:45}},
-            {s:{r:3,c:46}, e:{r:6,c:46}}
-        ], 47, kibCTitleRows.length, kibCRows.length, true);
-        wsKibC['!merges'].push(...getKibSignatureMerges(kibCSignStartRow, 47, 33, 1, 6, 46));
+            {s:{r:3,c:30}, e:{r:6,c:30}}
+        ], 31, kibCTitleRows.length, kibCRows.length, true);
+        wsKibC['!merges'].push(...getKibSignatureMerges(kibCSignStartRow, 31, 21, 1, 6, 30));
 
-        applyKemitraanMasterSheetStyling(wsKibC, kibCRows.length, 47, 30, kibCTitleRows.length, true);
-        applySignatureBlockStyling(wsKibC, kibCSignStartRow, 47);
+        applyKemitraanMasterSheetStyling(wsKibC, kibCRows.length, 31, 17, kibCTitleRows.length, true);
+        applySignatureBlockStyling(wsKibC, kibCSignStartRow, 31);
         if (filterCat === 'all' || filterCat === 'KIB C') {
             XLSX.utils.book_append_sheet(wb, wsKibC, filterCat === 'all' ? "4. KIB C - Bangunan" : "KIB C - Gedung & Bangunan");
         }
@@ -8753,13 +8582,13 @@
         const kibDTitleRows = getKemitraanKibTitleRows("JALAN, IRIGASI DAN JARINGAN", yearLabel, filterTw, skemaLabel);
         const kibDRows = [
             ...kibDTitleRows,
-            // r3: Main Banner (46 kolom)
+            // r3: Main Banner (31 kolom)
             [
                 "NO",
                 "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
-                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
                 "Letak/ Alamat",
-                "PIHAK PENYEDIA / MITRA", "", "", "", "",
+                "PIHAK PENYEDIA / MITRA", "", "",
                 "Pejabat Pembuat Komitmen", "",
                 "KET."
             ],
@@ -8775,16 +8604,11 @@
                 "Luas  (P X L)",
                 "Kondisi / Spesifikasi", "", "",
                 "Jenis Bangunan", "", "", "", "", "",
-                "Riwayat Kerja Sama / PKS", "", "", "", "", "", "", "",
+                "Riwayat Kerja Sama / PKS", "",
                 "VOLUME", "",
-                "Nilai Satuan Barang (Rp)", "", "",
                 "Total Nilai Barang (Rp)",
-                "SP2D", "",
-                "BAST pada Dokumen PKS/Kemitraan", "",
                 "",
-                "", "",
-                "Rekening", "",
-                "",
+                "", "", "",
                 "", "",
                 ""
             ],
@@ -8804,18 +8628,10 @@
                 "Baru",
                 "Kapitalisasi", "", "",
                 "PKS", "",
-                "Surat Pesanan / Addendum", "",
-                "Kwitansi / BA", "",
-                "Invoice / Dokumen", "",
                 "Jumlah", "Nama Satuan Barang",
-                "Nilai Perencanaan (Rp)", "Nilai Fisik (Rp)", "Nilai Pengawasan",
                 "",
-                "", "",
-                "", "",
                 "",
-                "Nama Mitra Rekanan", "Pimpinan Mitra",
-                "", "",
-                "Alamat Mitra",
+                "Nama Mitra Rekanan", "Pimpinan Mitra", "Alamat Mitra",
                 "Nama", "NIP",
                 ""
             ],
@@ -8826,23 +8642,17 @@
                 "", "", "",
                 "Nibar", "Tahun Induk", "Nilai Induk s/d " + (parseInt(yearLabel) - 1 || '2025'),
                 "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
                 "", "",
+                "",
+                "",
                 "", "", "",
-                "",
-                "NOMOR", "TANGGAL",
-                "NOMOR", "TANGGAL",
-                "",
-                "", "", "Nama Rek", "Nomor Rek", "",
                 "", "",
                 ""
             ],
-            // r7: Column Numbers (1 s/d 46)
+            // r7: Column Numbers (1 s/d 31)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"
             ]
         ];
 
@@ -8855,7 +8665,7 @@
 
         let globalKibDNo = 1;
         let kibDTotalAnggaran = 0, kibDTotalRealisasi = 0, kibDTotalLuas = 0, kibDTotalUnit = 0;
-        let kibDTotalPerencanaan = 0, kibDTotalFisik = 0, kibDTotalPengawasan = 0, kibDTotalNilaiBarang = 0;
+        let kibDTotalNilaiBarang = 0;
 
         Object.keys(kibDGroups).forEach(groupKey => {
             const groupItems = kibDGroups[groupKey];
@@ -8892,9 +8702,6 @@
 
                         kibDTotalLuas += luasM2;
                         kibDTotalUnit += jumlahUnit;
-                        kibDTotalPerencanaan += nilaiPerencanaan;
-                        kibDTotalFisik += nilaiFisik;
-                        kibDTotalPengawasan += nilaiPengawasan;
                         kibDTotalNilaiBarang += totalNilaiBarang;
 
                         const rawKondisi = jItem.jaringan_kondisi || item.kondisi || 'Baik';
@@ -8924,11 +8731,7 @@
                             ...getKemitraanKontrakCols(item),
                             jumlahUnit,
                             jItem.jaringan_satuan || item.satuan || 'Paket / Jaringan',
-                            nilaiPerencanaan,
-                            nilaiFisik,
-                            nilaiPengawasan,
                             totalNilaiBarang,
-                            ...getKemitraanDokumenCols(item),
                             jItem.jaringan_alamat || item.alamat_barang || '-',
                             ...getKemitraanStep4Cols(item)
                         ]);
@@ -8944,9 +8747,6 @@
 
                     kibDTotalLuas += luasM2;
                     kibDTotalUnit += jumlahUnit;
-                    kibDTotalPerencanaan += nilaiPerencanaan;
-                    kibDTotalFisik += nilaiFisik;
-                    kibDTotalPengawasan += nilaiPengawasan;
                     kibDTotalNilaiBarang += totalNilaiBarang;
 
                     const rawKondisi = item.kondisi || 'Baik';
@@ -8976,11 +8776,7 @@
                         ...getKemitraanKontrakCols(item),
                         jumlahUnit,
                         item.satuan || 'Paket / Jaringan',
-                        nilaiPerencanaan,
-                        nilaiFisik,
-                        nilaiPengawasan,
                         totalNilaiBarang,
-                        ...getKemitraanDokumenCols(item),
                         item.alamat_barang || '-',
                         ...getKemitraanStep4Cols(item)
                     ]);
@@ -8988,25 +8784,22 @@
             });
         });
 
-        // Baris Footer Total KIB D (46 Kolom)
-        const kibDFooterRow = Array(46).fill("");
+        // Baris Footer Total KIB D (31 Kolom)
+        const kibDFooterRow = Array(31).fill("");
         kibDFooterRow[0] = "JUMLAH";
         kibDFooterRow[5] = kibDTotalAnggaran;
         kibDFooterRow[6] = kibDTotalRealisasi;
         kibDFooterRow[9] = kibDTotalLuas;
-        kibDFooterRow[27] = kibDTotalUnit;
-        kibDFooterRow[29] = kibDTotalPerencanaan;
-        kibDFooterRow[30] = kibDTotalFisik;
-        kibDFooterRow[31] = kibDTotalPengawasan;
-        kibDFooterRow[32] = kibDTotalNilaiBarang;
+        kibDFooterRow[21] = kibDTotalUnit;
+        kibDFooterRow[23] = kibDTotalNilaiBarang;
         kibDRows.push(kibDFooterRow);
 
         const kibDSignStartRow = kibDRows.length;
-        const kibDSignRows = buildKemitraanSignRows(46, 32, 1);
+        const kibDSignRows = buildKemitraanSignRows(31, 21, 1);
         kibDSignRows.forEach(r => kibDRows.push(r));
 
         const wsKibD = XLSX.utils.aoa_to_sheet(kibDRows);
-        wsKibD['!cols'] = Array(46).fill({wch: 18});
+        wsKibD['!cols'] = Array(31).fill({wch: 18});
         wsKibD['!cols'][0] = {wch: 6};
         wsKibD['!cols'][1] = {wch: 14}; wsKibD['!cols'][2] = {wch: 26};
         wsKibD['!cols'][3] = {wch: 18}; wsKibD['!cols'][4] = {wch: 32};
@@ -9018,19 +8811,11 @@
         wsKibD['!cols'][15] = {wch: 16}; wsKibD['!cols'][16] = {wch: 22};
         wsKibD['!cols'][17] = {wch: 16}; wsKibD['!cols'][18] = {wch: 22};
         wsKibD['!cols'][19] = {wch: 22}; wsKibD['!cols'][20] = {wch: 14};
-        wsKibD['!cols'][21] = {wch: 22}; wsKibD['!cols'][22] = {wch: 14};
-        wsKibD['!cols'][23] = {wch: 22}; wsKibD['!cols'][24] = {wch: 14};
-        wsKibD['!cols'][25] = {wch: 22}; wsKibD['!cols'][26] = {wch: 14};
-        wsKibD['!cols'][27] = {wch: 18}; wsKibD['!cols'][28] = {wch: 20};
-        wsKibD['!cols'][29] = {wch: 22}; wsKibD['!cols'][30] = {wch: 22};
-        wsKibD['!cols'][31] = {wch: 22}; wsKibD['!cols'][32] = {wch: 22};
-        wsKibD['!cols'][33] = {wch: 20}; wsKibD['!cols'][34] = {wch: 14};
-        wsKibD['!cols'][35] = {wch: 28}; wsKibD['!cols'][36] = {wch: 14};
-        wsKibD['!cols'][37] = {wch: 32}; wsKibD['!cols'][38] = {wch: 28};
-        wsKibD['!cols'][39] = {wch: 24}; wsKibD['!cols'][40] = {wch: 24};
-        wsKibD['!cols'][41] = {wch: 22}; wsKibD['!cols'][42] = {wch: 30};
-        wsKibD['!cols'][43] = {wch: 24}; wsKibD['!cols'][44] = {wch: 22};
-        wsKibD['!cols'][45] = {wch: 26};
+        wsKibD['!cols'][21] = {wch: 18}; wsKibD['!cols'][22] = {wch: 20};
+        wsKibD['!cols'][23] = {wch: 22}; wsKibD['!cols'][24] = {wch: 24};
+        wsKibD['!cols'][25] = {wch: 28}; wsKibD['!cols'][26] = {wch: 24};
+        wsKibD['!cols'][27] = {wch: 30}; wsKibD['!cols'][28] = {wch: 24};
+        wsKibD['!cols'][29] = {wch: 22}; wsKibD['!cols'][30] = {wch: 26};
 
         wsKibD['!merges'] = getKemitraanKibMerges([
             {s:{r:3,c:0}, e:{r:6,c:0}},
@@ -9043,7 +8828,7 @@
             {s:{r:5,c:4}, e:{r:6,c:4}},
             {s:{r:4,c:5}, e:{r:6,c:5}},
             {s:{r:4,c:6}, e:{r:6,c:6}},
-            {s:{r:3,c:7}, e:{r:3,c:36}},
+            {s:{r:3,c:7}, e:{r:3,c:23}},
             {s:{r:4,c:7}, e:{r:6,c:7}},
             {s:{r:4,c:8}, e:{r:6,c:8}},
             {s:{r:4,c:9}, e:{r:6,c:9}},
@@ -9056,60 +8841,49 @@
             {s:{r:5,c:14}, e:{r:6,c:14}},
             {s:{r:5,c:15}, e:{r:6,c:15}},
             {s:{r:5,c:16}, e:{r:5,c:18}},
-            {s:{r:4,c:19}, e:{r:4,c:26}},
+            {s:{r:4,c:19}, e:{r:4,c:20}},
             {s:{r:5,c:19}, e:{r:5,c:20}},
-            {s:{r:5,c:21}, e:{r:5,c:22}},
-            {s:{r:5,c:23}, e:{r:5,c:24}},
-            {s:{r:5,c:25}, e:{r:5,c:26}},
-            {s:{r:4,c:27}, e:{r:4,c:28}},
+            {s:{r:4,c:21}, e:{r:4,c:22}},
+            {s:{r:5,c:21}, e:{r:6,c:21}},
+            {s:{r:5,c:22}, e:{r:6,c:22}},
+            {s:{r:4,c:23}, e:{r:6,c:23}},
+            {s:{r:3,c:24}, e:{r:6,c:24}},
+            {s:{r:3,c:25}, e:{r:4,c:27}},
+            {s:{r:5,c:25}, e:{r:6,c:25}},
+            {s:{r:5,c:26}, e:{r:6,c:26}},
             {s:{r:5,c:27}, e:{r:6,c:27}},
+            {s:{r:3,c:28}, e:{r:4,c:29}},
             {s:{r:5,c:28}, e:{r:6,c:28}},
-            {s:{r:4,c:29}, e:{r:4,c:31}},
             {s:{r:5,c:29}, e:{r:6,c:29}},
-            {s:{r:5,c:30}, e:{r:6,c:30}},
-            {s:{r:5,c:31}, e:{r:6,c:31}},
-            {s:{r:4,c:32}, e:{r:6,c:32}},
-            {s:{r:4,c:33}, e:{r:5,c:34}},
-            {s:{r:4,c:35}, e:{r:5,c:36}},
-            {s:{r:3,c:37}, e:{r:6,c:37}},
-            {s:{r:3,c:38}, e:{r:4,c:42}},
-            {s:{r:5,c:38}, e:{r:6,c:38}},
-            {s:{r:5,c:39}, e:{r:6,c:39}},
-            {s:{r:5,c:40}, e:{r:5,c:41}},
-            {s:{r:5,c:42}, e:{r:6,c:42}},
-            {s:{r:3,c:43}, e:{r:4,c:44}},
-            {s:{r:5,c:43}, e:{r:6,c:43}},
-            {s:{r:5,c:44}, e:{r:6,c:44}},
-            {s:{r:3,c:45}, e:{r:6,c:45}}
-        ], 46, kibDTitleRows.length, kibDRows.length, true);
-        wsKibD['!merges'].push(...getKibSignatureMerges(kibDSignStartRow, 46, 32, 1, 6, 45));
+            {s:{r:3,c:30}, e:{r:6,c:30}}
+        ], 31, kibDTitleRows.length, kibDRows.length, true);
+        wsKibD['!merges'].push(...getKibSignatureMerges(kibDSignStartRow, 31, 21, 1, 6, 30));
 
-        applyKemitraanMasterSheetStyling(wsKibD, kibDRows.length, 46, 30, kibDTitleRows.length, true);
-        applySignatureBlockStyling(wsKibD, kibDSignStartRow, 46);
+        applyKemitraanMasterSheetStyling(wsKibD, kibDRows.length, 31, 17, kibDTitleRows.length, true);
+        applySignatureBlockStyling(wsKibD, kibDSignStartRow, 31);
         if (filterCat === 'all' || filterCat === 'KIB D') {
             XLSX.utils.book_append_sheet(wb, wsKibD, filterCat === 'all' ? "5. KIB D - Jaringan" : "KIB D - Jalan & Jaringan");
         }
 
         // ========================================================================
-        // 6. KIB E (ASET TETAP LAINNYA) - FORMAT KHUSUS MITRA (45 KOLOM)
+        // 6. KIB E (ASET TETAP LAINNYA) - FORMAT KHUSUS MITRA (32 KOLOM)
         // ========================================================================
         const kibETitleRows = getKemitraanKibTitleRows("ASET TETAP LAINNYA", yearLabel, filterTw, skemaLabel);
         const kibERows = [
             ...kibETitleRows,
-            // r3: Main Banner (45 kolom)
+            // r3: Main Banner (32 kolom)
             [
                 "NO",
                 "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
                 "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel,
                 "", "", "", "", "", "", "", "", "", "",
-                "", "", "", "", "", "", "", "", "", "",
-                "", "", "", "", "", "", "", "",
+                "", "", "", "", "", "", "",
                 "RUANG /\nPEMEGANG",
-                "PIHAK PENYEDIA / MITRA", "", "", "", "",
+                "PIHAK PENYEDIA / MITRA", "", "",
                 "Pejabat Pembuat Komitmen", "",
                 "KET."
             ],
-            // r4: Sub-Banner Level 1 (45 kolom)
+            // r4: Sub-Banner Level 1 (32 kolom)
             [
                 "",
                 "Jenis Aset (PMDN 108)", "",
@@ -9121,18 +8895,15 @@
                 "BUKU PERPUSTAKAAN", "", "",
                 "Barang Bercorak Kesenian / Kebudayaan", "", "", "",
                 "Hewan Ternak / Tumbuhan", "", "",
-                "Riwayat Kerja Sama / PKS", "", "", "", "", "", "", "",
-                "VOLUME", "", "",
-                "ADMINISTRASI PROYEK (Rp)",
-                "Total Nilai Barang (Rp)",
-                "SP2D", "",
-                "BAST pada Dokumen PKS/Kemitraan", "",
+                "Riwayat Kerja Sama / PKS", "",
+                "VOLUME", "",
+                "Nilai Barang (Rp)", "",
                 "",
-                "Nama Mitra Rekanan", "Pimpinan Mitra", "Rekening", "", "Alamat Mitra",
+                "", "", "",
                 "", "",
                 ""
             ],
-            // r5: Sub-Banner Level 2 (45 kolom)
+            // r5: Sub-Banner Level 2 (32 kolom)
             [
                 "",
                 "Kode", "Nama Jenis Aset",
@@ -9143,14 +8914,11 @@
                 "", "", "",
                 "", "", "", "",
                 "", "", "",
-                "PKS", "", "Surat Pesanan / Addendum", "", "Kwitansi / BA", "", "Invoice / Dokumen", "",
-                "", "", "",
+                "PKS", "",
+                "Jumlah Barang", "Nama Satuan Barang",
+                "Nilai Satuan Barang (Rp)", "Total Nilai Barang (Rp)",
                 "",
-                "",
-                "", "",
-                "", "",
-                "",
-                "", "", "Nama Rek", "Nomor Rek", "",
+                "Nama Mitra Rekanan", "Pimpinan Mitra", "Alamat Mitra",
                 "Nama", "NIP",
                 ""
             ],
@@ -9164,24 +8932,17 @@
                 "Asal Daerah", "Pencipta", "Spesifikasi", "Bahan",
                 "Ukuran (m/cm)", "Judul", "Spesifikasi",
                 "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Nomor", "Tanggal",
-                "Jumlah Barang", "Nama Satuan Barang", "Nilai Satuan Barang (Rp)",
+                "", "",
+                "", "",
                 "",
-                "",
-                "NOMOR", "TANGGAL",
-                "NOMOR", "TANGGAL",
-                "",
-                "", "", "", "", "",
+                "", "", "",
                 "", "",
                 ""
             ],
-            // r7: Column Numbers (45 kolom: 1-7, 8-36, 37-45)
+            // r7: Column Numbers (32 kolom: 1-7, 8-25, 26-32)
             [
                 "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
-                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32 = 30+31", "33", "34", "35", "36",
-                "37", "38", "39", "40", "41", "42", "43", "44", "45"
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32"
             ]
         ];
 
@@ -9193,7 +8954,7 @@
         });
 
         let globalKibENo = 1;
-        let kibETotalAnggaran = 0, kibETotalRealisasi = 0, kibETotalUnit = 0, kibETotalAdminProyek = 0, kibETotalNilaiBarang = 0;
+        let kibETotalAnggaran = 0, kibETotalRealisasi = 0, kibETotalUnit = 0, kibETotalNilaiBarang = 0;
 
         Object.keys(kibEGroups).forEach(groupKey => {
             const groupItems = kibEGroups[groupKey];
@@ -9228,7 +8989,6 @@
                         const ruangUnit = lItem.ruang_pemegang_lainnya || lItem.ruang_pemegang || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : 'RSUD dr. H. Koesnandi');
 
                         kibETotalUnit += qty;
-                        kibETotalAdminProyek += adminProyek;
                         kibETotalNilaiBarang += totalNilaiBarang;
 
                         const subType = lItem.kib_e_sub_type || spec.kib_e_sub_type || (lItem.lainnya_buku_judul || lItem.lainnya_pencipta ? 'buku' : (lItem.lainnya_asal_daerah || lItem.lainnya_bahan ? 'kesenian' : (lItem.lainnya_hewan_jenis ? 'hewan_tumbuhan' : 'buku')));
@@ -9267,9 +9027,7 @@
                             qty,
                             lItem.lainnya_satuan || item.satuan || 'Unit',
                             nilaiSatuan,
-                            adminProyek,
                             totalNilaiBarang,
-                            ...getKemitraanDokumenCols(item),
                             ruangUnit,
                             ...getKemitraanStep4Cols(item)
                         ]);
@@ -9283,7 +9041,6 @@
                     const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : 'RSUD dr. H. Koesnandi');
 
                     kibETotalUnit += jumlahBarang;
-                    kibETotalAdminProyek += adminProyek;
                     kibETotalNilaiBarang += totalNilaiBarang;
 
                     const col1to7 = buildKemitraanCol1to7(item, globalKibENo, isFirstRowInGroup, groupAnggaranTotal, groupRealisasiTotal, '1.5.2', 'ASET TETAP LAINNYA');
@@ -9307,9 +9064,7 @@
                         jumlahBarang,
                         item.satuan || 'Unit',
                         nilaiSatuan,
-                        adminProyek,
                         totalNilaiBarang,
-                        ...getKemitraanDokumenCols(item),
                         ruangUnit,
                         ...getKemitraanStep4Cols(item)
                     ]);
@@ -9317,22 +9072,21 @@
             });
         });
 
-        // Baris Footer Total KIB E (45 Kolom)
-        const kibEFooterRow = Array(45).fill("");
+        // Baris Footer Total KIB E (32 Kolom)
+        const kibEFooterRow = Array(32).fill("");
         kibEFooterRow[0] = "JUMLAH";
         kibEFooterRow[5] = kibETotalAnggaran;
         kibEFooterRow[6] = kibETotalRealisasi;
-        kibEFooterRow[27] = kibETotalUnit;
-        kibEFooterRow[30] = kibETotalAdminProyek;
-        kibEFooterRow[31] = kibETotalNilaiBarang;
+        kibEFooterRow[21] = kibETotalUnit;
+        kibEFooterRow[24] = kibETotalNilaiBarang;
         kibERows.push(kibEFooterRow);
 
         const kibESignStartRow = kibERows.length;
-        const kibESignRows = buildKemitraanSignRows(45, 31, 1);
+        const kibESignRows = buildKemitraanSignRows(32, 21, 1);
         kibESignRows.forEach(r => kibERows.push(r));
 
         const wsKibE = XLSX.utils.aoa_to_sheet(kibERows);
-        wsKibE['!cols'] = Array(45).fill({wch: 18});
+        wsKibE['!cols'] = Array(32).fill({wch: 18});
         wsKibE['!cols'][0] = {wch: 6};
         wsKibE['!cols'][1] = {wch: 14}; wsKibE['!cols'][2] = {wch: 26};
         wsKibE['!cols'][3] = {wch: 18}; wsKibE['!cols'][4] = {wch: 32};
@@ -9344,18 +9098,12 @@
         wsKibE['!cols'][15] = {wch: 18}; wsKibE['!cols'][16] = {wch: 16};
         wsKibE['!cols'][17] = {wch: 20}; wsKibE['!cols'][18] = {wch: 24};
         wsKibE['!cols'][19] = {wch: 22}; wsKibE['!cols'][20] = {wch: 14};
-        wsKibE['!cols'][21] = {wch: 22}; wsKibE['!cols'][22] = {wch: 14};
-        wsKibE['!cols'][23] = {wch: 22}; wsKibE['!cols'][24] = {wch: 14};
-        wsKibE['!cols'][25] = {wch: 22}; wsKibE['!cols'][26] = {wch: 14};
-        wsKibE['!cols'][27] = {wch: 16}; wsKibE['!cols'][28] = {wch: 18};
-        wsKibE['!cols'][29] = {wch: 22}; wsKibE['!cols'][30] = {wch: 22};
-        wsKibE['!cols'][31] = {wch: 22}; wsKibE['!cols'][32] = {wch: 20};
-        wsKibE['!cols'][33] = {wch: 14}; wsKibE['!cols'][34] = {wch: 28};
-        wsKibE['!cols'][35] = {wch: 14}; wsKibE['!cols'][36] = {wch: 28};
-        wsKibE['!cols'][37] = {wch: 28}; wsKibE['!cols'][38] = {wch: 24};
-        wsKibE['!cols'][39] = {wch: 24}; wsKibE['!cols'][40] = {wch: 22};
-        wsKibE['!cols'][41] = {wch: 30}; wsKibE['!cols'][42] = {wch: 24};
-        wsKibE['!cols'][43] = {wch: 22}; wsKibE['!cols'][44] = {wch: 26};
+        wsKibE['!cols'][21] = {wch: 16}; wsKibE['!cols'][22] = {wch: 18};
+        wsKibE['!cols'][23] = {wch: 22}; wsKibE['!cols'][24] = {wch: 22};
+        wsKibE['!cols'][25] = {wch: 20};
+        wsKibE['!cols'][26] = {wch: 28}; wsKibE['!cols'][27] = {wch: 24};
+        wsKibE['!cols'][28] = {wch: 30}; wsKibE['!cols'][29] = {wch: 24};
+        wsKibE['!cols'][30] = {wch: 22}; wsKibE['!cols'][31] = {wch: 26};
 
         wsKibE['!merges'] = getKemitraanKibMerges([
             {s:{r:3,c:0}, e:{r:6,c:0}},
@@ -9368,7 +9116,7 @@
             {s:{r:5,c:4}, e:{r:6,c:4}},
             {s:{r:4,c:5}, e:{r:6,c:5}},
             {s:{r:4,c:6}, e:{r:6,c:6}},
-            {s:{r:3,c:7}, e:{r:3,c:35}},
+            {s:{r:3,c:7}, e:{r:3,c:24}},
             {s:{r:4,c:7}, e:{r:6,c:7}},
             {s:{r:4,c:8}, e:{r:6,c:8}},
             {s:{r:4,c:9}, e:{r:4,c:11}},
@@ -9384,34 +9132,28 @@
             {s:{r:5,c:16}, e:{r:6,c:16}},
             {s:{r:5,c:17}, e:{r:6,c:17}},
             {s:{r:5,c:18}, e:{r:6,c:18}},
-            {s:{r:4,c:19}, e:{r:4,c:26}},
+            {s:{r:4,c:19}, e:{r:4,c:20}},
             {s:{r:5,c:19}, e:{r:5,c:20}},
-            {s:{r:5,c:21}, e:{r:5,c:22}},
-            {s:{r:5,c:23}, e:{r:5,c:24}},
-            {s:{r:5,c:25}, e:{r:5,c:26}},
-            {s:{r:4,c:27}, e:{r:4,c:29}},
+            {s:{r:4,c:21}, e:{r:4,c:22}},
+            {s:{r:5,c:21}, e:{r:6,c:21}},
+            {s:{r:5,c:22}, e:{r:6,c:22}},
+            {s:{r:4,c:23}, e:{r:4,c:24}},
+            {s:{r:5,c:23}, e:{r:6,c:23}},
+            {s:{r:5,c:24}, e:{r:6,c:24}},
+            {s:{r:3,c:25}, e:{r:6,c:25}},
+            {s:{r:3,c:26}, e:{r:4,c:28}},
+            {s:{r:5,c:26}, e:{r:6,c:26}},
             {s:{r:5,c:27}, e:{r:6,c:27}},
             {s:{r:5,c:28}, e:{r:6,c:28}},
+            {s:{r:3,c:29}, e:{r:4,c:30}},
             {s:{r:5,c:29}, e:{r:6,c:29}},
-            {s:{r:4,c:30}, e:{r:6,c:30}},
-            {s:{r:4,c:31}, e:{r:6,c:31}},
-            {s:{r:4,c:32}, e:{r:5,c:33}},
-            {s:{r:4,c:34}, e:{r:5,c:35}},
-            {s:{r:3,c:36}, e:{r:6,c:36}},
-            {s:{r:3,c:37}, e:{r:4,c:41}},
-            {s:{r:5,c:37}, e:{r:6,c:37}},
-            {s:{r:5,c:38}, e:{r:6,c:38}},
-            {s:{r:5,c:39}, e:{r:5,c:40}},
-            {s:{r:5,c:41}, e:{r:6,c:41}},
-            {s:{r:3,c:42}, e:{r:4,c:43}},
-            {s:{r:5,c:42}, e:{r:6,c:42}},
-            {s:{r:5,c:43}, e:{r:6,c:43}},
-            {s:{r:3,c:44}, e:{r:6,c:44}}
-        ], 45, kibETitleRows.length, kibERows.length, true);
-        wsKibE['!merges'].push(...getKibSignatureMerges(kibESignStartRow, 45, 31, 1, 6, 44));
+            {s:{r:5,c:30}, e:{r:6,c:30}},
+            {s:{r:3,c:31}, e:{r:6,c:31}}
+        ], 32, kibETitleRows.length, kibERows.length, true);
+        wsKibE['!merges'].push(...getKibSignatureMerges(kibESignStartRow, 32, 21, 1, 6, 31));
 
-        applyKemitraanMasterSheetStyling(wsKibE, kibERows.length, 45, 29, kibETitleRows.length, true);
-        applySignatureBlockStyling(wsKibE, kibESignStartRow, 45);
+        applyKemitraanMasterSheetStyling(wsKibE, kibERows.length, 32, 18, kibETitleRows.length, true);
+        applySignatureBlockStyling(wsKibE, kibESignStartRow, 32);
         if (filterCat === 'all' || filterCat === 'KIB E') {
             XLSX.utils.book_append_sheet(wb, wsKibE, filterCat === 'all' ? "6. KIB E - Aset Lainnya" : "KIB E - Aset Lainnya");
         }
@@ -9521,11 +9263,6 @@
                     atb_pengembang: '',
                     atb_masa_manfaat: '4',
                     atb_nomor_lisensi: '',
-
-                    // ASET LAIN - Aset Lain-Lain (1.5.4)
-                    aset_lain_kondisi: 'Rusak Berat',
-                    aset_lain_alasan: 'Tidak digunakan lagi dalam operasional RSUD / Menunggu Penghapusan',
-                    aset_lain_lokasi: '',
 
                     // KEMITRAAN - Kemitraan Pihak Ketiga (1.5.2)
                     kemitraan_mitra: '',
@@ -10048,11 +9785,6 @@
                         this.reklasSpekBaru.atb_nama_software = spec.nama_software || it.nama_barang || '';
                         this.reklasSpekBaru.atb_pengembang = spec.pengembang || '';
                         this.reklasSpekBaru.atb_masa_manfaat = spec.masa_manfaat || '4';
-                        this.reklasSpekBaru.atb_nomor_lisensi = spec.nomor_lisensi || '';
-                    } else if (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN') {
-                        this.reklasSpekBaru.aset_lain_kondisi = spec.kondisi || spec.aset_lain_kondisi || 'Rusak Berat';
-                        this.reklasSpekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Tidak digunakan lagi dalam operasional RSUD / Menunggu Penghapusan';
-                        this.reklasSpekBaru.aset_lain_lokasi = spec.lokasi || it.lokasi_barang || defaultAlamat;
                     } else if (target === 'KEMITRAAN') {
                         this.reklasSpekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
                         this.reklasSpekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.kemitraan_perjanjian_no || '';
@@ -10519,6 +10251,16 @@
                         }).length;
                     }
 
+                    // KHUSUS PELIMPAHAN / MUTASI ANTAR-OPD
+                    if (sDana === 'pelimpahan' || sDana === 'mutasi' || sDana === 'pelimpahan_skpd') {
+                        return (this.astaps || []).filter(item => {
+                            const isPelimpahan = item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
+                            if (!isPelimpahan) return false;
+                            const matchYear = fYear === 'all' || String(item.tahun_perolehan) === String(fYear);
+                            return matchYear && isTwMatch(item.triwulan, fTw);
+                        }).length;
+                    }
+
                     // KHUSUS BELANJA MODAL (Default)
                     const fCat = this.exportCategory;
                     const isRekap = this.exportFormatType === 'rekap_triwulan';
@@ -10585,6 +10327,13 @@
                             this.isSubmittingExport = false;
                             this.showExportModal = false;
                             window.location.href = "{{ route('master.hibah') }}";
+                            return;
+                        }
+
+                        if (this.exportSumberDana === 'pelimpahan' || this.exportSumberDana === 'mutasi') {
+                            this.isSubmittingExport = false;
+                            this.showExportModal = false;
+                            window.location.href = "{{ route('mutasi.eksternal') }}";
                             return;
                         }
 

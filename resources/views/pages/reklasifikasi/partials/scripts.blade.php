@@ -1,5 +1,10 @@
-<!-- PUSTAKA EXCEL DENGAN STYLING DUKUNGAN FULL -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<!-- PUSTAKA EXCEL DENGAN OFFLINE FALLBACK -->
+<script src="{{ asset('js/xlsx.bundle.js') }}"></script>
+<script>
+    if (typeof XLSX === 'undefined') {
+        document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"><\/script>');
+    }
+</script>
 
 <!-- ALPINE.JS SCRIPTS MASTER REKLASIFIKASI (PMDN 108 & SPEK DINAMIS) -->
 <script>
@@ -250,9 +255,6 @@
                     atb_pengembang: '',
                     atb_masa_manfaat: 4,
                     atb_nomor_lisensi: '',
-                    aset_lain_kondisi: 'Rusak Berat',
-                    aset_lain_alasan: 'Tidak digunakan lagi dalam operasional RSUD / Menunggu Penghapusan',
-                    aset_lain_lokasi: '',
                     kemitraan_mitra: '',
                     kemitraan_perjanjian_no: '',
                     kemitraan_jangka_waktu: '5 Tahun',
@@ -273,8 +275,6 @@
                     'KIB E': '1.3.5',
                     'KIB F': '1.3.6',
                     'ATB':   '1.5.3',
-                    'ASET LAIN': '1.5.4',
-                    'ASET LAIN-LAIN': '1.5.4',
                     'KEMITRAAN': '1.5.2',
                 };
                 return map[this.formData.tujuan_kib] || '';
@@ -536,14 +536,6 @@
                         this.formData.jenis_reklasifikasi_asal_id = extraRow.id;
                     }
                     this.formData.asal_kib = 'EKSTRAKOMPTABEL';
-                    this.formData.tujuan_kib = 'KIB B';
-                    this.onTujuanKibChange();
-                } else if (this.formData.jenis_reklas === 'KAPITALISASI_INTRAKOM') {
-                    const extraRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_EXTRACOM');
-                    if (extraRow) {
-                        this.formData.jenis_reklasifikasi_asal_id = extraRow.id;
-                    }
-                    this.formData.asal_kib = 'EKSTRAKOMPTABEL';
                     // Default tujuan KIB B, bisa diubah user
                     if (!this.formData.tujuan_kib) {
                         this.formData.tujuan_kib = 'KIB B';
@@ -697,6 +689,11 @@
                 this.formData.spekBaru.atb_pengembang = spec.pengembang || '';
                 this.formData.spekBaru.atb_masa_manfaat = spec.masa_manfaat || 4;
                 this.formData.spekBaru.atb_nomor_lisensi = spec.nomor_lisensi || '';
+
+                // KEMITRAAN
+                this.formData.spekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
+                this.formData.spekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.kemitraan_perjanjian_no || '';
+                this.formData.spekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
             },
 
             openDetailReklas(item) {

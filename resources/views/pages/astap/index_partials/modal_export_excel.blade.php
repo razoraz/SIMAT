@@ -73,7 +73,7 @@
                         </span>
                         <span class="text-[10px] text-slate-400">Pilih Jenis Pengadaan</span>
                     </label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
                         <!-- Tab 1: Belanja Modal -->
                         <button type="button" @click="exportSumberDana = 'belanja_modal'"
                             class="p-2 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer"
@@ -107,7 +107,18 @@
                             <span class="text-[9.5px] text-slate-400 mt-1 leading-tight">BAST Masuk</span>
                         </button>
 
-                        <!-- Tab 4: Belanja Barang (Disabled) -->
+                        <!-- Tab 4: Pelimpahan / Mutasi SKPD -->
+                        <button type="button" @click="exportSumberDana = 'pelimpahan'"
+                            class="p-2 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer"
+                            :class="exportSumberDana === 'pelimpahan' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/60 shadow-md ring-1 ring-indigo-500/30' : 'bg-slate-950/60 text-slate-400 border-slate-800 hover:bg-slate-950 hover:text-slate-200'">
+                            <div class="flex items-center justify-between w-full">
+                                <span class="text-xs font-bold flex items-center gap-1">🔄 Pelimpahan</span>
+                                <span x-show="exportSumberDana === 'pelimpahan'" class="text-indigo-400 font-black text-xs">✓</span>
+                            </div>
+                            <span class="text-[9.5px] text-indigo-300/80 mt-1 leading-tight">Mutasi Antar-OPD</span>
+                        </button>
+
+                        <!-- Tab 5: Belanja Barang (Disabled) -->
                         <div class="p-2 rounded-xl border border-slate-800/40 bg-slate-950/30 text-slate-600 opacity-60 flex flex-col justify-between cursor-not-allowed select-none">
                             <div class="flex items-center justify-between w-full">
                                 <span class="text-xs font-semibold">📦 Barang</span>
@@ -137,7 +148,7 @@
                     </p>
                 </div>
 
-                <!-- 4. KHUSUS HIBAH: INFO & AKSI HIBAH -->
+                <!-- 4A. KHUSUS HIBAH: INFO & AKSI HIBAH -->
                 <div x-show="exportFormatType === 'sipenerbang' && exportSumberDana === 'hibah'" class="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 space-y-2">
                     <div class="flex items-center gap-2 text-amber-300 font-bold text-xs">
                         <span>🎁 Laporan Aset Perolehan Hibah</span>
@@ -148,6 +159,20 @@
                     <a href="{{ route('master.hibah') }}" 
                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold transition-all">
                         <span>Buka Modul Kelola Hibah ↗</span>
+                    </a>
+                </div>
+
+                <!-- 4B. KHUSUS PELIMPAHAN / MUTASI: INFO & AKSI MUTASI EKSTERNAL -->
+                <div x-show="exportFormatType === 'sipenerbang' && exportSumberDana === 'pelimpahan'" class="p-3.5 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 space-y-2">
+                    <div class="flex items-center gap-2 text-indigo-300 font-bold text-xs">
+                        <span>🔄 Laporan Aset Pelimpahan / Mutasi Antar-OPD</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 leading-relaxed">
+                        Pencatatan aset dari penyerahan/pelimpahan SKPD atau Dinas luar Pemkab Bondowoso (BAMB Masuk) dengan Berita Acara Serah Terima Mutasi Eksternal.
+                    </p>
+                    <a href="{{ route('mutasi.eksternal') }}" 
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold transition-all">
+                        <span>Buka Modul Mutasi Eksternal ↗</span>
                     </a>
                 </div>
 
@@ -169,7 +194,7 @@
                 <!-- 4. PILIHAN TRIWULAN (TW I - IV / SEMUA) -->
                 <div>
                     <label class="block text-cyan-300 font-bold text-xs mb-1 flex items-center justify-between">
-                        <span x-text="exportSumberDana === 'kemitraan' ? '📊 TRIWULAN PKS / KONSESI' : '📊 TRIWULAN PENGADAAN (BAST)'"></span>
+                        <span x-text="exportSumberDana === 'kemitraan' ? '📊 TRIWULAN PKS / KONSESI' : (exportSumberDana === 'pelimpahan' ? '📊 TRIWULAN PELIMPAHAN (BAMB)' : '📊 TRIWULAN PENGADAAN (BAST)')"></span>
                         <span class="text-[10px] text-cyan-400/80 font-mono">TW I - IV</span>
                     </label>
                     <div class="grid grid-cols-2 gap-1.5">
@@ -264,13 +289,13 @@
 
                 <!-- Info Ringkasan Data Siap Ekspor -->
                 <div class="p-2.5 rounded-xl border flex items-center justify-between"
-                     :class="exportSumberDana === 'kemitraan' ? 'bg-slate-950/80 border-cyan-500/30' : (exportSumberDana === 'hibah' ? 'bg-slate-950/80 border-amber-500/30' : 'bg-slate-950/80 border-emerald-500/30')">
+                     :class="exportSumberDana === 'kemitraan' ? 'bg-slate-950/80 border-cyan-500/30' : (exportSumberDana === 'hibah' ? 'bg-slate-950/80 border-amber-500/30' : (exportSumberDana === 'pelimpahan' ? 'bg-slate-950/80 border-indigo-500/30' : 'bg-slate-950/80 border-emerald-500/30'))">
                     <div class="flex items-center space-x-2 text-xs">
-                        <span class="text-base" x-text="exportSumberDana === 'kemitraan' ? '🤝' : (exportSumberDana === 'hibah' ? '🎁' : '📋')"></span>
+                        <span class="text-base" x-text="exportSumberDana === 'kemitraan' ? '🤝' : (exportSumberDana === 'hibah' ? '🎁' : (exportSumberDana === 'pelimpahan' ? '🔄' : '📋'))"></span>
                         <span class="text-slate-300 font-medium">Aset siap diekspor:</span>
                     </div>
                     <span class="px-2.5 py-0.5 rounded-lg font-mono font-bold text-xs border"
-                          :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : (exportSumberDana === 'hibah' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40')"
+                          :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : (exportSumberDana === 'hibah' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : (exportSumberDana === 'pelimpahan' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'))"
                           x-text="exportFilteredCount + ' Item Data'"></span>
                 </div>
             </div>
@@ -284,9 +309,9 @@
                 <button type="button" @click="submitExport()"
                     :disabled="isSubmittingExport"
                     class="px-5 py-2 rounded-xl font-black text-xs shadow-lg transition-all flex items-center space-x-2 cursor-pointer active:scale-95 disabled:opacity-50"
-                    :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20' : (exportSumberDana === 'hibah' ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20')">
+                    :class="exportSumberDana === 'kemitraan' ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20' : (exportSumberDana === 'hibah' ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20' : (exportSumberDana === 'pelimpahan' ? 'bg-indigo-500 hover:bg-indigo-400 text-slate-950 shadow-indigo-500/20' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/20'))">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span x-text="isSubmittingExport ? 'Mengekspor...' : 'Unduh File Excel'"></span>
+                    <span x-text="isSubmittingExport ? 'Mengekspor...' : (exportSumberDana === 'pelimpahan' ? 'Buka Modul Mutasi' : (exportSumberDana === 'hibah' ? 'Buka Modul Hibah' : 'Unduh File Excel'))"></span>
                 </button>
             </div>
         </div>
