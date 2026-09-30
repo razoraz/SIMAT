@@ -267,8 +267,8 @@
                                         <td class="px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="sub.volume || 1"></td>
                                         <td class="px-1 py-1 text-center" style="border: 1px solid black;" x-text="sub.satuan || 'Unit'"></td>
                                         <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Baik' || !sub.kondisi) ? '✓' : ''"></td>
-                                        <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB') ? '✓' : ''"></td>
-                                        <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Rusak Berat' || sub.kondisi === 'RB' || sub.kondisi === 'Rusak Ringan' || sub.kondisi === 'Rusak') ? '✓' : ''"></td>
+                                        <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB' || sub.kondisi === 'Rusak Ringan' || sub.kondisi === 'RR') ? '✓' : ''"></td>
+                                        <td class="px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Rusak Berat' || sub.kondisi === 'RB' || sub.kondisi === 'Rusak') ? '✓' : ''"></td>
                                         <td class="px-2 py-1 text-right font-mono text-[8.5pt]" style="border: 1px solid black;" x-text="formatRupiah(sub.harga_satuan)"></td>
                                         <td class="px-2 py-1 text-right font-mono font-bold text-[8.5pt]" style="border: 1px solid black;" x-text="formatRupiah(sub.nilai_total)"></td>
                                     </tr>

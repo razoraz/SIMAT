@@ -11655,28 +11655,27 @@
 
                 astaps: window.__simatAstaps || [],
 
-                // Hitung statistik kondisi dari registers suatu aset (Baik, Kurang Baik, Rusak Ringan, Rusak Berat)
+                // Hitung statistik kondisi dari registers suatu aset (Hanya 3 Kondisi: Baik, Kurang Baik, Rusak Berat)
                 getKondisiStats(item) {
                     if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_ringan: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
                     const regs = item.registers || [];
                     const total = regs.length;
                     if (total === 0) {
                         const k = item.kondisi || item.kondisi_barang || 'Baik';
-                        const isKb = k === 'Kurang Baik' || k === 'KB';
-                        const isRr = k === 'Rusak Ringan' || k === 'RR';
+                        const isKb = k === 'Kurang Baik' || k === 'KB' || k === 'Rusak Ringan' || k === 'RR';
                         const isRb = k === 'Rusak Berat' || k === 'RB' || k === 'Rusak';
-                        const dominan = isKb ? 'Kurang Baik' : (isRr ? 'Rusak Ringan' : (isRb ? 'Rusak Berat' : 'Baik'));
-                        const badgeClass = dominan === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (dominan === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : (dominan === 'Rusak Ringan' ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'));
-                        const dotClass = dominan === 'Baik' ? 'bg-emerald-400' : (dominan === 'Kurang Baik' ? 'bg-amber-400' : (dominan === 'Rusak Ringan' ? 'bg-orange-400' : 'bg-rose-400'));
+                        const dominan = isKb ? 'Kurang Baik' : (isRb ? 'Rusak Berat' : 'Baik');
+                        const badgeClass = dominan === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (dominan === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30');
+                        const dotClass = dominan === 'Baik' ? 'bg-emerald-400' : (dominan === 'Kurang Baik' ? 'bg-amber-400' : 'bg-rose-400');
                         return {
                             total: 1,
                             baik: dominan === 'Baik' ? 1 : 0,
                             kurang_baik: isKb ? 1 : 0,
-                            rusak_ringan: isRr ? 1 : 0,
+                            rusak_ringan: 0,
                             rusak_berat: isRb ? 1 : 0,
                             pct_baik: dominan === 'Baik' ? 100 : 0,
                             pct_kb: isKb ? 100 : 0,
-                            pct_rr: isRr ? 100 : 0,
+                            pct_rr: 0,
                             pct_rb: isRb ? 100 : 0,
                             kondisi_dominan: dominan,
                             is_multi: false,
@@ -11686,28 +11685,25 @@
                         };
                     }
                     const baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
-                    const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB').length;
-                    const rr   = regs.filter(r => r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
+                    const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB' || r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
                     const rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak').length;
-                    const dominan = (baik >= kb && baik >= rr && baik >= rb) ? 'Baik' : ((kb >= rr && kb >= rb) ? 'Kurang Baik' : ((rr >= rb) ? 'Rusak Ringan' : 'Rusak Berat'));
-                    const isSingle = (baik === total) || (kb === total) || (rr === total) || (rb === total);
+                    const dominan = (baik >= kb && baik >= rb) ? 'Baik' : ((kb >= rb) ? 'Kurang Baik' : 'Rusak Berat');
+                    const isSingle = (baik === total) || (kb === total) || (rb === total);
 
                     const pct_baik = Math.round((baik / total) * 100);
                     const pct_kb   = Math.round((kb   / total) * 100);
-                    const pct_rr   = Math.round((rr   / total) * 100);
+                    const pct_rr   = 0;
                     const pct_rb   = Math.round((rb   / total) * 100);
 
                     let parts = [];
                     if (baik > 0) parts.push(`${pct_baik}% Baik (${baik}/${total})`);
                     if (kb > 0)   parts.push(`${pct_kb}% Kurang Baik (${kb}/${total})`);
-                    if (rr > 0)   parts.push(`${pct_rr}% Rusak Ringan (${rr}/${total})`);
                     if (rb > 0)   parts.push(`${pct_rb}% Rusak Berat (${rb}/${total})`);
 
                     let text = parts.join(' • ');
                     if (isSingle) {
                         if (baik === total) text = total > 1 ? `Baik (${total} Aset)` : 'Baik';
                         else if (kb === total) text = total > 1 ? `Kurang Baik (${total} Aset)` : 'Kurang Baik';
-                        else if (rr === total) text = total > 1 ? `Rusak Ringan (${total} Aset)` : 'Rusak Ringan';
                         else if (rb === total) text = total > 1 ? `Rusak Berat (${total} Aset)` : 'Rusak Berat';
                     }
 
@@ -11716,18 +11712,16 @@
                         badgeClass = 'bg-rose-500/15 text-rose-300 border-rose-500/30';
                     } else if (kb > 0 && kb >= baik) {
                         badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-                    } else if (rr > 0 && rr >= baik) {
-                        badgeClass = 'bg-orange-500/15 text-orange-300 border-orange-500/30';
                     } else if (!isSingle) {
                         badgeClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
                     }
 
-                    let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : (pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'));
+                    let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : 'bg-amber-400');
 
                     return {
                         total,
-                        baik, kurang_baik: kb, rusak_ringan: rr, rusak_berat: rb,
-                        pct_baik, pct_kb, pct_rr, pct_rb,
+                        baik, kurang_baik: kb, rusak_ringan: 0, rusak_berat: rb,
+                        pct_baik, pct_kb, pct_rr: 0, pct_rb,
                         kondisi_dominan: dominan,
                         is_multi: !isSingle,
                         parts,
@@ -11739,13 +11733,13 @@
 
                 // Hitung statistik persentase kondisi untuk rincian item atau master ASTAP
                 getRincianKondisiStats(astap, idx = 0, type = null) {
-                    if (!astap) return { total: 0, text: 'Baik (100%)', pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, is_multi: false, badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
+                    if (!astap) return { total: 0, text: 'Baik', pct_baik: 100, pct_kb: 0, pct_rb: 0, is_multi: false, badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
 
                     let regs = astap.registers || [];
+                    let items = [];
 
                     // Jika ada multi-item dalam spesifikasi_json dan type diberikan
                     if (type) {
-                        let items = [];
                         if (type === 'tanah_items') items = this.getTanahItemsForDetail(astap);
                         else if (type === 'mesin_items') items = this.getMesinItemsForDetail(astap);
                         else if (type === 'gedung_items') items = this.getGedungItemsForDetail(astap);
@@ -11754,7 +11748,7 @@
                         else if (type === 'kdp_items') items = this.getKdpItemsForDetail(astap);
                         else if (type === 'atb_items') items = this.getAtbItemsForDetail(astap);
 
-                        if (items.length > 1) {
+                        if (items && items.length > 0 && regs.length > 0) {
                             const qtyKeyMap = {
                                 'tanah_items': 'tanah_jumlah_bidang',
                                 'mesin_items': 'mesin_jumlah_barang',
@@ -11778,85 +11772,90 @@
                     const total = regs.length;
                     if (total === 0) {
                         let fallbackKondisi = 'Baik';
-                        if (type && astap.spesifikasi_json?.[type]?.[idx]) {
-                            const it = astap.spesifikasi_json[type][idx];
-                            fallbackKondisi = it.mesin_kondisi || it.tanah_kondisi || it.gedung_kondisi || it.jaringan_kondisi || it.lainnya_kondisi || it.kdp_kondisi || it.atb_kondisi || astap.kondisi_barang || 'Baik';
+                        let it = null;
+                        if (items && items[idx]) {
+                            it = items[idx];
+                        } else if (type && astap.spesifikasi_json) {
+                            let spec = astap.spesifikasi_json;
+                            if (typeof spec === 'string') {
+                                try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                            }
+                            if (spec && spec[type] && spec[type][idx]) {
+                                it = spec[type][idx];
+                            }
+                        }
+                        if (it) {
+                            fallbackKondisi = it.tanah_kondisi || it.mesin_kondisi || it.gedung_kondisi || it.jaringan_kondisi || it.lainnya_kondisi || it.kdp_kondisi || it.atb_kondisi || astap.kondisi_barang || 'Baik';
                         } else {
                             fallbackKondisi = astap.kondisi_barang || 'Baik';
                         }
                         if (fallbackKondisi === 'B') fallbackKondisi = 'Baik';
-                        if (fallbackKondisi === 'KB') fallbackKondisi = 'Kurang Baik';
-                        if (fallbackKondisi === 'RR') fallbackKondisi = 'Rusak Ringan';
+                        if (fallbackKondisi === 'KB' || fallbackKondisi === 'RR' || fallbackKondisi === 'Rusak Ringan') fallbackKondisi = 'Kurang Baik';
                         if (fallbackKondisi === 'RB' || fallbackKondisi === 'Rusak') fallbackKondisi = 'Rusak Berat';
 
                         return {
                             total: 1,
                             baik: fallbackKondisi === 'Baik' ? 1 : 0,
                             kurang_baik: fallbackKondisi === 'Kurang Baik' ? 1 : 0,
-                            rusak_ringan: fallbackKondisi === 'Rusak Ringan' ? 1 : 0,
                             rusak_berat: fallbackKondisi === 'Rusak Berat' ? 1 : 0,
                             pct_baik: fallbackKondisi === 'Baik' ? 100 : 0,
                             pct_kb: fallbackKondisi === 'Kurang Baik' ? 100 : 0,
-                            pct_rr: fallbackKondisi === 'Rusak Ringan' ? 100 : 0,
                             pct_rb: fallbackKondisi === 'Rusak Berat' ? 100 : 0,
                             is_multi: false,
-                            text: fallbackKondisi + ' (100%)',
+                            text: fallbackKondisi,
                             badge_class: fallbackKondisi === 'Baik' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
                                         (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                                        (fallbackKondisi === 'Rusak Ringan' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
-                                        'bg-rose-500/20 text-rose-300 border-rose-500/30')),
+                                        'bg-rose-500/20 text-rose-300 border-rose-500/30'),
                             dot_class: fallbackKondisi === 'Baik' ? 'bg-emerald-400' :
-                                      (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-400' :
-                                      (fallbackKondisi === 'Rusak Ringan' ? 'bg-orange-400' : 'bg-rose-400'))
+                                      (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-400' : 'bg-rose-400')
                         };
                     }
 
-                    const baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
-                    const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB').length;
-                    const rr   = regs.filter(r => r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
-                    const rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak').length;
+                    let baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
+                    let kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB' || r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
+                    let rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak').length;
+
+                    if (baik === 0 && kb === 0 && rb === 0) {
+                        baik = total;
+                    }
 
                     const pct_baik = Math.round((baik / total) * 100);
                     const pct_kb   = Math.round((kb   / total) * 100);
-                    const pct_rr   = Math.round((rr   / total) * 100);
                     const pct_rb   = Math.round((rb   / total) * 100);
 
-                    const isSingle = (baik === total) || (kb === total) || (rr === total) || (rb === total);
+                    const isSingle = (baik === total) || (kb === total) || (rb === total);
 
                     let parts = [];
                     if (baik > 0) parts.push(`${pct_baik}% Baik (${baik}/${total})`);
                     if (kb > 0)   parts.push(`${pct_kb}% Kurang Baik (${kb}/${total})`);
-                    if (rr > 0)   parts.push(`${pct_rr}% Rusak Ringan (${rr}/${total})`);
                     if (rb > 0)   parts.push(`${pct_rb}% Rusak Berat (${rb}/${total})`);
 
                     let text = parts.join(' • ');
                     if (isSingle) {
-                        if (baik === total) text = `Baik (100%)`;
-                        else if (kb === total) text = `Kurang Baik (100%)`;
-                        else if (rr === total) text = `Rusak Ringan (100%)`;
-                        else if (rb === total) text = `Rusak Berat (100%)`;
+                        if (baik === total) text = total > 1 ? `Baik (${total} Aset)` : 'Baik';
+                        else if (kb === total) text = total > 1 ? `Kurang Baik (${total} Aset)` : 'Kurang Baik';
+                        else if (rb === total) text = total > 1 ? `Rusak Berat (${total} Aset)` : 'Rusak Berat';
                     }
+                    if (!text) text = 'Baik';
 
                     let badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
                     if (rb > 0 && rb >= baik && rb >= kb) {
                         badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
                     } else if (kb > 0 && kb >= baik) {
                         badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
-                    } else if (rr > 0 && rr >= baik) {
-                        badgeClass = 'bg-orange-500/20 text-orange-300 border-orange-500/30';
                     } else if (!isSingle) {
                         badgeClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
                     }
 
-                    let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : (pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'));
+                    let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : 'bg-amber-400');
 
                     return {
                         total,
-                        baik, kurang_baik: kb, rusak_ringan: rr, rusak_berat: rb,
-                        pct_baik, pct_kb, pct_rr, pct_rb,
+                        baik, kurang_baik: kb, rusak_berat: rb,
+                        pct_baik, pct_kb, pct_rb,
                         is_multi: !isSingle,
                         parts,
-                        text,
+                        text: text || 'Baik',
                         badge_class: badgeClass,
                         dot_class: dotClass
                     };

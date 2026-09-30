@@ -168,8 +168,8 @@
                                                 <td class="border border-black px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="sub.qty || sub.vol || 1"></td>
                                                 <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="sub.satuan || 'Unit'"></td>
                                                 <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Baik' || !sub.kondisi) ? '✓' : ''"></td>
-                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB') ? '✓' : ''"></td>
-                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Rusak Berat' || sub.kondisi === 'RB' || sub.kondisi === 'Rusak Ringan' || sub.kondisi === 'Rusak') ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Kurang Baik' || sub.kondisi === 'KB' || sub.kondisi === 'Rusak Ringan' || sub.kondisi === 'RR') ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(sub.kondisi === 'Rusak Berat' || sub.kondisi === 'RB' || sub.kondisi === 'Rusak') ? '✓' : ''"></td>
                                                 <td class="border border-black px-2 py-1 text-left text-[9pt]" style="border: 1px solid black;" x-text="sub.keterangan || selectedMutasi.keterangan || '-'"></td>
                                             </tr>
                                         </template>
@@ -182,8 +182,8 @@
                                                 <td class="border border-black px-1 py-1 text-center font-bold" style="border: 1px solid black;" x-text="selectedMutasi.qty || 1"></td>
                                                 <td class="border border-black px-1.5 py-1 text-center" style="border: 1px solid black;" x-text="selectedMutasi.satuan || 'Unit'"></td>
                                                 <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Baik' || !selectedMutasi.kondisi) ? '✓' : ''"></td>
-                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Kurang Baik' || selectedMutasi.kondisi === 'KB') ? '✓' : ''"></td>
-                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Rusak Berat' || selectedMutasi.kondisi === 'RB' || selectedMutasi.kondisi === 'Rusak Ringan' || selectedMutasi.kondisi === 'Rusak') ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Kurang Baik' || selectedMutasi.kondisi === 'KB' || selectedMutasi.kondisi === 'Rusak Ringan' || selectedMutasi.kondisi === 'RR') ? '✓' : ''"></td>
+                                                <td class="border border-black px-1 py-1 text-center text-[8.5pt]" style="border: 1px solid black;" x-text="(selectedMutasi.kondisi === 'Rusak Berat' || selectedMutasi.kondisi === 'RB' || selectedMutasi.kondisi === 'Rusak') ? '✓' : ''"></td>
                                                 <td class="border border-black px-2 py-1 text-left text-[9pt]" style="border: 1px solid black;" x-text="selectedMutasi.keterangan || '-'"></td>
                                             </tr>
                                         </template>

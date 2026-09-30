@@ -1619,12 +1619,10 @@ class RecycleBinController extends Controller
         $allRegs = $astap->registers()->where('is_deleted', 0)->get();
         $totalRegs = $allRegs->count();
         $baikCount = $allRegs->where('kondisi', 'Baik')->count();
-        $kbCount = $allRegs->where('kondisi', 'Kurang Baik')->count();
-        $rrCount = $allRegs->where('kondisi', 'Rusak Ringan')->count();
-        $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak'])->count();
-        $dominan = ($baikCount >= $kbCount && $baikCount >= $rrCount && $baikCount >= $rbCount) ? 'Baik'
-            : (($kbCount >= $rrCount && $kbCount >= $rbCount) ? 'Kurang Baik'
-            : (($rrCount >= $rbCount) ? 'Rusak Ringan' : 'Rusak Berat'));
+        $kbCount = $allRegs->whereIn('kondisi', ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR'])->count();
+        $rbCount = $allRegs->whereIn('kondisi', ['Rusak Berat', 'Rusak', 'RB'])->count();
+        $dominan = ($baikCount >= $kbCount && $baikCount >= $rbCount) ? 'Baik'
+            : (($kbCount >= $rbCount) ? 'Kurang Baik' : 'Rusak Berat');
 
         $spec = $astap->spesifikasi_json ?? [];
         if (is_array($spec)) {
@@ -1633,11 +1631,9 @@ class RecycleBinController extends Controller
                 'total' => $totalRegs,
                 'baik' => $baikCount,
                 'kurang_baik' => $kbCount,
-                'rusak_ringan' => $rrCount,
                 'rusak_berat' => $rbCount,
                 'pct_baik' => $totalRegs > 0 ? round($baikCount / $totalRegs * 100) : 0,
                 'pct_kb' => $totalRegs > 0 ? round($kbCount / $totalRegs * 100) : 0,
-                'pct_rr' => $totalRegs > 0 ? round($rrCount / $totalRegs * 100) : 0,
                 'pct_rb' => $totalRegs > 0 ? round($rbCount / $totalRegs * 100) : 0,
                 'kondisi_dominan' => $dominan,
             ];

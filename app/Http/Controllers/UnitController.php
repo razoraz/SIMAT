@@ -317,9 +317,9 @@ class UnitController extends Controller
                 $totalNilaiSum += $hargaSatuan;
 
                 $kondisi = $reg->kondisi ?: 'Baik';
-                if ($kondisi === 'Baik') {
+                if ($kondisi === 'Baik' || $kondisi === 'B') {
                     $kondisiBaik++;
-                } elseif ($kondisi === 'Kurang Baik' || $kondisi === 'Rusak Ringan') {
+                } elseif ($kondisi === 'Kurang Baik' || $kondisi === 'KB' || $kondisi === 'Rusak Ringan' || $kondisi === 'RR') {
                     $kondisiKurangBaik++;
                 } else {
                     $kondisiRusakBerat++;

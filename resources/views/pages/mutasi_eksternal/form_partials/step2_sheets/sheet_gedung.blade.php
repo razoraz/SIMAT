@@ -44,7 +44,7 @@
                             </span>
                             <span class="text-xs text-white font-bold" x-show="item.gedung_nama_barang" x-text="item.gedung_nama_barang"></span>
                             <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"
-                                :class="(item.gedung_kondisi === 'Baik' || !item.gedung_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (item.gedung_kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40')"
+                                :class="(item.gedung_kondisi === 'Baik' || !item.gedung_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (item.gedung_kondisi === 'Kurang Baik' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40')"
                                 x-text="'• Kondisi: ' + (item.gedung_kondisi || 'Baik')">
                             </span>
                             <span class="text-[11px] text-slate-400 font-mono" x-show="item.gedung_luas_m2">
@@ -108,7 +108,7 @@
                                     <select x-model="item.gedung_kondisi" @change="syncTotalsFromItems()"
                                         class="w-full bg-slate-950 border border-slate-700 focus:border-blue-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-bold cursor-pointer">
                                         <option value="Baik">🟢 Baik</option>
-                                        <option value="Rusak Ringan">🟡 Rusak Ringan</option>
+                                        <option value="Kurang Baik">🟡 Kurang Baik</option>
                                         <option value="Rusak Berat">🔴 Rusak Berat</option>
                                     </select>
                                 </div>

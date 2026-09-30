@@ -426,11 +426,10 @@
                                                         </div>
                                                         <div class="flex items-center space-x-3 text-[10.5px] font-mono">
                                                             <span class="text-slate-400">Luas: <strong class="text-cyan-300" x-text="(gItem.gedung_luas_m2 || 0) + ' M²'"></strong></span>
-                                                            <span class="text-slate-400 flex items-center gap-1">
-                                                                <span>Kondisi:</span>
-                                                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border"
-                                                                      :class="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').badge_class"
-                                                                      x-text="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').text"></span>
+                                                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                                  :class="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').badge_class">
+                                                                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').dot_class"></span>
+                                                                <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, gIdx, 'gedung_items').text"></span>
                                                             </span>
                                                             <span class="text-emerald-400 font-bold" x-text="'Rp ' + Number(Number(gItem.gedung_nilai_perencanaan || 0) + Number(gItem.gedung_nilai_fisik || 0) + Number(gItem.gedung_nilai_pengawasan || 0) + Number(gItem.gedung_nilai_ap || gItem.gedung_nilai_pip || 0)).toLocaleString('id-ID')"></span>
                                                         </div>
@@ -991,7 +990,6 @@
                                         <option value="all">Semua Kondisi</option>
                                         <option value="Baik">Baik (B)</option>
                                         <option value="Kurang Baik">Kurang Baik (KB)</option>
-                                        <option value="Rusak Ringan">Rusak Ringan (RR)</option>
                                         <option value="Rusak Berat">Rusak Berat (RB)</option>
                                     </select>
                                 </div>
@@ -1036,11 +1034,10 @@
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <span class="px-2.5 py-1 rounded-xl text-[10.5px] font-bold border inline-block shadow-sm"
                                                           :class="{
-                                                              'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik',
-                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik',
-                                                              'bg-orange-500/20 text-orange-300 border-orange-500/30': reg.kondisi === 'Rusak Ringan',
-                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'Rusak'
-                                                          }" x-text="reg.kondisi"></span>
+                                                              'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': reg.kondisi === 'Baik' || reg.kondisi === 'B',
+                                                              'bg-amber-500/20 text-amber-300 border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'KB' || reg.kondisi === 'Rusak Ringan' || reg.kondisi === 'RR',
+                                                              'bg-rose-500/20 text-rose-300 border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'RB' || reg.kondisi === 'Rusak'
+                                                          }" x-text="reg.kondisi === 'B' ? 'Baik' : ((reg.kondisi === 'KB' || reg.kondisi === 'RR' || reg.kondisi === 'Rusak Ringan') ? 'Kurang Baik' : ((reg.kondisi === 'RB' || reg.kondisi === 'Rusak') ? 'Rusak Berat' : (reg.kondisi || 'Baik')))"></span>
                                                 </td>
                                                 <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
                                                     <button type="button" @click.stop="downloadQrCodeNibar(reg, selectedAstapDetail)"

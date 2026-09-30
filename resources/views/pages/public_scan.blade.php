@@ -54,7 +54,7 @@
 
                 // Kondisi Fisik
                 $rawKondisi = strtoupper(trim((string)($register->kondisi ?? ($astap->kondisi ?? 'Baik'))));
-                $kondisi = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Rusak Ringan' : 'Baik'));
+                $kondisi = ($rawKondisi === 'KB' || $rawKondisi === 'KURANG BAIK') ? 'Kurang Baik' : (($rawKondisi === 'RB' || $rawKondisi === 'RUSAK BERAT' || $rawKondisi === 'RUSAK') ? 'Rusak Berat' : (($rawKondisi === 'RR' || $rawKondisi === 'RUSAK RINGAN') ? 'Kurang Baik' : 'Baik'));
 
                 // Ruang / Lokasi Penempatan
                 $ruang = $register->ruang_pemegang ?? ($astap->ruang_pemegang ?? ($spec['ruang_pemegang'] ?? ($astap->letak_lokasi ?? '')));

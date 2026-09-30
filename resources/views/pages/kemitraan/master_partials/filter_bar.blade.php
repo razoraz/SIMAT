@@ -45,7 +45,6 @@
                     <option value="KSP" {{ ($filterSkema ?? '') === 'KSP' ? 'selected' : '' }}>KSP - Kerja Sama Pemanfaatan (1.5.2.01.01.02)</option>
                     <option value="BGS/BSG" {{ ($filterSkema ?? '') === 'BGS/BSG' || ($filterSkema ?? '') === 'BSG' ? 'selected' : '' }}>BGS / BSG (1.5.2.01.01.03)</option>
                     <option value="KSPI" {{ ($filterSkema ?? '') === 'KSPI' ? 'selected' : '' }}>KSPI - Infrastruktur (1.5.2.01.01.04)</option>
-                    <option value="KSO" {{ ($filterSkema ?? '') === 'KSO' ? 'selected' : '' }}>KSO (Kerja Sama Operasi)</option>
                 </select>
             </div>
 

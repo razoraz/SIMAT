@@ -1,7 +1,8 @@
 <x-layout title="Kelola Data Aset Kemitraan (Akun 1.5.2) - SIMAT-RK">
-    @section('page-title', 'Kelola Data Aset Kemitraan Pihak Ketiga (KSO, KSP, Sewa)')
+    @section('page-title', 'Kelola Data Aset Kemitraan Pihak Ketiga (Sewa, KSP, BGS/BSG, KSPI)')
     @section('breadcrumb', 'Master Aset / Kelola Kemitraan Aset')
 
+    @include('pages.kemitraan.master_partials.scripts_export')
     @include('pages.kemitraan.master_partials.scripts')
 
     <div x-data="masterKemitraan()" x-cloak class="space-y-6 pb-16">
@@ -22,5 +23,11 @@
 
         <!-- MODAL PRATINJAU & DOWNLOAD QR CODE -->
         @include('pages.kemitraan.master_partials.modal_qr_kemitraan')
+
+        <!-- MODAL PILIH TAHUN, TRIWULAN & SKEMA EKSPOR EXCEL KEMITRAAN -->
+        @include('pages.kemitraan.master_partials.modal_export_excel')
+
+        <!-- FLOATING TOAST NOTIFICATION -->
+        @include('pages.kemitraan.master_partials.toast')
     </div>
 </x-layout>

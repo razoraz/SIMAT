@@ -67,7 +67,7 @@
             <!-- Kondisi Fisik -->
             <div class="p-3 rounded-2xl border
                 @if($kondisi === 'Baik') bg-emerald-500/10 border-emerald-500/30 text-emerald-300
-                @elseif($kondisi === 'Kurang Baik' || $kondisi === 'Rusak Ringan') bg-amber-500/10 border-amber-500/30 text-amber-300
+                @elseif($kondisi === 'Kurang Baik') bg-amber-500/10 border-amber-500/30 text-amber-300
                 @else bg-rose-500/10 border-rose-500/30 text-rose-300 @endif">
                 <span class="text-[9.5px] uppercase font-extrabold opacity-70 tracking-wider block mb-0.5">
                     Kondisi Fisik Terkini
@@ -75,7 +75,7 @@
                 <span class="text-xs sm:text-sm font-black flex items-center space-x-1.5">
                     <span class="w-2 h-2 rounded-full
                         @if($kondisi === 'Baik') bg-emerald-400
-                        @elseif($kondisi === 'Kurang Baik' || $kondisi === 'Rusak Ringan') bg-amber-400
+                        @elseif($kondisi === 'Kurang Baik') bg-amber-400
                         @else bg-rose-400 @endif"></span>
                     <span>{{ $kondisi }}</span>
                 </span>

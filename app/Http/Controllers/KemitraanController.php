@@ -120,8 +120,18 @@ class KemitraanController extends Controller
         $dbUnits = Unit::orderBy('nama')->get();
         $dbMaster108 = JenisAstap::getNested108();
 
+        // Ambil data Astap kemitraan lengkap untuk kebutuhan Engine Ekspor Excel Multi-Sheet (Client-Side)
+        $kemitraanAstaps = Astap::with(['registers.unit', 'kemitraan', 'jenisAstap', 'unit'])
+            ->where('is_deleted', 0)
+            ->where(function ($q) {
+                $q->where('sumber_dana', 'kemitraan')
+                  ->orWhereHas('kemitraan', fn($sq) => $sq->where('is_deleted', 0));
+            })
+            ->get();
+
         return view('pages.kemitraan.index', compact(
             'kemitraanRecords',
+            'kemitraanAstaps',
             'totalNilaiKemitraan',
             'totalVolumeUnit',
             'totalAktif',

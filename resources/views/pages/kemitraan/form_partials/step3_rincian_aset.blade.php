@@ -89,7 +89,7 @@
                 <select x-model="formData.kondisi" required
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold">
                     <option value="Baik">🟢 Baik (Operasional Normal / Siap Digunakan)</option>
-                    <option value="Rusak Ringan">🟡 Rusak Ringan (Perlu Kalibrasi / Setting)</option>
+                    <option value="Kurang Baik">🟡 Kurang Baik (Perlu Kalibrasi / Perawatan)</option>
                     <option value="Rusak Berat">🔴 Rusak Berat</option>
                 </select>
             </div>

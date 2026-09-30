@@ -38,6 +38,153 @@
             },
             isDeleting: false,
 
+            // Global Custom Confirmation Modal State
+            showConfirmModal: false,
+            confirmData: {
+                title: '',
+                message: '',
+                itemName: '',
+                itemDetails: null,
+                type: 'warning',
+                btnText: '',
+                isBlocked: false,
+                actionUrl: null,
+                actionText: null,
+                assetWarning: null,
+                onConfirm: null
+            },
+
+            // Modal Export Excel Kemitraan (Akun 1.5.2) States
+            showExportModal: false,
+            exportYear: 'all',
+            exportTriwulan: 'all',
+            exportKemitraanSkema: 'all',
+            exportKemitraanCategory: 'all',
+            isSubmittingExport: false,
+
+            openExportModal() {
+                this.exportKemitraanSkema = 'all';
+                this.exportKemitraanCategory = 'all';
+                this.exportYear = 'all';
+                this.exportTriwulan = 'all';
+                this.showExportModal = true;
+            },
+
+            get availableYears() {
+                const yearsSet = new Set();
+                const rawList = window.__simatAstaps || [];
+                rawList.forEach(item => {
+                    const yr = parseInt(item.tahun_perolehan || (item.kemitraan && item.kemitraan.tahun));
+                    if (!isNaN(yr)) yearsSet.add(yr);
+                });
+                yearsSet.add(new Date().getFullYear());
+                return Array.from(yearsSet).sort((a, b) => b - a);
+            },
+
+            get exportFilteredCount() {
+                const rawList = window.__simatAstaps || [];
+                const fYear = this.exportYear;
+                const fTw = this.exportTriwulan;
+                const fSkema = this.exportKemitraanSkema;
+                const fCat = this.exportKemitraanCategory;
+
+                const isTwMatch = (itemTw, targetTw) => {
+                    if (targetTw === 'all') return true;
+                    const targetKey = String(targetTw).replace(/[\s_]/g, '').toUpperCase();
+                    const curTw = (itemTw || 'TWI').replace(/[\s_]/g, '').toUpperCase();
+                    return (curTw === targetKey) ||
+                           (targetKey === 'TWI' && curTw === 'TW1') || (targetKey === 'TW1' && curTw === 'TWI') ||
+                           (targetKey === 'TWII' && curTw === 'TW2') || (targetKey === 'TW2' && curTw === 'TWII') ||
+                           (targetKey === 'TWIII' && curTw === 'TW3') || (targetKey === 'TW3' && curTw === 'TWIII') ||
+                           (targetKey === 'TWIV' && curTw === 'TW4') || (targetKey === 'TW4' && curTw === 'TWIV');
+                };
+
+                return rawList.filter(item => {
+                    const itemYear = (item.kemitraan && item.kemitraan.tahun) || item.tahun_perolehan;
+                    const matchYear = fYear === 'all' || String(itemYear) === String(fYear);
+
+                    const itemTw = (item.kemitraan && item.kemitraan.triwulan) || item.triwulan || 'TWI';
+                    const matchTw = isTwMatch(itemTw, fTw);
+
+                    let matchSkema = true;
+                    if (fSkema !== 'all') {
+                        const rawSkema = (item.kemitraan && item.kemitraan.skema_kemitraan) 
+                            || (item.spesifikasi_json && item.spesifikasi_json.skema_kemitraan) 
+                            || '';
+                        matchSkema = typeof normalizeSkemaKemitraan === 'function' ? (normalizeSkemaKemitraan(rawSkema) === fSkema) : true;
+                    }
+
+                    let matchCat = true;
+                    if (fCat !== 'all' && fCat !== 'REKAP') {
+                        let spec = item.spesifikasi_json || {};
+                        if (typeof spec === 'string') {
+                            try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                        }
+                        const isItemExtracom = !!item.is_extracomtable || 
+                                               (item.category && item.category.toUpperCase() === 'EXTRACOM') || 
+                                               (spec && spec.is_extracomtable) ||
+                                               (Array.isArray(spec?.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom)) ||
+                                               (Array.isArray(spec?.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom));
+                        if (fCat === 'EXTRACOM') {
+                            matchCat = isItemExtracom;
+                        } else {
+                            if (isItemExtracom) {
+                                matchCat = false;
+                            } else {
+                                const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                                matchCat = (itemCat === fCat);
+                            }
+                        }
+                    }
+
+                    return matchYear && matchTw && matchSkema && matchCat;
+                }).length;
+            },
+
+            submitExport() {
+                this.isSubmittingExport = true;
+                try {
+                    exportKemitraanToExcel({
+                        year: this.exportYear,
+                        triwulan: this.exportTriwulan,
+                        skema: this.exportKemitraanSkema,
+                        category: this.exportKemitraanCategory
+                    });
+                    setTimeout(() => {
+                        this.isSubmittingExport = false;
+                        this.showExportModal = false;
+                        const catLabel = this.exportKemitraanCategory === 'all'
+                            ? 'Lengkap (7 Sheet: Rekap, KIB A-E & Extracom)'
+                            : (this.exportKemitraanCategory === 'REKAP' ? 'Rekapitulasi' : (this.exportKemitraanCategory === 'EXTRACOM' ? 'Extracom' : this.exportKemitraanCategory));
+                        this.showToast('Berhasil mengekspor Laporan Aset Kemitraan ' + catLabel + ' (' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ') ' + (this.exportYear === 'all' ? 'Semua Tahun' : this.exportYear) + '!', 'success');
+                    }, 1000);
+                } catch (err) {
+                    console.error('Error ekspor excel kemitraan:', err);
+                    this.isSubmittingExport = false;
+                    if (typeof isExportingKemitraan !== 'undefined') isExportingKemitraan = false;
+                    this.showToast('Gagal mengekspor file: ' + (err.message || 'Terjadi kesalahan sistem'), 'error');
+                }
+            },
+
+            // Global Toast Notification State
+            toast: {
+                show: false,
+                message: '',
+                type: 'success'
+            },
+
+            // Modal Edit Kondisi State
+            showEditKondisiModal: false,
+            editingRegisterItem: null,
+            newKondisiValue: 'Baik',
+            isSavingKondisi: false,
+
+            // Modal Cek Riwayat Mutasi State
+            showRiwayatModal: false,
+            selectedRiwayatRegister: null,
+            selectedRiwayatMutasis: [],
+            isLoadingRiwayat: false,
+
             // Helpers Formatters
             formatRupiah(value) {
                 if (value === null || value === undefined || isNaN(value)) return '0';
@@ -92,6 +239,15 @@
                 let category = this.getEffectiveKibCategory(astap);
 
                 // Normalisasi Data Register NIBAR
+                const cleanModalRuang = (val) => {
+                    if (!val) return '';
+                    const s = String(val).trim();
+                    if (s.includes('Piere Tendean') || s.includes('RSUD Dr. H. Koesnandi Bondowoso, Jl') || ['Belum Ditempatkan / Di Gudang', 'Gudang Aset', '-'].includes(s)) {
+                        return '';
+                    }
+                    return s;
+                };
+
                 let registers = [];
                 if (astap?.registers && Array.isArray(astap.registers) && astap.registers.length > 0) {
                     registers = astap.registers.map(r => ({
@@ -99,7 +255,7 @@
                         nibar: r.nibar || r.no_register || '-',
                         no_register: r.no_register || r.nibar || '-',
                         no_register_int: r.no_register_int || parseInt((r.nibar || r.no_register || '').slice(-7)) || 0,
-                        ruang_pemegang: r.ruang_pemegang || r.unit?.nama || astap?.unit?.nama || (register?.ruang_pemegang || ''),
+                        ruang_pemegang: cleanModalRuang(r.ruang_pemegang || r.unit?.nama || astap?.unit?.nama || (register?.ruang_pemegang || '')),
                         kondisi: r.kondisi || 'Baik',
                         created_at: r.created_at
                     }));
@@ -109,7 +265,7 @@
                         nibar: register.nibar || register.no_register || '-',
                         no_register: register.no_register || register.nibar || '-',
                         no_register_int: register.no_register_int || 1,
-                        ruang_pemegang: register.ruang_pemegang || astap?.unit?.nama || '',
+                        ruang_pemegang: cleanModalRuang(register.ruang_pemegang || astap?.unit?.nama || ''),
                         kondisi: register.kondisi || 'Baik',
                         created_at: register.created_at
                     }];
@@ -189,28 +345,25 @@
                 this.showDetailModal = true;
             },
 
-            // Hitung statistik kondisi aset terdaftar
+            // Hitung statistik kondisi aset terdaftar (Standar 3 Kondisi: Baik, Kurang Baik, Rusak Berat)
             getKondisiStats(item) {
-                if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_ringan: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
+                if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
                 const regs = item.registers || [];
                 const total = regs.length;
                 if (total === 0) {
                     const k = item.kondisi || item.kondisi_barang || 'Baik';
-                    const isKb = k === 'Kurang Baik' || k === 'KB';
-                    const isRr = k === 'Rusak Ringan' || k === 'RR';
+                    const isKb = k === 'Kurang Baik' || k === 'KB' || k === 'Rusak Ringan' || k === 'RR';
                     const isRb = k === 'Rusak Berat' || k === 'RB' || k === 'Rusak';
-                    const dominan = isKb ? 'Kurang Baik' : (isRr ? 'Rusak Ringan' : (isRb ? 'Rusak Berat' : 'Baik'));
-                    const badgeClass = dominan === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (dominan === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : (dominan === 'Rusak Ringan' ? 'bg-orange-500/15 text-orange-300 border-orange-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'));
-                    const dotClass = dominan === 'Baik' ? 'bg-emerald-400' : (dominan === 'Kurang Baik' ? 'bg-amber-400' : (dominan === 'Rusak Ringan' ? 'bg-orange-400' : 'bg-rose-400'));
+                    const dominan = isKb ? 'Kurang Baik' : (isRb ? 'Rusak Berat' : 'Baik');
+                    const badgeClass = dominan === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (dominan === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30');
+                    const dotClass = dominan === 'Baik' ? 'bg-emerald-400' : (dominan === 'Kurang Baik' ? 'bg-amber-400' : 'bg-rose-400');
                     return {
                         total: 1,
                         baik: dominan === 'Baik' ? 1 : 0,
                         kurang_baik: isKb ? 1 : 0,
-                        rusak_ringan: isRr ? 1 : 0,
                         rusak_berat: isRb ? 1 : 0,
                         pct_baik: dominan === 'Baik' ? 100 : 0,
                         pct_kb: isKb ? 100 : 0,
-                        pct_rr: isRr ? 100 : 0,
                         pct_rb: isRb ? 100 : 0,
                         kondisi_dominan: dominan,
                         is_multi: false,
@@ -220,28 +373,24 @@
                     };
                 }
                 const baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
-                const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB').length;
-                const rr   = regs.filter(r => r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
+                const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB' || r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
                 const rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak').length;
-                const dominan = (baik >= kb && baik >= rr && baik >= rb) ? 'Baik' : ((kb >= rr && kb >= rb) ? 'Kurang Baik' : ((rr >= rb) ? 'Rusak Ringan' : 'Rusak Berat'));
-                const isSingle = (baik === total) || (kb === total) || (rr === total) || (rb === total);
+                const dominan = (baik >= kb && baik >= rb) ? 'Baik' : ((kb >= rb) ? 'Kurang Baik' : 'Rusak Berat');
+                const isSingle = (baik === total) || (kb === total) || (rb === total);
 
                 const pct_baik = Math.round((baik / total) * 100);
                 const pct_kb   = Math.round((kb   / total) * 100);
-                const pct_rr   = Math.round((rr   / total) * 100);
                 const pct_rb   = Math.round((rb   / total) * 100);
 
                 let parts = [];
                 if (baik > 0) parts.push(`${pct_baik}% Baik (${baik}/${total})`);
                 if (kb > 0)   parts.push(`${pct_kb}% Kurang Baik (${kb}/${total})`);
-                if (rr > 0)   parts.push(`${pct_rr}% Rusak Ringan (${rr}/${total})`);
                 if (rb > 0)   parts.push(`${pct_rb}% Rusak Berat (${rb}/${total})`);
 
                 let text = parts.join(' • ');
                 if (isSingle) {
                     if (baik === total) text = total > 1 ? `Baik (${total} Aset)` : 'Baik';
                     else if (kb === total) text = total > 1 ? `Kurang Baik (${total} Aset)` : 'Kurang Baik';
-                    else if (rr === total) text = total > 1 ? `Rusak Ringan (${total} Aset)` : 'Rusak Ringan';
                     else if (rb === total) text = total > 1 ? `Rusak Berat (${total} Aset)` : 'Rusak Berat';
                 }
 
@@ -250,18 +399,16 @@
                     badgeClass = 'bg-rose-500/15 text-rose-300 border-rose-500/30';
                 } else if (kb > 0 && kb >= baik) {
                     badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-                } else if (rr > 0 && rr >= baik) {
-                    badgeClass = 'bg-orange-500/15 text-orange-300 border-orange-500/30';
                 } else if (!isSingle) {
                     badgeClass = 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
                 }
 
-                let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : (pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'));
+                let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : 'bg-amber-400');
 
                 return {
                     total,
-                    baik, kurang_baik: kb, rusak_ringan: rr, rusak_berat: rb,
-                    pct_baik, pct_kb, pct_rr, pct_rb,
+                    baik, kurang_baik: kb, rusak_berat: rb,
+                    pct_baik, pct_kb, pct_rb,
                     kondisi_dominan: dominan,
                     is_multi: !isSingle,
                     parts,
@@ -276,9 +423,9 @@
                 if (!astap) return { total: 0, text: 'Baik (100%)', pct_baik: 100, pct_kb: 0, pct_rr: 0, pct_rb: 0, is_multi: false, badge_class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
 
                 let regs = astap.registers || [];
+                let items = [];
 
                 if (type) {
-                    let items = [];
                     if (type === 'tanah_items') items = this.getTanahItemsForDetail(astap);
                     else if (type === 'mesin_items') items = this.getMesinItemsForDetail(astap);
                     else if (type === 'gedung_items') items = this.getGedungItemsForDetail(astap);
@@ -308,60 +455,64 @@
                 const total = regs.length;
                 if (total === 0) {
                     let fallbackKondisi = 'Baik';
-                    if (type && astap.spesifikasi_json?.[type]?.[idx]) {
-                        const it = astap.spesifikasi_json[type][idx];
-                        fallbackKondisi = it.mesin_kondisi || it.tanah_kondisi || it.gedung_kondisi || it.jaringan_kondisi || it.lainnya_kondisi || 'Baik';
+                    let it = null;
+                    if (items && items[idx]) {
+                        it = items[idx];
+                    } else if (type && astap.spesifikasi_json) {
+                        let spec = astap.spesifikasi_json;
+                        if (typeof spec === 'string') {
+                            try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                        }
+                        if (spec && spec[type] && spec[type][idx]) {
+                            it = spec[type][idx];
+                        }
+                    }
+                    if (it) {
+                        fallbackKondisi = it.tanah_kondisi || it.mesin_kondisi || it.gedung_kondisi || it.jaringan_kondisi || it.lainnya_kondisi || astap.kondisi_barang || 'Baik';
+                    } else {
+                        fallbackKondisi = astap.kondisi_barang || 'Baik';
                     }
                     if (fallbackKondisi === 'B') fallbackKondisi = 'Baik';
-                    if (fallbackKondisi === 'KB') fallbackKondisi = 'Kurang Baik';
-                    if (fallbackKondisi === 'RR') fallbackKondisi = 'Rusak Ringan';
+                    if (fallbackKondisi === 'KB' || fallbackKondisi === 'RR' || fallbackKondisi === 'Rusak Ringan') fallbackKondisi = 'Kurang Baik';
                     if (fallbackKondisi === 'RB' || fallbackKondisi === 'Rusak') fallbackKondisi = 'Rusak Berat';
 
                     return {
                         total: 1,
                         baik: fallbackKondisi === 'Baik' ? 1 : 0,
                         kurang_baik: fallbackKondisi === 'Kurang Baik' ? 1 : 0,
-                        rusak_ringan: fallbackKondisi === 'Rusak Ringan' ? 1 : 0,
                         rusak_berat: fallbackKondisi === 'Rusak Berat' ? 1 : 0,
                         pct_baik: fallbackKondisi === 'Baik' ? 100 : 0,
                         pct_kb: fallbackKondisi === 'Kurang Baik' ? 100 : 0,
-                        pct_rr: fallbackKondisi === 'Rusak Ringan' ? 100 : 0,
                         pct_rb: fallbackKondisi === 'Rusak Berat' ? 100 : 0,
                         is_multi: false,
                         text: fallbackKondisi + ' (100%)',
                         badge_class: fallbackKondisi === 'Baik' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
                                     (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                                    (fallbackKondisi === 'Rusak Ringan' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
-                                    'bg-rose-500/20 text-rose-300 border-rose-500/30')),
+                                    'bg-rose-500/20 text-rose-300 border-rose-500/30'),
                         dot_class: fallbackKondisi === 'Baik' ? 'bg-emerald-400' :
-                                  (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-400' :
-                                  (fallbackKondisi === 'Rusak Ringan' ? 'bg-orange-400' : 'bg-rose-400'))
+                                  (fallbackKondisi === 'Kurang Baik' ? 'bg-amber-400' : 'bg-rose-400')
                     };
                 }
 
                 const baik = regs.filter(r => (r.kondisi || 'Baik') === 'Baik' || r.kondisi === 'B').length;
-                const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB').length;
-                const rr   = regs.filter(r => r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
+                const kb   = regs.filter(r => r.kondisi === 'Kurang Baik' || r.kondisi === 'KB' || r.kondisi === 'Rusak Ringan' || r.kondisi === 'RR').length;
                 const rb   = regs.filter(r => r.kondisi === 'Rusak Berat' || r.kondisi === 'RB' || r.kondisi === 'Rusak').length;
 
                 const pct_baik = Math.round((baik / total) * 100);
                 const pct_kb   = Math.round((kb   / total) * 100);
-                const pct_rr   = Math.round((rr   / total) * 100);
                 const pct_rb   = Math.round((rb   / total) * 100);
 
-                const isSingle = (baik === total) || (kb === total) || (rr === total) || (rb === total);
+                const isSingle = (baik === total) || (kb === total) || (rb === total);
 
                 let parts = [];
                 if (baik > 0) parts.push(`${pct_baik}% Baik (${baik}/${total})`);
                 if (kb > 0)   parts.push(`${pct_kb}% Kurang Baik (${kb}/${total})`);
-                if (rr > 0)   parts.push(`${pct_rr}% Rusak Ringan (${rr}/${total})`);
                 if (rb > 0)   parts.push(`${pct_rb}% Rusak Berat (${rb}/${total})`);
 
                 let text = parts.join(' • ');
                 if (isSingle) {
                     if (baik === total) text = `Baik (100%)`;
                     else if (kb === total) text = `Kurang Baik (100%)`;
-                    else if (rr === total) text = `Rusak Ringan (100%)`;
                     else if (rb === total) text = `Rusak Berat (100%)`;
                 }
 
@@ -370,21 +521,19 @@
                     badgeClass = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
                 } else if (kb > 0 && kb >= baik) {
                     badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
-                } else if (rr > 0 && rr >= baik) {
-                    badgeClass = 'bg-orange-500/20 text-orange-300 border-orange-500/30';
                 } else if (!isSingle) {
                     badgeClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
                 }
 
-                let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : (pct_rr > 0 ? 'bg-orange-400' : 'bg-amber-400'));
+                let dotClass = pct_baik === 100 ? 'bg-emerald-400' : (pct_rb > 0 ? 'bg-rose-400' : 'bg-amber-400');
 
                 return {
                     total,
-                    baik, kurang_baik: kb, rusak_ringan: rr, rusak_berat: rb,
-                    pct_baik, pct_kb, pct_rr, pct_rb,
+                    baik, kurang_baik: kb, rusak_berat: rb,
+                    pct_baik, pct_kb, pct_rb,
                     is_multi: !isSingle,
                     parts,
-                    text,
+                    text: text || 'Baik',
                     badge_class: badgeClass,
                     dot_class: dotClass
                 };
@@ -796,6 +945,290 @@
                     this.isDeleting = false;
                     this.showDeleteModal = false;
                 }
+            },
+
+            // Toast Notification Helper
+            showToast(message, type = 'success') {
+                this.toast.message = message;
+                this.toast.type = type;
+                this.toast.show = true;
+                setTimeout(() => {
+                    this.toast.show = false;
+                }, 4000);
+            },
+
+            // Custom Dialog Confirmation Helper
+            askConfirmation(opts) {
+                this.confirmData = {
+                    title: opts.title || 'Konfirmasi',
+                    message: opts.message || 'Apakah Anda yakin?',
+                    itemName: opts.itemName || '',
+                    itemDetails: opts.itemDetails || null,
+                    type: opts.type || 'warning',
+                    btnText: opts.btnText || 'Ya, Lanjutkan',
+                    isBlocked: !!opts.isBlocked,
+                    actionUrl: opts.actionUrl || null,
+                    actionText: opts.actionText || null,
+                    assetWarning: opts.assetWarning || null,
+                    onConfirm: opts.onConfirm || null
+                };
+                this.showConfirmModal = true;
+            },
+
+            executeConfirmedAction() {
+                if (typeof this.confirmData.onConfirm === 'function') {
+                    this.confirmData.onConfirm();
+                }
+                this.showConfirmModal = false;
+            },
+
+            // Rapikan NIBAR Barang Kemitraan Ini (Auto-Resequence)
+            resequenceSingleAstap(astap) {
+                if (!astap || !astap.id) return;
+                this.askConfirmation({
+                    title: '🔄 Konfirmasi Rapikan NIBAR Barang Ini',
+                    message: 'Sistem akan merapatkan nomor urut register (NIBAR) yang kosong khusus untuk aset yang BELUM DITEMPATKAN (di gudang).\n\n🔒 Aset yang SUDAH DITEMPATKAN di unit/ruangan TIDAK AKAN BERUBAH agar label stiker QR fisik di ruangan tidak tertukar.\n\n📦 Aset gudang setelahnya akan dimajukan untuk mengisi nomor yang kosong. Jika tidak ada aset gudang setelahnya, celah nomor dibiarkan dulu menunggu ada inputan baru dengan jenis & tahun yang sama atau sampai aset ruangan dikembalikan ke gudang.',
+                    itemName: (astap.nama_barang || 'Barang Kemitraan') + ' (Tahun ' + (astap.tahun_perolehan || '2026') + ')',
+                    type: 'warning',
+                    btnText: '⚡ Ya, Rapikan NIBAR',
+                    onConfirm: async () => {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        try {
+                            const res = await fetch('{{ route('astap.resequence_nibar') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    astap_id: astap.id
+                                })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                this.showDetailModal = false;
+                                this.showToast(data.message || 'NIBAR berhasil dirapikan!', 'success');
+                                setTimeout(() => { window.location.reload(); }, 1200);
+                            } else {
+                                this.showToast('Gagal: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                            }
+                        } catch (err) {
+                            this.showToast('Terjadi kendala saat merapikan NIBAR: ' + err.message, 'error');
+                        }
+                    }
+                });
+            },
+
+            // Modal Ubah Kondisi Barang Unit Register
+            openEditKondisiModal(reg) {
+                if (!reg) return;
+                this.editingRegisterItem = reg;
+                this.newKondisiValue = reg.kondisi || 'Baik';
+                this.showEditKondisiModal = true;
+            },
+
+            saveKondisiChange() {
+                if (!this.editingRegisterItem) return;
+                const reg = this.editingRegisterItem;
+                this.askConfirmation({
+                    title: '✏️ Konfirmasi Perubahan Kondisi Barang',
+                    message: 'Apakah Anda yakin ingin memperbarui kondisi barang unit ini menjadi "' + this.newKondisiValue + '"?',
+                    itemName: 'NIBAR: ' + (reg.nibar || reg.no_register),
+                    type: 'warning',
+                    btnText: '✏️ Ya, Simpan Kondisi',
+                    onConfirm: async () => {
+                        this.isSavingKondisi = true;
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        try {
+                            const res = await fetch('/astap-register/' + reg.id, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    ruang_pemegang: reg.ruang_pemegang || '',
+                                    kondisi: this.newKondisiValue
+                                })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                reg.kondisi = this.newKondisiValue;
+                                if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
+                                    this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.map(r => 
+                                        r.id === reg.id ? { ...r, kondisi: this.newKondisiValue } : { ...r }
+                                    );
+                                    if (data.stats) {
+                                        this.selectedAstapDetail.kondisi_barang = data.stats.kondisi_dominan;
+                                    }
+                                    this.selectedAstapDetail = { ...this.selectedAstapDetail };
+                                }
+                                this.showEditKondisiModal = false;
+                                this.showToast('Kondisi unit berhasil diperbarui menjadi ' + this.newKondisiValue + '!', 'success');
+                            } else {
+                                this.showToast('Gagal memperbarui: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                            }
+                        } catch(err) {
+                            reg.kondisi = this.newKondisiValue;
+                            if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
+                                this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.map(r => 
+                                    r.id === reg.id ? { ...r, kondisi: this.newKondisiValue } : { ...r }
+                                );
+                                this.selectedAstapDetail = { ...this.selectedAstapDetail };
+                            }
+                            this.showEditKondisiModal = false;
+                            this.showToast('Kondisi unit berhasil diperbarui!', 'success');
+                        } finally {
+                            this.isSavingKondisi = false;
+                        }
+                    }
+                });
+            },
+
+            // Modal Cek Riwayat Mutasi Barang
+            async openRiwayatModal(reg) {
+                if (!reg) return;
+                this.selectedRiwayatRegister = reg;
+                this.selectedRiwayatMutasis = Array.isArray(reg.mutasis) ? reg.mutasis : [];
+                this.showRiwayatModal = true;
+
+                try {
+                    this.isLoadingRiwayat = true;
+                    const res = await fetch(`/astap/register-mutasi/${reg.id}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success && Array.isArray(data.mutasis)) {
+                            this.selectedRiwayatMutasis = data.mutasis;
+                            reg.mutasis = data.mutasis;
+                            if (data.kondisi) reg.kondisi = data.kondisi;
+                            if (data.ruang) reg.ruang_pemegang = data.ruang;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Gagal memuat riwayat mutasi:', err);
+                } finally {
+                    this.isLoadingRiwayat = false;
+                }
+            },
+
+            // Cek apakah register sedang aktif ditempatkan di Unit / Ruangan
+            isRegisterPlacedInUnit(reg) {
+                if (!reg) return false;
+                if (reg.unit_id) return true;
+                if (!reg.ruang_pemegang) return false;
+                const clean = String(reg.ruang_pemegang).trim().toLowerCase();
+                const unplacedPlaceholders = [
+                    '', '-', 'belum ditempatkan', 'belum ditempatkan / di gudang',
+                    'belum ditempatkan / di gudang aset', 'gudang aset',
+                    'gudang aset utama / belum ditempatkan', 'gudang perbekalan'
+                ];
+                return !unplacedPlaceholders.includes(clean);
+            },
+
+            // Hapus Unit Register NIBAR (dengan proteksi ruangan aktif)
+            deleteRegister(reg) {
+                if (!reg) return;
+
+                // 1. Validasi Penempatan: Cek apakah unit register SUDAH DITEMPATKAN di unit / paviliun
+                if (this.isRegisterPlacedInUnit(reg)) {
+                    const roomName = String(reg.ruang_pemegang || 'Unit / Paviliun RSUD').trim();
+                    const parentName = this.selectedAstapDetail?.nama_barang || 'Aset Kemitraan';
+                    const nibarStr = reg.nibar || reg.no_register || 'NIBAR';
+
+                    this.askConfirmation({
+                        title: 'Unit Tidak Dapat Dihapus',
+                        message: `Unit register NIBAR "${nibarStr}" saat ini belum dapat dihapus karena masih aktif ditempatkan di ruangan "${roomName}" di database RSUD.`,
+                        itemName: `${parentName} (NIBAR: ${nibarStr})`,
+                        itemDetails: {
+                            nama: parentName,
+                            kode: nibarStr,
+                            badgeText: '1 ASET AKTIF',
+                            totalAset: 1,
+                            nilaiFmt: this.selectedAstapDetail?.total_realisasi ? ('Rp ' + Number(this.selectedAstapDetail.total_realisasi).toLocaleString('id-ID')) : 'Rp 0'
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: '/mutasi-aset',
+                        actionText: 'Ajukan Mutasi Aset',
+                        assetWarning: `Sistem mendeteksi bahwa ruangan "${roomName}" saat ini masih memegang aset aktif dengan NIBAR ${nibarStr}. Demi akuntabilitas dan pencegahan kehilangan aset RSUD Koesnadi, seluruh aset harus dipindahkan (mutasi) ke ruangan lain terlebih dahulu sampai ruangan ini kosong atau dikembalikan ke gudang perbekalan.`,
+                        btnText: null,
+                        onConfirm: null
+                    });
+                    return;
+                }
+
+                // 2. Jika belum ditempatkan (di gudang): Izinkan hapus ke Tong Sampah
+                this.askConfirmation({
+                    title: 'Konfirmasi Pindahkan ke Tong Sampah',
+                    message: 'Apakah Anda yakin ingin memindahkan unit register NIBAR ini ke Recycle Bin (Tong Sampah)? Data dapat dipulihkan kembali jika diperlukan.',
+                    itemName: 'NIBAR: ' + (reg.nibar || reg.no_register),
+                    itemDetails: {
+                        nama: this.selectedAstapDetail?.nama_barang || 'Aset Kemitraan',
+                        kode: reg.nibar || reg.no_register,
+                        badgeText: 'Belum Ditempatkan',
+                        totalAset: 0,
+                        nilaiFmt: 'Gudang Aset'
+                    },
+                    type: 'danger',
+                    isBlocked: false,
+                    btnText: 'Pindahkan ke Tong Sampah',
+                    onConfirm: async () => {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        try {
+                            const res = await fetch('/astap-register/' + reg.id, {
+                                method: 'DELETE',
+                                headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                if (this.selectedAstapDetail && this.selectedAstapDetail.registers) {
+                                    this.selectedAstapDetail.registers = this.selectedAstapDetail.registers.filter(r => r.id !== reg.id);
+                                    this.selectedAstapDetail.jumlah_volume = this.selectedAstapDetail.registers.length;
+                                    this.selectedAstapDetail.volume_satuan = this.selectedAstapDetail.jumlah_volume + ' Aset';
+                                    if (data.stats) {
+                                        this.selectedAstapDetail.kondisi_barang = data.stats.kondisi_dominan;
+                                    }
+                                    this.selectedAstapDetail = { ...this.selectedAstapDetail };
+
+                                    if (data.astap_auto_deleted && data.astap_id) {
+                                        this.showDetailModal = false;
+                                        this.selectedAstapDetail = null;
+                                        this.showToast(data.message || 'Paket Kemitraan otomatis dipindahkan ke Recycle Bin karena semua unit NIBAR telah dihapus.', 'success');
+                                        setTimeout(() => { window.location.reload(); }, 1200);
+                                    } else {
+                                        this.showToast(data.message || 'Unit register NIBAR berhasil dipindahkan ke Recycle Bin!', 'success');
+                                    }
+                                }
+                            } else if (data.is_blocked) {
+                                this.askConfirmation({
+                                    title: 'Unit Tidak Dapat Dihapus',
+                                    message: data.message,
+                                    itemName: 'NIBAR: ' + (reg.nibar || reg.no_register),
+                                    itemDetails: {
+                                        nama: this.selectedAstapDetail?.nama_barang || 'Aset Kemitraan',
+                                        kode: reg.nibar || reg.no_register,
+                                        badgeText: '1 ASET AKTIF',
+                                        totalAset: 1,
+                                        nilaiFmt: this.selectedAstapDetail?.total_realisasi ? ('Rp ' + Number(this.selectedAstapDetail.total_realisasi).toLocaleString('id-ID')) : 'Rp 0'
+                                    },
+                                    type: 'danger',
+                                    isBlocked: true,
+                                    actionUrl: data.action_url || '/mutasi-aset',
+                                    actionText: data.action_text || 'Ajukan Mutasi Aset',
+                                    assetWarning: data.message,
+                                    btnText: null,
+                                    onConfirm: null
+                                });
+                            } else {
+                                this.showToast('Gagal menghapus unit: ' + (data.message || 'Terjadi kesalahan sistem'), 'error');
+                            }
+                        } catch (err) {
+                            this.showToast('Terjadi kesalahan saat menghapus: ' + err.message, 'error');
+                        }
+                    }
+                });
             }
         };
     }

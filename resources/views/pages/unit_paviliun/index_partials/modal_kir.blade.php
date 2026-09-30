@@ -177,7 +177,7 @@
                                     </tr>
                                     <tr>
                                         <th class="border border-black px-1 py-1 w-8">B</th>
-                                        <th class="border border-black px-1 py-1 w-8">RR</th>
+                                        <th class="border border-black px-1 py-1 w-8">KB</th>
                                         <th class="border border-black px-1 py-1 w-8">RB</th>
                                     </tr>
                                 </thead>
@@ -193,15 +193,15 @@
                                             <td class="border border-black px-1 py-1 text-center font-mono font-bold">1</td>
                                             <td class="border border-black px-2 py-1 text-right font-mono font-semibold" x-text="formatRupiah(ast.nilai ?? ast.harga ?? 0)"></td>
                                             
-                                            <!-- Keadaan Barang: Baik (B), Rusak Ringan (RR), Rusak Berat (RB) -->
+                                            <!-- Keadaan Barang: Baik (B), Kurang Baik (KB), Rusak Berat (RB) -->
                                             <td class="border border-black px-1 py-1 text-center font-bold font-sans">
                                                 <span x-text="ast.kondisi === 'Baik' ? '✓' : ''"></span>
                                             </td>
-                                            <td class="border border-black px-1 py-1 text-center font-bold font-sans">
-                                                <span x-text="ast.kondisi === 'Rusak Ringan' ? '✓' : ''"></span>
+                                            <td class="border border-black px-1 py-1 text-center font-bold font-sans text-amber-700">
+                                                <span x-text="ast.kondisi === 'Kurang Baik' || ast.kondisi === 'Rusak Ringan' ? '✓' : ''"></span>
                                             </td>
-                                            <td class="border border-black px-1 py-1 text-center font-bold font-sans">
-                                                <span x-text="ast.kondisi === 'Rusak Berat' ? '✓' : ''"></span>
+                                            <td class="border border-black px-1 py-1 text-center font-bold font-sans text-red-700">
+                                                <span x-text="ast.kondisi === 'Rusak Berat' || ast.kondisi === 'Rusak' ? '✓' : ''"></span>
                                             </td>
 
                                             <td class="border border-black px-2 py-1 font-sans text-[8.5px]" x-text="ast.status"></td>

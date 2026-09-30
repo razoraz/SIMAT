@@ -85,8 +85,7 @@
                                     <button type="button" @click="openEditKondisi(item)"
                                         class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer hover:ring-2 hover:ring-amber-400/50 transition-all group"
                                         :class="item.kondisi === 'Baik' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 
-                                               (item.kondisi === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 
-                                               (item.kondisi === 'Rusak Ringan' ? 'bg-orange-500/15 text-orange-300 border border-orange-500/30' : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'))"
+                                               (item.kondisi === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-rose-500/15 text-rose-300 border border-rose-500/30')"
                                         title="Klik untuk ubah kondisi barang">
                                         <span x-text="item.kondisi"></span>
                                         <svg class="w-3 h-3 opacity-60 group-hover:opacity-100 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>

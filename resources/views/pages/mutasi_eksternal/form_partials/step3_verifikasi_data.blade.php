@@ -154,7 +154,7 @@
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Kondisi Fisik Saat Diterima:</span>
                         <span class="font-extrabold inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px]"
-                            :class="formData.kondisi === 'Baik' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : (formData.kondisi === 'Rusak Ringan' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30')"
+                            :class="formData.kondisi === 'Baik' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : (formData.kondisi === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30')"
                             x-text="formData.kondisi || 'Baik'"></span>
                     </div>
                 </div>

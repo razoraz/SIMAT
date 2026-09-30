@@ -152,7 +152,7 @@ class AstapSeeder extends Seeder
                 'nibar' => $nibar,
                 'qr_code_path' => "/scan/{$nibar}",
                 'ruang_pemegang' => $ruang,
-                'kondisi' => ($i == 3) ? 'Rusak Ringan' : 'Baik',
+                'kondisi' => ($i == 3) ? 'Kurang Baik' : 'Baik',
                 'status' => !empty($ruang) ? 'Tidak Tersedia' : 'Tersedia'
             ]);
         }
@@ -397,7 +397,7 @@ class AstapSeeder extends Seeder
             'nibar' => $nibarJaringan,
             'qr_code_path' => "/scan/{$nibarJaringan}",
             'ruang_pemegang' => $ruangJaringan,
-            'kondisi' => 'Rusak Ringan',
+            'kondisi' => 'Kurang Baik',
             'status' => !empty($ruangJaringan) ? 'Tidak Tersedia' : 'Tersedia'
         ]);
 
@@ -630,7 +630,7 @@ class AstapSeeder extends Seeder
         for ($i = 1; $i <= 5; $i++) {
             $noRegStr = str_pad($i, 7, '0', STR_PAD_LEFT);
             $nibar = "12013511020000002800002026132020102045{$noRegStr}";
-            $kondisiSample = ($i <= 3) ? 'Baik' : 'Rusak Ringan';
+            $kondisiSample = ($i <= 3) ? 'Baik' : 'Kurang Baik';
             AstapRegister::create([
                 'astap_id' => $astapTimbangan->id,
                 'unit_id' => $resolveUnitId($ruangTimbangan),

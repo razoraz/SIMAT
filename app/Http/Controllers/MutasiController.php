@@ -348,7 +348,7 @@ class MutasiController extends Controller
         $createdCount = 0;
         foreach ($registerIds as $regId) {
             $regObj = AstapRegister::find($regId);
-            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'])) {
+            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
                 if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
                     $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
                 }
@@ -539,7 +539,7 @@ class MutasiController extends Controller
 
         foreach ($registerIds as $regId) {
             $regObj = AstapRegister::find($regId);
-            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'])) {
+            if (isset($kondisiBaru[$regId]) && in_array($kondisiBaru[$regId], ['Baik', 'Kurang Baik', 'Rusak Berat'])) {
                 if ($regObj && $regObj->kondisi !== $kondisiBaru[$regId]) {
                     $regObj->update(['kondisi' => $kondisiBaru[$regId]]);
                 }

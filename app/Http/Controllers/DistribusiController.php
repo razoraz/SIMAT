@@ -86,7 +86,7 @@ class DistribusiController extends Controller
      * Dapatkan daftar ID register aset yang saat ini TIDAK DAPAT didistribusikan:
      * 1. Sedang terdaftar pada transaksi distribusi lain yang aktif ('Dalam Pengiriman', 'Telah Diterima', 'Dikirim', 'Diterima')
      * 2. Sedang dalam proses mutasi aktif (berdasarkan MutasiController::getLockedRegisterIds())
-     * 3. Kondisi fisik tidak baik (Kurang Baik, Rusak Ringan, Rusak Berat)
+     * 3. Kondisi fisik tidak baik (Kurang Baik, Rusak Berat)
      * 4. Status fisik sudah 'Tidak Tersedia' atau ruang_pemegang sudah terisi di unit lain
      * 
      * @param int|null $excludeDistribusiId ID distribusi yang sedang diedit (agar NIBAR miliknya tetap tersedia untuk transaksi tersebut)
@@ -1181,7 +1181,10 @@ class DistribusiController extends Controller
             return response()->json(['success' => false, 'message' => 'Register tidak ditemukan.'], 404);
         }
         $kondisi = $request->input('kondisi');
-        $allowed = ['Baik', 'Kurang Baik', 'Rusak Ringan', 'Rusak Berat'];
+        if ($kondisi === 'Rusak Ringan' || $kondisi === 'RR') {
+            $kondisi = 'Kurang Baik';
+        }
+        $allowed = ['Baik', 'Kurang Baik', 'Rusak Berat'];
         if (!in_array($kondisi, $allowed)) {
             return response()->json(['success' => false, 'message' => 'Kondisi tidak valid.'], 422);
         }

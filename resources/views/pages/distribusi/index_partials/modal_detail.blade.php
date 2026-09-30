@@ -172,9 +172,8 @@
                                                                     <span class="h-[32px] px-3 flex items-center justify-center rounded-lg text-[10px] font-bold whitespace-nowrap"
                                                                           :class="{
                                                                               'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30': reg.kondisi === 'Baik' || !reg.kondisi,
-                                                                              'bg-amber-500/15 text-amber-300 border border-amber-500/30': reg.kondisi === 'Kurang Baik',
-                                                                              'bg-orange-500/15 text-orange-300 border border-orange-500/30': reg.kondisi === 'Rusak Ringan',
-                                                                              'bg-rose-500/15 text-rose-300 border border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'Rusak'
+                                                                              'bg-amber-500/15 text-amber-300 border border-amber-500/30': reg.kondisi === 'Kurang Baik' || reg.kondisi === 'Rusak Ringan',
+                                                                                                                                                            'bg-rose-500/15 text-rose-300 border border-rose-500/30': reg.kondisi === 'Rusak Berat' || reg.kondisi === 'Rusak'
                                                                           }"
                                                                           x-text="reg.kondisi || 'Baik'"></span>
                                                                 </div>

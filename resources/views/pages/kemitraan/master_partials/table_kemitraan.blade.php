@@ -5,7 +5,7 @@
     <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <h2 class="text-base font-extrabold text-white flex items-center gap-2">
-                <span>📋 Daftar Aset Kemitraan (KSO, KSP, Sewa)</span>
+                <span>📋 Daftar Aset Kemitraan (Sewa, KSP, BGS/BSG, KSPI)</span>
             </h2>
             <p class="text-xs text-slate-400 mt-0.5">
                 Total {{ count($kemitraanRecords ?? []) }} data aset kerja sama tercatat dalam sistem SIMAT-RK.
@@ -24,10 +24,9 @@
                     <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
                     <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
                     <th class="py-3.5 px-4 min-w-[220px] bg-slate-950">Identitas Barang (Akun 108)</th>
-                    <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Ruangan Penempatan</th>
-                    <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Masa Konsesi / Kerjasama</th>
-                    <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
-                    <th class="py-3.5 px-4 min-w-[110px] text-center bg-slate-950 whitespace-nowrap">Status</th>
+                    <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
+                    <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
+                    <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi / Kerjasama</th>
                     <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                 </tr>
             </thead>
@@ -77,23 +76,89 @@
                                 {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.x') }}
                             </div>
                             <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
-                                <span>Vol: <strong>{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
-                                <span>•</span>
-                                <span>Kondisi: <strong class="text-emerald-400">{{ $firstReg?->kondisi ?: 'Baik' }}</strong></span>
+                                <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
                             </div>
                         </td>
 
-                        <!-- 4. Ruangan Penempatan -->
-                        <td class="py-4 px-4">
-                            <div class="text-xs font-semibold text-slate-200">
-                                🏢 {{ $unit?->nama ?: ($firstReg?->ruang_pemegang ?: 'RSUD Dr. H. Koesnandi') }}
-                            </div>
-                            <div class="text-[10px] text-slate-400 mt-0.5">
-                                NIBAR: <span class="font-mono text-slate-300">{{ $firstReg?->nibar ?: '-' }}</span>
+                        <!-- 4. Kondisi Aset (Persentase 3 Kondisi: Baik, Kurang Baik, Rusak Berat) -->
+                        <td class="py-4 px-4 text-center whitespace-nowrap">
+                            @php
+                                $regs = $astap?->registers ?? collect();
+                                $totalReg = $regs->count() ?: (int)($row->jumlah_volume ?: 1);
+
+                                if ($regs->isEmpty()) {
+                                    $kDefault = $firstReg?->kondisi ?: 'Baik';
+                                    $baik = ($kDefault === 'Baik' || $kDefault === 'B') ? $totalReg : 0;
+                                    $kb   = ($kDefault === 'Kurang Baik' || $kDefault === 'KB' || $kDefault === 'Rusak Ringan' || $kDefault === 'RR') ? $totalReg : 0;
+                                    $rb   = ($kDefault === 'Rusak Berat' || $kDefault === 'RB' || $kDefault === 'Rusak') ? $totalReg : 0;
+                                } else {
+                                    $baik = $regs->filter(fn($r) => in_array($r->kondisi, ['Baik', 'B']))->count();
+                                    $kb   = $regs->filter(fn($r) => in_array($r->kondisi, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']))->count();
+                                    $rb   = $regs->filter(fn($r) => in_array($r->kondisi, ['Rusak Berat', 'RB', 'Rusak']))->count();
+                                }
+
+                                $pctBaik = $totalReg > 0 ? round(($baik / $totalReg) * 100) : 0;
+                                $pctKb   = $totalReg > 0 ? round(($kb / $totalReg) * 100) : 0;
+                                $pctRb   = $totalReg > 0 ? round(($rb / $totalReg) * 100) : 0;
+
+                                $isSingle = ($baik === $totalReg) || ($kb === $totalReg) || ($rb === $totalReg);
+                            @endphp
+
+                            @if($isSingle)
+                                @if($baik === $totalReg)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                                        100% Baik
+                                    </span>
+                                @elseif($kb === $totalReg)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span>
+                                        100% K.Baik
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5"></span>
+                                        100% R.Berat
+                                    </span>
+                                @endif
+                            @else
+                                <div class="min-w-[125px] max-w-[150px] mx-auto">
+                                    <!-- Mini progress bar gabungan (3 Kondisi) -->
+                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1 border border-slate-700/50">
+                                        @if($pctBaik > 0)
+                                            <div class="bg-emerald-400 transition-all" style="width: {{ $pctBaik }}%" title="{{ $pctBaik }}% Baik ({{ $baik }}/{{ $totalReg }})"></div>
+                                        @endif
+                                        @if($pctKb > 0)
+                                            <div class="bg-amber-400 transition-all" style="width: {{ $pctKb }}%" title="{{ $pctKb }}% Kurang Baik ({{ $kb }}/{{ $totalReg }})"></div>
+                                        @endif
+                                        @if($pctRb > 0)
+                                            <div class="bg-rose-400 transition-all" style="width: {{ $pctRb }}%" title="{{ $pctRb }}% Rusak Berat ({{ $rb }}/{{ $totalReg }})"></div>
+                                        @endif
+                                    </div>
+                                    <!-- Label persentase per kondisi -->
+                                    <div class="flex flex-wrap gap-x-2 gap-y-0.5 justify-center text-[9px] font-bold">
+                                        @if($baik > 0)
+                                            <span class="text-emerald-400">{{ $pctBaik }}% Baik</span>
+                                        @endif
+                                        @if($kb > 0)
+                                            <span class="text-amber-400">{{ $pctKb }}% KB</span>
+                                        @endif
+                                        @if($rb > 0)
+                                            <span class="text-rose-400">{{ $pctRb }}% RB</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        </td>
+
+                        <!-- 4. Total Nilai Aset -->
+                        <td class="py-4 px-4 text-right">
+                            <div class="font-mono text-xs font-black text-cyan-300">
+                                Rp {{ number_format($row->nilai_aset, 0, ',', '.') }}
                             </div>
                         </td>
 
-                        <!-- 5. Masa Konsesi & Countdown Sisa Hari -->
+                        <!-- 5. Masa Konsesi / Kerjasama & Status -->
                         <td class="py-4 px-4">
                             @if($row->tanggal_mulai || $row->tanggal_selesai)
                                 <div class="text-[11px] font-medium text-slate-300">
@@ -101,51 +166,31 @@
                                     s.d. 
                                     {{ $row->tanggal_selesai ? \Carbon\Carbon::parse($row->tanggal_selesai)->format('d/m/Y') : '?' }}
                                 </div>
-                                @if(!is_null($sisaHari))
+                                @if($row->status_konsesi === 'Selesai / Reklasifikasi')
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md mt-1 border border-blue-500/30">
+                                        <span>🔄</span> Siap Reklasifikasi
+                                    </span>
+                                @elseif($row->status_konsesi === 'Dihentikan')
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1 border border-rose-500/30">
+                                        <span>🛑</span> Dihentikan
+                                    </span>
+                                @elseif(!is_null($sisaHari))
                                     @if($sisaHari > 60)
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md mt-1">
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md mt-1 border border-emerald-500/20">
                                             <span>⏱️</span> Sisa {{ $sisaHari }} hari
                                         </span>
                                     @elseif($sisaHari > 0)
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md mt-1">
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md mt-1 border border-amber-500/20">
                                             <span>⚠️</span> Sisa {{ $sisaHari }} hari
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1">
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1 border border-rose-500/30">
                                             <span>🛑</span> Konsesi Berakhir
                                         </span>
                                     @endif
                                 @endif
                             @else
                                 <span class="text-slate-500 text-[11px] italic">Tanpa batas waktu</span>
-                            @endif
-                        </td>
-
-                        <!-- 6. Taksiran Nilai Wajar -->
-                        <td class="py-4 px-4 text-right">
-                            <div class="font-mono text-xs font-black text-cyan-300">
-                                Rp {{ number_format($row->nilai_aset, 0, ',', '.') }}
-                            </div>
-                            <div class="text-[10px] text-slate-500 mt-0.5">
-                                {{ $row->tahun }} • {{ $row->triwulan }}
-                            </div>
-                        </td>
-
-                        <!-- 7. Status Konsesi -->
-                        <td class="py-4 px-4 text-center">
-                            @if($row->status_konsesi === 'Aktif')
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                                    Aktif
-                                </span>
-                            @elseif($row->status_konsesi === 'Selesai / Reklasifikasi')
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                                    Siap Reklas
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
-                                    {{ $row->status_konsesi }}
-                                </span>
                             @endif
                         </td>
 
@@ -199,7 +244,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="py-12 text-center text-slate-400">
+                        <td colspan="7" class="py-12 text-center text-slate-400">
                             <div class="text-3xl mb-2">🤝</div>
                             <p class="text-sm font-bold text-white">Belum Ada Aset Kemitraan Tercatat</p>
                             <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
