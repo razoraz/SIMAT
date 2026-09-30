@@ -2046,12 +2046,16 @@
                             }
                             // Validasi spesifikasi berdasarkan status akuntansi (Extracom vs Reguler)
                             if (it.is_extracom) {
-                                if (!it.lainnya_judul || !it.lainnya_judul.trim()) {
+                                const namaBarang = (it.lainnya_nama_barang || it.lainnya_judul || this.formData.nama_barang || this.selectedSubSub?.nama || '').trim();
+                                if (!namaBarang) {
                                     const msg = `Nama / Uraian Rincian Barang Extracom pada Item #${num} tidak boleh kosong.`;
                                     this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                     this.setStepError(2, msg);
                                     return false;
                                 }
+                                // Sinkronkan nilai nama agar konsisten di form dan payload database
+                                it.lainnya_nama_barang = namaBarang;
+                                it.lainnya_judul = namaBarang;
                             } else {
                                 if (it.kib_e_type === 'buku' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
                                     const msg = `Judul Buku pada Item #${num} tidak boleh kosong.`;

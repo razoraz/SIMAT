@@ -353,91 +353,82 @@
                     </div>
 
                     <!-- 4. Form Spesifikasi Ekstrakomtabel Baku (Universal untuk Semua Kategori KIB E saat Extracom) -->
-                    <div x-show="item.is_extracom" class="p-4 rounded-2xl bg-slate-950/70 border border-cyan-500/40 space-y-3 shadow-inner relative overflow-hidden">
-                        <!-- Glow Ambient Cyan -->
-                        <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div x-show="item.is_extracom" class="space-y-4">
+                        <!-- Grid Form Pengisian Spesifikasi Barang Ekstrakomtabel (Persis Template Baku Belanja Modal) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                        <!-- Header Form Extracom Baku -->
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-cyan-500/20 pb-2">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-base">📦</span>
-                                <div>
-                                    <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider block">
-                                        Form Spesifikasi Ekstrakomtabel Baku (Universal)
-                                    </span>
-                                    <span class="text-[9.5px] text-slate-400">
-                                        Standar isian barang non-kapitalisasi &bull; Klasifikasi PMDN 108 asal: 
-                                        <strong class="text-cyan-400 font-mono" x-text="item.kib_e_type === 'kesenian' ? 'Kesenian & Kebudayaan (1.3.5.02)' : (item.kib_e_type === 'hewan_tumbuhan' ? 'Hewan & Tanaman (1.3.5.03)' : 'Buku Perpustakaan (1.3.5.01)')"></strong>
+                            <!-- 1. Spesifikasi Fisik (Merk, Type, Ukuran & Nama) -->
+                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>⚙️ MERK, TYPE &amp; UKURAN:</span>
                                     </span>
                                 </div>
-                            </div>
-                            <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold self-start sm:self-auto font-mono">
-                                Nilai Satuan ≤ Rp 300.000
-                            </span>
-                        </div>
-
-                        <!-- Grid Isian Extracom Baku -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
-                            <!-- Nama / Uraian Rincian Barang -->
-                            <div class="sm:col-span-2">
-                                <label class="block text-slate-300 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                    <span>Nama / Uraian Rincian Barang Ekstrakomtabel <span class="text-rose-400">*</span></span>
-                                    <span class="text-[9px] text-slate-400 font-normal">Identitas spesifik barang di ruangan</span>
-                                </label>
-                                <input type="text" x-model="item.lainnya_judul"
-                                    placeholder="Contoh: Buku Panduan Saku Pelayanan Medis / Bibit Tanaman Polybag / Plakat Hiasan Meja"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
-                            </div>
-
-                            <!-- Merk / Pabrikan / Pencipta / Varietas -->
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Merk / Brand / Produsen / Varietas
-                                </label>
-                                <input type="text" x-model="item.lainnya_pencipta"
-                                    placeholder="Contoh: Percetakan Medis / Nursery Flora / Pengrajin Lokal / Standar"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                            </div>
-
-                            <!-- Bahan / Material Pembuatan -->
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Bahan / Material Pembuatan
-                                </label>
-                                <input type="text" x-model="item.lainnya_bahan"
-                                    placeholder="Contoh: Kertas Art Paper / Plastik Mika / Kayu / Akrilik / Bibit Organik"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                        <span>Nama Barang (PMDN 108)</span>
+                                        <span class="text-[9px] text-amber-400 font-bold flex items-center space-x-1">
+                                            <span>🔒</span>
+                                            <span>Otomatis dari Langkah 2</span>
+                                        </span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" 
+                                               :value="item.lainnya_nama_barang || formData.nama_barang || (selectedSubSub?.nama || 'Aset Tetap Lainnya')"
+                                               readonly
+                                               class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 font-bold cursor-not-allowed select-none focus:outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Merk Barang</label>
+                                    <input type="text" x-model="item.lainnya_pencipta" placeholder="Contoh: Olympic / Lion / Krisbow / Kenko"
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:border-amber-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Type / Model</label>
+                                        <input type="text" x-model="item.lainnya_spesifikasi" placeholder="Contoh: Standard / Meja / Rak"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:border-amber-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1">Ukuran / Kapasitas</label>
+                                        <input type="text" x-model="item.lainnya_ukuran" placeholder="Contoh: 120x60 cm / Sedang"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:border-amber-500">
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Ukuran / Dimensi / Spesifikasi Fisik -->
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Ukuran / Dimensi / Volume Fisik
-                                </label>
-                                <input type="text" x-model="item.lainnya_ukuran"
-                                    placeholder="Contoh: A5 (14.8 x 21 cm) / Tinggi 25 cm / Tebal 3 mm / Standar"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                            <!-- 2. Spesifikasi No Pabrik, Bahan & Kondisi -->
+                            <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span class="text-xs font-bold text-cyan-400 block uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🏷️ NO PABRIK, BAHAN &amp; KONDISI:</span>
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">No Pabrik / SN</label>
+                                        <input type="text" x-model="item.lainnya_no_pabrik" placeholder="SN-EXT-2026-001"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-[10px] mb-1 font-medium">Bahan Pembuatan</label>
+                                        <input type="text" x-model="item.lainnya_bahan" placeholder="Kayu / Besi / Plastik"
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-cyan-500">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Barang</label>
+                                    <select x-model="item.lainnya_kondisi" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500">
+                                        <option value="Baik">Baik (B)</option>
+                                        <option value="Kurang Baik">Kurang Baik (KB)</option>
+                                        <option value="Rusak Berat">Rusak Berat (RB)</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <!-- Asal Daerah / Sumber Pengadaan -->
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Asal Barang / Sumber Mitra
-                                </label>
-                                <input type="text" x-model="item.lainnya_asal_daerah"
-                                    placeholder="Contoh: Pengadaan Mitra KSO / Bondowoso / Lokal"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
-                            </div>
-
-                            <!-- Keterangan / Spesifikasi Khusus Barang Extracom -->
-                            <div class="sm:col-span-2">
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                    Spesifikasi Teknis / Keterangan Tambahan Barang Extracom
-                                </label>
-                                <input type="text" x-model="item.lainnya_spesifikasi"
-                                    placeholder="Contoh: Perlengkapan penunjang non-kapitalisasi operasional rawat inap mitra KSO"
-                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-cyan-300 focus:outline-none transition-all">
-                            </div>
                         </div>
                     </div>
 

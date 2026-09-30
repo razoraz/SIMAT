@@ -602,6 +602,25 @@
                 if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
                     return this.syncRepeaterItemsWithVolume(spec.lainnya_items, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
                 }
+                // Fallback untuk data historis lama sebelum repeater multi-item KIB E
+                if (spec && (spec.judul || spec.pencipta || spec.nama_barang || (astap.nama_barang && astap.nama_barang.toLowerCase().includes('buku')))) {
+                    return [{
+                        is_extracom: Boolean(spec.is_extracomtable),
+                        kib_e_type: spec.kib_e_type || 'buku',
+                        lainnya_nama_barang: spec.nama_barang || astap.nama_barang,
+                        lainnya_judul: spec.judul || astap.nama_barang,
+                        lainnya_pencipta: spec.pencipta || '',
+                        lainnya_spesifikasi: spec.spesifikasi || spec.keterangan || '',
+                        lainnya_bahan: spec.bahan || '',
+                        lainnya_ukuran: spec.ukuran || '',
+                        lainnya_tahun: spec.tahun || astap.tahun_perolehan,
+                        lainnya_kondisi: spec.kondisi || astap.kondisi || 'Baik',
+                        lainnya_jumlah: targetTotal,
+                        lainnya_satuan: astap.satuan || 'Buah',
+                        lainnya_nilai_satuan: (astap.harga_satuan || (astap.total_realisasi / targetTotal) || 0),
+                        ruang_pemegang: astap.alamat_barang || ''
+                    }];
+                }
                 return [];
             },
 
