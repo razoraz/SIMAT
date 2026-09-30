@@ -43,6 +43,10 @@
                                 <span>🌾 Bidang Tanah #<span x-text="idx + 1"></span></span>
                             </span>
                             <span class="text-xs text-white font-bold" x-show="item.tanah_nama_barang" x-text="item.tanah_nama_barang"></span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"
+                                :class="(item.tanah_kondisi === 'Baik' || !item.tanah_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (item.tanah_kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40')"
+                                x-text="'• Kondisi: ' + (item.tanah_kondisi || 'Baik')">
+                            </span>
                             <span class="text-[11px] text-slate-400 font-mono" x-show="item.tanah_luas_m2">
                                 • Luas: <strong class="text-indigo-300" x-text="(item.tanah_luas_m2 || 0).toLocaleString('id-ID') + ' m²'"></strong>
                             </span>
@@ -77,22 +81,31 @@
                             </div>
 
                             <!-- Hak Tanah & Luas -->
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-3 gap-2">
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Hak Tanah</label>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Hak</label>
                                     <select x-model="item.tanah_hak" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                                         <option value="Hak Pakai">Hak Pakai</option>
-                                        <option value="Hak Milik">Hak Milik (Pemkab)</option>
-                                        <option value="Hak Pengelolaan">Hak Pengelolaan (HPL)</option>
-                                        <option value="Hak Guna Bangunan">Hak Guna Bangunan (HGB)</option>
-                                        <option value="Belum Bersertifikat">Belum Bersertifikat</option>
+                                        <option value="Hak Milik">Hak Milik</option>
+                                        <option value="Hak Pengelolaan">HPL</option>
+                                        <option value="Hak Guna Bangunan">HGB</option>
+                                        <option value="Belum Bersertifikat">Belum</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas Tanah (m²)</label>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas (m²)</label>
                                     <input type="number" step="0.01" min="0" x-model.number="item.tanah_luas_m2" @input="syncTotalsFromItems()"
                                         placeholder="0"
                                         class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs font-mono font-bold text-indigo-300 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi</label>
+                                    <select x-model="item.tanah_kondisi" @change="syncTotalsFromItems()"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-bold cursor-pointer">
+                                        <option value="Baik">🟢 Baik</option>
+                                        <option value="Rusak Ringan">🟡 Kurang</option>
+                                        <option value="Rusak Berat">🔴 Rusak</option>
+                                    </select>
                                 </div>
                             </div>
 

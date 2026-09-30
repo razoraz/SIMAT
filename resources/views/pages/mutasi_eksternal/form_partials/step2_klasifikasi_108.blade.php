@@ -52,9 +52,9 @@
             <button type="button" @click="selectKibCategory('tanah')"
                 class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
                 :class="isTanah 
-                    ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-2 ring-emerald-400' 
+                    ? 'bg-emerald-500/20 border-emerald-400 text-white shadow-xl shadow-emerald-500/20 ring-1 ring-emerald-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-emerald-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center justify-between gap-2 shrink-0">
                     <span class="text-xl">🌾</span>
                     <span class="font-mono text-[10px] font-black text-emerald-400 group-hover:text-emerald-300">1.3.1</span>
                 </div>
@@ -62,7 +62,7 @@
                     <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB A (Tanah)</span>
                     <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Tanah perkantoran, pelayanan medis, sarana kesehatan</span>
                 </div>
-                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
                     <span class="text-[9px] font-mono text-slate-500">KIB A</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isTanah ? 'bg-emerald-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-emerald-400 group-hover:text-slate-950'">
@@ -76,9 +76,9 @@
             <button type="button" @click="selectKibCategory('mesin')"
                 class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
                 :class="isMesin 
-                    ? 'bg-indigo-500/20 border-indigo-400 text-white shadow-xl shadow-indigo-500/20 ring-2 ring-indigo-400' 
+                    ? 'bg-indigo-500/20 border-indigo-400 text-white shadow-xl shadow-indigo-500/20 ring-1 ring-indigo-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-indigo-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center justify-between gap-2 shrink-0">
                     <span class="text-xl">⚙️</span>
                     <span class="font-mono text-[10px] font-black text-indigo-400 group-hover:text-indigo-300">1.3.2</span>
                 </div>
@@ -86,7 +86,7 @@
                     <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB B (Peralatan/Mesin)</span>
                     <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Alat kesehatan, kendaraan, mesin, komputer, mebeler</span>
                 </div>
-                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
                     <span class="text-[9px] font-mono text-slate-500">KIB B</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isMesin ? 'bg-indigo-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-indigo-400 group-hover:text-slate-950'">
@@ -100,9 +100,9 @@
             <button type="button" @click="selectKibCategory('gedung')"
                 class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
                 :class="isGedung 
-                    ? 'bg-blue-500/20 border-blue-400 text-white shadow-xl shadow-blue-500/20 ring-2 ring-blue-400' 
+                    ? 'bg-blue-500/20 border-blue-400 text-white shadow-xl shadow-blue-500/20 ring-1 ring-blue-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-blue-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center justify-between gap-2 shrink-0">
                     <span class="text-xl">🏢</span>
                     <span class="font-mono text-[10px] font-black text-blue-400 group-hover:text-blue-300">1.3.3</span>
                 </div>
@@ -110,7 +110,7 @@
                     <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB C (Gedung/Bangunan)</span>
                     <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Gedung rawat inap, paviliun, gudang, laboratorium</span>
                 </div>
-                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
                     <span class="text-[9px] font-mono text-slate-500">KIB C</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isGedung ? 'bg-blue-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-blue-400 group-hover:text-slate-950'">
@@ -124,9 +124,9 @@
             <button type="button" @click="selectKibCategory('jaringan')"
                 class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
                 :class="isJaringan 
-                    ? 'bg-teal-500/20 border-teal-400 text-white shadow-xl shadow-teal-500/20 ring-2 ring-teal-400' 
+                    ? 'bg-teal-500/20 border-teal-400 text-white shadow-xl shadow-teal-500/20 ring-1 ring-teal-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-teal-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center justify-between gap-2 shrink-0">
                     <span class="text-xl">🛣️</span>
                     <span class="font-mono text-[10px] font-black text-teal-400 group-hover:text-teal-300">1.3.4</span>
                 </div>
@@ -134,7 +134,7 @@
                     <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB D (Jalan/Jaringan)</span>
                     <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Jalan lingkungan, instalasi pemipaan, kabel listrik, IT</span>
                 </div>
-                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
                     <span class="text-[9px] font-mono text-slate-500">KIB D</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isJaringan ? 'bg-teal-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-teal-400 group-hover:text-slate-950'">
@@ -146,11 +146,11 @@
 
             <!-- KIB E: Aset Tetap Lainnya -->
             <button type="button" @click="selectKibCategory('lainnya')"
-                class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative"
+                class="group p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 relative kib-card-last-span"
                 :class="isLainnya 
-                    ? 'bg-fuchsia-500/20 border-fuchsia-400 text-white shadow-xl shadow-fuchsia-500/20 ring-2 ring-fuchsia-400' 
+                    ? 'bg-fuchsia-500/20 border-fuchsia-400 text-white shadow-xl shadow-fuchsia-500/20 ring-1 ring-fuchsia-400' 
                     : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-fuchsia-500/50 hover:bg-slate-850 hover:-translate-y-0.5'">
-                <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center justify-between gap-2 shrink-0">
                     <span class="text-xl">📦</span>
                     <span class="font-mono text-[10px] font-black text-fuchsia-400 group-hover:text-fuchsia-300">1.3.5</span>
                 </div>
@@ -158,7 +158,7 @@
                     <span class="block text-xs font-bold text-slate-200 group-hover:text-white truncate">KIB E (Aset Lainnya)</span>
                     <span class="block text-[10px] text-slate-400 line-clamp-2 mt-0.5 leading-snug">Buku medis perpustakaan, seni, hewan/tanaman, software</span>
                 </div>
-                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                <div class="kib-footer pt-2 border-t border-slate-800/80 flex items-center justify-between shrink-0">
                     <span class="text-[9px] font-mono text-slate-500">KIB E</span>
                     <div class="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold"
                         :class="isLainnya ? 'bg-fuchsia-400 text-slate-950 shadow-md' : 'bg-slate-800 text-slate-400 group-hover:bg-fuchsia-400 group-hover:text-slate-950'">
@@ -267,159 +267,87 @@
     @include('pages.mutasi_eksternal.form_partials.step2_sheets.sheet_lainnya')
 
     <!-- ========================================================================= -->
-    <!-- PENEMPATAN RUANGAN (KIR) DI RSUD DR. H. KOESNANDI & KONDISI FISIK         -->
     <!-- ========================================================================= -->
-    <div class="p-6 rounded-3xl bg-slate-950/80 border border-indigo-500/30 space-y-5 shadow-xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-                <span>🏢 Penempatan Ruangan (KIR), Kondisi Fisik &amp; Lokasi di RSUD</span>
-                <span class="text-rose-400">*</span>
-            </span>
-            <span class="text-[10px] text-slate-400 font-mono">Pencatatan Kartu Inventaris Ruangan (KIR)</span>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Unit / Ruangan Penempatan Baru -->
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Unit / Ruangan Penempatan Aset di RSUD (KIR) <span class="text-rose-400">*</span>
-                </label>
-                <select x-model="formData.unit_id" required
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold shadow-inner">
-                    <option value="">-- Pilih Ruangan / Unit Penempatan --</option>
-                    @foreach($dbUnits ?? [] as $u)
-                        <option value="{{ $u->id }}">{{ $u->nama }} ({{ $u->kode_unit ?? 'Unit' }})</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Kondisi Fisik Saat Diterima -->
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Kondisi Fisik Saat Diterima dari SKPD Luar <span class="text-rose-400">*</span>
-                </label>
-                <select x-model="formData.kondisi" required
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold shadow-inner">
-                    <option value="Baik">🟢 Baik (Operasional Normal / Siap Digunakan)</option>
-                    <option value="Rusak Ringan">🟡 Rusak Ringan (Perlu Servis / Kalibrasi Ringan)</option>
-                    <option value="Rusak Berat">🔴 Rusak Berat</option>
-                </select>
-            </div>
-
-            <!-- Alamat / Gedung Penempatan Fisik Barang -->
-            <div class="sm:col-span-2">
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Alamat / Letak Fisik Barang di Lingkungan RSUD
-                </label>
-                <input type="text" x-model="formData.alamat_barang"
-                    placeholder="RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none font-semibold shadow-inner">
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- RINCIAN SPESIFIK BARANG & NILAI PEROLEHAN BMD DARI SKPD PENGIRIM          -->
+    <!-- AKUMULASI TOTAL VOLUME & NILAI PEROLEHAN BMD                              -->
     <!-- ========================================================================= -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-indigo-500/30 space-y-5 shadow-2xl relative overflow-hidden">
         <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                <span>📝 Nama Spesifik Barang &amp; Total Nilai Perolehan BMD</span>
-                <span class="text-rose-400">*</span>
-            </span>
+            <div class="flex items-center space-x-2.5">
+                <span class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm border border-indigo-500/30">🔒</span>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
+                        Akumulasi Total Volume &amp; Nilai Perolehan BMD
+                    </h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Terkunci otomatis dari hasil perhitungan seluruh rincian unit barang pada lembar KIB di atas.</p>
+                </div>
+            </div>
             <template x-if="selected108Item">
-                <span class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 font-mono"
+                <span class="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-mono hidden sm:inline-block"
                     x-text="selected108Item.kode + ' • ' + selected108Item.nama"></span>
             </template>
         </div>
 
-        <!-- Nama Spesifik Barang Lengkap -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                Nama Lengkap / Spesifikasi Barang Pelimpahan <span class="text-rose-400">*</span>
-            </label>
-            <input type="text" x-model="formData.nama_barang" required
-                @input="onNamaBarangInput($event.target.value)"
-                placeholder="Contoh: Mobil Ambulance Toyota Hiace Commuter 2.5 M/T / USG 4D Mindray DC-70"
-                class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-3 text-xs text-white font-bold placeholder-slate-500 focus:outline-none shadow-inner">
-            <p class="text-[10.5px] text-slate-400 mt-1">Nama ini akan dicetak resmi pada Berita Acara, Label QR-Code NIBAR, dan Buku Inventaris Aset RSUD.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
             <!-- 1. Total Volume / Kuantitas Aset -->
-            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span>Total Volume / Kuantitas Aset <span class="text-rose-400">*</span></span>
-                        <span class="text-[10px] text-indigo-400 font-bold font-mono" x-show="isMultiItemActive">🔒 Akumulasi Rincian</span>
-                    </label>
-                    <span class="text-xs font-mono text-indigo-300 font-extrabold" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                            <span>Total Volume / Kuantitas <span class="text-rose-400">*</span></span>
+                            <span class="text-[9px] font-bold text-indigo-400 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30">
+                                🔒 Terkunci
+                            </span>
+                        </label>
+                        <span class="text-xs font-mono text-indigo-300 font-extrabold" x-text="(formData.jumlah_volume || 0) + ' ' + (formData.satuan || 'Unit')"></span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="col-span-2 relative">
+                            <input type="number" x-model.number="formData.jumlah_volume" readonly required min="1"
+                                class="w-full bg-slate-950/80 border border-slate-800 text-indigo-300 rounded-xl px-4 py-2.5 text-xs font-bold font-mono cursor-not-allowed select-none focus:outline-none shadow-inner">
+                        </div>
+                        <div>
+                            <input type="text" x-model="formData.satuan" readonly required placeholder="Unit"
+                                class="w-full bg-slate-950/80 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-xs text-center font-bold cursor-not-allowed select-none focus:outline-none shadow-inner">
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="col-span-2 relative">
-                        <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
-                            @input="onJumlahVolumeInput($event.target.value)"
-                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-indigo-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
-                            class="w-full border focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
-                    </div>
-                    <div>
-                        <input type="text" x-model="formData.satuan" required placeholder="Unit"
-                            :readonly="isMultiItemActive"
-                            :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-slate-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
-                            class="w-full border focus:border-indigo-400 rounded-xl px-3 py-2.5 text-xs text-center font-bold focus:outline-none">
-                    </div>
-                </div>
-
-                <p class="text-[11px] text-slate-400 pt-1 leading-relaxed">
-                    <span x-show="isMultiItemActive">💡 Total volume dihitung otomatis dari akumulasi rincian fisik barang di lembar KIB atas.</span>
-                    <span x-show="!isMultiItemActive">Kuantitas fisik aset yang diserahterimakan dari SKPD pengirim ke RSUD Dr. H. Koesnandi.</span>
+                <p class="text-[10.5px] text-slate-400 pt-1 leading-relaxed">
+                    💡 Total volume dihitung otomatis dari akumulasi kuantitas rincian barang pada lembar KIB di atas.
                 </p>
             </div>
 
             <!-- 2. Total Nilai Perolehan BMD dari SKPD Pengirim (Rp) -->
-            <div class="p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-2.5 shadow-md">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span>Total Nilai Perolehan BMD (Rp) <span class="text-rose-400">*</span></span>
-                        <span class="text-[10px] text-emerald-400 font-bold font-mono" x-show="isMultiItemActive && formData.total_realisasi > 0">🔒 Akumulasi Otomatis</span>
-                    </label>
-                    <span class="text-xs font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
-                </div>
+            <div class="p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-2.5 shadow-md flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                            <span>Total Nilai Perolehan (Rp) <span class="text-rose-400">*</span></span>
+                            <span class="text-[9px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30">
+                                🔒 Terkunci
+                            </span>
+                        </label>
+                        <span class="text-xs font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
+                    </div>
 
-                <div class="flex items-center rounded-xl border transition-all overflow-hidden"
-                    :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-950 border-slate-700 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400/30'">
-                    <span class="px-3.5 py-2.5 bg-slate-900 border-r border-slate-800 text-slate-400 text-xs font-bold font-mono select-none flex items-center justify-center">
-                        Rp
-                    </span>
-                    <input type="text"
-                        :value="formData.total_realisasi ? Number(formData.total_realisasi).toLocaleString('id-ID') : ''"
-                        :readonly="isMultiItemActive"
-                        @input="
-                            let raw = $event.target.value.replace(/\D/g, '');
-                            let num = raw ? parseInt(raw, 10) : 0;
-                            formData.total_realisasi = num;
-                            $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
-                            onTotalRealisasiInput(num);
-                        "
-                        :class="isMultiItemActive ? 'text-emerald-400 cursor-not-allowed' : 'text-emerald-300'"
-                        placeholder="0"
-                        class="w-full bg-transparent px-3.5 py-2.5 text-xs font-bold font-mono placeholder-slate-600 focus:outline-none">
-                </div>
-
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-1">
-                    <p>
-                        <span x-show="isMultiItemActive">💡 Akumulasi otomatis dari nilai rincian fisik barang di lembar KIB atas.</span>
-                        <span x-show="!isMultiItemActive">Sesuai nilai perolehan di Berita Acara (BAMB/BAST) SKPD asal.</span>
-                    </p>
-                    <template x-if="formData.jumlah_volume > 1 && formData.total_realisasi > 0">
-                        <span class="text-indigo-400 font-mono font-semibold">
-                            Rata-rata: Rp <span x-text="formatRupiah(Math.round(formData.total_realisasi / formData.jumlah_volume))"></span>
+                    <div class="flex items-center rounded-xl border border-slate-800 bg-slate-950/80 overflow-hidden cursor-not-allowed shadow-inner">
+                        <span class="px-3.5 py-2.5 bg-slate-900 border-r border-slate-800 text-slate-400 text-xs font-bold font-mono select-none flex items-center justify-center">
+                            Rp
                         </span>
-                    </template>
+                        <input type="text"
+                            :value="formData.total_realisasi ? Number(formData.total_realisasi).toLocaleString('id-ID') : '0'"
+                            readonly
+                            placeholder="0"
+                            class="w-full bg-transparent px-3.5 py-2.5 text-xs font-bold font-mono text-emerald-400 cursor-not-allowed select-none focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="text-[10.5px] text-slate-400 pt-1 leading-relaxed">
+                    💡 Akumulasi otomatis dari nilai total seluruh rincian barang pada lembar KIB di atas.
                 </div>
             </div>
 

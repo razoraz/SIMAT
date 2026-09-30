@@ -540,6 +540,7 @@
                     mesin_no_rangka: '',
                     mesin_no_mesin: '',
                     mesin_no_polisi: '',
+                    mesin_kondisi: 'Baik',
                     mesin_jumlah_barang: 1,
                     mesin_satuan: this.formData.satuan || 'Unit',
                     mesin_nilai_satuan: 0
@@ -567,6 +568,7 @@
                     gedung_luas_m2: '',
                     gedung_bertingkat: 'Tidak',
                     gedung_beton: 'Beton',
+                    gedung_kondisi: 'Baik',
                     gedung_status_tanah: 'Tanah Pemkab Bondowoso',
                     gedung_dokumen_no: '',
                     gedung_jumlah_bangunan: 1,
@@ -597,6 +599,7 @@
                     jaringan_panjang_m: '',
                     jaringan_luas_m2: '',
                     jaringan_lokasi: this.formData.alamat_barang || '',
+                    jaringan_kondisi: 'Baik',
                     jaringan_jumlah: 1,
                     jaringan_satuan: 'Ruas',
                     jaringan_nilai_satuan: 0
@@ -624,6 +627,7 @@
                     lainnya_jenis: 'Buku / Kepustakaan Medis',
                     lainnya_pencipta: '',
                     lainnya_spesifikasi: '',
+                    lainnya_kondisi: 'Baik',
                     lainnya_jumlah: 1,
                     lainnya_satuan: 'Eksemplar',
                     lainnya_nilai_satuan: 0
@@ -650,7 +654,10 @@
                     this.formData.jumlah_volume = this.formData.tanah_items.length;
                     this.formData.satuan = 'Bidang';
                     const sum = this.formData.tanah_items.reduce((acc, it) => acc + (parseFloat(it.tanah_nilai_fisik) || 0), 0);
-                    if (sum > 0) this.formData.total_realisasi = sum;
+                    this.formData.total_realisasi = sum;
+                    if (this.formData.tanah_items[0].tanah_kondisi) {
+                        this.formData.kondisi = this.formData.tanah_items[0].tanah_kondisi;
+                    }
                 } else if (this.isMesin && this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
@@ -662,7 +669,10 @@
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.mesin_items[0].mesin_satuan || 'Unit';
-                    if (totalVal > 0) this.formData.total_realisasi = totalVal;
+                    this.formData.total_realisasi = totalVal;
+                    if (this.formData.mesin_items[0].mesin_kondisi) {
+                        this.formData.kondisi = this.formData.mesin_items[0].mesin_kondisi;
+                    }
                 } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
@@ -674,7 +684,10 @@
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.gedung_items[0].gedung_satuan || 'Gedung';
-                    if (totalVal > 0) this.formData.total_realisasi = totalVal;
+                    this.formData.total_realisasi = totalVal;
+                    if (this.formData.gedung_items[0].gedung_kondisi) {
+                        this.formData.kondisi = this.formData.gedung_items[0].gedung_kondisi;
+                    }
                 } else if (this.isJaringan && this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
@@ -686,7 +699,10 @@
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.jaringan_items[0].jaringan_satuan || 'Ruas';
-                    if (totalVal > 0) this.formData.total_realisasi = totalVal;
+                    this.formData.total_realisasi = totalVal;
+                    if (this.formData.jaringan_items[0].jaringan_kondisi) {
+                        this.formData.kondisi = this.formData.jaringan_items[0].jaringan_kondisi;
+                    }
                 } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
@@ -698,7 +714,17 @@
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.lainnya_items[0].lainnya_satuan || 'Item';
-                    if (totalVal > 0) this.formData.total_realisasi = totalVal;
+                    this.formData.total_realisasi = totalVal;
+                    if (this.formData.lainnya_items[0].lainnya_kondisi) {
+                        this.formData.kondisi = this.formData.lainnya_items[0].lainnya_kondisi;
+                    }
+                }
+
+                // Otomatis pastikan nama_barang terisi dari Kode 108 jika belum ada
+                if (!this.formData.nama_barang || this.formData.nama_barang.trim() === '') {
+                    if (this.selected108Item && this.selected108Item.nama) {
+                        this.formData.nama_barang = this.selected108Item.nama;
+                    }
                 }
             },
 
@@ -815,13 +841,24 @@
                         missing.push('Klasifikasi Kode Rekening Permendagri 108');
                     }
                     if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
-                        missing.push('Nama Lengkap / Spesifikasi Barang');
-                    }
-                    if (!this.formData.unit_id) {
-                        missing.push('Ruangan / Unit Penempatan di RSUD');
+                        if (this.selected108Item && this.selected108Item.nama) {
+                            this.formData.nama_barang = this.selected108Item.nama;
+                        } else if (this.firstMesinItem && (this.firstMesinItem.mesin_merk || this.firstMesinItem.mesin_type)) {
+                            this.formData.nama_barang = [this.firstMesinItem.mesin_merk, this.firstMesinItem.mesin_type].filter(Boolean).join(' ');
+                        } else if (this.formData.tanah_items?.[0]?.tanah_nama_barang) {
+                            this.formData.nama_barang = this.formData.tanah_items[0].tanah_nama_barang;
+                        } else if (this.formData.gedung_items?.[0]?.gedung_nama_barang) {
+                            this.formData.nama_barang = this.formData.gedung_items[0].gedung_nama_barang;
+                        } else if (this.formData.jaringan_items?.[0]?.jaringan_nama_barang) {
+                            this.formData.nama_barang = this.formData.jaringan_items[0].jaringan_nama_barang;
+                        } else if (this.formData.lainnya_items?.[0]?.lainnya_judul) {
+                            this.formData.nama_barang = this.formData.lainnya_items[0].lainnya_judul;
+                        } else {
+                            this.formData.nama_barang = 'Aset Pelimpahan SKPD';
+                        }
                     }
                     if (!this.formData.total_realisasi || Number(this.formData.total_realisasi) <= 0) {
-                        missing.push('Total Nilai Perolehan BMD (Rp > 0)');
+                        missing.push('Nilai Perolehan Satuan pada rincian unit KIB di atas (Total Nilai BMD harus > 0)');
                     }
 
                     if (missing.length > 0) {
@@ -1108,6 +1145,7 @@
                             gedung_luas_m2: init.gedung_luas_m2 || '',
                             gedung_bertingkat: init.gedung_bertingkat || 'Tidak',
                             gedung_beton: init.gedung_beton || 'Beton',
+                            gedung_kondisi: init.kondisi || 'Baik',
                             gedung_status_tanah: init.gedung_status_tanah || 'Tanah Pemda',
                             gedung_dokumen_no: init.gedung_dokumen_no || '',
                             gedung_jumlah_bangunan: init.jumlah_volume || 1,
@@ -1121,6 +1159,7 @@
                             jaringan_panjang_m: init.jaringan_panjang_m || '',
                             jaringan_luas_m2: init.jaringan_luas_m2 || '',
                             jaringan_lokasi: init.alamat_barang || '',
+                            jaringan_kondisi: init.kondisi || 'Baik',
                             jaringan_jumlah: init.jumlah_volume || 1,
                             jaringan_satuan: init.satuan || 'Ruas',
                             jaringan_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
@@ -1131,6 +1170,7 @@
                             lainnya_jenis: 'Buku / Kepustakaan Medis',
                             lainnya_pencipta: '',
                             lainnya_spesifikasi: '',
+                            lainnya_kondisi: init.kondisi || 'Baik',
                             lainnya_jumlah: init.jumlah_volume || 1,
                             lainnya_satuan: init.satuan || 'Eksemplar',
                             lainnya_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
@@ -1146,6 +1186,7 @@
                             mesin_no_rangka: init.no_rangka || '',
                             mesin_no_mesin: init.no_mesin || '',
                             mesin_no_polisi: init.no_polisi || '',
+                            mesin_kondisi: init.kondisi || 'Baik',
                             mesin_jumlah_barang: init.jumlah_volume || 1,
                             mesin_satuan: init.satuan || 'Unit',
                             mesin_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
