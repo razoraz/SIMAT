@@ -12,6 +12,17 @@
         $firstReg = $astap->registers ? $astap->registers->first() : null;
         $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : [];
         $me = $astap->mutasiEksternal;
+        
+        $rawTgl = $me?->tanggal_mutasi ?: ($astap->pelimpahanSkpd?->tanggal_bamb ?: ($astap->mutasi_tanggal ?: ($astap->bast_dokumen_tanggal ?: ($spec['tanggal_bamb'] ?? null))));
+        $mutasiTanggal = date('Y-m-d');
+        if ($rawTgl) {
+            try {
+                $mutasiTanggal = \Carbon\Carbon::parse($rawTgl)->format('Y-m-d');
+            } catch (\Throwable $e) {
+                $mutasiTanggal = date('Y-m-d');
+            }
+        }
+
         $initialAstap = [
             'id' => $astap->id,
             'from' => request('from', 'eksternal'),
@@ -20,7 +31,7 @@
             'triwulan' => $astap->triwulan ?: 'TW I',
             'mutasi_asal' => $me?->opd_asal ?: ($astap->pelimpahanSkpd?->skpd_asal ?: ($astap->mutasi_asal ?: ($spec['skpd_asal'] ?? ''))),
             'mutasi_nomor_bamb' => $me?->nomor_bamb ?: ($astap->pelimpahanSkpd?->nomor_bamb ?: ($astap->mutasi_nomor_bamb ?: ($astap->bast_dokumen_nomor ?: ($spec['nomor_bamb'] ?? '')))),
-            'mutasi_tanggal' => $me?->tanggal_mutasi ? $me->tanggal_mutasi->format('Y-m-d') : ($astap->pelimpahanSkpd?->tanggal_bamb ?: ($astap->mutasi_tanggal ?: ($astap->bast_dokumen_tanggal ?: ($spec['tanggal_bamb'] ?? date('Y-m-d'))))),
+            'mutasi_tanggal' => $mutasiTanggal,
             'total_realisasi' => (float) ($me?->nilai_perolehan ?: ($astap->total_realisasi ?: ($astap->pelimpahanSkpd?->nilai_perolehan ?: 0))),
             'mutasi_keterangan' => $me?->alasan_mutasi ?: ($astap->pelimpahanSkpd?->keterangan ?: ($astap->mutasi_keterangan ?: ($astap->keterangan_tambahan ?: ($spec['keterangan'] ?? '')))),
             'nomor_sk_dasar' => $me?->nomor_sk_dasar ?: ($spec['nomor_sk_dasar'] ?? ''),
@@ -42,6 +53,11 @@
             'gedung_items' => $spec['gedung_items'] ?? [],
             'jaringan_items' => $spec['jaringan_items'] ?? [],
             'lainnya_items' => $spec['lainnya_items'] ?? [],
+            'tanah_luas_m2' => $spec['tanah_luas_m2'] ?? ($spec['luas_m2'] ?? ''),
+            'tanah_hak' => $spec['tanah_hak'] ?? ($spec['hak_tanah'] ?? 'Hak Pakai'),
+            'tanah_sertifikat_no' => $spec['tanah_sertifikat_no'] ?? ($spec['sertifikat_no'] ?? ($spec['sertifikat_nomor'] ?? '')),
+            'tanah_sertifikat_tgl' => $spec['tanah_sertifikat_tgl'] ?? ($spec['sertifikat_tgl'] ?? ''),
+            'tanah_penggunaan' => $spec['tanah_penggunaan'] ?? ($spec['penggunaan'] ?? 'Bangunan Fasilitas Pelayanan Rumah Sakit'),
             'sertifikat_nomor' => $spec['sertifikat_no'] ?? ($spec['sertifikat_nomor'] ?? ''),
             'merk' => $spec['merk'] ?? '',
             'type' => $spec['type'] ?? '',
@@ -55,6 +71,10 @@
             'gedung_bertingkat' => $spec['gedung_bertingkat'] ?? 'Tidak',
             'gedung_beton' => $spec['gedung_beton'] ?? 'Beton',
             'gedung_status_tanah' => $spec['gedung_status_tanah'] ?? 'Tanah Pemda',
+            'gedung_dokumen_no' => $spec['gedung_dokumen_no'] ?? ($spec['dokumen_gedung_nomor'] ?? ''),
+            'jaringan_konstruksi' => $spec['jaringan_konstruksi'] ?? ($spec['konstruksi'] ?? ''),
+            'jaringan_panjang_m' => $spec['jaringan_panjang_m'] ?? ($spec['panjang_m'] ?? ''),
+            'jaringan_luas_m2' => $spec['jaringan_luas_m2'] ?? ($spec['luas_m2'] ?? ''),
         ];
     }
 @endphp

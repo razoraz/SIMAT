@@ -308,8 +308,20 @@ class MutasiEksternalController extends Controller
             $astapPayload['spesifikasi_json']['dokumen_lampiran'] = $dokumenPath;
         }
 
-        if ($request->has('spesifikasi_json') && is_array($request->input('spesifikasi_json'))) {
-            $astapPayload['spesifikasi_json'] = array_merge($astapPayload['spesifikasi_json'], $request->input('spesifikasi_json'));
+        $specJson = $astapPayload['spesifikasi_json'];
+
+        // Handle stringified or array spesifikasi_json
+        if ($request->has('spesifikasi_json')) {
+            $incomingSpec = $request->input('spesifikasi_json');
+            if (is_string($incomingSpec)) {
+                $decoded = json_decode($incomingSpec, true);
+                if (is_array($decoded)) {
+                    $incomingSpec = $decoded;
+                }
+            }
+            if (is_array($incomingSpec)) {
+                $specJson = array_merge($specJson, $incomingSpec);
+            }
         }
 
         $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
@@ -322,40 +334,80 @@ class MutasiEksternalController extends Controller
                         $val = $decoded;
                     }
                 }
-                $astapPayload['spesifikasi_json'][$rk] = $val;
+                $specJson[$rk] = $val;
             }
         }
 
-        if ($request->has('tanah_items')) {
-            $tItems = $request->input('tanah_items');
-            if (is_string($tItems)) {
-                $tItems = json_decode($tItems, true) ?: [];
-            }
-            if (is_array($tItems) && count($tItems) > 0) {
-                $firstT = $tItems[0];
-                $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
-                $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
+        // Unpack KIB A: Tanah
+        if (!empty($specJson['tanah_items']) && is_array($specJson['tanah_items']) && count($specJson['tanah_items']) > 0) {
+            $tItems = $specJson['tanah_items'];
+            $firstT = $tItems[0];
+            $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+            $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? ($it['tanah_sertifikat_nomor'] ?? null), $tItems));
+            $specJson['luas_m2'] = $totalLuas;
+            $specJson['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+            $specJson['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? ($firstT['tanah_sertifikat_nomor'] ?? null));
+            $specJson['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? ($firstT['tanah_sertifikat_tanggal'] ?? null);
+            $specJson['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+            $specJson['tanah_jumlah_bidang'] = count($tItems);
+        }
 
-                $astapPayload['spesifikasi_json']['tanah_items'] = $tItems;
-                $astapPayload['spesifikasi_json']['luas_m2'] = $totalLuas;
-                $astapPayload['spesifikasi_json']['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
-                $astapPayload['spesifikasi_json']['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
-                $astapPayload['spesifikasi_json']['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
-                $astapPayload['spesifikasi_json']['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
-                $astapPayload['spesifikasi_json']['tanah_jumlah_bidang'] = count($tItems);
-            }
+        // Unpack KIB B: Peralatan & Mesin
+        if (!empty($specJson['mesin_items']) && is_array($specJson['mesin_items']) && count($specJson['mesin_items']) > 0) {
+            $firstM = $specJson['mesin_items'][0];
+            $specJson['merk'] = $firstM['mesin_merk'] ?? ($firstM['merk'] ?? ($specJson['merk'] ?? ''));
+            $specJson['type'] = $firstM['mesin_type'] ?? ($firstM['type'] ?? ($specJson['type'] ?? ''));
+            $specJson['ukuran'] = $firstM['mesin_ukuran'] ?? ($firstM['ukuran'] ?? ($specJson['ukuran'] ?? ''));
+            $specJson['bahan'] = $firstM['mesin_bahan'] ?? ($firstM['bahan'] ?? ($specJson['bahan'] ?? ''));
+            $specJson['no_pabrik'] = $firstM['mesin_no_pabrik'] ?? ($firstM['no_pabrik'] ?? ($specJson['no_pabrik'] ?? ''));
+            $specJson['no_rangka'] = $firstM['mesin_no_rangka'] ?? ($firstM['no_rangka'] ?? ($specJson['no_rangka'] ?? ''));
+            $specJson['no_mesin'] = $firstM['mesin_no_mesin'] ?? ($firstM['no_mesin'] ?? ($specJson['no_mesin'] ?? ''));
+            $specJson['no_polisi'] = $firstM['mesin_no_polisi'] ?? ($firstM['no_polisi'] ?? ($specJson['no_polisi'] ?? ''));
+            $specJson['no_bpkb'] = $firstM['mesin_no_bpkb'] ?? ($firstM['no_bpkb'] ?? ($specJson['no_bpkb'] ?? ''));
+        }
+
+        // Unpack KIB C: Gedung & Bangunan
+        if (!empty($specJson['gedung_items']) && is_array($specJson['gedung_items']) && count($specJson['gedung_items']) > 0) {
+            $gItems = $specJson['gedung_items'];
+            $firstG = $gItems[0];
+            $totalLuasGedung = array_sum(array_map(fn($it) => (float)($it['gedung_luas_m2'] ?? 0), $gItems));
+            $specJson['gedung_luas_m2'] = $totalLuasGedung;
+            $specJson['luas_m2'] = $totalLuasGedung;
+            $specJson['gedung_bertingkat'] = $firstG['gedung_bertingkat'] ?? 'Tidak';
+            $specJson['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
+            $specJson['gedung_status_tanah'] = $firstG['gedung_status_tanah'] ?? 'Tanah Pemda';
+            $specJson['gedung_dokumen_no'] = $firstG['gedung_dokumen_no'] ?? ($firstG['gedung_dokumen_nomor'] ?? null);
+        }
+
+        // Unpack KIB D: Jalan, Irigasi & Jaringan
+        if (!empty($specJson['jaringan_items']) && is_array($specJson['jaringan_items']) && count($specJson['jaringan_items']) > 0) {
+            $jItems = $specJson['jaringan_items'];
+            $firstJ = $jItems[0];
+            $specJson['jaringan_konstruksi'] = $firstJ['jaringan_konstruksi'] ?? null;
+            $specJson['jaringan_panjang_m'] = $firstJ['jaringan_panjang_m'] ?? null;
+            $specJson['jaringan_luas_m2'] = $firstJ['jaringan_luas_m2'] ?? null;
+        }
+
+        // Unpack KIB E: Aset Tetap Lainnya
+        if (!empty($specJson['lainnya_items']) && is_array($specJson['lainnya_items']) && count($specJson['lainnya_items']) > 0) {
+            $lItems = $specJson['lainnya_items'];
+            $firstL = $lItems[0];
+            $specJson['lainnya_judul'] = $firstL['lainnya_judul'] ?? null;
+            $specJson['lainnya_pencipta'] = $firstL['lainnya_pencipta'] ?? null;
+            $specJson['lainnya_spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
         }
 
         $ppkNama = $request->input('ppk_nama', 'dr. H. Yus Priyatna, Sp.P');
         $ppkNip  = $request->input('ppk_nip', '196904121999031004');
         if ($request->filled('ppk_nama')) {
             $astapPayload['ppk_nama'] = $ppkNama;
-            $astapPayload['spesifikasi_json']['ppk_nama'] = $ppkNama;
+            $specJson['ppk_nama'] = $ppkNama;
         }
         if ($request->filled('ppk_nip')) {
             $astapPayload['ppk_nip'] = $ppkNip;
-            $astapPayload['spesifikasi_json']['ppk_nip'] = $ppkNip;
+            $specJson['ppk_nip'] = $ppkNip;
         }
+        $astapPayload['spesifikasi_json'] = $specJson;
 
         $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
             // 1. Simpan ke tabel master astaps
@@ -407,7 +459,7 @@ class MutasiEksternalController extends Controller
             // 4. Generate nomor register unik NIBAR 45 digit untuk setiap unit aset
             $ja = JenisAstap::find($data['jenis_astap_id']);
             $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
-            $kode108Clean = str_replace('.', '', $kode108Raw);
+            $kode108Clean = str_pad(substr(str_replace('.', '', $kode108Raw), 0, 12), 12, '0', STR_PAD_RIGHT);
 
             $maxRegInt = AstapRegister::where('tahun_perolehan', $tahun)
                 ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
@@ -569,6 +621,20 @@ class MutasiEksternalController extends Controller
             $specJson['dokumen_lampiran'] = $dokumenPath;
         }
 
+        // Handle stringified or array spesifikasi_json
+        if ($request->has('spesifikasi_json')) {
+            $incomingSpec = $request->input('spesifikasi_json');
+            if (is_string($incomingSpec)) {
+                $decoded = json_decode($incomingSpec, true);
+                if (is_array($decoded)) {
+                    $incomingSpec = $decoded;
+                }
+            }
+            if (is_array($incomingSpec)) {
+                $specJson = array_merge($specJson, $incomingSpec);
+            }
+        }
+
         $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
         foreach ($repeaterKeys as $rk) {
             if ($request->has($rk) && !is_null($request->input($rk))) {
@@ -583,23 +649,63 @@ class MutasiEksternalController extends Controller
             }
         }
 
-        if ($request->has('tanah_items')) {
-            $tItems = $request->input('tanah_items');
-            if (is_string($tItems)) {
-                $tItems = json_decode($tItems, true) ?: [];
-            }
-            if (is_array($tItems) && count($tItems) > 0) {
-                $specJson['tanah_items'] = $tItems;
-                $firstT = $tItems[0];
-                $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
-                $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
-                $specJson['luas_m2'] = $totalLuas;
-                $specJson['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
-                $specJson['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
-                $specJson['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
-                $specJson['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
-                $specJson['tanah_jumlah_bidang'] = count($tItems);
-            }
+        // Unpack KIB A: Tanah
+        if (!empty($specJson['tanah_items']) && is_array($specJson['tanah_items']) && count($specJson['tanah_items']) > 0) {
+            $tItems = $specJson['tanah_items'];
+            $firstT = $tItems[0];
+            $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+            $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? ($it['tanah_sertifikat_nomor'] ?? null), $tItems));
+            $specJson['luas_m2'] = $totalLuas;
+            $specJson['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+            $specJson['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? ($firstT['tanah_sertifikat_nomor'] ?? null));
+            $specJson['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? ($firstT['tanah_sertifikat_tanggal'] ?? null);
+            $specJson['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+            $specJson['tanah_jumlah_bidang'] = count($tItems);
+        }
+
+        // Unpack KIB B: Peralatan & Mesin
+        if (!empty($specJson['mesin_items']) && is_array($specJson['mesin_items']) && count($specJson['mesin_items']) > 0) {
+            $firstM = $specJson['mesin_items'][0];
+            $specJson['merk'] = $firstM['mesin_merk'] ?? ($firstM['merk'] ?? ($specJson['merk'] ?? ''));
+            $specJson['type'] = $firstM['mesin_type'] ?? ($firstM['type'] ?? ($specJson['type'] ?? ''));
+            $specJson['ukuran'] = $firstM['mesin_ukuran'] ?? ($firstM['ukuran'] ?? ($specJson['ukuran'] ?? ''));
+            $specJson['bahan'] = $firstM['mesin_bahan'] ?? ($firstM['bahan'] ?? ($specJson['bahan'] ?? ''));
+            $specJson['no_pabrik'] = $firstM['mesin_no_pabrik'] ?? ($firstM['no_pabrik'] ?? ($specJson['no_pabrik'] ?? ''));
+            $specJson['no_rangka'] = $firstM['mesin_no_rangka'] ?? ($firstM['no_rangka'] ?? ($specJson['no_rangka'] ?? ''));
+            $specJson['no_mesin'] = $firstM['mesin_no_mesin'] ?? ($firstM['no_mesin'] ?? ($specJson['no_mesin'] ?? ''));
+            $specJson['no_polisi'] = $firstM['mesin_no_polisi'] ?? ($firstM['no_polisi'] ?? ($specJson['no_polisi'] ?? ''));
+            $specJson['no_bpkb'] = $firstM['mesin_no_bpkb'] ?? ($firstM['no_bpkb'] ?? ($specJson['no_bpkb'] ?? ''));
+        }
+
+        // Unpack KIB C: Gedung & Bangunan
+        if (!empty($specJson['gedung_items']) && is_array($specJson['gedung_items']) && count($specJson['gedung_items']) > 0) {
+            $gItems = $specJson['gedung_items'];
+            $firstG = $gItems[0];
+            $totalLuasGedung = array_sum(array_map(fn($it) => (float)($it['gedung_luas_m2'] ?? 0), $gItems));
+            $specJson['gedung_luas_m2'] = $totalLuasGedung;
+            $specJson['luas_m2'] = $totalLuasGedung;
+            $specJson['gedung_bertingkat'] = $firstG['gedung_bertingkat'] ?? 'Tidak';
+            $specJson['gedung_beton'] = $firstG['gedung_beton'] ?? 'Beton';
+            $specJson['gedung_status_tanah'] = $firstG['gedung_status_tanah'] ?? 'Tanah Pemda';
+            $specJson['gedung_dokumen_no'] = $firstG['gedung_dokumen_no'] ?? ($firstG['gedung_dokumen_nomor'] ?? null);
+        }
+
+        // Unpack KIB D: Jalan, Irigasi & Jaringan
+        if (!empty($specJson['jaringan_items']) && is_array($specJson['jaringan_items']) && count($specJson['jaringan_items']) > 0) {
+            $jItems = $specJson['jaringan_items'];
+            $firstJ = $jItems[0];
+            $specJson['jaringan_konstruksi'] = $firstJ['jaringan_konstruksi'] ?? null;
+            $specJson['jaringan_panjang_m'] = $firstJ['jaringan_panjang_m'] ?? null;
+            $specJson['jaringan_luas_m2'] = $firstJ['jaringan_luas_m2'] ?? null;
+        }
+
+        // Unpack KIB E: Aset Tetap Lainnya
+        if (!empty($specJson['lainnya_items']) && is_array($specJson['lainnya_items']) && count($specJson['lainnya_items']) > 0) {
+            $lItems = $specJson['lainnya_items'];
+            $firstL = $lItems[0];
+            $specJson['lainnya_judul'] = $firstL['lainnya_judul'] ?? null;
+            $specJson['lainnya_pencipta'] = $firstL['lainnya_pencipta'] ?? null;
+            $specJson['lainnya_spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
         }
 
         $ppkNama = $request->input('ppk_nama', $item->ppk_nama ?: 'dr. H. Yus Priyatna, Sp.P');
@@ -614,7 +720,7 @@ class MutasiEksternalController extends Controller
         }
         $astapPayload['spesifikasi_json'] = $specJson;
 
-        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
+        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
             // 1. Update master Astap
             $item->update($astapPayload);
 
@@ -677,6 +783,47 @@ class MutasiEksternalController extends Controller
                 'ruang_pemegang' => $ruangNama,
                 'kondisi'        => $kondisiItem,
             ]);
+
+            // 5. Jika jumlah_volume bertambah melebihi jumlah register saat ini, buat register baru
+            $currentRegsCount = AstapRegister::where('astap_id', $item->id)->count();
+            if ($totalVolume > $currentRegsCount) {
+                $ja = JenisAstap::find($data['jenis_astap_id']);
+                $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
+                $kode108Clean = str_pad(substr(str_replace('.', '', $kode108Raw), 0, 12), 12, '0', STR_PAD_RIGHT);
+
+                $maxRegInt = AstapRegister::where('tahun_perolehan', $tahun)
+                    ->whereHas('astap', fn($sq) => $sq->where('jenis_astap_id', $data['jenis_astap_id']))
+                    ->max('no_register_int') ?? 0;
+
+                $runningRegNum = (int) $maxRegInt;
+                $needed = $totalVolume - $currentRegsCount;
+                for ($i = 0; $i < $needed; $i++) {
+                    $runningRegNum++;
+                    $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                    $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+
+                    while (AstapRegister::where('nibar', $nibar)->exists()) {
+                        $runningRegNum++;
+                        $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
+                        $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
+                    }
+
+                    $qrPath = "/scan/{$nibar}";
+                    AstapRegister::create([
+                        'astap_id'        => $item->id,
+                        'unit_id'         => $data['unit_id'] ?? null,
+                        'tahun_perolehan' => $tahun,
+                        'no_register_int' => $runningRegNum,
+                        'no_register'     => $nibar,
+                        'nibar'           => $nibar,
+                        'qr_code_path'    => $qrPath,
+                        'ruang_pemegang'  => $ruangNama,
+                        'kondisi'         => $kondisiItem,
+                        'status'          => 'Aktif',
+                        'is_deleted'      => 0,
+                    ]);
+                }
+            }
         });
 
         $targetRedirect = $request->input('from') === 'eksternal' ? route('mutasi.eksternal') : route('astap.index');

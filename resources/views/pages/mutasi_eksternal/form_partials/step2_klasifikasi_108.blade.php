@@ -196,6 +196,28 @@
                 class="absolute right-3.5 top-3 text-slate-400 hover:text-white text-xs">✕</button>
         </div>
 
+        <!-- Selected 108 Item Banner (Bespoke Highlight Card) -->
+        <template x-if="selected108Item">
+            <div class="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between gap-3 shadow-md">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-bold text-sm shrink-0 border border-indigo-500/30">
+                        ✓
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-mono text-xs font-black text-indigo-300" x-text="selected108Item.kode"></span>
+                            <span class="text-xs font-bold text-white truncate" x-text="selected108Item.nama"></span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 truncate mt-0.5" x-text="selected108Item.path || ''"></div>
+                    </div>
+                </div>
+                <button type="button" @click="clear108Selection()"
+                    class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 text-slate-300 text-[11px] font-bold transition-all border border-slate-700 shrink-0 cursor-pointer">
+                    ✕ Ganti Kode
+                </button>
+            </div>
+        </template>
+
         <!-- Hasil Pencarian Kode 108 (Grid Chips) -->
         <div x-show="filtered108Results.length > 0" class="max-h-60 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
             <template x-for="item in filtered108Results" :key="item.id">
@@ -317,6 +339,7 @@
                 Nama Lengkap / Spesifikasi Barang Pelimpahan <span class="text-rose-400">*</span>
             </label>
             <input type="text" x-model="formData.nama_barang" required
+                @input="onNamaBarangInput($event.target.value)"
                 placeholder="Contoh: Mobil Ambulance Toyota Hiace Commuter 2.5 M/T / USG 4D Mindray DC-70"
                 class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-4 py-3 text-xs text-white font-bold placeholder-slate-500 focus:outline-none shadow-inner">
             <p class="text-[10.5px] text-slate-400 mt-1">Nama ini akan dicetak resmi pada Berita Acara, Label QR-Code NIBAR, dan Buku Inventaris Aset RSUD.</p>
@@ -337,6 +360,7 @@
                 <div class="grid grid-cols-3 gap-2">
                     <div class="col-span-2 relative">
                         <input type="number" x-model.number="formData.jumlah_volume" :readonly="isMultiItemActive" required min="1"
+                            @input="onJumlahVolumeInput($event.target.value)"
                             :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-indigo-300 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-white'"
                             class="w-full border focus:border-indigo-400 rounded-xl px-4 py-2.5 text-xs focus:outline-none font-bold font-mono">
                     </div>
@@ -371,8 +395,10 @@
                         :readonly="isMultiItemActive"
                         @input="
                             let raw = $event.target.value.replace(/\D/g, '');
-                            formData.total_realisasi = raw ? parseInt(raw, 10) : 0;
+                            let num = raw ? parseInt(raw, 10) : 0;
+                            formData.total_realisasi = num;
                             $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+                            onTotalRealisasiInput(num);
                         "
                         :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-emerald-400 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-emerald-300'"
                         placeholder="0"
