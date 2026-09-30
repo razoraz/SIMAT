@@ -16,6 +16,18 @@
         </p>
     </div>
 
+    <!-- ===== BANNER ERROR INLINE LANGKAH 2 ===== -->
+    <template x-if="stepErrors[2]">
+        <div class="flex items-start gap-3 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 shadow-lg shadow-rose-500/10">
+            <span class="text-rose-400 text-lg mt-0.5 shrink-0">⚠️</span>
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian — Data Langkah 2 Belum Lengkap</p>
+                <p class="text-xs text-rose-200/90 leading-relaxed" x-text="stepErrors[2]"></p>
+            </div>
+            <button type="button" @click="clearStepError(2)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">✕</button>
+        </div>
+    </template>
+
     <!-- Quick Action / Shortcut Akun 1.5.2 (Rekomendasi Sub-Sub Rincian Kemitraan) -->
     <div class="p-5 rounded-3xl bg-slate-900/80 border border-cyan-500/30 backdrop-blur-md shadow-xl space-y-4 relative overflow-hidden">
         <!-- Subtle Glow Effect -->

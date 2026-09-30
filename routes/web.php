@@ -1156,12 +1156,14 @@ Route::middleware('auth')->group(function () {
                     })
                     ->values();
 
-                // PPK: ambil seluruh riwayat Pejabat Pembuat Komitmen tersimpan di SIMAT-RK untuk autofill NIP
-                $dbPpkKemitraans = \App\Models\Astap::whereNotNull('ppk_nama')
+                // PPK: khusus riwayat Pejabat Pembuat Komitmen kemitraan untuk autofill NIP
+                $dbPpkKemitraans = \App\Models\Astap::where('sumber_dana', 'kemitraan')
+                    ->whereNotNull('ppk_nama')
                     ->where('ppk_nama', '!=', '')
                     ->where('is_deleted', 0)
                     ->orderBy('id', 'desc')
                     ->get(['ppk_nama', 'ppk_nip'])
+                    ->filter(fn($it) => strlen(trim($it->ppk_nama)) >= 4 && !in_array(strtolower(trim($it->ppk_nama)), ['dsc', 'gf', 'test', 'tester']))
                     ->groupBy(function($item) {
                         return strtolower(trim($item->ppk_nama));
                     })
@@ -1208,8 +1210,8 @@ Route::middleware('auth')->group(function () {
                     'ppk_nama'             => 'nullable|string|max:255',
                     'ppk_nip'              => 'nullable|string|max:100',
                     'nomor_pks'            => 'required|string|max:255',
-                    // BUG-07/08 FIX: format DD/MM/YYYY — toleran 1-2 digit hari & bulan
-                    'tanggal_pks'          => ['required', 'string', 'regex:/^\d{1,2}\/\d{1,2}\/\d{4}$/'],
+                    // Format tanggal PKS: toleran DD/MM/YYYY atau YYYY-MM-DD
+                    'tanggal_pks'          => ['required', 'string', 'regex:/^(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{1,2}-\d{1,2})$/'],
                     // tanggal_mulai & selesai boleh kosong — diparse manual di bawah
                     'tanggal_mulai'        => 'nullable|string|max:20',
                     'tanggal_selesai'      => 'nullable|string|max:20',
@@ -1219,13 +1221,68 @@ Route::middleware('auth')->group(function () {
                     'kondisi'              => 'nullable|string|in:Baik,Kurang Baik,Rusak Ringan,Rusak Berat',
                 ]);
 
+                // Helper parser tanggal toleran DD/MM/YYYY dan YYYY-MM-DD
+                $parseDateHelper = function($val) {
+                    if (empty($val)) return null;
+                    $val = trim($val);
+                    if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $val, $m)) {
+                        return strtotime(sprintf('%04d-%02d-%02d 00:00:00', $m[3], $m[2], $m[1]));
+                    }
+                    if (preg_match('/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/', $val, $m)) {
+                        return strtotime(sprintf('%04d-%02d-%02d 00:00:00', $m[1], $m[2], $m[3]));
+                    }
+                    $t = strtotime(str_replace('/', '-', $val));
+                    return $t ? strtotime(date('Y-m-d 00:00:00', $t)) : null;
+                };
+
+                $todayTimestamp = strtotime(date('Y-m-d 23:59:59'));
+                $tPks = $parseDateHelper($data['tanggal_pks']);
+
+                // Validasi Tanggal PKS: tidak boleh lebih dari tanggal hari ini
+                if ($tPks && $tPks > $todayTimestamp) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.',
+                        'errors'  => [
+                            'tanggal_pks' => ['Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.']
+                        ]
+                    ], 422);
+                }
+
+                // Validasi Tanggal Mulai: tidak boleh lebih dari tanggal hari ini dan harus >= tanggal_pks
+                if (!empty($data['tanggal_mulai'])) {
+                    $tMulai = $parseDateHelper($data['tanggal_mulai']);
+                    if ($tMulai && $tMulai > $todayTimestamp) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.',
+                            'errors'  => [
+                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.']
+                            ]
+                        ], 422);
+                    }
+                    if ($tMulai && $tPks && $tMulai < $tPks) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.',
+                            'errors'  => [
+                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.']
+                            ]
+                        ], 422);
+                    }
+                }
+
+                // Validasi Tanggal Berakhir: tidak boleh lebih awal dari tanggal mulai
                 if (!empty($data['tanggal_mulai']) && !empty($data['tanggal_selesai'])) {
-                    $tMulai = strtotime(str_replace('/', '-', $data['tanggal_mulai']));
-                    $tSelesai = strtotime(str_replace('/', '-', $data['tanggal_selesai']));
+                    $tMulai = $parseDateHelper($data['tanggal_mulai']);
+                    $tSelesai = $parseDateHelper($data['tanggal_selesai']);
                     if ($tMulai && $tSelesai && $tSelesai < $tMulai) {
                         return response()->json([
                             'success' => false,
-                            'message' => 'Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.'
+                            'message' => 'Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.',
+                            'errors'  => [
+                                'tanggal_selesai' => ['Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.']
+                            ]
                         ], 422);
                     }
                 }

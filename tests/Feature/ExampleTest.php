@@ -53,6 +53,11 @@ class ExampleTest extends TestCase
                 $editRes->assertViewHas('dbPenyedias');
                 $editRes->assertViewHas('dbPejabats');
             }
+
+            $kemitraanRes = $this->actingAs($admin)->get('/astap/create-kemitraan');
+            $kemitraanRes->assertStatus(200);
+            $kemitraanRes->assertViewHas('dbMitraKemitraans');
+            $kemitraanRes->assertViewHas('dbPpkKemitraans');
         }
     }
 }

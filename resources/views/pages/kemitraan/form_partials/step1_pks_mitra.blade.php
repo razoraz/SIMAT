@@ -16,6 +16,18 @@
         </p>
     </div>
 
+    <!-- ===== BANNER ERROR INLINE LANGKAH 1 ===== -->
+    <template x-if="stepErrors[1]">
+        <div class="flex items-start gap-3 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 shadow-lg shadow-rose-500/10 animate-[fadeInDown_0.25s_ease-out]">
+            <span class="text-rose-400 text-lg mt-0.5 shrink-0">⚠️</span>
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian — Data Langkah 1 Belum Lengkap</p>
+                <p class="text-xs text-rose-200/90 leading-relaxed" x-text="stepErrors[1]"></p>
+            </div>
+            <button type="button" @click="clearStepError(1)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">✕</button>
+        </div>
+    </template>
+
     <!-- Bagian PKS & Mitra Pihak Ketiga -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-cyan-500/30 space-y-5 shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -47,7 +59,8 @@
                 <input type="text" 
                     x-model="formData.mitra_nama" 
                     @focus="isMitraDropdownOpen = true"
-                    @input="isMitraDropdownOpen = true"
+                    @input="isMitraDropdownOpen = true; onMitraInput($event.target.value)"
+                    @change="onMitraInput($event.target.value)"
                     @keydown.escape="isMitraDropdownOpen = false"
                     required
                     autocomplete="off"
@@ -79,7 +92,7 @@
                 x-transition:leave="transition ease-in duration-75"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 translate-y-1"
-                style="max-height: 220px !important; overflow-y: auto !important;"
+                style="max-height: 240px !important; overflow-y: auto !important;"
                 class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
                 
                 <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
@@ -90,13 +103,18 @@
                 <template x-for="(mitra, mIdx) in filteredMitraList" :key="mIdx">
                     <div @click="selectMitra(mitra)"
                         class="px-4 py-2.5 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
-                        :class="formData.mitra_nama === mitra ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-200'">
+                        :class="formData.mitra_nama === (mitra.nama || mitra) ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-200'">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <span class="text-xs text-cyan-400/80">🤝</span>
-                            <span class="text-xs font-bold group-hover:text-cyan-300 truncate" x-text="mitra"></span>
+                            <div class="min-w-0">
+                                <span class="text-xs font-bold group-hover:text-cyan-300 truncate block" x-text="mitra.nama || mitra"></span>
+                                <template x-if="mitra.pimpinan || mitra.alamat">
+                                    <span class="text-[10px] text-slate-400 truncate block font-normal mt-0.5" x-text="(mitra.pimpinan ? 'Pimpinan: ' + mitra.pimpinan : '') + (mitra.pimpinan && mitra.alamat ? ' • ' : '') + (mitra.alamat ? 'Alamat: ' + mitra.alamat : '')"></span>
+                                </template>
+                            </div>
                         </div>
                         <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold shrink-0 group-hover:bg-cyan-500/25">
-                            Pilih ↵
+                            Pilih &amp; Auto-fill ↵
                         </span>
                     </div>
                 </template>
@@ -110,30 +128,22 @@
                 </template>
             </div>
             
-            <!-- Rekomendasi Cepat Mitra (Badge Shortcut) -->
-            <div class="pt-1 flex flex-wrap items-center gap-1.5">
-                <span class="text-[10px] text-slate-500 font-semibold mr-1">Rekomendasi Cepat:</span>
-                <button type="button" @click="selectMitra('PT. Roche Indonesia')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors">
-                    PT. Roche Indonesia
-                </button>
-                <button type="button" @click="selectMitra('PT. Fresenius Medical Care Indonesia')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors">
-                    PT. Fresenius Medical Care
-                </button>
-                <button type="button" @click="selectMitra('PT. Kimia Farma Diagnostika')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors">
-                    PT. Kimia Farma Diagnostika
-                </button>
-                <button type="button" @click="selectMitra('PT. Sysmex Indonesia')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors">
-                    PT. Sysmex Indonesia
-                </button>
-                <button type="button" @click="selectMitra('CV. Penyedia Sarana Medika')"
-                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors">
-                    CV. Penyedia Sarana Medika
-                </button>
-            </div>
+            <!-- Riwayat Tersimpan Mitra (Badge Shortcut Riwayat Database) -->
+            <template x-if="masterMitraList && masterMitraList.length > 0">
+                <div class="pt-1 flex flex-wrap items-center gap-1.5">
+                    <span class="text-[10px] text-slate-500 font-semibold mr-1">Riwayat Tersimpan:</span>
+                    <template x-for="(m, mIdx) in masterMitraList.slice(0, 5)" :key="mIdx">
+                        <button type="button" @click="selectMitra(m)"
+                            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700 cursor-pointer transition-colors flex items-center gap-1"
+                            :class="formData.mitra_nama === (m.nama || m) ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-bold ring-1 ring-cyan-400' : ''">
+                            <span x-text="m.nama || m"></span>
+                            <template x-if="m.pimpinan || m.alamat">
+                                <span class="text-[9px] text-cyan-400" title="Ada data pimpinan & alamat tersimpan">⚡</span>
+                            </template>
+                        </button>
+                    </template>
+                </div>
+            </template>
         </div>
 
         <!-- Pimpinan Mitra & Alamat Mitra (Kolom 22 & 23 Sesuai Rekap Excel) -->
@@ -205,15 +215,29 @@
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none">
             </div>
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Tanggal Penandatanganan PKS <span class="text-rose-400">*</span>
-                </label>
-                <input type="text" x-datepicker x-model="formData.tanggal_pks"
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-200">
+                        Tanggal Penandatanganan PKS <span class="text-rose-400">*</span>
+                    </label>
+                    <span class="text-[10px] font-mono text-cyan-400/80 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
+                </div>
+                <input type="text" 
+                    x-datepicker="{ maxDate: 'today' }" 
+                    x-model="formData.tanggal_pks"
                     @input="syncTahunTriwulanFromPks($event.target.value)"
                     @change="syncTahunTriwulanFromPks($event.target.value)"
                     required
                     placeholder="dd/mm/yyyy"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
+                    :class="isTanggalPksInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-900'"
+                    class="w-full border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors">
+                
+                <!-- Peringatan Visual Jika Tanggal PKS Lebih dari Hari Ini -->
+                <template x-if="isTanggalPksInvalid()">
+                    <div class="mt-1.5 flex items-center gap-1.5 text-[10.5px] text-rose-400 font-semibold animate-pulse">
+                        <span>⚠️</span>
+                        <span>Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini!</span>
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -278,24 +302,41 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-[11px] font-semibold text-slate-400 mb-1">
-                        Tanggal Mulai Berlaku Kerjasama
-                    </label>
-                    <input type="text" x-datepicker x-model="formData.tanggal_mulai"
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-[11px] font-semibold text-slate-400">
+                            Tanggal Mulai Berlaku Kerjasama
+                        </label>
+                        <div class="flex items-center gap-1.5 text-[9.5px] font-mono text-cyan-400/90">
+                            <span x-show="formData.tanggal_pks" class="bg-slate-800/70 px-1.5 py-0.5 rounded border border-slate-700">Min (PKS): <span x-text="formatTanggalIndo(formData.tanggal_pks)"></span></span>
+                            <span class="bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
+                        </div>
+                    </div>
+                    <input type="text" 
+                        x-datepicker="{ minDate: formatDateToIso(formData.tanggal_pks) || undefined, maxDate: 'today' }" 
+                        x-model="formData.tanggal_mulai"
                         placeholder="dd/mm/yyyy"
-                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none">
+                        :class="isTanggalMulaiInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-950'"
+                        class="w-full border rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors">
+                    
+                    <!-- Peringatan Visual Jika Tanggal Mulai Tidak Valid -->
+                    <template x-if="isTanggalMulaiInvalid()">
+                        <div class="mt-1.5 flex items-center gap-1.5 text-[10.5px] text-rose-400 font-semibold animate-pulse">
+                            <span>⚠️</span>
+                            <span x-text="getTanggalMulaiErrorMsg()"></span>
+                        </div>
+                    </template>
                 </div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="text-[11px] font-semibold text-slate-400">
                             Tanggal Berakhir Kerjasama (Konsesi Berakhir)
                         </label>
-                        <span x-show="formData.tanggal_mulai" class="text-[9.5px] font-mono text-cyan-400/90">
-                            Min: <span x-text="formatTanggalIndo(formData.tanggal_mulai)"></span>
+                        <span x-show="formData.tanggal_mulai || formData.tanggal_pks" class="text-[9.5px] font-mono text-cyan-400/90">
+                            Min: <span x-text="formatTanggalIndo(formData.tanggal_mulai || formData.tanggal_pks)"></span>
                         </span>
                     </div>
                     <input type="text" 
-                        x-datepicker="{ minDate: formData.tanggal_mulai || undefined }" 
+                        x-datepicker="{ minDate: formatDateToIso(formData.tanggal_mulai || formData.tanggal_pks) || undefined }" 
                         x-model="formData.tanggal_selesai"
                         placeholder="dd/mm/yyyy"
                         :class="isTanggalSelesaiInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-cyan-400 bg-slate-950'"

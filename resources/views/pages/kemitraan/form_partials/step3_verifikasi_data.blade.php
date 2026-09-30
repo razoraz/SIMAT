@@ -26,6 +26,18 @@
         </div>
     </div>
 
+    <!-- ===== BANNER ERROR INLINE LANGKAH 3 ===== -->
+    <template x-if="stepErrors[3]">
+        <div class="flex items-start gap-3 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 shadow-lg shadow-rose-500/10">
+            <span class="text-rose-400 text-lg mt-0.5 shrink-0">⚠️</span>
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian — Verifikasi Langkah 3 Diperlukan</p>
+                <p class="text-xs text-rose-200/90 leading-relaxed" x-text="stepErrors[3]"></p>
+            </div>
+            <button type="button" @click="clearStepError(3)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">✕</button>
+        </div>
+    </template>
+
     <!-- 2. Quick Health Check Status (Grid 3 Kolom Indikator Utama) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         <!-- Status 1: Mitra & Dokumen PKS -->
@@ -573,7 +585,7 @@
     </div>
 
     <!-- 4. Pejabat Pembuat Komitmen (PPK) & Pengesahan (Sesuai Gambar 2 Rekap Excel Kolom 24 & 25) -->
-    <div class="p-6 rounded-3xl bg-slate-950/90 border border-cyan-500/30 space-y-5 shadow-2xl relative overflow-hidden">
+    <div class="p-6 rounded-3xl bg-slate-950/90 border border-cyan-500/30 space-y-5 shadow-2xl relative overflow-visible">
         <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -594,63 +606,85 @@
             </span>
         </div>
 
-        <!-- Rekomendasi / Preset PPK Cepat -->
-        <div class="flex flex-wrap items-center gap-2 pt-0.5">
-            <span class="text-[10px] text-slate-400 font-semibold mr-1">Rekomendasi Cepat:</span>
-            <!-- Shortcut Gambar 2: BUDI HARTONO, S.Sos -->
-            <button type="button" @click="selectPpk('BUDI HARTONO, S.Sos', '19760229 200801 1 010')"
-                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10.5px] font-bold transition-all border cursor-pointer"
-                :class="formData.ppk_nama === 'BUDI HARTONO, S.Sos' 
-                    ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-400' 
-                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-500/50 hover:text-white'">
-                <span>⭐</span>
-                <span>BUDI HARTONO, S.Sos</span>
-                <span class="text-[9.5px] font-mono opacity-80">(19760229 200801 1 010)</span>
-            </button>
-
-            <!-- Loop Pejabat lain dari database jika ada -->
-            <template x-for="p in pejabatsList.slice(0, 3)" :key="p.nama">
-                <template x-if="p.nama !== 'BUDI HARTONO, S.Sos'">
-                    <button type="button" @click="selectPpk(p.nama, p.nip)"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-medium transition-all border cursor-pointer"
+        <!-- Riwayat Tersimpan PPK Cepat -->
+        <template x-if="masterPpkList && masterPpkList.length > 0">
+            <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                <span class="text-[10px] text-slate-400 font-semibold mr-1">Riwayat Tersimpan:</span>
+                <template x-for="(p, pIdx) in masterPpkList.slice(0, 4)" :key="pIdx">
+                    <button type="button" @click="selectPpk(p)"
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10.5px] font-bold transition-all border cursor-pointer"
                         :class="formData.ppk_nama === p.nama 
-                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 ring-1 ring-cyan-400' 
-                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-500/40 hover:text-white'">
+                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-400' 
+                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-500/50 hover:text-white'">
+                        <span>👔</span>
                         <span x-text="p.nama"></span>
-                        <span class="text-[9.5px] font-mono opacity-70" x-show="p.nip" x-text="'(' + p.nip + ')'"></span>
+                        <span class="text-[9.5px] font-mono opacity-80" x-show="p.nip" x-text="'(' + p.nip + ')'"></span>
                     </button>
                 </template>
-            </template>
-        </div>
+            </div>
+        </template>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Nama PPK (Kolom 24) -->
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+            <!-- Nama PPK (Kolom 24) dengan Filter Autocomplete & Auto-Fill NIP -->
+            <div class="relative space-y-1.5" @click.away="isPpkDropdownOpen = false">
+                <label class="block text-xs font-bold text-slate-200 flex items-center justify-between">
                     <span>Nama Lengkap Pejabat Pembuat Komitmen (PPK) <span class="text-rose-400">*</span></span>
                     <span class="text-[10px] text-cyan-400 font-mono">Kolom 24</span>
                 </label>
                 <div class="relative">
                     <input type="text" x-model="formData.ppk_nama"
-                        list="ppk_datalist"
-                        @input="onPpkInput($event.target.value)"
+                        @focus="isPpkDropdownOpen = true"
+                        @input="isPpkDropdownOpen = true; onPpkInput($event.target.value)"
+                        @change="onPpkInput($event.target.value)"
+                        @keydown.escape="isPpkDropdownOpen = false"
+                        autocomplete="off"
                         placeholder="Contoh: BUDI HARTONO, S.Sos"
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white font-bold focus:outline-none placeholder-slate-500 shadow-inner">
-                    <datalist id="ppk_datalist">
-                        <option value="BUDI HARTONO, S.Sos">BUDI HARTONO, S.Sos - 19760229 200801 1 010</option>
-                        <template x-for="p in pejabatsList" :key="p.nama">
-                            <option :value="p.nama" x-text="p.nama + (p.nip ? ' (' + p.nip + ')' : '')"></option>
-                        </template>
-                    </datalist>
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 pr-10 text-xs text-white font-bold focus:outline-none placeholder-slate-500 shadow-inner">
                     <button type="button" 
                         x-show="formData.ppk_nama"
-                        @click="formData.ppk_nama = ''; formData.ppk_nip = ''" 
+                        @click="formData.ppk_nama = ''; formData.ppk_nip = ''; isPpkDropdownOpen = true" 
                         title="Kosongkan"
                         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
                         class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
                         ✕
                     </button>
                 </div>
+
+                <!-- Floating Dropdown Saran / Filter PPK -->
+                <div x-show="isPpkDropdownOpen && filteredPpkList.length > 0" 
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="opacity-0 translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 translate-y-1"
+                    style="max-height: 220px !important; overflow-y: auto !important;"
+                    class="absolute z-[9999] mt-1.5 w-full bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
+                    
+                    <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                        <span>Pilih Riwayat Pejabat (PPK)</span>
+                        <span class="font-mono text-slate-400" x-text="filteredPpkList.length + ' pejabat'"></span>
+                    </div>
+
+                    <template x-for="(p, pIdx) in filteredPpkList" :key="pIdx">
+                        <div @click="selectPpk(p)"
+                            class="px-4 py-2 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
+                            :class="formData.ppk_nama === p.nama ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-200'">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="text-xs text-cyan-400/80">👔</span>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold group-hover:text-cyan-300 truncate block" x-text="p.nama"></span>
+                                    <span class="text-[10px] text-cyan-400/80 font-mono truncate block" x-text="p.nip ? 'NIP: ' + p.nip : 'NIP belum terdata'"></span>
+                                </div>
+                            </div>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold shrink-0 group-hover:bg-cyan-500/25">
+                                Pilih &amp; Auto-fill NIP ↵
+                            </span>
+                        </div>
+                    </template>
+                </div>
+
                 <p class="text-[10px] text-slate-500 mt-1">Nama pejabat pembuat komitmen yang menandatangani berkas kontrak kerja sama.</p>
             </div>
 

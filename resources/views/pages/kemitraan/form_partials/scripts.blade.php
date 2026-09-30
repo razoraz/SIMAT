@@ -16,35 +16,19 @@
             isSubmitting: false,
             isDataVerified: false,
 
+            // Error state per langkah — ditampilkan sebagai banner inline di tiap step
+            stepErrors: { 1: '', 2: '', 3: '' },
+
             // Autocomplete Riwayat Mitra Kemitraan (object: {nama, pimpinan, alamat})
-            masterMitraList: (function() {
-                const list = (window.dbMitraKemitraans && Array.isArray(window.dbMitraKemitraans)) ? [...window.dbMitraKemitraans] : [];
-                const defaults = [
-                    { nama: 'PT. Roche Indonesia', pimpinan: '', alamat: '' },
-                    { nama: 'PT. Fresenius Medical Care Indonesia', pimpinan: '', alamat: '' },
-                    { nama: 'PT. Kimia Farma Diagnostika', pimpinan: '', alamat: '' },
-                    { nama: 'PT. Sysmex Indonesia', pimpinan: '', alamat: '' },
-                    { nama: 'CV. Penyedia Sarana Medika', pimpinan: '', alamat: '' },
-                ];
-                defaults.forEach(d => {
-                    if (!list.some(item => (item.nama || '').trim().toLowerCase() === d.nama.toLowerCase())) {
-                        list.push(d);
-                    }
-                });
-                return list;
-            })(),
+            // 100% MURNI hanya dari data yang pernah disimpan di database
+            masterMitraList: (window.dbMitraKemitraans && Array.isArray(window.dbMitraKemitraans)) 
+                ? [...window.dbMitraKemitraans] 
+                : [],
             isMitraDropdownOpen: false,
 
-            // Daftar PPK dari riwayat kemitraan + pejabat RSUD (object: {nama, nip})
+            // Daftar PPK dari riwayat kemitraan (object: {nama, nip})
             masterPpkList: (function() {
                 const list = (window.dbPpkKemitraans && Array.isArray(window.dbPpkKemitraans)) ? [...window.dbPpkKemitraans] : [];
-                if (window.dbPejabats && Array.isArray(window.dbPejabats)) {
-                    window.dbPejabats.forEach(p => {
-                        if (p && p.nama && !list.some(item => (item.nama || '').trim().toLowerCase() === p.nama.trim().toLowerCase())) {
-                            list.push({ nama: p.nama, nip: p.nip || '' });
-                        }
-                    });
-                }
                 if (!list.some(item => (item.nama || '').toLowerCase().includes('budi hartono'))) {
                     list.unshift({ nama: 'BUDI HARTONO, S.Sos', nip: '19760229 200801 1 010' });
                 }
@@ -165,14 +149,85 @@
 
             parseDateToTimestamp(val) {
                 if (!val) return 0;
-                if (val instanceof Date) return val.getTime();
+                if (val instanceof Date) {
+                    return new Date(val.getFullYear(), val.getMonth(), val.getDate()).getTime();
+                }
                 val = String(val).trim();
+                if (val.includes('T')) {
+                    val = val.split('T')[0];
+                }
+                // Format DD/MM/YYYY atau DD-MM-YYYY
                 if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(val)) {
                     const parts = val.split(/[\/\-]/);
                     return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10)).getTime();
                 }
+                // Format YYYY-MM-DD
+                if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/.test(val)) {
+                    const parts = val.split(/[\/\-]/);
+                    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)).getTime();
+                }
                 const d = new Date(val);
-                return isNaN(d.getTime()) ? 0 : d.getTime();
+                return isNaN(d.getTime()) ? 0 : new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+            },
+
+            getTodayTimestamp() {
+                const now = new Date();
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            },
+
+            formatDateToIso(val) {
+                if (!val) return undefined;
+                val = String(val).trim();
+                if (val.includes('T')) {
+                    val = val.split('T')[0];
+                }
+                if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(val)) {
+                    const parts = val.split(/[\/\-]/);
+                    const d = parts[0].padStart(2, '0');
+                    const m = parts[1].padStart(2, '0');
+                    const y = parts[2];
+                    return `${y}-${m}-${d}`;
+                }
+                if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(val)) {
+                    const parts = val.split('-');
+                    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                }
+                return val;
+            },
+
+            isTanggalPksInvalid() {
+                if (!this.formData.tanggal_pks) return false;
+                const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
+                const today = this.getTodayTimestamp();
+                return tPks > 0 && tPks > today;
+            },
+
+            isTanggalMulaiInvalid() {
+                if (!this.formData.tanggal_mulai) return false;
+                const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
+                const today = this.getTodayTimestamp();
+                if (tMulai > 0 && tMulai > today) return true;
+                if (this.formData.tanggal_pks) {
+                    const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
+                    if (tPks > 0 && tMulai > 0 && tMulai < tPks) return true;
+                }
+                return false;
+            },
+
+            getTanggalMulaiErrorMsg() {
+                if (!this.formData.tanggal_mulai) return '';
+                const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
+                const today = this.getTodayTimestamp();
+                if (tMulai > 0 && tMulai > today) {
+                    return 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini!';
+                }
+                if (this.formData.tanggal_pks) {
+                    const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
+                    if (tPks > 0 && tMulai > 0 && tMulai < tPks) {
+                        return 'Tanggal mulai kerjasama harus sama dengan atau setelah tanggal penandatanganan PKS!';
+                    }
+                }
+                return '';
             },
 
             isTanggalSelesaiInvalid() {
@@ -207,7 +262,7 @@
                 mitra_pimpinan: '',
                 mitra_alamat: '',
                 nomor_pks: '',
-                tanggal_pks: '{{ date('d/m/Y') }}',
+                tanggal_pks: '',
                 skema_kemitraan: 'Sewa',
                 tanggal_mulai: '',
                 tanggal_selesai: '',
@@ -437,6 +492,19 @@
 
                 this.$watch('formData.tanggal_pks', (newVal) => {
                     this.syncTahunTriwulanFromPks(newVal);
+                    if (newVal) {
+                        const tPks = this.parseDateToTimestamp(newVal);
+                        const today = this.getTodayTimestamp();
+                        if (tPks > today) {
+                            this.showToast('Tanggal PKS Tidak Valid', 'Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.', 'error');
+                        } else if (this.formData.tanggal_mulai) {
+                            const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
+                            if (tMulai > 0 && tMulai < tPks) {
+                                this.formData.tanggal_mulai = '';
+                                this.showToast('Penyesuaian Tanggal', 'Tanggal mulai kerjasama dikosongkan karena harus sama atau setelah tanggal PKS.', 'warning');
+                            }
+                        }
+                    }
                 });
 
                 this.$watch('formData.skema_kemitraan', (newVal) => {
@@ -476,8 +544,25 @@
                     this.syncTotalsFromItems();
                 }, { deep: true });
 
-                // Validasi relasi Tanggal Mulai dan Tanggal Selesai Kerjasama
+                // Validasi relasi Tanggal Mulai dan Tanggal PKS serta Tanggal Selesai
                 this.$watch('formData.tanggal_mulai', (newVal) => {
+                    if (newVal) {
+                        const tMulai = this.parseDateToTimestamp(newVal);
+                        const today = this.getTodayTimestamp();
+                        if (tMulai > today) {
+                            this.formData.tanggal_mulai = '';
+                            this.showToast('Tanggal Mulai Tidak Valid', 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.', 'error');
+                            return;
+                        }
+                        if (this.formData.tanggal_pks) {
+                            const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
+                            if (tPks > 0 && tMulai < tPks) {
+                                this.formData.tanggal_mulai = '';
+                                this.showToast('Tanggal Mulai Tidak Valid', 'Tanggal mulai kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.', 'error');
+                                return;
+                            }
+                        }
+                    }
                     if (newVal && this.formData.tanggal_selesai) {
                         const tMulai = this.parseDateToTimestamp(newVal);
                         const tSelesai = this.parseDateToTimestamp(this.formData.tanggal_selesai);
@@ -1637,35 +1722,86 @@
                 }
             },
 
+            // Helper: set / clear error pada step tertentu
+            setStepError(s, msg) {
+                this.stepErrors[s] = msg || '';
+            },
+
+            clearStepError(s) {
+                this.stepErrors[s] = '';
+            },
+
+            clearAllStepErrors() {
+                this.stepErrors = { 1: '', 2: '', 3: '' };
+            },
+
             validateStep(s) {
+                // Bersihkan error lama untuk step ini sebelum validasi ulang
+                this.clearStepError(s);
+
                 if (s === 1) {
                     if (!this.formData.mitra_nama || !this.formData.mitra_nama.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon isi nama perusahaan mitra / rekanan pihak ketiga.', 'error');
+                        const msg = 'Mohon isi nama perusahaan mitra / rekanan pihak ketiga.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
                         return false;
                     }
                     if (!this.formData.nomor_pks || !this.formData.nomor_pks.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon isi nomor dokumen Perjanjian Kerja Sama (PKS).', 'error');
+                        const msg = 'Mohon isi nomor dokumen Perjanjian Kerja Sama (PKS).';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
                         return false;
                     }
                     if (!this.formData.tanggal_pks) {
-                        this.showToast('Validasi Gagal', 'Mohon isi tanggal penandatanganan PKS.', 'error');
+                        const msg = 'Mohon isi tanggal penandatanganan PKS.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        return false;
+                    }
+                    const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
+                    const today = this.getTodayTimestamp();
+                    if (tPks > 0 && tPks > today) {
+                        const msg = 'Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
                         return false;
                     }
                     if (!this.formData.tahun_perolehan) {
-                        this.showToast('Validasi Gagal', 'Mohon tentukan tahun pembukuan.', 'error');
+                        const msg = 'Mohon tentukan tahun pembukuan.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
                         return false;
+                    }
+                    if (this.formData.tanggal_mulai) {
+                        const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
+                        if (tMulai > 0 && tMulai > today) {
+                            const msg = 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.';
+                            this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                            this.setStepError(1, msg);
+                            return false;
+                        }
+                        if (tPks > 0 && tMulai > 0 && tMulai < tPks) {
+                            const msg = 'Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.';
+                            this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                            this.setStepError(1, msg);
+                            return false;
+                        }
                     }
                     if (this.formData.tanggal_mulai && this.formData.tanggal_selesai) {
                         const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
                         const tSelesai = this.parseDateToTimestamp(this.formData.tanggal_selesai);
                         if (tMulai > 0 && tSelesai > 0 && tSelesai < tMulai) {
-                            this.showToast('Validasi Gagal', 'Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.', 'error');
+                            const msg = 'Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.';
+                            this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                            this.setStepError(1, msg);
                             return false;
                         }
                     }
                 } else if (s === 2) {
                     if (!this.formData.jenis_astap_id) {
-                        this.showToast('Validasi Gagal', 'Mohon pilih klasifikasi kode barang 108 (rekomendasi Akun 1.5.2 Kemitraan).', 'error');
+                        const msg = 'Mohon pilih klasifikasi kode barang 108 — pilih salah satu kartu objek kemitraan (rekomendasi Akun 1.5.2).';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
                         return false;
                     }
 
@@ -1673,83 +1809,111 @@
                     if (this.isMesin) {
                         this.syncTotalsFromItems();
                         if (!this.formData.mesin_items || this.formData.mesin_items.length === 0) {
-                            this.showToast('Validasi Gagal', 'Mohon tambahkan minimal 1 item barang / unit pada rincian mesin.', 'error');
+                            const msg = 'Mohon tambahkan minimal 1 item barang / unit pada rincian mesin.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
                             return false;
                         }
                         for (let i = 0; i < this.formData.mesin_items.length; i++) {
                             const it = this.formData.mesin_items[i];
                             const num = i + 1;
                             if (!it.mesin_nama_barang || !it.mesin_nama_barang.trim()) {
-                                this.showToast('Validasi Gagal', `Nama Barang / Unit #${num} tidak boleh kosong.`, 'error');
+                                const msg = `Nama Barang / Unit #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (!it.mesin_jumlah_barang || parseInt(it.mesin_jumlah_barang) < 1) {
-                                this.showToast('Validasi Gagal', `Jumlah volume pada Barang #${num} minimal 1 unit.`, 'error');
+                                const msg = `Jumlah volume pada Barang #${num} minimal 1 unit.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (parseFloat(it.mesin_nilai_satuan) <= 0 || isNaN(parseFloat(it.mesin_nilai_satuan))) {
-                                this.showToast('Validasi Gagal', `Taksiran nilai satuan pada Barang #${num} harus lebih dari 0.`, 'error');
+                                const msg = `Taksiran nilai satuan pada Barang #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (it.is_extracom && parseFloat(it.mesin_nilai_satuan) > 300000) {
-                                this.showToast('Validasi Extracom', `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`, 'error');
+                                const msg = `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`;
+                                this.showToast('Validasi Extracom Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                         }
                     } else if (this.isTanah) {
                         this.syncTotalsFromItems();
                         if (!this.formData.tanah_items || this.formData.tanah_items.length === 0) {
-                            this.showToast('Validasi Gagal', 'Mohon tambahkan minimal 1 bidang tanah pada rincian tanah.', 'error');
+                            const msg = 'Mohon tambahkan minimal 1 bidang tanah pada rincian tanah.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
                             return false;
                         }
                         for (let i = 0; i < this.formData.tanah_items.length; i++) {
                             const it = this.formData.tanah_items[i];
                             const num = i + 1;
                             if (!it.tanah_luas_m2 || parseFloat(it.tanah_luas_m2) <= 0) {
-                                this.showToast('Validasi Gagal', `Luas tanah (m²) pada Bidang #${num} harus lebih dari 0.`, 'error');
+                                const msg = `Luas tanah (m²) pada Bidang Tanah #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                         }
                     } else if (this.isGedung) {
                         this.syncTotalsFromItems();
                         if (!this.formData.gedung_items || this.formData.gedung_items.length === 0) {
-                            this.showToast('Validasi Gagal', 'Mohon tambahkan minimal 1 bangunan gedung pada rincian gedung.', 'error');
+                            const msg = 'Mohon tambahkan minimal 1 bangunan gedung pada rincian gedung.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
                             return false;
                         }
                         for (let i = 0; i < this.formData.gedung_items.length; i++) {
                             const it = this.formData.gedung_items[i];
                             const num = i + 1;
                             if (!it.gedung_nama_barang || !it.gedung_nama_barang.trim()) {
-                                this.showToast('Validasi Gagal', `Nama Bangunan #${num} tidak boleh kosong.`, 'error');
+                                const msg = `Nama Bangunan #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (!it.gedung_jumlah_bangunan || parseInt(it.gedung_jumlah_bangunan) < 1) {
-                                this.showToast('Validasi Gagal', `Jumlah unit pada Bangunan #${num} minimal 1.`, 'error');
+                                const msg = `Jumlah unit pada Bangunan #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                         }
                     } else if (this.isJaringan) {
                         this.syncTotalsFromItems();
                         if (!this.formData.jaringan_items || this.formData.jaringan_items.length === 0) {
-                            this.showToast('Validasi Gagal', 'Mohon tambahkan minimal 1 ruas pada rincian jalan & jaringan.', 'error');
+                            const msg = 'Mohon tambahkan minimal 1 ruas pada rincian jalan & jaringan.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
                             return false;
                         }
                         for (let i = 0; i < this.formData.jaringan_items.length; i++) {
                             const it = this.formData.jaringan_items[i];
                             const num = i + 1;
                             if (!it.jaringan_nama_barang || !it.jaringan_nama_barang.trim()) {
-                                this.showToast('Validasi Gagal', `Nama Ruas #${num} tidak boleh kosong.`, 'error');
+                                const msg = `Nama Ruas #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (!it.jaringan_jumlah || parseInt(it.jaringan_jumlah) < 1) {
-                                this.showToast('Validasi Gagal', `Jumlah volume pada Ruas #${num} minimal 1.`, 'error');
+                                const msg = `Jumlah volume pada Ruas #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                         }
                     } else if (this.isLainnya) {
                         this.syncTotalsFromItems();
                         if (!this.formData.lainnya_items || this.formData.lainnya_items.length === 0) {
-                            this.showToast('Validasi Gagal', 'Mohon tambahkan minimal 1 item pada rincian aset tetap lainnya.', 'error');
+                            const msg = 'Mohon tambahkan minimal 1 item pada rincian aset tetap lainnya.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
                             return false;
                         }
                         for (let i = 0; i < this.formData.lainnya_items.length; i++) {
@@ -1759,52 +1923,74 @@
                                 if (this.selectedSubSub?.nama) {
                                     it.lainnya_nama_barang = this.selectedSubSub.nama;
                                 } else {
-                                    this.showToast('Validasi Gagal', `Nama Barang pada Item #${num} tidak boleh kosong.`, 'error');
+                                    const msg = `Nama Barang pada Item #${num} tidak boleh kosong.`;
+                                    this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                    this.setStepError(2, msg);
                                     return false;
                                 }
                             }
                             if (it.kib_e_type === 'buku' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
-                                this.showToast('Validasi Gagal', `Judul Buku pada Item #${num} tidak boleh kosong.`, 'error');
+                                const msg = `Judul Buku pada Item #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (it.kib_e_type === 'hewan_tumbuhan' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
-                                this.showToast('Validasi Gagal', `Jenis Hewan / Tanaman pada Item #${num} tidak boleh kosong.`, 'error');
+                                const msg = `Jenis Hewan / Tanaman pada Item #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (!it.lainnya_jumlah || parseInt(it.lainnya_jumlah) < 1) {
-                                this.showToast('Validasi Gagal', `Jumlah volume pada Item #${num} minimal 1.`, 'error');
+                                const msg = `Jumlah volume pada Item #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                             if (it.is_extracom && parseFloat(it.lainnya_nilai_satuan) > 300000) {
-                                this.showToast('Validasi Extracom', `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`, 'error');
+                                const msg = `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`;
+                                this.showToast('Validasi Extracom Gagal', msg, 'error');
+                                this.setStepError(2, msg);
                                 return false;
                             }
                         }
                     }
 
                     if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon isi nama spesifik barang kemitraan.', 'error');
+                        const msg = 'Mohon isi nama spesifik barang kemitraan.';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
                         return false;
                     }
                     if (!this.formData.jumlah_volume || this.formData.jumlah_volume < 1) {
-                        this.showToast('Validasi Gagal', 'Jumlah volume barang minimal 1 unit.', 'error');
+                        const msg = 'Jumlah volume barang minimal 1 unit.';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
                         return false;
                     }
                     if (!this.formData.satuan || !this.formData.satuan.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon isi satuan barang (contoh: Unit, Set, Buah).', 'error');
+                        const msg = 'Mohon isi satuan barang (contoh: Unit, Set, Buah).';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
                         return false;
                     }
                     if (!this.formData.total_realisasi || this.formData.total_realisasi <= 0) {
-                        this.showToast('Validasi Gagal', 'Mohon masukkan total taksiran nilai wajar aset kemitraan (Rp).', 'error');
+                        const msg = 'Mohon masukkan total taksiran nilai wajar aset kemitraan (Rp).';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
                         return false;
                     }
                 } else if (s === 3) {
                     if (!this.formData.ppk_nama || !this.formData.ppk_nama.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon tentukan Nama Pejabat Pembuat Komitmen (PPK).', 'error');
+                        const msg = 'Mohon tentukan Nama Pejabat Pembuat Komitmen (PPK).';
+                        this.showToast('Validasi Langkah 3 Gagal', msg, 'error');
+                        this.setStepError(3, msg);
                         return false;
                     }
                     if (!this.isDataVerified) {
-                        this.showToast('Verifikasi Diperlukan', 'Mohon centang pernyataan bahwa data aset telah diverifikasi dengan benar sebelum disimpan.', 'warning');
+                        const msg = 'Mohon centang pernyataan bahwa data aset telah diverifikasi dengan benar sebelum disimpan.';
+                        this.showToast('Verifikasi Diperlukan', msg, 'warning');
+                        this.setStepError(3, msg);
                         return false;
                     }
                 }
@@ -1813,7 +1999,25 @@
 
             // Submit Form via AJAX
             async submitForm() {
-                if (!this.validateStep(1) || !this.validateStep(2) || !this.validateStep(3)) return;
+                // Bersihkan semua error lama terlebih dahulu
+                this.clearAllStepErrors();
+
+                // Validasi per step dan otomatis navigasi ke step bermasalah
+                if (!this.validateStep(1)) {
+                    this.currentStep = 1;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                if (!this.validateStep(2)) {
+                    this.currentStep = 2;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                if (!this.validateStep(3)) {
+                    this.currentStep = 3;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
 
                 this.syncTotalsFromItems();
 
@@ -1946,11 +2150,47 @@
                             window.location.href = json.redirect || '{{ route('master.kemitraan') }}';
                         }, 1200);
                     } else {
-                        let errMsg = json.message || 'Terjadi kesalahan saat menyimpan data.';
+                        // Parse server-side validation errors dan petakan ke step yang relevan
+                        const step1Fields = ['mitra_nama', 'mitra_pimpinan', 'mitra_alamat', 'nomor_pks', 'tanggal_pks', 'skema_kemitraan', 'tanggal_mulai', 'tanggal_selesai', 'tahun_perolehan', 'triwulan', 'kemitraan_keterangan'];
+                        const step2Fields = ['jenis_astap_id', 'nama_barang', 'jumlah_volume', 'satuan', 'total_realisasi', 'mesin_items', 'tanah_items', 'gedung_items', 'jaringan_items', 'lainnya_items'];
+                        const step3Fields = ['unit_id', 'kondisi', 'alamat_barang', 'ppk_nama', 'ppk_nip', 'is_extracomtable', 'spesifikasi_json'];
+
+                        let errorsStep1 = [], errorsStep2 = [], errorsStep3 = [], errorsGeneral = [];
+
                         if (json.errors) {
-                            errMsg += '\n' + Object.values(json.errors).flat().join('\n');
+                            Object.entries(json.errors).forEach(([field, msgs]) => {
+                                const baseField = field.split('.')[0];
+                                const msgList = Array.isArray(msgs) ? msgs : [msgs];
+                                if (step1Fields.includes(baseField)) {
+                                    errorsStep1.push(...msgList);
+                                } else if (step2Fields.includes(baseField)) {
+                                    errorsStep2.push(...msgList);
+                                } else if (step3Fields.includes(baseField)) {
+                                    errorsStep3.push(...msgList);
+                                } else {
+                                    errorsGeneral.push(...msgList);
+                                }
+                            });
                         }
-                        this.showToast('Gagal Menyimpan', errMsg, 'error');
+
+                        // Tampilkan error per-step dan arahkan user ke step pertama yang bermasalah
+                        if (errorsStep1.length > 0) {
+                            this.setStepError(1, errorsStep1.join(' • '));
+                            this.currentStep = 1;
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else if (errorsStep2.length > 0) {
+                            this.setStepError(2, errorsStep2.join(' • '));
+                            this.currentStep = 2;
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else if (errorsStep3.length > 0) {
+                            this.setStepError(3, errorsStep3.join(' • '));
+                            this.currentStep = 3;
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+
+                        const allErrors = [...errorsStep1, ...errorsStep2, ...errorsStep3, ...errorsGeneral];
+                        const errMsg = json.message || 'Terjadi kesalahan validasi server.';
+                        this.showToast('Gagal Menyimpan', allErrors.length > 0 ? allErrors[0] : errMsg, 'error');
                     }
                 } catch (err) {
                     console.error(err);
