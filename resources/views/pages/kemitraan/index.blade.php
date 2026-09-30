@@ -19,5 +19,8 @@
 
         <!-- MODAL KONFIRMASI HAPUS / BATALKAN -->
         @include('pages.kemitraan.master_partials.modal_confirm')
+
+        <!-- MODAL PRATINJAU & DOWNLOAD QR CODE -->
+        @include('pages.kemitraan.master_partials.modal_qr_kemitraan')
     </div>
 </x-layout>

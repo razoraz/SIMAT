@@ -675,32 +675,6 @@
                 </div>
                 <p class="text-[10px] text-slate-500 mt-1">Nomor Induk Pegawai (NIP) PPK bersangkutan (otomatis terisi bila memilih dari daftar).</p>
             </div>
-
-            <!-- Ruangan / Unit Penempatan (KIR) & Alamat Fisik -->
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Unit / Ruangan Penempatan Aset (KIR)
-                </label>
-                <select x-model="formData.unit_id"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold">
-                    <option value="">-- Pilih Ruangan / Penempatan KIR (Opsional) --</option>
-                    @foreach($dbUnits ?? [] as $u)
-                        <option value="{{ $u->id }}">{{ $u->nama }} ({{ $u->kode_unit ?? 'Unit' }})</option>
-                    @endforeach
-                </select>
-                <p class="text-[10px] text-slate-500 mt-1">Penempatan ruangan operasional alat/aset kemitraan di RSUD Koesnandi.</p>
-            </div>
-
-            <!-- Alamat Fisik Gedung Penempatan -->
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Alamat / Gedung Penempatan Fisik
-                </label>
-                <input type="text" x-model="formData.alamat_barang"
-                    placeholder="RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1"
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none placeholder-slate-500">
-                <p class="text-[10px] text-slate-500 mt-1">Gedung / lokasi fisik aset kemitraan di lingkungan rumah sakit.</p>
-            </div>
         </div>
     </div>
 
