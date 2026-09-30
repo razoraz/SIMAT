@@ -16,7 +16,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wide">
-                            Spesifikasi Jalan, Irigasi &amp; Jaringan Pelimpahan
+                            Spesifikasi Fisik Jalan, Irigasi &amp; Jaringan Pelimpahan
                         </h3>
                         <span class="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-mono font-bold text-[10px] border border-teal-500/40">
                             KIB D · Akun 1.3.4
@@ -47,8 +47,8 @@
                                 :class="(item.jaringan_kondisi === 'Baik' || !item.jaringan_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (item.jaringan_kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40')"
                                 x-text="'• Kondisi: ' + (item.jaringan_kondisi || 'Baik')">
                             </span>
-                            <span class="text-[11px] text-slate-400 font-mono" x-show="item.jaringan_panjang_m">
-                                • Panjang: <strong class="text-indigo-300" x-text="(item.jaringan_panjang_m || 0).toLocaleString('id-ID') + ' m'"></strong>
+                            <span class="text-[11px] text-slate-400 font-mono" x-show="item.jaringan_luas_m2">
+                                • Luas: <strong class="text-indigo-300" x-text="(item.jaringan_luas_m2 || 0).toLocaleString('id-ID') + ' m²'"></strong>
                             </span>
                             <span class="text-[11px] text-slate-400 font-mono">
                                 • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getJaringanSubtotal(item))"></strong>
@@ -63,33 +63,48 @@
                         </button>
                     </div>
 
-                    <!-- Form Grid Jaringan -->
+                    <!-- Form Grid Jaringan (Dibuat Sama Persis dengan KIB C Gedung) -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         
-                        <!-- Kolom Kiri: Dimensi & Konstruksi -->
+                        <!-- Kolom Kiri: Konstruksi, Luas & Tingkat -->
                         <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
                             <span class="text-xs font-bold text-teal-400 block uppercase tracking-wider border-b border-slate-800 pb-1.5">
-                                🛣️ Identitas &amp; Dimensi Fisik Jaringan
+                                🏗️ Konstruksi &amp; Dimensi Jaringan
                             </span>
 
                             <!-- Nama Ruas / Jaringan -->
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Ruas / Instalasi Jaringan</label>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama / Sebutan Ruas / Instalasi Jaringan</label>
                                 <input type="text" x-model="item.jaringan_nama_barang"
                                     placeholder="Contoh: Jaringan Pipa Air Medis / Saluran Pembuangan RSUD"
                                     class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                             </div>
 
-                            <!-- Konstruksi & Kondisi -->
+                            <!-- Luas Jaringan & Konstruksi Bertingkat / Layang -->
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Konstruksi / Spesifikasi Bahan</label>
-                                    <input type="text" x-model="item.jaringan_konstruksi"
-                                        placeholder="Aspal Hotmix, Pipa HDPE, Kabel..."
-                                        class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Luas Jaringan (m²)</label>
+                                    <input type="number" step="0.01" min="0" x-model.number="item.jaringan_luas_m2" @input="syncTotalsFromItems()"
+                                        placeholder="0"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs font-mono font-bold text-indigo-300 focus:outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Fisik <span class="text-rose-400">*</span></label>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Bertingkat</label>
+                                    <select x-model="item.jaringan_bertingkat" class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        <option value="Tidak">Tidak (1 Jalur / Permukaan)</option>
+                                        <option value="Bertingkat 2 Lantai">Bertingkat / Konstruksi Layang</option>
+                                        <option value="Bertingkat 3 Lantai">Bertingkat 3 Lantai / Tower</option>
+                                        <option value="Bawah Tanah">Bawah Tanah / Terpendam</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Kondisi Jaringan & Konstruksi Beton -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                        <span>Kondisi Jaringan <span class="text-rose-400">*</span></span>
+                                    </label>
                                     <select x-model="item.jaringan_kondisi" @change="syncTotalsFromItems()"
                                         class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-bold cursor-pointer">
                                         <option value="Baik">🟢 Baik</option>
@@ -97,43 +112,44 @@
                                         <option value="Rusak Berat">🔴 Rusak Berat</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Konstruksi Beton</label>
+                                    <select x-model="item.jaringan_beton" class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        <option value="Beton">Beton Bertulang</option>
+                                        <option value="Aspal">Aspal Hotmix</option>
+                                        <option value="Pipa / HDPE">Pipa / HDPE</option>
+                                        <option value="Bukan Beton">Bukan Beton / Kayu / Kabel</option>
+                                    </select>
+                                </div>
                             </div>
 
-                            <!-- Panjang & Lebar -->
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Panjang (Meter)</label>
-                                    <input type="number" step="0.01" min="0" x-model.number="item.jaringan_panjang_m"
-                                        placeholder="0"
-                                        class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs font-mono font-bold text-indigo-300 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Lebar / Luas (m²)</label>
-                                    <input type="number" step="0.01" min="0" x-model.number="item.jaringan_luas_m2"
-                                        placeholder="0"
-                                        class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs font-mono font-bold text-indigo-300 focus:outline-none">
-                                </div>
+                            <!-- Status Tanah -->
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Status Penguasaan Tanah</label>
+                                <input type="text" x-model="item.jaringan_status_tanah"
+                                    placeholder="Tanah Pemkab Bondowoso"
+                                    class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                             </div>
                         </div>
 
-                        <!-- Kolom Kanan: Lokasi & Nilai BMD -->
+                        <!-- Kolom Kanan: Dokumen Izin / Kontrak & Nilai BMD -->
                         <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
                             <span class="text-xs font-bold text-indigo-400 block uppercase tracking-wider border-b border-slate-800 pb-1.5">
-                                📍 Lokasi, Volume &amp; Nilai Perolehan BMD
+                                📄 Izin / Kontrak &amp; Nilai Perolehan BMD
                             </span>
 
-                            <!-- Lokasi / Letak -->
+                            <!-- Dokumen Kontrak / Izin Jaringan -->
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Titik Lokasi / Kawasan RSUD</label>
-                                <input type="text" x-model="item.jaringan_lokasi"
-                                    placeholder="Area Parkir Timur / Gedung Bedah Sentral"
-                                    class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nomor Dokumen Kontrak / Izin Jaringan</label>
+                                <input type="text" x-model="item.jaringan_dokumen_no"
+                                    placeholder="Nomor Dokumen Kontrak / Berita Acara Jaringan"
+                                    class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
                             </div>
 
                             <!-- Kuantitas & Satuan -->
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kuantitas (Volume)</label>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Jumlah Ruas (Qty)</label>
                                     <input type="number" min="1" x-model.number="item.jaringan_jumlah" @input="syncTotalsFromItems()"
                                         placeholder="1"
                                         class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs font-mono font-bold text-center text-white focus:outline-none">
@@ -146,7 +162,7 @@
                                 </div>
                             </div>
 
-                            <!-- Nilai Satuan BMD -->
+                            <!-- Nilai Perolehan BMD per Ruas -->
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
                                     <span>Nilai Perolehan BMD Ruas Ini (Rp)</span>

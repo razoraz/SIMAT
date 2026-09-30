@@ -161,6 +161,11 @@
 
             onTanggalChange(val) {
                 if (!val) return;
+                const todayIso = new Date().toISOString().split('T')[0];
+                if (val > todayIso) {
+                    this.formData.mutasi_tanggal = todayIso;
+                    val = todayIso;
+                }
                 this.formData.triwulan = this.calcTriwulanFromDate(val);
             },
 
@@ -530,20 +535,33 @@
 
             // Repeater Actions: Mesin
             addMesinItem() {
+                if (!this.formData.mesin_items) {
+                    this.formData.mesin_items = [];
+                }
                 this.formData.mesin_items.push({
+                    is_extracom: false,
+                    mesin_kode_barang: '',
                     mesin_nama_barang: this.formData.nama_barang || '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     mesin_merk: '',
                     mesin_type: '',
                     mesin_ukuran: '',
-                    mesin_bahan: '',
                     mesin_no_pabrik: '',
+                    mesin_bahan: '',
+                    mesin_tahun_pembuatan: null,
+                    mesin_kondisi: 'Baik',
                     mesin_no_rangka: '',
                     mesin_no_mesin: '',
+                    mesin_no_bpkb: '',
                     mesin_no_polisi: '',
-                    mesin_kondisi: 'Baik',
                     mesin_jumlah_barang: 1,
                     mesin_satuan: this.formData.satuan || 'Unit',
-                    mesin_nilai_satuan: 0
+                    mesin_nilai_satuan: 0,
+                    mesin_keterangan: '',
+                    ruang_pemegang: '',
+                    isRuangOpen: false,
+                    searchRuang: ''
                 });
                 this.syncTotalsFromItems();
             },
@@ -559,6 +577,20 @@
                 const qty = parseInt(item.mesin_jumlah_barang) || 1;
                 const unitVal = parseFloat(item.mesin_nilai_satuan) || 0;
                 return qty * unitVal;
+            },
+
+            get totalNilaiMesin() {
+                if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                    return this.formData.mesin_items.reduce((sum, item) => sum + this.getMesinSubtotal(item), 0);
+                }
+                return Number(this.formData.total_realisasi || 0);
+            },
+
+            get totalVolumeMesin() {
+                if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                    return this.formData.mesin_items.reduce((sum, item) => sum + (parseInt(item.mesin_jumlah_barang) || 1), 0);
+                }
+                return parseInt(this.formData.jumlah_volume) || 1;
             },
 
             // Repeater Actions: Gedung
@@ -595,11 +627,12 @@
             addJaringanItem() {
                 this.formData.jaringan_items.push({
                     jaringan_nama_barang: this.formData.nama_barang || '',
-                    jaringan_konstruksi: '',
-                    jaringan_panjang_m: '',
                     jaringan_luas_m2: '',
-                    jaringan_lokasi: this.formData.alamat_barang || '',
+                    jaringan_bertingkat: 'Tidak',
+                    jaringan_beton: 'Beton',
                     jaringan_kondisi: 'Baik',
+                    jaringan_status_tanah: 'Tanah Pemkab Bondowoso',
+                    jaringan_dokumen_no: '',
                     jaringan_jumlah: 1,
                     jaringan_satuan: 'Ruas',
                     jaringan_nilai_satuan: 0
@@ -673,6 +706,35 @@
                     if (this.formData.mesin_items[0].mesin_kondisi) {
                         this.formData.kondisi = this.formData.mesin_items[0].mesin_kondisi;
                     }
+                    if (this.formData.mesin_items[0].ruang_pemegang) {
+                        const matchedUnit = (this.unitsList || []).find(u => u.nama === this.formData.mesin_items[0].ruang_pemegang);
+                        if (matchedUnit) {
+                            this.formData.unit_id = matchedUnit.id;
+                        }
+                    }
+                    const first = this.formData.mesin_items[0];
+                    if (this.formData.mesin_items.length === 1) {
+                        if (first.mesin_nama_barang) {
+                            this.formData.nama_barang = first.mesin_nama_barang;
+                        }
+                    } else {
+                        const names = this.formData.mesin_items.map(m => m.mesin_nama_barang || (m.mesin_merk ? m.mesin_merk + ' ' + m.mesin_type : '')).filter(Boolean);
+                        if (names.length > 0) {
+                            this.formData.nama_barang = names.join(', ');
+                        }
+                    }
+                    if (first) {
+                        this.formData.merk = first.mesin_merk || '';
+                        this.formData.type = first.mesin_type || '';
+                        this.formData.no_pabrik = first.mesin_no_pabrik || '';
+                        this.formData.bahan = first.mesin_bahan || '';
+                        this.formData.ukuran = first.mesin_ukuran || '';
+                        this.formData.tahun_pembuatan = first.mesin_tahun_pembuatan || null;
+                        this.formData.no_rangka = first.mesin_no_rangka || '';
+                        this.formData.no_mesin = first.mesin_no_mesin || '';
+                        this.formData.no_polisi = first.mesin_no_polisi || '';
+                        this.formData.no_bpkb = first.mesin_no_bpkb || '';
+                    }
                 } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
@@ -728,6 +790,71 @@
                 }
             },
 
+            // Helper Live Search 108 untuk Tiap Item Sheet KIB (Max 5 hasil, Zero-Lag)
+            filterJenisAstap108(prefix, query, isOpen) {
+                if (!isOpen) return [];
+                const q = (query || '').toLowerCase().trim();
+                const results = [];
+                const list = this.allFlat108 || [];
+                for (let i = 0; i < list.length; i++) {
+                    const it = list[i];
+                    if (!it || !it.kode || !it.kode.startsWith(prefix)) continue;
+                    if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
+                        results.push(it);
+                        if (results.length >= 5) break; // Strict 5-item cutoff agar tidak lag!
+                    }
+                }
+                return results;
+            },
+
+            // Pilih barang 108 dari filter dropdown
+            select108ForItem(item, opt, type) {
+                if (type === 'mesin') {
+                    item.mesin_kode_barang = opt.kode;
+                    item.mesin_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'tanah') {
+                    item.tanah_kode_barang = opt.kode;
+                    item.tanah_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'gedung') {
+                    item.gedung_kode_barang = opt.kode;
+                    item.gedung_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'jaringan') {
+                    item.jaringan_kode_barang = opt.kode;
+                    item.jaringan_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'lainnya') {
+                    item.lainnya_kode_barang = opt.kode;
+                    item.lainnya_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                }
+                item.isFilterOpen = false;
+                if (!this.formData.jenis_astap_id && opt.id) {
+                    this.formData.jenis_astap_id = opt.id;
+                }
+                this.syncTotalsFromItems();
+            },
+
+            // Helper Pencarian & Pemilihan Unit/Ruangan Penempatan
+            filterUnitsForItem(item) {
+                let list = this.unitsList || [];
+                if (!item.searchRuang || item.searchRuang.trim() === '') return list;
+                const q = item.searchRuang.toLowerCase().trim();
+                return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+            },
+
+            selectUnitForItem(item, unit) {
+                item.ruang_pemegang = unit.nama;
+                item.isRuangOpen = false;
+                item.searchRuang = '';
+                if (unit.id) {
+                    this.formData.unit_id = unit.id;
+                }
+                this.syncTotalsFromItems();
+            },
+
             // Getters for Step 3 Summary
             get totalLuasTanah() {
                 if (!this.formData.tanah_items) return 0;
@@ -737,6 +864,11 @@
             get totalLuasGedung() {
                 if (!this.formData.gedung_items) return 0;
                 return this.formData.gedung_items.reduce((s, it) => s + (parseFloat(it.gedung_luas_m2) || 0), 0);
+            },
+
+            get totalLuasJaringan() {
+                if (!this.formData.jaringan_items) return 0;
+                return this.formData.jaringan_items.reduce((s, it) => s + (parseFloat(it.jaringan_luas_m2) || 0), 0);
             },
 
             get firstMesinItem() {
@@ -826,6 +958,11 @@
                     }
                     if (!this.formData.mutasi_tanggal) {
                         missing.push('Tanggal Dokumen Berita Acara');
+                    } else {
+                        const todayIso = new Date().toISOString().split('T')[0];
+                        if (this.formData.mutasi_tanggal > todayIso) {
+                            missing.push('Tanggal Dokumen Berita Acara tidak boleh melebihi tanggal hari ini');
+                        }
                     }
                     if (!this.formData.tahun_perolehan) {
                         missing.push('Tahun Perolehan BMD');
@@ -859,6 +996,14 @@
                     }
                     if (!this.formData.total_realisasi || Number(this.formData.total_realisasi) <= 0) {
                         missing.push('Nilai Perolehan Satuan pada rincian unit KIB di atas (Total Nilai BMD harus > 0)');
+                    }
+                    if (this.isTanah && this.formData.tanah_items) {
+                        const todayIso = new Date().toISOString().split('T')[0];
+                        this.formData.tanah_items.forEach((item, idx) => {
+                            if (item.tanah_sertifikat_tgl && item.tanah_sertifikat_tgl > todayIso) {
+                                missing.push(`Tanggal Sertifikat Tanah #${idx + 1} tidak boleh melebihi tanggal hari ini`);
+                            }
+                        });
                     }
 
                     if (missing.length > 0) {
@@ -990,14 +1135,19 @@
                     specJson.mesin_items = this.formData.mesin_items;
                     if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                         const firstM = this.formData.mesin_items[0];
+                        specJson.is_extracom = firstM.is_extracom || false;
                         specJson.merk = firstM.mesin_merk || '';
                         specJson.type = firstM.mesin_type || '';
                         specJson.no_pabrik = firstM.mesin_no_pabrik || '';
                         specJson.ukuran = firstM.mesin_ukuran || '';
                         specJson.bahan = firstM.mesin_bahan || '';
+                        specJson.tahun_pembuatan = firstM.mesin_tahun_pembuatan || null;
                         specJson.no_rangka = firstM.mesin_no_rangka || '';
                         specJson.no_mesin = firstM.mesin_no_mesin || '';
+                        specJson.no_bpkb = firstM.mesin_no_bpkb || '';
                         specJson.no_polisi = firstM.mesin_no_polisi || '';
+                        specJson.keterangan = firstM.mesin_keterangan || '';
+                        specJson.ruang_pemegang = firstM.ruang_pemegang || '';
                     }
                 } else if (this.isGedung) {
                     specJson.kategori_kib = 'KIB C (Gedung & Bangunan)';
@@ -1012,6 +1162,14 @@
                 } else if (this.isJaringan) {
                     specJson.kategori_kib = 'KIB D (Jalan, Irigasi & Jaringan)';
                     specJson.jaringan_items = this.formData.jaringan_items;
+                    if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                        const firstJ = this.formData.jaringan_items[0];
+                        specJson.jaringan_luas_m2 = this.totalLuasJaringan;
+                        specJson.jaringan_bertingkat = firstJ.jaringan_bertingkat || 'Tidak';
+                        specJson.jaringan_beton = firstJ.jaringan_beton || 'Beton';
+                        specJson.jaringan_status_tanah = firstJ.jaringan_status_tanah || 'Tanah Pemda';
+                        specJson.jaringan_dokumen_no = firstJ.jaringan_dokumen_no || '';
+                    }
                 } else if (this.isLainnya) {
                     specJson.kategori_kib = 'KIB E (Aset Tetap Lainnya)';
                     specJson.lainnya_items = this.formData.lainnya_items;
@@ -1155,11 +1313,12 @@
                     } else if (this.activeKibCategory === 'jaringan' && (!this.formData.jaringan_items || this.formData.jaringan_items.length === 0)) {
                         this.formData.jaringan_items = [{
                             jaringan_nama_barang: init.nama_barang || '',
-                            jaringan_konstruksi: init.jaringan_konstruksi || '',
-                            jaringan_panjang_m: init.jaringan_panjang_m || '',
                             jaringan_luas_m2: init.jaringan_luas_m2 || '',
-                            jaringan_lokasi: init.alamat_barang || '',
+                            jaringan_bertingkat: init.jaringan_bertingkat || 'Tidak',
+                            jaringan_beton: init.jaringan_beton || 'Beton',
                             jaringan_kondisi: init.kondisi || 'Baik',
+                            jaringan_status_tanah: init.jaringan_status_tanah || 'Tanah Pemda',
+                            jaringan_dokumen_no: init.jaringan_dokumen_no || '',
                             jaringan_jumlah: init.jumlah_volume || 1,
                             jaringan_satuan: init.satuan || 'Ruas',
                             jaringan_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
@@ -1177,20 +1336,41 @@
                         }];
                     } else if (this.activeKibCategory === 'mesin' && (!this.formData.mesin_items || this.formData.mesin_items.length === 0)) {
                         this.formData.mesin_items = [{
+                            is_extracom: init.is_extracom || false,
+                            mesin_kode_barang: this.selected108Item?.kode || '',
                             mesin_nama_barang: init.nama_barang || '',
+                            isFilterOpen: false,
+                            searchFilter: '',
                             mesin_merk: init.merk || '',
                             mesin_type: init.type || '',
                             mesin_ukuran: init.ukuran || '',
                             mesin_bahan: init.bahan || '',
                             mesin_no_pabrik: init.no_pabrik || '',
+                            mesin_tahun_pembuatan: init.tahun_pembuatan || null,
+                            mesin_kondisi: init.kondisi || 'Baik',
                             mesin_no_rangka: init.no_rangka || '',
                             mesin_no_mesin: init.no_mesin || '',
+                            mesin_no_bpkb: init.no_bpkb || '',
                             mesin_no_polisi: init.no_polisi || '',
-                            mesin_kondisi: init.kondisi || 'Baik',
                             mesin_jumlah_barang: init.jumlah_volume || 1,
                             mesin_satuan: init.satuan || 'Unit',
-                            mesin_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
+                            mesin_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi,
+                            mesin_keterangan: init.mutasi_keterangan || (init.keterangan || ''),
+                            ruang_pemegang: init.ruang_pemegang || (this.selectedUnitName || ''),
+                            isRuangOpen: false,
+                            searchRuang: ''
                         }];
+                    }
+
+                    // Normalisasi mesin_items yang ada agar properti reaktif Alpine tidak undefined
+                    if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
+                        this.formData.mesin_items.forEach(it => {
+                            if (it.is_extracom === undefined) it.is_extracom = false;
+                            if (it.isFilterOpen === undefined) it.isFilterOpen = false;
+                            if (it.isRuangOpen === undefined) it.isRuangOpen = false;
+                            if (it.searchRuang === undefined) it.searchRuang = '';
+                            if (!it.ruang_pemegang && this.selectedUnitName) it.ruang_pemegang = this.selectedUnitName;
+                        });
                     }
                 } else {
                     // Default seed for new form

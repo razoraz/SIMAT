@@ -126,11 +126,17 @@
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
                     <span>Tanggal Dokumen BAMB</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Otomatis Hari Ini</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Maks. Hari Ini</span>
                 </label>
-                <input type="date" x-model="formData.mutasi_tanggal" 
-                    @change="onTanggalChange($event.target.value)"
-                    @input="onTanggalChange($event.target.value)"
+                <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="formData.mutasi_tanggal" 
+                    @change="
+                        const todayIso = new Date().toISOString().split('T')[0];
+                        if (formData.mutasi_tanggal > todayIso) {
+                            formData.mutasi_tanggal = todayIso;
+                        }
+                        onTanggalChange(formData.mutasi_tanggal);
+                    "
+                    placeholder="dd/mm/yyyy"
                     required
                     class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none shadow-inner">
             </div>

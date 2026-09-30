@@ -176,6 +176,9 @@
                     <template x-if="isMesin">
                         <div class="text-[11px] text-slate-300 space-y-0.5">
                             <div>• Rincian Item: <strong class="text-white" x-text="(formData.mesin_items ? formData.mesin_items.length : 1) + ' Item/Barang'"></strong></div>
+                            <div x-show="firstMesinItem?.is_extracom !== undefined">
+                                • Status Akuntansi: <span class="font-bold font-mono text-[10px] px-1.5 py-0.5 rounded" :class="firstMesinItem?.is_extracom ? 'text-cyan-300 bg-cyan-950/60 border border-cyan-500/30' : 'text-purple-300 bg-purple-950/60 border border-purple-500/30'" x-text="firstMesinItem?.is_extracom ? 'Ekstrakomtabel (≤ 300rb)' : 'Aset Tetap Reguler'"></span>
+                            </div>
                             <div x-show="firstMesinItem?.mesin_merk || firstMesinItem?.mesin_type">
                                 • Merk / Type: <strong class="text-white" x-text="(firstMesinItem?.mesin_merk || '') + ' ' + (firstMesinItem?.mesin_type || '')"></strong>
                             </div>
@@ -184,6 +187,9 @@
                             </div>
                             <div x-show="firstMesinItem?.mesin_no_polisi">
                                 • No. Polisi: <span class="font-mono text-amber-300 font-bold" x-text="firstMesinItem?.mesin_no_polisi"></span>
+                            </div>
+                            <div x-show="firstMesinItem?.ruang_pemegang">
+                                • Ruang / Unit: <strong class="text-white" x-text="firstMesinItem?.ruang_pemegang"></strong>
                             </div>
                         </div>
                     </template>
@@ -201,7 +207,8 @@
                     <template x-if="isJaringan">
                         <div class="text-[11px] text-slate-300 space-y-0.5">
                             <div>• Total Ruas/Instalasi: <strong class="text-white" x-text="(formData.jaringan_items ? formData.jaringan_items.length : 1) + ' Ruas'"></strong></div>
-                            <div>• Panjang: <strong class="text-indigo-300 font-mono" x-text="(firstJaringanItem?.jaringan_panjang_m || 0) + ' Meter'"></strong></div>
+                            <div>• Luas Jaringan: <strong class="text-teal-300 font-mono" x-text="(totalLuasJaringan || 0).toLocaleString('id-ID') + ' m²'"></strong></div>
+                            <div>• Konstruksi: <span class="text-white" x-text="firstJaringanItem?.jaringan_beton || 'Beton Bertulang'"></span></div>
                         </div>
                     </template>
 

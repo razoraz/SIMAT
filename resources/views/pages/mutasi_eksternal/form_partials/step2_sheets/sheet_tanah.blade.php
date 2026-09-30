@@ -118,8 +118,15 @@
                                         class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Tanggal Sertifikat</label>
-                                    <input type="date" x-model="item.tanah_sertifikat_tgl"
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                        <span>Tanggal Sertifikat</span>
+                                        <span class="text-[9px] text-emerald-400 font-mono">Maks. Hari Ini</span>
+                                    </label>
+                                    <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.tanah_sertifikat_tgl" placeholder="dd/mm/yyyy"
+                                        @change="
+                                            const todayIso = new Date().toISOString().split('T')[0];
+                                            if (item.tanah_sertifikat_tgl > todayIso) item.tanah_sertifikat_tgl = todayIso;
+                                        "
                                         class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                                 </div>
                             </div>
