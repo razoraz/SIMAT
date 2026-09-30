@@ -15,13 +15,13 @@
                     <!-- Kategori KIB Badge -->
                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
                         :class="{
-                            'bg-amber-500/20 text-amber-300 border-amber-500/30': selectedAstapDetail?.category === 'KIB A',
-                            'bg-cyan-500/20 text-cyan-300 border-cyan-500/30':     selectedAstapDetail?.category === 'KIB B',
-                            'bg-purple-500/20 text-purple-300 border-purple-500/30': selectedAstapDetail?.category === 'KIB C',
-                            'bg-teal-500/20 text-teal-300 border-teal-500/30':     selectedAstapDetail?.category === 'KIB D',
-                            'bg-orange-500/20 text-orange-300 border-orange-500/30': selectedAstapDetail?.category === 'KIB E'
+                            'bg-amber-500/20 text-amber-300 border-amber-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'KIB A',
+                            'bg-cyan-500/20 text-cyan-300 border-cyan-500/30':     getEffectiveKibCategory(selectedAstapDetail) === 'KIB B',
+                            'bg-purple-500/20 text-purple-300 border-purple-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'KIB C',
+                            'bg-teal-500/20 text-teal-300 border-teal-500/30':     getEffectiveKibCategory(selectedAstapDetail) === 'KIB D',
+                            'bg-orange-500/20 text-orange-300 border-orange-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'KIB E'
                         }"
-                        x-text="selectedAstapDetail?.category || 'KIB B'"></span>
+                        x-text="getEffectiveKibCategory(selectedAstapDetail)"></span>
 
                     <!-- Badge Kemitraan Akun 1.5.2 -->
                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
@@ -132,19 +132,19 @@
                     <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                         <h4 class="text-xs font-extrabold uppercase tracking-wider flex items-center space-x-1.5"
                             :class="{
-                                'text-amber-400': selectedAstapDetail.category === 'KIB A',
-                                'text-cyan-400':  selectedAstapDetail.category === 'KIB B',
-                                'text-purple-400': selectedAstapDetail.category === 'KIB C',
-                                'text-teal-400':  selectedAstapDetail.category === 'KIB D',
-                                'text-orange-400': selectedAstapDetail.category === 'KIB E'
+                                'text-amber-400': getEffectiveKibCategory(selectedAstapDetail) === 'KIB A',
+                                'text-cyan-400':  getEffectiveKibCategory(selectedAstapDetail) === 'KIB B',
+                                'text-purple-400': getEffectiveKibCategory(selectedAstapDetail) === 'KIB C',
+                                'text-teal-400':  getEffectiveKibCategory(selectedAstapDetail) === 'KIB D',
+                                'text-orange-400': getEffectiveKibCategory(selectedAstapDetail) === 'KIB E'
                             }">
-                            <span>🔍 Rincian Spesifikasi Teknis Aset (<span x-text="selectedAstapDetail.category"></span>)</span>
+                            <span>🔍 Rincian Spesifikasi Teknis Aset (<span x-text="getEffectiveKibCategory(selectedAstapDetail)"></span>)</span>
                         </h4>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400" x-text="'Spesifikasi Khusus ' + selectedAstapDetail.category"></span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400" x-text="'Spesifikasi Khusus ' + getEffectiveKibCategory(selectedAstapDetail)"></span>
                     </div>
 
                     <!-- 1. KIB A (TANAH) -->
-                    <template x-if="selectedAstapDetail.category === 'KIB A'">
+                    <template x-if="getEffectiveKibCategory(selectedAstapDetail) === 'KIB A'">
                         <div class="space-y-2.5">
                             <template x-if="getTanahItemsForDetail(selectedAstapDetail).length > 0">
                                 <div class="space-y-2.5">
@@ -246,7 +246,7 @@
                     </template>
 
                     <!-- 2. KIB B (PERALATAN & MESIN) -->
-                    <template x-if="selectedAstapDetail.category === 'KIB B'">
+                    <template x-if="getEffectiveKibCategory(selectedAstapDetail) === 'KIB B'">
                         <div class="space-y-3">
                             <!-- Multi-Item Repeater List jika ada mesin_items -->
                             <template x-if="getMesinItemsForDetail(selectedAstapDetail).length > 0">
@@ -308,7 +308,7 @@
                             </template>
 
                             <!-- Fallback jika single item / legacy -->
-                            <template x-if="!selectedAstapDetail.spesifikasi_json?.mesin_items || selectedAstapDetail.spesifikasi_json.mesin_items.length === 0">
+                            <template x-if="getMesinItemsForDetail(selectedAstapDetail).length === 0">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                                     <div class="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
                                         <span class="text-slate-400 text-[10px] block font-semibold mb-0.5">🏷️ Merk / Brand</span>
@@ -340,7 +340,7 @@
                     </template>
 
                     <!-- 3. KIB C (GEDUNG & BANGUNAN) -->
-                    <template x-if="selectedAstapDetail.category === 'KIB C'">
+                    <template x-if="getEffectiveKibCategory(selectedAstapDetail) === 'KIB C'">
                         <div class="space-y-3">
                             <template x-if="getGedungItemsForDetail(selectedAstapDetail).length > 0">
                                 <div class="space-y-2.5">
@@ -412,7 +412,7 @@
                     </template>
 
                     <!-- 4. KIB D (JALAN, IRIGASI DAN JARINGAN) -->
-                    <template x-if="selectedAstapDetail.category === 'KIB D'">
+                    <template x-if="getEffectiveKibCategory(selectedAstapDetail) === 'KIB D'">
                         <div class="space-y-3">
                             <template x-for="(jItem, jIdx) in getJaringanItemsForDetail(selectedAstapDetail)" :key="jIdx">
                                 <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-teal-500/30 space-y-2.5 shadow-sm">
@@ -451,7 +451,7 @@
                     </template>
 
                     <!-- 5. KIB E (ASET TETAP LAINNYA) -->
-                    <template x-if="selectedAstapDetail.category === 'KIB E'">
+                    <template x-if="getEffectiveKibCategory(selectedAstapDetail) === 'KIB E'">
                         <div class="space-y-3">
                             <template x-for="(lItem, lIdx) in getLainnyaItemsForDetail(selectedAstapDetail)" :key="lIdx">
                                 <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-orange-500/30 space-y-2.5 shadow-sm">
