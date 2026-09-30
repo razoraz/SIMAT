@@ -7877,7 +7877,7 @@
                         kibARows.push([
                             ...col1to7,
                             tItem.tanah_nama_barang || item.nama_barang || '-',
-                            item.kode_barang || '1.5.2.01.01.01.001',
+                            tItem.tanah_kode_barang || spec.tanah_kode_barang || item.kode_barang || '1.5.2.01.01.01.001',
                             tItem.tanah_hak || spec.hak_tanah || item.hak_tanah || 'Hak Pakai',
                             formatAstapDate(tItem.tanah_sertifikat_tgl || spec.sertifikat_tgl || item.sertifikat_tanggal),
                             tItem.tanah_sertifikat_no || spec.sertifikat_no || item.sertifikat_nomor || '-',
@@ -7912,7 +7912,7 @@
                     kibARows.push([
                         ...col1to7,
                         item.nama_barang || '-',
-                        item.kode_barang || '1.5.2.01.01.01.001',
+                        spec.tanah_kode_barang || item.kode_barang || '1.5.2.01.01.01.001',
                         spec.hak_tanah || item.hak_tanah || 'Hak Pakai',
                         formatAstapDate(spec.sertifikat_tgl || item.sertifikat_tanggal),
                         spec.sertifikat_no || item.sertifikat_nomor || '-',
@@ -8134,7 +8134,7 @@
                         kibBRows.push([
                             ...col1to7,
                             mItem.mesin_nama_barang || item.nama_barang || '-',
-                            item.kode_barang || '1.5.2.01.01.04.002',
+                            mItem.mesin_kode_barang || spec.mesin_kode_barang || item.kode_barang || '1.5.2.01.01.04.002',
                             mItem.mesin_merk || spec.merk || item.merk || '-',
                             mItem.mesin_type || spec.type || item.type || '-',
                             mItem.mesin_ukuran || spec.ukuran || item.ukuran || '-',
@@ -8177,7 +8177,7 @@
                     kibBRows.push([
                         ...col1to7,
                         item.nama_barang || '-',
-                        item.kode_barang || '1.5.2.01.01.04.002',
+                        spec.mesin_kode_barang || item.kode_barang || '1.5.2.01.01.04.002',
                         item.merk || spec.merk || '-',
                         item.type || spec.type || '-',
                         item.ukuran || spec.ukuran || '-',
@@ -8295,7 +8295,7 @@
             [
                 "NO",
                 "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
-                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
                 "Letak/ Alamat",
                 "PIHAK PENYEDIA / MITRA", "", "",
                 "Pejabat Pembuat Komitmen", "",
@@ -8427,7 +8427,7 @@
                         kibCRows.push([
                             ...col1to7,
                             gItem.gedung_nama_barang || item.nama_barang || '-',
-                            item.kode_barang || '1.5.2.01.01.03.003',
+                            gItem.gedung_kode_barang || spec.gedung_kode_barang || item.kode_barang || '1.5.2.01.01.03.003',
                             luasM2,
                             kondisiLabel,
                             gItem.gedung_bertingkat || 'Bertingkat',
@@ -8473,7 +8473,7 @@
                     kibCRows.push([
                         ...col1to7,
                         item.nama_barang || '-',
-                        item.kode_barang || '1.5.2.01.01.03.003',
+                        spec.gedung_kode_barang || item.kode_barang || '1.5.2.01.01.03.003',
                         luasM2,
                         kondisiLabel,
                         spec.gedung_bertingkat || 'Bertingkat',
@@ -8586,7 +8586,7 @@
             [
                 "NO",
                 "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
-                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "RINCIAN ASET KEMITRAAN SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
                 "Letak/ Alamat",
                 "PIHAK PENYEDIA / MITRA", "", "",
                 "Pejabat Pembuat Komitmen", "",
@@ -8717,7 +8717,7 @@
                         kibDRows.push([
                             ...col1to7,
                             jItem.jaringan_nama_barang || item.nama_barang || '-',
-                            item.kode_barang || '1.5.2.01.01.04.004',
+                            jItem.jaringan_kode_barang || spec.jaringan_kode_barang || item.kode_barang || '1.5.2.01.01.04.004',
                             luasM2,
                             kondisiLabel,
                             jItem.jaringan_bertingkat || '-',
@@ -8762,7 +8762,7 @@
                     kibDRows.push([
                         ...col1to7,
                         item.nama_barang || '-',
-                        item.kode_barang || '1.5.2.01.01.04.004',
+                        spec.jaringan_kode_barang || item.kode_barang || '1.5.2.01.01.04.004',
                         luasM2,
                         kondisiLabel,
                         spec.jaringan_bertingkat || '-',
@@ -8911,9 +8911,9 @@
                 "", "",
                 "",
                 "",
-                "", "", "",
-                "", "", "", "",
-                "", "", "",
+                "Judul", "Pencipta", "Spesifikasi",
+                "Asal Daerah", "Pencipta", "Spesifikasi", "Bahan",
+                "Ukuran (m/cm)", "Judul", "Spesifikasi",
                 "PKS", "",
                 "Jumlah Barang", "Nama Satuan Barang",
                 "Nilai Satuan Barang (Rp)", "Total Nilai Barang (Rp)",
@@ -8928,9 +8928,9 @@
                 "", "", "", "", "", "",
                 "",
                 "",
-                "Judul", "Pencipta", "Spesifikasi",
-                "Asal Daerah", "Pencipta", "Spesifikasi", "Bahan",
-                "Ukuran (m/cm)", "Judul", "Spesifikasi",
+                "", "", "",
+                "", "", "", "",
+                "", "", "",
                 "Nomor", "Tanggal",
                 "", "",
                 "", "",
@@ -9012,7 +9012,7 @@
                         kibERows.push([
                             ...col1to7,
                             lItem.lainnya_nama_barang || item.nama_barang || '-',
-                            item.kode_barang || '1.5.2.01.01.02.005',
+                            lItem.lainnya_kode_barang || spec.lainnya_kode_barang || item.kode_barang || '1.5.2.01.01.02.005',
                             judulBuku,
                             penciptaBuku,
                             spesifikasiBuku,
@@ -9049,7 +9049,7 @@
                     kibERows.push([
                         ...col1to7,
                         item.nama_barang || '-',
-                        item.kode_barang || '1.5.2.01.01.02.005',
+                        spec.lainnya_kode_barang || item.kode_barang || '1.5.2.01.01.02.005',
                         spec.buku_judul || item.nama_barang || '-',
                         spec.buku_pencipta || '-',
                         spec.buku_spesifikasi || spec.spesifikasi || '-',
