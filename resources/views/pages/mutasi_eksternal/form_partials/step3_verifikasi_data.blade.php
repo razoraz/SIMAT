@@ -146,9 +146,17 @@
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Kode Rekening Barang 108:</span>
                     <span class="font-mono font-black text-indigo-300 block text-xs" x-text="selected108Item ? (selected108Item.kode + ' • ' + selected108Item.nama) : '-'"></span>
                 </div>
-                <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama Spesifik Barang Pelimpahan:</span>
-                    <span class="font-bold text-white block text-sm" x-text="formData.nama_barang || '-'"></span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nama Barang Pelimpahan:</span>
+                        <span class="font-bold text-white block text-sm" x-text="formData.nama_barang || '-'"></span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Kondisi Fisik Saat Diterima:</span>
+                        <span class="font-extrabold inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px]"
+                            :class="formData.kondisi === 'Baik' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : (formData.kondisi === 'Rusak Ringan' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30')"
+                            x-text="formData.kondisi || 'Baik'"></span>
+                    </div>
                 </div>
 
                 <!-- Preview Spesifikasi Khusus Sesuai KIB -->
@@ -209,46 +217,12 @@
         </div>
 
         <!-- ===================================================================== -->
-        <!-- KARTU 3: PENEMPATAN RUANGAN (KIR) & KONDISI FISIK RSUD                -->
-        <!-- ===================================================================== -->
-        <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-slate-800 shadow-xl space-y-4 relative">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div class="flex items-center space-x-2">
-                    <span class="w-7 h-7 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-500/30">3</span>
-                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
-                        Penempatan Ruangan (KIR) &amp; Lokasi RSUD
-                    </h3>
-                </div>
-                <button type="button" @click="goToStep(2)" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer">
-                    <span>Ubah</span> &rarr;
-                </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Unit Ruangan Penempatan:</span>
-                    <span class="font-bold text-indigo-300 block text-xs" x-text="selectedUnitName || 'Belum dipilih'"></span>
-                </div>
-                <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Kondisi Fisik Saat Diterima:</span>
-                    <span class="font-extrabold inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px]"
-                        :class="formData.kondisi === 'Baik' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : (formData.kondisi === 'Rusak Ringan' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30')"
-                        x-text="formData.kondisi || 'Baik'"></span>
-                </div>
-                <div class="col-span-2">
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Alamat / Lokasi Fisik di RSUD:</span>
-                    <span class="text-slate-300 block" x-text="formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1'"></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- ===================================================================== -->
-        <!-- KARTU 4: AKUMULASI KEUANGAN & INTEGRASI NIBAR REGISTER                -->
+        <!-- KARTU 3: AKUMULASI KEUANGAN & INTEGRASI NIBAR REGISTER                -->
         <!-- ===================================================================== -->
         <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/90 border border-emerald-500/30 shadow-xl space-y-4 relative">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2">
-                    <span class="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold border border-emerald-500/30">4</span>
+                    <span class="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold border border-emerald-500/30">3</span>
                     <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider">
                         Akumulasi Keuangan &amp; Register NIBAR
                     </h3>

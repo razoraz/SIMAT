@@ -43,6 +43,10 @@
                                 <span>🛣️ Ruas / Jaringan #<span x-text="idx + 1"></span></span>
                             </span>
                             <span class="text-xs text-white font-bold" x-show="item.jaringan_nama_barang" x-text="item.jaringan_nama_barang"></span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"
+                                :class="(item.jaringan_kondisi === 'Baik' || !item.jaringan_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (item.jaringan_kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40')"
+                                x-text="'• Kondisi: ' + (item.jaringan_kondisi || 'Baik')">
+                            </span>
                             <span class="text-[11px] text-slate-400 font-mono" x-show="item.jaringan_panjang_m">
                                 • Panjang: <strong class="text-indigo-300" x-text="(item.jaringan_panjang_m || 0).toLocaleString('id-ID') + ' m'"></strong>
                             </span>
@@ -76,12 +80,23 @@
                                     class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                             </div>
 
-                            <!-- Konstruksi / Bahan -->
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Konstruksi / Spesifikasi Bahan</label>
-                                <input type="text" x-model="item.jaringan_konstruksi"
-                                    placeholder="Aspal Hotmix, Pipa HDPE, Kabel Tembaga NYY..."
-                                    class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                            <!-- Konstruksi & Kondisi -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Konstruksi / Spesifikasi Bahan</label>
+                                    <input type="text" x-model="item.jaringan_konstruksi"
+                                        placeholder="Aspal Hotmix, Pipa HDPE, Kabel..."
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Fisik <span class="text-rose-400">*</span></label>
+                                    <select x-model="item.jaringan_kondisi" @change="syncTotalsFromItems()"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-bold cursor-pointer">
+                                        <option value="Baik">🟢 Baik</option>
+                                        <option value="Rusak Ringan">🟡 Rusak Ringan</option>
+                                        <option value="Rusak Berat">🔴 Rusak Berat</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <!-- Panjang & Lebar -->

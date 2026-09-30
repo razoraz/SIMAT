@@ -43,8 +43,12 @@
                             <span class="px-3 py-1 rounded-xl bg-indigo-500/20 text-indigo-300 font-mono font-extrabold text-xs border border-indigo-500/40 flex items-center space-x-1.5">
                                 <span>⚙️ Barang / Unit #<span x-text="idx + 1"></span></span>
                             </span>
-                            <span class="text-[11px] text-slate-200 font-semibold" x-show="item.mesin_nama_barang || item.mesin_merk || item.mesin_type">
-                                • <span x-text="item.mesin_nama_barang ? (item.mesin_nama_barang + ' • ') : ''"></span><span x-text="(item.mesin_merk || '') + ' ' + (item.mesin_type || '')"></span>
+                            <span class="text-[11px] text-slate-200 font-semibold" x-show="item.mesin_merk || item.mesin_type">
+                                • <span x-text="(item.mesin_merk || '') + ' ' + (item.mesin_type || '')"></span>
+                            </span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"
+                                :class="(item.mesin_kondisi === 'Baik' || !item.mesin_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (item.mesin_kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40')"
+                                x-text="'• Kondisi: ' + (item.mesin_kondisi || 'Baik')">
                             </span>
                             <span class="text-[11px] text-slate-400 font-mono">
                                 • Qty: <strong class="text-indigo-300" x-text="(item.mesin_jumlah_barang || 1) + ' ' + (item.mesin_satuan || 'Unit')"></strong>
@@ -66,7 +70,7 @@
                     <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                        <!-- 1. Spesifikasi Fisik (Nama, Merk, Type, Ukuran & Bahan) -->
+                        <!-- 1. Spesifikasi Fisik (Merk, Type, Ukuran & Bahan) -->
                         <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
                             <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                 <span class="text-xs font-bold text-amber-400 block uppercase tracking-wider flex items-center space-x-1.5">
@@ -75,12 +79,20 @@
                                 <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">Fisik Aset</span>
                             </div>
 
-                            <!-- Nama Spesifik Barang Item Ini -->
+                            <!-- Kondisi Fisik Saat Diterima -->
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Nama Spesifik Barang / Alat</label>
-                                <input type="text" x-model="item.mesin_nama_barang"
-                                    placeholder="Contoh: USG 4D Mindray DC-70 / Mobil Ambulance Toyota Hiace"
-                                    class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                    <span>Kondisi Fisik Saat Diterima <span class="text-rose-400">*</span></span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                        :class="(item.mesin_kondisi === 'Baik' || !item.mesin_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : (item.mesin_kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30')"
+                                        x-text="item.mesin_kondisi || 'Baik'"></span>
+                                </label>
+                                <select x-model="item.mesin_kondisi" @change="syncTotalsFromItems()"
+                                    class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-bold cursor-pointer">
+                                    <option value="Baik">🟢 Baik (Siap Digunakan)</option>
+                                    <option value="Rusak Ringan">🟡 Rusak Ringan (Perlu Servis / Kalibrasi)</option>
+                                    <option value="Rusak Berat">🔴 Rusak Berat</option>
+                                </select>
                             </div>
 
                             <!-- Merk & Type -->

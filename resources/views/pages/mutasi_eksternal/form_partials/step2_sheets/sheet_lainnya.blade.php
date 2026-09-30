@@ -43,6 +43,10 @@
                                 <span>📦 Item #<span x-text="idx + 1"></span></span>
                             </span>
                             <span class="text-xs text-white font-bold" x-show="item.lainnya_judul" x-text="item.lainnya_judul"></span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border font-mono"
+                                :class="(item.lainnya_kondisi === 'Baik' || !item.lainnya_kondisi) ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (item.lainnya_kondisi === 'Rusak Ringan' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40')"
+                                x-text="'• Kondisi: ' + (item.lainnya_kondisi || 'Baik')">
+                            </span>
                             <span class="text-[11px] text-slate-400 font-mono">
                                 • Qty: <strong class="text-indigo-300" x-text="(item.lainnya_jumlah || 1) + ' ' + (item.lainnya_satuan || 'Eks / Buah')"></strong>
                             </span>
@@ -76,16 +80,27 @@
                                     class="w-full bg-slate-950 border border-slate-700 focus:border-fuchsia-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                             </div>
 
-                            <!-- Jenis / Kategori -->
-                            <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kategori Aset Tetap Lainnya</label>
-                                <select x-model="item.lainnya_jenis" class="w-full bg-slate-950 border border-slate-700 focus:border-fuchsia-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                    <option value="Buku / Kepustakaan Medis">Buku / Kepustakaan Medis</option>
-                                    <option value="Barang Bercorak Kesenian">Barang Bercorak Kesenian / Budaya</option>
-                                    <option value="Hewan / Ternak / Tanaman">Hewan / Ternak / Tanaman Hias</option>
-                                    <option value="Aset Tak Berwujud / Software">Aset Tak Berwujud (ATB) / Software Lisensi</option>
-                                    <option value="Lainnya">Lainnya</option>
-                                </select>
+                            <!-- Kategori & Kondisi -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kategori Aset Lainnya</label>
+                                    <select x-model="item.lainnya_jenis" class="w-full bg-slate-950 border border-slate-700 focus:border-fuchsia-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        <option value="Buku / Kepustakaan Medis">Buku / Kepustakaan</option>
+                                        <option value="Barang Bercorak Kesenian">Kesenian / Budaya</option>
+                                        <option value="Hewan / Ternak / Tanaman">Hewan / Tanaman</option>
+                                        <option value="Aset Tak Berwujud / Software">Software Lisensi</option>
+                                        <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Fisik <span class="text-rose-400">*</span></label>
+                                    <select x-model="item.lainnya_kondisi" @change="syncTotalsFromItems()"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-fuchsia-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none font-bold cursor-pointer">
+                                        <option value="Baik">🟢 Baik</option>
+                                        <option value="Rusak Ringan">🟡 Rusak Ringan</option>
+                                        <option value="Rusak Berat">🔴 Rusak Berat</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <!-- Asal Daerah / Pengarang / Pencipta -->

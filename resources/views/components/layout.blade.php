@@ -189,6 +189,50 @@
             background: #0d9488;
         }
 
+        /* 5-Column Grid Utilities & Responsive Layout Helpers */
+        .grid-cols-5 {
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        }
+        @media (min-width: 640px) {
+            .sm\:grid-cols-5 {
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            }
+            .sm\:col-span-2 {
+                grid-column: span 2 / span 2 !important;
+            }
+        }
+        @media (min-width: 768px) {
+            .md\:grid-cols-5 {
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            }
+        }
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-5 {
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            }
+            .lg\:col-span-1 {
+                grid-column: span 1 / span 1 !important;
+            }
+        }
+        @media (min-width: 1280px) {
+            .xl\:grid-cols-5 {
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            }
+        }
+        @media (min-width: 640px) and (max-width: 1023px) {
+            .kib-card-last-span {
+                grid-column: span 2 / span 2 !important;
+                flex-direction: row !important;
+                align-items: center !important;
+            }
+            .kib-card-last-span .kib-footer {
+                border-top: none !important;
+                border-left: 1px solid rgba(51, 65, 85, 0.8) !important;
+                padding-top: 0 !important;
+                padding-left: 1rem !important;
+                gap: 0.75rem !important;
+            }
+        }
 
         @media print {
             .no-print, aside, header, footer, #topbar, nav, button, .no-print * {
