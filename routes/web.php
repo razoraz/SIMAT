@@ -1258,7 +1258,7 @@ Route::middleware('auth')->group(function () {
                     if (empty($astapPayload['spesifikasi_json']['no_rangka'])) $astapPayload['spesifikasi_json']['no_rangka'] = $firstM['mesin_no_rangka'] ?? '';
                     if (empty($astapPayload['spesifikasi_json']['no_mesin'])) $astapPayload['spesifikasi_json']['no_mesin'] = $firstM['mesin_no_mesin'] ?? '';
                     if (empty($astapPayload['spesifikasi_json']['no_bpkb'])) $astapPayload['spesifikasi_json']['no_bpkb'] = $firstM['mesin_no_bpkb'] ?? '';
-                    if (empty($astapPayload['spesifikasi_json']['no_polisi'])) $astapPayload['spesifikasi_json']['no_polisi'] = $firstM['mesin_no_polisi'] ?? '';
+                    if (!empty($firstM['mesin_kode_barang'])) $astapPayload['spesifikasi_json']['mesin_kode_barang'] = $firstM['mesin_kode_barang'];
                 }
 
                 if ($request->has('tanah_items') && is_array($request->input('tanah_items')) && count($request->input('tanah_items')) > 0) {
@@ -1274,6 +1274,25 @@ Route::middleware('auth')->group(function () {
                     $astapPayload['spesifikasi_json']['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
                     $astapPayload['spesifikasi_json']['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
                     $astapPayload['spesifikasi_json']['tanah_jumlah_bidang'] = count($tItems);
+                    if (!empty($firstT['tanah_kode_barang'])) $astapPayload['spesifikasi_json']['tanah_kode_barang'] = $firstT['tanah_kode_barang'];
+                }
+
+                if ($request->has('gedung_items') && is_array($request->input('gedung_items')) && count($request->input('gedung_items')) > 0) {
+                    $gItems = $request->input('gedung_items');
+                    $firstG = $gItems[0];
+                    if (!empty($firstG['gedung_kode_barang'])) $astapPayload['spesifikasi_json']['gedung_kode_barang'] = $firstG['gedung_kode_barang'];
+                }
+
+                if ($request->has('jaringan_items') && is_array($request->input('jaringan_items')) && count($request->input('jaringan_items')) > 0) {
+                    $jItems = $request->input('jaringan_items');
+                    $firstJ = $jItems[0];
+                    if (!empty($firstJ['jaringan_kode_barang'])) $astapPayload['spesifikasi_json']['jaringan_kode_barang'] = $firstJ['jaringan_kode_barang'];
+                }
+
+                if ($request->has('lainnya_items') && is_array($request->input('lainnya_items')) && count($request->input('lainnya_items')) > 0) {
+                    $lItems = $request->input('lainnya_items');
+                    $firstL = $lItems[0];
+                    if (!empty($firstL['lainnya_kode_barang'])) $astapPayload['spesifikasi_json']['lainnya_kode_barang'] = $firstL['lainnya_kode_barang'];
                 }
 
                 if ($request->filled('ppk_nama')) {

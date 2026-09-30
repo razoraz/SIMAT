@@ -150,7 +150,10 @@
                 tanah_alamat: '',
                 tanah_items: [
                     {
+                        tanah_kode_barang: '',
                         tanah_nama_barang: '',
+                        isFilterOpen: false,
+                        searchFilter: '',
                         tanah_luas_m2: null,
                         tanah_hak: 'Hak Pakai',
                         tanah_sertifikat_no: '',
@@ -178,7 +181,10 @@
                 no_polisi: '',
                 mesin_items: [
                     {
+                        mesin_kode_barang: '',
                         mesin_nama_barang: '',
+                        isFilterOpen: false,
+                        searchFilter: '',
                         mesin_merk: '',
                         mesin_type: '',
                         mesin_ukuran: '',
@@ -212,7 +218,10 @@
                 gedung_fungsi: '',
                 gedung_items: [
                     {
+                        gedung_kode_barang: '',
                         gedung_nama_barang: '',
+                        isFilterOpen: false,
+                        searchFilter: '',
                         gedung_luas_lantai: null,
                         gedung_kondisi: 'Baik',
                         gedung_bertingkat: 'Tidak',
@@ -242,7 +251,10 @@
                 jaringan_alamat: '',
                 jaringan_items: [
                     {
+                        jaringan_kode_barang: '',
                         jaringan_nama_barang: '',
+                        isFilterOpen: false,
+                        searchFilter: '',
                         jaringan_konstruksi: '',
                         jaringan_panjang: null,
                         jaringan_lebar: null,
@@ -280,7 +292,10 @@
                 lainnya_items: [
                     {
                         kib_e_type: 'buku',
+                        lainnya_kode_barang: '',
                         lainnya_nama_barang: '',
+                        isFilterOpen: false,
+                        searchFilter: '',
                         lainnya_judul: '',
                         lainnya_pencipta: '',
                         lainnya_spesifikasi: '',
@@ -705,7 +720,7 @@
                             list.push({
                                 unitNo: runningOffset + 1,
                                 itemIndex: lIdx,
-                                itemName: (l.lainnya_judul || this.formData.nama_barang || `Item Aset Lainnya #${lIdx + 1}`) + subLainNo,
+                                itemName: (l.lainnya_nama_barang || l.lainnya_judul || this.formData.nama_barang || `Item Aset Lainnya #${lIdx + 1}`) + subLainNo,
                                 spec: [catLabel, l.lainnya_pencipta || l.lainnya_spesifikasi || l.lainnya_bahan].filter(Boolean).join(' • ') || 'Aset Tetap Lainnya',
                                 kondisi: l.lainnya_kondisi || 'Baik',
                                 nibar: this.getSimulatedNibar(runningOffset)
@@ -734,9 +749,11 @@
                 if (!this.formData.mesin_items) {
                     this.formData.mesin_items = [];
                 }
-                const defaultNama = this.selectedSubSub ? this.selectedSubSub.nama : (this.formData.nama_barang || '');
                 this.formData.mesin_items.push({
-                    mesin_nama_barang: defaultNama,
+                    mesin_kode_barang: '',
+                    mesin_nama_barang: '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     mesin_merk: '',
                     mesin_type: '',
                     mesin_ukuran: '',
@@ -790,7 +807,10 @@
                     this.formData.tanah_items = [];
                 }
                 this.formData.tanah_items.push({
-                    tanah_nama_barang: this.selectedSubSub ? this.selectedSubSub.nama : (this.formData.nama_barang || 'Bidang Tanah'),
+                    tanah_kode_barang: '',
+                    tanah_nama_barang: '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     tanah_luas_m2: null,
                     tanah_hak: 'Hak Pakai',
                     tanah_sertifikat_no: '',
@@ -838,7 +858,10 @@
                     this.formData.gedung_items = [];
                 }
                 this.formData.gedung_items.push({
-                    gedung_nama_barang: this.selectedSubSub ? this.selectedSubSub.nama : (this.formData.nama_barang || 'Bangunan Gedung'),
+                    gedung_kode_barang: '',
+                    gedung_nama_barang: '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     gedung_luas_lantai: null,
                     gedung_kondisi: 'Baik',
                     gedung_bertingkat: 'Tidak',
@@ -890,7 +913,10 @@
                     this.formData.jaringan_items = [];
                 }
                 this.formData.jaringan_items.push({
-                    jaringan_nama_barang: this.selectedSubSub ? this.selectedSubSub.nama : (this.formData.nama_barang || 'Ruas Jaringan'),
+                    jaringan_kode_barang: '',
+                    jaringan_nama_barang: '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     jaringan_konstruksi: '',
                     jaringan_panjang: null,
                     jaringan_lebar: null,
@@ -947,7 +973,10 @@
                 }
                 this.formData.lainnya_items.push({
                     kib_e_type: 'buku',
-                    lainnya_nama_barang: this.selectedSubSub ? this.selectedSubSub.nama : (this.formData.nama_barang || 'Item Aset Lainnya'),
+                    lainnya_kode_barang: '',
+                    lainnya_nama_barang: '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     lainnya_judul: '',
                     lainnya_pencipta: '',
                     lainnya_spesifikasi: '',
@@ -977,6 +1006,50 @@
 
             getLainnyaSubtotal(item) {
                 return (Number(item.lainnya_jumlah || 1) * Number(item.lainnya_nilai_satuan || 0));
+            },
+
+            // Helper Live Search 108 untuk Tiap Item Sheet KIB (Max 5 hasil, Zero-Lag)
+            filterJenisAstap108(prefix, query, isOpen) {
+                if (!isOpen) return [];
+                const q = (query || '').toLowerCase().trim();
+                const results = [];
+                const list = this.flat108 || [];
+                for (let i = 0; i < list.length; i++) {
+                    const it = list[i];
+                    if (!it || !it.kode || !it.kode.startsWith(prefix)) continue;
+                    if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
+                        results.push(it);
+                        if (results.length >= 5) break; // Strict 5-item cutoff agar tidak lag!
+                    }
+                }
+                return results;
+            },
+
+            // Pilih barang 108 dari filter dropdown
+            select108ForItem(item, opt, type) {
+                if (type === 'tanah') {
+                    item.tanah_kode_barang = opt.kode;
+                    item.tanah_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'mesin') {
+                    item.mesin_kode_barang = opt.kode;
+                    item.mesin_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'gedung') {
+                    item.gedung_kode_barang = opt.kode;
+                    item.gedung_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'jaringan') {
+                    item.jaringan_kode_barang = opt.kode;
+                    item.jaringan_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                } else if (type === 'lainnya') {
+                    item.lainnya_kode_barang = opt.kode;
+                    item.lainnya_nama_barang = opt.nama;
+                    item.searchFilter = opt.nama;
+                }
+                item.isFilterOpen = false;
+                this.syncTotalsFromItems();
             },
 
             // Helper Pencarian & Pemilihan Unit/Ruangan Penempatan
@@ -1133,19 +1206,22 @@
                     this.formData.total_realisasi = this.totalNilaiLainnya;
                     const first = this.formData.lainnya_items[0];
                     if (this.formData.lainnya_items.length === 1) {
-                        if (first.lainnya_judul) {
+                        if (first.lainnya_nama_barang) {
+                            this.formData.nama_barang = first.lainnya_nama_barang;
+                        } else if (first.lainnya_judul) {
                             this.formData.nama_barang = first.lainnya_judul;
                         } else if (this.selectedSubSub?.nama) {
                             this.formData.nama_barang = this.selectedSubSub.nama;
                         }
                         this.formData.satuan = first.lainnya_satuan || 'Buah';
                     } else {
-                        const names = this.formData.lainnya_items.map(l => l.lainnya_judul).filter(Boolean);
+                        const names = this.formData.lainnya_items.map(l => l.lainnya_nama_barang || l.lainnya_judul).filter(Boolean);
                         if (names.length > 0) this.formData.nama_barang = names.join(', ');
                         this.formData.satuan = 'Unit';
                     }
                     if (first) {
                         this.formData.kib_e_type = first.kib_e_type;
+                        this.formData.lainnya_nama_barang = first.lainnya_nama_barang;
                         this.formData.lainnya_judul = first.lainnya_judul;
                         this.formData.lainnya_pencipta = first.lainnya_pencipta;
                         this.formData.lainnya_spesifikasi = first.lainnya_spesifikasi;
@@ -1308,46 +1384,6 @@
                     targetType = 'lainnya';
                 }
 
-                // Helper pengecekan: apakah nama yang ada sekarang adalah nama bawaan/generic sistem
-                const isGenericOrEmpty = (val) => {
-                    if (!val) return true;
-                    val = String(val).trim();
-                    if (val === '' || val === prevNama) return true;
-                    return /^(Sewa|Kerja Sama|Bangun|Penyediaan|KSO|KSP|BGS|BSG|KSPI)/i.test(val);
-                };
-
-                // Sinkronkan nama spesifik pada sheet yang aktif sesuai targetType
-                if (targetType === 'tanah' && this.formData.tanah_items) {
-                    this.formData.tanah_items.forEach(t => {
-                        if (isGenericOrEmpty(t.tanah_nama_barang)) {
-                            t.tanah_nama_barang = item.nama;
-                        }
-                    });
-                } else if (targetType === 'mesin' && this.formData.mesin_items) {
-                    this.formData.mesin_items.forEach(m => {
-                        if (isGenericOrEmpty(m.mesin_nama_barang)) {
-                            m.mesin_nama_barang = item.nama;
-                        }
-                    });
-                } else if (targetType === 'gedung' && this.formData.gedung_items) {
-                    this.formData.gedung_items.forEach(g => {
-                        if (isGenericOrEmpty(g.gedung_nama_barang)) {
-                            g.gedung_nama_barang = item.nama;
-                        }
-                    });
-                } else if (targetType === 'jaringan' && this.formData.jaringan_items) {
-                    this.formData.jaringan_items.forEach(j => {
-                        if (isGenericOrEmpty(j.jaringan_nama_barang)) {
-                            j.jaringan_nama_barang = item.nama;
-                        }
-                    });
-                } else if (targetType === 'lainnya' && this.formData.lainnya_items) {
-                    this.formData.lainnya_items.forEach(l => {
-                        if (isGenericOrEmpty(l.lainnya_judul)) {
-                            l.lainnya_judul = item.nama;
-                        }
-                    });
-                }
 
                 this.search108 = '';
                 this.searchResults108 = [];
@@ -1611,8 +1647,20 @@
                         for (let i = 0; i < this.formData.lainnya_items.length; i++) {
                             const it = this.formData.lainnya_items[i];
                             const num = i + 1;
-                            if (!it.lainnya_judul || !it.lainnya_judul.trim()) {
-                                this.showToast('Validasi Gagal', `Judul / Nama pada Item #${num} tidak boleh kosong.`, 'error');
+                            if (!it.lainnya_nama_barang || !it.lainnya_nama_barang.trim()) {
+                                if (this.selectedSubSub?.nama) {
+                                    it.lainnya_nama_barang = this.selectedSubSub.nama;
+                                } else {
+                                    this.showToast('Validasi Gagal', `Nama Barang pada Item #${num} tidak boleh kosong.`, 'error');
+                                    return false;
+                                }
+                            }
+                            if (it.kib_e_type === 'buku' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
+                                this.showToast('Validasi Gagal', `Judul Buku pada Item #${num} tidak boleh kosong.`, 'error');
+                                return false;
+                            }
+                            if (it.kib_e_type === 'hewan_tumbuhan' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
+                                this.showToast('Validasi Gagal', `Jenis Hewan / Tanaman pada Item #${num} tidak boleh kosong.`, 'error');
                                 return false;
                             }
                             if (!it.lainnya_jumlah || parseInt(it.lainnya_jumlah) < 1) {
@@ -1737,6 +1785,7 @@
 
                     specJson = {
                         kategori_kib: 'KIB E (Aset Tetap Lainnya)',
+                        nama_barang: firstL.lainnya_nama_barang || this.formData.nama_barang || '',
                         kib_e_type: firstL.kib_e_type || this.formData.kib_e_type || 'buku',
                         judul: firstL.lainnya_judul || this.formData.lainnya_judul || '',
                         pencipta: firstL.lainnya_pencipta || this.formData.lainnya_pencipta || '',
