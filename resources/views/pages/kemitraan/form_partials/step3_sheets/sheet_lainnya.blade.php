@@ -43,6 +43,10 @@
                             <span class="px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 font-mono font-extrabold text-xs border border-purple-500/40 flex items-center space-x-1.5 shadow-sm">
                                 <span>📦 Item #<span x-text="idx + 1"></span></span>
                             </span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all"
+                                  :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                  x-text="item.is_extracom ? '📦 Extracom (≤ 300rb)' : '⚙️ Reguler'">
+                            </span>
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
                                 :class="{
                                     'bg-amber-500/20 text-amber-300 border-amber-500/40': (item.kib_e_type || 'buku') === 'buku',
@@ -88,13 +92,12 @@
                         </div>
                     </div>
 
-                    <!-- Pilihan PMDN 108 & Nama Spesifik Aset Tetap Lainnya -->
-                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-purple-500/40 space-y-3 shadow-inner">
-                        <!-- 1. Pilihan Jenis Barang PMDN 108 (Filter Ketik, Max 5 Hasil) -->
+                    <!-- 1. Pilihan Jenis & Nama Barang PMDN 108 (Satu Input Filter & Ketik Langsung) -->
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-purple-500/40 space-y-2 shadow-inner">
                         <div class="relative" @click.outside="item.isFilterOpen = false">
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="text-purple-300 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                    <span>🏷️ Pilih Jenis Barang PMDN 108 (Aset Tetap Lainnya)</span>
+                                    <span>🏷️ Pilih / Ketik Jenis Barang PMDN 108 (Aset Tetap Lainnya)</span>
                                     <span class="text-rose-400">*</span>
                                 </label>
                                 <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold font-mono"
@@ -105,21 +108,21 @@
                             
                             <div class="relative">
                                 <input type="text"
-                                       x-model="item.searchFilter"
+                                       x-model="item.lainnya_nama_barang"
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
-                                       @input="item.isFilterOpen = true"
-                                       placeholder="Ketik untuk memfilter jenis barang (contoh: Buku Medis, Karya Seni, Tanaman Hias, dll)..."
-                                       class="w-full bg-slate-950 border border-slate-700 hover:border-purple-500 focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all pl-9">
-                                <div class="absolute left-3 top-2.5 text-slate-400 pointer-events-none">
+                                       @input="item.isFilterOpen = true; syncTotalsFromItems();"
+                                       placeholder="Ketik untuk memfilter jenis barang PMDN 108 atau tulis rincian aset lainnya..."
+                                       class="w-full bg-slate-950 border border-slate-700 hover:border-purple-500 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9">
+                                <div class="absolute left-3 top-3 text-slate-400 pointer-events-none">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
                                 </div>
                                 <button type="button" 
-                                        x-show="item.searchFilter" 
-                                        @click="item.searchFilter = ''; item.isFilterOpen = true" 
-                                        class="absolute right-3 top-2 text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
+                                        x-show="item.lainnya_nama_barang" 
+                                        @click="item.lainnya_nama_barang = ''; item.lainnya_kode_barang = ''; item.isFilterOpen = true; syncTotalsFromItems();" 
+                                        class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
                             </div>
 
                             <!-- Dropdown Hasil Filter (Strict Max 5 Baris - Zero Lag) -->
@@ -129,10 +132,10 @@
                                  x-transition:enter-end="opacity-100 translate-y-0"
                                  class="absolute z-50 left-0 right-0 mt-1 bg-slate-900 border border-purple-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800">
                                 <div class="px-3 py-1.5 bg-slate-950/80 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-                                    <span>Menampilkan maksimal 5 pilihan aset:</span>
+                                    <span>Pilihan Rekomendasi PMDN 108 (Maks. 5):</span>
                                     <span class="text-purple-400 font-mono text-[9px]">PMDN 108 Aset Lainnya (1.3.5)</span>
                                 </div>
-                                <template x-for="opt in filterJenisAstap108('1.3.5', item.searchFilter, item.isFilterOpen)" :key="opt.id">
+                                <template x-for="opt in filterJenisAstap108('1.3.5', item.lainnya_nama_barang, item.isFilterOpen)" :key="opt.id">
                                     <div @click="select108ForItem(item, opt, 'lainnya')"
                                          class="px-3.5 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors flex items-center justify-between group">
                                         <div class="flex-1 pr-2">
@@ -141,22 +144,57 @@
                                         <span class="font-mono text-[10px] text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/30 shrink-0" x-text="opt.kode"></span>
                                     </div>
                                 </template>
-                                <div x-show="filterJenisAstap108('1.3.5', item.searchFilter, item.isFilterOpen).length === 0" 
+                                <div x-show="filterJenisAstap108('1.3.5', item.lainnya_nama_barang, item.isFilterOpen).length === 0" 
                                      class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
-                                    Tidak ada hasil jenis barang yang cocok. Silakan ketik kata kunci lain.
+                                    <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- 2. Nama Spesifik / Identitas Barang Aset (Terpisah di Bawah Pilihan) -->
-                        <div class="pt-2 border-t border-slate-800/80">
-                            <label class="block text-slate-300 text-[10.5px] mb-1 font-semibold flex items-center justify-between">
-                                <span>Nama Spesifik / Identitas Barang Aset #<span x-text="idx + 1"></span> <span class="text-rose-400">*</span></span>
-                                <span class="text-[9.5px] text-slate-500">Bisa disesuaikan spesifik / judul barang aset</span>
+                    <!-- 2. Pilihan Status Akuntansi: Aset Tetap Reguler vs Ekstrakomtabel (Extracom) -->
+                    <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold uppercase tracking-wider flex items-center space-x-2"
+                                   :class="item.is_extracom ? 'text-cyan-300' : 'text-purple-300'">
+                                <span x-text="item.is_extracom ? '📦 Status Akuntansi: Ekstrakomtabel (Extracom)' : '⚙️ Status Akuntansi: Aset Tetap Reguler (Intrakomptabel)'"></span>
                             </label>
-                            <input type="text" x-model="item.lainnya_nama_barang" @input="syncTotalsFromItems()"
-                                :placeholder="item.lainnya_kode_barang ? 'Beri nama spesifik / rincian barang aset ini' : 'Contoh: Buku Kedokteran / Lukisan Sejarah / Tanaman Lanskap'"
-                                class="w-full bg-slate-950 border border-slate-700 hover:border-purple-500 focus:border-purple-500 rounded-xl px-3.5 py-2 text-xs text-white font-bold focus:outline-none transition-all">
+                            <span class="text-[9.5px] px-2 py-0.5 rounded-md font-bold font-mono border"
+                                  :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                  x-text="item.is_extracom ? '≤ Rp 300.000' : '> Rp 300.000'">
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <!-- Aset Tetap Reguler -->
+                            <button type="button" 
+                                    @click="item.is_extracom = false; syncTotalsFromItems();"
+                                    :class="!item.is_extracom ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500 text-white font-extrabold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                                    class="p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-base">⚙️</span>
+                                    <div class="text-left">
+                                        <div class="text-[11px] font-bold">Aset Tetap Reguler</div>
+                                        <div class="text-[9px] text-slate-400">Nilai wajar satuan &gt; Rp 300.000</div>
+                                    </div>
+                                </div>
+                                <span x-show="!item.is_extracom" class="text-purple-400 font-bold text-xs">✓ Terpilih</span>
+                            </button>
+
+                            <!-- Ekstrakomtabel -->
+                            <button type="button" 
+                                    @click="item.is_extracom = true; syncTotalsFromItems();"
+                                    :class="item.is_extracom ? 'border-cyan-500 bg-cyan-950/40 ring-1 ring-cyan-500 text-white font-extrabold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                                    class="p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-base">📦</span>
+                                    <div class="text-left">
+                                        <div class="text-[11px] font-bold">Ekstrakomtabel (Extracom)</div>
+                                        <div class="text-[9px] text-slate-400">Nilai wajar satuan ≤ Rp 300.000</div>
+                                    </div>
+                                </div>
+                                <span x-show="item.is_extracom" class="text-cyan-400 font-bold text-xs">✓ Terpilih</span>
+                            </button>
                         </div>
                     </div>
 
@@ -184,9 +222,13 @@
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none transition-all">
                             </div>
                             <div>
-                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Tahun Terbit</label>
-                                <input type="number" min="1950" max="2100" x-model.number="item.lainnya_tahun"
-                                    placeholder="2024"
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="text-slate-400 text-[10px] font-semibold">Tahun Terbit</label>
+                                    <span class="text-[9px] text-slate-500 font-mono">Maks: {{ date('Y') }}</span>
+                                </div>
+                                <input type="number" min="1950" :max="new Date().getFullYear()" x-model.number="item.lainnya_tahun"
+                                    @input="if(item.lainnya_tahun > {{ date('Y') }}) item.lainnya_tahun = {{ date('Y') }};"
+                                    placeholder="Contoh: {{ date('Y') }}"
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-amber-500 focus:outline-none transition-all">
                             </div>
                             <div>
@@ -369,8 +411,11 @@
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                    <span>Taksiran Nilai Wajar (Rp) <span class="text-rose-400">*</span></span>
-                                    <span class="text-[9px] font-bold text-emerald-400">Harga Wajar</span>
+                                    <span x-text="item.is_extracom ? 'Nilai Satuan (Rp) *' : 'Taksiran Nilai Wajar (Rp) *'"></span>
+                                    <span class="text-[9px] font-bold"
+                                          :class="item.is_extracom ? 'text-amber-400 font-mono' : 'text-emerald-400'"
+                                          x-text="item.is_extracom ? 'Maks. Rp 300.000' : 'Harga Wajar'">
+                                    </span>
                                 </label>
                                 <input type="text"
                                     :value="item.lainnya_nilai_satuan ? Number(item.lainnya_nilai_satuan).toLocaleString('id-ID') : ''"
@@ -380,8 +425,12 @@
                                         $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                         syncTotalsFromItems();
                                     "
-                                    placeholder="Contoh: 1.500.000"
-                                    class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold focus:border-purple-500 focus:outline-none">
+                                    :placeholder="item.is_extracom ? 'Maks. 300.000' : 'Contoh: 1.500.000'"
+                                    :class="item.is_extracom && item.lainnya_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-purple-500'"
+                                    class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
+                                <span x-show="item.is_extracom && item.lainnya_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                    ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
+                                </span>
                             </div>
                         </div>
                     </div>

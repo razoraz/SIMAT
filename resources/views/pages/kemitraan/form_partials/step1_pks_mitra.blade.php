@@ -327,7 +327,9 @@
                         Sinkron PKS
                     </span>
                 </label>
-                <input type="number" x-model.number="formData.tahun_perolehan" required min="1990" max="2100"
+                <input type="number" x-model.number="formData.tahun_perolehan" required min="1990" :max="new Date().getFullYear()"
+                    placeholder="{{ date('Y') }}"
+                    @input="if(formData.tahun_perolehan > {{ date('Y') }}) formData.tahun_perolehan = {{ date('Y') }};"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none font-bold">
             </div>
             <div>

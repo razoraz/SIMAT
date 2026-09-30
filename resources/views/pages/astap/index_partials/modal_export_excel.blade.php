@@ -276,14 +276,14 @@
                         <span class="text-[10px] text-cyan-400 font-mono">Sheet Excel</span>
                     </label>
                     <select x-model="exportKemitraanCategory"
-                            class="w-full bg-slate-950 border border-cyan-500/40 rounded-xl px-3 py-2 text-xs font-semibold text-cyan-100 focus:outline-none focus:border-cyan-400">
-                        <option value="all">Semua KIB (Buku Aset Kemitraan Lengkap 6 Sheet: Rekap &amp; KIB A s/d E)</option>
+                        <option value="all">Semua KIB (Buku Aset Kemitraan Lengkap 7 Sheet: Rekap, KIB A s/d E &amp; Extracom)</option>
                         <option value="REKAP">Lembar Rekapitulasi Realisasi Kemitraan (Sheet 1)</option>
                         <option value="KIB A">KIB A - Tanah (Akun 1.5.2.01.01.xx.001)</option>
                         <option value="KIB B">KIB B - Peralatan &amp; Mesin / KSO Alkes (Akun 1.5.2.01.01.xx.002)</option>
                         <option value="KIB C">KIB C - Gedung &amp; Bangunan / BGS (Akun 1.5.2.01.01.xx.003)</option>
                         <option value="KIB D">KIB D - Jalan, Irigasi &amp; Jaringan (Akun 1.5.2.01.01.xx.004)</option>
                         <option value="KIB E">KIB E - Aset Tetap Lainnya (Akun 1.5.2.01.01.xx.005)</option>
+                        <option value="EXTRACOM">Extracom - Barang Ekstrakomtabel (&lt; Rp 300.000)</option>
                     </select>
                 </div>
 

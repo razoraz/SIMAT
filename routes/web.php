@@ -1195,6 +1195,18 @@ Route::middleware('auth')->group(function () {
                 $tahun          = (int) $data['tahun_perolehan'];
                 $kondisiItem    = $data['kondisi'] ?: 'Baik';
 
+                $isExtracom = $request->boolean('is_extracomtable');
+                if (!$isExtracom && $request->has('mesin_items')) {
+                    foreach ((array)$request->input('mesin_items') as $m) {
+                        if (!empty($m['is_extracom'])) { $isExtracom = true; break; }
+                    }
+                }
+                if (!$isExtracom && $request->has('lainnya_items')) {
+                    foreach ((array)$request->input('lainnya_items') as $l) {
+                        if (!empty($l['is_extracom'])) { $isExtracom = true; break; }
+                    }
+                }
+
                 $astapPayload = [
                     'nama_barang'               => $data['nama_barang'],
                     'jenis_astap_id'            => $data['jenis_astap_id'],
@@ -1214,11 +1226,12 @@ Route::middleware('auth')->group(function () {
                     'unit_id'                   => $data['unit_id'] ?? null,
                     'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
                     'user_id'                   => auth()->id(),
-                    'is_extracomtable'          => false,
+                    'is_extracomtable'          => $isExtracom,
                     'is_reklas'                 => false,
                     'is_deleted'                => 0,
                     'spesifikasi_json'          => [
                         'sumber_dana'        => 'kemitraan',
+                        'is_extracomtable'   => $isExtracom,
                         'mitra_nama'         => $data['mitra_nama'],
                         'mitra_pimpinan'     => $data['mitra_pimpinan'] ?? null,
                         'mitra_alamat'       => $data['mitra_alamat'] ?? null,

@@ -7367,28 +7367,54 @@
 
             let matchCat = true;
             if (filterCat !== 'all' && filterCat !== 'REKAP') {
-                const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
-                matchCat = (itemCat === filterCat);
+                const spec = getSafeSpec(item);
+                const isItemExtracom = !!item.is_extracomtable || 
+                                       (item.category && item.category.toUpperCase() === 'EXTRACOM') || 
+                                       (spec && spec.is_extracomtable) ||
+                                       (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom)) ||
+                                       (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom));
+                if (filterCat === 'EXTRACOM') {
+                    matchCat = isItemExtracom;
+                } else {
+                    if (isItemExtracom) {
+                        matchCat = false;
+                    } else {
+                        const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                        matchCat = (itemCat === filterCat);
+                    }
+                }
             }
 
             return matchYear && matchTw && matchSkema && matchCat;
         });
 
-        // Pengelompokan Data per Kategori KIB Kemitraan (Khusus Akun 1.5.2: KIB A s/d E Saja)
+        // Pengelompokan Data per Kategori KIB Kemitraan (Khusus Akun 1.5.2: KIB A s/d E & EXTRACOM)
         const categories = {
             'KIB A': [],
             'KIB B': [],
             'KIB C': [],
             'KIB D': [],
-            'KIB E': []
+            'KIB E': [],
+            'EXTRACOM': []
         };
 
         filteredKemitraans.forEach(item => {
-            const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : (item.category || 'KIB B');
-            if (categories[cat]) {
-                categories[cat].push(item);
+            const spec = getSafeSpec(item);
+            const isItemExtracom = !!item.is_extracomtable || 
+                                   (item.category && item.category.toUpperCase() === 'EXTRACOM') || 
+                                   (spec && spec.is_extracomtable) ||
+                                   (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom)) ||
+                                   (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom));
+
+            if (isItemExtracom) {
+                categories['EXTRACOM'].push(item);
             } else {
-                categories['KIB B'].push(item);
+                const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : (item.category || 'KIB B');
+                if (categories[cat]) {
+                    categories[cat].push(item);
+                } else {
+                    categories['KIB B'].push(item);
+                }
             }
         });
 
@@ -7461,11 +7487,12 @@
         const sumC = getKemitraanCatSummary('KIB C');
         const sumD = getKemitraanCatSummary('KIB D');
         const sumE = getKemitraanCatSummary('KIB E');
+        const sumExtracom = getKemitraanCatSummary('EXTRACOM');
 
-        const grandTotalVal = sumA.totalVal + sumB.totalVal + sumC.totalVal + sumD.totalVal + sumE.totalVal;
-        const grandTotalUnits = sumA.totalUnits + sumB.totalUnits + sumC.totalUnits + sumD.totalUnits + sumE.totalUnits;
+        const grandTotalVal = sumA.totalVal + sumB.totalVal + sumC.totalVal + sumD.totalVal + sumE.totalVal + sumExtracom.totalVal;
+        const grandTotalUnits = sumA.totalUnits + sumB.totalUnits + sumC.totalUnits + sumD.totalUnits + sumE.totalUnits + sumExtracom.totalUnits;
 
-        // 1. REKAPITULASI KEMITRAAN (Sheet 1 - Persis Format Belanja Modal 5 Kategori KIB A s/d E)
+        // 1. REKAPITULASI KEMITRAAN (Sheet 1 - Persis Format Belanja Modal KIB A s/d E & Extracom)
         const rekapData = [
             ["PEMERINTAH KABUPATEN BONDOWOSO"],
             ["RUMAH SAKIT UMUM DAERAH dr. H. KOESNANDI"],
@@ -7512,6 +7539,12 @@
                 sumE.itemCount > 0 ? "Aset Kemitraan Khusus Lainnya" : "-"
             ],
             [
+                "6", "EXTRACOM - BARANG EKSTRAKOMTABEL (< Rp 300.000)", "1.5.2.01.01.04.002",
+                "Peralatan, Mesin & Barang Ekstrakomtabel",
+                sumExtracom.totalUnits + " Unit/Item", sumExtracom.totalVal,
+                sumExtracom.itemCount > 0 ? "Barang Ekstrakomtabel Nilai < Rp 300.000" : "-"
+            ],
+            [
                 "JUMLAH TOTAL NILAI ASET KEMITRAAN (AKUN 1.5.2)", "", "", "",
                 grandTotalUnits + " Unit Total",
                 grandTotalVal,
@@ -7533,11 +7566,11 @@
             { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
             { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
             { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
-            { s: { r: 11, c: 0 }, e: { r: 11, c: 3 } },
+            { s: { r: 12, c: 0 }, e: { r: 12, c: 3 } },
             ...getKibSignatureMerges(rekapSignStart, 7, 4, 1, 2, 6)
         ];
 
-        applyRekapSheetStyling(wsRekap, rekapData.length, 7, 5, 11, rekapSignStart);
+        applyRekapSheetStyling(wsRekap, rekapData.length, 7, 5, 12, rekapSignStart);
         applySignatureBlockStyling(wsRekap, rekapSignStart, 7);
 
         if (filterCat === 'all' || filterCat === 'REKAP') {
@@ -9158,10 +9191,322 @@
             XLSX.utils.book_append_sheet(wb, wsKibE, filterCat === 'all' ? "6. KIB E - Aset Lainnya" : "KIB E - Aset Lainnya");
         }
 
-        // Tulis Berkas Excel dan Simpan (Khusus Kemitraan: Maksimal 6 Sheet: Rekap & KIB A s/d E)
+        // ========================================================================
+        // 7. EXTRACOM (BARANG EKSTRAKOMTABEL < Rp 300.000) - 29 KOLOM
+        // ========================================================================
+        const extracomTitleRows = getKemitraanKibTitleRows("BARANG EKSTRAKOMTABEL (< Rp 300.000)", yearLabel, filterTw, skemaLabel);
+        const extracomRows = [
+            ...extracomTitleRows,
+            // r3: Main Banner (29 kolom)
+            [
+                "NO",
+                "ASET KEMITRAAN (AKUN 1.5.2)", "", "", "", "", "",
+                "RINCIAN ASET EKSTRAKOMTABEL SESUAI PKS / PERJANJIAN KERJA SAMA / " + yearLabel,
+                "", "", "", "", "", "", "", "", "", "", "", "", "",
+                "RUANG /\nPEMEGANG",
+                "PIHAK PENYEDIA / MITRA", "", "",
+                "Pejabat Pembuat Komitmen", "",
+                "KET."
+            ],
+            // r4: Sub Banner (Level 2)
+            [
+                "",
+                "Jenis Aset (PMDN 108)", "",
+                "Sub Rincian Objek (PMDN 108)", "",
+                "JUMLAH TAKSIRAN (Rp)",
+                "NILAI ASET WAJAR (Rp)",
+                "NAMA BARANG\n(Uraian Sub Sub Rincian Objek PMDN 108)",
+                "Kode Barang\n(Kode Sub Sub Rincian Objek PMDN 108)",
+                "Merk", "Type", "Ukuran / Spesifikasi",
+                "No. Pabrik",
+                "BAHAN", "Tahun Perolehan",
+                "Riwayat Kerja Sama / PKS", "",
+                "Kondisi\n(B,KB,RB)",
+                "VOLUME", "",
+                "Nilai Barang (Rp)", "",
+                "",
+                "", "", "",
+                "", "",
+                ""
+            ],
+            // r5: Sub Header (Level 3)
+            [
+                "",
+                "Kode", "Nama Jenis Aset",
+                "Kode", "Nama Uraian Sub Rincian Objek",
+                "", "",
+                "", "", "", "", "", "",
+                "", "",
+                "PKS", "",
+                "",
+                "Jumlah Barang", "Nama Satuan Barang",
+                "Nilai Satuan Barang (Rp)", "Total Nilai Barang (Rp)",
+                "",
+                "Nama Mitra Rekanan", "Pimpinan Mitra", "Alamat Mitra",
+                "Nama", "NIP",
+                ""
+            ],
+            // r6: Technical Sub Detail (Level 4)
+            [
+                "",
+                "", "", "", "", "", "",
+                "", "", "", "", "", "",
+                "", "",
+                "Nomor", "Tanggal",
+                "",
+                "", "",
+                "", "",
+                "",
+                "", "", "",
+                "", "",
+                ""
+            ],
+            // r7: Column Numbers (1 s/d 29)
+            [
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29"
+            ]
+        ];
+
+        const extracomGroups = {};
+        categories['EXTRACOM'].forEach(item => {
+            const groupKey = getAstapGroupKey(item, '1.5.2.01.01.04');
+            if (!extracomGroups[groupKey]) extracomGroups[groupKey] = [];
+            extracomGroups[groupKey].push(item);
+        });
+
+        let globalExtracomNo = 1;
+        let extTotalAnggaran = 0, extTotalRealisasi = 0, extTotalUnit = 0, extTotalNilaiBarang = 0;
+
+        Object.keys(extracomGroups).forEach(groupKey => {
+            const groupItems = extracomGroups[groupKey];
+            let groupAnggaranTotal = 0;
+            let groupRealisasiTotal = 0;
+
+            groupItems.forEach(it => {
+                const k = it.kemitraan || {};
+                const val = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(it.total_realisasi_num) || parseFloat(it.total_realisasi) || 0);
+                groupAnggaranTotal += (typeof it.anggaran_num === 'number' ? it.anggaran_num : (parseFloat(it.jumlah_anggaran) || val));
+                groupRealisasiTotal += val;
+            });
+
+            extTotalAnggaran += groupAnggaranTotal;
+            extTotalRealisasi += groupRealisasiTotal;
+
+            let isFirstRowInGroup = true;
+
+            groupItems.forEach((item) => {
+                const k = item.kemitraan || {};
+                const spec = getSafeSpec(item);
+                const subMesinItems = (spec.mesin_items && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0)
+                    ? spec.mesin_items
+                    : null;
+                const subLainnyaItems = (spec.lainnya_items && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0)
+                    ? spec.lainnya_items
+                    : null;
+
+                if (subMesinItems) {
+                    subMesinItems.forEach((mItem) => {
+                        const qty = Math.max(1, parseInt(mItem.mesin_jumlah_barang) || 1);
+                        const nilaiSatuan = parseFloat(mItem.mesin_nilai_satuan) || (parseFloat(k.nilai_aset) / qty) || 0;
+                        const adminProyek = parseFloat(mItem.mesin_administrasi_proyek) || 0;
+                        const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
+
+                        extTotalUnit += qty;
+                        extTotalNilaiBarang += totalNilaiBarang;
+
+                        const rawKondisi = mItem.mesin_kondisi || item.kondisi || 'Baik';
+                        const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                        const ruangUnit = mItem.ruang_pemegang || spec.ruang_pemegang || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : 'RSUD dr. H. Koesnandi');
+
+                        const col1to7 = buildKemitraanCol1to7(item, globalExtracomNo, isFirstRowInGroup, groupAnggaranTotal, groupRealisasiTotal, '1.5.2', 'BARANG EKSTRAKOMTABEL');
+                        if (isFirstRowInGroup) { globalExtracomNo++; isFirstRowInGroup = false; }
+
+                        extracomRows.push([
+                            ...col1to7,
+                            mItem.mesin_nama_barang || item.nama_barang || '-',
+                            mItem.mesin_kode_barang || spec.mesin_kode_barang || item.kode_barang || '1.5.2.01.01.04.002',
+                            mItem.mesin_merk || spec.merk || item.merk || '-',
+                            mItem.mesin_type || spec.type || item.type || '-',
+                            mItem.mesin_ukuran || spec.ukuran || item.ukuran || '-',
+                            mItem.mesin_no_pabrik || spec.no_pabrik || item.no_pabrik || '-',
+                            mItem.mesin_bahan || spec.bahan || item.bahan || '-',
+                            mItem.mesin_tahun_pembuatan || spec.tahun_pembuatan || item.tahun_perolehan || '-',
+                            ...getKemitraanKontrakCols(item),
+                            kondisiLabel,
+                            qty,
+                            mItem.mesin_satuan || item.satuan || 'Unit',
+                            nilaiSatuan,
+                            totalNilaiBarang,
+                            ruangUnit,
+                            ...getKemitraanStep4Cols(item)
+                        ]);
+                    });
+                } else if (subLainnyaItems) {
+                    subLainnyaItems.forEach((lItem) => {
+                        const qty = Math.max(1, parseInt(lItem.lainnya_jumlah) || parseInt(lItem.lainnya_jumlah_barang) || 1);
+                        const nilaiSatuan = parseFloat(lItem.lainnya_nilai_satuan) || (parseFloat(k.nilai_aset) / qty) || 0;
+                        const adminProyek = parseFloat(lItem.lainnya_administrasi_proyek) || 0;
+                        const totalNilaiBarang = (qty * nilaiSatuan) + adminProyek;
+
+                        extTotalUnit += qty;
+                        extTotalNilaiBarang += totalNilaiBarang;
+
+                        const rawKondisi = lItem.lainnya_kondisi || item.kondisi || 'Baik';
+                        const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                           : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                           : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+                        const ruangUnit = lItem.ruang_pemegang_lainnya || lItem.ruang_pemegang || item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : 'RSUD dr. H. Koesnandi');
+
+                        const col1to7 = buildKemitraanCol1to7(item, globalExtracomNo, isFirstRowInGroup, groupAnggaranTotal, groupRealisasiTotal, '1.5.2', 'BARANG EKSTRAKOMTABEL');
+                        if (isFirstRowInGroup) { globalExtracomNo++; isFirstRowInGroup = false; }
+
+                        extracomRows.push([
+                            ...col1to7,
+                            lItem.lainnya_nama_barang || item.nama_barang || '-',
+                            lItem.lainnya_kode_barang || spec.lainnya_kode_barang || item.kode_barang || '1.5.2.01.01.02.005',
+                            lItem.lainnya_judul || spec.judul || '-',
+                            lItem.lainnya_pencipta || spec.pencipta || '-',
+                            lItem.lainnya_ukuran || spec.ukuran || lItem.lainnya_spesifikasi || '-',
+                            '-',
+                            lItem.lainnya_bahan || spec.bahan || '-',
+                            lItem.lainnya_tahun || spec.tahun || item.tahun_perolehan || '-',
+                            ...getKemitraanKontrakCols(item),
+                            kondisiLabel,
+                            qty,
+                            lItem.lainnya_satuan || item.satuan || 'Buah',
+                            nilaiSatuan,
+                            totalNilaiBarang,
+                            ruangUnit,
+                            ...getKemitraanStep4Cols(item)
+                        ]);
+                    });
+                } else {
+                    const qty = parseInt(k.jumlah_volume) || parseInt(item.jumlah_volume) || 1;
+                    const totalVal = typeof k.nilai_aset === 'number' ? k.nilai_aset : (parseFloat(item.total_realisasi_num) || parseFloat(item.total_realisasi) || 0);
+                    const nilaiSatuan = typeof item.harga_satuan_num === 'number' ? item.harga_satuan_num : (parseFloat(item.harga_satuan) || (totalVal / qty));
+                    const adminProyek = typeof item.biaya_administrasi_proyek_num === 'number' ? item.biaya_administrasi_proyek_num : (parseFloat(item.biaya_administrasi_proyek) || 0);
+                    const totalNilaiBarang = totalVal || ((qty * nilaiSatuan) + adminProyek);
+                    const ruangUnit = item.ruang_unit || (item.registers && item.registers.length > 0 ? item.registers[0].ruang_pemegang : 'RSUD dr. H. Koesnandi');
+
+                    extTotalUnit += qty;
+                    extTotalNilaiBarang += totalNilaiBarang;
+
+                    const rawKondisi = item.kondisi || 'Baik';
+                    const kondisiLabel = (rawKondisi === 'B' || rawKondisi === 'Baik') ? 'Baik' 
+                                       : (rawKondisi === 'KB' || rawKondisi === 'Kurang Baik' ? 'Kurang Baik' 
+                                       : (rawKondisi === 'RB' || rawKondisi === 'Rusak Berat' ? 'Rusak Berat' : rawKondisi));
+
+                    const col1to7 = buildKemitraanCol1to7(item, globalExtracomNo, isFirstRowInGroup, groupAnggaranTotal, groupRealisasiTotal, '1.5.2', 'BARANG EKSTRAKOMTABEL');
+                    if (isFirstRowInGroup) { globalExtracomNo++; isFirstRowInGroup = false; }
+
+                    extracomRows.push([
+                        ...col1to7,
+                        item.nama_barang || '-',
+                        spec.mesin_kode_barang || spec.lainnya_kode_barang || item.kode_barang || '1.5.2.01.01.04.002',
+                        spec.merk || item.merk || '-',
+                        spec.type || item.type || '-',
+                        spec.ukuran || item.ukuran || spec.spesifikasi || '-',
+                        spec.no_pabrik || item.no_pabrik || '-',
+                        spec.bahan || item.bahan || '-',
+                        spec.tahun_pembuatan || spec.tahun || item.tahun_perolehan || '-',
+                        ...getKemitraanKontrakCols(item),
+                        kondisiLabel,
+                        qty,
+                        item.satuan || 'Unit',
+                        nilaiSatuan,
+                        totalNilaiBarang,
+                        ruangUnit,
+                        ...getKemitraanStep4Cols(item)
+                    ]);
+                }
+            });
+        });
+
+        // Baris Footer Total Extracom (29 Kolom)
+        const extracomFooterRow = Array(29).fill("");
+        extracomFooterRow[0] = "JUMLAH";
+        extracomFooterRow[5] = extTotalAnggaran;
+        extracomFooterRow[6] = extTotalRealisasi;
+        extracomFooterRow[18] = extTotalUnit;
+        extracomFooterRow[21] = extTotalNilaiBarang;
+        extracomRows.push(extracomFooterRow);
+
+        const extracomSignStartRow = extracomRows.length;
+        const extracomSignRows = buildKemitraanSignRows(29, 23, 1);
+        extracomSignRows.forEach(r => extracomRows.push(r));
+
+        const wsExtracom = XLSX.utils.aoa_to_sheet(extracomRows);
+        wsExtracom['!cols'] = Array(29).fill({wch: 18});
+        wsExtracom['!cols'][0] = {wch: 6};
+        wsExtracom['!cols'][1] = {wch: 14}; wsExtracom['!cols'][2] = {wch: 26};
+        wsExtracom['!cols'][3] = {wch: 18}; wsExtracom['!cols'][4] = {wch: 32};
+        wsExtracom['!cols'][5] = {wch: 22}; wsExtracom['!cols'][6] = {wch: 22};
+        wsExtracom['!cols'][7] = {wch: 32}; wsExtracom['!cols'][8] = {wch: 22};
+        wsExtracom['!cols'][9] = {wch: 18}; wsExtracom['!cols'][10] = {wch: 18};
+        wsExtracom['!cols'][11] = {wch: 18}; wsExtracom['!cols'][12] = {wch: 18};
+        wsExtracom['!cols'][13] = {wch: 16}; wsExtracom['!cols'][14] = {wch: 16};
+        wsExtracom['!cols'][15] = {wch: 24}; wsExtracom['!cols'][16] = {wch: 14};
+        wsExtracom['!cols'][17] = {wch: 14}; wsExtracom['!cols'][18] = {wch: 14};
+        wsExtracom['!cols'][19] = {wch: 16}; wsExtracom['!cols'][20] = {wch: 22};
+        wsExtracom['!cols'][21] = {wch: 22}; wsExtracom['!cols'][22] = {wch: 24};
+        wsExtracom['!cols'][23] = {wch: 28}; wsExtracom['!cols'][24] = {wch: 24};
+        wsExtracom['!cols'][25] = {wch: 28}; wsExtracom['!cols'][26] = {wch: 24};
+        wsExtracom['!cols'][27] = {wch: 22}; wsExtracom['!cols'][28] = {wch: 26};
+
+        wsExtracom['!merges'] = getKemitraanKibMerges([
+            {s:{r:3,c:0}, e:{r:6,c:0}},
+            {s:{r:3,c:1}, e:{r:3,c:6}},
+            {s:{r:4,c:1}, e:{r:4,c:2}},
+            {s:{r:5,c:1}, e:{r:6,c:1}},
+            {s:{r:5,c:2}, e:{r:6,c:2}},
+            {s:{r:4,c:3}, e:{r:4,c:4}},
+            {s:{r:5,c:3}, e:{r:6,c:3}},
+            {s:{r:5,c:4}, e:{r:6,c:4}},
+            {s:{r:4,c:5}, e:{r:6,c:5}},
+            {s:{r:4,c:6}, e:{r:6,c:6}},
+            {s:{r:3,c:7}, e:{r:3,c:21}},
+            {s:{r:4,c:7}, e:{r:6,c:7}},
+            {s:{r:4,c:8}, e:{r:6,c:8}},
+            {s:{r:4,c:9}, e:{r:6,c:9}},
+            {s:{r:4,c:10}, e:{r:6,c:10}},
+            {s:{r:4,c:11}, e:{r:6,c:11}},
+            {s:{r:4,c:12}, e:{r:6,c:12}},
+            {s:{r:4,c:13}, e:{r:6,c:13}},
+            {s:{r:4,c:14}, e:{r:6,c:14}},
+            {s:{r:4,c:15}, e:{r:4,c:16}},
+            {s:{r:5,c:15}, e:{r:5,c:16}},
+            {s:{r:4,c:17}, e:{r:6,c:17}},
+            {s:{r:4,c:18}, e:{r:4,c:19}},
+            {s:{r:5,c:18}, e:{r:6,c:18}},
+            {s:{r:5,c:19}, e:{r:6,c:19}},
+            {s:{r:4,c:20}, e:{r:4,c:21}},
+            {s:{r:5,c:20}, e:{r:6,c:20}},
+            {s:{r:5,c:21}, e:{r:6,c:21}},
+            {s:{r:3,c:22}, e:{r:6,c:22}},
+            {s:{r:3,c:23}, e:{r:4,c:25}},
+            {s:{r:5,c:23}, e:{r:6,c:23}},
+            {s:{r:5,c:24}, e:{r:6,c:24}},
+            {s:{r:5,c:25}, e:{r:6,c:25}},
+            {s:{r:3,c:26}, e:{r:4,c:27}},
+            {s:{r:5,c:26}, e:{r:6,c:26}},
+            {s:{r:5,c:27}, e:{r:6,c:27}},
+            {s:{r:3,c:28}, e:{r:6,c:28}}
+        ], 29, extracomTitleRows.length, extracomRows.length, true);
+        wsExtracom['!merges'].push(...getKibSignatureMerges(extracomSignStartRow, 29, 23, 1, 6, 28));
+
+        applyKemitraanMasterSheetStyling(wsExtracom, extracomRows.length, 29, 15, extracomTitleRows.length, true);
+        applySignatureBlockStyling(wsExtracom, extracomSignStartRow, 29);
+        if (filterCat === 'all' || filterCat === 'EXTRACOM') {
+            XLSX.utils.book_append_sheet(wb, wsExtracom, filterCat === 'all' ? "7. Extracom" : "Extracom - Barang Ekstrakomtabel");
+        }
+
+        // Tulis Berkas Excel dan Simpan (Khusus Kemitraan: Lengkap 7 Sheet: Rekap, KIB A s/d E & Extracom)
         const twSlug = filterTw === 'all' ? 'TAHUNAN' : filterTw.replace(/[\s_]/g, '');
         const skemaSlug = filterSkema === 'all' ? 'SEMUA_SKEMA' : filterSkema.toUpperCase();
-        const catSlug = filterCat === 'all' ? 'LENGKAP_6SHEET' : filterCat.replace(/[\s_]/g, '');
+        const catSlug = filterCat === 'all' ? 'LENGKAP_7SHEET' : filterCat.replace(/[\s_]/g, '');
         const fileName = `BUKU_ASET_KEMITRAAN_AKUN_152_RSDK_${skemaSlug}_${catSlug}_${yearLabel}_${twSlug}.xlsx`;
 
         XLSX.writeFile(wb, fileName);
@@ -9187,7 +9532,7 @@
                 exportCategory: 'all',
                 exportRekapSheet: 'all', // 'all' | 'sheet1' | 'sheet2' | 'sheet3' | 'sheet4'
                 exportKemitraanSkema: 'all', // 'all' | 'sewa' | 'ksp' | 'bgs_bsg' | 'kso'
-                exportKemitraanCategory: 'all', // 'all' | 'REKAP' | 'KIB A' | 'KIB B' | 'KIB C' | 'KIB D' | 'KIB E'
+                exportKemitraanCategory: 'all', // 'all' | 'REKAP' | 'KIB A' | 'KIB B' | 'KIB C' | 'KIB D' | 'KIB E' | 'EXTRACOM'
                 isSubmittingExport: false,
 
                 // State Modal Rapikan / Urutkan Ulang NIBAR (Auto-Resequence)
@@ -10234,8 +10579,22 @@
 
                             let matchCat = true;
                             if (fCat !== 'all' && fCat !== 'REKAP') {
-                                const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
-                                matchCat = (itemCat === fCat);
+                                const spec = (item.spesifikasi_json && typeof item.spesifikasi_json === 'object') ? item.spesifikasi_json : {};
+                                const isItemExtracom = !!item.is_extracomtable || 
+                                                       (item.category && item.category.toUpperCase() === 'EXTRACOM') || 
+                                                       (spec && spec.is_extracomtable) ||
+                                                       (Array.isArray(spec.mesin_items) && spec.mesin_items.some(m => !!m.is_extracom)) ||
+                                                       (Array.isArray(spec.lainnya_items) && spec.lainnya_items.some(l => !!l.is_extracom));
+                                if (fCat === 'EXTRACOM') {
+                                    matchCat = isItemExtracom;
+                                } else {
+                                    if (isItemExtracom) {
+                                        matchCat = false;
+                                    } else {
+                                        const itemCat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : item.category;
+                                        matchCat = (itemCat === fCat);
+                                    }
+                                }
                             }
 
                             return matchYear && matchTw && matchSkema && matchCat;
@@ -10316,8 +10675,8 @@
                                 this.isSubmittingExport = false;
                                 this.showExportModal = false;
                                 const catLabel = this.exportKemitraanCategory === 'all'
-                                    ? 'Lengkap (6 Sheet)'
-                                    : (this.exportKemitraanCategory === 'REKAP' ? 'Rekapitulasi' : this.exportKemitraanCategory);
+                                    ? 'Lengkap (7 Sheet: Rekap, KIB A-E & Extracom)'
+                                    : (this.exportKemitraanCategory === 'REKAP' ? 'Rekapitulasi' : (this.exportKemitraanCategory === 'EXTRACOM' ? 'Extracom' : this.exportKemitraanCategory));
                                 this.showToast('Berhasil mengekspor Laporan Aset Kemitraan ' + catLabel + ' (' + (this.exportTriwulan === 'all' ? 'Tahunan' : this.exportTriwulan) + ') ' + this.exportYear + '!', 'success');
                             }, 800);
                             return;

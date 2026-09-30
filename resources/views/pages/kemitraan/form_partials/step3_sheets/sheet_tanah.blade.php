@@ -59,13 +59,12 @@
                         </button>
                     </div>
 
-                    <!-- Pilihan PMDN 108 & Nama Spesifik Tanah -->
-                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/40 space-y-3 shadow-inner">
-                        <!-- 1. Pilihan Jenis Barang PMDN 108 (Filter Ketik, Max 5 Hasil) -->
+                    <!-- 1. Pilihan Jenis & Nama Barang PMDN 108 (Satu Input Filter & Ketik Langsung) -->
+                    <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/40 space-y-2 shadow-inner">
                         <div class="relative" @click.outside="item.isFilterOpen = false">
                             <div class="flex items-center justify-between mb-1.5">
                                 <label class="text-emerald-300 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                    <span>🏷️ Pilih Jenis Barang PMDN 108 (Tanah)</span>
+                                    <span>🏷️ Pilih / Ketik Jenis Barang PMDN 108 (Tanah)</span>
                                     <span class="text-rose-400">*</span>
                                 </label>
                                 <span class="text-[9.5px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold font-mono"
@@ -76,21 +75,21 @@
                             
                             <div class="relative">
                                 <input type="text"
-                                       x-model="item.searchFilter"
+                                       x-model="item.tanah_nama_barang"
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
-                                       @input="item.isFilterOpen = true"
-                                       placeholder="Ketik untuk memfilter jenis barang (contoh: Tanah Bangunan, Lahan, dll)..."
-                                       class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-xs text-white font-medium focus:outline-none transition-all pl-9">
-                                <div class="absolute left-3 top-2.5 text-slate-400 pointer-events-none">
+                                       @input="item.isFilterOpen = true; syncTotalsFromItems();"
+                                       placeholder="Ketik untuk memfilter jenis PMDN 108 atau tulis rincian bidang tanah..."
+                                       class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9">
+                                <div class="absolute left-3 top-3 text-slate-400 pointer-events-none">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                     </svg>
                                 </div>
                                 <button type="button" 
-                                        x-show="item.searchFilter" 
-                                        @click="item.searchFilter = ''; item.isFilterOpen = true" 
-                                        class="absolute right-3 top-2 text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
+                                        x-show="item.tanah_nama_barang" 
+                                        @click="item.tanah_nama_barang = ''; item.tanah_kode_barang = ''; item.isFilterOpen = true; syncTotalsFromItems();" 
+                                        class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 text-xs cursor-pointer">✕</button>
                             </div>
 
                             <!-- Dropdown Hasil Filter (Strict Max 5 Baris - Zero Lag) -->
@@ -100,10 +99,10 @@
                                  x-transition:enter-end="opacity-100 translate-y-0"
                                  class="absolute z-50 left-0 right-0 mt-1 bg-slate-900 border border-emerald-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800">
                                 <div class="px-3 py-1.5 bg-slate-950/80 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-                                    <span>Menampilkan maksimal 5 pilihan aset:</span>
+                                    <span>Pilihan Rekomendasi PMDN 108 (Maks. 5):</span>
                                     <span class="text-emerald-400 font-mono text-[9px]">PMDN 108 Tanah (1.3.1)</span>
                                 </div>
-                                <template x-for="opt in filterJenisAstap108('1.3.1', item.searchFilter, item.isFilterOpen)" :key="opt.id">
+                                <template x-for="opt in filterJenisAstap108('1.3.1', item.tanah_nama_barang, item.isFilterOpen)" :key="opt.id">
                                     <div @click="select108ForItem(item, opt, 'tanah')"
                                          class="px-3.5 py-2 hover:bg-emerald-500/20 cursor-pointer transition-colors flex items-center justify-between group">
                                         <div class="flex-1 pr-2">
@@ -112,22 +111,11 @@
                                         <span class="font-mono text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 shrink-0" x-text="opt.kode"></span>
                                     </div>
                                 </template>
-                                <div x-show="filterJenisAstap108('1.3.1', item.searchFilter, item.isFilterOpen).length === 0" 
+                                <div x-show="filterJenisAstap108('1.3.1', item.tanah_nama_barang, item.isFilterOpen).length === 0" 
                                      class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
-                                    Tidak ada hasil jenis barang yang cocok. Silakan ketik kata kunci lain.
+                                    <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- 2. Nama Spesifik / Identitas Barang Aset (Terpisah di Bawah Pilihan) -->
-                        <div class="pt-2 border-t border-slate-800/80">
-                            <label class="block text-slate-300 text-[10.5px] mb-1 font-semibold flex items-center justify-between">
-                                <span>Nama Spesifik / Identitas Bidang Tanah #<span x-text="idx + 1"></span> <span class="text-rose-400">*</span></span>
-                                <span class="text-[9.5px] text-slate-500">Bisa disesuaikan spesifik / lokasi bidang</span>
-                            </label>
-                            <input type="text" x-model="item.tanah_nama_barang" @input="syncTotalsFromItems()"
-                                :placeholder="item.tanah_kode_barang ? 'Beri nama spesifik / rincian bidang tanah ini' : 'Contoh: Tanah Kompleks RSUD Dr. H. Koesnandi / Lahan Parkir Paviliun Barat'"
-                                class="w-full bg-slate-950 border border-slate-700 hover:border-emerald-500 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-xs text-white font-bold focus:outline-none transition-all">
                         </div>
                     </div>
 

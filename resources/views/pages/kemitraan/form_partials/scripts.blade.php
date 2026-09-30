@@ -181,6 +181,7 @@
                 no_polisi: '',
                 mesin_items: [
                     {
+                        is_extracom: false,
                         mesin_kode_barang: '',
                         mesin_nama_barang: '',
                         isFilterOpen: false,
@@ -291,6 +292,7 @@
                 lainnya_asal: '',
                 lainnya_items: [
                     {
+                        is_extracom: false,
                         kib_e_type: 'buku',
                         lainnya_kode_barang: '',
                         lainnya_nama_barang: '',
@@ -448,8 +450,9 @@
                     }
                 }
 
-                if (year && year >= 1990 && year <= 2100) {
-                    this.formData.tahun_perolehan = year;
+                const currentYear = new Date().getFullYear();
+                if (year && year >= 1990) {
+                    this.formData.tahun_perolehan = Math.min(year, currentYear);
                 }
 
                 if (month && month >= 1 && month <= 12) {
@@ -750,6 +753,7 @@
                     this.formData.mesin_items = [];
                 }
                 this.formData.mesin_items.push({
+                    is_extracom: false,
                     mesin_kode_barang: '',
                     mesin_nama_barang: '',
                     isFilterOpen: false,
@@ -972,6 +976,7 @@
                     this.formData.lainnya_items = [];
                 }
                 this.formData.lainnya_items.push({
+                    is_extracom: false,
                     kib_e_type: 'buku',
                     lainnya_kode_barang: '',
                     lainnya_nama_barang: '',
@@ -1587,6 +1592,10 @@
                                 this.showToast('Validasi Gagal', `Taksiran nilai satuan pada Barang #${num} harus lebih dari 0.`, 'error');
                                 return false;
                             }
+                            if (it.is_extracom && parseFloat(it.mesin_nilai_satuan) > 300000) {
+                                this.showToast('Validasi Extracom', `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`, 'error');
+                                return false;
+                            }
                         }
                     } else if (this.isTanah) {
                         this.syncTotalsFromItems();
@@ -1667,6 +1676,10 @@
                                 this.showToast('Validasi Gagal', `Jumlah volume pada Item #${num} minimal 1.`, 'error');
                                 return false;
                             }
+                            if (it.is_extracom && parseFloat(it.lainnya_nilai_satuan) > 300000) {
+                                this.showToast('Validasi Extracom', `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`, 'error');
+                                return false;
+                            }
                         }
                     }
 
@@ -1705,6 +1718,14 @@
 
                 this.syncTotalsFromItems();
 
+                let isExtracom = false;
+                if (this.isMesin && this.formData.mesin_items) {
+                    isExtracom = this.formData.mesin_items.some(m => !!m.is_extracom);
+                } else if (this.isLainnya && this.formData.lainnya_items) {
+                    isExtracom = this.formData.lainnya_items.some(l => !!l.is_extracom);
+                }
+                this.formData.is_extracomtable = isExtracom;
+
                 // Siapkan payload spesifikasi JSON terstruktur sesuai sheet KIB yang aktif
                 let specJson = {};
 
@@ -1729,6 +1750,7 @@
 
                     specJson = {
                         kategori_kib: 'KIB B (Peralatan & Mesin)',
+                        is_extracomtable: !!firstM.is_extracom,
                         merk: firstM.mesin_merk || this.formData.merk || '',
                         type: firstM.mesin_type || this.formData.type || '',
                         no_pabrik: firstM.mesin_no_pabrik || this.formData.no_pabrik || '',
@@ -1785,6 +1807,7 @@
 
                     specJson = {
                         kategori_kib: 'KIB E (Aset Tetap Lainnya)',
+                        is_extracomtable: !!firstL.is_extracom,
                         nama_barang: firstL.lainnya_nama_barang || this.formData.nama_barang || '',
                         kib_e_type: firstL.kib_e_type || this.formData.kib_e_type || 'buku',
                         judul: firstL.lainnya_judul || this.formData.lainnya_judul || '',
