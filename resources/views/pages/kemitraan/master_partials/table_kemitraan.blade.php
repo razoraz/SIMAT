@@ -174,9 +174,9 @@
                                     <span>Reklas</span>
                                 </a>
 
-                                <!-- 3. Tombol Ubah (Form Edit ASTAP) -->
-                                <a href="/astap/{{ $astap?->id }}/edit"
-                                    title="Ubah Data ASTAP (Form Lengkap)"
+                                <!-- 3. Tombol Ubah (Form Edit ASTAP Kemitraan) -->
+                                <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"
+                                    title="Ubah Data ASTAP Kemitraan (Form Lengkap)"
                                     class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                     <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>

@@ -5,19 +5,19 @@
     <!-- Top Header Banner -->
     <div class="flex items-center justify-between p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl">
         <div class="flex items-center space-x-3.5 sm:space-x-4">
-            <a href="{{ route('astap.pilih_jenis') }}"
+            <a href="{{ isset($astap) ? route('master.kemitraan') : route('astap.pilih_jenis') }}"
                class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-950 border border-slate-800 hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400 flex items-center justify-center transition-all shadow-sm shrink-0">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             </a>
             <div class="min-w-0 flex-1">
                 <div class="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-cyan-400/15 text-cyan-300 border border-cyan-400/30 text-[9px] sm:text-[10px] font-bold mb-1">
-                    <span>🤝 PENCATATAN ASET KEMITRAAN PIHAK KETIGA (KSO / KEMITRAAN)</span>
+                    <span>🤝 {{ isset($astap) ? 'PERUBAHAN ASET KEMITRAAN PIHAK KETIGA (KSO / KEMITRAAN)' : 'PENCATATAN ASET KEMITRAAN PIHAK KETIGA (KSO / KEMITRAAN)' }}</span>
                 </div>
                 <h1 class="text-base sm:text-xl md:text-2xl font-extrabold text-white tracking-tight truncate">
-                    Pencatatan Aset Kemitraan (SIMAT-RK)
+                    {{ isset($astap) ? 'Ubah Data Aset Kemitraan (SIMAT-RK)' : 'Pencatatan Aset Kemitraan (SIMAT-RK)' }}
                 </h1>
                 <p class="text-xs text-slate-400 mt-0.5 hidden sm:block">
-                    Pendaftaran perolehan aset kerja sama pihak ketiga (Akun 1.5.2: KSO, KSP, Sewa) terintegrasi ke inventaris ruangan RSUD.
+                    {{ isset($astap) ? 'Perbarui data legalitas PKS, klasifikasi aset, serta rincian inventaris ruangan kemitraan.' : 'Pendaftaran perolehan aset kerja sama pihak ketiga (Akun 1.5.2: KSO, KSP, Sewa) terintegrasi ke inventaris ruangan RSUD.' }}
                 </p>
             </div>
         </div>
