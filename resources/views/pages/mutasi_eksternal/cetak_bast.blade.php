@@ -76,6 +76,21 @@
         $nilaiTotal = (float) ($mutasi->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
         $hargaSatuan = $totalVol > 0 ? ($nilaiTotal / $totalVol) : $nilaiTotal;
         $kode108 = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($astap?->jenisAstap?->jenis ?: '1.3.2.00.00.00'));
+
+        // Data Resmi Pejabat SIMAT RSUD dr. H. Koesnadi Bondowoso
+        // Pihak Kedua: Pengurus Barang Pengguna RSUD (BUDI HARTONO, S.Sos)
+        $isPjYus = str_contains(strtolower($mutasi->pj_tujuan_nama ?? ''), 'yus');
+        $pbNama = (!$isPjYus && !empty($mutasi->pj_tujuan_nama)) ? $mutasi->pj_tujuan_nama : 'BUDI HARTONO, S.Sos';
+        $pbNip = (!$isPjYus && !empty($mutasi->pj_tujuan_nip) && !str_contains($mutasi->pj_tujuan_nip, '19771002') && !str_contains($mutasi->pj_tujuan_nip, '19690412'))
+            ? $mutasi->pj_tujuan_nip 
+            : '19760229 200801 1 010';
+        $pbJabatan = (!$isPjYus && !empty($mutasi->pj_tujuan_jabatan) && !str_contains(strtolower($mutasi->pj_tujuan_jabatan), 'direktur'))
+            ? $mutasi->pj_tujuan_jabatan 
+            : 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi';
+
+        // Mengetahui: Direktur RSUD Dr. H. Koesnadi (dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR)
+        $direkturNama = 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR';
+        $direkturNip = '19771002 200604 1 006';
     @endphp
 
     <div class="print-container bg-white text-black max-w-4xl w-full p-8 sm:p-12 shadow-2xl rounded-sm text-[10pt] leading-relaxed"
@@ -154,19 +169,19 @@
                     <td class="w-6 align-top font-bold">2.</td>
                     <td class="w-32 align-top">Nama</td>
                     <td class="w-3 align-top">:</td>
-                    <td class="align-top font-bold">{{ $mutasi->pj_tujuan_nama ?: 'dr. H. Yus Priyatna, Sp.P' }}</td>
+                    <td class="align-top font-bold">{{ $pbNama }}</td>
                 </tr>
                 <tr>
                     <td></td>
                     <td class="align-top">NIP</td>
                     <td class="align-top">:</td>
-                    <td class="align-top font-mono">{{ $mutasi->pj_tujuan_nip ?: '196904121999031004' }}</td>
+                    <td class="align-top font-mono">{{ $pbNip }}</td>
                 </tr>
                 <tr>
                     <td></td>
                     <td class="align-top">Jabatan</td>
                     <td class="align-top">:</td>
-                    <td class="align-top">{{ $mutasi->pj_tujuan_jabatan ?: 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi' }}</td>
+                    <td class="align-top">{{ $pbJabatan }}</td>
                 </tr>
                 <tr>
                     <td></td>
@@ -270,6 +285,7 @@
             <div>
                 <p class="font-bold text-slate-800">PIHAK KEDUA</p>
                 <p class="text-[9pt] text-slate-600">Yang Menerima,</p>
+                <p class="text-[8.5pt] text-slate-500 font-semibold mb-1">Pengurus Barang Pengguna</p>
                 <div class="h-20 flex items-center justify-center">
                     @if($mutasi->signed)
                     <div style="padding:4px; border:1.5px solid #0d9488; background:#f0fdfa; border-radius:5px; display:inline-flex; align-items:center; gap:6px; text-align:left;">
@@ -290,8 +306,8 @@
                     </div>
                     @endif
                 </div>
-                <p class="font-bold underline text-[10pt] uppercase">{{ $mutasi->pj_tujuan_nama ?: 'BUDI HARTONO, S.Sos' }}</p>
-                <p class="font-mono text-[9pt]">NIP. {{ $mutasi->pj_tujuan_nip ?: '19760229 200801 1 010' }}</p>
+                <p class="font-bold underline text-[10pt] uppercase">{{ $pbNama }}</p>
+                <p class="font-mono text-[9pt]">NIP. {{ $pbNip }}</p>
             </div>
         </div>
 
@@ -302,8 +318,8 @@
             <div class="h-20 flex items-center justify-center">
                 <!-- Space for TTD / Stempel -->
             </div>
-            <p class="font-bold underline text-[10pt] uppercase">dr. DIAN ARISANDI, M.Kes</p>
-            <p class="font-mono text-[9pt]">NIP. 19730514 200212 2 003</p>
+            <p class="font-bold underline text-[10pt] uppercase">{{ $direkturNama }}</p>
+            <p class="font-mono text-[9pt]">NIP. {{ $direkturNip }}</p>
         </div>
 
     </div>

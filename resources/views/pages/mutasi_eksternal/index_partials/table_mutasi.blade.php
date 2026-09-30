@@ -12,7 +12,7 @@
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Volume / Kuantitas</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Nilai Perolehan</th>
                     <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950">Kondisi</th>
-                    <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                    <th class="px-4 py-3.5 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[260px] w-[260px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/80">
@@ -120,28 +120,18 @@
                             </div>
                         </td>
 
-                        <!-- Aksi (Detail, Cetak, Reklas, Ubah, Hapus) — FREEZE STICKY RIGHT -->
-                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[340px] w-[340px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                        <!-- Aksi (Detail, Reklas, Ubah, Hapus) — FREEZE STICKY RIGHT -->
+                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[260px] w-[260px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                             <div class="flex items-center justify-center gap-1.5">
-                                <!-- 1. Tombol Detail -->
+                                <!-- 1. Tombol Detail (Termasuk Fitur Cetak BAST di Dalamnya) -->
                                 <button type="button" @click="openDetail(item)"
-                                    title="Lihat Detail BAST Antar-OPD & Aset"
+                                    title="Lihat Detail BAST Antar-OPD & Cetak Dokumen"
                                     class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                     <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                     <span>Detail</span>
-                                </button>
-
-                                <!-- 2. Tombol Cetak BAST -->
-                                <button type="button" @click="openPrintModal(item)"
-                                    title="Cetak Berita Acara Serah Terima (BAST) Pelimpahan BMD"
-                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-purple-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-purple-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2h6z"/>
-                                    </svg>
-                                    <span>Cetak</span>
                                 </button>
 
                                 <!-- 2. Tombol Reklas (Reklasifikasi Aset) -->

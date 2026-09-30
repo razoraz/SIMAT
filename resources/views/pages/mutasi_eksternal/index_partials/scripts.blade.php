@@ -218,6 +218,7 @@
 
             openPrintModal(item) {
                 if (!item) return;
+                this.showDetailModal = false;
 
                 const hariMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
                 const bulanMap = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -291,16 +292,20 @@
                     pj_asal_nip: item.pj_asal_nip || '-',
                     pj_asal_jabatan: item.pj_asal_jabatan || 'Pengurus Barang / PPK Asal',
 
-                    // Pihak Kedua (Yang Menerima / RSUD Dr. H. Koesnandi)
+                    // Pihak Kedua (Yang Menerima / Pengurus Barang RSUD Dr. H. Koesnadi)
                     opd_tujuan: 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
-                    pj_tujuan_nama: item.pejabat_opd_tujuan || 'BUDI HARTONO, S.Sos',
-                    pj_tujuan_nip: item.nip_pejabat_opd_tujuan || '19760229 200801 1 010',
-                    pj_tujuan_jabatan: item.jabatan_opd_tujuan || 'Pengurus Barang Aset RSUD dr. H. Koesnandi',
+                    pj_tujuan_nama: (item.pejabat_opd_tujuan && !item.pejabat_opd_tujuan.toLowerCase().includes('yus')) 
+                        ? item.pejabat_opd_tujuan 
+                        : ((item.pj_tujuan_nama && !item.pj_tujuan_nama.toLowerCase().includes('yus')) ? item.pj_tujuan_nama : 'BUDI HARTONO, S.Sos'),
+                    pj_tujuan_nip: (item.nip_pejabat_opd_tujuan && !item.nip_pejabat_opd_tujuan.includes('19771002') && !item.nip_pejabat_opd_tujuan.includes('19690412'))
+                        ? item.nip_pejabat_opd_tujuan 
+                        : ((item.pj_tujuan_nip && !item.pj_tujuan_nip.includes('19771002') && !item.pj_tujuan_nip.includes('19690412')) ? item.pj_tujuan_nip : '19760229 200801 1 010'),
+                    pj_tujuan_jabatan: item.jabatan_opd_tujuan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
 
-                    // Pejabat Pengesah (Direktur RSUD)
-                    direktur_nama: 'dr. DIAN ARISANDI, M.Kes',
-                    direktur_nip: '19730514 200212 2 003',
-                    direktur_jabatan: 'Direktur RSUD dr. H. Koesnandi',
+                    // Pejabat Pengesah (Direktur RSUD Dr. H. Koesnadi)
+                    direktur_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
+                    direktur_nip: '19771002 200604 1 006',
+                    direktur_jabatan: 'Direktur RSUD dr. H. Koesnadi',
 
                     signed: true,
                     qr_hash: `BSRE-KOESNANDI-PLP-${id}-${tahun}`,

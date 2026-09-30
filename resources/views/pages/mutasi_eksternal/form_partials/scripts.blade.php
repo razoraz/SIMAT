@@ -16,6 +16,8 @@
             master108: {{ Js::from($dbMaster108 ?? []) }},
             pejabatsList: {{ Js::from($dbPejabats ?? []) }},
             unitsList: {{ Js::from($dbUnits ?? []) }},
+            skpdDirectory: {{ Js::from($dbSkpdDirectory ?? []) }},
+            pejabatPenyerahList: {{ Js::from($dbPejabatPenyerahs ?? []) }},
             masterSkpdList: {{ Js::from(!empty($dbSkpdAsals) ? $dbSkpdAsals : [
                 'Dinas Kesehatan Kabupaten Bondowoso',
                 'BPKAD Kabupaten Bondowoso',
@@ -23,6 +25,7 @@
                 'Dinas Kesehatan Provinsi Jawa Timur'
             ]) }},
             isSkpdDropdownOpen: false,
+            isPejabatDropdownOpen: false,
 
             // Filter & Search 108
             search108Query: '',
@@ -34,7 +37,13 @@
                 from: {{ Js::from(request('from', 'eksternal')) }},
                 sumber_dana: 'pelimpahan_skpd',
                 tahun_perolehan: new Date().getFullYear(),
-                triwulan: 'TW I',
+                triwulan: (function() {
+                    const m = new Date().getMonth() + 1;
+                    if (m >= 4 && m <= 6) return 'TW II';
+                    if (m >= 7 && m <= 9) return 'TW III';
+                    if (m >= 10 && m <= 12) return 'TW IV';
+                    return 'TW I';
+                })(),
                 mutasi_asal: '',
                 mutasi_nomor_bamb: '',
                 mutasi_tanggal: new Date().toISOString().split('T')[0],
@@ -42,8 +51,8 @@
                 pj_asal_nama: '',
                 pj_asal_nip: '',
                 pj_asal_jabatan: '',
-                ppk_nama: 'dr. H. Yus Priyatna, Sp.P',
-                ppk_nip: '196904121999031004',
+                ppk_nama: 'BUDI HARTONO, S.Sos',
+                ppk_nip: '19760229 200801 1 010',
                 mutasi_keterangan: '',
                 dokumen_lampiran_path: '',
                 jenis_astap_id: '',
@@ -114,6 +123,47 @@
                 return val;
             },
 
+            // Hitung otomatis Triwulan dan Tahun dari tanggal dokumen
+            calcTriwulanFromDate(dateStr) {
+                if (!dateStr) return 'TW I';
+                let month = 1;
+                let year = null;
+                const str = String(dateStr).trim();
+
+                if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+                    const parts = str.split('-');
+                    year = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10);
+                } else if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
+                    const d = new Date(str);
+                    if (!isNaN(d.getTime())) {
+                        year = d.getFullYear();
+                        month = d.getMonth() + 1;
+                    }
+                } else {
+                    const d = new Date(str);
+                    if (!isNaN(d.getTime())) {
+                        year = d.getFullYear();
+                        month = d.getMonth() + 1;
+                    }
+                }
+
+                if (year && year >= 1990 && year <= 2100) {
+                    this.formData.tahun_perolehan = year;
+                }
+
+                if (month >= 1 && month <= 3) return 'TW I';
+                if (month >= 4 && month <= 6) return 'TW II';
+                if (month >= 7 && month <= 9) return 'TW III';
+                if (month >= 10 && month <= 12) return 'TW IV';
+                return 'TW I';
+            },
+
+            onTanggalChange(val) {
+                if (!val) return;
+                this.formData.triwulan = this.calcTriwulanFromDate(val);
+            },
+
             // Autocomplete SKPD Asal
             get filteredSkpdList() {
                 const q = (this.formData.mutasi_asal || '').toLowerCase().trim();
@@ -123,9 +173,104 @@
                 return this.masterSkpdList.filter(skpd => skpd && skpd.toLowerCase().includes(q));
             },
 
+            // Ambil ringkasan pejabat untuk item dropdown SKPD
+            getSkpdPejabatInfo(skpdName) {
+                if (!skpdName || !this.skpdDirectory) return '';
+                const item = this.skpdDirectory[skpdName];
+                if (!item || !item.pj_nama) return '';
+                return item.pj_nama + (item.pj_jabatan ? ' (' + item.pj_jabatan + ')' : '');
+            },
+
+            // Sinkronisasi data Pejabat Penyerah (Pihak Pertama) dari SKPD yang dipilih
+            syncPejabatFromSkpd(skpdName, force = false) {
+                const target = (skpdName || this.formData.mutasi_asal || '').trim();
+                if (!target) return;
+
+                let matched = this.skpdDirectory ? this.skpdDirectory[target] : null;
+                if (!matched && this.skpdDirectory) {
+                    const lowerTarget = target.toLowerCase();
+                    for (const [key, val] of Object.entries(this.skpdDirectory)) {
+                        if (key.toLowerCase() === lowerTarget || (val.nama && val.nama.toLowerCase() === lowerTarget)) {
+                            matched = val;
+                            break;
+                        }
+                    }
+                }
+
+                if (matched && matched.pj_nama) {
+                    if (force || !this.formData.pj_asal_nama) {
+                        this.formData.pj_asal_nama = matched.pj_nama;
+                        this.formData.pj_asal_nip = matched.pj_nip || '';
+                        this.formData.pj_asal_jabatan = matched.pj_jabatan || '';
+                        this.showToast('Pihak Pertama Terhubung', 'Data Pejabat Penyerah otomatis disesuaikan dengan riwayat ' + matched.nama, 'info');
+                    }
+                }
+            },
+
+            // Daftar pejabat yang tersedia untuk SKPD yang sedang dipilih
+            get availablePejabatPenyerahs() {
+                const curSkpd = (this.formData.mutasi_asal || '').trim().toLowerCase();
+                if (curSkpd && this.skpdDirectory) {
+                    for (const [key, info] of Object.entries(this.skpdDirectory)) {
+                        if (key.toLowerCase() === curSkpd || (info.nama && info.nama.toLowerCase() === curSkpd)) {
+                            if (info.pejabats && info.pejabats.length > 0) {
+                                return info.pejabats.map(p => ({
+                                    ...p,
+                                    skpd: info.nama
+                                }));
+                            }
+                        }
+                    }
+                }
+                return this.pejabatPenyerahList || [];
+            },
+
+            // Filter dropdown Pejabat Penyerah
+            get filteredPejabatPenyerahList() {
+                const q = (this.formData.pj_asal_nama || '').toLowerCase().trim();
+                const list = this.availablePejabatPenyerahs || [];
+                if (!q) {
+                    return list.slice(0, 15);
+                }
+                return list.filter(p => 
+                    (p.nama && p.nama.toLowerCase().includes(q)) ||
+                    (p.jabatan && p.jabatan.toLowerCase().includes(q)) ||
+                    (p.nip && p.nip.includes(q))
+                );
+            },
+
+            // Pilih pejabat penyerah dari dropdown
+            selectPejabatPenyerah(p) {
+                if (!p) return;
+                this.formData.pj_asal_nama = p.nama || '';
+                this.formData.pj_asal_nip = p.nip || '';
+                this.formData.pj_asal_jabatan = p.jabatan || '';
+                this.isPejabatDropdownOpen = false;
+                if (p.skpd && !this.formData.mutasi_asal) {
+                    this.formData.mutasi_asal = p.skpd;
+                }
+                this.showToast('Pejabat Dipilih', 'Pejabat Penyerah diset: ' + p.nama, 'info');
+            },
+
+            // Handler ketika Pejabat Penyerah dipilih dari input langsung
+            onPejabatPenyerahSelect(event) {
+                const val = (event.target.value || '').trim();
+                if (!val) return;
+                const found = (this.availablePejabatPenyerahs || []).find(p => p.nama && p.nama.toLowerCase() === val.toLowerCase())
+                    || (this.pejabatPenyerahList || []).find(p => p.nama && p.nama.toLowerCase() === val.toLowerCase());
+                if (found) {
+                    if (found.nip) this.formData.pj_asal_nip = found.nip;
+                    if (found.jabatan) this.formData.pj_asal_jabatan = found.jabatan;
+                    if (found.skpd && !this.formData.mutasi_asal) {
+                        this.formData.mutasi_asal = found.skpd;
+                    }
+                }
+            },
+
             selectSkpd(name) {
                 this.formData.mutasi_asal = name;
                 this.isSkpdDropdownOpen = false;
+                this.syncPejabatFromSkpd(name, false);
             },
 
             // KIB Category Helpers (Single Source of Truth)
@@ -224,14 +369,17 @@
             filter108List() {
                 const q = (this.search108Query || '').toLowerCase().trim();
                 if (!q) {
-                    const prefix = this.activeKibCode;
-                    this.filtered108Results = this.allFlat108
-                        .filter(i => i.kode && i.kode.startsWith(prefix))
-                        .slice(0, 25);
+                    this.filtered108Results = [];
                     return;
                 }
+                const activePrefix = this.activeKibCode;
                 this.filtered108Results = this.allFlat108
                     .filter(i => (i.kode && i.kode.toLowerCase().includes(q)) || (i.nama && i.nama.toLowerCase().includes(q)) || (i.path && i.path.toLowerCase().includes(q)))
+                    .sort((a, b) => {
+                        const aMatch = a.kode && a.kode.startsWith(activePrefix) ? 1 : 0;
+                        const bMatch = b.kode && b.kode.startsWith(activePrefix) ? 1 : 0;
+                        return bMatch - aMatch;
+                    })
                     .slice(0, 30);
             },
 
@@ -257,7 +405,7 @@
             clear108Selection() {
                 this.formData.jenis_astap_id = '';
                 this.search108Query = '';
-                this.filter108List();
+                this.filtered108Results = [];
             },
 
             selectKibCategory(cat, seedDefault = true) {
@@ -276,9 +424,6 @@
                     }
                 }
                 this.syncTotalsFromItems();
-                if (!this.formData.jenis_astap_id || !this.selected108Item) {
-                    this.filter108List();
-                }
             },
 
             // Sinkronisasi Nama Barang ke Item Pertama
@@ -646,46 +791,128 @@
 
             validateStep(s) {
                 if (s === 1) {
+                    let missing = [];
                     if (!this.formData.mutasi_asal || !this.formData.mutasi_asal.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon isi nama instansi / SKPD asal pengirim BMD.', 'error');
-                        return false;
+                        missing.push('Instansi / SKPD Asal Pengirim BMD');
                     }
                     if (!this.formData.mutasi_nomor_bamb || !this.formData.mutasi_nomor_bamb.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon isi nomor Berita Acara (BAMB / BAST).', 'error');
-                        return false;
+                        missing.push('Nomor Berita Acara (BAMB / BAST)');
                     }
                     if (!this.formData.mutasi_tanggal) {
-                        this.showToast('Validasi Gagal', 'Mohon isi tanggal dokumen Berita Acara.', 'error');
-                        return false;
+                        missing.push('Tanggal Dokumen Berita Acara');
                     }
                     if (!this.formData.tahun_perolehan) {
-                        this.showToast('Validasi Gagal', 'Mohon tentukan tahun perolehan BMD.', 'error');
+                        missing.push('Tahun Perolehan BMD');
+                    }
+
+                    if (missing.length > 0) {
+                        this.showValidationAlert(1, missing);
                         return false;
                     }
                 } else if (s === 2) {
+                    let missing = [];
                     if (!this.formData.jenis_astap_id) {
-                        this.showToast('Validasi Gagal', 'Mohon pilih klasifikasi kode barang Permendagri No. 108/2016.', 'error');
-                        return false;
+                        missing.push('Klasifikasi Kode Rekening Permendagri 108');
                     }
                     if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
-                        this.showToast('Validasi Gagal', 'Mohon isi nama lengkap spesifik barang pelimpahan.', 'error');
-                        return false;
+                        missing.push('Nama Lengkap / Spesifikasi Barang');
                     }
                     if (!this.formData.unit_id) {
-                        this.showToast('Validasi Gagal', 'Mohon tentukan unit / ruangan penempatan di RSUD Dr. H. Koesnandi.', 'error');
-                        return false;
+                        missing.push('Ruangan / Unit Penempatan di RSUD');
                     }
-                    if (!this.formData.total_realisasi || this.formData.total_realisasi <= 0) {
-                        this.showToast('Validasi Gagal', 'Mohon masukkan total nilai perolehan BMD (Rp) dari SKPD asal.', 'error');
+                    if (!this.formData.total_realisasi || Number(this.formData.total_realisasi) <= 0) {
+                        missing.push('Total Nilai Perolehan BMD (Rp > 0)');
+                    }
+
+                    if (missing.length > 0) {
+                        this.showValidationAlert(2, missing);
                         return false;
                     }
                 } else if (s === 3) {
                     if (!this.isDataVerified) {
-                        this.showToast('Verifikasi Diperlukan', 'Mohon centang pernyataan bahwa data Berita Acara dan fisik barang telah diverifikasi dengan benar.', 'warning');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Verifikasi Data Belum Dicentang',
+                                text: 'Mohon centang kotak pernyataan verifikasi data serah terima di bagian bawah sebelum menyimpan ke database.',
+                                confirmButtonText: 'Baik, Saya Mengerti',
+                                confirmButtonColor: '#6366f1',
+                                background: '#0f172a',
+                                color: '#ffffff'
+                            });
+                        } else {
+                            this.showToast('Verifikasi Diperlukan', 'Mohon centang pernyataan verifikasi di bagian bawah.', 'warning');
+                        }
                         return false;
                     }
                 }
                 return true;
+            },
+
+            showValidationAlert(stepNum, missingFields) {
+                const listHtml = missingFields.map(f => `
+                    <li class="flex items-center gap-2 text-rose-300">
+                        <span class="text-rose-400 font-bold">✕</span> 
+                        <span class="font-bold text-white">${f}</span>
+                    </li>
+                `).join('');
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Kolom Wajib Belum Diisi',
+                        html: `
+                            <div class="text-left text-xs space-y-3 text-slate-300">
+                                <p class="text-slate-200">
+                                    Tombol <strong>Lanjut ke Langkah ${stepNum + 1}</strong> belum dapat memproses karena kolom wajib berikut masih kosong:
+                                </p>
+                                <ul class="p-3.5 rounded-2xl bg-slate-900/90 border border-rose-500/40 space-y-2">
+                                    ${listHtml}
+                                </ul>
+                                <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-[11px] leading-relaxed">
+                                    💡 <strong>Catatan: Tidak harus mengisi semua kolom di layar!</strong> Kolom lain seperti SK Bupati, Pejabat Penyerah, dan Berkas Lampiran bersifat <em>opsional</em> (bisa dikosongkan/diisi nanti).
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: 'Lengkapi Sekarang &rarr;',
+                        confirmButtonColor: '#6366f1',
+                        background: '#0f172a',
+                        color: '#ffffff'
+                    }).then(() => {
+                        this.focusFirstMissingField(stepNum);
+                    });
+                } else {
+                    this.showToast('Kolom Wajib Belum Diisi', missingFields.join(', '), 'error');
+                    this.focusFirstMissingField(stepNum);
+                }
+            },
+
+            focusFirstMissingField(stepNum) {
+                setTimeout(() => {
+                    if (stepNum === 1) {
+                        if (!this.formData.mutasi_asal || !this.formData.mutasi_asal.trim()) {
+                            const el = document.querySelector('input[x-model="formData.mutasi_asal"]');
+                            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                        } else if (!this.formData.mutasi_nomor_bamb || !this.formData.mutasi_nomor_bamb.trim()) {
+                            const el = document.querySelector('input[x-model="formData.mutasi_nomor_bamb"]');
+                            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                        }
+                    } else if (stepNum === 2) {
+                        if (!this.formData.jenis_astap_id) {
+                            const el = document.querySelector('input[x-model="search108Query"]');
+                            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                        } else if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
+                            const el = document.querySelector('input[x-model="formData.nama_barang"]');
+                            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                        } else if (!this.formData.unit_id) {
+                            const el = document.querySelector('select[x-model="formData.unit_id"]');
+                            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                        } else if (!this.formData.total_realisasi || Number(this.formData.total_realisasi) <= 0) {
+                            const el = document.querySelector('input[x-model.number="formData.total_realisasi"]') || document.querySelector('input[placeholder="0"]');
+                            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                        }
+                    }
+                }, 150);
             },
 
             // Form Submit via AJAX
@@ -928,23 +1155,44 @@
                     // Default seed for new form
                     this.selectKibCategory('mesin', true);
                 }
+
+                // Hitung otomatis triwulan dan tahun perolehan dari tanggal dokumen
+                if (this.formData.mutasi_tanggal) {
+                    this.onTanggalChange(this.formData.mutasi_tanggal);
+                }
+
+                // Pasang watcher Alpine agar triwulan dan tahun selalu otomatis mengikuti tanggal
+                this.$watch('formData.mutasi_tanggal', (val) => {
+                    this.onTanggalChange(val);
+                });
+
+                // Jika sudah ada mutasi_asal tapi pejabat penyerah belum terisi, coba sinkronkan
+                if (this.formData.mutasi_asal && !this.formData.pj_asal_nama) {
+                    this.syncPejabatFromSkpd(this.formData.mutasi_asal, false);
+                }
             }
         };
     }
 </script>
 
 <style>
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(99, 102, 241, 0.5) rgba(15, 23, 42, 0.6);
+    }
     .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
+        height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
         background: rgba(15, 23, 42, 0.6);
+        border-radius: 9999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(99, 102, 241, 0.4);
+        background: rgba(99, 102, 241, 0.5);
         border-radius: 9999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(99, 102, 241, 0.7);
+        background: rgba(99, 102, 241, 0.8);
     }
 </style>

@@ -218,13 +218,15 @@
             </div>
         </template>
 
-        <!-- Hasil Pencarian Kode 108 (Grid Chips) -->
-        <div x-show="filtered108Results.length > 0" class="max-h-60 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+        <!-- Hasil Pencarian Kode 108 (Grid Chips dengan Scroll Kontainer Terbatas) -->
+        <div x-show="search108Query && search108Query.trim().length > 0 && filtered108Results.length > 0" 
+             style="max-height: 280px !important; overflow-y: auto !important;" 
+             class="space-y-1.5 custom-scrollbar pr-2 p-1.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 shadow-inner">
             <template x-for="item in filtered108Results" :key="item.id">
                 <div @click="select108FromSearch(item)"
                     class="p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 text-left"
                     :class="formData.jenis_astap_id === item.id 
-                        ? 'bg-indigo-500/20 border-indigo-400 text-white' 
+                        ? 'bg-indigo-500/20 border-indigo-400 text-white shadow-md shadow-indigo-500/10' 
                         : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800/80 hover:border-indigo-500/40'">
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
@@ -233,8 +235,8 @@
                         </div>
                         <div class="text-[10px] text-slate-400 truncate mt-0.5" x-text="item.path || ''"></div>
                     </div>
-                    <span class="text-[10px] px-2 py-0.5 rounded font-bold shrink-0"
-                        :class="formData.jenis_astap_id === item.id ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400'">
+                    <span class="text-[10px] px-2.5 py-1 rounded-lg font-bold shrink-0 transition-colors"
+                        :class="formData.jenis_astap_id === item.id ? 'bg-indigo-500 text-white shadow' : 'bg-slate-800 text-slate-400'">
                         <span x-show="formData.jenis_astap_id === item.id">✓ Terpilih</span>
                         <span x-show="formData.jenis_astap_id !== item.id">Pilih</span>
                     </span>
@@ -388,8 +390,11 @@
                     <span class="text-xs font-mono text-emerald-400 font-extrabold" x-text="'Rp ' + formatRupiah(formData.total_realisasi)"></span>
                 </div>
 
-                <div class="relative">
-                    <span class="absolute left-3.5 top-2.5 text-slate-400 text-xs font-bold font-mono">Rp</span>
+                <div class="flex items-center rounded-xl border transition-all overflow-hidden"
+                    :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-950 border-slate-700 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400/30'">
+                    <span class="px-3.5 py-2.5 bg-slate-900 border-r border-slate-800 text-slate-400 text-xs font-bold font-mono select-none flex items-center justify-center">
+                        Rp
+                    </span>
                     <input type="text"
                         :value="formData.total_realisasi ? Number(formData.total_realisasi).toLocaleString('id-ID') : ''"
                         :readonly="isMultiItemActive"
@@ -400,9 +405,9 @@
                             $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                             onTotalRealisasiInput(num);
                         "
-                        :class="isMultiItemActive ? 'bg-slate-950/70 border-slate-800 text-emerald-400 cursor-not-allowed' : 'bg-slate-950 border-slate-700 text-emerald-300'"
+                        :class="isMultiItemActive ? 'text-emerald-400 cursor-not-allowed' : 'text-emerald-300'"
                         placeholder="0"
-                        class="w-full border focus:border-indigo-400 rounded-xl px-4 py-2.5 pl-10 text-xs font-bold font-mono focus:outline-none">
+                        class="w-full bg-transparent px-3.5 py-2.5 text-xs font-bold font-mono placeholder-slate-600 focus:outline-none">
                 </div>
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 pt-1">

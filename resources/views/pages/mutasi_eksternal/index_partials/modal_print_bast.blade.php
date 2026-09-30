@@ -310,7 +310,7 @@
                             <!-- Kolom Kanan: PIHAK KEDUA (Yang Menerima - Pengurus Barang RSUD) -->
                             <div>
                                 <p class="m-0">Yang Menerima,</p>
-                                <p class="font-bold m-0">Pengurus Barang Aset RSUD</p>
+                                <p class="font-bold m-0">Pengurus Barang Pengguna</p>
                                 
                                 <!-- TTD Elektronik BSrE Pengurus Barang (Pak Budi Hartono) -->
                                 <div class="my-1 flex items-center justify-center" style="height: 55px; min-height: 55px;">
@@ -319,7 +319,7 @@
                                             <img :src="getQrCodeSvg(window.location.origin + '/validasi-tte/' + (printDoc.qr_hash || printDoc.nomor_bast || 'BSRE-PELIMPAHAN-BMD'))" alt="QR TTE" style="width:36px; height:36px; flex-shrink:0;">
                                             <div style="font-size:7.5px; line-height:1.35; color:#1e293b;">
                                                 <div style="font-weight:700; color:#134e4a;">DITANDATANGANI ELEKTRONIK</div>
-                                                <div style="color:#374151;">Pengurus Barang Aset</div>
+                                                <div style="color:#374151;">Pengurus Barang Pengguna</div>
                                                 <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                             </div>
                                         </div>

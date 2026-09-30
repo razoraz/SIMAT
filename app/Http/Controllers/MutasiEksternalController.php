@@ -38,33 +38,228 @@ class MutasiEksternalController extends Controller
     }
 
     /**
+     * Dapatkan direktori instansi/SKPD pengirim beserta riwayat data pejabat penyerahnya (Pihak Pertama).
+     * Satu instansi dapat memiliki lebih dari 1 pejabat (Kepala Dinas, Pengurus Barang, PPK, atau pejabat baru pengganti).
+     */
+    public static function getSkpdDirectory()
+    {
+        // 1. Data default instansi umum di Bondowoso / Provinsi beserta opsi beberapa pejabat
+        $directory = [
+            'Dinas Kesehatan Kabupaten Bondowoso' => [
+                'nama'       => 'Dinas Kesehatan Kabupaten Bondowoso',
+                'pj_nama'    => 'dr. Mohammad Imron, M.MKes',
+                'pj_nip'     => '197005121998031005',
+                'pj_jabatan' => 'Kepala Dinas Kesehatan',
+                'pejabats'   => [
+                    [
+                        'nama'    => 'dr. Mohammad Imron, M.MKes',
+                        'nip'     => '197005121998031005',
+                        'jabatan' => 'Kepala Dinas Kesehatan',
+                    ],
+                    [
+                        'nama'    => 'Pengurus Barang Dinkes Bondowoso',
+                        'nip'     => '-',
+                        'jabatan' => 'Pengurus Barang Pengguna',
+                    ],
+                ],
+            ],
+            'BPKAD Kabupaten Bondowoso' => [
+                'nama'       => 'BPKAD Kabupaten Bondowoso',
+                'pj_nama'    => 'Drs. H. Ansori, M.Si',
+                'pj_nip'     => '196803151994021003',
+                'pj_jabatan' => 'Kepala BPKAD Kabupaten Bondowoso',
+                'pejabats'   => [
+                    [
+                        'nama'    => 'Drs. H. Ansori, M.Si',
+                        'nip'     => '196803151994021003',
+                        'jabatan' => 'Kepala BPKAD Kabupaten Bondowoso',
+                    ],
+                    [
+                        'nama'    => 'Kepala Bidang Pengelolaan Aset Daerah BPKAD',
+                        'nip'     => '-',
+                        'jabatan' => 'Kabid Aset Daerah BPKAD',
+                    ],
+                ],
+            ],
+            'Pemerintah Kabupaten Bondowoso' => [
+                'nama'       => 'Pemerintah Kabupaten Bondowoso',
+                'pj_nama'    => 'Hj. Haeriah Yuliati, S.Sos., M.M.',
+                'pj_nip'     => '196907201990032005',
+                'pj_jabatan' => 'Sekretaris Daerah Kab. Bondowoso',
+                'pejabats'   => [
+                    [
+                        'nama'    => 'Hj. Haeriah Yuliati, S.Sos., M.M.',
+                        'nip'     => '196907201990032005',
+                        'jabatan' => 'Sekretaris Daerah Kab. Bondowoso',
+                    ],
+                ],
+            ],
+            'Dinas Kesehatan Provinsi Jawa Timur' => [
+                'nama'       => 'Dinas Kesehatan Provinsi Jawa Timur',
+                'pj_nama'    => 'Prof. Dr. dr. Erwin Astha Triyono, Sp.PD, K-PTI',
+                'pj_nip'     => '196509181990031007',
+                'pj_jabatan' => 'Kepala Dinas Kesehatan Provinsi Jatim',
+                'pejabats'   => [
+                    [
+                        'nama'    => 'Prof. Dr. dr. Erwin Astha Triyono, Sp.PD, K-PTI',
+                        'nip'     => '196509181990031007',
+                        'jabatan' => 'Kepala Dinas Kesehatan Provinsi Jatim',
+                    ],
+                ],
+            ],
+        ];
+
+        // 2. Query dari mutasi_eksternals (diurutkan desc agar data terbaru menjadi default pj_nama)
+        try {
+            $records = MutasiEksternal::whereNotNull('opd_asal')
+                ->where('opd_asal', '!=', '')
+                ->orderBy('id', 'desc')
+                ->get(['opd_asal', 'pj_asal_nama', 'pj_asal_nip', 'pj_asal_jabatan']);
+
+            foreach ($records as $r) {
+                $nama = trim($r->opd_asal);
+                if (!$nama) continue;
+
+                $pjNama = ($r->pj_asal_nama && $r->pj_asal_nama !== 'Pejabat Penyerah OPD Pengirim') ? trim($r->pj_asal_nama) : '';
+                $pjNip  = ($r->pj_asal_nip && $r->pj_asal_nip !== '-') ? trim($r->pj_asal_nip) : '';
+                $pjJab  = ($r->pj_asal_jabatan && $r->pj_asal_jabatan !== 'Pengurus Barang / PPK Asal') ? trim($r->pj_asal_jabatan) : '';
+
+                if (!isset($directory[$nama])) {
+                    $directory[$nama] = [
+                        'nama'       => $nama,
+                        'pj_nama'    => $pjNama,
+                        'pj_nip'     => $pjNip,
+                        'pj_jabatan' => $pjJab,
+                        'pejabats'   => [],
+                    ];
+                }
+
+                if ($pjNama) {
+                    $exists = false;
+                    foreach ($directory[$nama]['pejabats'] as $p) {
+                        if (strtolower(trim($p['nama'])) === strtolower($pjNama)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $directory[$nama]['pejabats'][] = [
+                            'nama'    => $pjNama,
+                            'nip'     => $pjNip,
+                            'jabatan' => $pjJab,
+                        ];
+                    }
+                    if (empty($directory[$nama]['pj_nama'])) {
+                        $directory[$nama]['pj_nama'] = $pjNama;
+                        $directory[$nama]['pj_nip'] = $pjNip;
+                        $directory[$nama]['pj_jabatan'] = $pjJab;
+                    }
+                }
+            }
+
+            // 3. Tambahan dari Astap spesifikasi_json
+            $astaps = Astap::where('sumber_dana', 'pelimpahan_skpd')
+                ->whereNotNull('mutasi_asal')
+                ->where('mutasi_asal', '!=', '')
+                ->orderBy('id', 'desc')
+                ->get(['mutasi_asal', 'spesifikasi_json']);
+
+            foreach ($astaps as $a) {
+                $nama = trim($a->mutasi_asal);
+                if (!$nama) continue;
+                $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (is_string($a->spesifikasi_json) ? json_decode($a->spesifikasi_json, true) : []);
+                $pjNama = !empty($spec['pj_asal_nama']) ? trim($spec['pj_asal_nama']) : '';
+                $pjNip  = !empty($spec['pj_asal_nip']) ? trim($spec['pj_asal_nip']) : '';
+                $pjJab  = !empty($spec['pj_asal_jabatan']) ? trim($spec['pj_asal_jabatan']) : '';
+
+                if (!isset($directory[$nama])) {
+                    $directory[$nama] = [
+                        'nama'       => $nama,
+                        'pj_nama'    => $pjNama,
+                        'pj_nip'     => $pjNip,
+                        'pj_jabatan' => $pjJab,
+                        'pejabats'   => [],
+                    ];
+                }
+
+                if ($pjNama) {
+                    $exists = false;
+                    foreach ($directory[$nama]['pejabats'] as $p) {
+                        if (strtolower(trim($p['nama'])) === strtolower($pjNama)) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (!$exists) {
+                        $directory[$nama]['pejabats'][] = [
+                            'nama'    => $pjNama,
+                            'nip'     => $pjNip,
+                            'jabatan' => $pjJab,
+                        ];
+                    }
+                    if (empty($directory[$nama]['pj_nama'])) {
+                        $directory[$nama]['pj_nama'] = $pjNama;
+                        $directory[$nama]['pj_nip'] = $pjNip;
+                        $directory[$nama]['pj_jabatan'] = $pjJab;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('getSkpdDirectory error: ' . $e->getMessage());
+        }
+
+        return $directory;
+    }
+
+    /**
+     * Dapatkan daftar unik pejabat penyerah (Pihak Pertama) yang pernah tercatat.
+     */
+    public static function getDistinctPejabatPenyerahs()
+    {
+        $directory = self::getSkpdDirectory();
+        $list = [];
+
+        foreach ($directory as $skpd => $item) {
+            if (!empty($item['pejabats'])) {
+                foreach ($item['pejabats'] as $p) {
+                    $list[] = [
+                        'nama'    => $p['nama'],
+                        'nip'     => $p['nip'] ?? '',
+                        'jabatan' => $p['jabatan'] ?? '',
+                        'skpd'    => $item['nama'] ?? $skpd,
+                    ];
+                }
+            } elseif (!empty($item['pj_nama'])) {
+                $list[] = [
+                    'nama'    => $item['pj_nama'],
+                    'nip'     => $item['pj_nip'] ?? '',
+                    'jabatan' => $item['pj_jabatan'] ?? '',
+                    'skpd'    => $item['nama'] ?? $skpd,
+                ];
+            }
+        }
+
+        return collect($list)
+            ->unique(fn($i) => strtolower(trim($i['nama'])))
+            ->values()
+            ->all();
+    }
+
+    /**
      * Dapatkan daftar instansi/SKPD pengirim yang pernah tercatat di database.
      */
     public static function getDistinctSkpdAsals()
     {
-        return MutasiEksternal::whereNotNull('opd_asal')
-            ->where('opd_asal', '!=', '')
+        $directory = self::getSkpdDirectory();
+        $list = array_keys($directory);
+
+        $dbExtras = AstapPelimpahanSkpd::whereNotNull('skpd_asal')
+            ->where('skpd_asal', '!=', '')
             ->distinct()
-            ->pluck('opd_asal')
-            ->merge(
-                AstapPelimpahanSkpd::whereNotNull('skpd_asal')
-                    ->where('skpd_asal', '!=', '')
-                    ->distinct()
-                    ->pluck('skpd_asal')
-            )
-            ->merge(
-                Astap::where('sumber_dana', 'pelimpahan_skpd')
-                    ->whereNotNull('mutasi_asal')
-                    ->where('mutasi_asal', '!=', '')
-                    ->distinct()
-                    ->pluck('mutasi_asal')
-            )
-            ->merge([
-                'Dinas Kesehatan Kabupaten Bondowoso',
-                'BPKAD Kabupaten Bondowoso',
-                'Pemerintah Kabupaten Bondowoso',
-                'Dinas Kesehatan Provinsi Jawa Timur',
-            ])
+            ->pluck('skpd_asal')
+            ->toArray();
+
+        return collect(array_merge($list, $dbExtras))
             ->map(fn($v) => trim($v))
             ->filter()
             ->unique()
@@ -215,9 +410,18 @@ class MutasiEksternalController extends Controller
         $dbMaster108 = JenisAstap::getNested108();
         $dbUnits = Unit::orderBy('nama')->get();
         $dbPejabats = self::getDistinctPejabats();
-        $dbSkpdAsals = self::getDistinctSkpdAsals();
+        $dbSkpdDirectory = self::getSkpdDirectory();
+        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
+        $dbPejabatPenyerahs = self::getDistinctPejabatPenyerahs();
 
-        return view('pages.mutasi_eksternal.form', compact('dbMaster108', 'dbUnits', 'dbPejabats', 'dbSkpdAsals'));
+        return view('pages.mutasi_eksternal.form', compact(
+            'dbMaster108', 
+            'dbUnits', 
+            'dbPejabats', 
+            'dbSkpdAsals', 
+            'dbSkpdDirectory', 
+            'dbPejabatPenyerahs'
+        ));
     }
 
     /**
@@ -397,8 +601,8 @@ class MutasiEksternalController extends Controller
             $specJson['lainnya_spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
         }
 
-        $ppkNama = $request->input('ppk_nama', 'dr. H. Yus Priyatna, Sp.P');
-        $ppkNip  = $request->input('ppk_nip', '196904121999031004');
+        $ppkNama = $request->input('ppk_nama', 'BUDI HARTONO, S.Sos');
+        $ppkNip  = $request->input('ppk_nip', '197602292008011010');
         if ($request->filled('ppk_nama')) {
             $astapPayload['ppk_nama'] = $ppkNama;
             $specJson['ppk_nama'] = $ppkNama;
@@ -432,7 +636,7 @@ class MutasiEksternalController extends Controller
                 'pj_asal_jabatan'     => $request->input('pj_asal_jabatan') ?: 'Pengurus Barang / PPK Asal',
                 'pj_tujuan_nama'      => $ppkNama,
                 'pj_tujuan_nip'       => $ppkNip,
-                'pj_tujuan_jabatan'   => 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi',
+                'pj_tujuan_jabatan'   => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
                 'nomor_sk_dasar'      => $request->input('nomor_sk_dasar', $data['mutasi_nomor_bamb']),
                 'tgl_estimasi_kembali'=> $request->input('tgl_estimasi_kembali'),
                 'dokumen_lampiran'    => $dokumenPath,
@@ -531,9 +735,19 @@ class MutasiEksternalController extends Controller
         $dbMaster108 = JenisAstap::getNested108();
         $dbUnits = Unit::orderBy('nama')->get();
         $dbPejabats = self::getDistinctPejabats();
-        $dbSkpdAsals = self::getDistinctSkpdAsals();
+        $dbSkpdDirectory = self::getSkpdDirectory();
+        $dbSkpdAsals = array_values(array_unique(array_keys($dbSkpdDirectory)));
+        $dbPejabatPenyerahs = self::getDistinctPejabatPenyerahs();
 
-        return view('pages.mutasi_eksternal.form', compact('astap', 'dbMaster108', 'dbUnits', 'dbPejabats', 'dbSkpdAsals'));
+        return view('pages.mutasi_eksternal.form', compact(
+            'astap', 
+            'dbMaster108', 
+            'dbUnits', 
+            'dbPejabats', 
+            'dbSkpdAsals', 
+            'dbSkpdDirectory', 
+            'dbPejabatPenyerahs'
+        ));
     }
 
     /**
@@ -708,8 +922,10 @@ class MutasiEksternalController extends Controller
             $specJson['lainnya_spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
         }
 
-        $ppkNama = $request->input('ppk_nama', $item->ppk_nama ?: 'dr. H. Yus Priyatna, Sp.P');
-        $ppkNip  = $request->input('ppk_nip', $item->ppk_nip ?: '196904121999031004');
+        $fallbackPbNama = ($item->ppk_nama && !str_contains(strtolower($item->ppk_nama), 'yus')) ? $item->ppk_nama : 'BUDI HARTONO, S.Sos';
+        $fallbackPbNip  = ($item->ppk_nip && !str_contains($item->ppk_nip, '19771002') && !str_contains($item->ppk_nip, '19690412')) ? $item->ppk_nip : '197602292008011010';
+        $ppkNama = $request->input('ppk_nama', $fallbackPbNama);
+        $ppkNip  = $request->input('ppk_nip', $fallbackPbNip);
         if ($request->filled('ppk_nama')) {
             $astapPayload['ppk_nama'] = $ppkNama;
             $specJson['ppk_nama'] = $ppkNama;
@@ -744,7 +960,7 @@ class MutasiEksternalController extends Controller
                     'pj_asal_jabatan'     => $request->input('pj_asal_jabatan') ?: ($item->mutasiEksternal?->pj_asal_jabatan ?: 'Pengurus Barang / PPK Asal'),
                     'pj_tujuan_nama'      => $ppkNama,
                     'pj_tujuan_nip'       => $ppkNip,
-                    'pj_tujuan_jabatan'   => 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi',
+                    'pj_tujuan_jabatan'   => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
                     'nomor_sk_dasar'      => $request->input('nomor_sk_dasar', $data['mutasi_nomor_bamb']),
                     'tgl_estimasi_kembali'=> $request->input('tgl_estimasi_kembali'),
                     'dokumen_lampiran'    => $dokumenPath,
@@ -962,9 +1178,9 @@ class MutasiEksternalController extends Controller
                 'pj_asal_nama'        => 'Pejabat Penyerah OPD Pengirim',
                 'pj_asal_nip'         => '-',
                 'pj_asal_jabatan'     => 'Pengurus Barang / PPK Asal',
-                'pj_tujuan_nama'      => $a->ppk_nama ?: 'dr. H. Yus Priyatna, Sp.P',
-                'pj_tujuan_nip'       => $a->ppk_nip ?: '196904121999031004',
-                'pj_tujuan_jabatan'   => 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi',
+                'pj_tujuan_nama'      => 'BUDI HARTONO, S.Sos',
+                'pj_tujuan_nip'       => '197602292008011010',
+                'pj_tujuan_jabatan'   => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
                 'nomor_sk_dasar'      => $nomorBamb,
                 'status'              => 'Disahkan (Selesai)',
                 'jumlah_volume'       => (int) ($a->jumlah_volume ?: 1),

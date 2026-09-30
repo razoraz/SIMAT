@@ -133,8 +133,10 @@
                                     <span>Nilai Perolehan BMD Satuan (Rp)</span>
                                     <span class="text-emerald-400 font-mono text-[9px]">Sesuai BAMB / SKPD Asal</span>
                                 </label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2 text-slate-500 text-xs font-bold font-mono">Rp</span>
+                                <div class="flex items-center rounded-xl bg-slate-950 border border-slate-700 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-400/30 overflow-hidden transition-all">
+                                    <span class="px-3 py-2 bg-slate-900 border-r border-slate-800 text-slate-400 text-xs font-bold font-mono select-none flex items-center justify-center">
+                                        Rp
+                                    </span>
                                     <input type="text"
                                         :value="item.lainnya_nilai_satuan ? Number(item.lainnya_nilai_satuan).toLocaleString('id-ID') : ''"
                                         @input="
@@ -144,7 +146,7 @@
                                             syncTotalsFromItems();
                                         "
                                         placeholder="0"
-                                        class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3 py-2 pl-9 text-xs font-mono font-bold text-emerald-300 focus:outline-none">
+                                        class="w-full bg-transparent px-3 py-2 text-xs font-mono font-bold text-emerald-300 placeholder-slate-600 focus:outline-none">
                                 </div>
                             </div>
                         </div>
