@@ -266,6 +266,9 @@
                                                     <span class="text-white font-bold text-xs" x-text="(mItem.mesin_nama_barang ? (mItem.mesin_nama_barang + ' • ') : '') + ((mItem.mesin_merk || mItem.mesin_type) ? ((mItem.mesin_merk || '') + ' ' + (mItem.mesin_type || '')) : '-')"></span>
                                                     <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
                                                           x-text="(mItem.mesin_jumlah_barang || 1) + ' ' + (mItem.mesin_satuan || 'Unit')"></span>
+                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
+                                                          :class="mItem.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                                          x-text="mItem.is_extracom ? '📦 Extracom' : '⚙️ Reguler'"></span>
                                                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
                                                           :class="getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items').badge_class">
                                                         <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, mIdx, 'mesin_items').dot_class"></span>
@@ -454,29 +457,67 @@
                     <template x-if="getEffectiveKibCategory(selectedAstapDetail) === 'KIB E'">
                         <div class="space-y-3">
                             <template x-for="(lItem, lIdx) in getLainnyaItemsForDetail(selectedAstapDetail)" :key="lIdx">
-                                <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-orange-500/30 space-y-2.5 shadow-sm">
+                                <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-purple-500/30 space-y-2.5 shadow-sm hover:border-purple-400/50 transition-all">
                                     <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2 gap-2">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <span class="px-2.5 py-0.5 rounded-lg bg-orange-500/20 text-orange-300 font-mono font-bold text-[11px] border border-orange-500/30"
+                                            <span class="px-2.5 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 font-mono font-bold text-[11px] border border-purple-500/30"
                                                   x-text="'Item #' + (lIdx + 1)"></span>
-                                            <span class="text-white font-bold text-xs" x-text="lItem.lainnya_nama_barang || selectedAstapDetail.nama_barang"></span>
+                                            <span class="text-white font-bold text-xs" x-text="lItem.lainnya_nama_barang || lItem.lainnya_judul || selectedAstapDetail.nama_barang"></span>
+                                            
+                                            <!-- Badge Status Akuntansi: Extracom vs Reguler -->
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
+                                                  :class="lItem.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                                  x-text="lItem.is_extracom ? '📦 Extracom' : '⚙️ Reguler'"></span>
+
+                                            <!-- Badge Kategori KIB E -->
+                                            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold border"
+                                                  :class="{
+                                                      'bg-amber-500/15 text-amber-300 border-amber-500/30': (lItem.kib_e_type || 'buku') === 'buku',
+                                                      'bg-purple-500/15 text-purple-300 border-purple-500/30': lItem.kib_e_type === 'kesenian',
+                                                      'bg-emerald-500/15 text-emerald-300 border-emerald-500/30': lItem.kib_e_type === 'hewan_tumbuhan'
+                                                  }"
+                                                  x-text="lItem.kib_e_type === 'kesenian' ? '🎨 Kesenian' : (lItem.kib_e_type === 'hewan_tumbuhan' ? '🌿 Hewan/Tanaman' : '📚 Buku Pustaka')"></span>
+
+                                            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/30"
+                                                  x-text="(lItem.lainnya_jumlah || 1) + ' ' + (lItem.lainnya_satuan || 'Buah')"></span>
+
+                                            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border inline-flex items-center gap-1.5"
+                                                  :class="getRincianKondisiStats(selectedAstapDetail, lIdx, 'lainnya_items').badge_class">
+                                                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="getRincianKondisiStats(selectedAstapDetail, lIdx, 'lainnya_items').dot_class"></span>
+                                                <span x-text="'Kondisi: ' + getRincianKondisiStats(selectedAstapDetail, lIdx, 'lainnya_items').text"></span>
+                                            </span>
+
+                                            <template x-if="getRincianNibar(selectedAstapDetail, lIdx, 'lainnya_items')">
+                                                <span class="text-[11px] text-cyan-400 font-mono font-bold"
+                                                      :title="getRincianNibar(selectedAstapDetail, lIdx, 'lainnya_items').tooltip"
+                                                      x-text="getRincianNibar(selectedAstapDetail, lIdx, 'lainnya_items').label"></span>
+                                            </template>
                                         </div>
                                         <div class="text-[11px] font-mono">
-                                            <strong class="text-emerald-400 font-bold" x-text="selectedAstapDetail.jumlah_realisasi"></strong>
+                                            <span class="text-slate-400">Subtotal: </span>
+                                            <strong class="text-emerald-400 font-bold" x-text="'Rp ' + (Number(lItem.lainnya_jumlah || 1) * Number(lItem.lainnya_nilai_satuan || 0)).toLocaleString('id-ID')"></strong>
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-[10.5px]">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[10.5px]">
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">📚 Judul / Pencipta</span>
-                                            <span class="text-orange-300 font-bold block truncate" x-text="(selectedAstapDetail.spesifikasi_json?.judul || selectedAstapDetail.spesifikasi_json?.buku_judul || '-') + ' / ' + (selectedAstapDetail.spesifikasi_json?.pencipta || '-')"></span>
+                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏷️ Judul / Uraian Rincian</span>
+                                            <span class="text-purple-300 font-bold block truncate" :title="lItem.lainnya_judul" x-text="lItem.lainnya_judul || selectedAstapDetail.nama_barang || '-'"></span>
+                                            <span class="text-slate-400 text-[10px]" x-text="'Pencipta/Brand: ' + (lItem.lainnya_pencipta || '-')"></span>
                                         </div>
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🔍 Spesifikasi</span>
-                                            <span class="text-cyan-300 font-medium block truncate" x-text="selectedAstapDetail.spesifikasi_json?.spesifikasi || selectedAstapDetail.spesifikasi_json?.buku_spesifikasi || '-'"></span>
+                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🧪 Bahan &amp; Ukuran</span>
+                                            <span class="text-cyan-300 font-semibold block truncate" x-text="'Bhn: ' + (lItem.lainnya_bahan || '-')"></span>
+                                            <span class="text-slate-300 text-[9.5px] block truncate" x-text="'Uk: ' + (lItem.lainnya_ukuran || '-') + (lItem.lainnya_tahun ? (' • Thn: ' + lItem.lainnya_tahun) : '')"></span>
                                         </div>
                                         <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Unit Pemegang</span>
-                                            <span class="text-teal-300 font-medium block truncate" x-text="selectedAstapDetail.alamat_barang || '-'"></span>
+                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">💰 Nilai Wajar Satuan</span>
+                                            <span class="text-emerald-300 font-mono font-bold block text-[11px]" x-text="'Rp ' + Number(lItem.lainnya_nilai_satuan || 0).toLocaleString('id-ID')"></span>
+                                            <span class="text-[9.5px]" :class="lItem.is_extracom ? 'text-amber-400 font-medium' : 'text-slate-400'" x-text="lItem.is_extracom ? 'Maksimal Rp 300.000' : 'Aset Tetap Intrakomptabel'"></span>
+                                        </div>
+                                        <div class="p-2 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                            <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">🏥 Ruang / Unit Pemegang</span>
+                                            <span class="text-amber-300 font-medium block truncate" :title="lItem.ruang_pemegang" x-text="lItem.ruang_pemegang || selectedAstapDetail.alamat_barang || '-'"></span>
+                                            <span class="text-slate-400 text-[9px] block truncate" x-text="'Ket: ' + (lItem.lainnya_spesifikasi || lItem.lainnya_keterangan || '-')"></span>
                                         </div>
                                     </div>
                                 </div>

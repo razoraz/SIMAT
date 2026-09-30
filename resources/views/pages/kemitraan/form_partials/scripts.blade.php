@@ -255,7 +255,11 @@
                 return parts.join(' ') || `${diffDays} Hari`;
             },
 
-            // Form Data Payload (Sesuai Controller backend `astap.store_kemitraan`)
+            // State Mode Edit Kemitraan
+            isEditMode: false,
+            editId: null,
+
+            // Form Data Payload (Sesuai Controller backend `astap.store_kemitraan` & `astap.update_kemitraan`)
             formData: {
                 // Step 1: Legalitas PKS & Mitra
                 mitra_nama: '',
@@ -486,9 +490,17 @@
 
             init() {
                 this.prepareMaster108();
-                this.syncTahunTriwulanFromPks();
-                this.syncCascadingToActiveSkema();
-                this.syncTotalsFromItems();
+
+                // Cek apakah sedang dalam Mode Ubah Data (data di-inject oleh Controller backend)
+                if (window.editAstapData && window.editAstapData.id) {
+                    this.isEditMode = true;
+                    this.editId = window.editAstapData.id;
+                    this.hydrateFromEditData(window.editAstapData);
+                } else {
+                    this.syncTahunTriwulanFromPks();
+                    this.syncCascadingToActiveSkema();
+                    this.syncTotalsFromItems();
+                }
 
                 this.$watch('formData.tanggal_pks', (newVal) => {
                     this.syncTahunTriwulanFromPks(newVal);
@@ -725,6 +737,87 @@
 
                 this.master108 = parsed;
                 this.flat108 = flat;
+            },
+
+            // Hidrasi form input dari data eksisting saat mode Ubah Aset Kemitraan
+            hydrateFromEditData(d) {
+                if (!d) return;
+                const kemitraan = d.kemitraan || {};
+                const spec = (typeof d.spesifikasi_json === 'object' && d.spesifikasi_json !== null) 
+                    ? d.spesifikasi_json 
+                    : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
+
+                // Step 1: Legalitas PKS & Mitra
+                this.formData.mitra_nama = kemitraan.mitra_nama || spec.mitra_nama || '';
+                this.formData.mitra_pimpinan = kemitraan.mitra_pimpinan || spec.mitra_pimpinan || '';
+                this.formData.mitra_alamat = kemitraan.mitra_alamat || spec.mitra_alamat || '';
+                this.formData.nomor_pks = kemitraan.nomor_pks || d.bast_dokumen_nomor || spec.nomor_pks || '';
+                this.formData.tanggal_pks = kemitraan.tanggal_pks || d.bast_dokumen_tanggal || spec.tanggal_pks || '';
+                this.formData.skema_kemitraan = kemitraan.skema_kemitraan || spec.skema_kemitraan || 'Sewa';
+                this.formData.tanggal_mulai = kemitraan.tanggal_mulai || spec.tanggal_mulai || '';
+                this.formData.tanggal_selesai = kemitraan.tanggal_selesai || spec.tanggal_selesai || '';
+                this.formData.tahun_perolehan = d.tahun_perolehan || kemitraan.tahun || {{ date('Y') }};
+                this.formData.triwulan = d.triwulan || kemitraan.triwulan || 'TW I';
+                this.formData.kemitraan_keterangan = d.keterangan_tambahan || kemitraan.keterangan || spec.keterangan || '';
+
+                // Step 2: Klasifikasi 108 & Nilai Aset
+                this.formData.nama_barang = d.nama_barang || '';
+                this.formData.jenis_astap_id = d.jenis_astap_id || null;
+                this.formData.jumlah_volume = d.jumlah_volume || 1;
+                this.formData.satuan = d.satuan || 'Unit';
+                this.formData.total_realisasi = Number(d.total_realisasi || 0);
+
+                // Step 3: Rincian Fisik, Ruangan & PPK
+                this.formData.unit_id = d.unit_id || '';
+                this.formData.kondisi = spec.kondisi || 'Baik';
+                this.formData.alamat_barang = d.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                this.formData.ppk_nama = d.ppk_nama || spec.ppk_nama || 'BUDI HARTONO, S.Sos';
+                this.formData.ppk_nip = d.ppk_nip || spec.ppk_nip || '19760229 200801 1 010';
+                this.formData.is_extracomtable = Boolean(d.is_extracomtable || spec.is_extracomtable);
+
+                // Rehidrasi Repeater KIB A-E
+                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
+                    this.formData.mesin_items = spec.mesin_items.map(m => ({
+                        ...m,
+                        is_extracom: Boolean(m.is_extracom)
+                    }));
+                }
+                if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                    this.formData.tanah_items = spec.tanah_items;
+                }
+                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                    this.formData.gedung_items = spec.gedung_items;
+                }
+                if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
+                    this.formData.jaringan_items = spec.jaringan_items;
+                }
+                if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
+                    this.formData.lainnya_items = spec.lainnya_items.map(l => ({
+                        ...l,
+                        is_extracom: Boolean(l.is_extracom)
+                    }));
+                }
+
+                // Rehidrasi Sub-Sub 108
+                this.syncCascadingToActiveSkema();
+                if (this.formData.jenis_astap_id) {
+                    let targetSubSub = this.flat108.find(x => x.id === this.formData.jenis_astap_id);
+                    if (!targetSubSub && d.jenis_astap) {
+                        targetSubSub = {
+                            id: d.jenis_astap.id,
+                            kode: d.jenis_astap.kode,
+                            nama: d.jenis_astap.nama,
+                            jenisKode: '1.5.2',
+                            subKode: this.activeSkemaKode
+                        };
+                        this.flat108.push(targetSubSub);
+                    }
+                    if (targetSubSub) {
+                        this.selectedSubSub = targetSubSub;
+                    }
+                }
+
+                this.syncTotalsFromItems();
             },
 
             // Getter: Deteksi jenis objek aset berdasarkan kode 108 atau nama barang
@@ -1192,18 +1285,40 @@
                 return (Number(item.lainnya_jumlah || 1) * Number(item.lainnya_nilai_satuan || 0));
             },
 
+            getKibEPrefix(item) {
+                if (!item) return '1.3.5';
+                if (item.kib_e_type === 'kesenian') return '1.3.5.02';
+                if (item.kib_e_type === 'hewan_tumbuhan') return '1.3.5.03';
+                return '1.3.5.01';
+            },
+
             // Helper Live Search 108 untuk Tiap Item Sheet KIB (Max 5 hasil, Zero-Lag)
             filterJenisAstap108(prefix, query, isOpen) {
                 if (!isOpen) return [];
                 const q = (query || '').toLowerCase().trim();
                 const results = [];
                 const list = this.flat108 || [];
+                const pfx = prefix || '';
+
                 for (let i = 0; i < list.length; i++) {
                     const it = list[i];
-                    if (!it || !it.kode || !it.kode.startsWith(prefix)) continue;
+                    if (!it || !it.kode || !it.kode.startsWith(pfx)) continue;
                     if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
                         results.push(it);
                         if (results.length >= 5) break; // Strict 5-item cutoff agar tidak lag!
+                    }
+                }
+
+                // Fallback jika tidak ada hasil spesifik di sub-prefix (misal 1.3.5.01), cari di parent prefix 1.3.5
+                if (results.length === 0 && pfx.length > 5) {
+                    const parentPrefix = pfx.substring(0, 5); // '1.3.5'
+                    for (let i = 0; i < list.length; i++) {
+                        const it = list[i];
+                        if (!it || !it.kode || !it.kode.startsWith(parentPrefix)) continue;
+                        if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
+                            results.push(it);
+                            if (results.length >= 5) break;
+                        }
                     }
                 }
                 return results;
@@ -1929,17 +2044,27 @@
                                     return false;
                                 }
                             }
-                            if (it.kib_e_type === 'buku' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
-                                const msg = `Judul Buku pada Item #${num} tidak boleh kosong.`;
-                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
-                                this.setStepError(2, msg);
-                                return false;
-                            }
-                            if (it.kib_e_type === 'hewan_tumbuhan' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
-                                const msg = `Jenis Hewan / Tanaman pada Item #${num} tidak boleh kosong.`;
-                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
-                                this.setStepError(2, msg);
-                                return false;
+                            // Validasi spesifikasi berdasarkan status akuntansi (Extracom vs Reguler)
+                            if (it.is_extracom) {
+                                if (!it.lainnya_judul || !it.lainnya_judul.trim()) {
+                                    const msg = `Nama / Uraian Rincian Barang Extracom pada Item #${num} tidak boleh kosong.`;
+                                    this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                    this.setStepError(2, msg);
+                                    return false;
+                                }
+                            } else {
+                                if (it.kib_e_type === 'buku' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
+                                    const msg = `Judul Buku pada Item #${num} tidak boleh kosong.`;
+                                    this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                    this.setStepError(2, msg);
+                                    return false;
+                                }
+                                if (it.kib_e_type === 'hewan_tumbuhan' && (!it.lainnya_judul || !it.lainnya_judul.trim())) {
+                                    const msg = `Jenis Hewan / Tanaman pada Item #${num} tidak boleh kosong.`;
+                                    this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                    this.setStepError(2, msg);
+                                    return false;
+                                }
                             }
                             if (!it.lainnya_jumlah || parseInt(it.lainnya_jumlah) < 1) {
                                 const msg = `Jumlah volume pada Item #${num} minimal 1.`;
@@ -1981,6 +2106,44 @@
                         return false;
                     }
                 } else if (s === 3) {
+                    const today = this.getTodayTimestamp();
+
+                    if (this.isTanah && this.formData.tanah_items) {
+                        for (let i = 0; i < this.formData.tanah_items.length; i++) {
+                            const tgl = this.formData.tanah_items[i].tanah_sertifikat_tgl;
+                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
+                                const msg = `Tanggal Terbit Sertifikat pada Bidang Tanah #${i + 1} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(3, msg);
+                                return false;
+                            }
+                        }
+                    }
+
+                    if (this.isGedung && this.formData.gedung_items) {
+                        for (let i = 0; i < this.formData.gedung_items.length; i++) {
+                            const tgl = this.formData.gedung_items[i].gedung_dokumen_tgl;
+                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
+                                const msg = `Tanggal Terbit PBG/IMB pada Bangunan #${i + 1} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(3, msg);
+                                return false;
+                            }
+                        }
+                    }
+
+                    if (this.isJaringan && this.formData.jaringan_items) {
+                        for (let i = 0; i < this.formData.jaringan_items.length; i++) {
+                            const tgl = this.formData.jaringan_items[i].jaringan_dokumen_tgl;
+                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
+                                const msg = `Tanggal Dokumen Kontrak pada Ruas #${i + 1} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(3, msg);
+                                return false;
+                            }
+                        }
+                    }
+
                     if (!this.formData.ppk_nama || !this.formData.ppk_nama.trim()) {
                         const msg = 'Mohon tentukan Nama Pejabat Pembuat Komitmen (PPK).';
                         this.showToast('Validasi Langkah 3 Gagal', msg, 'error');
@@ -2130,8 +2293,12 @@
                 this.formData.spesifikasi_json = specJson;
                 this.isSubmitting = true;
 
+                const submitUrl = this.isEditMode 
+                    ? ('/astap/update-kemitraan/' + this.editId)
+                    : '{{ route('astap.store_kemitraan') }}';
+
                 try {
-                    const res = await fetch('{{ route('astap.store_kemitraan') }}', {
+                    const res = await fetch(submitUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2144,7 +2311,7 @@
                     const json = await res.json();
 
                     if (res.ok && json.success) {
-                        this.showToast('Berhasil Disimpan!', json.message || 'Data Aset Kemitraan berhasil dicatat ke SIMAT-RK.', 'success');
+                        this.showToast('Berhasil Disimpan!', json.message || (this.isEditMode ? 'Perubahan Aset Kemitraan berhasil disimpan.' : 'Data Aset Kemitraan berhasil dicatat ke SIMAT-RK.'), 'success');
                         setTimeout(() => {
                             // BUG-02 FIX: fallback redirect seharusnya ke master kemitraan, bukan astap.index
                             window.location.href = json.redirect || '{{ route('master.kemitraan') }}';

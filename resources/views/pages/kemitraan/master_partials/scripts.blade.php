@@ -600,7 +600,7 @@
                 }
                 const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
                 if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
-                    return this.syncRepeaterItemsWithVolume(spec.lainnya_items, targetTotal, ['lainnya_jumlah_barang']);
+                    return this.syncRepeaterItemsWithVolume(spec.lainnya_items, targetTotal, ['lainnya_jumlah', 'lainnya_jumlah_barang']);
                 }
                 return [];
             },

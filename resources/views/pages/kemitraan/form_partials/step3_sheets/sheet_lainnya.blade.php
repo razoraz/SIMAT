@@ -1,4 +1,4 @@
-﻿<!-- ========================================================================= -->
+<!-- ========================================================================= -->
 <!-- SHEET SPESIFIKASI: ASET TETAP LAINNYA (KIB E / AKUN 1.5.2.xx.005)         -->
 <!-- MULTI-ITEM REPEATER (MODEL PERSIS KIB B PERALATAN & MESIN)                 -->
 <!-- ========================================================================= -->
@@ -70,25 +70,53 @@
                         </button>
                     </div>
 
-                    <!-- Pilihan Kategori KIB E untuk Item Ini -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        <div @click="item.kib_e_type = 'buku'"
-                            :class="(item.kib_e_type || 'buku') === 'buku' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100'"
-                            class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold text-amber-300">
-                            <span>📚 Buku Perpustakaan</span>
-                            <span x-show="(item.kib_e_type || 'buku') === 'buku'">✓</span>
+                    <!-- Pilihan Kategori KIB E untuk Item Ini (Menentukan Klasifikasi & Akun PMDN 108 Awal) -->
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📑 Kategori Asal PMDN 108:</span>
+                            </span>
+                            <span class="text-[9.5px] text-cyan-400 font-medium" x-show="item.is_extracom">
+                                ✨ Tab menentukan kode 108 asal &bull; Area isian bawah otomatis form Extracom baku
+                            </span>
                         </div>
-                        <div @click="item.kib_e_type = 'kesenian'"
-                            :class="item.kib_e_type === 'kesenian' ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100'"
-                            class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold text-purple-300">
-                            <span>🎨 Kesenian &amp; Budaya</span>
-                            <span x-show="item.kib_e_type === 'kesenian'">✓</span>
-                        </div>
-                        <div @click="item.kib_e_type = 'hewan_tumbuhan'"
-                            :class="item.kib_e_type === 'hewan_tumbuhan' ? 'border-emerald-500 bg-emerald-950/40 ring-1 ring-emerald-500' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100'"
-                            class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold text-emerald-300">
-                            <span>🌿 Hewan &amp; Tumbuhan</span>
-                            <span x-show="item.kib_e_type === 'hewan_tumbuhan'">✓</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <div @click="item.kib_e_type = 'buku'"
+                                :class="(item.kib_e_type || 'buku') === 'buku' ? 'border-amber-500 bg-amber-950/40 ring-1 ring-amber-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-amber-300/80'"
+                                class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                <div class="flex items-center space-x-2">
+                                    <span>📚</span>
+                                    <div class="text-left">
+                                        <div class="text-xs">Buku Perpustakaan</div>
+                                        <div class="text-[9px] text-slate-400 font-mono font-normal">Kode 108: 1.3.5.01</div>
+                                    </div>
+                                </div>
+                                <span x-show="(item.kib_e_type || 'buku') === 'buku'" class="text-amber-400 font-bold">✓</span>
+                            </div>
+                            <div @click="item.kib_e_type = 'kesenian'"
+                                :class="item.kib_e_type === 'kesenian' ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-purple-300/80'"
+                                class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                <div class="flex items-center space-x-2">
+                                    <span>🎨</span>
+                                    <div class="text-left">
+                                        <div class="text-xs">Kesenian &amp; Budaya</div>
+                                        <div class="text-[9px] text-slate-400 font-mono font-normal">Kode 108: 1.3.5.02</div>
+                                    </div>
+                                </div>
+                                <span x-show="item.kib_e_type === 'kesenian'" class="text-purple-400 font-bold">✓</span>
+                            </div>
+                            <div @click="item.kib_e_type = 'hewan_tumbuhan'"
+                                :class="item.kib_e_type === 'hewan_tumbuhan' ? 'border-emerald-500 bg-emerald-950/40 ring-1 ring-emerald-500 text-white font-extrabold shadow-sm' : 'border-slate-800 bg-slate-950/60 opacity-60 hover:opacity-100 text-emerald-300/80'"
+                                class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between text-xs font-bold">
+                                <div class="flex items-center space-x-2">
+                                    <span>🌿</span>
+                                    <div class="text-left">
+                                        <div class="text-xs">Hewan &amp; Tumbuhan</div>
+                                        <div class="text-[9px] text-slate-400 font-mono font-normal">Kode 108: 1.3.5.03</div>
+                                    </div>
+                                </div>
+                                <span x-show="item.kib_e_type === 'hewan_tumbuhan'" class="text-emerald-400 font-bold">✓</span>
+                            </div>
                         </div>
                     </div>
 
@@ -133,9 +161,9 @@
                                  class="absolute z-50 left-0 right-0 mt-1 bg-slate-900 border border-purple-500/40 rounded-xl shadow-2xl overflow-hidden divide-y divide-slate-800">
                                 <div class="px-3 py-1.5 bg-slate-950/80 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
                                     <span>Pilihan Rekomendasi PMDN 108 (Maks. 5):</span>
-                                    <span class="text-purple-400 font-mono text-[9px]">PMDN 108 Aset Lainnya (1.3.5)</span>
+                                    <span class="text-purple-400 font-mono text-[9px]" x-text="'Prefix: ' + getKibEPrefix(item)"></span>
                                 </div>
-                                <template x-for="opt in filterJenisAstap108('1.3.5', item.lainnya_nama_barang, item.isFilterOpen)" :key="opt.id">
+                                <template x-for="opt in filterJenisAstap108(getKibEPrefix(item), item.lainnya_nama_barang, item.isFilterOpen)" :key="opt.id">
                                     <div @click="select108ForItem(item, opt, 'lainnya')"
                                          class="px-3.5 py-2 hover:bg-purple-500/20 cursor-pointer transition-colors flex items-center justify-between group">
                                         <div class="flex-1 pr-2">
@@ -144,7 +172,7 @@
                                         <span class="font-mono text-[10px] text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/30 shrink-0" x-text="opt.kode"></span>
                                     </div>
                                 </template>
-                                <div x-show="filterJenisAstap108('1.3.5', item.lainnya_nama_barang, item.isFilterOpen).length === 0" 
+                                <div x-show="filterJenisAstap108(getKibEPrefix(item), item.lainnya_nama_barang, item.isFilterOpen).length === 0" 
                                      class="px-3.5 py-2.5 text-center text-xs text-slate-400 italic">
                                     <span>Gunakan nama yang Anda ketik jika tidak ada dalam daftar PMDN 108 di atas.</span>
                                 </div>
@@ -198,8 +226,18 @@
                         </div>
                     </div>
 
-                    <!-- 1. Form Spesifik: Buku Perpustakaan -->
-                    <div x-show="(item.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <!-- ========================================================================= -->
+                    <!-- AREA FORM ISIAN SPESIFIKASI                                               -->
+                    <!-- ========================================================================= -->
+
+                    <!-- 1. Form Spesifik: Buku Perpustakaan (Hanya Tampil Saat Non-Extracom) -->
+                    <div x-show="!item.is_extracom && (item.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>📚 Atribut Buku Perpustakaan &amp; Pustaka Medis:</span>
+                            </span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold">KIB E Reguler</span>
+                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="sm:col-span-2">
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
@@ -240,13 +278,13 @@
                         </div>
                     </div>
 
-                    <!-- 2. Form Spesifik: Kesenian & Budaya -->
-                    <div x-show="item.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <!-- 2. Form Spesifik: Kesenian & Budaya (Hanya Tampil Saat Non-Extracom) -->
+                    <div x-show="!item.is_extracom && item.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
                             <span class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>🎨 Atribut Fisik Benda Seni / Budaya:</span>
                             </span>
-                            <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">KIB E Kesenian</span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-bold">KIB E Reguler</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
@@ -282,8 +320,14 @@
                         </div>
                     </div>
 
-                    <!-- 3. Form Spesifik: Hewan & Tumbuhan -->
-                    <div x-show="item.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <!-- 3. Form Spesifik: Hewan & Tumbuhan (Hanya Tampil Saat Non-Extracom) -->
+                    <div x-show="!item.is_extracom && item.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                <span>🌿 Atribut Fisik Hewan &amp; Tumbuhan:</span>
+                            </span>
+                            <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">KIB E Reguler</span>
+                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
@@ -304,6 +348,95 @@
                                 <input type="text" x-model="item.lainnya_spesifikasi"
                                     placeholder="Penghijauan Area Taman Rawat Inap Barat"
                                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Form Spesifikasi Ekstrakomtabel Baku (Universal untuk Semua Kategori KIB E saat Extracom) -->
+                    <div x-show="item.is_extracom" class="p-4 rounded-2xl bg-slate-950/70 border border-cyan-500/40 space-y-3 shadow-inner relative overflow-hidden">
+                        <!-- Glow Ambient Cyan -->
+                        <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                        <!-- Header Form Extracom Baku -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-cyan-500/20 pb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-base">📦</span>
+                                <div>
+                                    <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider block">
+                                        Form Spesifikasi Ekstrakomtabel Baku (Universal)
+                                    </span>
+                                    <span class="text-[9.5px] text-slate-400">
+                                        Standar isian barang non-kapitalisasi &bull; Klasifikasi PMDN 108 asal: 
+                                        <strong class="text-cyan-400 font-mono" x-text="item.kib_e_type === 'kesenian' ? 'Kesenian & Kebudayaan (1.3.5.02)' : (item.kib_e_type === 'hewan_tumbuhan' ? 'Hewan & Tanaman (1.3.5.03)' : 'Buku Perpustakaan (1.3.5.01)')"></strong>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="text-[9.5px] px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold self-start sm:self-auto font-mono">
+                                Nilai Satuan ≤ Rp 300.000
+                            </span>
+                        </div>
+
+                        <!-- Grid Isian Extracom Baku -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
+                            <!-- Nama / Uraian Rincian Barang -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-300 text-[10px] mb-1 font-semibold flex items-center justify-between">
+                                    <span>Nama / Uraian Rincian Barang Ekstrakomtabel <span class="text-rose-400">*</span></span>
+                                    <span class="text-[9px] text-slate-400 font-normal">Identitas spesifik barang di ruangan</span>
+                                </label>
+                                <input type="text" x-model="item.lainnya_judul"
+                                    placeholder="Contoh: Buku Panduan Saku Pelayanan Medis / Bibit Tanaman Polybag / Plakat Hiasan Meja"
+                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none transition-all">
+                            </div>
+
+                            <!-- Merk / Pabrikan / Pencipta / Varietas -->
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Merk / Brand / Produsen / Varietas
+                                </label>
+                                <input type="text" x-model="item.lainnya_pencipta"
+                                    placeholder="Contoh: Percetakan Medis / Nursery Flora / Pengrajin Lokal / Standar"
+                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                            </div>
+
+                            <!-- Bahan / Material Pembuatan -->
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Bahan / Material Pembuatan
+                                </label>
+                                <input type="text" x-model="item.lainnya_bahan"
+                                    placeholder="Contoh: Kertas Art Paper / Plastik Mika / Kayu / Akrilik / Bibit Organik"
+                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                            </div>
+
+                            <!-- Ukuran / Dimensi / Spesifikasi Fisik -->
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Ukuran / Dimensi / Volume Fisik
+                                </label>
+                                <input type="text" x-model="item.lainnya_ukuran"
+                                    placeholder="Contoh: A5 (14.8 x 21 cm) / Tinggi 25 cm / Tebal 3 mm / Standar"
+                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                            </div>
+
+                            <!-- Asal Daerah / Sumber Pengadaan -->
+                            <div>
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Asal Barang / Sumber Mitra
+                                </label>
+                                <input type="text" x-model="item.lainnya_asal_daerah"
+                                    placeholder="Contoh: Pengadaan Mitra KSO / Bondowoso / Lokal"
+                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all">
+                            </div>
+
+                            <!-- Keterangan / Spesifikasi Khusus Barang Extracom -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
+                                    Spesifikasi Teknis / Keterangan Tambahan Barang Extracom
+                                </label>
+                                <input type="text" x-model="item.lainnya_spesifikasi"
+                                    placeholder="Contoh: Perlengkapan penunjang non-kapitalisasi operasional rawat inap mitra KSO"
+                                    class="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/70 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-cyan-300 focus:outline-none transition-all">
                             </div>
                         </div>
                     </div>

@@ -1699,6 +1699,314 @@ Route::middleware('auth')->group(function () {
                     ->with('success', 'Data Aset Kemitraan "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_kemitraan');
 
+            // ─── Form Kemitraan Pihak Ketiga (Edit & Update) ─────────────────
+            Route::get('/astap/{id}/edit-kemitraan', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
+                $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'kemitraan'])->findOrFail($id);
+                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbPenyedias = $getDistinctPenyedias();
+                $dbPejabats = $getDistinctPejabats();
+
+                $dbMitraKemitraans = \App\Models\AstapKemitraan::whereNotNull('mitra_nama')
+                    ->where('mitra_nama', '!=', '')
+                    ->where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get(['mitra_nama', 'mitra_pimpinan', 'mitra_alamat'])
+                    ->groupBy(fn($item) => strtolower(trim($item->mitra_nama)))
+                    ->map(function($group) {
+                        $latest = $group->first();
+                        $withPimpinan = $group->first(fn($it) => !empty(trim($it->mitra_pimpinan ?? '')));
+                        $withAlamat = $group->first(fn($it) => !empty(trim($it->mitra_alamat ?? '')));
+                        return [
+                            'nama'     => trim($latest->mitra_nama),
+                            'pimpinan' => trim($withPimpinan ? $withPimpinan->mitra_pimpinan : ($latest->mitra_pimpinan ?? '')),
+                            'alamat'   => trim($withAlamat ? $withAlamat->mitra_alamat : ($latest->mitra_alamat ?? '')),
+                        ];
+                    })
+                    ->values();
+
+                $dbPpkKemitraans = \App\Models\Astap::where('sumber_dana', 'kemitraan')
+                    ->whereNotNull('ppk_nama')
+                    ->where('ppk_nama', '!=', '')
+                    ->where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get(['ppk_nama', 'ppk_nip'])
+                    ->filter(fn($it) => strlen(trim($it->ppk_nama)) >= 4 && !in_array(strtolower(trim($it->ppk_nama)), ['dsc', 'gf', 'test', 'tester']))
+                    ->groupBy(fn($item) => strtolower(trim($item->ppk_nama)))
+                    ->map(function($group) {
+                        $latest = $group->first();
+                        $withNip = $group->first(fn($it) => !empty(trim($it->ppk_nip ?? '')));
+                        return [
+                            'nama' => trim($latest->ppk_nama),
+                            'nip'  => trim($withNip ? $withNip->ppk_nip : ($latest->ppk_nip ?? '')),
+                        ];
+                    })
+                    ->values();
+
+                if ($dbPpkKemitraans->isEmpty() || !$dbPpkKemitraans->contains(fn($p) => stripos($p['nama'], 'BUDI HARTONO') !== false)) {
+                    $dbPpkKemitraans->prepend([
+                        'nama' => 'BUDI HARTONO, S.Sos',
+                        'nip'  => '19760229 200801 1 010'
+                    ]);
+                }
+
+                return view('pages.kemitraan.form', compact(
+                    'astap', 'dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats',
+                    'dbMitraKemitraans', 'dbPpkKemitraans'
+                ));
+            })->name('astap.edit_kemitraan');
+
+            Route::match(['put', 'post'], '/astap/update-kemitraan/{id}', function (\Illuminate\Http\Request $request, $id) {
+                $astap = \App\Models\Astap::with(['registers', 'kemitraan'])->findOrFail($id);
+
+                $data = $request->validate([
+                    'nama_barang'          => 'required|string|max:500',
+                    'jenis_astap_id'       => 'required|integer|exists:jenis_astaps,id',
+                    'tahun_perolehan'      => 'required|integer|min:1990|max:2100',
+                    'jumlah_volume'        => 'required|integer|min:1',
+                    'satuan'               => 'required|string|max:100',
+                    'total_realisasi'      => 'required|numeric|min:0',
+                    'triwulan'             => 'required|string|in:TW I,TW II,TW III,TW IV',
+                    'skema_kemitraan'      => 'nullable|string|in:Sewa,KSO,KSP,BGS,BSG,BGS/BSG,KSPI,KSO/KSP',
+                    'mitra_nama'           => 'required|string|max:500',
+                    'mitra_pimpinan'       => 'nullable|string|max:255',
+                    'mitra_alamat'         => 'nullable|string|max:1000',
+                    'ppk_nama'             => 'nullable|string|max:255',
+                    'ppk_nip'              => 'nullable|string|max:100',
+                    'nomor_pks'            => 'required|string|max:255',
+                    'tanggal_pks'          => ['required', 'string', 'regex:/^(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{1,2}-\d{1,2})$/'],
+                    'tanggal_mulai'        => 'nullable|string|max:20',
+                    'tanggal_selesai'      => 'nullable|string|max:20',
+                    'kemitraan_keterangan' => 'nullable|string|max:2000',
+                    'unit_id'              => 'nullable|integer|exists:units,id',
+                    'alamat_barang'        => 'nullable|string|max:1000',
+                    'kondisi'              => 'nullable|string|in:Baik,Kurang Baik,Rusak Ringan,Rusak Berat',
+                ]);
+
+                $parseDateHelper = function($val) {
+                    if (empty($val)) return null;
+                    $val = trim($val);
+                    if (preg_match('/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/', $val, $m)) {
+                        return strtotime(sprintf('%04d-%02d-%02d 00:00:00', $m[3], $m[2], $m[1]));
+                    }
+                    if (preg_match('/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/', $val, $m)) {
+                        return strtotime(sprintf('%04d-%02d-%02d 00:00:00', $m[1], $m[2], $m[3]));
+                    }
+                    $t = strtotime(str_replace('/', '-', $val));
+                    return $t ? strtotime(date('Y-m-d 00:00:00', $t)) : null;
+                };
+
+                $todayTimestamp = strtotime(date('Y-m-d 23:59:59'));
+                $tPks = $parseDateHelper($data['tanggal_pks']);
+
+                if ($tPks && $tPks > $todayTimestamp) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.',
+                        'errors'  => [
+                            'tanggal_pks' => ['Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.']
+                        ]
+                    ], 422);
+                }
+
+                if (!empty($data['tanggal_mulai'])) {
+                    $tMulai = $parseDateHelper($data['tanggal_mulai']);
+                    if ($tMulai && $tMulai > $todayTimestamp) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.',
+                            'errors'  => [
+                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.']
+                            ]
+                        ], 422);
+                    }
+                    if ($tMulai && $tPks && $tMulai < $tPks) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.',
+                            'errors'  => [
+                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.']
+                            ]
+                        ], 422);
+                    }
+                }
+
+                if (!empty($data['tanggal_mulai']) && !empty($data['tanggal_selesai'])) {
+                    $tMulai = $parseDateHelper($data['tanggal_mulai']);
+                    $tSelesai = $parseDateHelper($data['tanggal_selesai']);
+                    if ($tMulai && $tSelesai && $tSelesai < $tMulai) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.',
+                            'errors'  => [
+                                'tanggal_selesai' => ['Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.']
+                            ]
+                        ], 422);
+                    }
+                }
+
+                $totalRealisasi = (float) $data['total_realisasi'];
+                $totalVolume    = max(1, (int) $data['jumlah_volume']);
+                $hargaSatuan    = $totalRealisasi / $totalVolume;
+                $tahun          = (int) $data['tahun_perolehan'];
+                $kondisiItem    = $data['kondisi'] ?: 'Baik';
+
+                $isExtracom = $request->boolean('is_extracomtable');
+                if (!$isExtracom && $request->has('mesin_items')) {
+                    foreach ((array)$request->input('mesin_items') as $m) {
+                        if (!empty($m['is_extracom'])) { $isExtracom = true; break; }
+                    }
+                }
+                if (!$isExtracom && $request->has('lainnya_items')) {
+                    foreach ((array)$request->input('lainnya_items') as $l) {
+                        if (!empty($l['is_extracom'])) { $isExtracom = true; break; }
+                    }
+                }
+
+                $specJson = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : [];
+                $specJson['sumber_dana']      = 'kemitraan';
+                $specJson['is_extracomtable'] = $isExtracom;
+                $specJson['mitra_nama']       = $data['mitra_nama'];
+                $specJson['mitra_pimpinan']   = $data['mitra_pimpinan'] ?? null;
+                $specJson['mitra_alamat']     = $data['mitra_alamat'] ?? null;
+                $specJson['ppk_nama']         = $data['ppk_nama'] ?? null;
+                $specJson['ppk_nip']          = $data['ppk_nip'] ?? null;
+                $specJson['nomor_pks']        = $data['nomor_pks'];
+                $specJson['tanggal_pks']      = $data['tanggal_pks'];
+                $specJson['tanggal_mulai']    = $data['tanggal_mulai'] ?? null;
+                $specJson['tanggal_selesai']  = $data['tanggal_selesai'] ?? null;
+                $specJson['kondisi']          = $kondisiItem;
+                $specJson['keterangan']       = $data['kemitraan_keterangan'] ?? null;
+
+                if ($request->has('spesifikasi_json') && is_array($request->input('spesifikasi_json'))) {
+                    $specJson = array_merge($specJson, $request->input('spesifikasi_json'));
+                }
+
+                $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
+                foreach ($repeaterKeys as $rk) {
+                    if ($request->has($rk) && !is_null($request->input($rk))) {
+                        $specJson[$rk] = $request->input($rk);
+                    }
+                }
+
+                $mesinItems = $request->input('mesin_items') ?? ($specJson['mesin_items'] ?? null);
+                if (is_array($mesinItems) && count($mesinItems) > 0) {
+                    $specJson['mesin_items'] = $mesinItems;
+                    $firstM = $mesinItems[0];
+                    if (empty($specJson['merk'])) $specJson['merk'] = $firstM['mesin_merk'] ?? '';
+                    if (empty($specJson['type'])) $specJson['type'] = $firstM['mesin_type'] ?? '';
+                    if (empty($specJson['no_pabrik'])) $specJson['no_pabrik'] = $firstM['mesin_no_pabrik'] ?? '';
+                    if (empty($specJson['bahan'])) $specJson['bahan'] = $firstM['mesin_bahan'] ?? '';
+                    if (empty($specJson['ukuran'])) $specJson['ukuran'] = $firstM['mesin_ukuran'] ?? '';
+                    if (empty($specJson['tahun_pembuatan'])) $specJson['tahun_pembuatan'] = $firstM['mesin_tahun_pembuatan'] ?? null;
+                    if (empty($specJson['kondisi'])) $specJson['kondisi'] = $firstM['mesin_kondisi'] ?? 'Baik';
+                    if (empty($specJson['no_rangka'])) $specJson['no_rangka'] = $firstM['mesin_no_rangka'] ?? '';
+                    if (empty($specJson['no_mesin'])) $specJson['no_mesin'] = $firstM['mesin_no_mesin'] ?? '';
+                    if (empty($specJson['no_bpkb'])) $specJson['no_bpkb'] = $firstM['mesin_no_bpkb'] ?? '';
+                    if (!empty($firstM['mesin_kode_barang'])) $specJson['mesin_kode_barang'] = $firstM['mesin_kode_barang'];
+                }
+
+                if ($request->has('tanah_items') && is_array($request->input('tanah_items')) && count($request->input('tanah_items')) > 0) {
+                    $tItems = $request->input('tanah_items');
+                    $firstT = $tItems[0];
+                    $totalLuas = array_sum(array_map(fn($it) => (float)($it['tanah_luas_m2'] ?? 0), $tItems));
+                    $allSertifikat = array_filter(array_map(fn($it) => $it['tanah_sertifikat_no'] ?? null, $tItems));
+
+                    $specJson['tanah_items'] = $tItems;
+                    $specJson['luas_m2'] = $totalLuas;
+                    $specJson['hak_tanah'] = $firstT['tanah_hak'] ?? 'Hak Pakai';
+                    $specJson['sertifikat_no'] = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($firstT['tanah_sertifikat_no'] ?? null);
+                    $specJson['sertifikat_tgl'] = $firstT['tanah_sertifikat_tgl'] ?? null;
+                    $specJson['penggunaan'] = $firstT['tanah_penggunaan'] ?? null;
+                    $specJson['tanah_jumlah_bidang'] = count($tItems);
+                    if (!empty($firstT['tanah_kode_barang'])) $specJson['tanah_kode_barang'] = $firstT['tanah_kode_barang'];
+                }
+
+                if ($request->has('gedung_items') && is_array($request->input('gedung_items')) && count($request->input('gedung_items')) > 0) {
+                    $gItems = $request->input('gedung_items');
+                    $firstG = $gItems[0];
+                    if (!empty($firstG['gedung_kode_barang'])) $specJson['gedung_kode_barang'] = $firstG['gedung_kode_barang'];
+                }
+
+                if ($request->has('jaringan_items') && is_array($request->input('jaringan_items')) && count($request->input('jaringan_items')) > 0) {
+                    $jItems = $request->input('jaringan_items');
+                    $firstJ = $jItems[0];
+                    if (!empty($firstJ['jaringan_kode_barang'])) $specJson['jaringan_kode_barang'] = $firstJ['jaringan_kode_barang'];
+                }
+
+                if ($request->has('lainnya_items') && is_array($request->input('lainnya_items')) && count($request->input('lainnya_items')) > 0) {
+                    $lItems = $request->input('lainnya_items');
+                    $firstL = $lItems[0];
+                    if (!empty($firstL['lainnya_kode_barang'])) $specJson['lainnya_kode_barang'] = $firstL['lainnya_kode_barang'];
+                }
+
+                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $request) {
+                    $astap->update([
+                        'nama_barang'          => $data['nama_barang'],
+                        'jenis_astap_id'       => $data['jenis_astap_id'],
+                        'tahun_perolehan'      => $tahun,
+                        'jumlah_volume'        => $totalVolume,
+                        'satuan'               => $data['satuan'],
+                        'harga_satuan'         => $hargaSatuan,
+                        'jumlah_realisasi'     => $totalRealisasi,
+                        'total_realisasi'      => $totalRealisasi,
+                        'triwulan'             => $data['triwulan'],
+                        'bast_dokumen_nomor'   => $data['nomor_pks'],
+                        'bast_dokumen_tanggal' => \App\Models\Astap::parseDateInput($data['tanggal_pks']) ?? $data['tanggal_pks'],
+                        'keterangan_tambahan'  => $data['kemitraan_keterangan'] ?? null,
+                        'unit_id'              => $data['unit_id'] ?? null,
+                        'alamat_barang'        => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
+                        'is_extracomtable'     => $isExtracom,
+                        'ppk_nama'             => $data['ppk_nama'] ?? null,
+                        'ppk_nip'              => $data['ppk_nip'] ?? null,
+                        'spesifikasi_json'     => $specJson,
+                    ]);
+
+                    // Sinkronisasi record AstapKemitraan
+                    $kemitraan = \App\Models\AstapKemitraan::firstOrNew(['astap_id' => $astap->id]);
+                    $kemitraan->fill([
+                        'mitra_nama'       => $data['mitra_nama'],
+                        'mitra_pimpinan'   => $data['mitra_pimpinan'] ?? null,
+                        'mitra_alamat'     => $data['mitra_alamat'] ?? null,
+                        'nomor_pks'        => $data['nomor_pks'],
+                        'tanggal_pks'      => $data['tanggal_pks'],
+                        'skema_kemitraan'  => (function($s) {
+                            $s = trim($s ?? 'Sewa');
+                            $allowed = ['Sewa', 'KSO', 'KSP', 'BGS', 'BSG', 'BGS/BSG', 'KSPI', 'KSO/KSP'];
+                            return in_array($s, $allowed) ? $s : 'Sewa';
+                        })($data['skema_kemitraan'] ?? $request->input('skema_kemitraan', 'Sewa')),
+                        'tanggal_mulai'    => $data['tanggal_mulai'] ?? null,
+                        'tanggal_selesai'  => $data['tanggal_selesai'] ?? null,
+                        'status_konsesi'   => $kemitraan->status_konsesi ?: 'Aktif',
+                        'jumlah_volume'    => $totalVolume,
+                        'satuan'           => $data['satuan'],
+                        'nilai_aset'       => $totalRealisasi,
+                        'tahun'            => $tahun,
+                        'triwulan'         => $data['triwulan'],
+                        'keterangan'       => $data['kemitraan_keterangan'] ?? null,
+                        'user_id'          => auth()->id(),
+                    ]);
+                    $kemitraan->save();
+
+                    // Update informasi umum pada tabel AstapRegister yang sudah ada
+                    \App\Models\AstapRegister::where('astap_id', $astap->id)->update([
+                        'unit_id'         => $data['unit_id'] ?? null,
+                        'tahun_perolehan' => $tahun,
+                    ]);
+                });
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Perubahan Aset Kemitraan "' . $astap->nama_barang . '" berhasil disimpan!',
+                        'redirect' => route('master.kemitraan')
+                    ]);
+                }
+
+                return redirect()->route('master.kemitraan')
+                    ->with('success', 'Perubahan Aset Kemitraan "' . $astap->nama_barang . '" berhasil disimpan.');
+            })->name('astap.update_kemitraan');
+
             Route::get('/astap/create', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
                 $rawMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {
@@ -1720,6 +2028,9 @@ Route::middleware('auth')->group(function () {
                 $astap = \App\Models\Astap::with(['registers', 'jenisAstap', 'rekeningBelanja', 'jenisPengadaan'])->findOrFail($id);
                 if ($astap->sumber_dana === 'pelimpahan_skpd' || !empty($astap->mutasi_nomor_bamb) || !empty($astap->mutasi_asal)) {
                     return redirect()->route('astap.edit_mutasi_eksternal', ['id' => $id, 'from' => request('from', 'eksternal')]);
+                }
+                if ($astap->sumber_dana === 'kemitraan') {
+                    return redirect()->route('astap.edit_kemitraan', ['id' => $id]);
                 }
                 $rawMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbMaster108 = array_values(array_filter($rawMaster108, function ($j) {

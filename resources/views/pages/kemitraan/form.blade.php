@@ -1,6 +1,16 @@
-<x-layout title="Form Input Aset Kemitraan Pihak Ketiga (KSO) - SIMAT-RK">
-    @section('page-title', 'Pencatatan Aset Kemitraan (KSO)')
-    @section('breadcrumb', 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan')
+@php
+    $isEdit = isset($astap) && $astap;
+    $pageTitle = $isEdit ? 'Ubah Data Aset Kemitraan (KSO)' : 'Pencatatan Aset Kemitraan (KSO)';
+    $pageBreadcrumb = $isEdit ? 'Master Aset / Kelola Kemitraan Aset / Ubah Aset Kemitraan' : 'Master Aset / Kelola Kemitraan Aset / Tambah Aset Kemitraan';
+@endphp
+
+<x-layout :title="($isEdit ? 'Form Ubah Aset Kemitraan Pihak Ketiga (KSO)' : 'Form Input Aset Kemitraan Pihak Ketiga (KSO)') . ' - SIMAT-RK'">
+    @section('page-title', $pageTitle)
+    @section('breadcrumb', $pageBreadcrumb)
+
+    <script>
+        window.editAstapData = @json($astap ?? null);
+    </script>
 
     <!-- 1. Script Logika Form (Alpine.js & State Management) -->
     @include('pages.kemitraan.form_partials.scripts')

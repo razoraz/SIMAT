@@ -523,7 +523,11 @@
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center space-x-2">
                                                 <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-300 font-mono text-[10px] font-bold flex items-center justify-center border border-purple-500/30" x-text="lIdx + 1"></span>
-                                                <span class="font-bold text-white text-xs truncate max-w-[200px]" x-text="lItem.lainnya_judul || ('Item #' + (lIdx + 1))"></span>
+                                                <span class="font-bold text-white text-xs truncate max-w-[170px]" x-text="lItem.lainnya_judul || ('Item #' + (lIdx + 1))"></span>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border"
+                                                      :class="lItem.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                                      x-text="lItem.is_extracom ? '📦 Extracom' : '⚙️ Reguler'">
+                                                </span>
                                             </div>
                                             <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-800 text-purple-300 border border-slate-700 shrink-0" x-text="(lItem.lainnya_jumlah || 1) + ' ' + (lItem.lainnya_satuan || 'Buah')"></span>
                                         </div>

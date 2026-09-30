@@ -1,4 +1,4 @@
-﻿<!-- ========================================================================= -->
+<!-- ========================================================================= -->
 <!-- SHEET SPESIFIKASI: GEDUNG & BANGUNAN (KIB C / AKUN 1.5.2.01.01.xx.003)    -->
 <!-- MULTI-ITEM REPEATER (MODEL PERSIS KIB B PERALATAN & MESIN)                 -->
 <!-- ========================================================================= -->
@@ -226,10 +226,13 @@
 
                                 <!-- Tanggal PBG / IMB -->
                                 <div>
-                                    <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
-                                        Tanggal Terbit PBG / IMB
-                                    </label>
-                                    <input type="text" x-datepicker x-model="item.gedung_dokumen_tgl"
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-slate-400 text-[10px] font-semibold">
+                                            Tanggal Terbit PBG / IMB
+                                        </label>
+                                        <span class="text-[9px] font-mono text-cyan-400/80 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
+                                    </div>
+                                    <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="item.gedung_dokumen_tgl"
                                         placeholder="dd/mm/yyyy"
                                         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all">
                                 </div>

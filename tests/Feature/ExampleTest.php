@@ -58,6 +58,19 @@ class ExampleTest extends TestCase
             $kemitraanRes->assertStatus(200);
             $kemitraanRes->assertViewHas('dbMitraKemitraans');
             $kemitraanRes->assertViewHas('dbPpkKemitraans');
+
+            $kemitraanAstap = \App\Models\Astap::where('sumber_dana', 'kemitraan')->first();
+            if ($kemitraanAstap) {
+                // Test edit kemitraan page
+                $editKemitraanRes = $this->actingAs($admin)->get("/astap/{$kemitraanAstap->id}/edit-kemitraan");
+                $editKemitraanRes->assertStatus(200);
+                $editKemitraanRes->assertViewHas('astap');
+                $editKemitraanRes->assertViewHas('dbMitraKemitraans');
+
+                // Test general /astap/{id}/edit redirects to edit-kemitraan
+                $redirectRes = $this->actingAs($admin)->get("/astap/{$kemitraanAstap->id}/edit");
+                $redirectRes->assertRedirect(route('astap.edit_kemitraan', ['id' => $kemitraanAstap->id]));
+            }
         }
     }
 }
