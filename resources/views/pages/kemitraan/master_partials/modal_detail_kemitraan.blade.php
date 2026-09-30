@@ -43,6 +43,14 @@
                     <span class="font-bold text-white block mt-0.5" x-text="activeDetail.kemitraan?.mitra_nama || '-'"></span>
                 </div>
                 <div>
+                    <span class="text-slate-500 block text-[10px]">Pimpinan Mitra (Kolom 22):</span>
+                    <span class="font-bold text-cyan-300 block mt-0.5" x-text="activeDetail.kemitraan?.mitra_pimpinan || activeDetail.astap?.spesifikasi_json?.mitra_pimpinan || '-'"></span>
+                </div>
+                <div class="sm:col-span-2">
+                    <span class="text-slate-500 block text-[10px]">Alamat Domisili Mitra (Kolom 23):</span>
+                    <span class="font-semibold text-slate-200 block mt-0.5" x-text="activeDetail.kemitraan?.mitra_alamat || activeDetail.astap?.spesifikasi_json?.mitra_alamat || '-'"></span>
+                </div>
+                <div>
                     <span class="text-slate-500 block text-[10px]">Skema Kemitraan:</span>
                     <span class="font-bold text-cyan-300 block mt-0.5" x-text="activeDetail.kemitraan?.skema_kemitraan || 'KSO'"></span>
                 </div>
@@ -50,7 +58,7 @@
                     <span class="text-slate-500 block text-[10px]">Tanggal Penandatanganan PKS:</span>
                     <span class="font-semibold text-slate-300 block mt-0.5" x-text="formatTanggal(activeDetail.kemitraan?.tanggal_pks)"></span>
                 </div>
-                <div>
+                <div class="sm:col-span-2">
                     <span class="text-slate-500 block text-[10px]">Masa Konsesi / Kerjasama:</span>
                     <span class="font-semibold text-slate-300 block mt-0.5" 
                           x-text="(formatTanggal(activeDetail.kemitraan?.tanggal_mulai) || '?') + ' s.d. ' + (formatTanggal(activeDetail.kemitraan?.tanggal_selesai) || '?')"></span>
@@ -169,6 +177,10 @@
                 <div class="sm:col-span-2">
                     <span class="text-slate-500 block text-[10px]">Ruangan Penempatan / Lokasi Fisik RSUD:</span>
                     <span class="font-bold text-emerald-300 block mt-0.5" x-text="activeDetail.register?.ruang_pemegang || activeDetail.astap?.alamat_barang || '-'"></span>
+                </div>
+                <div class="sm:col-span-2 pt-2 border-t border-slate-900">
+                    <span class="text-slate-500 block text-[10px]">Pejabat Pembuat Komitmen (PPK RSUD - Kolom 24 &amp; 25):</span>
+                    <span class="font-bold text-white block mt-0.5" x-text="(activeDetail.astap?.ppk_nama || activeDetail.astap?.spesifikasi_json?.ppk_nama || '-') + (activeDetail.astap?.ppk_nip ? ' (' + activeDetail.astap?.ppk_nip + ')' : '')"></span>
                 </div>
             </div>
         </div>

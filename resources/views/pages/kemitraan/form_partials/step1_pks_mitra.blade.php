@@ -136,6 +136,64 @@
             </div>
         </div>
 
+        <!-- Pimpinan Mitra & Alamat Mitra (Kolom 22 & 23 Sesuai Rekap Excel) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            <!-- Pimpinan Mitra -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <span>Pimpinan Mitra / Direktur Rekanan</span>
+                    </span>
+                    <span class="text-[10px] text-cyan-400/80 font-mono">Kolom 22</span>
+                </label>
+                <div class="relative">
+                    <input type="text" x-model="formData.mitra_pimpinan"
+                        placeholder="Nama Direktur / Penanggung Jawab Pihak Ketiga"
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-all placeholder-slate-500 shadow-inner">
+                    <button type="button" 
+                        x-show="formData.mitra_pimpinan"
+                        @click="formData.mitra_pimpinan = ''" 
+                        title="Kosongkan"
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                        class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                        ✕
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">Nama direktur, pimpinan cabang, atau kuasa rekanan penandatangan PKS.</p>
+            </div>
+
+            <!-- Alamat Mitra -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Alamat Mitra / Domisili Kantor</span>
+                    </span>
+                    <span class="text-[10px] text-cyan-400/80 font-mono">Kolom 23</span>
+                </label>
+                <div class="relative">
+                    <input type="text" x-model="formData.mitra_alamat"
+                        placeholder="Alamat kantor pusat / domisili rekanan mitra"
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-all placeholder-slate-500 shadow-inner">
+                    <button type="button" 
+                        x-show="formData.mitra_alamat"
+                        @click="formData.mitra_alamat = ''" 
+                        title="Kosongkan"
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                        class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                        ✕
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">Alamat kantor domisili rekanan mitra penyedia aset kemitraan.</p>
+            </div>
+        </div>
+
         <!-- Nomor & Tanggal PKS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

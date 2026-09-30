@@ -91,12 +91,20 @@
                     <span class="font-extrabold text-white block truncate" x-text="formData.mitra_nama || '-'"></span>
                 </div>
                 <div>
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Pimpinan Mitra (Kolom 22):</span>
+                    <span class="font-bold text-cyan-300 block truncate" x-text="formData.mitra_pimpinan || '-'"></span>
+                </div>
+                <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Nomor Perjanjian (PKS):</span>
                     <span class="font-mono font-bold text-cyan-300 block truncate" x-text="formData.nomor_pks || '-'"></span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Tanggal Dokumen PKS:</span>
                     <span class="font-semibold text-white block" x-text="formData.tanggal_pks || '-'"></span>
+                </div>
+                <div class="col-span-2">
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Alamat Domisili Mitra (Kolom 23):</span>
+                    <span class="text-slate-200 block truncate" x-text="formData.mitra_alamat || '-'"></span>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Bentuk / Skema Kemitraan:</span>
@@ -564,7 +572,137 @@
 
     </div>
 
+    <!-- 4. Pejabat Pembuat Komitmen (PPK) & Pengesahan (Sesuai Gambar 2 Rekap Excel Kolom 24 & 25) -->
+    <div class="p-6 rounded-3xl bg-slate-950/90 border border-cyan-500/30 space-y-5 shadow-2xl relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none"></div>
 
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+            <div class="flex items-center space-x-2.5">
+                <span class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-sm font-bold border border-cyan-500/30 shrink-0">
+                    👔
+                </span>
+                <div>
+                    <h3 class="text-xs sm:text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span>Pejabat Pembuat Komitmen (PPK RSUD)</span>
+                        <span class="text-rose-400">*</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Pengesahan penanggung jawab komitmen pengadaan &amp; kemitraan RSUD Koesnandi (Kolom 24 &amp; 25)</p>
+                </div>
+            </div>
+            <span class="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-400/10 px-2.5 py-1 rounded-lg border border-cyan-400/20 self-start sm:self-center shrink-0">
+                Kolom 24 &amp; 25 Excel
+            </span>
+        </div>
+
+        <!-- Rekomendasi / Preset PPK Cepat -->
+        <div class="flex flex-wrap items-center gap-2 pt-0.5">
+            <span class="text-[10px] text-slate-400 font-semibold mr-1">Rekomendasi Cepat:</span>
+            <!-- Shortcut Gambar 2: BUDI HARTONO, S.Sos -->
+            <button type="button" @click="selectPpk('BUDI HARTONO, S.Sos', '19760229 200801 1 010')"
+                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10.5px] font-bold transition-all border cursor-pointer"
+                :class="formData.ppk_nama === 'BUDI HARTONO, S.Sos' 
+                    ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-400' 
+                    : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-500/50 hover:text-white'">
+                <span>⭐</span>
+                <span>BUDI HARTONO, S.Sos</span>
+                <span class="text-[9.5px] font-mono opacity-80">(19760229 200801 1 010)</span>
+            </button>
+
+            <!-- Loop Pejabat lain dari database jika ada -->
+            <template x-for="p in pejabatsList.slice(0, 3)" :key="p.nama">
+                <template x-if="p.nama !== 'BUDI HARTONO, S.Sos'">
+                    <button type="button" @click="selectPpk(p.nama, p.nip)"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10.5px] font-medium transition-all border cursor-pointer"
+                        :class="formData.ppk_nama === p.nama 
+                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 ring-1 ring-cyan-400' 
+                            : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-cyan-500/40 hover:text-white'">
+                        <span x-text="p.nama"></span>
+                        <span class="text-[9.5px] font-mono opacity-70" x-show="p.nip" x-text="'(' + p.nip + ')'"></span>
+                    </button>
+                </template>
+            </template>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Nama PPK (Kolom 24) -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span>Nama Lengkap Pejabat Pembuat Komitmen (PPK) <span class="text-rose-400">*</span></span>
+                    <span class="text-[10px] text-cyan-400 font-mono">Kolom 24</span>
+                </label>
+                <div class="relative">
+                    <input type="text" x-model="formData.ppk_nama"
+                        list="ppk_datalist"
+                        @input="onPpkInput($event.target.value)"
+                        placeholder="Contoh: BUDI HARTONO, S.Sos"
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white font-bold focus:outline-none placeholder-slate-500 shadow-inner">
+                    <datalist id="ppk_datalist">
+                        <option value="BUDI HARTONO, S.Sos">BUDI HARTONO, S.Sos - 19760229 200801 1 010</option>
+                        <template x-for="p in pejabatsList" :key="p.nama">
+                            <option :value="p.nama" x-text="p.nama + (p.nip ? ' (' + p.nip + ')' : '')"></option>
+                        </template>
+                    </datalist>
+                    <button type="button" 
+                        x-show="formData.ppk_nama"
+                        @click="formData.ppk_nama = ''; formData.ppk_nip = ''" 
+                        title="Kosongkan"
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                        class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                        ✕
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">Nama pejabat pembuat komitmen yang menandatangani berkas kontrak kerja sama.</p>
+            </div>
+
+            <!-- NIP PPK (Kolom 25) -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                    <span>NIP Pejabat Pembuat Komitmen (PPK)</span>
+                    <span class="text-[10px] text-cyan-400 font-mono">Kolom 25</span>
+                </label>
+                <div class="relative">
+                    <input type="text" x-model="formData.ppk_nip"
+                        placeholder="Contoh: 19760229 200801 1 010"
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-cyan-300 font-mono focus:outline-none placeholder-slate-500 shadow-inner">
+                    <button type="button" 
+                        x-show="formData.ppk_nip"
+                        @click="formData.ppk_nip = ''" 
+                        title="Kosongkan"
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                        class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                        ✕
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-500 mt-1">Nomor Induk Pegawai (NIP) PPK bersangkutan (otomatis terisi bila memilih dari daftar).</p>
+            </div>
+
+            <!-- Ruangan / Unit Penempatan (KIR) & Alamat Fisik -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Unit / Ruangan Penempatan Aset (KIR)
+                </label>
+                <select x-model="formData.unit_id"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none font-semibold">
+                    <option value="">-- Pilih Ruangan / Penempatan KIR (Opsional) --</option>
+                    @foreach($dbUnits ?? [] as $u)
+                        <option value="{{ $u->id }}">{{ $u->nama }} ({{ $u->kode_unit ?? 'Unit' }})</option>
+                    @endforeach
+                </select>
+                <p class="text-[10px] text-slate-500 mt-1">Penempatan ruangan operasional alat/aset kemitraan di RSUD Koesnandi.</p>
+            </div>
+
+            <!-- Alamat Fisik Gedung Penempatan -->
+            <div>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Alamat / Gedung Penempatan Fisik
+                </label>
+                <input type="text" x-model="formData.alamat_barang"
+                    placeholder="RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none placeholder-slate-500">
+                <p class="text-[10px] text-slate-500 mt-1">Gedung / lokasi fisik aset kemitraan di lingkungan rumah sakit.</p>
+            </div>
+        </div>
+    </div>
 
     <!-- 5. Checklist Verifikasi Keabsahan Data & Tombol Finalisasi -->
     <div class="p-5 sm:p-6 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-4 shadow-xl">

@@ -114,6 +114,8 @@
             formData: {
                 // Step 1: Legalitas PKS & Mitra
                 mitra_nama: '',
+                mitra_pimpinan: '',
+                mitra_alamat: '',
                 nomor_pks: '',
                 tanggal_pks: '{{ date('d/m/Y') }}',
                 skema_kemitraan: 'Sewa',
@@ -134,8 +136,8 @@
                 unit_id: '',
                 kondisi: 'Baik',
                 alamat_barang: 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
-                ppk_nama: '',
-                ppk_nip: '',
+                ppk_nama: 'BUDI HARTONO, S.Sos',
+                ppk_nip: '19760229 200801 1 010',
 
                 // Sheet KIB A: Tanah
                 tanah_luas_m2: null,
@@ -1433,8 +1435,28 @@
                 const found = this.pejabatsList.find(p => p.nama === this.formData.ppk_nama);
                 if (found) {
                     this.formData.ppk_nip = found.nip || '';
+                } else if (this.formData.ppk_nama === 'BUDI HARTONO, S.Sos') {
+                    this.formData.ppk_nip = '19760229 200801 1 010';
                 } else {
                     this.formData.ppk_nip = '';
+                }
+            },
+
+            selectPpk(nama, nip) {
+                this.formData.ppk_nama = nama || '';
+                this.formData.ppk_nip = nip || '';
+            },
+
+            onPpkInput(val) {
+                const query = (val || '').trim().toLowerCase();
+                if (!query) return;
+                if (query === 'budi hartono, s.sos' || query === 'budi hartono') {
+                    this.formData.ppk_nip = '19760229 200801 1 010';
+                    return;
+                }
+                const found = this.pejabatsList.find(p => p.nama && p.nama.toLowerCase() === query);
+                if (found && found.nip) {
+                    this.formData.ppk_nip = found.nip;
                 }
             },
 
@@ -1617,6 +1639,10 @@
                         return false;
                     }
                 } else if (s === 3) {
+                    if (!this.formData.ppk_nama || !this.formData.ppk_nama.trim()) {
+                        this.showToast('Validasi Gagal', 'Mohon tentukan Nama Pejabat Pembuat Komitmen (PPK).', 'error');
+                        return false;
+                    }
                     if (!this.isDataVerified) {
                         this.showToast('Verifikasi Diperlukan', 'Mohon centang pernyataan bahwa data aset telah diverifikasi dengan benar sebelum disimpan.', 'warning');
                         return false;
