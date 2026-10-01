@@ -787,10 +787,25 @@
         </template>
 
         <!-- Modal Footer -->
-        <div class="pt-4 border-t border-slate-800 flex items-center justify-end space-x-2.5">
-            <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs transition-all shadow-md active:scale-95 cursor-pointer">
-                Tutup Detail
-            </button>
+        <div class="pt-4 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2.5">
+            <div>
+                <template x-if="selectedAstapDetail && selectedAstapDetail.dokumen_path">
+                    <a :href="'/storage/' + selectedAstapDetail.dokumen_path" target="_blank"
+                        class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-cyan-500/25 active:scale-95 flex items-center gap-2 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span>Buka / Unduh Berkas BAST Kerja Sama</span>
+                        <span>↗</span>
+                    </a>
+                </template>
+            </div>
+            <div class="flex items-center space-x-2.5">
+                <button type="button" @click="showDetailModal = false" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs transition-all shadow-md active:scale-95 cursor-pointer">
+                    Tutup Detail
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -1322,7 +1322,7 @@ Route::middleware('auth')->group(function () {
                 $totalVolume    = max(1, (int) $data['jumlah_volume']);
                 $hargaSatuan    = $totalRealisasi / $totalVolume;
                 $tahun          = (int) $data['tahun_perolehan'];
-                $kondisiItem    = $data['kondisi'] ?: 'Baik';
+                $kondisiItem    = (!empty($data['kondisi']) ? $data['kondisi'] : 'Baik');
 
                 $isExtracom = $request->boolean('is_extracomtable');
                 if (!$isExtracom && $request->has('mesin_items')) {
@@ -1361,7 +1361,7 @@ Route::middleware('auth')->group(function () {
                     'bast_dokumen_tanggal'      => \App\Models\Astap::parseDateInput($data['tanggal_pks']) ?? $data['tanggal_pks'],
                     'keterangan_tambahan'       => $data['kemitraan_keterangan'] ?? null,
                     'unit_id'                   => $data['unit_id'] ?? null,
-                    'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
+                    'alamat_barang'             => (!empty($data['alamat_barang']) ? $data['alamat_barang'] : 'RSUD Dr. H. Koesnandi'),
                     'user_id'                   => auth()->id(),
                     'is_extracomtable'          => $isExtracom,
                     'is_reklas'                 => false,
@@ -1937,7 +1937,7 @@ Route::middleware('auth')->group(function () {
                 $totalVolume    = max(1, (int) $data['jumlah_volume']);
                 $hargaSatuan    = $totalRealisasi / $totalVolume;
                 $tahun          = (int) $data['tahun_perolehan'];
-                $kondisiItem    = $data['kondisi'] ?: 'Baik';
+                $kondisiItem    = (!empty($data['kondisi']) ? $data['kondisi'] : 'Baik');
 
                 $isExtracom = $request->boolean('is_extracomtable');
                 if (!$isExtracom && $request->has('mesin_items')) {
