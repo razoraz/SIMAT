@@ -37,9 +37,15 @@
                                 </span>
                             </template>
 
-                            <template x-if="selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk'">
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'pelimpahan' || selectedAstapDetail?.sumber_dana === 'pelimpahan_skpd' || selectedAstapDetail?.sumber_dana === 'mutasi_masuk' || selectedAstapDetail?.sumber_dana === 'mutasi'">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
                                     🔄 PELIMPAHAN SKPD LUAR
+                                </span>
+                            </template>
+
+                            <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || !!selectedAstapDetail?.kemitraan">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
+                                    🤝 KEMITRAAN PIHAK KETIGA
                                 </span>
                             </template>
 

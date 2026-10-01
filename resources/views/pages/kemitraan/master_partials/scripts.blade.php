@@ -1634,6 +1634,9 @@
                     this.reklasSpekBaru.atb_nama_software = spec.nama_software || it.nama_barang || '';
                     this.reklasSpekBaru.atb_pengembang = spec.pengembang || '';
                     this.reklasSpekBaru.atb_masa_manfaat = spec.masa_manfaat || '4';
+                } else if (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN' || target === 'ASET LAINNYA') {
+                    this.reklasSpekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
+                    this.reklasSpekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain';
                 }
             },
 

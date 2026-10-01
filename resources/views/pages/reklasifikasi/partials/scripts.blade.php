@@ -694,6 +694,10 @@
                 this.formData.spekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
                 this.formData.spekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.kemitraan_perjanjian_no || '';
                 this.formData.spekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
+
+                // ASET LAIN (1.5.4)
+                this.formData.spekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
+                this.formData.spekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain';
             },
 
             openDetailReklas(item) {

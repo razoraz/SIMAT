@@ -10137,6 +10137,9 @@
                         this.reklasSpekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
                         this.reklasSpekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.kemitraan_perjanjian_no || '';
                         this.reklasSpekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
+                    } else if (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN' || target === 'ASET LAINNYA') {
+                        this.reklasSpekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
+                        this.reklasSpekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain';
                     }
                 },
 
@@ -10749,6 +10752,7 @@
                 categoryFilter: 'all',
                 kondisiFilter: 'all',
                 asalUsulFilter: 'all',
+                sumberDanaFilter: 'all',
                 tahunFilter: 'all',
                 triwulanFilter: 'all',
                 viewMode: 'catalog',
@@ -11652,6 +11656,7 @@
                     this.categoryFilter = 'all';
                     this.kondisiFilter = 'all';
                     this.asalUsulFilter = 'all';
+                    this.sumberDanaFilter = 'all';
                     this.tahunFilter = 'all';
                     this.triwulanFilter = 'all';
                 },
@@ -11973,7 +11978,26 @@
                                       (targetKey === 'TWIV' && itemTw === 'TW4') || (targetKey === 'TW4' && itemTw === 'TWIV');
                         }
 
-                        return matchSearch && matchCategory && matchKondisi && matchAsalUsul && matchTahun && matchTriwulan;
+                        let matchSumber = true;
+                        if (this.sumberDanaFilter && this.sumberDanaFilter !== 'all') {
+                            if (this.sumberDanaFilter === 'kemitraan') {
+                                matchSumber = item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan;
+                            } else if (this.sumberDanaFilter === 'hibah') {
+                                matchSumber = item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK' || String(item.asal_usul || '').toUpperCase().includes('HIBAH');
+                            } else if (this.sumberDanaFilter === 'belanja_barang') {
+                                matchSumber = item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'));
+                            } else if (this.sumberDanaFilter === 'pelimpahan') {
+                                matchSumber = item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
+                            } else if (this.sumberDanaFilter === 'belanja_modal') {
+                                const isOther = (item.sumber_dana === 'kemitraan' || !!item.kemitraan) ||
+                                                (item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK' || String(item.asal_usul || '').toUpperCase().includes('HIBAH')) ||
+                                                (item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'))) ||
+                                                (item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk');
+                                matchSumber = !isOther || item.sumber_dana === 'belanja_modal';
+                            }
+                        }
+
+                        return matchSearch && matchCategory && matchKondisi && matchAsalUsul && matchTahun && matchTriwulan && matchSumber;
                     });
                 },
 

@@ -640,12 +640,15 @@ class ReklasifikasiController extends Controller
                     }
                 } elseif ($targetKib) {
                     $kibPrefixMap = [
-                        'KIB A' => '1.3.1',
-                        'KIB B' => '1.3.2',
-                        'KIB C' => '1.3.3',
-                        'KIB D' => '1.3.4',
-                        'KIB E' => '1.3.5',
-                        'ATB'   => '1.5.3',
+                        'KIB A'          => '1.3.1',
+                        'KIB B'          => '1.3.2',
+                        'KIB C'          => '1.3.3',
+                        'KIB D'          => '1.3.4',
+                        'KIB E'          => '1.3.5',
+                        'ATB'            => '1.5.3',
+                        'KEMITRAAN'      => '1.5.2',
+                        'ASET LAIN'      => '1.5.4',
+                        'ASET LAIN-LAIN' => '1.5.4',
                     ];
                     $prefix = $kibPrefixMap[$targetKib] ?? null;
                     if ($prefix) {
@@ -862,6 +865,15 @@ class ReklasifikasiController extends Controller
                     $newSpec['mitra_nama']       = $kemitraanItem['mitra_nama'];
                     $newSpec['perjanjian_nomor'] = $kemitraanItem['perjanjian_nomor'];
                     $newSpec['jangka_waktu']     = $kemitraanItem['jangka_waktu'];
+                } elseif ($targetKib === 'ASET LAIN' || $targetKib === 'ASET LAIN-LAIN' || $targetKib === 'ASET LAINNYA') {
+                    $asetLainItem = [
+                        'aset_lain_kondisi'    => $rawNew['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)',
+                        'aset_lain_alasan'     => $validated['alasan_reklas'] ?? 'Dialihkan ke Akun 1.5.4 Aset Lain-Lain',
+                        'aset_lain_nilai'      => (float) $astap->total_realisasi,
+                    ];
+                    $newSpec['aset_lain_items'] = [$asetLainItem];
+                    $newSpec['kondisi_barang']  = $asetLainItem['aset_lain_kondisi'];
+                    $newSpec['aset_lain_kondisi'] = $asetLainItem['aset_lain_kondisi'];
                 }
 
                 $astap->spesifikasi_json = $newSpec;

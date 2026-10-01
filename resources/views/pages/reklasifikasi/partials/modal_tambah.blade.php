@@ -289,6 +289,7 @@
                         <option value="KIB E">KIB E - Aset Tetap Lainnya (1.3.5)</option>
                         <option value="ATB">ATB - Aset Tidak Berwujud (1.5.3)</option>
                         <option value="KEMITRAAN">Kemitraan Pihak Ketiga (1.5.2)</option>
+                        <option value="ASET LAIN">Aset Lain-Lain (1.5.4)</option>
                     </select>
                 </div>
 
@@ -657,6 +658,22 @@
                                 <input type="text" x-model="formData.spekBaru.kemitraan_jangka_waktu" placeholder="Contoh: 5 Tahun (2026 s/d 2031)"
                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                             </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Form Spesifik: ASET LAIN - Aset Lain-Lain (1.5.4) -->
+                <template x-if="formData.tujuan_kib === 'ASET LAIN' || formData.tujuan_kib === 'ASET LAIN-LAIN'">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Kondisi Fisik Barang:</label>
+                            <select x-model="formData.spekBaru.aset_lain_kondisi"
+                                    class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                <option value="Rusak Berat (Menunggu Penghapusan)">Rusak Berat (Menunggu Usulan Penghapusan)</option>
+                                <option value="Tidak Dapat Digunakan Lagi">Tidak Dapat Digunakan Lagi / Usang</option>
+                                <option value="Hilang / Tidak Ditemukan">Hilang / Tidak Ditemukan</option>
+                                <option value="Sengketa / Status Hukum">Sengketa / Status Hukum</option>
+                            </select>
                         </div>
                     </div>
                 </template>
