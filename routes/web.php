@@ -848,23 +848,26 @@ Route::middleware('auth')->group(function () {
         Route::middleware('module:astap')->group(function () {
             // Helper pengambilan data unik Penyedia & PPK dari riwayat data ASTAP
             $getDistinctPenyedias = function() {
-                return \App\Models\Astap::whereNotNull('penyedia_nama')
-                    ->where('penyedia_nama', '!=', '')
-                    ->orderBy('id', 'desc')
-                    ->get(['penyedia_nama', 'penyedia_pemilik', 'penyedia_rekening_nama', 'penyedia_rekening_nomor', 'penyedia_alamat', 'spesifikasi_json'])
-                    ->map(function($a) {
-                        $spec = is_array($a->spesifikasi_json) ? $a->spesifikasi_json : (json_decode($a->spesifikasi_json, true) ?? []);
-                        return [
-                            'nama'           => trim($a->penyedia_nama),
-                            'pemilik'        => $a->penyedia_pemilik ?? '',
-                            'telepon'        => $spec['penyedia_telepon'] ?? '',
-                            'rekening_nama'  => $a->penyedia_rekening_nama ?? '',
-                            'rekening_nomor' => $a->penyedia_rekening_nomor ?? '',
-                            'alamat'         => $a->penyedia_alamat ?? '',
-                        ];
-                    })
-                    ->unique(fn($p) => strtolower(trim($p['nama'])))
-                    ->values();
+                try {
+                    return \App\Models\AstapBelanjaModal::whereNotNull('penyedia_nama')
+                        ->where('penyedia_nama', '!=', '')
+                        ->orderBy('id', 'desc')
+                        ->get(['penyedia_nama', 'penyedia_pemilik', 'penyedia_rekening_nama', 'penyedia_rekening_nomor', 'penyedia_alamat'])
+                        ->map(function($m) {
+                            return [
+                                'nama'           => trim($m->penyedia_nama),
+                                'pemilik'        => $m->penyedia_pemilik ?? '',
+                                'telepon'        => '',
+                                'rekening_nama'  => $m->penyedia_rekening_nama ?? '',
+                                'rekening_nomor' => $m->penyedia_rekening_nomor ?? '',
+                                'alamat'         => $m->penyedia_alamat ?? '',
+                            ];
+                        })
+                        ->unique(fn($p) => strtolower(trim($p['nama'])))
+                        ->values();
+                } catch (\Throwable $e) {
+                    return collect();
+                }
             };
 
             $getDistinctPejabats = function() {
@@ -900,10 +903,13 @@ Route::middleware('auth')->group(function () {
                     ->pluck('pihak_hibah')
                     ->merge(
                         \App\Models\Astap::where('sumber_dana', 'hibah')
-                            ->whereNotNull('hibah_pemberi')
-                            ->where('hibah_pemberi', '!=', '')
-                            ->distinct()
-                            ->pluck('hibah_pemberi')
+                            ->with('hibahDetail')
+                            ->get()
+                            ->map(function ($a) {
+                                return $a->hibahDetail?->pihak_hibah
+                                    ?: ($a->spesifikasi_json['pemberi'] ?? ($a->spesifikasi_json['hibah_pemberi'] ?? null));
+                            })
+                            ->filter()
                     )
                     ->merge([
                         'Kementerian Kesehatan Republik Indonesia',

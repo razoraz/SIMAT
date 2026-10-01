@@ -71,6 +71,11 @@ class ExampleTest extends TestCase
                 $redirectRes = $this->actingAs($admin)->get("/astap/{$kemitraanAstap->id}/edit");
                 $redirectRes->assertRedirect(route('astap.edit_kemitraan', ['id' => $kemitraanAstap->id]));
             }
+
+            // Test form create-hibah
+            $hibahRes = $this->actingAs($admin)->get('/astap/create-hibah');
+            $hibahRes->assertStatus(200);
+            $hibahRes->assertViewHas('dbPemberiHibahs');
         }
     }
 }
