@@ -155,6 +155,17 @@
                     <td class="align-top">:</td>
                     <td class="align-top font-semibold">{{ $mutasi->opd_asal }}</td>
                 </tr>
+                @php
+                    $alamatInstansi = $mutasi->alamat_instansi ?: ($mutasi->astap?->spesifikasi_json['alamat_instansi'] ?? '');
+                @endphp
+                @if(!empty($alamatInstansi))
+                <tr>
+                    <td></td>
+                    <td class="align-top">Alamat Instansi</td>
+                    <td class="align-top">:</td>
+                    <td class="align-top">{{ $alamatInstansi }}</td>
+                </tr>
+                @endif
                 <tr>
                     <td></td>
                     <td colspan="3" class="pt-0.5 italic text-slate-700">

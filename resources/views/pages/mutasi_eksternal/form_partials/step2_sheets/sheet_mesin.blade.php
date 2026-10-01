@@ -81,23 +81,28 @@
                                 </span>
                             </div>
                             
-                            <div class="relative">
+                            <div class="relative flex items-center" style="position: relative;">
+                                <svg class="w-4 h-4 text-amber-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                     style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
                                 <input type="text"
                                        x-model="item.mesin_nama_barang"
                                        @focus="item.isFilterOpen = true"
                                        @click="item.isFilterOpen = true"
                                        @input="item.isFilterOpen = true; syncTotalsFromItems();"
                                        placeholder="Ketik untuk mencari jenis barang PMDN 108 atau tulis rincian unit alat..."
-                                       class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none transition-all pl-9 pr-8">
-                                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                    </svg>
-                                </div>
+                                       style="padding-left: 38px; padding-right: 36px;"
+                                       class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl py-2.5 text-xs text-white font-bold focus:outline-none transition-all shadow-inner">
                                 <button type="button" 
                                         x-show="item.mesin_nama_barang" 
                                         @click="item.mesin_nama_barang = ''; item.mesin_kode_barang = ''; item.isFilterOpen = true; syncTotalsFromItems();" 
-                                        class="absolute inset-y-0 right-2.5 flex items-center text-slate-400 hover:text-white transition-colors cursor-pointer"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 10;"
+                                        class="flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
                             </div>
 
                             <!-- Dropdown Hasil Filter (Strict Max 5 Baris - Zero Lag) -->
@@ -322,14 +327,18 @@
                             </div>
                         </div>
                         
-                        <div class="relative">
+                        <div class="relative flex items-center" style="position: relative;">
+                            <svg class="w-4 h-4 text-amber-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                 style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; z-index: 10;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
                             <input type="text" 
                                    :value="!item.isRuangOpen ? item.ruang_pemegang : item.searchRuang"
                                    @input="item.ruang_pemegang = $event.target.value; item.searchRuang = $event.target.value; item.isRuangOpen = true; syncTotalsFromItems();"
                                    @focus="item.isRuangOpen = true"
                                    placeholder="Ketik atau pilih nama Ruang / Unit / Paviliun dari master data RSUD..."
-                                   class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl px-3.5 py-2.5 pl-9 text-xs text-white font-semibold focus:outline-none transition-all">
-                            <svg class="w-3.5 h-3.5 text-amber-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                   style="padding-left: 38px;"
+                                   class="w-full bg-slate-950 border border-slate-700 hover:border-amber-500 focus:border-amber-500 rounded-xl py-2.5 text-xs text-white font-semibold focus:outline-none transition-all shadow-inner">
                         </div>
 
                         <!-- Dropdown List Pilihan Unit & Paviliun -->

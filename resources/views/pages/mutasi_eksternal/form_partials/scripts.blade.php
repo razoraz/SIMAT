@@ -48,6 +48,7 @@
                 mutasi_nomor_bamb: '',
                 mutasi_tanggal: new Date().toISOString().split('T')[0],
                 nomor_sk_dasar: '',
+                alamat_instansi: '',
                 pj_asal_nama: '',
                 pj_asal_nip: '',
                 pj_asal_jabatan: '',
@@ -186,6 +187,21 @@
                 return item.pj_nama + (item.pj_jabatan ? ' (' + item.pj_jabatan + ')' : '');
             },
 
+            // Ambil ringkasan alamat untuk item dropdown SKPD
+            getSkpdAlamatInfo(skpdName) {
+                if (!skpdName || !this.skpdDirectory) return '';
+                const item = this.skpdDirectory[skpdName];
+                if (item && item.alamat) return item.alamat;
+
+                const lowerTarget = skpdName.toLowerCase().trim();
+                for (const [key, val] of Object.entries(this.skpdDirectory)) {
+                    if (key.toLowerCase() === lowerTarget || (val.nama && val.nama.toLowerCase() === lowerTarget)) {
+                        return val.alamat || '';
+                    }
+                }
+                return '';
+            },
+
             // Sinkronisasi data Pejabat Penyerah (Pihak Pertama) dari SKPD yang dipilih
             syncPejabatFromSkpd(skpdName, force = false) {
                 const target = (skpdName || this.formData.mutasi_asal || '').trim();
@@ -276,6 +292,10 @@
                 this.formData.mutasi_asal = name;
                 this.isSkpdDropdownOpen = false;
                 this.syncPejabatFromSkpd(name, false);
+                const alamat = this.getSkpdAlamatInfo(name);
+                if (alamat && !this.formData.alamat_instansi) {
+                    this.formData.alamat_instansi = alamat;
+                }
             },
 
             // KIB Category Helpers (Single Source of Truth)
@@ -428,7 +448,29 @@
                         this.addLainnyaItem();
                     }
                 }
+                this.ensureJenisAstapId();
                 this.syncTotalsFromItems();
+            },
+
+            // Pastikan jenis_astap_id terisi otomatis sesuai KIB aktif jika belum dipilih
+            ensureJenisAstapId() {
+                if (this.isMesin && this.formData.mesin_items?.length > 0) {
+                    const itemWithKode = this.formData.mesin_items.find(i => i.mesin_kode_barang);
+                    if (itemWithKode) {
+                        const found = this.allFlat108.find(x => x.kode === itemWithKode.mesin_kode_barang);
+                        if (found) {
+                            this.formData.jenis_astap_id = found.id;
+                            return;
+                        }
+                    }
+                }
+                const prefix = this.activeKibCode;
+                if (!this.formData.jenis_astap_id || !this.selected108Item?.kode?.startsWith(prefix)) {
+                    const match = this.allFlat108.find(x => x.kode && x.kode.startsWith(prefix));
+                    if (match) {
+                        this.formData.jenis_astap_id = match.id;
+                    }
+                }
             },
 
             // Sinkronisasi Nama Barang ke Item Pertama
@@ -975,7 +1017,10 @@
                 } else if (s === 2) {
                     let missing = [];
                     if (!this.formData.jenis_astap_id) {
-                        missing.push('Klasifikasi Kode Rekening Permendagri 108');
+                        this.ensureJenisAstapId();
+                    }
+                    if (!this.formData.jenis_astap_id) {
+                        missing.push('Klasifikasi Kategori KIB Permendagri 108');
                     }
                     if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
                         if (this.selected108Item && this.selected108Item.nama) {
@@ -1080,10 +1125,7 @@
                             if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
                         }
                     } else if (stepNum === 2) {
-                        if (!this.formData.jenis_astap_id) {
-                            const el = document.querySelector('input[x-model="search108Query"]');
-                            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-                        } else if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
+                        if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
                             const el = document.querySelector('input[x-model="formData.nama_barang"]');
                             if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
                         } else if (!this.formData.unit_id) {
@@ -1111,7 +1153,8 @@
                     tanggal_bamb: this.formData.mutasi_tanggal,
                     kondisi: this.formData.kondisi,
                     keterangan: this.formData.mutasi_keterangan,
-                    nomor_sk_dasar: this.formData.nomor_sk_dasar,
+                    nomor_sk_dasar: this.formData.nomor_sk_dasar || this.formData.alamat_instansi || '',
+                    alamat_instansi: this.formData.alamat_instansi || '',
                     pj_asal_nama: this.formData.pj_asal_nama,
                     pj_asal_nip: this.formData.pj_asal_nip,
                     pj_asal_jabatan: this.formData.pj_asal_jabatan,
@@ -1196,7 +1239,8 @@
                 postData.append('unit_id', this.formData.unit_id || '');
                 postData.append('alamat_barang', this.formData.alamat_barang || '');
                 postData.append('kondisi', this.formData.kondisi || 'Baik');
-                postData.append('nomor_sk_dasar', this.formData.nomor_sk_dasar || '');
+                postData.append('nomor_sk_dasar', this.formData.nomor_sk_dasar || this.formData.alamat_instansi || '');
+                postData.append('alamat_instansi', this.formData.alamat_instansi || '');
                 postData.append('pj_asal_nama', this.formData.pj_asal_nama || '');
                 postData.append('pj_asal_nip', this.formData.pj_asal_nip || '');
                 postData.append('pj_asal_jabatan', this.formData.pj_asal_jabatan || '');

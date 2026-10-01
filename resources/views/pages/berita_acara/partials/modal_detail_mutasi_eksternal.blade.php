@@ -51,6 +51,9 @@
                             <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1">
                                 <span class="text-[10px] text-cyan-400 font-bold uppercase block">Pihak 1 (OPD Pengirim)</span>
                                 <div class="font-extrabold text-white text-sm" x-text="selectedDetailMutasiEksternal.opd_asal"></div>
+                                <template x-if="selectedDetailMutasiEksternal.alamat_instansi">
+                                    <div class="text-[10.5px] text-slate-300" x-text="'📍 ' + selectedDetailMutasiEksternal.alamat_instansi"></div>
+                                </template>
                                 <div class="text-[11px] text-cyan-300 font-semibold" x-text="selectedDetailMutasiEksternal.pj_asal_nama"></div>
                                 <div class="text-[10px] text-slate-400 font-mono" x-text="'NIP: ' + selectedDetailMutasiEksternal.pj_asal_nip"></div>
                             </div>

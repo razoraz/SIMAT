@@ -35,6 +35,7 @@
             'total_realisasi' => (float) ($me?->nilai_perolehan ?: ($astap->total_realisasi ?: ($astap->pelimpahanSkpd?->nilai_perolehan ?: 0))),
             'mutasi_keterangan' => $me?->alasan_mutasi ?: ($astap->pelimpahanSkpd?->keterangan ?: ($astap->mutasi_keterangan ?: ($astap->keterangan_tambahan ?: ($spec['keterangan'] ?? '')))),
             'nomor_sk_dasar' => $me?->nomor_sk_dasar ?: ($spec['nomor_sk_dasar'] ?? ''),
+            'alamat_instansi' => $me?->alamat_instansi ?: ($spec['alamat_instansi'] ?? ''),
             'pj_asal_nama' => $me?->pj_asal_nama ?: ($spec['pj_asal_nama'] ?? ''),
             'pj_asal_nip' => $me?->pj_asal_nip ?: ($spec['pj_asal_nip'] ?? ''),
             'pj_asal_jabatan' => $me?->pj_asal_jabatan ?: ($spec['pj_asal_jabatan'] ?? ''),

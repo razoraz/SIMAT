@@ -60,6 +60,9 @@
                         <div>
                             <span class="text-slate-400 text-[10px] block">Instansi Asal Pelimpahan:</span>
                             <p class="font-bold text-white text-xs" x-text="selectedMutasi.opd_asal"></p>
+                            <template x-if="selectedMutasi.alamat_instansi">
+                                <p class="text-[10.5px] text-slate-300 mt-0.5" x-text="'📍 ' + selectedMutasi.alamat_instansi"></p>
+                            </template>
                         </div>
                         <div>
                             <span class="text-slate-400 text-[10px] block">Pejabat / Pihak yang Menyerahkan:</span>
@@ -88,11 +91,17 @@
                     </div>
                 </div>
 
-                <!-- Dasar Hukum / Dokumen Mutasi BMD -->
+                <!-- Legalitas & Dokumen Mutasi BMD -->
                 <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    <template x-if="selectedMutasi.alamat_instansi">
+                        <div>
+                            <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Alamat Instansi Pengirim:</span>
+                            <p class="text-white font-semibold text-xs leading-relaxed mt-0.5" x-text="selectedMutasi.alamat_instansi"></p>
+                        </div>
+                    </template>
                     <div>
-                        <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Dasar Hukum & Dokumen Mutasi:</span>
-                        <p class="text-white font-semibold text-xs leading-relaxed mt-0.5" x-text="selectedMutasi.nomor_sk_dasar || '-'"></p>
+                        <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Dasar Pelimpahan / SK:</span>
+                        <p class="text-slate-300 font-semibold text-xs leading-relaxed mt-0.5" x-text="selectedMutasi.nomor_sk_dasar || '-'"></p>
                     </div>
                     <template x-if="selectedMutasi.tgl_estimasi_kembali">
                         <p class="text-amber-400 font-medium text-[11px]">

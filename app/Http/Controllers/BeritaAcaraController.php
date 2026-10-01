@@ -661,6 +661,7 @@ class BeritaAcaraController extends Controller
                 'nilai_perolehan_format' => 'Rp ' . number_format($nilaiTotal, 0, ',', '.'),
                 'harga_satuan'           => $hargaSatuan,
                 'opd_asal'               => $opdAsal,
+                'alamat_instansi'        => $m->alamat_instansi ?: ($astap?->spesifikasi_json['alamat_instansi'] ?? ''),
                 'ruangan_asal'           => $opdAsal,
                 'pj_asal_nama'           => $m->pj_asal_nama ?: 'Pejabat Penyerah OPD Pengirim',
                 'pj_asal_nip'            => $m->pj_asal_nip ?: '-',
