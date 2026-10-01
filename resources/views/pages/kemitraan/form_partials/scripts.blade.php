@@ -25,6 +25,21 @@
                 ? [...window.dbMitraKemitraans] 
                 : [],
             isMitraDropdownOpen: false,
+            isPejabatDropdownOpen: false,
+            isAlamatDropdownOpen: false,
+            selectedFile: null,
+
+            handleFileSelect(event) {
+                const file = event.target.files && event.target.files[0];
+                if (!file) return;
+                if (file.size > 10 * 1024 * 1024) {
+                    this.setStepError(1, 'Ukuran berkas melebihi batas maksimal 10 MB.');
+                    this.showToast('Gagal Memilih Berkas', 'Ukuran berkas tidak boleh melebihi 10 MB.', 'danger');
+                    event.target.value = '';
+                    return;
+                }
+                this.selectedFile = file;
+            },
 
             // Daftar PPK dari riwayat kemitraan (object: {nama, nip})
             masterPpkList: (function() {
@@ -46,6 +61,69 @@
                 return this.masterMitraList.filter(m => m && m.nama && m.nama.toLowerCase().includes(q));
             },
 
+            // Mendapatkan objek mitra terpilih saat ini berdasarkan input nama
+            get currentMitraData() {
+                const q = (this.formData.mitra_nama || '').toLowerCase().trim();
+                if (!q) return null;
+                return this.masterMitraList.find(m => m && m.nama && m.nama.toLowerCase().trim() === q) || null;
+            },
+
+            // Daftar opsi riwayat pejabat/pimpinan (paling baru berada di indeks 0)
+            get availablePejabatList() {
+                if (this.currentMitraData && Array.isArray(this.currentMitraData.history_pimpinan) && this.currentMitraData.history_pimpinan.length > 0) {
+                    return this.currentMitraData.history_pimpinan;
+                }
+                const all = [];
+                this.masterMitraList.forEach(m => {
+                    if (Array.isArray(m.history_pimpinan)) {
+                        m.history_pimpinan.forEach(p => { if (p && !all.includes(p)) all.push(p); });
+                    } else if (m.pimpinan && !all.includes(m.pimpinan)) {
+                        all.push(m.pimpinan);
+                    }
+                });
+                return all;
+            },
+
+            get filteredPejabatList() {
+                const q = (this.formData.mitra_pimpinan || '').toLowerCase().trim();
+                const list = this.availablePejabatList;
+                if (!q) return list.slice(0, 10);
+                return list.filter(p => p && p.toLowerCase().includes(q));
+            },
+
+            // Daftar opsi riwayat alamat domisili kantor (paling baru berada di indeks 0)
+            get availableAlamatList() {
+                if (this.currentMitraData && Array.isArray(this.currentMitraData.history_alamat) && this.currentMitraData.history_alamat.length > 0) {
+                    return this.currentMitraData.history_alamat;
+                }
+                const all = [];
+                this.masterMitraList.forEach(m => {
+                    if (Array.isArray(m.history_alamat)) {
+                        m.history_alamat.forEach(a => { if (a && !all.includes(a)) all.push(a); });
+                    } else if (m.alamat && !all.includes(m.alamat)) {
+                        all.push(m.alamat);
+                    }
+                });
+                return all;
+            },
+
+            get filteredAlamatList() {
+                const q = (this.formData.mitra_alamat || '').toLowerCase().trim();
+                const list = this.availableAlamatList;
+                if (!q) return list.slice(0, 10);
+                return list.filter(a => a && a.toLowerCase().includes(q));
+            },
+
+            selectPejabat(pejabat) {
+                this.formData.mitra_pimpinan = pejabat || '';
+                this.isPejabatDropdownOpen = false;
+            },
+
+            selectAlamat(alamat) {
+                this.formData.mitra_alamat = alamat || '';
+                this.isAlamatDropdownOpen = false;
+            },
+
             get filteredPpkList() {
                 const q = (this.formData.ppk_nama || '').toLowerCase().trim();
                 if (!q) return this.masterPpkList.slice(0, 15);
@@ -58,8 +136,10 @@
                 if (!q) return;
                 const match = this.masterMitraList.find(m => m && m.nama && m.nama.trim().toLowerCase() === q);
                 if (match) {
-                    if (match.pimpinan) this.formData.mitra_pimpinan = match.pimpinan;
-                    if (match.alamat)   this.formData.mitra_alamat   = match.alamat;
+                    const latestPimpinan = match.pimpinan || (Array.isArray(match.history_pimpinan) ? match.history_pimpinan[0] : '');
+                    const latestAlamat   = match.alamat   || (Array.isArray(match.history_alamat)   ? match.history_alamat[0]   : '');
+                    if (latestPimpinan) this.formData.mitra_pimpinan = latestPimpinan;
+                    if (latestAlamat)   this.formData.mitra_alamat   = latestAlamat;
                 }
             },
 
@@ -74,8 +154,10 @@
                     target = mitra;
                 }
                 if (target) {
-                    if (target.pimpinan) this.formData.mitra_pimpinan = target.pimpinan;
-                    if (target.alamat)   this.formData.mitra_alamat   = target.alamat;
+                    const latestPimpinan = target.pimpinan || (Array.isArray(target.history_pimpinan) ? target.history_pimpinan[0] : '');
+                    const latestAlamat   = target.alamat   || (Array.isArray(target.history_alamat)   ? target.history_alamat[0]   : '');
+                    if (latestPimpinan) this.formData.mitra_pimpinan = latestPimpinan;
+                    if (latestAlamat)   this.formData.mitra_alamat   = latestAlamat;
                 }
                 this.isMitraDropdownOpen = false;
             },
@@ -273,6 +355,7 @@
                 tahun_perolehan: {{ date('Y') }},
                 triwulan: '{{ (date('n') <= 3) ? 'TW I' : ((date('n') <= 6) ? 'TW II' : ((date('n') <= 9) ? 'TW III' : 'TW IV')) }}',
                 kemitraan_keterangan: '',
+                dokumen_path: '',
 
                 // Step 2: Klasifikasi 108 & Nilai Aset
                 nama_barang: '',
@@ -759,6 +842,7 @@
                 this.formData.tahun_perolehan = d.tahun_perolehan || kemitraan.tahun || {{ date('Y') }};
                 this.formData.triwulan = d.triwulan || kemitraan.triwulan || 'TW I';
                 this.formData.kemitraan_keterangan = d.keterangan_tambahan || kemitraan.keterangan || spec.keterangan || '';
+                this.formData.dokumen_path = kemitraan.dokumen_path || spec.dokumen_path || '';
 
                 // Step 2: Klasifikasi 108 & Nilai Aset
                 this.formData.nama_barang = d.nama_barang || '';
@@ -2301,15 +2385,36 @@
                     ? ('/astap/update-kemitraan/' + this.editId)
                     : '{{ route('astap.store_kemitraan') }}';
 
+                let submitBody;
+                const submitHeaders = {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                };
+
+                if (this.selectedFile) {
+                    const fd = new FormData();
+                    Object.keys(this.formData).forEach(key => {
+                        const val = this.formData[key];
+                        if (val !== null && val !== undefined) {
+                            if (typeof val === 'object') {
+                                fd.append(key, JSON.stringify(val));
+                            } else {
+                                fd.append(key, val);
+                            }
+                        }
+                    });
+                    fd.append('dokumen_file', this.selectedFile);
+                    submitBody = fd;
+                } else {
+                    submitHeaders['Content-Type'] = 'application/json';
+                    submitBody = JSON.stringify(this.formData);
+                }
+
                 try {
                     const res = await fetch(submitUrl, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify(this.formData)
+                        headers: submitHeaders,
+                        body: submitBody
                     });
 
                     const json = await res.json();

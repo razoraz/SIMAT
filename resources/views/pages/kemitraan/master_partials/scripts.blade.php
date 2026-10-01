@@ -368,7 +368,7 @@
                     alamat_barang: astap?.alamat_barang || (register?.ruang_pemegang ? ('Ruang ' + register.ruang_pemegang + ' RSUD Dr. H. Koesnandi') : 'RSUD Dr. H. Koesnandi'),
                     kemitraan: kemitraan || {},
 
-                    // Informasi Mitra Rekanan (Kolom 22 & Kolom 23)
+                    // Informasi Mitra Rekanan
                     penyedia_nama: kemitraan?.mitra_nama || spec.mitra_nama || '-',
                     penyedia_pemilik: kemitraan?.mitra_pimpinan || spec.mitra_pimpinan || '-',
                     penyedia_alamat: kemitraan?.mitra_alamat || spec.mitra_alamat || '-',
@@ -386,7 +386,8 @@
                     tanggal_mulai: kemitraan?.tanggal_mulai || spec.tanggal_mulai || null,
                     tanggal_selesai: kemitraan?.tanggal_selesai || spec.tanggal_selesai || null,
                     status_konsesi: kemitraan?.status_konsesi || 'Aktif',
-                    sisa_hari_konsesi: kemitraan?.sisa_hari_konsesi ?? null
+                    sisa_hari_konsesi: kemitraan?.sisa_hari_konsesi ?? null,
+                    dokumen_path: kemitraan?.dokumen_path || spec.dokumen_path || null
                 };
 
                 // Kompatibilitas state lama

@@ -103,7 +103,7 @@
                     <span class="font-extrabold text-white block truncate" x-text="formData.mitra_nama || '-'"></span>
                 </div>
                 <div>
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Pimpinan Mitra (Kolom 22):</span>
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Pejabat Mitra / Direktur:</span>
                     <span class="font-bold text-cyan-300 block truncate" x-text="formData.mitra_pimpinan || '-'"></span>
                 </div>
                 <div>
@@ -115,8 +115,28 @@
                     <span class="font-semibold text-white block" x-text="formData.tanggal_pks || '-'"></span>
                 </div>
                 <div class="col-span-2">
-                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Alamat Domisili Mitra (Kolom 23):</span>
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Alamat Domisili Mitra:</span>
                     <span class="text-slate-200 block truncate" x-text="formData.mitra_alamat || '-'"></span>
+                </div>
+                <div class="col-span-2">
+                    <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Berkas Dokumen BAST Kerja Sama:</span>
+                    <template x-if="selectedFile">
+                        <span class="text-emerald-400 font-mono text-xs flex items-center gap-1 font-semibold">
+                            <span>📄</span>
+                            <span x-text="selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB)'"></span>
+                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold ml-1">Siap Diunggah</span>
+                        </span>
+                    </template>
+                    <template x-if="!selectedFile && formData.dokumen_path">
+                        <span class="text-cyan-400 font-mono text-xs flex items-center gap-1">
+                            <span>📄</span>
+                            <span x-text="formData.dokumen_path.split('/').pop()"></span>
+                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold ml-1">Tersimpan</span>
+                        </span>
+                    </template>
+                    <template x-if="!selectedFile && !formData.dokumen_path">
+                        <span class="text-slate-500 text-xs italic">Tidak ada berkas yang diunggah.</span>
+                    </template>
                 </div>
                 <div>
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Bentuk / Skema Kemitraan:</span>

@@ -124,6 +124,20 @@
                             <span class="text-slate-400 block text-[10px] uppercase font-bold">Masa Konsesi / Kerjasama:</span>
                             <span class="text-slate-200 font-medium block" x-text="(formatTanggalIndo(selectedAstapDetail.tanggal_mulai) || '?') + ' s.d. ' + (formatTanggalIndo(selectedAstapDetail.tanggal_selesai) || '?')"></span>
                         </div>
+
+                        <template x-if="selectedAstapDetail.dokumen_path">
+                            <div class="col-span-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                                <span class="text-slate-400 text-[10px] uppercase font-bold flex items-center gap-1.5">
+                                    <span>📄 Berkas BAST / PKS Kerja Sama:</span>
+                                    <span class="font-mono text-cyan-300 lowercase text-[11px]" x-text="selectedAstapDetail.dokumen_path.split('/').pop()"></span>
+                                </span>
+                                <a :href="'/storage/' + selectedAstapDetail.dokumen_path" target="_blank"
+                                    class="px-3 py-1 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                    <span>Unduh / Buka Dokumen</span>
+                                    <span>↗</span>
+                                </a>
+                            </div>
+                        </template>
                     </div>
                 </div>
 
@@ -536,7 +550,7 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-[11px]">
-                        <!-- Card Pihak Mitra Rekanan (Kolom 22 & Kolom 23) -->
+                        <!-- Card Pihak Mitra Rekanan -->
                         <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800/90 space-y-2.5">
                             <span class="text-[10.5px] font-extrabold text-cyan-400 uppercase tracking-wider block flex items-center space-x-1">
                                 <span>🏢 Informasi Mitra Pihak Ketiga</span>
@@ -547,7 +561,7 @@
                                     <strong class="text-white font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_nama" x-text="selectedAstapDetail.penyedia_nama || '-'"></strong>
                                 </div>
                                 <div class="flex items-center justify-between pt-1.5">
-                                    <span class="text-slate-400">Pimpinan Mitra (Kolom 22):</span>
+                                    <span class="text-slate-400">Pejabat Mitra / Direktur:</span>
                                     <strong class="text-cyan-300 font-bold truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_pemilik" x-text="selectedAstapDetail.penyedia_pemilik || '-'"></strong>
                                 </div>
                                 <div class="flex items-center justify-between pt-1.5">
@@ -555,7 +569,7 @@
                                     <span class="text-amber-400 font-mono font-bold truncate max-w-[55%]" x-text="selectedAstapDetail.penyedia_telepon || '-'"></span>
                                 </div>
                                 <div class="flex items-start justify-between pt-1.5">
-                                    <span class="text-slate-400 shrink-0">Alamat Domisili (Kolom 23):</span>
+                                    <span class="text-slate-400 shrink-0">Alamat Domisili:</span>
                                     <span class="text-teal-300 font-medium text-right truncate max-w-[55%]" :title="selectedAstapDetail.penyedia_alamat" x-text="selectedAstapDetail.penyedia_alamat || '-'"></span>
                                 </div>
                             </div>

@@ -40,6 +40,51 @@
             </span>
         </div>
 
+        <!-- Bentuk Skema Kemitraan Sesuai Permendagri 108 Akun 1.5.2 (Ditaruh Paling Atas Sendiri) -->
+        <div>
+            <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
+                <span>Bentuk Skema Kemitraan Sesuai Permendagri 108 / SAP <span class="text-rose-400">*</span></span>
+                <span class="text-[10px] text-cyan-400/90 font-mono">Akun Neraca 1.5.2</span>
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <!-- 1. Sewa (1.5.2.01.01.01) -->
+                <button type="button" @click="formData.skema_kemitraan = 'Sewa'"
+                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+                    :class="formData.skema_kemitraan === 'Sewa' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    <span class="block text-xs font-bold">Sewa</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Sewa Barang / Alat</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.01</span>
+                </button>
+
+                <!-- 2. KSP (1.5.2.01.01.02) -->
+                <button type="button" @click="formData.skema_kemitraan = 'KSP'"
+                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+                    :class="formData.skema_kemitraan === 'KSP' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    <span class="block text-xs font-bold">KSP</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Kerja Sama Pemanfaatan</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.02</span>
+                </button>
+
+                <!-- 3. BGS / BSG (1.5.2.01.01.03) -->
+                <button type="button" @click="formData.skema_kemitraan = 'BGS/BSG'"
+                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+                    :class="(formData.skema_kemitraan === 'BGS/BSG' || formData.skema_kemitraan === 'BSG' || formData.skema_kemitraan === 'BGS') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    <span class="block text-xs font-bold">BGS / BSG</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Bangun Guna / Serah Guna</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.03</span>
+                </button>
+
+                <!-- 4. KSPI (1.5.2.01.01.04) -->
+                <button type="button" @click="formData.skema_kemitraan = 'KSPI'"
+                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
+                    :class="(formData.skema_kemitraan === 'KSPI' || formData.skema_kemitraan === 'KSO') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
+                    <span class="block text-xs font-bold">KSPI</span>
+                    <span class="block text-[9px] text-slate-400 mt-0.5">Penyediaan Infrastruktur</span>
+                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.04</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Nama Mitra / Rekanan Pihak Ketiga (Combobox / Filter Riwayat & Bebas Ketik) -->
         <div class="relative space-y-1.5" @click.away="isMitraDropdownOpen = false">
             <div class="flex items-center justify-between">
@@ -146,37 +191,79 @@
             </template>
         </div>
 
-        <!-- Pimpinan Mitra & Alamat Mitra (Kolom 22 & 23 Sesuai Rekap Excel) -->
+        <!-- Pejabat Mitra & Alamat Mitra -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-            <!-- Pimpinan Mitra -->
-            <div>
+            <!-- Pejabat Mitra -->
+            <div class="relative space-y-1.5" @click.away="isPejabatDropdownOpen = false">
                 <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
                     <span class="flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        <span>Pimpinan Mitra / Direktur Rekanan</span>
+                        <span>Pejabat Mitra / Direktur Rekanan</span>
                     </span>
-                    <span class="text-[10px] text-cyan-400/80 font-mono">Kolom 22</span>
                 </label>
                 <div class="relative">
                     <input type="text" x-model="formData.mitra_pimpinan"
-                        placeholder="Nama Direktur / Penanggung Jawab Pihak Ketiga"
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-all placeholder-slate-500 shadow-inner">
+                        @focus="isPejabatDropdownOpen = true"
+                        @input="isPejabatDropdownOpen = true"
+                        @keydown.escape="isPejabatDropdownOpen = false"
+                        autocomplete="off"
+                        placeholder="Nama Pejabat / Direktur / Penanggung Jawab Pihak Ketiga"
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 pr-9 text-xs text-white focus:outline-none transition-all placeholder-slate-500 shadow-inner">
                     <button type="button" 
                         x-show="formData.mitra_pimpinan"
-                        @click="formData.mitra_pimpinan = ''" 
+                        @click="formData.mitra_pimpinan = ''; isPejabatDropdownOpen = true" 
                         title="Kosongkan"
                         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
                         class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
                         ✕
                     </button>
                 </div>
+
+                <!-- Floating Dropdown Riwayat Pejabat Mitra -->
+                <div x-show="isPejabatDropdownOpen && filteredPejabatList.length > 0" 
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="opacity-0 translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 translate-y-1"
+                    style="max-height: 220px !important; overflow-y: auto !important;"
+                    class="absolute z-50 mt-1 w-full bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
+                    
+                    <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                        <span>Pilih Riwayat Pejabat Mitra</span>
+                        <span class="font-mono text-slate-400" x-text="filteredPejabatList.length + ' saran'"></span>
+                    </div>
+
+                    <template x-for="(pejabat, pIdx) in filteredPejabatList" :key="pIdx">
+                        <div @click="selectPejabat(pejabat)"
+                            class="px-3.5 py-2 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-2.5 text-left"
+                            :class="formData.mitra_pimpinan === pejabat ? 'bg-cyan-500/20 text-cyan-200 font-bold' : 'text-slate-200'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-xs text-cyan-400/80">👤</span>
+                                <span class="text-xs group-hover:text-cyan-300 truncate" x-text="pejabat"></span>
+                            </div>
+                            <template x-if="pIdx === 0">
+                                <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold shrink-0">
+                                    ⚡ Terbaru
+                                </span>
+                            </template>
+                            <template x-if="pIdx > 0">
+                                <span class="text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium shrink-0">
+                                    Riwayat Lama
+                                </span>
+                            </template>
+                        </div>
+                    </template>
+                </div>
                 <p class="text-[10px] text-slate-500 mt-1">Nama direktur, pimpinan cabang, atau kuasa rekanan penandatangan PKS.</p>
             </div>
 
             <!-- Alamat Mitra -->
-            <div>
+            <div class="relative space-y-1.5" @click.away="isAlamatDropdownOpen = false">
                 <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
                     <span class="flex items-center gap-1.5">
                         <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,24 +272,67 @@
                         </svg>
                         <span>Alamat Mitra / Domisili Kantor</span>
                     </span>
-                    <span class="text-[10px] text-cyan-400/80 font-mono">Kolom 23</span>
                 </label>
                 <div class="relative">
                     <input type="text" x-model="formData.mitra_alamat"
+                        @focus="isAlamatDropdownOpen = true"
+                        @input="isAlamatDropdownOpen = true"
+                        @keydown.escape="isAlamatDropdownOpen = false"
+                        autocomplete="off"
                         placeholder="Alamat kantor pusat / domisili rekanan mitra"
-                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-all placeholder-slate-500 shadow-inner">
+                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 pr-9 text-xs text-white focus:outline-none transition-all placeholder-slate-500 shadow-inner">
                     <button type="button" 
                         x-show="formData.mitra_alamat"
-                        @click="formData.mitra_alamat = ''" 
+                        @click="formData.mitra_alamat = ''; isAlamatDropdownOpen = true" 
                         title="Kosongkan"
                         style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
                         class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
                         ✕
                     </button>
                 </div>
+
+                <!-- Floating Dropdown Riwayat Alamat Mitra -->
+                <div x-show="isAlamatDropdownOpen && filteredAlamatList.length > 0" 
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="opacity-0 translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 translate-y-1"
+                    style="max-height: 220px !important; overflow-y: auto !important;"
+                    class="absolute z-50 mt-1 w-full bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
+                    
+                    <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                        <span>Pilih Riwayat Alamat Kantor</span>
+                        <span class="font-mono text-slate-400" x-text="filteredAlamatList.length + ' saran'"></span>
+                    </div>
+
+                    <template x-for="(alamat, aIdx) in filteredAlamatList" :key="aIdx">
+                        <div @click="selectAlamat(alamat)"
+                            class="px-3.5 py-2 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-2.5 text-left"
+                            :class="formData.mitra_alamat === alamat ? 'bg-cyan-500/20 text-cyan-200 font-bold' : 'text-slate-200'">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-xs text-cyan-400/80">📍</span>
+                                <span class="text-xs group-hover:text-cyan-300 truncate" x-text="alamat"></span>
+                            </div>
+                            <template x-if="aIdx === 0">
+                                <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold shrink-0">
+                                    ⚡ Terbaru
+                                </span>
+                            </template>
+                            <template x-if="aIdx > 0">
+                                <span class="text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-medium shrink-0">
+                                    Riwayat Lama
+                                </span>
+                            </template>
+                        </div>
+                    </template>
+                </div>
                 <p class="text-[10px] text-slate-500 mt-1">Alamat kantor domisili rekanan mitra penyedia aset kemitraan.</p>
             </div>
         </div>
+
 
         <!-- Nomor & Tanggal PKS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -241,50 +371,6 @@
             </div>
         </div>
 
-        <!-- Skema Bentuk Kemitraan Sesuai Permendagri 108 Akun 1.5.2 (Gambar 2 & Gambar 3) -->
-        <div>
-            <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                <span>Bentuk Skema Kemitraan Sesuai Permendagri 108 / SAP <span class="text-rose-400">*</span></span>
-                <span class="text-[10px] text-cyan-400/90 font-mono">Akun Neraca 1.5.2</span>
-            </label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <!-- 1. Sewa (1.5.2.01.01.01) -->
-                <button type="button" @click="formData.skema_kemitraan = 'Sewa'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'Sewa' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">Sewa</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Sewa Barang / Alat</span>
-                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.01</span>
-                </button>
-
-                <!-- 2. KSP (1.5.2.01.01.02) -->
-                <button type="button" @click="formData.skema_kemitraan = 'KSP'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="formData.skema_kemitraan === 'KSP' ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">KSP</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Kerja Sama Pemanfaatan</span>
-                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.02</span>
-                </button>
-
-                <!-- 3. BGS / BSG (1.5.2.01.01.03) -->
-                <button type="button" @click="formData.skema_kemitraan = 'BGS/BSG'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="(formData.skema_kemitraan === 'BGS/BSG' || formData.skema_kemitraan === 'BSG' || formData.skema_kemitraan === 'BGS') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">BGS / BSG</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Bangun Guna / Serah Guna</span>
-                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.03</span>
-                </button>
-
-                <!-- 4. KSPI (1.5.2.01.01.04) -->
-                <button type="button" @click="formData.skema_kemitraan = 'KSPI'"
-                    class="p-2.5 rounded-xl border text-center transition-all cursor-pointer"
-                    :class="(formData.skema_kemitraan === 'KSPI' || formData.skema_kemitraan === 'KSO') ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 font-black shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-400' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'">
-                    <span class="block text-xs font-bold">KSPI</span>
-                    <span class="block text-[9px] text-slate-400 mt-0.5">Penyediaan Infrastruktur</span>
-                    <span class="block font-mono text-[9px] text-cyan-400/70 mt-0.5">1.5.2.01.01.04</span>
-                </button>
-            </div>
-        </div>
 
         <!-- Masa Berlaku Kerja Sama (Mulai s.d. Selesai) -->
         <!-- Masa Berlaku Kerja Sama (Mulai s.d. Selesai) -->
@@ -391,6 +477,65 @@
                     <option value="TW IV">TW IV (Oktober - Desember)</option>
                 </select>
             </div>
+        </div>
+
+        <!-- Unggah Berkas Dokumen BAST / PKS Kerja Sama (Diletakkan di antara Tahun/Triwulan dan Ruang Lingkup) -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <span>Unggah Berkas Dokumen BAST / PKS Kerja Sama</span>
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-800/40">
+                        Opsional
+                    </span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono">Format: PDF, JPG, PNG, DOC/DOCX (Maks. 10 MB)</span>
+            </div>
+
+            <!-- Drag & Drop / Click Upload Box -->
+            <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed border-slate-700 hover:border-cyan-400/60 transition-all text-center relative group">
+                <input type="file" @change="handleFileSelect" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                
+                <div class="space-y-1.5 pointer-events-none">
+                    <div class="w-10 h-10 mx-auto rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-lg shadow-inner">
+                        📁
+                    </div>
+                    <p class="text-xs font-bold text-slate-300 group-hover:text-cyan-300 transition-colors">
+                        <span x-show="!selectedFile">Klik atau seret berkas BAST / PKS Kerja Sama ke sini</span>
+                        <span x-show="selectedFile" class="text-cyan-400 font-mono" x-text="selectedFile ? ('📄 ' + selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB)') : ''"></span>
+                    </p>
+                    <p class="text-[10.5px] text-slate-500">Maksimal 10 MB (Format: PDF, Gambar Scan, Dokumen Word)</p>
+                </div>
+            </div>
+
+            <!-- Info Berkas yang Sudah Tersimpan (Mode Edit) -->
+            <template x-if="isEditMode && formData.dokumen_path">
+                <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
+                    <span class="text-slate-300 truncate">📄 File Tersimpan: <strong class="text-cyan-300 font-mono" x-text="formData.dokumen_path.split('/').pop()"></strong></span>
+                    <a :href="'/storage/' + formData.dokumen_path" target="_blank" class="text-cyan-400 hover:underline font-bold text-[11px] shrink-0 ml-2 flex items-center gap-1">
+                        <span>Lihat Berkas BAST</span>
+                        <span>↗</span>
+                    </a>
+                </div>
+            </template>
+
+            <!-- Aksi Jika File Terpilih -->
+            <template x-if="selectedFile">
+                <div class="flex items-center justify-between px-1 text-[11px]">
+                    <span class="text-emerald-400 font-semibold flex items-center gap-1">
+                        <span>✓</span>
+                        <span>Berkas siap disimpan ke sistem bersama aset kemitraan</span>
+                    </span>
+                    <button type="button" @click="selectedFile = null" class="text-rose-400 hover:underline font-medium cursor-pointer">
+                        ✕ Batal / Ganti Berkas
+                    </button>
+                </div>
+            </template>
         </div>
 
         <!-- Ruang Lingkup & Keterangan Kerjasama -->

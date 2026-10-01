@@ -885,6 +885,44 @@ Route::middleware('auth')->group(function () {
                     ->values();
             };
 
+            $getDistinctMitras = function() {
+                return \App\Models\AstapKemitraan::whereNotNull('mitra_nama')
+                    ->where('mitra_nama', '!=', '')
+                    ->where('is_deleted', 0)
+                    ->orderBy('id', 'desc')
+                    ->get(['id', 'mitra_nama', 'mitra_pimpinan', 'mitra_alamat', 'created_at'])
+                    ->groupBy(fn($item) => strtolower(trim($item->mitra_nama)))
+                    ->map(function($group) {
+                        $latest = $group->first();
+                        $companyName = trim($latest->mitra_nama);
+
+                        // Ambil seluruh riwayat pejabat/pimpinan unik, paling baru berada di indeks 0
+                        $historyPejabat = $group
+                            ->map(fn($it) => trim($it->mitra_pimpinan ?? ''))
+                            ->filter()
+                            ->unique()
+                            ->values()
+                            ->all();
+
+                        // Ambil seluruh riwayat alamat domisili kantor unik, paling baru berada di indeks 0
+                        $historyAlamat = $group
+                            ->map(fn($it) => trim($it->mitra_alamat ?? ''))
+                            ->filter()
+                            ->unique()
+                            ->values()
+                            ->all();
+
+                        return [
+                            'nama'             => $companyName,
+                            'pimpinan'         => $historyPejabat[0] ?? '',
+                            'alamat'           => $historyAlamat[0] ?? '',
+                            'history_pimpinan' => $historyPejabat,
+                            'history_alamat'   => $historyAlamat,
+                        ];
+                    })
+                    ->values();
+            };
+
             // ─── Pilih Jenis Input (Belanja Modal / Hibah) ───────────────
             Route::get('/astap/pilih-jenis', function () {
                 return view('pages.astap.pilih_jenis');
@@ -1131,36 +1169,12 @@ Route::middleware('auth')->group(function () {
 
 
             // ─── Form Kemitraan Pihak Ketiga / KSO (Create & Store) ────────
-            Route::get('/astap/create-kemitraan', function () use ($getDistinctPenyedias, $getDistinctPejabats) {
+            Route::get('/astap/create-kemitraan', function () use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-
-                // Mitra: ambil data terbaru per nama untuk autofill pimpinan & alamat
-                $dbMitraKemitraans = \App\Models\AstapKemitraan::whereNotNull('mitra_nama')
-                    ->where('mitra_nama', '!=', '')
-                    ->where('is_deleted', 0)
-                    ->orderBy('id', 'desc')
-                    ->get(['mitra_nama', 'mitra_pimpinan', 'mitra_alamat'])
-                    ->groupBy(function($item) {
-                        return strtolower(trim($item->mitra_nama));
-                    })
-                    ->map(function($group) {
-                        $latest = $group->first();
-                        $withPimpinan = $group->first(function($it) {
-                            return !empty(trim($it->mitra_pimpinan ?? ''));
-                        });
-                        $withAlamat = $group->first(function($it) {
-                            return !empty(trim($it->mitra_alamat ?? ''));
-                        });
-                        return [
-                            'nama'     => trim($latest->mitra_nama),
-                            'pimpinan' => trim($withPimpinan ? $withPimpinan->mitra_pimpinan : ($latest->mitra_pimpinan ?? '')),
-                            'alamat'   => trim($withAlamat ? $withAlamat->mitra_alamat : ($latest->mitra_alamat ?? '')),
-                        ];
-                    })
-                    ->values();
+                $dbMitraKemitraans = $getDistinctMitras();
 
                 // PPK: khusus riwayat Pejabat Pembuat Komitmen kemitraan untuk autofill NIP
                 $dbPpkKemitraans = \App\Models\Astap::where('sumber_dana', 'kemitraan')
@@ -1200,6 +1214,16 @@ Route::middleware('auth')->group(function () {
             })->name('astap.create_kemitraan');
 
             Route::post('/astap/store-kemitraan', function (\Illuminate\Http\Request $request) {
+                // Normalisasi input JSON string jika dikirim via multipart FormData
+                foreach (['mesin_items', 'tanah_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'spesifikasi_json'] as $jsonField) {
+                    if ($request->has($jsonField) && is_string($request->input($jsonField))) {
+                        $decoded = json_decode($request->input($jsonField), true);
+                        if (is_array($decoded)) {
+                            $request->merge([$jsonField => $decoded]);
+                        }
+                    }
+                }
+
                 $data = $request->validate([
                     'nama_barang'          => 'required|string|max:500',
                     'jenis_astap_id'       => 'required|integer|exists:jenis_astaps,id',
@@ -1225,6 +1249,7 @@ Route::middleware('auth')->group(function () {
                     'unit_id'              => 'nullable|integer|exists:units,id',
                     'alamat_barang'        => 'nullable|string|max:1000',
                     'kondisi'              => 'nullable|string|in:Baik,Kurang Baik,Rusak Berat',
+                    'dokumen_file'         => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
                 ]);
 
                 // Helper parser tanggal toleran DD/MM/YYYY dan YYYY-MM-DD
@@ -1311,6 +1336,14 @@ Route::middleware('auth')->group(function () {
                     }
                 }
 
+                // Handle Upload Berkas Dokumen BAST / PKS Kerja Sama
+                $dokumenPath = null;
+                if ($request->hasFile('dokumen_file')) {
+                    $file = $request->file('dokumen_file');
+                    $filename = 'BAST_KEMITRAAN_' . time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                    $dokumenPath = $file->storeAs('dokumen_kemitraan', $filename, 'public');
+                }
+
                 $astapPayload = [
                     'nama_barang'               => $data['nama_barang'],
                     'jenis_astap_id'            => $data['jenis_astap_id'],
@@ -1347,6 +1380,7 @@ Route::middleware('auth')->group(function () {
                         'tanggal_selesai'    => $data['tanggal_selesai'] ?? null,
                         'kondisi'            => $kondisiItem,
                         'keterangan'         => $data['kemitraan_keterangan'] ?? null,
+                        'dokumen_path'       => $dokumenPath,
                     ],
                 ];
 
@@ -1453,7 +1487,7 @@ Route::middleware('auth')->group(function () {
 
                 $astapPayload['alamat_barang'] = $resolvedAlamat;
 
-                $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $mesinItems, $request) {
+                $item = \Illuminate\Support\Facades\DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $mesinItems, $dokumenPath, $request) {
                     $item = \App\Models\Astap::create($astapPayload);
 
                     // Buat AstapRegister untuk setiap unit barang kemitraan
@@ -1740,6 +1774,7 @@ Route::middleware('auth')->group(function () {
                         'tahun'            => $tahun,
                         'triwulan'         => $data['triwulan'],
                         'keterangan'       => $data['kemitraan_keterangan'] ?? null,
+                        'dokumen_path'     => $dokumenPath,
                         'user_id'          => auth()->id(),
                     ]);
 
@@ -1759,30 +1794,13 @@ Route::middleware('auth')->group(function () {
             })->name('astap.store_kemitraan');
 
             // ─── Form Kemitraan Pihak Ketiga (Edit & Update) ─────────────────
-            Route::get('/astap/{id}/edit-kemitraan', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
+            Route::get('/astap/{id}/edit-kemitraan', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras) {
                 $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'kemitraan'])->findOrFail($id);
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
-
-                $dbMitraKemitraans = \App\Models\AstapKemitraan::whereNotNull('mitra_nama')
-                    ->where('mitra_nama', '!=', '')
-                    ->where('is_deleted', 0)
-                    ->orderBy('id', 'desc')
-                    ->get(['mitra_nama', 'mitra_pimpinan', 'mitra_alamat'])
-                    ->groupBy(fn($item) => strtolower(trim($item->mitra_nama)))
-                    ->map(function($group) {
-                        $latest = $group->first();
-                        $withPimpinan = $group->first(fn($it) => !empty(trim($it->mitra_pimpinan ?? '')));
-                        $withAlamat = $group->first(fn($it) => !empty(trim($it->mitra_alamat ?? '')));
-                        return [
-                            'nama'     => trim($latest->mitra_nama),
-                            'pimpinan' => trim($withPimpinan ? $withPimpinan->mitra_pimpinan : ($latest->mitra_pimpinan ?? '')),
-                            'alamat'   => trim($withAlamat ? $withAlamat->mitra_alamat : ($latest->mitra_alamat ?? '')),
-                        ];
-                    })
-                    ->values();
+                $dbMitraKemitraans = $getDistinctMitras();
 
                 $dbPpkKemitraans = \App\Models\Astap::where('sumber_dana', 'kemitraan')
                     ->whereNotNull('ppk_nama')
@@ -1816,6 +1834,16 @@ Route::middleware('auth')->group(function () {
             })->name('astap.edit_kemitraan');
 
             Route::match(['put', 'post'], '/astap/update-kemitraan/{id}', function (\Illuminate\Http\Request $request, $id) {
+                // Normalisasi input JSON string jika dikirim via multipart FormData
+                foreach (['mesin_items', 'tanah_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'spesifikasi_json'] as $jsonField) {
+                    if ($request->has($jsonField) && is_string($request->input($jsonField))) {
+                        $decoded = json_decode($request->input($jsonField), true);
+                        if (is_array($decoded)) {
+                            $request->merge([$jsonField => $decoded]);
+                        }
+                    }
+                }
+
                 $astap = \App\Models\Astap::with(['registers', 'kemitraan'])->findOrFail($id);
 
                 $data = $request->validate([
@@ -1840,6 +1868,7 @@ Route::middleware('auth')->group(function () {
                     'unit_id'              => 'nullable|integer|exists:units,id',
                     'alamat_barang'        => 'nullable|string|max:1000',
                     'kondisi'              => 'nullable|string|in:Baik,Kurang Baik,Rusak Berat',
+                    'dokumen_file'         => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
                 ]);
 
                 $parseDateHelper = function($val) {
@@ -2031,7 +2060,16 @@ Route::middleware('auth')->group(function () {
                     $resolvedAlamat = null;
                 }
 
-                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $resolvedAlamat, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $request) {
+                // Handle Upload Berkas Dokumen BAST / PKS Kerja Sama (jika ada file baru)
+                $dokumenPath = $astap->kemitraan?->dokumen_path ?? ($astap->spesifikasi_json['dokumen_path'] ?? null);
+                if ($request->hasFile('dokumen_file')) {
+                    $file = $request->file('dokumen_file');
+                    $filename = 'BAST_KEMITRAAN_' . time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                    $dokumenPath = $file->storeAs('dokumen_kemitraan', $filename, 'public');
+                }
+                $specJson['dokumen_path'] = $dokumenPath;
+
+                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $resolvedAlamat, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $dokumenPath, $request) {
                     $astap->update([
                         'nama_barang'          => $data['nama_barang'],
                         'jenis_astap_id'       => $data['jenis_astap_id'],
@@ -2075,6 +2113,7 @@ Route::middleware('auth')->group(function () {
                         'tahun'            => $tahun,
                         'triwulan'         => $data['triwulan'],
                         'keterangan'       => $data['kemitraan_keterangan'] ?? null,
+                        'dokumen_path'     => $dokumenPath,
                         'user_id'          => auth()->id(),
                     ]);
                     $kemitraan->save();
