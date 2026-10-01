@@ -15,9 +15,10 @@
                                     'bg-teal-500/20 text-teal-300 border-teal-500/30':     getEffectiveKibCategory(selectedAstapDetail) === 'KIB D',
                                     'bg-orange-500/20 text-orange-300 border-orange-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'KIB E',
                                     'bg-rose-500/20 text-rose-300 border-rose-500/30':     getEffectiveKibCategory(selectedAstapDetail) === 'KIB F',
-                                    'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'ATB'
+                                    'bg-indigo-500/20 text-indigo-300 border-indigo-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'ATB',
+                                    'bg-violet-500/20 text-violet-300 border-violet-500/30': getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAIN' || getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAINNYA'
                                 }"
-                                x-text="selectedAstapDetail?.category === 'EXTRACOM' ? '📦 EXTRACOM' : (getEffectiveKibCategory(selectedAstapDetail))"></span>
+                                x-text="selectedAstapDetail?.category === 'EXTRACOM' ? '📦 EXTRACOM' : (getEffectiveKibCategory(selectedAstapDetail) === 'ASET LAIN' ? 'ASET LAIN (1.5.4)' : getEffectiveKibCategory(selectedAstapDetail))"></span>
 
                             <template x-if="selectedAstapDetail?.sumber_dana === 'kemitraan' || selectedAstapDetail?.sumber_dana_raw === 'kemitraan' || selectedAstapDetail?.category === 'KEMITRAAN'">
                                 <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-cyan-500/20 text-cyan-300 border-cyan-500/30">

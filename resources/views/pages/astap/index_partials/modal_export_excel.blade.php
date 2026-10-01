@@ -249,6 +249,7 @@
                         <option value="KIB F">KIB F - Konstruksi KDP</option>
                         <option value="ATB">ATB - Aset Tidak Berwujud</option>
                         <option value="EXTRACOM">Extracom</option>
+                        <option value="ASET LAIN">Aset Lain-Lain (1.5.4)</option>
                     </select>
                 </div>
 

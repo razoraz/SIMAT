@@ -11400,8 +11400,8 @@
                 getEffectiveKibCategory(astap) {
                     if (!astap) return 'KIB B';
                     let cat = String(astap.category || '').toUpperCase().trim();
-                    if (cat === 'KIB A' || cat === 'KIB B' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB E' || cat === 'KIB F' || cat === 'EXTRACOM' || cat === 'ATB') {
-                        return cat;
+                    if (cat === 'KIB A' || cat === 'KIB B' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB E' || cat === 'KIB F' || cat === 'EXTRACOM' || cat === 'ATB' || cat === 'ASET LAIN' || cat === 'ASET LAINNYA') {
+                        return (cat === 'ASET LAINNYA') ? 'ASET LAIN' : cat;
                     }
 
                     let spec = astap.spesifikasi_json;
@@ -11424,6 +11424,7 @@
                     if (kd.endsWith('.003') || kd.includes('.01.003') || kd.startsWith('1.3.3') || kd.includes('.01.01.01.003')) return 'KIB C';
                     if (kd.endsWith('.004') || kd.includes('.01.004') || kd.startsWith('1.3.4') || kd.includes('.01.01.01.004')) return 'KIB D';
                     if (kd.endsWith('.005') || kd.includes('.01.005') || kd.startsWith('1.3.5') || kd.includes('.01.01.01.005')) return 'KIB E';
+                    if (kd.startsWith('1.5.4')) return 'ASET LAIN';
 
                     // 3. Periksa isi repeater yang valid
                     if (spec?.mesin_items?.some(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0))) return 'KIB B';
@@ -11949,7 +11950,14 @@
                                             (item.kode_barang || '').toLowerCase().includes(query) ||
                                             (item.merk || '').toLowerCase().includes(query);
                                             
-                        const matchCategory = this.categoryFilter === 'all' || item.category === this.categoryFilter;
+                        const matchCategory = this.categoryFilter === 'all' || 
+                                              item.category === this.categoryFilter ||
+                                              (this.categoryFilter === 'ASET LAIN' && (
+                                                  item.category === 'ASET LAIN' || 
+                                                  item.category === 'ASET LAINNYA' || 
+                                                  item.category === '1.5.4' || 
+                                                  (item.kode_barang && String(item.kode_barang).startsWith('1.5.4'))
+                                              ));
                         // Filter kondisi: mencakup jika ada unit dengan kondisi tsb
                         const stats = this.getKondisiStats(item);
                         let matchKondisi = true;
