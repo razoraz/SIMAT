@@ -1153,7 +1153,7 @@
                     tanggal_bamb: this.formData.mutasi_tanggal,
                     kondisi: this.formData.kondisi,
                     keterangan: this.formData.mutasi_keterangan,
-                    nomor_sk_dasar: this.formData.nomor_sk_dasar || this.formData.alamat_instansi || '',
+                    nomor_sk_dasar: this.formData.nomor_sk_dasar || '',
                     alamat_instansi: this.formData.alamat_instansi || '',
                     pj_asal_nama: this.formData.pj_asal_nama,
                     pj_asal_nip: this.formData.pj_asal_nip,
@@ -1239,7 +1239,7 @@
                 postData.append('unit_id', this.formData.unit_id || '');
                 postData.append('alamat_barang', this.formData.alamat_barang || '');
                 postData.append('kondisi', this.formData.kondisi || 'Baik');
-                postData.append('nomor_sk_dasar', this.formData.nomor_sk_dasar || this.formData.alamat_instansi || '');
+                postData.append('nomor_sk_dasar', this.formData.nomor_sk_dasar || '');
                 postData.append('alamat_instansi', this.formData.alamat_instansi || '');
                 postData.append('pj_asal_nama', this.formData.pj_asal_nama || '');
                 postData.append('pj_asal_nip', this.formData.pj_asal_nip || '');

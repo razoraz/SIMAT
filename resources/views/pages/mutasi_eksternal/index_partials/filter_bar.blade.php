@@ -33,17 +33,19 @@
                     x-text="countSelesai"></span>
             </button>
 
-            {{-- Button Menunggu Verifikasi --}}
-            <button type="button" @click="statusFilter = 'menunggu_verifikasi'"
-                :class="statusFilter === 'menunggu_verifikasi' 
-                    ? 'bg-amber-500 text-slate-950 font-extrabold shadow-lg shadow-amber-500/25 border-amber-400 ring-2 ring-amber-500/30' 
-                    : 'bg-slate-900/90 text-slate-400 hover:text-amber-300 hover:bg-slate-800 border-slate-800'"
-                class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
-                <span>⏳ Menunggu Verifikasi</span>
-                <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
-                    :class="statusFilter === 'menunggu_verifikasi' ? 'bg-slate-950/40 text-slate-950' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
-                    x-text="countMenunggu"></span>
-            </button>
+            {{-- Button Menunggu Verifikasi (Hanya muncul jika terdapat data menunggu) --}}
+            <template x-if="countMenunggu > 0">
+                <button type="button" @click="statusFilter = 'menunggu_verifikasi'"
+                    :class="statusFilter === 'menunggu_verifikasi' 
+                        ? 'bg-amber-500 text-slate-950 font-extrabold shadow-lg shadow-amber-500/25 border-amber-400 ring-2 ring-amber-500/30' 
+                        : 'bg-slate-900/90 text-slate-400 hover:text-amber-300 hover:bg-slate-800 border-slate-800'"
+                    class="px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 active:scale-95">
+                    <span>⏳ Menunggu Verifikasi</span>
+                    <span class="px-1.5 py-0.2 text-[10px] font-mono font-black rounded-md"
+                        :class="statusFilter === 'menunggu_verifikasi' ? 'bg-slate-950/40 text-slate-950' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
+                        x-text="countMenunggu"></span>
+                </button>
+            </template>
         </div>
 
         <!-- Filter Kategori KIB & Search Input Row -->

@@ -93,12 +93,6 @@
 
                 <!-- Legalitas & Dokumen Mutasi BMD -->
                 <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                    <template x-if="selectedMutasi.alamat_instansi">
-                        <div>
-                            <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Alamat Instansi Pengirim:</span>
-                            <p class="text-white font-semibold text-xs leading-relaxed mt-0.5" x-text="selectedMutasi.alamat_instansi"></p>
-                        </div>
-                    </template>
                     <div>
                         <span class="text-slate-400 text-[10.5px] uppercase font-bold tracking-wider block">Dasar Pelimpahan / SK:</span>
                         <p class="text-slate-300 font-semibold text-xs leading-relaxed mt-0.5" x-text="selectedMutasi.nomor_sk_dasar || '-'"></p>

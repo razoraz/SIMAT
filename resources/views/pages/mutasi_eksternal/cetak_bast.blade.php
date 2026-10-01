@@ -312,9 +312,7 @@
                         </div>
                     </div>
                     @else
-                    <div class="h-16 flex items-center justify-center text-[8.5pt] italic text-slate-400 border border-dashed border-slate-300 rounded px-3">
-                        (Belum Disahkan TTE BSrE)
-                    </div>
+                    <!-- Ruang Bersih untuk Tanda Tangan Basah & Stempel -->
                     @endif
                 </div>
                 <p class="font-bold underline text-[10pt] uppercase">{{ $pbNama }}</p>

@@ -109,11 +109,16 @@
 
                         <div>
                             <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Alamat Instansi Pengirim:</span>
-                            <span class="text-slate-300 text-xs block leading-relaxed flex items-center gap-1.5" x-show="formData.alamat_instansi || formData.nomor_sk_dasar">
+                            <span class="text-slate-300 text-xs block leading-relaxed flex items-center gap-1.5" x-show="formData.alamat_instansi">
                                 <span class="text-cyan-400">📍</span>
-                                <span x-text="formData.alamat_instansi || formData.nomor_sk_dasar"></span>
+                                <span x-text="formData.alamat_instansi"></span>
                             </span>
-                            <span class="text-slate-500 italic text-xs block" x-show="!formData.alamat_instansi && !formData.nomor_sk_dasar">-</span>
+                            <span class="text-slate-500 italic text-xs block" x-show="!formData.alamat_instansi">-</span>
+                        </div>
+
+                        <div x-show="formData.nomor_sk_dasar" class="pt-1">
+                            <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Dasar Pelimpahan / SK Bupati:</span>
+                            <span class="text-indigo-300 font-mono text-xs block font-bold" x-text="formData.nomor_sk_dasar"></span>
                         </div>
 
                         <div class="pt-2 border-t border-slate-800/60">

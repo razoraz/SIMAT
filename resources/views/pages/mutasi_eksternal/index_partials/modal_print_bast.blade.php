@@ -21,11 +21,11 @@
                     <span x-text="showEditForm ? '✕ Tutup Form Edit' : '✏️ Edit Data & Pejabat BAST'"></span>
                 </button>
 
-                <!-- Toggle TTD BSrE -->
+                <!-- Toggle TTD BSrE / Manual -->
                 <button type="button" @click="toggleSign(printDoc)"
-                    :class="printDoc && printDoc.signed ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30' : 'bg-emerald-500 text-slate-950 font-extrabold shadow-md'"
+                    :class="printDoc && printDoc.signed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30' : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700'"
                     class="px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all active:scale-95 cursor-pointer">
-                    <span x-text="printDoc && printDoc.signed ? '↩️ Batalkan TTD BSrE' : '✍️ TTD BSrE'"></span>
+                    <span x-text="printDoc && printDoc.signed ? '✍️ Mode: TTE BSrE (Aktif)' : '🖋️ Mode: TTD Basah / Fisik'"></span>
                 </button>
 
                 <!-- Tombol Cetak -->
@@ -77,10 +77,14 @@
                 <!-- Baris 2: Pihak Kesatu (Yang Menyerahkan / OPD Luar) -->
                 <div class="pt-2 border-t border-slate-800/80">
                     <span class="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider block mb-2">1. Pihak Kesatu (Yang Menyerahkan / SKPD Pengirim):</span>
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
                         <div class="col-span-1 sm:col-span-2">
                             <label class="block text-slate-400 text-[10px] mb-1">Nama Instansi / OPD Pengirim</label>
                             <input type="text" x-model="printDoc.opd_asal" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-cyan-300 font-bold text-xs">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="block text-slate-400 text-[10px] mb-1">Alamat Instansi</label>
+                            <input type="text" x-model="printDoc.alamat_instansi" placeholder="Jl. ..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 text-xs">
                         </div>
                         <div>
                             <label class="block text-slate-400 text-[10px] mb-1">Nama Pejabat Penyerah</label>
@@ -183,6 +187,14 @@
                                 <td style="border: none !important; vertical-align: top; padding: 1px 0;">:</td>
                                 <td style="border: none !important; vertical-align: top; padding: 1px 0;" class="font-bold uppercase text-purple-950" x-text="printDoc.opd_asal"></td>
                             </tr>
+                            <template x-if="printDoc.alamat_instansi">
+                                <tr style="border: none !important;">
+                                    <td style="border: none !important;"></td>
+                                    <td style="border: none !important; vertical-align: top; padding: 1px 0;">Alamat Instansi</td>
+                                    <td style="border: none !important; vertical-align: top; padding: 1px 0;">:</td>
+                                    <td style="border: none !important; vertical-align: top; padding: 1px 0;" x-text="printDoc.alamat_instansi"></td>
+                                </tr>
+                            </template>
                             <tr style="border: none !important;">
                                 <td style="border: none !important;"></td>
                                 <td colspan="3" style="border: none !important; vertical-align: top; padding: 2px 0 6px 0;" class="italic text-[9pt]">
@@ -322,11 +334,6 @@
                                                 <div style="color:#374151;">Pengurus Barang Pengguna</div>
                                                 <div style="font-size:6.5px; color:#6b7280; font-family:monospace;">Sertifikat BSrE - BSSN</div>
                                             </div>
-                                        </div>
-                                    </template>
-                                    <template x-if="printDoc.signed === false">
-                                        <div style="padding:4px 10px; border:1.5px dashed #d97706; background:#fffbeb; border-radius:5px; text-align:center; color:#92400e; display:inline-block;">
-                                            <span style="font-size:8px; font-weight:700; font-style:italic;">( Menunggu Pengesahan TTD BSrE )</span>
                                         </div>
                                     </template>
                                 </div>

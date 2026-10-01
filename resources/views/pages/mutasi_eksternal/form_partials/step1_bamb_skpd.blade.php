@@ -12,7 +12,7 @@
             <span>Langkah 1: Dokumen BAMB &amp; SKPD Pengirim</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1">
-            Lengkapi data legalitas Berita Acara Mutasi Barang (BAMB/BAST), instansi atau SKPD pengirim, pejabat penyerah dan penerima, serta dokumen berkas serah terima.
+            Lengkapi data legalitas Berita Acara Mutasi Barang (BAMB/BAST), instansi atau SKPD pengirim, pejabat penyerah, serta dokumen berkas serah terima.
         </p>
 
 

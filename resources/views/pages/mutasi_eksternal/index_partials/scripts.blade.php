@@ -282,9 +282,11 @@
 
                     // Pihak Kesatu (Yang Menyerahkan / SKPD Pengirim)
                     opd_asal: item.opd_asal || 'Dinas Kesehatan Kabupaten Bondowoso',
+                    alamat_instansi: item.alamat_instansi || (item.astap && item.astap.spesifikasi_json ? item.astap.spesifikasi_json.alamat_instansi : '') || '',
                     pj_asal_nama: item.pj_asal_nama || 'Pejabat Penyerah SKPD Pengirim',
                     pj_asal_nip: item.pj_asal_nip || '-',
                     pj_asal_jabatan: item.pj_asal_jabatan || 'Pengurus Barang / PPK Asal',
+                    nomor_sk_dasar: item.nomor_sk_dasar || '',
 
                     // Pihak Kedua (Yang Menerima / Pengurus Barang RSUD Dr. H. Koesnadi)
                     opd_tujuan: 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
