@@ -736,6 +736,7 @@
                                 class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                                 <option value="Aktif">🟢 Aktif (Kerjasama Berjalan)</option>
                                 <option value="Akan Berakhir">🟡 Akan Berakhir (Sisa &lt; 30 Hari)</option>
+                                <option value="Konsesi Berakhir">🛑 Konsesi Berakhir (Masa Konsesi Lewat)</option>
                                 <option value="Selesai / Reklasifikasi">🔵 Selesai (Siap Reklasifikasi ke Aset Tetap)</option>
                                 <option value="Dihentikan">🔴 Dihentikan / Dibatalkan</option>
                             </select>

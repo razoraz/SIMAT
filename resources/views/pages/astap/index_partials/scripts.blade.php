@@ -9632,10 +9632,10 @@
                     const it = this.selectedAstapReklas;
                     const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(it) : (it.category || '');
                     const kode = it.kode_barang || it.jenis_aset_kode || '';
-                    if (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3')) {
+                    if (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || kode.startsWith('1.5.2')) {
                         return true;
                     }
-                    return (cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB');
+                    return (cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
                 },
 
                 isCurrentAstapKdp() {
@@ -9755,7 +9755,7 @@
                     const isExtracomNow = this.isCurrentAstapExtracom();
                     const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : (item.category || '');
                     const kode = item.kode_barang || item.jenis_aset_kode || '';
-                    const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB');
+                    const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || kode.startsWith('1.5.2') || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
 
                     if (isExtracomNow) {
                         // Kebalikan: dari Ekstrakomptabel dikapitalisasi ke Intrakomptabel
@@ -9765,6 +9765,9 @@
                         // Proyek KDP selesai -> Kapitalisasi ke KIB C / D Definitif
                         this.reklasJenis = 'kdp';
                         this.reklasTujuanKib = 'KIB C';
+                    } else if (cat === 'KEMITRAAN' || kode.startsWith('1.5.2')) {
+                        this.reklasJenis = 'pindah_kib';
+                        this.reklasTujuanKib = 'KIB B';
                     } else if (isNonExtracom) {
                         this.reklasJenis = 'pindah_kib';
                         this.reklasTujuanKib = cat === 'KIB A' ? 'KIB C' : 'KIB B';

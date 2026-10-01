@@ -99,6 +99,7 @@ class AstapController extends Controller
                 $jp = $a->jenisPengadaan;
                 $rb = $a->rekeningBelanja;
                 $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
+                $latestReklas = $a->reklas ? $a->reklas->first() : null;
 
                 return [
                     'id' => $a->id,
@@ -107,6 +108,13 @@ class AstapController extends Controller
                     'is_extracomtable' => (bool) $a->is_extracomtable,
                     'is_reklas' => (bool) $a->is_reklas,
                     'jenis_reklas' => $a->jenis_reklas,
+                    'tujuan_kib' => $latestReklas?->tujuan_kib,
+                    'tujuan_kode' => $latestReklas?->tujuan_kode,
+                    'tujuan_kode_barang' => $latestReklas?->tujuan_kode,
+                    'tujuan_nama' => $latestReklas?->tujuan_nama,
+                    'asal_kib' => $latestReklas?->asal_kib,
+                    'asal_kode' => $latestReklas?->asal_kode,
+                    'nilai_reklas' => $latestReklas?->nilai_reklas ? (float) $latestReklas->nilai_reklas : null,
                     'asal_usul' => $jp ? ($jp->nama_pengadaan ?: '') : ($spec['asal_usul'] ?? ($spec['cara_perolehan'] ?? '')),
                     'sumber_dana' => in_array($a->sumber_dana, ['pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'pelimpahan' : ($a->sumber_dana === 'kemitraan' ? 'kemitraan' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
                     'sumber_dana_raw' => $a->sumber_dana,

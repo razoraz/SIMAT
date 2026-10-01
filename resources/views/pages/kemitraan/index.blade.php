@@ -21,6 +21,9 @@
         <!-- MODAL KONFIRMASI HAPUS / BATALKAN -->
         @include('pages.kemitraan.master_partials.modal_confirm')
 
+        <!-- MODAL REKLASIFIKASI ASET TETAP (RSDK) — SAMA SEPERTI DI DATA ASTAP -->
+        @include('pages.astap.index_partials.modal_reklas')
+
         <!-- MODAL PRATINJAU & DOWNLOAD QR CODE -->
         @include('pages.kemitraan.master_partials.modal_qr_kemitraan')
 

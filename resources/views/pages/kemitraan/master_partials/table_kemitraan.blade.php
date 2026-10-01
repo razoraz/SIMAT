@@ -174,6 +174,10 @@
                                     <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1 border border-rose-500/30">
                                         <span>🛑</span> Dihentikan
                                     </span>
+                                @elseif($row->status_konsesi === 'Konsesi Berakhir' || (!is_null($sisaHari) && $sisaHari <= 0))
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1 border border-rose-500/30">
+                                        <span>🛑</span> Konsesi Berakhir
+                                    </span>
                                 @elseif(!is_null($sisaHari))
                                     @if($sisaHari > 60)
                                         <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md mt-1 border border-emerald-500/20">
@@ -182,10 +186,6 @@
                                     @elseif($sisaHari > 0)
                                         <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md mt-1 border border-amber-500/20">
                                             <span>⚠️</span> Sisa {{ $sisaHari }} hari
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1 border border-rose-500/30">
-                                            <span>🛑</span> Konsesi Berakhir
                                         </span>
                                     @endif
                                 @endif
@@ -209,15 +209,15 @@
                                 </button>
 
                                 @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                <!-- 2. Tombol Reklas (Reklasifikasi Aset Konsesi Selesai ke Definitif KIB) -->
-                                <a href="{{ route('master.reklasifikasi') }}?astap_id={{ $astap?->id }}"
-                                    title="Reklasifikasi Aset (Pindah ke Aset Tetap KIB A-E saat Masa Konsesi Berakhir)"
+                                <!-- 2. Tombol Reklas (Reklasifikasi Aset — Sama Seperti Data ASTAP) -->
+                                <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
+                                    title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
                                     class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                     <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                     </svg>
                                     <span>Reklas</span>
-                                </a>
+                                </button>
 
                                 <!-- 3. Tombol Ubah (Form Edit ASTAP Kemitraan) -->
                                 <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"

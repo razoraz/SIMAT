@@ -53,10 +53,18 @@ class KemitraanController extends Controller
             });
         }
 
+        // Sinkronisasi status konsesi: Jika tanggal_selesai sudah lewat, ubah status 'Aktif' menjadi 'Konsesi Berakhir'
+        $today = Carbon::today();
+        AstapKemitraan::where('is_deleted', 0)
+            ->where('status_konsesi', 'Aktif')
+            ->whereNotNull('tanggal_selesai')
+            ->where('tanggal_selesai', '<', $today)
+            ->update(['status_konsesi' => 'Konsesi Berakhir']);
+
         $filterSkema  = $request->query('skema', 'all');   // 'all', 'KSO', 'BGS', 'BSG', 'KSP', 'Sewa'
         $filterTahun  = $request->query('tahun', 'all');
         $filterTw     = $request->query('triwulan', 'all');
-        $filterStatus = $request->query('status', 'all');  // 'all', 'Aktif', 'Akan Berakhir', 'Selesai / Reklasifikasi'
+        $filterStatus = $request->query('status', 'all');  // 'all', 'Aktif', 'Akan Berakhir', 'Konsesi Berakhir', 'Selesai / Reklasifikasi'
         $search       = trim($request->query('search', ''));
 
         // Query utama data kemitraan (hanya yang aktif / belum dihapus)
@@ -89,7 +97,23 @@ class KemitraanController extends Controller
         }
 
         if ($filterStatus !== 'all') {
-            $query->where('status_konsesi', $filterStatus);
+            if ($filterStatus === 'Aktif') {
+                $query->where('status_konsesi', 'Aktif')
+                      ->where(function ($q) use ($today) {
+                          $q->whereNull('tanggal_selesai')->orWhere('tanggal_selesai', '>=', $today);
+                      });
+            } elseif ($filterStatus === 'Konsesi Berakhir') {
+                $query->where(function ($q) use ($today) {
+                    $q->where('status_konsesi', 'Konsesi Berakhir')
+                      ->orWhere(function ($sq) use ($today) {
+                          $sq->where('status_konsesi', 'Aktif')
+                             ->whereNotNull('tanggal_selesai')
+                             ->where('tanggal_selesai', '<', $today);
+                      });
+                });
+            } else {
+                $query->where('status_konsesi', $filterStatus);
+            }
         }
 
         if ($search !== '') {
@@ -113,7 +137,20 @@ class KemitraanController extends Controller
 
         $totalNilaiKemitraan = (clone $kpiBase)->sum('nilai_aset');
         $totalVolumeUnit     = (clone $kpiBase)->sum('jumlah_volume');
-        $totalAktif          = (clone $kpiBase)->where('status_konsesi', 'Aktif')->count();
+        $totalAktif          = (clone $kpiBase)
+            ->where('status_konsesi', 'Aktif')
+            ->where(function ($q) use ($today) {
+                $q->whereNull('tanggal_selesai')->orWhere('tanggal_selesai', '>=', $today);
+            })->count();
+        $totalBerakhir       = (clone $kpiBase)
+            ->where(function ($q) use ($today) {
+                $q->where('status_konsesi', 'Konsesi Berakhir')
+                  ->orWhere(function ($sq) use ($today) {
+                      $sq->where('status_konsesi', 'Aktif')
+                         ->whereNotNull('tanggal_selesai')
+                         ->where('tanggal_selesai', '<', $today);
+                  });
+            })->count();
         $totalMitraUnik      = (clone $kpiBase)->distinct('mitra_nama')->count('mitra_nama');
 
         // Daftar Unit & Jenis 108 untuk modal atau filter
@@ -135,6 +172,7 @@ class KemitraanController extends Controller
             'totalNilaiKemitraan',
             'totalVolumeUnit',
             'totalAktif',
+            'totalBerakhir',
             'totalMitraUnik',
             'dbUnits',
             'dbMaster108',
@@ -154,7 +192,7 @@ class KemitraanController extends Controller
         $kemitraan = AstapKemitraan::findOrFail($id);
 
         $request->validate([
-            'status_konsesi' => 'required|string|in:Aktif,Akan Berakhir,Selesai / Reklasifikasi,Dihentikan',
+            'status_konsesi' => 'required|string|in:Aktif,Akan Berakhir,Konsesi Berakhir,Selesai / Reklasifikasi,Dihentikan',
             'keterangan'     => 'nullable|string|max:1000'
         ]);
 

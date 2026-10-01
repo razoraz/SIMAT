@@ -81,7 +81,16 @@
                 <span class="text-lg sm:text-xl font-black text-blue-400 font-mono" x-text="{{ $totalAktif ?? 0 }}"></span>
                 <span class="text-xs font-semibold text-slate-400">PKS Berjalan</span>
             </div>
-            <p class="text-[10px] text-slate-500 mt-1">Masa Konsesi Masih Berlaku</p>
+            @if(($totalBerakhir ?? 0) > 0)
+                <div class="mt-1 flex items-center justify-between text-[10px]">
+                    <span class="text-slate-500">Masa Konsesi Berlaku</span>
+                    <span class="font-bold text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20" title="{{ $totalBerakhir }} PKS telah melewati tanggal masa konsesi">
+                        🛑 {{ $totalBerakhir }} Berakhir
+                    </span>
+                </div>
+            @else
+                <p class="text-[10px] text-slate-500 mt-1">Masa Konsesi Masih Berlaku</p>
+            @endif
         </div>
 
         <!-- KPI 4: Mitra Rekanan Bekerjasama -->

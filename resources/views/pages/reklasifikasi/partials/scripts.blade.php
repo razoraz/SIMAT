@@ -895,6 +895,7 @@
                         if (typeof window.showSimatToast === 'function') {
                             window.showSimatToast(result.message || 'Transaksi reklasifikasi berhasil dibatalkan/dihapus.', 'success');
                         }
+                        setTimeout(() => window.location.reload(), 700);
                     } else {
                         if (typeof window.showSimatToast === 'function') {
                             window.showSimatToast(result.message || 'Gagal menghapus transaksi.', 'error');
@@ -937,6 +938,24 @@
 
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.table_to_sheet(table);
+
+                // Format ulang angka numerik agar tidak menjadi string teks pada Excel
+                for (const cellKey in ws) {
+                    if (cellKey[0] === '!') continue;
+                    const cell = ws[cellKey];
+                    if (cell && cell.t === 's' && typeof cell.v === 'string') {
+                        const str = cell.v.trim();
+                        if (str.startsWith('Rp') || str.includes('Rp ')) {
+                            const cleanNum = str.replace(/Rp\s*/g, '').replace(/\./g, '').replace(/,/g, '.').trim();
+                            if (!isNaN(cleanNum) && cleanNum !== '') {
+                                cell.t = 'n';
+                                cell.v = parseFloat(cleanNum);
+                                cell.z = '#,##0';
+                            }
+                        }
+                    }
+                }
+
                 const sheetName = this.activeTab === 'log' ? 'Log_Transaksi' : 'Sheet3_REKLAS';
                 XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
