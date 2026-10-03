@@ -27,7 +27,7 @@ class HibahController extends Controller
 
         // Query utama riwayat hibah (Hanya data aktif / belum dihapus)
         $query = AstapHibah::active()
-            ->with(['astap.jenisAstap', 'astap.registers', 'register', 'user'])
+            ->with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'register.unit', 'user'])
             ->orderBy('tanggal_bast', 'desc')
             ->orderBy('id', 'desc');
 
@@ -57,7 +57,7 @@ class HibahController extends Controller
 
         $hibahRecords = $query->get();
 
-        // Hitung Statistik KPI dari data aktif
+        // Hitung Statistik KPI dari data aktif via aggregate query / collection
         $allHibahs = AstapHibah::active()->with('astap')->get();
         $totalMasukUnit = $allHibahs->where('tipe_hibah', 'masuk')->sum('jumlah_volume');
         $totalMasukNominal = $allHibahs->where('tipe_hibah', 'masuk')->sum('nilai_aset');
@@ -103,6 +103,19 @@ class HibahController extends Controller
                 ];
             });
 
+        // Ambil data Astap Hibah lengkap untuk kebutuhan Engine Ekspor Excel Multi-Sheet (Client-Side)
+        $hibahAstaps = Astap::with(['registers.unit', 'hibahs', 'jenisAstap', 'unit'])
+            ->where('is_deleted', 0)
+            ->where(function ($q) {
+                $q->where('sumber_dana', 'hibah')
+                  ->orWhereHas('hibahs', fn($sq) => $sq->where('is_deleted', 0));
+            })
+            ->get();
+
+        // Daftar Unit & Jenis 108 untuk filter / modal
+        $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+        $dbMaster108 = \App\Models\JenisAstap::getNested108();
+
         // Daftar Tahun Unik untuk Filter
         $availableYears = AstapHibah::active()->select('tahun')
             ->distinct()
@@ -116,6 +129,9 @@ class HibahController extends Controller
 
         return view('pages.hibah.index', compact(
             'hibahRecords',
+            'hibahAstaps',
+            'dbUnits',
+            'dbMaster108',
             'totalMasukUnit',
             'totalMasukNominal',
             'totalKeluarUnit',

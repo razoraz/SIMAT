@@ -965,7 +965,11 @@ Route::middleware('auth')->group(function () {
             Route::post('/astap/store-hibah', function (\Illuminate\Http\Request $request) {
                 $data = $request->validate([
                     'nama_barang'        => 'required|string|max:500',
-                    'jenis_astap_id'     => 'required|integer|exists:jenis_astaps,id',
+                    'jenis_astap_id'     => 'nullable|integer|exists:jenis_astaps,id',
+                    'jenis_aset_kode'    => 'nullable|string|max:50',
+                    'jenis_aset_nama'    => 'nullable|string|max:255',
+                    'sub_rincian_kode'   => 'nullable|string|max:50',
+                    'sub_rincian_nama'   => 'nullable|string|max:255',
                     'tahun_perolehan'    => 'required|integer|min:1990|max:2100',
                     'jumlah_volume'      => 'required|integer|min:1',
                     'satuan'             => 'required|string|max:100',
@@ -978,13 +982,49 @@ Route::middleware('auth')->group(function () {
                     'unit_id'            => 'nullable|integer|exists:units,id',
                     'alamat_barang'      => 'nullable|string|max:1000',
                     'kondisi'            => 'nullable|string|max:50',
+                    'dokumen_bast'       => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
                 ]);
+
+                // ── Resolve jenis_astap_id: bisa dari ID langsung atau dari kode 108 ──
+                $jenisAstapId = !empty($data['jenis_astap_id']) ? (int) $data['jenis_astap_id'] : null;
+                if (!$jenisAstapId && !empty($data['jenis_aset_kode'])) {
+                    // Coba lookup berdasarkan kode
+                    $ja = \App\Models\JenisAstap::where('sub_sub_rincian_objek', $data['jenis_aset_kode'])
+                        ->orWhere('jenis', $data['jenis_aset_kode'])
+                        ->first();
+                    if ($ja) $jenisAstapId = $ja->id;
+                }
+                if (!$jenisAstapId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Klasifikasi Jenis Aset (Kode 108) tidak valid atau tidak ditemukan di database.',
+                    ], 422);
+                }
+                $data['jenis_astap_id'] = $jenisAstapId;
 
                 $totalRealisasi = (float) $data['total_realisasi'];
                 $totalVolume    = max(1, (int) $data['jumlah_volume']);
                 $hargaSatuan    = $totalRealisasi / $totalVolume;
                 $tahun          = (int) $data['tahun_perolehan'];
                 $kondisiItem    = $data['kondisi'] ?: 'Baik';
+
+                // ── Upload file dokumen BAST jika ada ───────────────────────────
+                $dokumenBastPath = null;
+                if ($request->hasFile('dokumen_bast') && $request->file('dokumen_bast')->isValid()) {
+                    $dokumenBastPath = $request->file('dokumen_bast')->store(
+                        'hibah/bast/' . $tahun,
+                        'public'
+                    );
+                }
+
+                // ── Parse spesifikasi_json (dikirim sebagai JSON string via FormData) ──
+                $spesifikasiExtra = [];
+                if ($request->filled('spesifikasi_json')) {
+                    $decoded = json_decode($request->input('spesifikasi_json'), true);
+                    if (is_array($decoded)) {
+                        $spesifikasiExtra = $decoded;
+                    }
+                }
 
                 $astapPayload = [
                     'nama_barang'               => $data['nama_barang'],
@@ -1010,25 +1050,31 @@ Route::middleware('auth')->group(function () {
                     'rekening_belanja_id'       => $request->input('rekening_belanja_id') ?: null,
                     'alamat_barang'             => $data['alamat_barang'] ?: 'RSUD Dr. H. Koesnandi',
                     'user_id'                   => auth()->id(),
-                    'is_extracomtable'          => (bool) ($request->input('is_extracomtable') ?? false),
+                    'is_extracomtable'          => filter_var($request->input('is_extracomtable', false), FILTER_VALIDATE_BOOLEAN),
                     'is_reklas'                 => false,
                     'is_deleted'                => 0,
-                    'spesifikasi_json'          => [
+                    'spesifikasi_json'          => array_merge([
                         'sumber_dana'        => 'hibah',
                         'pemberi'            => $data['hibah_pemberi'],
                         'nomor_bast'         => $data['hibah_nomor_bast'],
                         'tanggal_bast'       => $data['hibah_tanggal_bast'],
                         'kondisi'            => $kondisiItem,
                         'keterangan'         => $data['hibah_keterangan'] ?? null,
-                    ],
+                        'jenis_aset_kode'    => $data['jenis_aset_kode'] ?? null,
+                        'jenis_aset_nama'    => $data['jenis_aset_nama'] ?? null,
+                        'sub_rincian_kode'   => $data['sub_rincian_kode'] ?? null,
+                        'sub_rincian_nama'   => $data['sub_rincian_nama'] ?? null,
+                        'tipe_hibah'         => $request->input('tipe_hibah', 'masuk'),
+                        'hibah_pimpinan'     => $request->input('hibah_pimpinan'),
+                        'hibah_alamat_pemberi' => $request->input('hibah_alamat_pemberi'),
+                        'dokumen_bast_path'  => $dokumenBastPath,
+                    ], $spesifikasiExtra),
                 ];
 
-                    // Gabungkan spesifikasi repeater jika dikirimkan dari form
-                    if ($request->has('spesifikasi_json') && is_array($request->input('spesifikasi_json'))) {
-                        $astapPayload['spesifikasi_json'] = array_merge($astapPayload['spesifikasi_json'], $request->input('spesifikasi_json'));
-                    }
+                    // Gabungkan spesifikasi repeater dari spesifikasi_json yang sudah di-decode
+                    // (sudah digabung di atas via array_merge)
 
-                    // Tangkap spesifikasi teknis jika dikirimkan di root request
+                    // Tangkap spesifikasi teknis tambahan jika masih ada yang dikirimkan di root request
                     $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
                     foreach ($repeaterKeys as $rk) {
                         if ($request->has($rk) && !is_null($request->input($rk))) {
@@ -1135,6 +1181,212 @@ Route::middleware('auth')->group(function () {
                     return redirect()->route('master.hibah')
                         ->with('success', 'Data Hibah "' . $item->nama_barang . '" berhasil ditambahkan.');
                 })->name('astap.store_hibah');
+
+            // ─── Form Hibah (Edit & Update) ──────────────────────────────
+            Route::get('/astap/{id}/edit-hibah', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats) {
+                $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'hibahs'])->findOrFail($id);
+                $dbMaster108 = \App\Models\JenisAstap::getNested108();
+                $dbUnits = \App\Models\Unit::orderBy('nama')->get();
+                $dbRekeningBelanjas = \App\Models\RekeningBelanja::orderBy('kode_rek')->get();
+                $dbPenyedias = $getDistinctPenyedias();
+                $dbPejabats = $getDistinctPejabats();
+                $dbPemberiHibahs = \App\Models\AstapHibah::whereNotNull('pihak_hibah')
+                    ->where('pihak_hibah', '!=', '')
+                    ->distinct()
+                    ->pluck('pihak_hibah')
+                    ->merge([
+                        'Kementerian Kesehatan Republik Indonesia',
+                        'Dinas Kesehatan Provinsi Jawa Timur',
+                        'Pemerintah Kabupaten Bondowoso',
+                        'Donatur Swasta / Yayasan CSR',
+                    ])
+                    ->map(fn($v) => trim($v))
+                    ->filter()
+                    ->unique()
+                    ->values();
+
+                return view('pages.hibah.form', compact(
+                    'astap',
+                    'dbMaster108',
+                    'dbUnits',
+                    'dbRekeningBelanjas',
+                    'dbPenyedias',
+                    'dbPejabats',
+                    'dbPemberiHibahs'
+                ));
+            })->name('astap.edit_hibah');
+
+            Route::match(['put', 'post'], '/astap/update-hibah/{id}', function (\Illuminate\Http\Request $request, $id) {
+                $astap = \App\Models\Astap::with(['registers', 'hibahs'])->findOrFail($id);
+
+                // Normalisasi nilai format Rupiah
+                $data = $request->all();
+                if (isset($data['total_realisasi']) && is_string($data['total_realisasi'])) {
+                    $cleanVal = preg_replace('/[^\d]/', '', $data['total_realisasi']);
+                    $data['total_realisasi'] = $cleanVal !== '' ? (float) $cleanVal : 0;
+                    $request->merge(['total_realisasi' => $data['total_realisasi']]);
+                }
+
+                // Normalisasi tanggal_bast jika format dd/mm/yyyy
+                if ($request->has('hibah_tanggal_bast') && is_string($request->hibah_tanggal_bast)) {
+                    $rawDate = trim($request->hibah_tanggal_bast);
+                    if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $rawDate, $m)) {
+                        $isoDate = sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
+                        $request->merge(['hibah_tanggal_bast' => $isoDate]);
+                    }
+                }
+
+                $validated = $request->validate([
+                    'hibah_pemberi'      => 'required|string|max:255',
+                    'hibah_nomor_bast'   => 'required|string|max:255',
+                    'hibah_tanggal_bast' => 'required|date',
+                    'tahun_perolehan'    => 'required|integer',
+                    'triwulan'           => 'required|string|in:TW I,TW II,TW III,TW IV',
+                    'nama_barang'        => 'required|string|max:255',
+                    'jumlah_volume'      => 'required|integer|min:1',
+                    'satuan'             => 'required|string|max:50',
+                    'total_realisasi'    => 'required|numeric|min:0',
+                    'unit_id'            => 'nullable|integer',
+                    'alamat_barang'      => 'nullable|string|max:255',
+                    'ppk_nama'           => 'nullable|string|max:255',
+                    'ppk_nip'            => 'nullable|string|max:50',
+                    'hibah_keterangan'   => 'nullable|string|max:2000',
+                    'is_extracomtable'   => 'nullable|in:0,1,true,false',
+                    'dokumen_bast'       => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                ]);
+
+                // Tangani file upload jika diunggah ulang
+                $dokumenPath = $astap->spesifikasi_json['dokumen_path'] ?? null;
+                if ($request->hasFile('dokumen_bast')) {
+                    $file = $request->file('dokumen_bast');
+                    $filename = 'BAST_HIBAH_' . time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                    $dokumenPath = $file->storeAs('dokumen_hibah', $filename, 'public');
+                }
+
+                // Decode spesifikasi_json jika dikirim sebagai string
+                $specJson = $astap->spesifikasi_json ?? [];
+                if ($request->has('spesifikasi_json')) {
+                    $incomingSpec = $request->input('spesifikasi_json');
+                    if (is_string($incomingSpec)) {
+                        $decoded = json_decode($incomingSpec, true);
+                        if (is_array($decoded)) {
+                            $specJson = array_merge($specJson, $decoded);
+                        }
+                    } elseif (is_array($incomingSpec)) {
+                        $specJson = array_merge($specJson, $incomingSpec);
+                    }
+                }
+                $specJson['sumber_dana'] = 'hibah';
+                $specJson['pemberi_hibah'] = $validated['hibah_pemberi'];
+                if ($request->filled('hibah_pimpinan')) {
+                    $specJson['hibah_pimpinan'] = $request->input('hibah_pimpinan');
+                }
+                if ($request->filled('hibah_alamat_pemberi')) {
+                    $specJson['hibah_alamat_pemberi'] = $request->input('hibah_alamat_pemberi');
+                }
+                if ($dokumenPath) {
+                    $specJson['dokumen_path'] = $dokumenPath;
+                }
+
+                $vol = max(1, (int) $validated['jumlah_volume']);
+                $totalRealisasi = (float) $validated['total_realisasi'];
+                $hargaSatuan = $vol > 0 ? ($totalRealisasi / $vol) : $totalRealisasi;
+
+                \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $validated, $specJson, $hargaSatuan, $vol, $totalRealisasi, $request) {
+                    // 1. Update master ASTAP
+                    $astap->update([
+                        'jenis_astap_id'      => $request->input('jenis_astap_id') ?: $astap->jenis_astap_id,
+                        'nama_barang'         => $validated['nama_barang'],
+                        'satuan'              => $validated['satuan'],
+                        'jumlah_volume'       => $vol,
+                        'harga_satuan'        => $hargaSatuan,
+                        'total_realisasi'     => $totalRealisasi,
+                        'tahun_perolehan'     => $validated['tahun_perolehan'],
+                        'triwulan'            => $validated['triwulan'],
+                        'unit_id'             => $validated['unit_id'] ?? $astap->unit_id,
+                        'alamat_barang'       => $validated['alamat_barang'] ?? $astap->alamat_barang,
+                        'ppk_nama'            => $validated['ppk_nama'] ?? $astap->ppk_nama,
+                        'ppk_nip'             => $validated['ppk_nip'] ?? $astap->ppk_nip,
+                        'hibah_pemberi'       => $validated['hibah_pemberi'],
+                        'hibah_nomor_bast'    => $validated['hibah_nomor_bast'],
+                        'hibah_tanggal_bast'  => $validated['hibah_tanggal_bast'],
+                        'hibah_keterangan'    => $validated['hibah_keterangan'] ?? null,
+                        'bast_dokumen_nomor'  => $validated['hibah_nomor_bast'],
+                        'bast_dokumen_tanggal'=> $validated['hibah_tanggal_bast'],
+                        'is_extracomtable'    => !empty($validated['is_extracomtable']) ? 1 : 0,
+                        'spesifikasi_json'    => $specJson,
+                    ]);
+
+                    // 2. Update atau sync AstapHibah
+                    $hibah = \App\Models\AstapHibah::where('astap_id', $astap->id)
+                        ->where('tipe_hibah', 'masuk')
+                        ->first();
+                    if ($hibah) {
+                        $hibah->update([
+                            'pihak_hibah'   => $validated['hibah_pemberi'],
+                            'nomor_bast'    => $validated['hibah_nomor_bast'],
+                            'tanggal_bast'  => $validated['hibah_tanggal_bast'],
+                            'jumlah_volume' => $vol,
+                            'satuan'        => $validated['satuan'],
+                            'nilai_aset'    => $totalRealisasi,
+                            'tahun'         => $validated['tahun_perolehan'],
+                            'triwulan'      => $validated['triwulan'],
+                            'keterangan'    => $validated['hibah_keterangan'] ?? null,
+                        ]);
+                    }
+
+                    // 3. Update existing registers dan sesuaikan volume jika bertambah/berkurang
+                    $existingRegisters = $astap->registers()->where('is_deleted', 0)->orderBy('no_register_int')->get();
+                    $unitNama = $astap->unit ? $astap->unit->nama : null;
+
+                    foreach ($existingRegisters as $reg) {
+                        $reg->update([
+                            'nama_barang'   => $validated['nama_barang'],
+                            'tahun'         => $validated['tahun_perolehan'],
+                            'harga_satuan'  => $hargaSatuan,
+                            'unit_id'       => $validated['unit_id'] ?? $reg->unit_id,
+                            'ruang_pemegang'=> $unitNama ?: $reg->ruang_pemegang,
+                        ]);
+                    }
+
+                    // Jika volume bertambah, buat unit register baru
+                    if ($existingRegisters->count() < $vol) {
+                        $needed = $vol - $existingRegisters->count();
+                        $lastRegInt = $existingRegisters->max('no_register_int') ?? 0;
+                        for ($i = 1; $i <= $needed; $i++) {
+                            $nextNo = $lastRegInt + $i;
+                            $strNo = str_pad((string)$nextNo, 4, '0', STR_PAD_LEFT);
+                            $regKode108 = $astap->kode_108 ?: ($astap->jenisAstap?->sub_sub_rincian_objek ?: '1.3.2');
+                            $nibar = sprintf('%s.%s.%s', $regKode108, $validated['tahun_perolehan'], $strNo);
+
+                            \App\Models\AstapRegister::create([
+                                'astap_id'        => $astap->id,
+                                'no_register'     => $strNo,
+                                'no_register_int' => $nextNo,
+                                'nibar'           => $nibar,
+                                'nama_barang'     => $validated['nama_barang'],
+                                'tahun'           => $validated['tahun_perolehan'],
+                                'harga_satuan'    => $hargaSatuan,
+                                'kondisi'         => 'Baik',
+                                'status'          => 'Tersedia',
+                                'unit_id'         => $validated['unit_id'] ?? null,
+                                'ruang_pemegang'  => $unitNama ?: 'Gudang Aset',
+                            ]);
+                        }
+                    }
+                });
+
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Perubahan Data Hibah "' . $astap->nama_barang . '" berhasil disimpan!',
+                        'redirect' => route('master.hibah')
+                    ]);
+                }
+
+                return redirect()->route('master.hibah')
+                    ->with('success', 'Perubahan Data Hibah "' . $astap->nama_barang . '" berhasil disimpan.');
+            })->name('astap.update_hibah');
 
             // ─── Belanja Barang (Akun 5.1.02 / Perbekalan Ruangan) ────────
             Route::get('/master-data/belanja-barang', [\App\Http\Controllers\BelanjaBarangController::class, 'index'])->name('master.belanja_barang');

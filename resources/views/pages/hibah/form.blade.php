@@ -1,6 +1,16 @@
-<x-layout title="Form Input Aset Hibah - SIMAT-RK">
-    @section('page-title', 'Pencatatan Aset Hibah')
-    @section('breadcrumb', 'Master Utama / Data ASTAP / Tambah Hibah')
+@php
+    $isEdit = isset($astap) && $astap;
+    $pageTitle = $isEdit ? 'Ubah Data Aset Hibah' : 'Pencatatan Aset Hibah';
+    $pageBreadcrumb = $isEdit ? 'Master Aset / Kelola Hibah Aset / Ubah Aset Hibah' : 'Master Utama / Data ASTAP / Tambah Hibah';
+@endphp
+
+<x-layout :title="($isEdit ? 'Form Ubah Aset Hibah' : 'Form Input Aset Hibah') . ' - SIMAT-RK'">
+    @section('page-title', $pageTitle)
+    @section('breadcrumb', $pageBreadcrumb)
+
+    <script>
+        window.editAstapData = @json($astap ?? null);
+    </script>
 
     <!-- 1. Script Logika Form (Alpine.js & State Management) -->
     @include('pages.hibah.form_partials.scripts')

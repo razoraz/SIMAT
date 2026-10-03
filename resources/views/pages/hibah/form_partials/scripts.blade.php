@@ -11,6 +11,95 @@
             currentStep: 1,
             totalSteps: 3,
             isSubmitting: false,
+            isEditMode: !!window.editAstapData,
+            editId: window.editAstapData ? window.editAstapData.id : null,
+
+            init() {
+                if (window.editAstapData) {
+                    this.hydrateFromEditData(window.editAstapData);
+                }
+            },
+
+            hydrateFromEditData(data) {
+                if (!data) return;
+
+                this.formData.tahun_perolehan = data.tahun_perolehan || new Date().getFullYear();
+                this.formData.triwulan = data.triwulan || 'TW I';
+
+                const hibah = data.hibah_masuk || data.hibahMasuk;
+                if (hibah) {
+                    this.formData.hibah_pemberi = hibah.pihak_hibah || '';
+                    this.formData.hibah_nomor_bast = hibah.nomor_bast || '';
+                    this.formData.hibah_tanggal_bast = hibah.tanggal_bast || '';
+                    this.formData.hibah_keterangan = hibah.keterangan || '';
+                }
+
+                let spec = data.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                if (spec && typeof spec === 'object') {
+                    if (spec.hibah_pemberi && !this.formData.hibah_pemberi) this.formData.hibah_pemberi = spec.hibah_pemberi;
+                    if (spec.hibah_nomor_bast && !this.formData.hibah_nomor_bast) this.formData.hibah_nomor_bast = spec.hibah_nomor_bast;
+                    if (spec.hibah_tanggal_bast && !this.formData.hibah_tanggal_bast) this.formData.hibah_tanggal_bast = spec.hibah_tanggal_bast;
+                    if (spec.hibah_pimpinan) this.formData.hibah_pimpinan = spec.hibah_pimpinan;
+                    if (spec.hibah_alamat_pemberi) this.formData.hibah_alamat_pemberi = spec.hibah_alamat_pemberi;
+                    if (spec.hibah_keterangan && !this.formData.hibah_keterangan) this.formData.hibah_keterangan = spec.hibah_keterangan;
+                    if (spec.tipe_hibah) this.formData.tipe_hibah = spec.tipe_hibah;
+                }
+
+                this.formData.nama_barang = data.nama_barang || '';
+                this.formData.satuan = data.satuan || 'Unit';
+                this.formData.jumlah_volume = parseInt(data.jumlah_volume) || 1;
+                this.formData.total_realisasi = parseFloat(data.total_realisasi) || 0;
+                this.formData.jumlah_realisasi = this.formData.total_realisasi;
+                this.formData.is_extracomtable = !!data.is_extracomtable;
+                this.formData.jenis_astap_id = data.jenis_astap_id || null;
+                this.formData.rekening_belanja_id = data.rekening_belanja_id || null;
+
+                if (data.unit_id) {
+                    this.formData.unit_id = data.unit_id;
+                } else if (data.unit && data.unit.id) {
+                    this.formData.unit_id = data.unit.id;
+                }
+
+                this.formData.alamat_barang = data.alamat_barang || '';
+                this.formData.ppk_nama = data.ppk_nama || (spec && spec.ppk_nama) || '';
+                this.formData.ppk_nip = data.ppk_nip || (spec && spec.ppk_nip) || '';
+                if (data.keterangan_tambahan && !this.formData.hibah_keterangan) {
+                    this.formData.hibah_keterangan = data.keterangan_tambahan;
+                }
+
+                if (data.jenis_astap) {
+                    this.formData.jenis_aset_kode = data.jenis_astap.kode || '';
+                    this.formData.jenis_aset_nama = data.jenis_astap.nama || '';
+                    this.formData.sub_rincian_kode = data.jenis_astap.sub_rincian_objek || '';
+                    this.formData.sub_rincian_nama = data.jenis_astap.nama_sub_rincian_objek || '';
+                    this.selectedSubSub = {
+                        id: data.jenis_astap.id,
+                        kode: data.jenis_astap.sub_sub_rincian_objek || data.kode_108,
+                        nama: data.jenis_astap.nama_sub_sub_rincian_objek || data.nama_barang
+                    };
+                } else if (data.kode_108) {
+                    this.formData.jenis_aset_kode = data.kode_108;
+                    this.selectedSubSub = {
+                        id: data.jenis_astap_id,
+                        kode: data.kode_108,
+                        nama: data.nama_barang
+                    };
+                }
+
+                if (data.rekening_belanja) {
+                    this.formData.kode_rek = data.rekening_belanja.kode_rek || '';
+                    this.formData.nama_belanja = data.rekening_belanja.nama_belanja || '';
+                }
+            },
+
+            // ─── File Upload State ───────────────────────────────────────────
+            selectedFile: null,
+
+            // ─── Per-Step Error Banners ──────────────────────────────────────
+            stepErrors: { 1: null, 2: null, 3: null },
 
             // Master Data
             master108: window.dbMasterJenisAstap108 || [],
@@ -56,6 +145,24 @@
             // Active Selected Item
             selectedSubSub: null,
 
+            // ─── Helpers ────────────────────────────────────────────────────
+            clearStepError(step) {
+                this.stepErrors[step] = null;
+            },
+
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (!file) { this.selectedFile = null; return; }
+                const maxMb = 5;
+                if (file.size > maxMb * 1024 * 1024) {
+                    this.showToast('❌ File Terlalu Besar', `Ukuran file maksimal ${maxMb} MB. File Anda: ${(file.size/1024/1024).toFixed(2)} MB`, 'error');
+                    event.target.value = '';
+                    this.selectedFile = null;
+                    return;
+                }
+                this.selectedFile = file;
+            },
+
             // Toast State
             toast: {
                 show: false,
@@ -76,10 +183,13 @@
 
             // Form Data Payload
             formData: {
-                // Langkah 1: BAST & Pemberi (Tahun & Triwulan sekarang di Langkah 2 per instruksi PM)
+                // Langkah 1: BAST & Pemberi
                 tahun_perolehan: new Date().getFullYear(),
                 triwulan: 'TW I',
+                tipe_hibah: 'pemerintah_pusat',
                 hibah_pemberi: '',
+                hibah_pimpinan: '',
+                hibah_alamat_pemberi: '',
                 hibah_nomor_bast: '',
                 hibah_tanggal_bast: new Date().toISOString().split('T')[0],
                 total_realisasi: 0,
@@ -283,11 +393,78 @@
                 hibah_keterangan: ''
             },
 
+            isEditMode: false,
+            editId: null,
+
             init() {
                 if (this.pejabatsList.length > 0) {
                     this.formData.ppk_nama = this.pejabatsList[0].nama || '';
                     this.formData.ppk_nip = this.pejabatsList[0].nip || '';
                 }
+
+                if (window.editAstapData && window.editAstapData.id) {
+                    this.isEditMode = true;
+                    this.editId = window.editAstapData.id;
+                    this.hydrateFromEditData(window.editAstapData);
+                }
+            },
+
+            hydrateFromEditData(d) {
+                if (!d) return;
+                const spec = (typeof d.spesifikasi_json === 'object' && d.spesifikasi_json !== null)
+                    ? d.spesifikasi_json
+                    : (typeof d.spesifikasi_json === 'string' ? (JSON.parse(d.spesifikasi_json) || {}) : {});
+                
+                const hibah = (d.hibahs && d.hibahs.length > 0) ? d.hibahs[0] : (d.hibah || {});
+
+                // Langkah 1: BAST & Pemberi
+                this.formData.tahun_perolehan = d.tahun_perolehan || hibah.tahun || new Date().getFullYear();
+                this.formData.triwulan = d.triwulan || hibah.triwulan || 'TW I';
+                this.formData.tipe_hibah = spec.tipe_hibah || hibah.tipe_hibah || 'pemerintah_pusat';
+                this.formData.hibah_pemberi = d.hibah_pemberi || hibah.pihak_hibah || spec.pemberi_hibah || '';
+                this.formData.hibah_pimpinan = spec.hibah_pimpinan || spec.pimpinan_pemberi || '';
+                this.formData.hibah_alamat_pemberi = spec.hibah_alamat_pemberi || spec.alamat_pemberi || '';
+                this.formData.hibah_nomor_bast = d.hibah_nomor_bast || hibah.nomor_bast || d.bast_dokumen_nomor || '';
+                this.formData.hibah_tanggal_bast = d.hibah_tanggal_bast || hibah.tanggal_bast || d.bast_dokumen_tanggal || '';
+                this.formData.total_realisasi = Number(d.total_realisasi || hibah.nilai_aset || 0);
+                this.formData.jumlah_realisasi = this.formData.total_realisasi;
+                this.formData.hibah_keterangan = d.hibah_keterangan || d.keterangan_tambahan || hibah.keterangan || '';
+
+                // Langkah 2: Klasifikasi 108 & Barang
+                this.formData.nama_barang = d.nama_barang || '';
+                this.formData.jenis_astap_id = d.jenis_astap_id || null;
+                this.formData.satuan = d.satuan || 'Unit';
+                this.formData.jumlah_volume = d.jumlah_volume || hibah.jumlah_volume || 1;
+                this.formData.is_extracomtable = Boolean(d.is_extracomtable || spec.is_extracomtable);
+
+                if (d.jenis_astap) {
+                    this.formData.jenis_aset_kode = d.jenis_astap.jenis || '';
+                    this.formData.jenis_aset_nama = d.jenis_astap.nama_jenis || '';
+                    this.formData.sub_rincian_kode = d.jenis_astap.sub_rincian_objek || '';
+                    this.formData.sub_rincian_nama = d.jenis_astap.nama_sub_rincian_objek || '';
+                    this.selectedSubSub = {
+                        id: d.jenis_astap.id,
+                        kode: d.jenis_astap.sub_sub_rincian_objek,
+                        nama: d.jenis_astap.nama_sub_sub_rincian_objek
+                    };
+                }
+
+                // Langkah 3: Penempatan Ruangan & PPK
+                this.formData.unit_id = d.unit_id || '';
+                this.formData.alamat_barang = d.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                if (d.ppk_nama) this.formData.ppk_nama = d.ppk_nama;
+                if (d.ppk_nip)  this.formData.ppk_nip  = d.ppk_nip;
+
+                // Rehydrate Repeater Items from spec
+                if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) this.formData.tanah_items = spec.tanah_items;
+                if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) this.formData.mesin_items = spec.mesin_items;
+                if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) this.formData.gedung_items = spec.gedung_items;
+                if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) this.formData.jaringan_items = spec.jaringan_items;
+                if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) this.formData.lainnya_items = spec.lainnya_items;
+                if (Array.isArray(spec.atb_items) && spec.atb_items.length > 0) this.formData.atb_items = spec.atb_items;
+                if (Array.isArray(spec.kdp_items) && spec.kdp_items.length > 0) this.formData.kdp_items = spec.kdp_items;
+
+                this.syncActiveKibTotals();
             },
 
             // ─── Filtered Getters PMDN 108 ─────────────────────────────────────
@@ -489,6 +666,39 @@
 
             get hasSelectedKib() {
                 return !!(this.formData.jenis_aset_kode || this.formData.jenis_astap_id);
+            },
+
+            // ─── isMultiItemActive: true jika repeater KIB punya data rincian ──
+            get isMultiItemActive() {
+                if (this.isTanah) return this.formData.tanah_items && this.formData.tanah_items.length > 0;
+                if (this.isMesin) return this.formData.mesin_items && this.formData.mesin_items.length > 0;
+                if (this.isGedung) return this.formData.gedung_items && this.formData.gedung_items.length > 0;
+                if (this.isJaringan) return this.formData.jaringan_items && this.formData.jaringan_items.length > 0;
+                if (this.isAsetLainnya) return this.formData.lainnya_items && this.formData.lainnya_items.length > 0;
+                if (this.isAtb) return this.formData.atb_items && this.formData.atb_items.length > 0;
+                if (this.isKdp) return this.formData.kdp_items && this.formData.kdp_items.length > 0;
+                return false;
+            },
+
+            // ─── quickSelectKib: shortcut dari kartu KIB di Step 2 ────────────
+            quickSelectKib(kodePrefix, namaKib) {
+                // Reset cascading
+                this.formData.jenis_aset_kode = '';
+                this.formData.jenis_aset_nama = '';
+                this.formData.sub_rincian_kode = '';
+                this.formData.sub_rincian_nama = '';
+                this.selectedSubSub = null;
+                this.formData.jenis_astap_id = null;
+                this.searchJenis108 = kodePrefix;
+                this.isJenis108Open = false;
+
+                // Cari jenis aset yang cocok
+                const found = this.master108.find(j => j.kode && j.kode.startsWith(kodePrefix));
+                if (found) {
+                    this.formData.jenis_aset_kode = found.kode;
+                    this.formData.jenis_aset_nama = found.nama;
+                }
+                this.adjustSatuanForKib();
             },
 
             get kibLabel() {
@@ -1103,41 +1313,43 @@
             },
 
             validateStep(s) {
+                this.stepErrors[s] = null;
+
                 if (s === 1) {
-                    if (!this.formData.hibah_pemberi.trim()) {
-                        alert('⚠️ Mohon isi Nama Instansi Pemberi Hibah.');
+                    if (!this.formData.hibah_pemberi || !this.formData.hibah_pemberi.trim()) {
+                        this.stepErrors[1] = 'Nama Instansi / Pemberi Hibah wajib diisi.';
                         return false;
                     }
-                    if (!this.formData.hibah_nomor_bast.trim()) {
-                        alert('⚠️ Mohon isi Nomor BAST Hibah.');
+                    if (!this.formData.hibah_nomor_bast || !this.formData.hibah_nomor_bast.trim()) {
+                        this.stepErrors[1] = 'Nomor BAST / NPHD wajib diisi.';
                         return false;
                     }
                     if (!this.formData.hibah_tanggal_bast) {
-                        alert('⚠️ Mohon isi Tanggal BAST Hibah.');
+                        this.stepErrors[1] = 'Tanggal BAST / NPHD wajib diisi.';
+                        return false;
+                    }
+                    if (!this.formData.tahun_perolehan) {
+                        this.stepErrors[1] = 'Tahun Pembukuan wajib diisi.';
+                        return false;
+                    }
+                    if (!this.formData.triwulan) {
+                        this.stepErrors[1] = 'Triwulan Pembukuan wajib dipilih.';
                         return false;
                     }
                     return true;
                 }
 
                 if (s === 2) {
-                    if (!this.formData.tahun_perolehan) {
-                        alert('⚠️ Mohon tentukan Tahun Pembukuan Hibah.');
-                        return false;
-                    }
-                    if (!this.formData.triwulan) {
-                        alert('⚠️ Mohon tentukan Triwulan Pembukuan.');
-                        return false;
-                    }
                     if (!this.formData.jenis_astap_id && !this.formData.jenis_aset_kode) {
-                        alert('⚠️ Mohon pilih Klasifikasi Jenis Aset / Kode Barang 108.');
+                        this.stepErrors[2] = 'Mohon pilih Klasifikasi Jenis Aset / Kode Barang 108 terlebih dahulu.';
                         return false;
                     }
                     if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
-                        alert('⚠️ Mohon isi Nama Lengkap Barang.');
+                        this.stepErrors[2] = 'Nama Lengkap Barang Hibah wajib diisi.';
                         return false;
                     }
                     if (!this.formData.jumlah_volume || this.formData.jumlah_volume < 1) {
-                        alert('⚠️ Mohon tentukan Volume / Kuantitas Barang.');
+                        this.stepErrors[2] = 'Volume / Kuantitas Barang minimal 1 unit.';
                         return false;
                     }
                     return true;
@@ -1146,7 +1358,11 @@
                 if (s === 3) {
                     this.syncActiveKibTotals();
                     if (!this.formData.unit_id) {
-                        alert('⚠️ Mohon pilih Unit / Ruangan Penempatan Aset (KIR).');
+                        this.stepErrors[3] = 'Unit / Ruangan Penempatan Aset (KIR) wajib dipilih.';
+                        return false;
+                    }
+                    if (!this.formData.total_realisasi || this.formData.total_realisasi <= 0) {
+                        this.stepErrors[3] = 'Taksiran Nilai Aset harus lebih dari Rp 0. Isi di Langkah 2.';
                         return false;
                     }
                     return true;
@@ -1156,37 +1372,100 @@
             },
 
             submitForm() {
-                if (!this.validateStep(1) || !this.validateStep(2) || !this.validateStep(3)) return;
+                // Validasi semua langkah terlebih dahulu
+                if (!this.validateStep(1)) { this.currentStep = 1; window.scrollTo({top:0,behavior:'smooth'}); return; }
+                if (!this.validateStep(2)) { this.currentStep = 2; window.scrollTo({top:0,behavior:'smooth'}); return; }
+                if (!this.validateStep(3)) { this.currentStep = 3; window.scrollTo({top:0,behavior:'smooth'}); return; }
 
                 this.syncActiveKibTotals();
-
                 this.isSubmitting = true;
+
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 
-                fetch("{{ route('astap.store_hibah') }}", {
+                // ── Gunakan FormData untuk mendukung file upload dokumen BAST ──
+                const fd = new FormData();
+                fd.append('_token', token);
+
+                // Langkah 1: BAST & Pemberi
+                fd.append('hibah_pemberi',      this.formData.hibah_pemberi);
+                fd.append('hibah_nomor_bast',   this.formData.hibah_nomor_bast);
+                fd.append('hibah_tanggal_bast', this.formData.hibah_tanggal_bast);
+                fd.append('tahun_perolehan',    this.formData.tahun_perolehan);
+                fd.append('triwulan',           this.formData.triwulan);
+                if (this.formData.tipe_hibah)          fd.append('tipe_hibah',       this.formData.tipe_hibah || 'masuk');
+                if (this.formData.hibah_pimpinan)      fd.append('hibah_pimpinan',   this.formData.hibah_pimpinan);
+                if (this.formData.hibah_alamat_pemberi) fd.append('hibah_alamat_pemberi', this.formData.hibah_alamat_pemberi);
+
+                // File Dokumen BAST (opsional)
+                if (this.selectedFile) {
+                    fd.append('dokumen_bast', this.selectedFile, this.selectedFile.name);
+                }
+
+                // Langkah 2: Klasifikasi 108 & Barang
+                if (this.formData.jenis_astap_id)   fd.append('jenis_astap_id',   this.formData.jenis_astap_id);
+                if (this.formData.jenis_aset_kode)  fd.append('jenis_aset_kode',  this.formData.jenis_aset_kode);
+                if (this.formData.jenis_aset_nama)  fd.append('jenis_aset_nama',  this.formData.jenis_aset_nama);
+                if (this.formData.sub_rincian_kode) fd.append('sub_rincian_kode', this.formData.sub_rincian_kode);
+                if (this.formData.sub_rincian_nama) fd.append('sub_rincian_nama', this.formData.sub_rincian_nama);
+                fd.append('nama_barang',       this.formData.nama_barang);
+                fd.append('satuan',            this.formData.satuan || 'Unit');
+                fd.append('jumlah_volume',     this.formData.jumlah_volume || 1);
+                fd.append('total_realisasi',   this.formData.total_realisasi || 0);
+                fd.append('is_extracomtable',  this.formData.is_extracomtable ? '1' : '0');
+
+                // Spesifikasi teknis KIB (dikirim sebagai JSON string)
+                const spesifikasi = {};
+                if (this.isTanah && this.formData.tanah_items?.length)        spesifikasi.tanah_items   = this.formData.tanah_items;
+                if (this.isMesin && this.formData.mesin_items?.length)        spesifikasi.mesin_items   = this.formData.mesin_items;
+                if (this.isGedung && this.formData.gedung_items?.length)      spesifikasi.gedung_items  = this.formData.gedung_items;
+                if (this.isJaringan && this.formData.jaringan_items?.length)  spesifikasi.jaringan_items = this.formData.jaringan_items;
+                if (this.isAsetLainnya && this.formData.lainnya_items?.length) spesifikasi.lainnya_items = this.formData.lainnya_items;
+                if (this.isAtb && this.formData.atb_items?.length)            spesifikasi.atb_items     = this.formData.atb_items;
+                if (this.isKdp && this.formData.kdp_items?.length)            spesifikasi.kdp_items     = this.formData.kdp_items;
+                if (Object.keys(spesifikasi).length > 0) {
+                    fd.append('spesifikasi_json', JSON.stringify(spesifikasi));
+                }
+
+                // Langkah 3: Penempatan & PPK
+                if (this.formData.unit_id)          fd.append('unit_id',          this.formData.unit_id);
+                if (this.formData.alamat_barang)    fd.append('alamat_barang',    this.formData.alamat_barang);
+                if (this.formData.ppk_nama)         fd.append('ppk_nama',         this.formData.ppk_nama);
+                if (this.formData.ppk_nip)          fd.append('ppk_nip',          this.formData.ppk_nip);
+                if (this.formData.hibah_keterangan) fd.append('hibah_keterangan', this.formData.hibah_keterangan);
+                if (this.formData.rekening_belanja_id) fd.append('rekening_belanja_id', this.formData.rekening_belanja_id);
+
+                const submitUrl = this.isEditMode
+                    ? ('/astap/update-hibah/' + this.editId)
+                    : "{{ route('astap.store_hibah') }}";
+
+                fetch(submitUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': token
-                    },
-                    body: JSON.stringify(this.formData)
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    body: fd
                 })
                 .then(res => res.json().then(data => ({ status: res.status, body: data })))
                 .then(result => {
                     this.isSubmitting = false;
                     if (result.status === 200 && result.body.success) {
-                        alert('🎉 Berhasil! ' + (result.body.message || 'Data Hibah berhasil disimpan ke database.'));
-                        window.location.href = "{{ route('master.hibah') }}";
+                        this.showToast(
+                            this.isEditMode ? '🎉 Perubahan Aset Hibah Tersimpan!' : '🎉 Aset Hibah Tersimpan!',
+                            result.body.message || (this.isEditMode ? 'Perubahan data hibah berhasil disimpan.' : 'Data hibah berhasil dicatat ke inventaris RSUD.'),
+                            'success'
+                        );
+                        setTimeout(() => { window.location.href = result.body.redirect || "{{ route('master.hibah') }}"; }, 1800);
                     } else {
-                        const errMsg = result.body.message || (result.body.errors ? Object.values(result.body.errors).flat().join('\n') : 'Gagal menyimpan data hibah.');
-                        alert('❌ Terjadi Kesalahan:\n' + errMsg);
+                        const errMsg = result.body.message ||
+                            (result.body.errors ? Object.values(result.body.errors).flat().join(' • ') : 'Gagal menyimpan data hibah.');
+                        this.stepErrors[3] = errMsg;
+                        this.showToast('❌ Gagal Menyimpan', errMsg, 'error');
                     }
                 })
                 .catch(err => {
                     this.isSubmitting = false;
                     console.error(err);
-                    alert('❌ Gagal menghubungi server. Silakan coba kembali.');
+                    const msg = 'Gagal menghubungi server. Periksa koneksi internet Anda.';
+                    this.stepErrors[3] = msg;
+                    this.showToast('❌ Koneksi Error', msg, 'error');
                 });
             }
         };

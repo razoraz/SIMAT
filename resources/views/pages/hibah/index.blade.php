@@ -2,6 +2,7 @@
     @section('page-title', 'Kelola Data Hibah Aset (Masuk & Pengurangan)')
     @section('breadcrumb', 'Master Aset / Kelola Hibah Aset')
 
+    @include('pages.hibah.master_partials.scripts_export')
     @include('pages.hibah.master_partials.scripts')
 
     <div x-data="masterHibah()" x-cloak class="space-y-6 pb-16">
@@ -28,5 +29,8 @@
 
         <!-- MODAL KONFIRMASI BESPOKE (Z-INDEX TINGGI z-[60]) -->
         @include('pages.hibah.master_partials.modal_confirm_hibah')
+
+        <!-- FLOATING TOAST NOTIFICATION -->
+        @include('pages.hibah.master_partials.toast')
     </div>
 </x-layout>
