@@ -251,6 +251,7 @@ class ReklasifikasiController extends Controller
             'templateRows'      => $templateRows,
             'kandidatAstaps'    => $kandidatAstaps,
             'dbMaster108'       => JenisAstap::getNested108(),
+            'dbMitraKemitraans' => \App\Models\AstapKemitraan::getDistinctMitras(),
         ]);
     }
 
@@ -856,15 +857,28 @@ class ReklasifikasiController extends Controller
                     $astap->satuan          = 'Paket / Lisensi';
                 } elseif ($targetKib === 'KEMITRAAN') {
                     $kemitraanItem = [
+                        'skema_kemitraan'  => $rawNew['kemitraan_skema'] ?? 'Sewa',
                         'mitra_nama'       => $rawNew['kemitraan_mitra'] ?? 'Pihak Ketiga Mitra RSUD',
+                        'mitra_pimpinan'   => $rawNew['kemitraan_pimpinan'] ?? null,
+                        'mitra_alamat'     => $rawNew['kemitraan_alamat'] ?? null,
                         'perjanjian_nomor' => $rawNew['kemitraan_perjanjian_no'] ?? '-',
+                        'tanggal_pks'      => $rawNew['kemitraan_tanggal_pks'] ?? null,
+                        'tanggal_mulai'    => $rawNew['kemitraan_tanggal_mulai'] ?? null,
+                        'tanggal_selesai'  => $rawNew['kemitraan_tanggal_selesai'] ?? null,
                         'jangka_waktu'     => $rawNew['kemitraan_jangka_waktu'] ?? '5 Tahun',
                         'kemitraan_nilai'  => (float) $astap->total_realisasi,
                     ];
-                    $newSpec['kemitraan_items'] = [$kemitraanItem];
-                    $newSpec['mitra_nama']       = $kemitraanItem['mitra_nama'];
-                    $newSpec['perjanjian_nomor'] = $kemitraanItem['perjanjian_nomor'];
-                    $newSpec['jangka_waktu']     = $kemitraanItem['jangka_waktu'];
+                    $newSpec['kemitraan_items']   = [$kemitraanItem];
+                    $newSpec['skema_kemitraan']   = $kemitraanItem['skema_kemitraan'];
+                    $newSpec['mitra_nama']        = $kemitraanItem['mitra_nama'];
+                    $newSpec['mitra_pimpinan']    = $kemitraanItem['mitra_pimpinan'];
+                    $newSpec['mitra_alamat']      = $kemitraanItem['mitra_alamat'];
+                    $newSpec['perjanjian_nomor']  = $kemitraanItem['perjanjian_nomor'];
+                    $newSpec['nomor_pks']         = $kemitraanItem['perjanjian_nomor'];
+                    $newSpec['tanggal_pks']       = $kemitraanItem['tanggal_pks'];
+                    $newSpec['tanggal_mulai']     = $kemitraanItem['tanggal_mulai'];
+                    $newSpec['tanggal_selesai']   = $kemitraanItem['tanggal_selesai'];
+                    $newSpec['jangka_waktu']      = $kemitraanItem['jangka_waktu'];
                 } elseif ($targetKib === 'ASET LAIN' || $targetKib === 'ASET LAIN-LAIN' || $targetKib === 'ASET LAINNYA') {
                     $asetLainItem = [
                         'aset_lain_kondisi'    => $rawNew['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)',

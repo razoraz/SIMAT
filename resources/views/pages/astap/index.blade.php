@@ -2,6 +2,10 @@
     @section('page-title', 'Data ASTAP')
     @section('breadcrumb', 'Master Utama / Data ASTAP')
 
+    <script>
+        window.dbMitraKemitraans = @json($dbMitraKemitraans ?? []);
+    </script>
+
     <!-- 1. Script Ekspor Multi-Sheet Excel & Logika Alpine.js (astapCatalog) -->
     @include('pages.astap.index_partials.scripts')
 

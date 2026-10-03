@@ -125,6 +125,21 @@
                             <span class="text-slate-200 font-medium block" x-text="(formatTanggalIndo(selectedAstapDetail.tanggal_mulai) || '?') + ' s.d. ' + (formatTanggalIndo(selectedAstapDetail.tanggal_selesai) || '?')"></span>
                         </div>
 
+                        <template x-if="selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar">
+                            <div class="col-span-1 sm:col-span-2 md:col-span-4 p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs">🏛️</span>
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Objek Aset RSUD yang Disewakan / Dikerjasamakan:</span>
+                                        <span class="text-xs font-mono font-bold text-cyan-300" x-text="'NIBAR: ' + (selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar)"></span>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-semibold">
+                                    Aset Terkait BMD RSUD
+                                </span>
+                            </div>
+                        </template>
+
                         <template x-if="selectedAstapDetail.dokumen_path">
                             <div class="col-span-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-800/80 flex items-center justify-between">
                                 <span class="text-slate-400 text-[10px] uppercase font-bold flex items-center gap-1.5">

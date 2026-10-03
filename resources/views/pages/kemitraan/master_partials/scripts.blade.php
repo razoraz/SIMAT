@@ -6,6 +6,9 @@
 
     function masterKemitraan() {
         return {
+            // Mode Tampilan Pemisah Tabel Kemitraan: 'both' | 'dimanfaatkan' | 'ditambahkan' | 'all'
+            kemitraanTableTab: 'both',
+
             // State Modal Reklasifikasi Aset Tetap (RSDK) — Sama Seperti di Data ASTAP
             showReklasModal: false,
             selectedAstapReklas: null,
@@ -31,6 +34,48 @@
             reklasNilaiAnggaran: 0,
             reklasNoDokumenKoreksi: '',
             isSubmittingReklas: false,
+
+            // State Autocomplete Mitra Rekanan Kemitraan (Sinkron dengan Form Kemitraan)
+            masterMitraList: (window.dbMitraKemitraans && Array.isArray(window.dbMitraKemitraans)) ? [...window.dbMitraKemitraans] : [],
+            isReklasMitraDropdownOpen: false,
+
+            get filteredReklasMitraList() {
+                const q = (this.reklasSpekBaru?.kemitraan_mitra || '').toLowerCase().trim();
+                if (!q) return this.masterMitraList.slice(0, 15);
+                return this.masterMitraList.filter(m => m && m.nama && m.nama.toLowerCase().includes(q));
+            },
+
+            onReklasMitraInput(val) {
+                const q = (val !== undefined ? val : (this.reklasSpekBaru?.kemitraan_mitra || '')).trim().toLowerCase();
+                if (!q) return;
+                const match = this.masterMitraList.find(m => m && m.nama && m.nama.trim().toLowerCase() === q);
+                if (match) {
+                    if (match.pimpinan && !this.reklasSpekBaru.kemitraan_pimpinan) {
+                        this.reklasSpekBaru.kemitraan_pimpinan = match.pimpinan;
+                    }
+                    if (match.alamat && !this.reklasSpekBaru.kemitraan_alamat) {
+                        this.reklasSpekBaru.kemitraan_alamat = match.alamat;
+                    }
+                }
+            },
+
+            selectReklasMitra(mitra) {
+                if (!this.reklasSpekBaru) this.reklasSpekBaru = {};
+                if (typeof mitra === 'string') {
+                    this.reklasSpekBaru.kemitraan_mitra = mitra;
+                    const match = this.masterMitraList.find(m => m && m.nama && m.nama.trim().toLowerCase() === mitra.trim().toLowerCase());
+                    if (match) {
+                        if (match.pimpinan) this.reklasSpekBaru.kemitraan_pimpinan = match.pimpinan;
+                        if (match.alamat) this.reklasSpekBaru.kemitraan_alamat = match.alamat;
+                    }
+                } else if (mitra && typeof mitra === 'object') {
+                    this.reklasSpekBaru.kemitraan_mitra = mitra.nama || '';
+                    if (mitra.pimpinan) this.reklasSpekBaru.kemitraan_pimpinan = mitra.pimpinan;
+                    if (mitra.alamat) this.reklasSpekBaru.kemitraan_alamat = mitra.alamat;
+                }
+                this.isReklasMitraDropdownOpen = false;
+            },
+
             reklasSpekBaru: {
                 tanah_luas_m2: '',
                 tanah_hak: 'Hak Pakai',
@@ -62,8 +107,14 @@
                 atb_pengembang: '',
                 atb_masa_manfaat: '4',
                 atb_nomor_lisensi: '',
+                kemitraan_skema: 'Sewa',
                 kemitraan_mitra: '',
+                kemitraan_pimpinan: '',
+                kemitraan_alamat: '',
                 kemitraan_perjanjian_no: '',
+                kemitraan_tanggal_pks: new Date().toISOString().split('T')[0],
+                kemitraan_tanggal_mulai: new Date().toISOString().split('T')[0],
+                kemitraan_tanggal_selesai: '',
                 kemitraan_jangka_waktu: '5 Tahun',
             },
 
@@ -1784,6 +1835,88 @@
 
                 this.initReklasSpekBaru();
                 this.showReklasModal = true;
+            },
+
+            initReklasSpekBaru() {
+                const it = this.selectedAstapReklas;
+                if (!it) return;
+                const spec = (typeof it.spesifikasi_json === 'object' && it.spesifikasi_json !== null) ? it.spesifikasi_json : {};
+                const target = this.reklasTujuanKib;
+                const defaultAlamat = it.alamat_barang || spec.alamat || 'RSUD Dr. H. Koesnandi';
+
+                if (target === 'KIB A') {
+                    this.reklasSpekBaru.tanah_luas_m2 = spec.luas_m2 || spec.tanah_luas_m2 || '';
+                    this.reklasSpekBaru.tanah_hak = spec.hak_tanah || spec.tanah_hak || 'Hak Pakai';
+                    this.reklasSpekBaru.tanah_sertifikat_no = spec.sertifikat_no || spec.tanah_sertifikat_no || '';
+                    this.reklasSpekBaru.tanah_sertifikat_tgl = spec.sertifikat_tgl || spec.tanah_sertifikat_tgl || '';
+                    this.reklasSpekBaru.tanah_penggunaan = spec.penggunaan || spec.tanah_penggunaan || it.nama_barang || 'Kompleks RSUD';
+                    this.reklasSpekBaru.tanah_asal_usul = spec.tanah_asal_usul || 'Pengadaan APBD / BLUD';
+                    this.reklasSpekBaru.tanah_alamat = defaultAlamat;
+                } else if (target === 'KIB B') {
+                    this.reklasSpekBaru.mesin_merk = spec.merk || it.merk_type || '';
+                    this.reklasSpekBaru.mesin_type = spec.type || '';
+                    this.reklasSpekBaru.mesin_no_pabrik = spec.no_pabrik || '';
+                    this.reklasSpekBaru.mesin_ukuran_cc = spec.ukuran_cc || '';
+                    this.reklasSpekBaru.mesin_bahan = spec.bahan || 'Logam / Komponen Elektronik';
+                    this.reklasSpekBaru.mesin_no_polisi = spec.no_polisi || '';
+                } else if (target === 'KIB C') {
+                    this.reklasSpekBaru.gedung_konstruksi_bertingkat = spec.konstruksi_bertingkat || spec.bertingkat || 'Bertingkat';
+                    this.reklasSpekBaru.gedung_konstruksi_beton = spec.konstruksi_beton || spec.beton || 'Beton';
+                    this.reklasSpekBaru.gedung_luas_lantai_m2 = spec.luas_lantai_m2 || '';
+                    this.reklasSpekBaru.gedung_dokumen_nomor = spec.dokumen_nomor || it.spk_nomor || '';
+                    this.reklasSpekBaru.gedung_dokumen_tgl = spec.dokumen_tgl || it.spk_tanggal || '';
+                    this.reklasSpekBaru.gedung_status_tanah = spec.status_tanah || 'Tanah Pemda';
+                    this.reklasSpekBaru.gedung_alamat = defaultAlamat;
+                } else if (target === 'KIB D') {
+                    this.reklasSpekBaru.jaringan_konstruksi = spec.konstruksi || 'Aspal / Beton';
+                    this.reklasSpekBaru.jaringan_panjang_km = spec.panjang_km || '';
+                    this.reklasSpekBaru.jaringan_lebar_m = spec.lebar_m || '';
+                    this.reklasSpekBaru.jaringan_luas_m2 = spec.luas_m2 || '';
+                    this.reklasSpekBaru.jaringan_dokumen_nomor = spec.dokumen_nomor || it.spk_nomor || '';
+                    this.reklasSpekBaru.jaringan_dokumen_tgl = spec.dokumen_tgl || it.spk_tanggal || '';
+                    this.reklasSpekBaru.jaringan_status_tanah = spec.status_tanah || 'Tanah Pemda';
+                } else if (target === 'KIB E') {
+                    this.reklasSpekBaru.lainnya_judul_pencipta = spec.judul_pencipta || it.nama_barang || '';
+                    this.reklasSpekBaru.lainnya_spesifikasi = spec.spesifikasi || '-';
+                    this.reklasSpekBaru.lainnya_asal_daerah = spec.asal_daerah || '-';
+                    this.reklasSpekBaru.lainnya_bahan = spec.bahan || 'Kertas / Kanvas / Lainnya';
+                    this.reklasSpekBaru.lainnya_ukuran = spec.ukuran || '-';
+                } else if (target === 'ATB') {
+                    this.reklasSpekBaru.atb_nama_software = spec.nama_software || it.nama_barang || '';
+                    this.reklasSpekBaru.atb_pengembang = spec.pengembang || '-';
+                    this.reklasSpekBaru.atb_masa_manfaat = spec.masa_manfaat || 4;
+                    this.reklasSpekBaru.atb_nomor_lisensi = spec.nomor_lisensi || '-';
+                } else if (target === 'KEMITRAAN') {
+                    this.reklasSpekBaru.kemitraan_skema = spec.skema || spec.kemitraan_skema || 'Sewa';
+                    this.reklasSpekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
+                    this.reklasSpekBaru.kemitraan_pimpinan = spec.pimpinan || spec.mitra_pimpinan || spec.kemitraan_pimpinan || '';
+                    this.reklasSpekBaru.kemitraan_alamat = spec.alamat || spec.mitra_alamat || spec.kemitraan_alamat || '';
+                    this.reklasSpekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.nomor_pks || spec.kemitraan_perjanjian_no || '';
+                    this.reklasSpekBaru.kemitraan_tanggal_pks = spec.tanggal_pks || spec.kemitraan_tanggal_pks || new Date().toISOString().split('T')[0];
+                    this.reklasSpekBaru.kemitraan_tanggal_mulai = spec.tanggal_mulai || spec.kemitraan_tanggal_mulai || new Date().toISOString().split('T')[0];
+                    this.reklasSpekBaru.kemitraan_tanggal_selesai = spec.tanggal_selesai || spec.kemitraan_tanggal_selesai || '';
+                    this.reklasSpekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
+                } else if (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN' || target === 'ASET LAINNYA') {
+                    this.reklasSpekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
+                    this.reklasSpekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain';
+                }
+            },
+
+            calcReklasKemitraanDurasi() {
+                const tM = this.reklasSpekBaru.kemitraan_tanggal_mulai;
+                const tS = this.reklasSpekBaru.kemitraan_tanggal_selesai;
+                if (!tM || !tS) return;
+                const dM = new Date(tM);
+                const dS = new Date(tS);
+                if (isNaN(dM.getTime()) || isNaN(dS.getTime()) || dS < dM) return;
+                const diffDays = Math.round((dS - dM) / (1000 * 60 * 60 * 24));
+                const years = Math.floor(diffDays / 365);
+                const remainingDays = diffDays % 365;
+                const months = Math.floor(remainingDays / 30);
+                const parts = [];
+                if (years > 0) parts.push(`${years} Tahun`);
+                if (months > 0) parts.push(`${months} Bulan`);
+                this.reklasSpekBaru.kemitraan_jangka_waktu = parts.join(' ') || `${diffDays} Hari`;
             },
 
             async submitReklas() {

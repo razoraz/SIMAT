@@ -2,6 +2,10 @@
     @section('page-title', 'Reklasifikasi Aset Tetap (RSDK)')
     @section('breadcrumb', 'Master Aset / Reklasifikasi Aset')
 
+    <script>
+        window.dbMitraKemitraans = @json($dbMitraKemitraans ?? []);
+    </script>
+
     @include('pages.reklasifikasi.partials.scripts')
 
     <div x-data="masterReklasifikasi()" x-cloak class="space-y-6 pb-16">

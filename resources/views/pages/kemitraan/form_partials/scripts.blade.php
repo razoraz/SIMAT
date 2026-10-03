@@ -196,6 +196,75 @@
                 this.selectPpk(ppk);
             },
 
+            // =========================================================================
+            // MANAJEMEN OBJEK ASET BMD RSUD (TANAH / GEDUNG / RUANGAN YANG DISEWAKAN)
+            // =========================================================================
+            dbObjekAsetList: (window.dbObjekAsetKemitraan && Array.isArray(window.dbObjekAsetKemitraan))
+                ? [...window.dbObjekAsetKemitraan]
+                : [],
+            objekSearchQuery: '',
+            isObjekDropdownOpen: false,
+            objekKibFilter: 'ALL',
+
+            get filteredObjekAsetList() {
+                const q = (this.objekSearchQuery || '').toLowerCase().trim();
+                let list = this.dbObjekAsetList;
+                if (this.objekKibFilter !== 'ALL') {
+                    list = list.filter(item => item.kib === this.objekKibFilter);
+                }
+                if (!q) return list.slice(0, 5);
+                return list.filter(item => {
+                    const nibar = (item.nibar || '').toLowerCase();
+                    const nama = (item.nama_barang || '').toLowerCase();
+                    const kode = (item.kode_108 || '').toLowerCase();
+                    const unit = (item.unit_nama || '').toLowerCase();
+                    const alamat = (item.alamat_barang || '').toLowerCase();
+                    return nibar.includes(q) || nama.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
+                }).slice(0, 5);
+            },
+
+            get totalFilteredObjekCount() {
+                const q = (this.objekSearchQuery || '').toLowerCase().trim();
+                let list = this.dbObjekAsetList;
+                if (this.objekKibFilter !== 'ALL') {
+                    list = list.filter(item => item.kib === this.objekKibFilter);
+                }
+                if (!q) return list.length;
+                return list.filter(item => {
+                    const nibar = (item.nibar || '').toLowerCase();
+                    const nama = (item.nama_barang || '').toLowerCase();
+                    const kode = (item.kode_108 || '').toLowerCase();
+                    const unit = (item.unit_nama || '').toLowerCase();
+                    const alamat = (item.alamat_barang || '').toLowerCase();
+                    return nibar.includes(q) || nama.includes(q) || kode.includes(q) || unit.includes(q) || alamat.includes(q);
+                }).length;
+            },
+
+            selectObjekAset(item) {
+                if (!item) return;
+                this.formData.objek_astap_id = item.astap_id;
+                this.formData.objek_register_id = item.register_id;
+                this.formData.objek_nibar = item.nibar;
+                this.formData.objek_aset_terpilih = item;
+                this.isObjekDropdownOpen = false;
+                this.objekSearchQuery = '';
+
+                if (item.pks_aktif) {
+                    this.showToast('Perhatian Status Konsesi', `Aset ini sedang dalam PKS aktif: ${item.pks_aktif.nomor_pks} (${item.pks_aktif.mitra_nama}) sampai ${item.pks_aktif.tanggal_selesai || 'selesai'}. Pastikan masa berlaku kerjasama tidak tumpang tindih.`, 'warning');
+                } else {
+                    this.showToast('Objek Aset Dipilih', `Berhasil memilih objek BMD: ${item.nama_barang} (NIBAR: ${item.nibar})`, 'success');
+                }
+            },
+
+            clearObjekAset() {
+                this.formData.objek_astap_id = null;
+                this.formData.objek_register_id = null;
+                this.formData.objek_nibar = '';
+                this.formData.objek_aset_terpilih = null;
+                this.objekSearchQuery = '';
+                this.showToast('Objek Dikosongkan', 'Pencatatan kemitraan tidak menautkan objek aset BMD tertentu.', 'info');
+            },
+
             // Toast State
             toast: {
                 show: false,
@@ -356,6 +425,12 @@
                 triwulan: '{{ (date('n') <= 3) ? 'TW I' : ((date('n') <= 6) ? 'TW II' : ((date('n') <= 9) ? 'TW III' : 'TW IV')) }}',
                 kemitraan_keterangan: '',
                 dokumen_path: '',
+
+                // Objek Aset Terkait RSUD yang dikerjasamakan (misal sewa tanah/gedung/ruangan)
+                objek_astap_id: null,
+                objek_register_id: null,
+                objek_nibar: '',
+                objek_aset_terpilih: null,
 
                 // Step 2: Klasifikasi 108 & Nilai Aset
                 nama_barang: '',
@@ -843,6 +918,26 @@
                 this.formData.triwulan = d.triwulan || kemitraan.triwulan || 'TW I';
                 this.formData.kemitraan_keterangan = d.keterangan_tambahan || kemitraan.keterangan || spec.keterangan || '';
                 this.formData.dokumen_path = kemitraan.dokumen_path || spec.dokumen_path || '';
+
+                // Objek Aset Terkait RSUD yang Dikerjasamakan
+                this.formData.objek_astap_id = kemitraan.objek_astap_id || spec.objek_astap_id || null;
+                this.formData.objek_register_id = kemitraan.objek_register_id || spec.objek_register_id || null;
+                this.formData.objek_nibar = kemitraan.objek_nibar || spec.objek_nibar || '';
+                if (this.formData.objek_register_id) {
+                    const foundObj = this.dbObjekAsetList.find(o => o.register_id == this.formData.objek_register_id);
+                    if (foundObj) {
+                        this.formData.objek_aset_terpilih = foundObj;
+                    } else if (this.formData.objek_nibar) {
+                        this.formData.objek_aset_terpilih = {
+                            register_id: this.formData.objek_register_id,
+                            astap_id: this.formData.objek_astap_id,
+                            nibar: this.formData.objek_nibar,
+                            nama_barang: 'Aset BMD RSUD Terpilih',
+                            kib: 'KIB Terkait',
+                            unit_nama: 'RSUD Dr. H. Koesnandi',
+                        };
+                    }
+                }
 
                 // Step 2: Klasifikasi 108 & Nilai Aset
                 this.formData.nama_barang = d.nama_barang || '';
@@ -2427,7 +2522,7 @@
                         }, 1200);
                     } else {
                         // Parse server-side validation errors dan petakan ke step yang relevan
-                        const step1Fields = ['mitra_nama', 'mitra_pimpinan', 'mitra_alamat', 'nomor_pks', 'tanggal_pks', 'skema_kemitraan', 'tanggal_mulai', 'tanggal_selesai', 'tahun_perolehan', 'triwulan', 'kemitraan_keterangan'];
+                        const step1Fields = ['mitra_nama', 'mitra_pimpinan', 'mitra_alamat', 'nomor_pks', 'tanggal_pks', 'skema_kemitraan', 'tanggal_mulai', 'tanggal_selesai', 'tahun_perolehan', 'triwulan', 'kemitraan_keterangan', 'objek_astap_id', 'objek_register_id', 'objek_nibar'];
                         const step2Fields = ['jenis_astap_id', 'nama_barang', 'jumlah_volume', 'satuan', 'total_realisasi', 'mesin_items', 'tanah_items', 'gedung_items', 'jaringan_items', 'lainnya_items'];
                         const step3Fields = ['unit_id', 'kondisi', 'alamat_barang', 'ppk_nama', 'ppk_nip', 'is_extracomtable', 'spesifikasi_json'];
 

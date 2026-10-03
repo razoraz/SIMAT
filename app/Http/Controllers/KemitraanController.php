@@ -68,7 +68,7 @@ class KemitraanController extends Controller
         $search       = trim($request->query('search', ''));
 
         // Query utama data kemitraan (hanya yang aktif / belum dihapus)
-        $query = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'user'])
+        $query = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'user', 'objekRegister.astap', 'objekAstap'])
             ->where('is_deleted', 0)
             ->whereHas('astap', function ($q) {
                 $q->where('is_deleted', 0);
@@ -166,6 +166,8 @@ class KemitraanController extends Controller
             })
             ->get();
 
+        $dbMitraKemitraans = AstapKemitraan::getDistinctMitras();
+
         return view('pages.kemitraan.index', compact(
             'kemitraanRecords',
             'kemitraanAstaps',
@@ -180,7 +182,8 @@ class KemitraanController extends Controller
             'filterTahun',
             'filterTw',
             'filterStatus',
-            'search'
+            'search',
+            'dbMitraKemitraans'
         ));
     }
 

@@ -10,6 +10,7 @@
 
     <script>
         window.editAstapData = @json($astap ?? null);
+        window.dbObjekAsetKemitraan = @json($dbObjekAsetKemitraan ?? []);
     </script>
 
     <!-- 1. Script Logika Form (Alpine.js & State Management) -->

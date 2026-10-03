@@ -684,7 +684,9 @@ Route::middleware('auth')->group(function () {
         $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
         $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
-        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108'));
+        $dbMitraKemitraans = \App\Models\AstapKemitraan::getDistinctMitras();
+
+        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108', 'dbMitraKemitraans'));
     })->name('astap.index')->middleware('module:astap');
 
     // API: Ambil riwayat mutasi spesifik unit register NIBAR
@@ -833,6 +835,14 @@ Route::middleware('auth')->group(function () {
             'notifications' => $res['notifications'],
         ]);
     })->name('notifications.list');
+
+    // 8. API Rekanan / Mitra Kemitraan (Autofill & Filter)
+    Route::get('/api/kemitraan/mitras', function () {
+        return response()->json([
+            'success' => true,
+            'data'    => \App\Models\AstapKemitraan::getDistinctMitras(),
+        ]);
+    })->name('api.kemitraan.mitras');
 
     // Rute Khusus Master Admin & Admin Operasional (Sub Admin Dibatasi)
     Route::middleware([RoleMiddleware::class . ':master_admin,admin'])->group(function () {
@@ -1421,12 +1431,80 @@ Route::middleware('auth')->group(function () {
 
 
             // ─── Form Kemitraan Pihak Ketiga / KSO (Create & Store) ────────
-            Route::get('/astap/create-kemitraan', function () use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras) {
+            $getObjekAsetKemitraans = function() {
+                $activeKemitraanByRegId = \App\Models\AstapKemitraan::whereNotNull('objek_register_id')
+                    ->where('status_konsesi', 'Aktif')
+                    ->where('is_deleted', 0)
+                    ->get()
+                    ->keyBy('objek_register_id');
+
+                return \App\Models\AstapRegister::where('is_deleted', 0)
+                    ->whereHas('astap', function($q) {
+                        $q->where('is_deleted', 0)
+                          ->where(function($sq) {
+                              $sq->whereNull('sumber_dana')
+                                 ->orWhere('sumber_dana', '!=', 'kemitraan');
+                          });
+                    })
+                    ->with(['astap.jenisAstap', 'astap.unit', 'unit'])
+                    ->get()
+                    ->map(function($reg) use ($activeKemitraanByRegId) {
+                        $astap = $reg->astap;
+                        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
+                        
+                        $kib = $astap->category ?: (
+                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.1') ? 'KIB A' : (
+                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.2') ? 'KIB B' : (
+                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.3') ? 'KIB C' : (
+                            str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.4') ? 'KIB D' : 'KIB E'
+                        ))));
+                        
+                        $luas = null;
+                        $sertifikat = null;
+                        if ($kib === 'KIB A') {
+                            $luas = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? null);
+                            $sertifikat = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? null);
+                        } elseif ($kib === 'KIB C') {
+                            $luas = $spec['gedung_luas_lantai'] ?? ($spec['luas_lantai'] ?? null);
+                            $sertifikat = $spec['gedung_dokumen_no'] ?? null;
+                        } elseif ($kib === 'KIB B') {
+                            $sertifikat = $spec['mesin_no_polisi'] ?? ($spec['no_polisi'] ?? ($spec['mesin_no_pabrik'] ?? ($spec['no_pabrik'] ?? null)));
+                        }
+
+                        $pksAktif = $activeKemitraanByRegId[$reg->id] ?? null;
+
+                        return [
+                            'register_id'     => $reg->id,
+                            'astap_id'        => $astap->id,
+                            'nibar'           => $reg->nibar,
+                            'nama_barang'     => $astap->nama_barang,
+                            'kib'             => $kib,
+                            'kode_108'        => $astap->jenisAstap?->sub_sub_rincian_objek ?: ($astap->jenisAstap?->sub_rincian_objek ?: $astap->jenisAstap?->jenis),
+                            'alamat_barang'   => $astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi',
+                            'unit_id'         => $reg->unit_id ?: $astap->unit_id,
+                            'unit_nama'       => $reg->unit?->nama ?: ($astap->unit?->nama ?: 'RSUD Dr. H. Koesnandi'),
+                            'tahun_perolehan' => $reg->tahun_perolehan ?: $astap->tahun_perolehan,
+                            'total_realisasi' => (float) $astap->total_realisasi,
+                            'kondisi'         => $reg->kondisi ?: 'Baik',
+                            'luas'            => $luas,
+                            'sertifikat'      => $sertifikat,
+                            'pks_aktif'       => $pksAktif ? [
+                                'nomor_pks'       => $pksAktif->nomor_pks,
+                                'mitra_nama'      => $pksAktif->mitra_nama,
+                                'tanggal_selesai' => $pksAktif->tanggal_selesai ? $pksAktif->tanggal_selesai->format('d/m/Y') : null,
+                            ] : null,
+                        ];
+                    })
+                    ->values();
+            };
+
+            Route::get('/astap/create-kemitraan', function () use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
                 $dbMitraKemitraans = $getDistinctMitras();
+                $dbObjekAsetKemitraan = $getObjekAsetKemitraans();
 
                 // PPK: khusus riwayat Pejabat Pembuat Komitmen kemitraan untuk autofill NIP
                 $dbPpkKemitraans = \App\Models\Astap::where('sumber_dana', 'kemitraan')
@@ -1461,7 +1539,7 @@ Route::middleware('auth')->group(function () {
 
                 return view('pages.kemitraan.form', compact(
                     'dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats',
-                    'dbMitraKemitraans', 'dbPpkKemitraans'
+                    'dbMitraKemitraans', 'dbPpkKemitraans', 'dbObjekAsetKemitraan'
                 ));
             })->name('astap.create_kemitraan');
 
@@ -1502,6 +1580,9 @@ Route::middleware('auth')->group(function () {
                     'alamat_barang'        => 'nullable|string|max:1000',
                     'kondisi'              => 'nullable|string|in:Baik,Kurang Baik,Rusak Berat',
                     'dokumen_file'         => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
+                    'objek_astap_id'       => 'nullable|integer|exists:astaps,id',
+                    'objek_register_id'    => 'nullable|integer|exists:astap_registers,id',
+                    'objek_nibar'          => 'nullable|string|max:50',
                 ]);
 
                 // Helper parser tanggal toleran DD/MM/YYYY dan YYYY-MM-DD
@@ -1570,6 +1651,41 @@ Route::middleware('auth')->group(function () {
                     }
                 }
 
+                // Validasi Overlap PKS Aktif pada Objek Aset RSUD Terkait (Bug B8 Prevention)
+                if (!empty($data['objek_register_id'])) {
+                    $tMulaiVal = !empty($data['tanggal_mulai']) ? $parseDateHelper($data['tanggal_mulai']) : $tPks;
+                    $tSelesaiVal = !empty($data['tanggal_selesai']) ? $parseDateHelper($data['tanggal_selesai']) : null;
+
+                    $activeOverlap = \App\Models\AstapKemitraan::where('objek_register_id', $data['objek_register_id'])
+                        ->where('status_konsesi', 'Aktif')
+                        ->where('is_deleted', 0)
+                        ->first();
+
+                    if ($activeOverlap) {
+                        $exMulai = $activeOverlap->tanggal_mulai ? strtotime($activeOverlap->tanggal_mulai->format('Y-m-d 00:00:00')) : ($activeOverlap->tanggal_pks ? strtotime($activeOverlap->tanggal_pks->format('Y-m-d 00:00:00')) : null);
+                        $exSelesai = $activeOverlap->tanggal_selesai ? strtotime($activeOverlap->tanggal_selesai->format('Y-m-d 23:59:59')) : null;
+
+                        $isOverlap = false;
+                        if (!$exSelesai || !$tSelesaiVal) {
+                            $isOverlap = true;
+                        } else {
+                            if ($tMulaiVal <= $exSelesai && $tSelesaiVal >= $exMulai) {
+                                $isOverlap = true;
+                            }
+                        }
+
+                        if ($isOverlap) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Aset objek RSUD ini (NIBAR: ' . ($data['objek_nibar'] ?? $activeOverlap->objek_nibar) . ') sedang terikat perjanjian kerja sama aktif lain: ' . $activeOverlap->nomor_pks . ' (' . $activeOverlap->mitra_nama . ').',
+                                'errors'  => [
+                                    'objek_register_id' => ['Aset ini masih dalam masa konsesi aktif pada PKS ' . $activeOverlap->nomor_pks]
+                                ]
+                            ], 422);
+                        }
+                    }
+                }
+
                 $totalRealisasi = (float) $data['total_realisasi'];
                 $totalVolume    = max(1, (int) $data['jumlah_volume']);
                 $hargaSatuan    = $totalRealisasi / $totalVolume;
@@ -1633,6 +1749,9 @@ Route::middleware('auth')->group(function () {
                         'kondisi'            => $kondisiItem,
                         'keterangan'         => $data['kemitraan_keterangan'] ?? null,
                         'dokumen_path'       => $dokumenPath,
+                        'objek_astap_id'     => $data['objek_astap_id'] ?? null,
+                        'objek_register_id'  => $data['objek_register_id'] ?? null,
+                        'objek_nibar'        => $data['objek_nibar'] ?? null,
                     ],
                 ];
 
@@ -2004,10 +2123,13 @@ Route::middleware('auth')->group(function () {
 
                     // Catat ke tabel master astap_kemitraans
                     \App\Models\AstapKemitraan::create([
-                        'astap_id'         => $item->id,
-                        'mitra_nama'       => $data['mitra_nama'],
-                        'mitra_pimpinan'   => $data['mitra_pimpinan'] ?? null,
-                        'mitra_alamat'     => $data['mitra_alamat'] ?? null,
+                        'astap_id'          => $item->id,
+                        'objek_astap_id'    => $data['objek_astap_id'] ?? null,
+                        'objek_register_id' => $data['objek_register_id'] ?? null,
+                        'objek_nibar'       => $data['objek_nibar'] ?? null,
+                        'mitra_nama'        => $data['mitra_nama'],
+                        'mitra_pimpinan'    => $data['mitra_pimpinan'] ?? null,
+                        'mitra_alamat'      => $data['mitra_alamat'] ?? null,
                         'nomor_pks'        => $data['nomor_pks'],
                         'tanggal_pks'      => $data['tanggal_pks'],
                         // BUG-05 FIX: normalisasi skema BGS/BSG → BGS agar konsisten dengan filter master
@@ -2046,13 +2168,14 @@ Route::middleware('auth')->group(function () {
             })->name('astap.store_kemitraan');
 
             // ─── Form Kemitraan Pihak Ketiga (Edit & Update) ─────────────────
-            Route::get('/astap/{id}/edit-kemitraan', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras) {
+            Route::get('/astap/{id}/edit-kemitraan', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
                 $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'kemitraan'])->findOrFail($id);
                 $dbMaster108 = \App\Models\JenisAstap::getNested108();
                 $dbUnits = \App\Models\Unit::orderBy('nama')->get();
                 $dbPenyedias = $getDistinctPenyedias();
                 $dbPejabats = $getDistinctPejabats();
                 $dbMitraKemitraans = $getDistinctMitras();
+                $dbObjekAsetKemitraan = $getObjekAsetKemitraans();
 
                 $dbPpkKemitraans = \App\Models\Astap::where('sumber_dana', 'kemitraan')
                     ->whereNotNull('ppk_nama')
@@ -2081,7 +2204,7 @@ Route::middleware('auth')->group(function () {
 
                 return view('pages.kemitraan.form', compact(
                     'astap', 'dbMaster108', 'dbUnits', 'dbPenyedias', 'dbPejabats',
-                    'dbMitraKemitraans', 'dbPpkKemitraans'
+                    'dbMitraKemitraans', 'dbPpkKemitraans', 'dbObjekAsetKemitraan'
                 ));
             })->name('astap.edit_kemitraan');
 
@@ -2121,6 +2244,9 @@ Route::middleware('auth')->group(function () {
                     'alamat_barang'        => 'nullable|string|max:1000',
                     'kondisi'              => 'nullable|string|in:Baik,Kurang Baik,Rusak Berat',
                     'dokumen_file'         => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
+                    'objek_astap_id'       => 'nullable|integer|exists:astaps,id',
+                    'objek_register_id'    => 'nullable|integer|exists:astap_registers,id',
+                    'objek_nibar'          => 'nullable|string|max:50',
                 ]);
 
                 $parseDateHelper = function($val) {
@@ -2182,6 +2308,42 @@ Route::middleware('auth')->group(function () {
                                 'tanggal_selesai' => ['Tanggal berakhir kerjasama tidak boleh di bawah (lebih awal dari) tanggal mulai kerjasama.']
                             ]
                         ], 422);
+                    }
+                }
+
+                // Validasi Overlap PKS Aktif pada Objek Aset RSUD Terkait (Bug B8 Prevention)
+                if (!empty($data['objek_register_id'])) {
+                    $tMulaiVal = !empty($data['tanggal_mulai']) ? $parseDateHelper($data['tanggal_mulai']) : $tPks;
+                    $tSelesaiVal = !empty($data['tanggal_selesai']) ? $parseDateHelper($data['tanggal_selesai']) : null;
+
+                    $activeOverlap = \App\Models\AstapKemitraan::where('objek_register_id', $data['objek_register_id'])
+                        ->where('status_konsesi', 'Aktif')
+                        ->where('is_deleted', 0)
+                        ->where('astap_id', '!=', $astap->id)
+                        ->first();
+
+                    if ($activeOverlap) {
+                        $exMulai = $activeOverlap->tanggal_mulai ? strtotime($activeOverlap->tanggal_mulai->format('Y-m-d 00:00:00')) : ($activeOverlap->tanggal_pks ? strtotime($activeOverlap->tanggal_pks->format('Y-m-d 00:00:00')) : null);
+                        $exSelesai = $activeOverlap->tanggal_selesai ? strtotime($activeOverlap->tanggal_selesai->format('Y-m-d 23:59:59')) : null;
+
+                        $isOverlap = false;
+                        if (!$exSelesai || !$tSelesaiVal) {
+                            $isOverlap = true;
+                        } else {
+                            if ($tMulaiVal <= $exSelesai && $tSelesaiVal >= $exMulai) {
+                                $isOverlap = true;
+                            }
+                        }
+
+                        if ($isOverlap) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Aset objek RSUD ini (NIBAR: ' . ($data['objek_nibar'] ?? $activeOverlap->objek_nibar) . ') sedang terikat perjanjian kerja sama aktif lain: ' . $activeOverlap->nomor_pks . ' (' . $activeOverlap->mitra_nama . ').',
+                                'errors'  => [
+                                    'objek_register_id' => ['Aset ini masih dalam masa konsesi aktif pada PKS ' . $activeOverlap->nomor_pks]
+                                ]
+                            ], 422);
+                        }
                     }
                 }
 
@@ -2320,6 +2482,9 @@ Route::middleware('auth')->group(function () {
                     $dokumenPath = $file->storeAs('dokumen_kemitraan', $filename, 'public');
                 }
                 $specJson['dokumen_path'] = $dokumenPath;
+                $specJson['objek_astap_id'] = $data['objek_astap_id'] ?? null;
+                $specJson['objek_register_id'] = $data['objek_register_id'] ?? null;
+                $specJson['objek_nibar'] = $data['objek_nibar'] ?? null;
 
                 \Illuminate\Support\Facades\DB::transaction(function () use ($astap, $data, $specJson, $resolvedAlamat, $totalVolume, $totalRealisasi, $hargaSatuan, $tahun, $kondisiItem, $isExtracom, $dokumenPath, $request) {
                     $astap->update([
@@ -2346,6 +2511,9 @@ Route::middleware('auth')->group(function () {
                     // Sinkronisasi record AstapKemitraan
                     $kemitraan = \App\Models\AstapKemitraan::firstOrNew(['astap_id' => $astap->id]);
                     $kemitraan->fill([
+                        'objek_astap_id'    => $data['objek_astap_id'] ?? null,
+                        'objek_register_id' => $data['objek_register_id'] ?? null,
+                        'objek_nibar'       => $data['objek_nibar'] ?? null,
                         'mitra_nama'       => $data['mitra_nama'],
                         'mitra_pimpinan'   => $data['mitra_pimpinan'] ?? null,
                         'mitra_alamat'     => $data['mitra_alamat'] ?? null,

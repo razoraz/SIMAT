@@ -497,7 +497,9 @@ class AstapController extends Controller
         $deletedAstaps = $deletedAstapsList->concat($deletedNibarsList)->values();
         $dbMaster108 = \App\Models\JenisAstap::getNested108();
 
-        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108'));
+        $dbMitraKemitraans = \App\Models\AstapKemitraan::getDistinctMitras();
+
+        return view('pages.astap.index', compact('astaps', 'deletedAstaps', 'dbMaster108', 'dbMitraKemitraans'));
     }
 
     /**

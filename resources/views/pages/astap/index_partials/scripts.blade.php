@@ -9566,6 +9566,48 @@
                 reklasNilaiAnggaran: 0,
                 reklasNoDokumenKoreksi: '',
                 isSubmittingReklas: false,
+
+                // State Autocomplete Mitra Rekanan Kemitraan (Sinkron dengan Form Kemitraan)
+                masterMitraList: (window.dbMitraKemitraans && Array.isArray(window.dbMitraKemitraans)) ? [...window.dbMitraKemitraans] : [],
+                isReklasMitraDropdownOpen: false,
+
+                get filteredReklasMitraList() {
+                    const q = (this.reklasSpekBaru?.kemitraan_mitra || '').toLowerCase().trim();
+                    if (!q) return this.masterMitraList.slice(0, 15);
+                    return this.masterMitraList.filter(m => m && m.nama && m.nama.toLowerCase().includes(q));
+                },
+
+                onReklasMitraInput(val) {
+                    const q = (val !== undefined ? val : (this.reklasSpekBaru?.kemitraan_mitra || '')).trim().toLowerCase();
+                    if (!q) return;
+                    const match = this.masterMitraList.find(m => m && m.nama && m.nama.trim().toLowerCase() === q);
+                    if (match) {
+                        if (match.pimpinan && !this.reklasSpekBaru.kemitraan_pimpinan) {
+                            this.reklasSpekBaru.kemitraan_pimpinan = match.pimpinan;
+                        }
+                        if (match.alamat && !this.reklasSpekBaru.kemitraan_alamat) {
+                            this.reklasSpekBaru.kemitraan_alamat = match.alamat;
+                        }
+                    }
+                },
+
+                selectReklasMitra(mitra) {
+                    if (!this.reklasSpekBaru) this.reklasSpekBaru = {};
+                    if (typeof mitra === 'string') {
+                        this.reklasSpekBaru.kemitraan_mitra = mitra;
+                        const match = this.masterMitraList.find(m => m && m.nama && m.nama.trim().toLowerCase() === mitra.trim().toLowerCase());
+                        if (match) {
+                            if (match.pimpinan) this.reklasSpekBaru.kemitraan_pimpinan = match.pimpinan;
+                            if (match.alamat) this.reklasSpekBaru.kemitraan_alamat = match.alamat;
+                        }
+                    } else if (mitra && typeof mitra === 'object') {
+                        this.reklasSpekBaru.kemitraan_mitra = mitra.nama || '';
+                        if (mitra.pimpinan) this.reklasSpekBaru.kemitraan_pimpinan = mitra.pimpinan;
+                        if (mitra.alamat) this.reklasSpekBaru.kemitraan_alamat = mitra.alamat;
+                    }
+                    this.isReklasMitraDropdownOpen = false;
+                },
+
                 reklasSpekBaru: {
                     // KIB A - Tanah
                     tanah_luas_m2: '',
@@ -10134,8 +10176,14 @@
                         this.reklasSpekBaru.atb_pengembang = spec.pengembang || '';
                         this.reklasSpekBaru.atb_masa_manfaat = spec.masa_manfaat || '4';
                     } else if (target === 'KEMITRAAN') {
+                        this.reklasSpekBaru.kemitraan_skema = spec.kemitraan_skema || spec.skema || 'Sewa';
                         this.reklasSpekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
-                        this.reklasSpekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.kemitraan_perjanjian_no || '';
+                        this.reklasSpekBaru.kemitraan_pimpinan = spec.pimpinan || spec.mitra_pimpinan || spec.kemitraan_pimpinan || '';
+                        this.reklasSpekBaru.kemitraan_alamat = spec.alamat || spec.mitra_alamat || spec.kemitraan_alamat || '';
+                        this.reklasSpekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.nomor_pks || spec.kemitraan_perjanjian_no || '';
+                        this.reklasSpekBaru.kemitraan_tanggal_pks = spec.tanggal_pks || spec.kemitraan_tanggal_pks || new Date().toISOString().split('T')[0];
+                        this.reklasSpekBaru.kemitraan_tanggal_mulai = spec.tanggal_mulai || spec.kemitraan_tanggal_mulai || new Date().toISOString().split('T')[0];
+                        this.reklasSpekBaru.kemitraan_tanggal_selesai = spec.tanggal_selesai || spec.kemitraan_tanggal_selesai || '';
                         this.reklasSpekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
                     } else if (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN' || target === 'ASET LAINNYA') {
                         this.reklasSpekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
@@ -10143,6 +10191,22 @@
                     }
                 },
 
+                calcReklasKemitraanDurasi() {
+                    const tM = this.reklasSpekBaru.kemitraan_tanggal_mulai;
+                    const tS = this.reklasSpekBaru.kemitraan_tanggal_selesai;
+                    if (!tM || !tS) return;
+                    const dM = new Date(tM);
+                    const dS = new Date(tS);
+                    if (isNaN(dM.getTime()) || isNaN(dS.getTime()) || dS < dM) return;
+                    const diffDays = Math.round((dS - dM) / (1000 * 60 * 60 * 24));
+                    const years = Math.floor(diffDays / 365);
+                    const remainingDays = diffDays % 365;
+                    const months = Math.floor(remainingDays / 30);
+                    const parts = [];
+                    if (years > 0) parts.push(`${years} Tahun`);
+                    if (months > 0) parts.push(`${months} Bulan`);
+                    this.reklasSpekBaru.kemitraan_jangka_waktu = parts.join(' ') || `${diffDays} Hari`;
+                },
 
                 getReklasExtracomTotal() {
                     if (!this.reklasExtracomItems || this.reklasExtracomItems.length === 0) {

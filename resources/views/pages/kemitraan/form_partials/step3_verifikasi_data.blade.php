@@ -118,6 +118,22 @@
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Alamat Domisili Mitra:</span>
                     <span class="text-slate-200 block truncate" x-text="formData.mitra_alamat || '-'"></span>
                 </div>
+                <!-- Objek Aset BMD RSUD yang Dikerjasamakan -->
+                <div class="col-span-2 p-3 rounded-2xl bg-slate-900/90 border border-cyan-500/20">
+                    <span class="text-[10px] font-semibold text-cyan-400 block mb-1">🏛️ Objek Aset BMD RSUD yang Dikerjasamakan:</span>
+                    <template x-if="formData.objek_nibar">
+                        <div class="flex items-center justify-between text-xs gap-2">
+                            <div>
+                                <span class="font-extrabold text-white" x-text="formData.objek_aset_terpilih?.nama_barang || 'Aset BMD Terpilih'"></span>
+                                <span class="text-cyan-400 font-mono text-[11px] block" x-text="'NIBAR: ' + formData.objek_nibar + ' · ' + (formData.objek_aset_terpilih?.kib || '')"></span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 font-mono shrink-0" x-text="formData.objek_aset_terpilih?.unit_nama || ''"></span>
+                        </div>
+                    </template>
+                    <template x-if="!formData.objek_nibar">
+                        <span class="text-slate-500 text-xs italic">Tanpa penautan objek aset BMD spesifik (Penerimaan/Pengadaan Barang KSO Baru).</span>
+                    </template>
+                </div>
                 <div class="col-span-2">
                     <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Berkas Dokumen BAST Kerja Sama:</span>
                     <template x-if="selectedFile">

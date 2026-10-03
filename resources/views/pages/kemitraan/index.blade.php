@@ -2,6 +2,10 @@
     @section('page-title', 'Kelola Data Aset Kemitraan Pihak Ketiga (Sewa, KSP, BGS/BSG, KSPI)')
     @section('breadcrumb', 'Master Aset / Kelola Kemitraan Aset')
 
+    <script>
+        window.dbMitraKemitraans = @json($dbMitraKemitraans ?? []);
+    </script>
+
     @include('pages.kemitraan.master_partials.scripts_export')
     @include('pages.kemitraan.master_partials.scripts')
 

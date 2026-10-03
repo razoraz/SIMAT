@@ -1,265 +1,706 @@
 <!-- ========================================================================= -->
 <!-- TABEL DATA MASTER ASET KEMITRAAN PIHAK KETIGA (AKUN 1.5.2)                -->
+<!-- DIPISAH: 1. Aset RSUD Dimanfaatkan Mitra | 2. Aset Ditambahkan Mitra       -->
 <!-- ========================================================================= -->
-<div class="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl overflow-hidden">
-    <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-            <h2 class="text-base font-extrabold text-white flex items-center gap-2">
-                <span>📋 Daftar Aset Kemitraan (Sewa, KSP, BGS/BSG, KSPI)</span>
-            </h2>
-            <p class="text-xs text-slate-400 mt-0.5">
-                Total {{ count($kemitraanRecords ?? []) }} data aset kerja sama tercatat dalam sistem SIMAT-RK.
-            </p>
+
+@php
+    $isDimanfaatkan = function($row) {
+        $astap = $row->astap;
+        
+        // 1. Aset RSUD yang Dimanfaatkan Mitra: HANYA jika secara eksplisit menautkan objek aset BMD milik RSUD
+        if (!empty($row->objek_nibar) || !empty($row->objek_register_id) || !empty($row->objek_astap_id)) {
+            return true;
+        }
+        $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+        if (!empty($spec['objek_nibar']) || !empty($spec['objek_register_id']) || !empty($spec['objek_astap_id'])) {
+            return true;
+        }
+
+        // 2. ATAU jika aset tersebut merupakan hasil reklasifikasi dari aset tetap RSUD (KIB A / C) ke Kemitraan (1.5.2)
+        if (!empty($astap?->reklas_riwayat) || ($astap?->asal_usul ?? '') === 'Reklasifikasi') {
+            return true;
+        }
+
+        return false;
+    };
+
+    $recordsDimanfaatkan = collect($kemitraanRecords ?? [])->filter(fn($r) => $isDimanfaatkan($r))->values();
+    $recordsDitambahkan  = collect($kemitraanRecords ?? [])->filter(fn($r) => !$isDimanfaatkan($r))->values();
+@endphp
+
+<div class="space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- SWITCHER TAB & MODE PEMISAH TABEL KEMITRAAN                              -->
+    <!-- ========================================================================= -->
+    <div class="p-4 sm:p-5 rounded-3xl bg-slate-900/95 border border-slate-800 shadow-xl space-y-3">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 block mb-0.5">
+                    🗂️ Pemisah Klasifikasi Aset Kemitraan (Akun 1.5.2)
+                </span>
+                <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
+                    <span>Pemisahan Objek Aset BMD RSUD &amp; Pengadaan Barang KSO Mitra</span>
+                </h3>
+            </div>
+
+            <!-- Tombol Switcher Tab -->
+            <div class="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950 border border-slate-800/90 shrink-0 overflow-x-auto max-w-full">
+                <!-- 1. Tampilkan Kedua Tabel Sekaligus -->
+                <button type="button" @click="kemitraanTableTab = 'both'"
+                    :class="kemitraanTableTab === 'both' ? 'bg-gradient-to-r from-cyan-500/20 to-teal-500/20 text-cyan-300 border-cyan-400 font-extrabold shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
+                    <span>📑</span>
+                    <span>Tampilkan Kedua Tabel</span>
+                </button>
+
+                <!-- 2. Tab: Aset RSUD Dimanfaatkan Mitra -->
+                <button type="button" @click="kemitraanTableTab = 'dimanfaatkan'"
+                    :class="kemitraanTableTab === 'dimanfaatkan' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-extrabold shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
+                    <span>🏛️</span>
+                    <span>Aset RSUD Dimanfaatkan</span>
+                    <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
+                        :class="kemitraanTableTab === 'dimanfaatkan' ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-300'">
+                        {{ count($recordsDimanfaatkan) }}
+                    </span>
+                </button>
+
+                <!-- 3. Tab: Aset Ditambahkan Mitra -->
+                <button type="button" @click="kemitraanTableTab = 'ditambahkan'"
+                    :class="kemitraanTableTab === 'ditambahkan' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400 font-extrabold shadow-md shadow-emerald-500/20' : 'text-slate-400 hover:text-white border-transparent'"
+                    class="px-3 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
+                    <span>📦</span>
+                    <span>Aset Ditambahkan Mitra</span>
+                    <span class="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold"
+                        :class="kemitraanTableTab === 'ditambahkan' ? 'bg-emerald-400 text-slate-950' : 'bg-slate-800 text-slate-300'">
+                        {{ count($recordsDitambahkan) }}
+                    </span>
+                </button>
+
+                <!-- 4. Tab: Semua Data Gabungan -->
+                <button type="button" @click="kemitraanTableTab = 'all'"
+                    :class="kemitraanTableTab === 'all' ? 'bg-slate-800 text-white border-slate-700 font-extrabold' : 'text-slate-500 hover:text-slate-300 border-transparent'"
+                    class="px-2.5 py-1.5 rounded-xl text-xs border transition-all flex items-center gap-1 shrink-0 cursor-pointer">
+                    <span>📋</span>
+                    <span>Semua ({{ count($kemitraanRecords ?? []) }})</span>
+                </button>
+            </div>
         </div>
 
-        <span class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-xl border border-cyan-500/30">
-            Akun 1.5.2 Aset Kemitraan
-        </span>
+        <div class="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/80">
+            <template x-if="kemitraanTableTab === 'both'">
+                <span class="text-cyan-400 flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>Menampilkan 2 tabel terpisah: <strong>Tabel 1 (Aset BMD RSUD yang Dimanfaatkan Mitra)</strong> dan <strong>Tabel 2 (Aset yang Ditambahkan Mitra)</strong>.</span>
+                </span>
+            </template>
+            <template x-if="kemitraanTableTab === 'dimanfaatkan'">
+                <span class="text-cyan-300 flex items-center gap-1.5">
+                    <span>🏛️</span>
+                    <span>Fokus pada aset daerah milik RSUD (Semua KIB: KIB A s.d. E) yang dimanfaatkan oleh pihak ketiga.</span>
+                </span>
+            </template>
+            <template x-if="kemitraanTableTab === 'ditambahkan'">
+                <span class="text-emerald-300 flex items-center gap-1.5">
+                    <span>📦</span>
+                    <span>Fokus pada peralatan, mesin, dan instalasi yang didatangkan/ditambahkan oleh pihak ketiga untuk operasional RSUD.</span>
+                </span>
+            </template>
+            <template x-if="kemitraanTableTab === 'all'">
+                <span class="text-slate-400 flex items-center gap-1.5">
+                    <span>📋</span>
+                    <span>Menampilkan tabel gabungan seluruh arsip aset kemitraan Akun 1.5.2.</span>
+                </span>
+            </template>
+            <span class="font-mono text-cyan-400/80 text-[10px] hidden sm:inline-block">Total {{ count($kemitraanRecords ?? []) }} Data Kemitraan</span>
+        </div>
     </div>
 
-    <div class="rounded-2xl border border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
-        <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
-            <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
-                <tr>
-                    <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
-                    <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
-                    <th class="py-3.5 px-4 min-w-[220px] bg-slate-950">Identitas Barang (Akun 108)</th>
-                    <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
-                    <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
-                    <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi / Kerjasama</th>
-                    <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/60">
-                @forelse($kemitraanRecords ?? [] as $idx => $row)
-                    @php
-                        $astap = $row->astap;
-                        $firstReg = $astap?->registers?->first();
-                        $unit = $firstReg?->unit ?? $astap?->unit;
-                        $sisaHari = $row->sisa_hari_konsesi;
-                    @endphp
-                    <tr class="hover:bg-slate-800/40 transition-colors group">
-                        <!-- 1. Nomor -->
-                        <td class="py-4 px-4 text-center font-mono text-slate-500 text-xs">
-                            {{ $idx + 1 }}
-                        </td>
 
-                        <!-- 2. Dokumen PKS & Rekanan -->
-                        <td class="py-4 px-4">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider
-                                    {{ $row->skema_kemitraan === 'KSO' || $row->skema_kemitraan === 'KSPI' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : '' }}
-                                    {{ $row->skema_kemitraan === 'BGS' || $row->skema_kemitraan === 'BSG' || $row->skema_kemitraan === 'BGS/BSG' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
-                                    {{ $row->skema_kemitraan === 'Sewa' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : '' }}
-                                    {{ $row->skema_kemitraan === 'KSP' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : '' }}
-                                ">
-                                    {{ $row->skema_kemitraan ?: 'Sewa' }}
-                                </span>
-                                <span class="text-xs font-bold text-white truncate max-w-[180px]" title="{{ $row->mitra_nama }}">
-                                    {{ $row->mitra_nama }}
-                                </span>
-                            </div>
-                            <div class="text-[11px] font-mono text-slate-400 truncate max-w-[200px]" title="{{ $row->nomor_pks }}">
-                                No: {{ $row->nomor_pks }}
-                            </div>
-                            <div class="text-[10px] text-slate-500 mt-0.5">
-                                Tgl PKS: {{ $row->tanggal_pks ? \Carbon\Carbon::parse($row->tanggal_pks)->translatedFormat('d F Y') : '-' }}
-                            </div>
-                        </td>
+    <!-- ========================================================================= -->
+    <!-- TABEL 1: ASET MILIK RSUD YANG DIMANFAATKAN / DISEWAKAN KE MITRA           -->
+    <!-- ========================================================================= -->
+    <div x-show="kemitraanTableTab === 'both' || kemitraanTableTab === 'dimanfaatkan'"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="rounded-3xl bg-slate-900/90 border border-cyan-500/30 shadow-2xl overflow-hidden space-y-0">
+        
+        <!-- Table Header Banner -->
+        <div class="p-5 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-950/40 via-slate-900/90 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-lg shrink-0 shadow-inner">
+                    🏛️
+                </div>
+                <div>
+                    <h2 class="text-base font-extrabold text-white flex items-center gap-2">
+                        <span>Daftar Aset Milik RSUD yang Dimanfaatkan oleh Mitra</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        Seluruh aset daerah milik RSUD (Semua KIB: KIB A s.d. E) yang dimanfaatkan atau dikerjasamakan dengan pihak ketiga.
+                    </p>
+                </div>
+            </div>
 
-                        <!-- 3. Identitas Barang & 108 -->
-                        <td class="py-4 px-4">
-                            <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
-                                {{ $astap?->nama_barang ?: 'Barang Aset Kemitraan' }}
-                            </div>
-                            <div class="text-[11px] font-mono text-cyan-400 mt-0.5">
-                                {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.x') }}
-                            </div>
-                            <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
-                                <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
-                            </div>
-                        </td>
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-500/10 px-3 py-1 rounded-xl border border-cyan-500/30">
+                    {{ count($recordsDimanfaatkan) }} Aset BMD Dimanfaatkan
+                </span>
+            </div>
+        </div>
 
-                        <!-- 4. Kondisi Aset (Persentase 3 Kondisi: Baik, Kurang Baik, Rusak Berat) -->
-                        <td class="py-4 px-4 text-center whitespace-nowrap">
-                            @php
-                                $regs = $astap?->registers ?? collect();
-                                $totalReg = $regs->count() ?: (int)($row->jumlah_volume ?: 1);
+        <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
+            <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
+                    <tr>
+                        <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
+                        <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Mitra</th>
+                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Objek Aset BMD RSUD (Semua KIB)</th>
+                        <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
+                        <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
+                        <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    @forelse($recordsDimanfaatkan as $idx => $row)
+                        @php
+                            $astap = $row->astap;
+                            $firstReg = $astap?->registers?->first();
+                            $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+                            $sisaHari = $row->sisa_hari_konsesi;
+                            $nibarObjek = $row->objek_nibar ?: ($spec['objek_nibar'] ?? null);
+                            $luasObjek = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
+                            $sertifikatObjek = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null));
+                        @endphp
+                        <tr class="hover:bg-cyan-950/20 transition-colors group">
+                            <!-- 1. Nomor -->
+                            <td class="py-4 px-4 text-center font-mono text-cyan-400 font-bold text-xs">
+                                {{ $idx + 1 }}
+                            </td>
 
-                                if ($regs->isEmpty()) {
-                                    $kDefault = $firstReg?->kondisi ?: 'Baik';
-                                    $baik = ($kDefault === 'Baik' || $kDefault === 'B') ? $totalReg : 0;
-                                    $kb   = ($kDefault === 'Kurang Baik' || $kDefault === 'KB' || $kDefault === 'Rusak Ringan' || $kDefault === 'RR') ? $totalReg : 0;
-                                    $rb   = ($kDefault === 'Rusak Berat' || $kDefault === 'RB' || $kDefault === 'Rusak') ? $totalReg : 0;
-                                } else {
-                                    $baik = $regs->filter(fn($r) => in_array($r->kondisi, ['Baik', 'B']))->count();
-                                    $kb   = $regs->filter(fn($r) => in_array($r->kondisi, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']))->count();
-                                    $rb   = $regs->filter(fn($r) => in_array($r->kondisi, ['Rusak Berat', 'RB', 'Rusak']))->count();
-                                }
-
-                                $pctBaik = $totalReg > 0 ? round(($baik / $totalReg) * 100) : 0;
-                                $pctKb   = $totalReg > 0 ? round(($kb / $totalReg) * 100) : 0;
-                                $pctRb   = $totalReg > 0 ? round(($rb / $totalReg) * 100) : 0;
-
-                                $isSingle = ($baik === $totalReg) || ($kb === $totalReg) || ($rb === $totalReg);
-                            @endphp
-
-                            @if($isSingle)
-                                @if($baik === $totalReg)
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                                        100% Baik
+                            <!-- 2. Dokumen PKS & Mitra -->
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                        {{ $row->skema_kemitraan ?: 'Sewa' }}
                                     </span>
-                                @elseif($kb === $totalReg)
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span>
-                                        100% K.Baik
+                                    <span class="text-xs font-bold text-white truncate max-w-[180px]" title="{{ $row->mitra_nama }}">
+                                        {{ $row->mitra_nama }}
                                     </span>
-                                @else
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5"></span>
-                                        100% R.Berat
-                                    </span>
-                                @endif
-                            @else
-                                <div class="min-w-[125px] max-w-[150px] mx-auto">
-                                    <!-- Mini progress bar gabungan (3 Kondisi) -->
-                                    <div class="flex h-2 rounded-full overflow-hidden bg-slate-800 mb-1 border border-slate-700/50">
-                                        @if($pctBaik > 0)
-                                            <div class="bg-emerald-400 transition-all" style="width: {{ $pctBaik }}%" title="{{ $pctBaik }}% Baik ({{ $baik }}/{{ $totalReg }})"></div>
-                                        @endif
-                                        @if($pctKb > 0)
-                                            <div class="bg-amber-400 transition-all" style="width: {{ $pctKb }}%" title="{{ $pctKb }}% Kurang Baik ({{ $kb }}/{{ $totalReg }})"></div>
-                                        @endif
-                                        @if($pctRb > 0)
-                                            <div class="bg-rose-400 transition-all" style="width: {{ $pctRb }}%" title="{{ $pctRb }}% Rusak Berat ({{ $rb }}/{{ $totalReg }})"></div>
-                                        @endif
-                                    </div>
-                                    <!-- Label persentase per kondisi -->
-                                    <div class="flex flex-wrap gap-x-2 gap-y-0.5 justify-center text-[9px] font-bold">
-                                        @if($baik > 0)
-                                            <span class="text-emerald-400">{{ $pctBaik }}% Baik</span>
-                                        @endif
-                                        @if($kb > 0)
-                                            <span class="text-amber-400">{{ $pctKb }}% KB</span>
-                                        @endif
-                                        @if($rb > 0)
-                                            <span class="text-rose-400">{{ $pctRb }}% RB</span>
-                                        @endif
-                                    </div>
                                 </div>
-                            @endif
-                        </td>
-
-                        <!-- 4. Total Nilai Aset -->
-                        <td class="py-4 px-4 text-right">
-                            <div class="font-mono text-xs font-black text-cyan-300">
-                                Rp {{ number_format($row->nilai_aset, 0, ',', '.') }}
-                            </div>
-                        </td>
-
-                        <!-- 5. Masa Konsesi / Kerjasama & Status -->
-                        <td class="py-4 px-4">
-                            @if($row->tanggal_mulai || $row->tanggal_selesai)
-                                <div class="text-[11px] font-medium text-slate-300">
-                                    {{ $row->tanggal_mulai ? \Carbon\Carbon::parse($row->tanggal_mulai)->format('d/m/Y') : '?' }} 
-                                    s.d. 
-                                    {{ $row->tanggal_selesai ? \Carbon\Carbon::parse($row->tanggal_selesai)->format('d/m/Y') : '?' }}
+                                <div class="text-[11px] font-mono text-slate-400 truncate max-w-[200px]" title="{{ $row->nomor_pks }}">
+                                    No: {{ $row->nomor_pks }}
                                 </div>
-                                @if($row->status_konsesi === 'Selesai / Reklasifikasi')
-                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md mt-1 border border-blue-500/30">
-                                        <span>🔄</span> Siap Reklasifikasi
-                                    </span>
-                                @elseif($row->status_konsesi === 'Dihentikan')
-                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1 border border-rose-500/30">
-                                        <span>🛑</span> Dihentikan
-                                    </span>
-                                @elseif($row->status_konsesi === 'Konsesi Berakhir' || (!is_null($sisaHari) && $sisaHari <= 0))
-                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md mt-1 border border-rose-500/30">
-                                        <span>🛑</span> Konsesi Berakhir
-                                    </span>
-                                @elseif(!is_null($sisaHari))
-                                    @if($sisaHari > 60)
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md mt-1 border border-emerald-500/20">
-                                            <span>⏱️</span> Sisa {{ $sisaHari }} hari
+                                <div class="text-[10px] text-slate-500 mt-0.5">
+                                    Tgl PKS: {{ $row->tanggal_pks ? \Carbon\Carbon::parse($row->tanggal_pks)->translatedFormat('d F Y') : '-' }}
+                                </div>
+                            </td>
+
+                            <!-- 3. Objek Aset BMD RSUD (KIB A / C) -->
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+                                    @if($nibarObjek)
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
+                                            NIBAR: {{ $nibarObjek }}
                                         </span>
-                                    @elseif($sisaHari > 0)
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md mt-1 border border-amber-500/20">
-                                            <span>⚠️</span> Sisa {{ $sisaHari }} hari
+                                    @else
+                                        <span class="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                            Aset BMD RSUD
                                         </span>
                                     @endif
-                                @endif
-                            @else
-                                <span class="text-slate-500 text-[11px] italic">Tanpa batas waktu</span>
-                            @endif
-                        </td>
+                                    <span class="text-[10.5px] font-mono text-slate-400">
+                                        {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01') }}
+                                    </span>
+                                </div>
+                                <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
+                                    {{ $astap?->nama_barang ?: 'Objek Aset BMD RSUD' }}
+                                </div>
+                                <div class="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10.5px] text-slate-400">
+                                    @if($luasObjek)
+                                        <span>📐 Luas: <strong class="font-mono text-cyan-300">{{ $luasObjek }} m²</strong></span>
+                                    @endif
+                                    @if($sertifikatObjek)
+                                        <span>📜 Sertifikat: <strong class="text-slate-300 font-mono">{{ $sertifikatObjek }}</strong></span>
+                                    @endif
+                                </div>
+                            </td>
 
-                        <!-- 8. Aksi (Detail, Reklas, Ubah, Hapus) — FREEZE STICKY RIGHT -->
-                        <td class="px-4 py-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 2; background-color: #0f172a !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
-                            <div class="flex items-center justify-center gap-1.5">
-                                <!-- 1. Tombol Detail -->
-                                <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
-                                    title="Lihat Detail Lengkap PKS & Aset Kemitraan"
-                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                    </svg>
-                                    <span>Detail</span>
-                                </button>
+                            <!-- 4. Kondisi Aset -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                                    100% Baik
+                                </span>
+                            </td>
 
-                                @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                <!-- 2. Tombol Reklas (Reklasifikasi Aset — Sama Seperti Data ASTAP) -->
-                                <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
-                                    title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
-                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                    </svg>
-                                    <span>Reklas</span>
-                                </button>
+                            <!-- 5. Total Nilai Konsesi / Taksiran -->
+                            <td class="py-4 px-4 text-right whitespace-nowrap">
+                                <span class="font-mono font-bold text-xs text-white block">
+                                    Rp {{ number_format($row->nilai_aset, 0, ',', '.') }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">
+                                    Tahun {{ $row->tahun }} · {{ $row->triwulan }}
+                                </span>
+                            </td>
 
-                                <!-- 3. Tombol Ubah (Form Edit ASTAP Kemitraan) -->
-                                <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"
-                                    title="Ubah Data ASTAP Kemitraan (Form Lengkap)"
-                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                    <span>Ubah</span>
-                                </a>
+                            <!-- 6. Masa Konsesi / Sewa -->
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold
+                                        {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Akan Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                    ">
+                                        {{ $row->status_konsesi }}
+                                    </span>
+                                    @if($sisaHari !== null)
+                                        <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
+                                            {{ $sisaHari > 0 ? $sisaHari . ' hari lagi' : 'Berakhir' }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="text-[10.5px] font-mono text-slate-400">
+                                    {{ $row->tanggal_mulai ? \Carbon\Carbon::parse($row->tanggal_mulai)->format('d/m/Y') : '?' }} s/d {{ $row->tanggal_selesai ? \Carbon\Carbon::parse($row->tanggal_selesai)->format('d/m/Y') : '?' }}
+                                </div>
+                            </td>
 
-                                <!-- 4. Tombol Hapus -->
-                                <button type="button" @click="confirmDelete({{ $row->id }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
-                                    title="Hapus / Batalkan Aset Kemitraan"
-                                    class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                    <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                    <span>Hapus</span>
-                                </button>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="py-12 text-center text-slate-400">
-                            <div class="text-3xl mb-2">🤝</div>
-                            <p class="text-sm font-bold text-white">Belum Ada Aset Kemitraan Tercatat</p>
-                            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                                Belum ada aset dengan skema KSO, KSP, atau sewa pihak ketiga yang tercatat pada periode ini.
-                            </p>
-                            <div class="mt-4">
-                                <a href="{{ route('astap.create_kemitraan') }}"
-                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all">
-                                    <span>+ Catat Aset Kemitraan Baru</span>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                            <!-- 7. Aksi (Sticky Right) -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <div class="flex items-center justify-center space-x-1.5">
+                                    <!-- 1. Tombol Detail -->
+                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
+                                        title="Lihat Detail Lengkap PKS & Objek Aset"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        <span>Detail</span>
+                                    </button>
+
+                                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                    <!-- 2. Tombol Reklas -->
+                                    <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
+                                        title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
+
+                                    <!-- 3. Tombol Ubah -->
+                                    <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"
+                                        title="Ubah Data Aset Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </a>
+
+                                    <!-- 4. Tombol Hapus -->
+                                    <button type="button" @click="confirmDelete({{ $row->id }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
+                                        title="Hapus / Batalkan Aset Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <span>Hapus</span>
+                                    </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-slate-400">
+                                <div class="text-3xl mb-2">🏛️</div>
+                                <p class="text-sm font-bold text-white">Belum Ada Aset BMD RSUD yang Dimanfaatkan</p>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Belum ada data pemanfaatan aset daerah milik RSUD (Semua KIB: KIB A s.d. E) oleh pihak ketiga pada periode ini.
+                                </p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- TABEL 2: ASET YANG DITAMBAHKAN / DIDATANGKAN OLEH MITRA                   -->
+    <!-- ========================================================================= -->
+    <div x-show="kemitraanTableTab === 'both' || kemitraanTableTab === 'ditambahkan'"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="rounded-3xl bg-slate-900/90 border border-emerald-500/30 shadow-2xl overflow-hidden space-y-0">
+        
+        <!-- Table Header Banner -->
+        <div class="p-5 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-950/40 via-slate-900/90 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg shrink-0 shadow-inner">
+                    📦
+                </div>
+                <div>
+                    <h2 class="text-base font-extrabold text-white flex items-center gap-2">
+                        <span>Daftar Aset yang Ditambahkan oleh Mitra (Sewa, KSP, BGS/BSG, KSPI)</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        Seluruh aset (peralatan, mesin, tanah, gedung, atau instalasi) yang diperoleh / ditambahkan melalui kerja sama dengan pihak ketiga.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[11px] font-mono font-bold text-emerald-300 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/30">
+                    {{ count($recordsDitambahkan) }} Aset Ditambahkan Mitra
+                </span>
+            </div>
+        </div>
+
+        <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
+            <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
+                    <tr>
+                        <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
+                        <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
+                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Identitas Barang &amp; Spesifikasi (Akun 108)</th>
+                        <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
+                        <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
+                        <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi Operasional</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    @forelse($recordsDitambahkan as $idx => $row)
+                        @php
+                            $astap = $row->astap;
+                            $firstReg = $astap?->registers?->first();
+                            $spec = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap?->spesifikasi_json ?? '[]', true) ?: []);
+                            $sisaHari = $row->sisa_hari_konsesi;
+                            $merk = $spec['merk'] ?? ($spec['mesin_merk'] ?? null);
+                            $type = $spec['type'] ?? ($spec['mesin_type'] ?? null);
+                        @endphp
+                        <tr class="hover:bg-emerald-950/20 transition-colors group">
+                            <!-- 1. Nomor -->
+                            <td class="py-4 px-4 text-center font-mono text-emerald-400 font-bold text-xs">
+                                {{ $idx + 1 }}
+                            </td>
+
+                            <!-- 2. Dokumen PKS & Rekanan -->
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                        {{ $row->skema_kemitraan ?: 'KSO' }}
+                                    </span>
+                                    <span class="text-xs font-bold text-white truncate max-w-[180px]" title="{{ $row->mitra_nama }}">
+                                        {{ $row->mitra_nama }}
+                                    </span>
+                                </div>
+                                <div class="text-[11px] font-mono text-slate-400 truncate max-w-[200px]" title="{{ $row->nomor_pks }}">
+                                    No: {{ $row->nomor_pks }}
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">
+                                    Tgl PKS: {{ $row->tanggal_pks ? \Carbon\Carbon::parse($row->tanggal_pks)->translatedFormat('d F Y') : '-' }}
+                                </div>
+                            </td>
+
+                            <!-- 3. Identitas Barang KSO & Spesifikasi -->
+                            <td class="py-4 px-4">
+                                <div class="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors leading-snug">
+                                    {{ $astap?->nama_barang ?: 'Barang KSO Rekanan' }}
+                                </div>
+                                <div class="text-[11px] font-mono text-emerald-400 mt-0.5">
+                                    {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01.002') }}
+                                </div>
+                                <div class="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-slate-400">
+                                    <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
+                                    @if($merk || $type)
+                                        <span class="text-slate-300 font-mono">{{ trim(($merk ?? '') . ' ' . ($type ?? '')) }}</span>
+                                    @endif
+                                </div>
+                            </td>
+
+                            <!-- 4. Kondisi Aset -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                                    100% Baik
+                                </span>
+                            </td>
+
+                            <!-- 5. Taksiran Nilai Aset -->
+                            <td class="py-4 px-4 text-right whitespace-nowrap">
+                                <span class="font-mono font-bold text-xs text-white block">
+                                    Rp {{ number_format($row->nilai_aset, 0, ',', '.') }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">
+                                    Tahun {{ $row->tahun }} · {{ $row->triwulan }}
+                                </span>
+                            </td>
+
+                            <!-- 6. Masa Konsesi Operasional -->
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold
+                                        {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Akan Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                    ">
+                                        {{ $row->status_konsesi }}
+                                    </span>
+                                    @if($sisaHari !== null)
+                                        <span class="text-[10px] font-mono {{ $sisaHari <= 30 ? 'text-amber-400 font-bold' : 'text-slate-400' }}">
+                                            {{ $sisaHari > 0 ? $sisaHari . ' hari lagi' : 'Berakhir' }}
+                                        </span>
+                                    @endif
+                                </div>
+                                <div class="text-[10.5px] font-mono text-slate-400">
+                                    {{ $row->tanggal_mulai ? \Carbon\Carbon::parse($row->tanggal_mulai)->format('d/m/Y') : '?' }} s/d {{ $row->tanggal_selesai ? \Carbon\Carbon::parse($row->tanggal_selesai)->format('d/m/Y') : '?' }}
+                                </div>
+                            </td>
+
+                            <!-- 7. Aksi (Sticky Right) -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <div class="flex items-center justify-center space-x-1.5">
+                                    <!-- 1. Tombol Detail -->
+                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
+                                        title="Lihat Detail Lengkap PKS & Aset Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        <span>Detail</span>
+                                    </button>
+
+                                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                    <!-- 2. Tombol Reklas -->
+                                    <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
+                                        title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
+
+                                    <!-- 3. Tombol Ubah -->
+                                    <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"
+                                        title="Ubah Data ASTAP Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </a>
+
+                                    <!-- 4. Tombol Hapus -->
+                                    <button type="button" @click="confirmDelete({{ $row->id }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
+                                        title="Hapus / Batalkan Aset Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <span>Hapus</span>
+                                    </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-slate-400">
+                                <div class="text-3xl mb-2">📦</div>
+                                <p class="text-sm font-bold text-white">Belum Ada Aset yang Ditambahkan oleh Mitra</p>
+                                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Belum ada aset (peralatan, mesin, tanah, atau gedung) yang ditambahkan dari kerja sama pihak ketiga pada periode ini.
+                                </p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- TABEL 3: SEMUA DATA GABUNGAN (JIKA MODE TAB 'ALL')                        -->
+    <!-- ========================================================================= -->
+    <div x-show="kemitraanTableTab === 'all'"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl overflow-hidden space-y-0">
+        
+        <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h2 class="text-base font-extrabold text-white flex items-center gap-2">
+                    <span>📋 Seluruh Daftar Aset Kemitraan (Gabungan Akun 1.5.2)</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    Menampilkan total {{ count($kemitraanRecords ?? []) }} data aset kerja sama baik pemanfaatan BMD RSUD maupun pengadaan KSO mitra.
+                </p>
+            </div>
+
+            <span class="text-[11px] font-mono font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-xl border border-cyan-500/30">
+                Akun 1.5.2 Aset Kemitraan
+            </span>
+        </div>
+
+        <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
+            <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
+                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
+                    <tr>
+                        <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
+                        <th class="py-3.5 px-4 min-w-[130px] bg-slate-950">Kategori Kemitraan</th>
+                        <th class="py-3.5 px-4 min-w-[190px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
+                        <th class="py-3.5 px-4 min-w-[210px] bg-slate-950">Identitas Barang (Akun 108)</th>
+                        <th class="py-3.5 px-4 min-w-[125px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
+                        <th class="py-3.5 px-4 min-w-[130px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
+                        <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Masa Konsesi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[260px] w-[260px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    @forelse($kemitraanRecords ?? [] as $idx => $row)
+                        @php
+                            $astap = $row->astap;
+                            $firstReg = $astap?->registers?->first();
+                            $sisaHari = $row->sisa_hari_konsesi;
+                            $isRowDimanfaatkan = $isDimanfaatkan($row);
+                        @endphp
+                        <tr class="hover:bg-slate-800/40 transition-colors group">
+                            <!-- 1. Nomor -->
+                            <td class="py-4 px-4 text-center font-mono text-slate-500 text-xs">
+                                {{ $idx + 1 }}
+                            </td>
+
+                            <!-- 2. Kategori Kemitraan Badge -->
+                            <td class="py-4 px-4">
+                                @if($isRowDimanfaatkan)
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                                        <span>🏛️</span>
+                                        <span>Aset RSUD Dimanfaatkan</span>
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                        <span>📦</span>
+                                        <span>Aset Ditambahkan Mitra</span>
+                                    </span>
+                                @endif
+                            </td>
+
+                            <!-- 3. Dokumen PKS & Rekanan -->
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider
+                                        {{ $row->skema_kemitraan === 'KSO' || $row->skema_kemitraan === 'KSPI' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : '' }}
+                                        {{ $row->skema_kemitraan === 'BGS' || $row->skema_kemitraan === 'BSG' || $row->skema_kemitraan === 'BGS/BSG' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                        {{ $row->skema_kemitraan === 'Sewa' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : '' }}
+                                        {{ $row->skema_kemitraan === 'KSP' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : '' }}
+                                    ">
+                                        {{ $row->skema_kemitraan ?: 'Sewa' }}
+                                    </span>
+                                    <span class="text-xs font-bold text-white truncate max-w-[150px]" title="{{ $row->mitra_nama }}">
+                                        {{ $row->mitra_nama }}
+                                    </span>
+                                </div>
+                                <div class="text-[11px] font-mono text-slate-400 truncate max-w-[180px]" title="{{ $row->nomor_pks }}">
+                                    No: {{ $row->nomor_pks }}
+                                </div>
+                            </td>
+
+                            <!-- 4. Identitas Barang (Akun 108) -->
+                            <td class="py-4 px-4">
+                                <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
+                                    {{ $astap?->nama_barang ?: 'Barang Aset Kemitraan' }}
+                                </div>
+                                <div class="text-[11px] font-mono text-cyan-400 mt-0.5">
+                                    {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.x') }}
+                                </div>
+                                <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                                    <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
+                                </div>
+                            </td>
+
+                            <!-- 5. Kondisi -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
+                                    100% Baik
+                                </span>
+                            </td>
+
+                            <!-- 6. Total Nilai -->
+                            <td class="py-4 px-4 text-right whitespace-nowrap">
+                                <span class="font-mono font-bold text-xs text-white block">
+                                    Rp {{ number_format($row->nilai_aset, 0, ',', '.') }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">
+                                    {{ $row->tahun }} · {{ $row->triwulan }}
+                                </span>
+                            </td>
+
+                            <!-- 7. Masa Konsesi -->
+                            <td class="py-4 px-4">
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    <span class="px-1.5 py-0.2 rounded text-[10px] font-bold
+                                        {{ $row->status_konsesi === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Akan Berakhir' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Konsesi Berakhir' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : '' }}
+                                        {{ $row->status_konsesi === 'Selesai / Reklasifikasi' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : '' }}
+                                    ">
+                                        {{ $row->status_konsesi }}
+                                    </span>
+                                </div>
+                                <div class="text-[10px] font-mono text-slate-400">
+                                    {{ $row->tanggal_mulai ? \Carbon\Carbon::parse($row->tanggal_mulai)->format('d/m/y') : '?' }} - {{ $row->tanggal_selesai ? \Carbon\Carbon::parse($row->tanggal_selesai)->format('d/m/y') : '?' }}
+                                </div>
+                            </td>
+
+                            <!-- 8. Aksi (Sticky Right) -->
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                                <div class="flex items-center justify-center space-x-1.5">
+                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
+                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 font-bold text-xs transition-all">
+                                        Detail
+                                    </button>
+                                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                    <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
+                                        class="px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 font-bold text-xs transition-all">
+                                        Reklas
+                                    </button>
+                                    <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"
+                                        class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all">
+                                        Ubah
+                                    </a>
+                                    <button type="button" @click="confirmDelete({{ $row->id }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
+                                        class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs transition-all">
+                                        Hapus
+                                    </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="py-12 text-center text-slate-400">
+                                <p class="text-sm font-bold text-white">Belum Ada Aset Kemitraan Tercatat</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
