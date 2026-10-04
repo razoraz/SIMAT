@@ -9608,6 +9608,9 @@
                     this.isReklasMitraDropdownOpen = false;
                 },
 
+                reklasSpekBaruItems: [],
+                activeSpekUnitTab: 0,
+
                 reklasSpekBaru: {
                     // KIB A - Tanah
                     tanah_luas_m2: '',
@@ -9915,7 +9918,15 @@
                         else if (isValidDoc(item.sp2d_nomor)) docs.push('SP2D: ' + item.sp2d_nomor.trim());
                     }
                     this.reklasNomorBa = docs.length > 0 ? docs.join(' | ') : '';
-                    this.reklasTujuanKib = '';
+                    if (this.reklasJenis === 'pindah_kib') {
+                        this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : 'KIB B';
+                    } else if (this.reklasJenis === 'intracom') {
+                        this.reklasTujuanKib = (kode.startsWith('1.3.5') || cat === 'KIB E') ? 'KIB E' : 'KIB B';
+                    } else if (this.reklasJenis === 'kdp') {
+                        this.reklasTujuanKib = 'KIB C';
+                    } else {
+                        this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : '';
+                    }
                     this.reklasTujuanKode = '';
                     this.reklasTujuanNama = '';
                     this.reklasSubRincianKode = '';
@@ -9928,7 +9939,28 @@
                     this.isReklasSubSubRincianOpen = false;
                     this.reklasTanggal = new Date().toLocaleDateString('en-CA');
                     this.reklasAlasan = '';
+                    this.initReklasSpekBaru();
                     this.showReklasModal = true;
+                },
+
+                onReklasJenisChange() {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return;
+                    const cat = typeof resolveItemCategory === 'function' ? resolveItemCategory(it) : (it.category || 'KIB B');
+                    const kode = it.kode_barang || it.jenis_aset_kode || '';
+
+                    if (this.reklasJenis === 'pindah_kib') {
+                        if (!this.reklasTujuanKib) {
+                            this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : 'KIB B';
+                        }
+                    } else if (this.reklasJenis === 'intracom') {
+                        this.reklasTujuanKib = (kode.startsWith('1.3.5') || cat === 'KIB E') ? 'KIB E' : 'KIB B';
+                    } else if (this.reklasJenis === 'kdp') {
+                        this.reklasTujuanKib = 'KIB C';
+                    } else if (this.reklasJenis === 'extracom') {
+                        this.reklasTujuanKib = 'EKSTRAKOMPTABEL';
+                    }
+                    this.initReklasSpekBaru();
                 },
 
                 getReklasNoBuktiDisplay() {
@@ -10135,60 +10167,198 @@
                 initReklasSpekBaru() {
                     const it = this.selectedAstapReklas;
                     if (!it) return;
-                    const spec = (typeof it.spesifikasi_json === 'object' && it.spesifikasi_json !== null) ? it.spesifikasi_json : {};
+                    let spec = it.spesifikasi_json;
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+                    if (!spec || typeof spec !== 'object') spec = {};
+
                     const target = this.reklasTujuanKib;
                     const defaultAlamat = it.alamat_barang || spec.alamat || 'RSUD Dr. H. Koesnandi';
 
-                    if (target === 'KIB A') {
-                        this.reklasSpekBaru.tanah_luas_m2 = spec.luas_m2 || spec.tanah_luas_m2 || '';
-                        this.reklasSpekBaru.tanah_hak = spec.hak_tanah || spec.tanah_hak || 'Hak Pakai';
-                        this.reklasSpekBaru.tanah_sertifikat_no = spec.sertifikat_no || spec.tanah_sertifikat_no || '';
-                        this.reklasSpekBaru.tanah_sertifikat_tgl = spec.sertifikat_tgl || spec.tanah_sertifikat_tgl || '';
-                        this.reklasSpekBaru.tanah_penggunaan = spec.penggunaan || spec.tanah_penggunaan || it.nama_barang || 'Kompleks RSUD';
-                        this.reklasSpekBaru.tanah_asal_usul = spec.tanah_asal_usul || 'Pengadaan APBD / BLUD';
-                        this.reklasSpekBaru.tanah_alamat = defaultAlamat;
-                    } else if (target === 'KIB B') {
-                        this.reklasSpekBaru.mesin_merk = spec.merk || it.merk_type || '';
-                        this.reklasSpekBaru.mesin_type = spec.type || '';
-                        this.reklasSpekBaru.mesin_no_pabrik = spec.no_pabrik || '';
-                        this.reklasSpekBaru.mesin_ukuran_cc = spec.ukuran_cc || '';
-                        this.reklasSpekBaru.mesin_bahan = spec.bahan || 'Logam / Komponen Elektronik';
-                        this.reklasSpekBaru.mesin_no_polisi = spec.no_polisi || '';
-                    } else if (target === 'KIB C') {
-                        this.reklasSpekBaru.gedung_konstruksi_bertingkat = spec.konstruksi_bertingkat || spec.bertingkat || 'Bertingkat';
-                        this.reklasSpekBaru.gedung_konstruksi_beton = spec.konstruksi_beton || spec.beton || 'Beton';
-                        this.reklasSpekBaru.gedung_luas_lantai_m2 = spec.luas_lantai_m2 || '';
-                        this.reklasSpekBaru.gedung_dokumen_nomor = spec.dokumen_nomor || it.spk_nomor || '';
-                        this.reklasSpekBaru.gedung_dokumen_tgl = spec.dokumen_tgl || it.spk_tanggal || '';
-                        this.reklasSpekBaru.gedung_status_tanah = spec.status_tanah || 'Tanah Pemda';
-                        this.reklasSpekBaru.gedung_alamat = defaultAlamat;
-                    } else if (target === 'KIB D') {
-                        this.reklasSpekBaru.jaringan_konstruksi = spec.konstruksi || 'Aspal / Beton';
-                        this.reklasSpekBaru.jaringan_panjang_km = spec.panjang_km || '';
-                        this.reklasSpekBaru.jaringan_lebar_m = spec.lebar_m || '';
-                        this.reklasSpekBaru.jaringan_luas_m2 = spec.luas_m2 || '';
-                        this.reklasSpekBaru.jaringan_alamat = defaultAlamat;
-                    } else if (target === 'KIB E') {
-                        this.reklasSpekBaru.lainnya_judul_pencipta = spec.judul_pencipta || it.nama_barang || '';
-                        this.reklasSpekBaru.lainnya_bahan = spec.bahan || 'Kertas / Kanvas / Lainnya';
-                    } else if (target === 'ATB') {
-                        this.reklasSpekBaru.atb_nama_software = spec.nama_software || it.nama_barang || '';
-                        this.reklasSpekBaru.atb_pengembang = spec.pengembang || '';
-                        this.reklasSpekBaru.atb_masa_manfaat = spec.masa_manfaat || '4';
-                    } else if (target === 'KEMITRAAN') {
-                        this.reklasSpekBaru.kemitraan_skema = spec.kemitraan_skema || spec.skema || 'Sewa';
-                        this.reklasSpekBaru.kemitraan_mitra = spec.mitra || spec.kemitraan_mitra || '';
-                        this.reklasSpekBaru.kemitraan_pimpinan = spec.pimpinan || spec.mitra_pimpinan || spec.kemitraan_pimpinan || '';
-                        this.reklasSpekBaru.kemitraan_alamat = spec.alamat || spec.mitra_alamat || spec.kemitraan_alamat || '';
-                        this.reklasSpekBaru.kemitraan_perjanjian_no = spec.perjanjian_no || spec.nomor_pks || spec.kemitraan_perjanjian_no || '';
-                        this.reklasSpekBaru.kemitraan_tanggal_pks = spec.tanggal_pks || spec.kemitraan_tanggal_pks || new Date().toISOString().split('T')[0];
-                        this.reklasSpekBaru.kemitraan_tanggal_mulai = spec.tanggal_mulai || spec.kemitraan_tanggal_mulai || new Date().toISOString().split('T')[0];
-                        this.reklasSpekBaru.kemitraan_tanggal_selesai = spec.tanggal_selesai || spec.kemitraan_tanggal_selesai || '';
-                        this.reklasSpekBaru.kemitraan_jangka_waktu = spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun';
-                    } else if (target === 'ASET LAIN' || target === 'ASET LAIN-LAIN' || target === 'ASET LAINNYA') {
-                        this.reklasSpekBaru.aset_lain_kondisi = spec.kondisi_barang || spec.aset_lain_kondisi || 'Rusak Berat (Menunggu Penghapusan)';
-                        this.reklasSpekBaru.aset_lain_alasan = spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain';
+                    // Sub-item arrays jika ada (dari form pengadaan astap multi-item)
+                    const tItems = Array.isArray(spec.tanah_items) ? spec.tanah_items : [];
+                    const mItems = Array.isArray(spec.mesin_items) ? spec.mesin_items : [];
+                    const gItems = Array.isArray(spec.gedung_items) ? spec.gedung_items : [];
+                    const jItems = Array.isArray(spec.jaringan_items) ? spec.jaringan_items : [];
+                    const lItems = Array.isArray(spec.lainnya_items) ? spec.lainnya_items : [];
+                    const aItems = Array.isArray(spec.atb_items) ? spec.atb_items : [];
+                    const kData = it.kemitraan || {};
+
+                    let existingItems = [];
+                    if (lItems.length > 0) existingItems = lItems;
+                    else if (mItems.length > 0) existingItems = mItems;
+                    else if (gItems.length > 0) existingItems = gItems;
+                    else if (jItems.length > 0) existingItems = jItems;
+                    else if (tItems.length > 0) existingItems = tItems;
+                    else if (aItems.length > 0) existingItems = aItems;
+
+                    const regs = Array.isArray(it.registers) ? it.registers : [];
+                    let totalUnits = 1;
+
+                    if (existingItems.length > 1) {
+                        totalUnits = existingItems.length;
+                    } else if (regs.length > 1 && regs.length <= 50) {
+                        totalUnits = regs.length;
+                    } else {
+                        const vol = parseInt(it.jumlah_volume) || 1;
+                        totalUnits = (vol > 1 && vol <= 50) ? vol : 1;
                     }
+
+                    // Buat template spek default dari data KIB target dan sumber asal
+                    const createDefaultSpekForUnit = (idx) => {
+                        const reg = regs[idx] || null;
+                        const tItem = tItems[idx] || tItems[0] || {};
+                        const mItem = mItems[idx] || mItems[0] || {};
+                        const gItem = gItems[idx] || gItems[0] || {};
+                        const jItem = jItems[idx] || jItems[0] || {};
+                        const lItem = lItems[idx] || lItems[0] || {};
+                        const aItem = aItems[idx] || aItems[0] || {};
+
+                        const currItem = (lItems.length > 0 ? lItems[idx] : null)
+                            || (mItems.length > 0 ? mItems[idx] : null)
+                            || (gItems.length > 0 ? gItems[idx] : null)
+                            || (jItems.length > 0 ? jItems[idx] : null)
+                            || (tItems.length > 0 ? tItems[idx] : null)
+                            || (aItems.length > 0 ? aItems[idx] : null)
+                            || {};
+
+                        const itemNama = currItem.mesin_nama_barang 
+                            || currItem.lainnya_nama_barang 
+                            || currItem.gedung_nama_bangunan 
+                            || currItem.jaringan_nama 
+                            || currItem.tanah_nama_barang 
+                            || currItem.atb_nama_software 
+                            || currItem.nama_barang 
+                            || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].nama_barang : null)
+                            || it.nama_barang 
+                            || `Barang #${idx + 1}`;
+
+                        const itemVol = parseInt(currItem.mesin_jumlah_barang || currItem.lainnya_jumlah || currItem.gedung_jumlah_bangunan || currItem.jaringan_jumlah || currItem.tanah_jumlah_bidang || currItem.atb_jumlah_barang || currItem.jumlah_volume || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].jumlah_volume : 1));
+                        const itemSatuan = currItem.mesin_satuan || currItem.lainnya_satuan || currItem.gedung_satuan || currItem.jaringan_satuan || currItem.tanah_satuan || currItem.atb_satuan || (this.reklasExtracomItems && this.reklasExtracomItems[idx] ? this.reklasExtracomItems[idx].satuan : null) || it.satuan || 'Unit';
+
+                        return {
+                            unit_index: idx,
+                            item_nama: itemNama,
+                            item_volume: itemVol,
+                            item_satuan: itemSatuan,
+                            nibar: reg?.nibar || reg?.no_register || `Unit #${idx + 1}`,
+                            ruang_pemegang: reg?.ruang_pemegang || it.ruang_unit || '-',
+                            kondisi: reg?.kondisi || 'Baik',
+
+                            // KIB A - Tanah
+                            tanah_luas_m2: tItem.tanah_luas_m2 || spec.luas_m2 || spec.tanah_luas_m2 || (it.luas_m2 && it.luas_m2 > 0 ? it.luas_m2 : '') || '',
+                            tanah_hak: tItem.tanah_hak || tItem.hak_tanah || spec.hak_tanah || spec.tanah_hak || (it.hak_tanah && it.hak_tanah !== '-' ? it.hak_tanah : 'Hak Pakai'),
+                            tanah_sertifikat_no: tItem.tanah_sertifikat_no || tItem.sertifikat_no || spec.sertifikat_no || spec.tanah_sertifikat_no || spec.sertifikat_nomor || (it.sertifikat_nomor && it.sertifikat_nomor !== '-' ? it.sertifikat_nomor : '') || '',
+                            tanah_sertifikat_tgl: tItem.tanah_sertifikat_tgl || tItem.sertifikat_tgl || spec.sertifikat_tgl || spec.tanah_sertifikat_tgl || spec.sertifikat_tanggal || (it.sertifikat_tanggal && it.sertifikat_tanggal !== '-' ? it.sertifikat_tanggal : '') || '',
+                            tanah_penggunaan: tItem.tanah_penggunaan || tItem.penggunaan || spec.penggunaan || spec.tanah_penggunaan || (it.penggunaan && it.penggunaan !== '-' ? it.penggunaan : '') || itemNama || 'Bangunan Rumah Sakit & Fasilitas',
+                            tanah_asal_usul: tItem.tanah_asal_usul || spec.tanah_asal_usul || spec.asal_usul || (it.asal_usul && it.asal_usul !== '-' ? it.asal_usul : 'Pengadaan APBD / BLUD'),
+                            tanah_alamat: tItem.tanah_alamat || spec.tanah_alamat || spec.alamat || it.alamat_barang || defaultAlamat,
+
+                            // KIB B - Mesin
+                            mesin_merk: mItem.mesin_merk || spec.merk || it.merk || (it.merk_type && it.merk_type !== '-' ? it.merk_type : '') || '',
+                            mesin_type: mItem.mesin_type || spec.type || it.type || '',
+                            mesin_no_pabrik: mItem.mesin_nomor_pabrik || mItem.mesin_no_pabrik || spec.no_pabrik || (it.no_pabrik && it.no_pabrik !== '-' ? it.no_pabrik : '') || '',
+                            mesin_ukuran_cc: mItem.mesin_ukuran || spec.ukuran_cc || spec.ukuran || (it.ukuran && it.ukuran !== '-' ? it.ukuran : '') || '',
+                            mesin_bahan: mItem.mesin_bahan || spec.bahan || (it.bahan && it.bahan !== '-' ? it.bahan : 'Logam / Komponen Elektronik'),
+                            mesin_no_polisi: mItem.mesin_nomor_polisi || mItem.mesin_no_polisi || spec.no_polisi || (it.no_polisi && it.no_polisi !== '-' ? it.no_polisi : '') || '',
+
+                            // KIB C - Gedung
+                            gedung_konstruksi_bertingkat: gItem.gedung_bertingkat || spec.konstruksi_bertingkat || spec.bertingkat || (it.gedung_bertingkat && it.gedung_bertingkat !== '-' ? it.gedung_bertingkat : 'Bertingkat'),
+                            gedung_konstruksi_beton: gItem.gedung_beton || spec.konstruksi_beton || spec.beton || (it.gedung_beton && it.gedung_beton !== '-' ? it.gedung_beton : 'Beton'),
+                            gedung_luas_lantai_m2: gItem.gedung_luas_lantai_m2 || spec.luas_lantai_m2 || spec.luas_m2 || (it.luas_m2 && it.luas_m2 > 0 ? it.luas_m2 : '') || '',
+                            gedung_dokumen_nomor: gItem.gedung_dokumen_nomor || spec.dokumen_nomor || it.spk_nomor || '',
+                            gedung_dokumen_tgl: gItem.gedung_dokumen_tgl || spec.dokumen_tgl || it.spk_tanggal || '',
+                            gedung_status_tanah: gItem.gedung_status_tanah || spec.status_tanah || (it.gedung_status_tanah && it.gedung_status_tanah !== '-' ? it.gedung_status_tanah : 'Tanah Pemda'),
+                            gedung_alamat: gItem.gedung_alamat || spec.gedung_alamat || spec.alamat || it.alamat_barang || defaultAlamat,
+
+                            // KIB D - Jaringan
+                            jaringan_konstruksi: jItem.jaringan_konstruksi || spec.konstruksi || (it.jaringan_konstruksi && it.jaringan_konstruksi !== '-' ? it.jaringan_konstruksi : 'Aspal / Beton'),
+                            jaringan_panjang_km: jItem.jaringan_panjang_m || spec.panjang_km || spec.panjang_m || (it.jaringan_panjang_m && it.jaringan_panjang_m > 0 ? it.jaringan_panjang_m : '') || '',
+                            jaringan_lebar_m: jItem.jaringan_lebar_m || spec.lebar_m || (it.jaringan_lebar_m && it.jaringan_lebar_m > 0 ? it.jaringan_lebar_m : '') || '',
+                            jaringan_luas_m2: jItem.jaringan_luas_m2 || spec.luas_m2 || (it.jaringan_luas_m2 && it.jaringan_luas_m2 > 0 ? it.jaringan_luas_m2 : '') || '',
+                            jaringan_alamat: jItem.jaringan_alamat || spec.jaringan_alamat || spec.alamat || it.alamat_barang || defaultAlamat,
+
+                            // KIB E - Lainnya
+                            lainnya_judul_pencipta: lItem.lainnya_buku_judul || lItem.lainnya_judul_pencipta || spec.buku_judul || spec.judul || spec.judul_pencipta || itemNama || '',
+                            lainnya_bahan: lItem.lainnya_bahan || spec.bahan || (it.bahan && it.bahan !== '-' ? it.bahan : 'Kertas / Kanvas / Lainnya'),
+
+                            // ATB - Aset Tak Berwujud
+                            atb_nama_software: aItem.atb_nama_software || spec.nama_software || itemNama || '',
+                            atb_pengembang: aItem.atb_pengembang || spec.pengembang || '',
+                            atb_masa_manfaat: aItem.atb_masa_manfaat || spec.masa_manfaat || '4',
+                            atb_nomor_lisensi: aItem.atb_nomor_lisensi || spec.nomor_lisensi || '',
+
+                            // KEMITRAAN - Kemitraan Pihak Ketiga (1.5.2)
+                            kemitraan_skema: kData.skema_kemitraan || spec.kemitraan_skema || spec.skema || 'Sewa',
+                            kemitraan_mitra: kData.mitra_nama || spec.mitra || spec.mitra_nama || spec.kemitraan_mitra || '',
+                            kemitraan_pimpinan: spec.pimpinan || spec.mitra_pimpinan || spec.kemitraan_pimpinan || '',
+                            kemitraan_alamat: spec.alamat || spec.mitra_alamat || spec.kemitraan_alamat || '',
+                            kemitraan_perjanjian_no: kData.nomor_pks || spec.perjanjian_no || spec.nomor_pks || spec.kemitraan_perjanjian_no || '',
+                            kemitraan_tanggal_pks: kData.tanggal_pks || spec.tanggal_pks || spec.kemitraan_tanggal_pks || new Date().toISOString().split('T')[0],
+                            kemitraan_tanggal_mulai: kData.tanggal_mulai || spec.tanggal_mulai || spec.kemitraan_tanggal_mulai || new Date().toISOString().split('T')[0],
+                            kemitraan_tanggal_selesai: kData.tanggal_selesai || spec.tanggal_selesai || spec.kemitraan_tanggal_selesai || '',
+                            kemitraan_jangka_waktu: spec.jangka_waktu || spec.kemitraan_jangka_waktu || '5 Tahun',
+
+                            // ASET LAIN
+                            aset_lain_kondisi: spec.kondisi_barang || spec.aset_lain_kondisi || (it.kondisi && it.kondisi !== '-' ? it.kondisi : 'Rusak Berat (Menunggu Penghapusan)'),
+                            aset_lain_alasan: spec.alasan || spec.aset_lain_alasan || 'Pengalihan ke Akun 1.5.4 Aset Lain-Lain',
+                        };
+                    };
+
+                    this.reklasSpekBaruItems = [];
+                    for (let i = 0; i < totalUnits; i++) {
+                        this.reklasSpekBaruItems.push(createDefaultSpekForUnit(i));
+                    }
+
+                    this.activeSpekUnitTab = 0;
+                    if (this.reklasSpekBaruItems.length > 0) {
+                        this.reklasSpekBaru = Object.assign({}, this.reklasSpekBaruItems[0]);
+                    }
+                },
+
+                switchActiveSpekUnit(idx) {
+                    if (!this.reklasSpekBaruItems || idx < 0 || idx >= this.reklasSpekBaruItems.length) return;
+                    this.syncCurrentSpekToActiveItem();
+                    this.activeSpekUnitTab = idx;
+                    this.reklasSpekBaru = Object.assign({}, this.reklasSpekBaruItems[idx]);
+                },
+
+                syncCurrentSpekToActiveItem() {
+                    if (this.reklasSpekBaruItems && this.reklasSpekBaruItems[this.activeSpekUnitTab]) {
+                        Object.assign(this.reklasSpekBaruItems[this.activeSpekUnitTab], this.reklasSpekBaru);
+                    }
+                },
+
+                copyActiveSpekToAll() {
+                    this.syncCurrentSpekToActiveItem();
+                    const current = Object.assign({}, this.reklasSpekBaru);
+                    this.reklasSpekBaruItems.forEach((item) => {
+                        const keepProps = {
+                            unit_index: item.unit_index,
+                            nibar: item.nibar,
+                            ruang_pemegang: item.ruang_pemegang,
+                            kondisi: item.kondisi,
+                            item_nama: item.item_nama,
+                            item_volume: item.item_volume,
+                            item_satuan: item.item_satuan,
+                        };
+                        Object.assign(item, current, keepProps);
+                    });
+                    this.showToast('Spesifikasi item aktif berhasil disalin ke seluruh ' + this.reklasSpekBaruItems.length + ' rincian barang!', 'success');
+                },
+
+                getUnitTabTitle(idx) {
+                    const item = this.reklasSpekBaruItems[idx];
+                    if (!item) return `Unit #${idx + 1}`;
+                    return item.nibar && item.nibar !== '-' ? item.nibar : `Unit #${idx + 1}`;
+                },
+
+                getUnitTabSubtitle(uItem) {
+                    if (!uItem) return '';
+                    const r = uItem.ruang_pemegang && uItem.ruang_pemegang !== '-' ? uItem.ruang_pemegang : '';
+                    const k = uItem.kondisi || 'Baik';
+                    return r ? `${r} (${k})` : k;
                 },
 
                 calcReklasKemitraanDurasi() {

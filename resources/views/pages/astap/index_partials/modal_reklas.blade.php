@@ -408,6 +408,62 @@
                                     <span>Aset dialihkan ke kelompok <strong class="text-white" x-text="reklasTujuanKib"></strong>. Data spesifikasi lama akan diarsip ke riwayat audit, dan form di bawah otomatis disesuaikan agar register &amp; KIR terbit sesuai format fisik <strong class="text-white" x-text="reklasTujuanKib"></strong>.</span>
                                 </div>
 
+                                <!-- Multi-Unit Register Navigation & Mass Actions (Tampil bila > 1 Unit) -->
+                                <template x-if="reklasSpekBaruItems && reklasSpekBaruItems.length > 1">
+                                    <div class="p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-2.5 shadow-inner">
+                                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                                                <span class="text-[11px] font-extrabold text-cyan-300 tracking-wide uppercase">
+                                                    Pilih Rincian Unit / Register (<span x-text="reklasSpekBaruItems.length"></span> Unit):
+                                                </span>
+                                            </div>
+                                            <!-- Tombol Salin Cepat Spesifikasi ke Seluruh Unit -->
+                                            <button type="button" @click="copyActiveSpekToAll()"
+                                                class="px-2.5 py-1 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 text-[10.5px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                                                </svg>
+                                                <span>⚡ Salin Spesifikasi Unit Ini ke Semua Unit</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Tab Pills Horizontal Scroll -->
+                                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar">
+                                            <template x-for="(uItem, uIdx) in reklasSpekBaruItems" :key="uIdx">
+                                                <button type="button" @click="switchActiveSpekUnit(uIdx)"
+                                                    class="shrink-0 px-3 py-1.5 rounded-xl border text-left transition-all text-xs flex flex-col justify-center cursor-pointer"
+                                                    :class="activeSpekUnitTab === uIdx 
+                                                        ? 'bg-gradient-to-r from-cyan-950 to-slate-900 border-cyan-400 text-cyan-200 font-extrabold shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/50' 
+                                                        : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200'">
+                                                    <div class="flex items-center space-x-1.5">
+                                                        <span class="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center shrink-0"
+                                                              :class="activeSpekUnitTab === uIdx ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                                                              x-text="uIdx + 1"></span>
+                                                        <span class="font-mono text-[11px]" x-text="getUnitTabTitle(uIdx)"></span>
+                                                    </div>
+                                                    <span class="text-[9px] text-slate-400 truncate max-w-[140px] ml-5"
+                                                          x-show="getUnitTabSubtitle(uItem)"
+                                                          x-text="getUnitTabSubtitle(uItem)"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        <!-- Info Banner Unit Sedang Aktif -->
+                                        <div class="px-2.5 py-1.5 rounded-lg bg-slate-900/70 border border-slate-800/80 text-[10.5px] text-slate-300 flex items-center justify-between">
+                                            <div class="flex items-center space-x-1.5 truncate">
+                                                <span class="text-cyan-400 font-bold">Sedang Mengedit:</span>
+                                                <span class="font-bold text-white" x-text="getUnitTabTitle(activeSpekUnitTab)"></span>
+                                                <template x-if="reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang && reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang !== '-'">
+                                                    <span class="text-slate-400 truncate" x-text="'(' + reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang + ')'"></span>
+                                                </template>
+                                            </div>
+                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0"
+                                                  x-text="'Kondisi: ' + (reklasSpekBaruItems[activeSpekUnitTab]?.kondisi || 'Baik')"></span>
+                                        </div>
+                                    </div>
+                                </template>
+
                                 <!-- Form Spesifik: KIB A - Tanah -->
                                 <template x-if="reklasTujuanKib === 'KIB A'">
                                     <div class="space-y-3">
