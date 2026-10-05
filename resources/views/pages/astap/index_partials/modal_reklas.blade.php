@@ -389,13 +389,200 @@
                                 </div>
                             </div>
 
-                            <!-- Tingkat 4: Penyesuaian Spesifikasi Fisik Baru Sesuai KIB Tujuan -->
-                            <div x-show="reklasTujuanKib" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
+                            <!-- Bagian Kemitraan: Dokumen Kerja Sama & Rekanan Mitra (Akun 1.5.2) - Non Multi-Choice -->
+                            <div x-show="reklasTujuanKib === 'KEMITRAAN'" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                                     <div class="flex items-center space-x-2">
                                         <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center shrink-0">4</span>
                                         <span class="text-xs font-bold text-white uppercase tracking-wider">
-                                            📝 Spesifikasi Fisik Baru (<span class="text-cyan-300 font-extrabold" x-text="reklasTujuanKib"></span>):
+                                            🤝 Dokumen Kerja Sama &amp; Rekanan Mitra (Akun 1.5.2):
+                                        </span>
+                                    </div>
+                                    <div class="text-[10px] text-cyan-300 font-mono bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/25 flex items-center gap-1.5 shrink-0">
+                                        <span>Wujud Fisik:</span>
+                                        <strong class="text-white font-extrabold uppercase" x-text="getReklasKemitraanPhysicalType() === 'tanah' ? '🌾 Tanah (KIB A)' : (getReklasKemitraanPhysicalType() === 'mesin' ? '⚙️ Mesin (KIB B)' : (getReklasKemitraanPhysicalType() === 'gedung' ? '🏢 Gedung (KIB C)' : (getReklasKemitraanPhysicalType() === 'jaringan' ? '🛣️ Jaringan (KIB D)' : '📚 Aset Tetap Lain (KIB E)')))"></strong>
+                                    </div>
+                                </div>
+
+                                <div class="p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-[11px] text-cyan-200/90 leading-relaxed flex items-center gap-2">
+                                    <span>💡</span>
+                                    <span>Data perjanjian kerja sama (PKS/MoU) dan pihak ketiga rekanan bersifat <strong>tunggal (single contract)</strong> untuk seluruh objek aset yang dimanfaatkan bersama mitra.</span>
+                                </div>
+
+                                <!-- 1. Nama Perusahaan Mitra / Rekanan Pihak Ketiga -->
+                                <div class="relative" @click.away="isReklasMitraDropdownOpen = false">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                                            Nama Perusahaan Mitra / Rekanan: <span class="text-rose-400">*</span>
+                                        </label>
+                                        <template x-if="masterMitraList && masterMitraList.length > 0">
+                                            <span class="text-[9.5px] text-cyan-400 font-mono font-normal flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                                                <span>⚡</span>
+                                                <span>Riwayat Tersimpan</span>
+                                            </span>
+                                        </template>
+                                    </div>
+
+                                    <!-- Input Box dengan Ikon dan Tombol Clear -->
+                                    <div class="relative">
+                                        <input type="text" 
+                                            x-model="reklasSpekBaru.kemitraan_mitra"
+                                            @focus="isReklasMitraDropdownOpen = true"
+                                            @input="isReklasMitraDropdownOpen = true; onReklasMitraInput($event.target.value)"
+                                            @change="onReklasMitraInput($event.target.value)"
+                                            @keydown.escape="isReklasMitraDropdownOpen = false"
+                                            autocomplete="off"
+                                            placeholder="Ketik atau pilih mitra rekanan (contoh: PT. Kimia Farma, PT. Roche...)"
+                                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold shadow-inner transition-all">
+
+                                        <!-- Ikon Mitra Perusahaan -->
+                                        <svg class="w-4 h-4 text-cyan-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
+
+                                        <!-- Tombol Kosongkan Input (Clear Button) -->
+                                        <button type="button" 
+                                            x-show="reklasSpekBaru.kemitraan_mitra"
+                                            @click="reklasSpekBaru.kemitraan_mitra = ''; isReklasMitraDropdownOpen = true" 
+                                            title="Kosongkan nama mitra"
+                                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
+                                            class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
+                                            ✕
+                                        </button>
+                                    </div>
+
+                                    <!-- Floating Dropdown Saran / Filter Mitra -->
+                                    <div x-show="isReklasMitraDropdownOpen" 
+                                        x-cloak
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 translate-y-1"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        x-transition:leave="transition ease-in duration-75"
+                                        x-transition:leave-start="opacity-100 translate-y-0"
+                                        x-transition:leave-end="opacity-0 translate-y-1"
+                                        style="max-height: 220px !important; overflow-y: auto !important;"
+                                        class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
+                                        
+                                        <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
+                                            <span>Pilih Riwayat / Ketik Mitra Baru</span>
+                                            <span class="font-mono text-slate-400" x-text="filteredReklasMitraList.length + ' saran'"></span>
+                                        </div>
+
+                                        <template x-for="(mitra, mIdx) in filteredReklasMitraList" :key="mIdx">
+                                            <div @click="selectReklasMitra(mitra)"
+                                                 class="px-3.5 py-2 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
+                                                 :class="reklasSpekBaru.kemitraan_mitra === (mitra.nama || mitra) ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-200'">
+                                                <div class="flex items-center gap-2.5 min-w-0">
+                                                    <span class="text-xs text-cyan-400/80">🤝</span>
+                                                    <div class="min-w-0">
+                                                        <span class="text-xs font-bold group-hover:text-cyan-300 truncate block" x-text="mitra.nama || mitra"></span>
+                                                        <template x-if="mitra.pimpinan || mitra.alamat">
+                                                            <span class="text-[10px] text-slate-400 truncate block font-normal mt-0.5" x-text="(mitra.pimpinan ? 'Pimpinan: ' + mitra.pimpinan : '') + (mitra.pimpinan && mitra.alamat ? ' • ' : '') + (mitra.alamat ? 'Alamat: ' + mitra.alamat : '')"></span>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                                <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold shrink-0 group-hover:bg-cyan-500/25">
+                                                    Pilih &amp; Auto-fill ↵
+                                                </span>
+                                            </div>
+                                        </template>
+
+                                        <!-- Notifikasi jika mengetik nama mitra baru -->
+                                        <template x-if="reklasSpekBaru.kemitraan_mitra && filteredReklasMitraList.length === 0">
+                                            <div class="p-3 text-center text-xs text-slate-400 bg-slate-950/50">
+                                                <span class="text-cyan-300 font-semibold" x-text="'➕ Gunakan Mitra Baru: &quot;' + reklasSpekBaru.kemitraan_mitra + '&quot;'"></span>
+                                                <p class="text-[10px] text-slate-500 mt-0.5">Nama mitra ini akan otomatis tercatat ke riwayat kemitraan.</p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Pejabat Mitra & Alamat Domisili -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                            Pejabat Mitra / Direktur Rekanan:
+                                        </label>
+                                        <input type="text" x-model="reklasSpekBaru.kemitraan_pimpinan"
+                                            placeholder="Nama Direktur / Penanggung Jawab Rekanan"
+                                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500 shadow-inner">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                            Alamat Kantor Domisili Mitra:
+                                        </label>
+                                        <input type="text" x-model="reklasSpekBaru.kemitraan_alamat"
+                                            placeholder="Alamat kantor / domisili rekanan mitra"
+                                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500 shadow-inner">
+                                    </div>
+                                </div>
+
+                                <!-- 3. Nomor PKS & Tanggal PKS -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                            Nomor Dokumen Perjanjian (PKS / MoU): <span class="text-rose-400">*</span>
+                                        </label>
+                                        <input type="text" x-model="reklasSpekBaru.kemitraan_perjanjian_no"
+                                            placeholder="Contoh: 000.2.3.2/PKS-KSO/430.10.7/2026"
+                                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none shadow-inner">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                                            Tanggal Penandatanganan PKS: <span class="text-rose-400">*</span>
+                                        </label>
+                                        <input type="date" x-model="reklasSpekBaru.kemitraan_tanggal_pks"
+                                            class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none shadow-inner">
+                                    </div>
+                                </div>
+
+                                <!-- 4. Masa Berlaku Kerjasama (Tanggal Mulai & Tanggal Selesai) -->
+                                <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/90 space-y-2.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
+                                            <span>🗓️</span>
+                                            <span>Masa Berlaku Kerja Sama (Konsesi Pemanfaatan)</span>
+                                        </span>
+                                    </div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">
+                                                Tanggal Mulai Berlaku:
+                                            </label>
+                                            <input type="date" x-model="reklasSpekBaru.kemitraan_tanggal_mulai"
+                                                @input="calcReklasKemitraanDurasi()"
+                                                @change="calcReklasKemitraanDurasi()"
+                                                class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">
+                                                Tanggal Berakhir (Konsesi Selesai):
+                                            </label>
+                                            <input type="date" x-model="reklasSpekBaru.kemitraan_tanggal_selesai"
+                                                @input="calcReklasKemitraanDurasi()"
+                                                @change="calcReklasKemitraanDurasi()"
+                                                class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">
+                                            Estimasi Jangka Waktu / Durasi:
+                                        </label>
+                                        <input type="text" x-model="reklasSpekBaru.kemitraan_jangka_waktu"
+                                            placeholder="Contoh: 5 Tahun (2026 s/d 2031)"
+                                            class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tingkat 4 (atau 5 jika Kemitraan): Penyesuaian Spesifikasi Fisik Baru Sesuai KIB Tujuan -->
+                            <div x-show="reklasTujuanKib" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
+                                <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center shrink-0"
+                                              x-text="reklasTujuanKib === 'KEMITRAAN' ? '5' : '4'"></span>
+                                        <span class="text-xs font-bold text-white uppercase tracking-wider">
+                                            📝 Spesifikasi Fisik Baru (<span class="text-cyan-300 font-extrabold" x-text="reklasTujuanKib === 'KEMITRAAN' ? ('Fisik Objek ' + (getReklasKemitraanPhysicalType() === 'tanah' ? 'Tanah (KIB A)' : (getReklasKemitraanPhysicalType() === 'mesin' ? 'Peralatan & Mesin (KIB B)' : (getReklasKemitraanPhysicalType() === 'gedung' ? 'Gedung & Bangunan (KIB C)' : (getReklasKemitraanPhysicalType() === 'jaringan' ? 'Jalan & Jaringan (KIB D)' : 'Aset Lainnya (KIB E)'))))) : reklasTujuanKib"></span>):
                                         </span>
                                     </div>
                                     <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/30 font-semibold">
@@ -405,68 +592,81 @@
 
                                 <div class="p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-[11px] text-cyan-200/90 leading-relaxed flex items-center gap-2">
                                     <span>💡</span>
-                                    <span>Aset dialihkan ke kelompok <strong class="text-white" x-text="reklasTujuanKib"></strong>. Data spesifikasi lama akan diarsip ke riwayat audit, dan form di bawah otomatis disesuaikan agar register &amp; KIR terbit sesuai format fisik <strong class="text-white" x-text="reklasTujuanKib"></strong>.</span>
+                                    <span>Aset dialihkan ke kelompok <strong class="text-white" x-text="reklasTujuanKib"></strong><template x-if="reklasTujuanKib === 'KEMITRAAN'"><span> dengan wujud fisik <strong class="text-cyan-300" x-text="getReklasKemitraanPhysicalType() === 'tanah' ? 'Tanah' : (getReklasKemitraanPhysicalType() === 'mesin' ? 'Peralatan & Mesin' : (getReklasKemitraanPhysicalType() === 'gedung' ? 'Gedung & Bangunan' : (getReklasKemitraanPhysicalType() === 'jaringan' ? 'Jalan & Jaringan' : 'Aset Tetap Lainnya')))"></strong></span></template>. Data spesifikasi lama akan diarsip ke riwayat audit, dan form di bawah otomatis disesuaikan agar register &amp; KIR terbit sesuai format fisik tersebut.</span>
                                 </div>
 
-                                <!-- Multi-Unit Register Navigation & Mass Actions (Tampil bila > 1 Unit) -->
+                                <!-- Multi-Item Navigation & Mass Actions (Tampil bila > 1 Item Rincian Barang) -->
                                 <template x-if="reklasSpekBaruItems && reklasSpekBaruItems.length > 1">
                                     <div class="p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-2.5 shadow-inner">
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                             <div class="flex items-center space-x-2">
                                                 <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                                                 <span class="text-[11px] font-extrabold text-cyan-300 tracking-wide uppercase">
-                                                    Pilih Rincian Unit / Register (<span x-text="reklasSpekBaruItems.length"></span> Unit):
+                                                    Pilih Rincian Barang (<span x-text="reklasSpekBaruItems.length"></span> Item):
                                                 </span>
                                             </div>
-                                            <!-- Tombol Salin Cepat Spesifikasi ke Seluruh Unit -->
+                                            <!-- Tombol Salin Cepat Spesifikasi ke Seluruh Item -->
                                             <button type="button" @click="copyActiveSpekToAll()"
                                                 class="px-2.5 py-1 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 text-[10.5px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
                                                 <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                                 </svg>
-                                                <span>⚡ Salin Spesifikasi Unit Ini ke Semua Unit</span>
+                                                <span>⚡ Salin Spesifikasi ke Semua Item</span>
                                             </button>
                                         </div>
 
-                                        <!-- Tab Pills Horizontal Scroll -->
-                                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar">
+                                        <!-- Tab Pills: Full-Width (2-5 Item) & Scrollable (6+ Item) -->
+                                        <div class="pb-1.5 custom-scrollbar"
+                                             :class="reklasSpekBaruItems.length <= 5 
+                                                ? ('grid gap-2 ' + (reklasSpekBaruItems.length === 2 ? 'grid-cols-2' : (reklasSpekBaruItems.length === 3 ? 'grid-cols-3' : (reklasSpekBaruItems.length === 4 ? 'grid-cols-4' : 'grid-cols-5')))) 
+                                                : 'flex items-center gap-2 overflow-x-auto'">
                                             <template x-for="(uItem, uIdx) in reklasSpekBaruItems" :key="uIdx">
                                                 <button type="button" @click="switchActiveSpekUnit(uIdx)"
-                                                    class="shrink-0 px-3 py-1.5 rounded-xl border text-left transition-all text-xs flex flex-col justify-center cursor-pointer"
-                                                    :class="activeSpekUnitTab === uIdx 
-                                                        ? 'bg-gradient-to-r from-cyan-950 to-slate-900 border-cyan-400 text-cyan-200 font-extrabold shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/50' 
-                                                        : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200'">
-                                                    <div class="flex items-center space-x-1.5">
+                                                    class="px-3 py-2 rounded-xl border text-left transition-all text-xs flex flex-col justify-center cursor-pointer min-w-0"
+                                                    :class="[
+                                                        reklasSpekBaruItems.length > 5 ? 'shrink-0 min-w-[150px]' : 'w-full',
+                                                        activeSpekUnitTab === uIdx 
+                                                            ? 'bg-gradient-to-r from-cyan-950 to-slate-900 border-cyan-400 text-cyan-200 font-extrabold shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/50' 
+                                                            : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+                                                    ]">
+                                                    <div class="flex items-center space-x-1.5 truncate">
                                                         <span class="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center shrink-0"
                                                               :class="activeSpekUnitTab === uIdx ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
                                                               x-text="uIdx + 1"></span>
-                                                        <span class="font-mono text-[11px]" x-text="getUnitTabTitle(uIdx)"></span>
+                                                        <span class="font-mono text-[11px] truncate font-bold" x-text="getUnitTabTitle(uIdx)"></span>
                                                     </div>
-                                                    <span class="text-[9px] text-slate-400 truncate max-w-[140px] ml-5"
+                                                    <span class="text-[9px] text-slate-400 truncate ml-5.5 mt-0.5"
                                                           x-show="getUnitTabSubtitle(uItem)"
                                                           x-text="getUnitTabSubtitle(uItem)"></span>
                                                 </button>
                                             </template>
                                         </div>
 
-                                        <!-- Info Banner Unit Sedang Aktif -->
-                                        <div class="px-2.5 py-1.5 rounded-lg bg-slate-900/70 border border-slate-800/80 text-[10.5px] text-slate-300 flex items-center justify-between">
-                                            <div class="flex items-center space-x-1.5 truncate">
-                                                <span class="text-cyan-400 font-bold">Sedang Mengedit:</span>
-                                                <span class="font-bold text-white" x-text="getUnitTabTitle(activeSpekUnitTab)"></span>
+                                        <!-- Info Banner Unit Aktif -->
+                                        <div class="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between gap-2 shadow-inner">
+                                            <div class="flex items-center space-x-2 truncate">
+                                                <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0 animate-pulse"></span>
+                                                <span class="font-bold text-white truncate" x-text="getUnitTabTitle(activeSpekUnitTab)"></span>
+                                                <template x-if="getUnitFullTitle(activeSpekUnitTab) && getUnitFullTitle(activeSpekUnitTab) !== getUnitTabTitle(activeSpekUnitTab)">
+                                                    <span class="text-slate-400 text-[10.5px] truncate" x-text="'(' + getUnitFullTitle(activeSpekUnitTab) + ')'"></span>
+                                                </template>
                                                 <template x-if="reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang && reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang !== '-'">
-                                                    <span class="text-slate-400 truncate" x-text="'(' + reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang + ')'"></span>
+                                                    <span class="text-slate-400 text-[10px] truncate" x-text="'• ' + reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang"></span>
                                                 </template>
                                             </div>
-                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0"
+                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700/80 shrink-0 font-semibold"
                                                   x-text="'Kondisi: ' + (reklasSpekBaruItems[activeSpekUnitTab]?.kondisi || 'Baik')"></span>
                                         </div>
                                     </div>
                                 </template>
 
-                                <!-- Form Spesifik: KIB A - Tanah -->
-                                <template x-if="reklasTujuanKib === 'KIB A'">
+                                <!-- Form Spesifik: KIB A - Tanah (Termasuk Sewa/Kemitraan Fisik Tanah) -->
+                                <template x-if="reklasTujuanKib === 'KIB A' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'tanah')">
                                     <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">🌾</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Objek Tanah Kemitraan:</span>
+                                        </div>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Tanah (m²):</label>
@@ -507,9 +707,13 @@
                                     </div>
                                 </template>
 
-                                <!-- Form Spesifik: KIB B - Peralatan & Mesin -->
-                                <template x-if="reklasTujuanKib === 'KIB B'">
+                                <!-- Form Spesifik: KIB B - Peralatan & Mesin (Termasuk Sewa/Kemitraan Fisik Mesin) -->
+                                <template x-if="reklasTujuanKib === 'KIB B' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'mesin')">
                                     <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">⚙️</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Peralatan & Mesin Kemitraan:</span>
+                                        </div>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Merk / Pabrikan:</label>
@@ -545,9 +749,13 @@
                                     </div>
                                 </template>
 
-                                <!-- Form Spesifik: KIB C - Gedung & Bangunan -->
-                                <template x-if="reklasTujuanKib === 'KIB C'">
+                                <!-- Form Spesifik: KIB C - Gedung & Bangunan (Termasuk Sewa/Kemitraan Fisik Gedung) -->
+                                <template x-if="reklasTujuanKib === 'KIB C' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'gedung')">
                                     <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">🏢</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Gedung & Bangunan Kemitraan:</span>
+                                        </div>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Bertingkat:</label>
@@ -599,9 +807,13 @@
                                     </div>
                                 </template>
 
-                                <!-- Form Spesifik: KIB D - Jalan, Jaringan & Irigasi -->
-                                <template x-if="reklasTujuanKib === 'KIB D'">
+                                <!-- Form Spesifik: KIB D - Jalan, Jaringan & Irigasi (Termasuk Sewa/Kemitraan Fisik Jaringan) -->
+                                <template x-if="reklasTujuanKib === 'KIB D' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'jaringan')">
                                     <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">🛣️</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Jalan & Jaringan Kemitraan:</span>
+                                        </div>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Fisik Jaringan:</label>
@@ -627,9 +839,13 @@
                                     </div>
                                 </template>
 
-                                <!-- Form Spesifik: KIB E - Aset Tetap Lainnya -->
-                                <template x-if="reklasTujuanKib === 'KIB E'">
+                                <!-- Form Spesifik: KIB E - Aset Tetap Lainnya (Termasuk Sewa/Kemitraan Fisik Lainnya) -->
+                                <template x-if="reklasTujuanKib === 'KIB E' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'lainnya')">
                                     <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">📚</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Aset Tetap Lainnya Kemitraan:</span>
+                                        </div>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Judul / Pencipta / Spesifikasi:</label>
@@ -668,178 +884,6 @@
                                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Registrasi Lisensi / HAKI:</label>
                                                 <input type="text" x-model="reklasSpekBaru.atb_nomor_lisensi" placeholder="Contoh: LIC-SIMRS-2026-009"
                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-
-                                <!-- Form Spesifik: KEMITRAAN - Kemitraan Pihak Ketiga (Akun 1.5.2 Sesuai Form Kemitraan Langkah 1) -->
-                                <template x-if="reklasTujuanKib === 'KEMITRAAN'">
-                                    <div class="space-y-4 pt-1">
-
-                                        <!-- 2. Nama Perusahaan Mitra / Rekanan Pihak Ketiga (Ketik Filter seperti Form 1 Kemitraan) -->
-                                        <div class="relative" @click.away="isReklasMitraDropdownOpen = false">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                                                    Nama Perusahaan Mitra / Rekanan: <span class="text-rose-400">*</span>
-                                                </label>
-                                                <template x-if="masterMitraList && masterMitraList.length > 0">
-                                                    <span class="text-[9.5px] text-cyan-400 font-mono font-normal flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
-                                                        <span>⚡</span>
-                                                        <span>Riwayat Tersimpan</span>
-                                                    </span>
-                                                </template>
-                                            </div>
-
-                                            <!-- Input Box dengan Ikon dan Tombol Clear -->
-                                            <div class="relative">
-                                                <input type="text" 
-                                                    x-model="reklasSpekBaru.kemitraan_mitra"
-                                                    @focus="isReklasMitraDropdownOpen = true"
-                                                    @input="isReklasMitraDropdownOpen = true; onReklasMitraInput($event.target.value)"
-                                                    @change="onReklasMitraInput($event.target.value)"
-                                                    @keydown.escape="isReklasMitraDropdownOpen = false"
-                                                    autocomplete="off"
-                                                    placeholder="Ketik atau pilih mitra rekanan (contoh: PT. Kimia Farma, PT. Roche...)"
-                                                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 pl-9 pr-9 text-xs text-white placeholder-slate-500 focus:outline-none font-bold shadow-inner transition-all">
-
-                                                <!-- Ikon Mitra Perusahaan -->
-                                                <svg class="w-4 h-4 text-cyan-400 absolute left-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                                                </svg>
-
-                                                <!-- Tombol Kosongkan Input (Clear Button) -->
-                                                <button type="button" 
-                                                    x-show="reklasSpekBaru.kemitraan_mitra"
-                                                    @click="reklasSpekBaru.kemitraan_mitra = ''; isReklasMitraDropdownOpen = true" 
-                                                    title="Kosongkan nama mitra"
-                                                    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;"
-                                                    class="rounded-md bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition-colors">
-                                                    ✕
-                                                </button>
-                                            </div>
-
-                                            <!-- Floating Dropdown Saran / Filter Mitra (Muncul saat fokus / diketik) -->
-                                            <div x-show="isReklasMitraDropdownOpen" 
-                                                x-cloak
-                                                x-transition:enter="transition ease-out duration-100"
-                                                x-transition:enter-start="opacity-0 translate-y-1"
-                                                x-transition:enter-end="opacity-100 translate-y-0"
-                                                x-transition:leave="transition ease-in duration-75"
-                                                x-transition:leave-start="opacity-100 translate-y-0"
-                                                x-transition:leave-end="opacity-0 translate-y-1"
-                                                style="max-height: 220px !important; overflow-y: auto !important;"
-                                                class="absolute z-50 mt-1.5 w-full bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-800 custom-scrollbar backdrop-blur-xl">
-                                                
-                                                <div class="px-3.5 py-1.5 bg-slate-950/90 text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center justify-between border-b border-slate-800">
-                                                    <span>Pilih Riwayat / Ketik Mitra Baru</span>
-                                                    <span class="font-mono text-slate-400" x-text="filteredReklasMitraList.length + ' saran'"></span>
-                                                </div>
-
-                                                <template x-for="(mitra, mIdx) in filteredReklasMitraList" :key="mIdx">
-                                                    <div @click="selectReklasMitra(mitra)"
-                                                        class="px-3.5 py-2 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
-                                                        :class="reklasSpekBaru.kemitraan_mitra === (mitra.nama || mitra) ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-200'">
-                                                        <div class="flex items-center gap-2.5 min-w-0">
-                                                            <span class="text-xs text-cyan-400/80">🤝</span>
-                                                            <div class="min-w-0">
-                                                                <span class="text-xs font-bold group-hover:text-cyan-300 truncate block" x-text="mitra.nama || mitra"></span>
-                                                                <template x-if="mitra.pimpinan || mitra.alamat">
-                                                                    <span class="text-[10px] text-slate-400 truncate block font-normal mt-0.5" x-text="(mitra.pimpinan ? 'Pimpinan: ' + mitra.pimpinan : '') + (mitra.pimpinan && mitra.alamat ? ' • ' : '') + (mitra.alamat ? 'Alamat: ' + mitra.alamat : '')"></span>
-                                                                </template>
-                                                            </div>
-                                                        </div>
-                                                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 font-bold shrink-0 group-hover:bg-cyan-500/25">
-                                                            Pilih &amp; Auto-fill ↵
-                                                        </span>
-                                                    </div>
-                                                </template>
-
-                                                <!-- Notifikasi jika mengetik nama mitra baru -->
-                                                <template x-if="reklasSpekBaru.kemitraan_mitra && filteredReklasMitraList.length === 0">
-                                                    <div class="p-3 text-center text-xs text-slate-400 bg-slate-950/50">
-                                                        <span class="text-cyan-300 font-semibold" x-text="'➕ Gunakan Mitra Baru: &quot;' + reklasSpekBaru.kemitraan_mitra + '&quot;'"></span>
-                                                        <p class="text-[10px] text-slate-500 mt-0.5">Nama mitra ini akan otomatis tercatat ke riwayat kemitraan.</p>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <!-- 3. Pejabat Mitra & Alamat Domisili -->
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                                    Pejabat Mitra / Direktur Rekanan:
-                                                </label>
-                                                <input type="text" x-model="reklasSpekBaru.kemitraan_pimpinan"
-                                                    placeholder="Nama Direktur / Penanggung Jawab Rekanan"
-                                                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500 shadow-inner">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                                    Alamat Kantor Domisili Mitra:
-                                                </label>
-                                                <input type="text" x-model="reklasSpekBaru.kemitraan_alamat"
-                                                    placeholder="Alamat kantor / domisili rekanan mitra"
-                                                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500 shadow-inner">
-                                            </div>
-                                        </div>
-
-                                        <!-- 4. Nomor PKS & Tanggal PKS -->
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                                    Nomor Dokumen Perjanjian (PKS / MoU): <span class="text-rose-400">*</span>
-                                                </label>
-                                                <input type="text" x-model="reklasSpekBaru.kemitraan_perjanjian_no"
-                                                    placeholder="Contoh: 000.2.3.2/PKS-KSO/430.10.7/2026"
-                                                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none shadow-inner">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                                                    Tanggal Penandatanganan PKS: <span class="text-rose-400">*</span>
-                                                </label>
-                                                <input type="date" x-model="reklasSpekBaru.kemitraan_tanggal_pks"
-                                                    class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none shadow-inner">
-                                            </div>
-                                        </div>
-
-                                        <!-- 5. Masa Berlaku Kerjasama (Tanggal Mulai & Tanggal Selesai) -->
-                                        <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/90 space-y-2.5">
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
-                                                    <span>🗓️</span>
-                                                    <span>Masa Berlaku Kerja Sama (Konsesi Pemanfaatan)</span>
-                                                </span>
-                                            </div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div>
-                                                    <label class="block text-[10px] font-semibold text-slate-400 mb-1">
-                                                        Tanggal Mulai Berlaku:
-                                                    </label>
-                                                    <input type="date" x-model="reklasSpekBaru.kemitraan_tanggal_mulai"
-                                                        @input="calcReklasKemitraanDurasi()"
-                                                        @change="calcReklasKemitraanDurasi()"
-                                                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                                </div>
-                                                <div>
-                                                    <label class="block text-[10px] font-semibold text-slate-400 mb-1">
-                                                        Tanggal Berakhir (Konsesi Selesai):
-                                                    </label>
-                                                    <input type="date" x-model="reklasSpekBaru.kemitraan_tanggal_selesai"
-                                                        @input="calcReklasKemitraanDurasi()"
-                                                        @change="calcReklasKemitraanDurasi()"
-                                                        class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-semibold text-slate-400 mb-1">
-                                                    Estimasi Jangka Waktu / Durasi:
-                                                </label>
-                                                <input type="text" x-model="reklasSpekBaru.kemitraan_jangka_waktu"
-                                                    placeholder="Contoh: 5 Tahun (2026 s/d 2031)"
-                                                    class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                                             </div>
                                         </div>
                                     </div>

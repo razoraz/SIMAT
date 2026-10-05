@@ -780,10 +780,16 @@ class ReklasifikasiController extends Controller
                 } elseif ($targetKib === 'KIB B') {
                     $mesinItems = [];
                     $allNoPabrik = [];
+                    $regCursor = 0;
 
                     foreach ($unitItems as $uIdx => $uItem) {
+                        $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['mesin_jumlah_barang'] ?? 1)));
+                        $unitItemPrice = isset($uItem['harga_satuan']) && (float)$uItem['harga_satuan'] > 0 
+                            ? (float)$uItem['harga_satuan'] 
+                            : ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume)));
+
                         $m = [
-                            'mesin_nama_barang'   => $astap->nama_barang,
+                            'mesin_nama_barang'   => $uItem['item_nama'] ?? ($uItem['mesin_nama_barang'] ?? $astap->nama_barang),
                             'mesin_merk'          => $uItem['mesin_merk'] ?? ($rawNew['mesin_merk'] ?? '-'),
                             'mesin_type'          => $uItem['mesin_type'] ?? ($rawNew['mesin_type'] ?? '-'),
                             'mesin_ukuran_cc'     => $uItem['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran_cc'] ?? '-'),
@@ -794,24 +800,27 @@ class ReklasifikasiController extends Controller
                             'mesin_no_polisi'     => $uItem['mesin_no_polisi'] ?? ($rawNew['mesin_no_polisi'] ?? '-'),
                             'mesin_no_bpkb'       => $uItem['mesin_no_bpkb'] ?? ($rawNew['mesin_no_bpkb'] ?? '-'),
                             'mesin_kondisi'       => $uItem['mesin_kondisi'] ?? 'Baik',
-                            'mesin_ruang_pemegang'=> $uItem['mesin_ruang_pemegang'] ?? ($astap->registers->skip($uIdx)->first()?->ruang_pemegang ?? 'Instalasi Perbekalan'),
-                            'mesin_jumlah_barang' => 1,
-                            'mesin_satuan'        => $astap->satuan ?: 'Unit',
-                            'mesin_nilai_satuan'  => $unitPrice,
-                            'mesin_total_nilai'   => $unitPrice,
+                            'mesin_ruang_pemegang'=> $uItem['mesin_ruang_pemegang'] ?? ($astap->registers->skip($regCursor)->first()?->ruang_pemegang ?? 'Instalasi Perbekalan'),
+                            'mesin_jumlah_barang' => $vol,
+                            'mesin_satuan'        => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Unit'),
+                            'mesin_nilai_satuan'  => $unitItemPrice,
+                            'mesin_total_nilai'   => $vol * $unitItemPrice,
                         ];
                         $mesinItems[] = $m;
                         if (!empty($m['mesin_no_pabrik']) && $m['mesin_no_pabrik'] !== '-') {
                             $allNoPabrik[] = $m['mesin_no_pabrik'];
                         }
 
-                        // Sinkronkan penempatan ruangan & kondisi ke register per-unit
-                        $targetRegister = $astap->registers->skip($uIdx)->first();
-                        if ($targetRegister) {
-                            $targetRegister->update([
-                                'ruang_pemegang' => $m['mesin_ruang_pemegang'],
-                                'kondisi'        => $m['mesin_kondisi'],
-                            ]);
+                        // Sinkronkan penempatan ruangan & kondisi ke seluruh register yang dicakup barang ini
+                        for ($r = 0; $r < $vol; $r++) {
+                            $targetRegister = $astap->registers->skip($regCursor)->first();
+                            if ($targetRegister) {
+                                $targetRegister->update([
+                                    'ruang_pemegang' => $m['mesin_ruang_pemegang'],
+                                    'kondisi'        => $m['mesin_kondisi'],
+                                ]);
+                            }
+                            $regCursor++;
                         }
                     }
 
@@ -879,18 +888,23 @@ class ReklasifikasiController extends Controller
                 } elseif ($targetKib === 'KIB E') {
                     $lainnyaItems = [];
                     foreach ($unitItems as $uIdx => $uItem) {
+                        $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['lainnya_jumlah_barang'] ?? 1)));
+                        $unitItemPrice = isset($uItem['harga_satuan']) && (float)$uItem['harga_satuan'] > 0 
+                            ? (float)$uItem['harga_satuan'] 
+                            : ($astap->harga_satuan ?: ($astap->total_realisasi / max(1, $astap->jumlah_volume)));
+
                         $l = [
-                            'lainnya_nama_barang'    => $astap->nama_barang,
+                            'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? $astap->nama_barang),
                             'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang),
                             'lainnya_spesifikasi'    => $uItem['lainnya_spesifikasi'] ?? ($rawNew['lainnya_spesifikasi'] ?? '-'),
                             'lainnya_asal_daerah'    => $uItem['lainnya_asal_daerah'] ?? ($rawNew['lainnya_asal_daerah'] ?? '-'),
                             'lainnya_bahan'          => $uItem['lainnya_bahan'] ?? ($rawNew['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya'),
                             'lainnya_ukuran'         => $uItem['lainnya_ukuran'] ?? ($rawNew['lainnya_ukuran'] ?? '-'),
                             'lainnya_kondisi'        => 'Baik',
-                            'lainnya_jumlah_barang'  => 1,
-                            'lainnya_satuan'         => $astap->satuan ?: 'Buah',
-                            'lainnya_nilai_satuan'   => $unitPrice,
-                            'lainnya_total_nilai'    => $unitPrice,
+                            'lainnya_jumlah_barang'  => $vol,
+                            'lainnya_satuan'         => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Buah'),
+                            'lainnya_nilai_satuan'   => $unitItemPrice,
+                            'lainnya_total_nilai'    => $vol * $unitItemPrice,
                         ];
                         $lainnyaItems[] = $l;
                     }
@@ -938,6 +952,148 @@ class ReklasifikasiController extends Controller
                     $newSpec['tanggal_mulai']     = $kemitraanItems[0]['tanggal_mulai'] ?? null;
                     $newSpec['tanggal_selesai']   = $kemitraanItems[0]['tanggal_selesai'] ?? null;
                     $newSpec['jangka_waktu']      = $kemitraanItems[0]['jangka_waktu'] ?? '5 Tahun';
+
+                    // Simpan juga spesifikasi fisik (Mesin / Tanah / Gedung / Jaringan / Lainnya) sesuai data input
+                    $hasMesinData = !empty($rawNew['mesin_merk']) || !empty($rawNew['mesin_type']) || !empty($rawNew['mesin_no_pabrik']) || !empty($unitItems[0]['mesin_merk']);
+                    $hasTanahData = !empty($rawNew['tanah_luas_m2']) || !empty($rawNew['tanah_sertifikat_no']) || !empty($unitItems[0]['tanah_luas_m2']);
+                    $hasGedungData = !empty($rawNew['gedung_luas_lantai_m2']) || !empty($rawNew['gedung_dokumen_nomor']) || !empty($unitItems[0]['gedung_luas_lantai_m2']);
+                    $hasJaringanData = !empty($rawNew['jaringan_konstruksi']) || !empty($rawNew['jaringan_luas_m2']) || !empty($unitItems[0]['jaringan_luas_m2']);
+                    $hasLainnyaData = !empty($rawNew['lainnya_judul_pencipta']) || !empty($unitItems[0]['lainnya_judul_pencipta']);
+
+                    if ($hasMesinData) {
+                        $mesinItems = [];
+                        $allNoPabrik = [];
+                        $regCursor = 0;
+                        foreach ($unitItems as $uIdx => $uItem) {
+                            $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['mesin_jumlah_barang'] ?? 1)));
+                            $m = [
+                                'mesin_nama_barang'   => $uItem['item_nama'] ?? ($uItem['mesin_nama_barang'] ?? $astap->nama_barang),
+                                'mesin_merk'          => $uItem['mesin_merk'] ?? ($rawNew['mesin_merk'] ?? '-'),
+                                'mesin_type'          => $uItem['mesin_type'] ?? ($rawNew['mesin_type'] ?? '-'),
+                                'mesin_ukuran_cc'     => $uItem['mesin_ukuran_cc'] ?? ($rawNew['mesin_ukuran_cc'] ?? '-'),
+                                'mesin_bahan'         => $uItem['mesin_bahan'] ?? ($rawNew['mesin_bahan'] ?? 'Logam / Komponen Elektronik'),
+                                'mesin_no_pabrik'     => $uItem['mesin_no_pabrik'] ?? ($rawNew['mesin_no_pabrik'] ?? '-'),
+                                'mesin_no_rangka'     => $uItem['mesin_no_rangka'] ?? ($rawNew['mesin_no_rangka'] ?? '-'),
+                                'mesin_no_mesin'      => $uItem['mesin_no_mesin'] ?? ($rawNew['mesin_no_mesin'] ?? '-'),
+                                'mesin_no_polisi'     => $uItem['mesin_no_polisi'] ?? ($rawNew['mesin_no_polisi'] ?? '-'),
+                                'mesin_no_bpkb'       => $uItem['mesin_no_bpkb'] ?? ($rawNew['mesin_no_bpkb'] ?? '-'),
+                                'mesin_kondisi'       => $uItem['mesin_kondisi'] ?? 'Baik',
+                                'mesin_ruang_pemegang'=> $uItem['mesin_ruang_pemegang'] ?? ($astap->registers->skip($regCursor)->first()?->ruang_pemegang ?? 'Instalasi Perbekalan'),
+                                'mesin_jumlah_barang' => $vol,
+                                'mesin_satuan'        => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Unit'),
+                                'mesin_nilai_satuan'  => $unitPrice,
+                                'mesin_total_nilai'   => $vol * $unitPrice,
+                            ];
+                            $mesinItems[] = $m;
+                            if (!empty($m['mesin_no_pabrik']) && $m['mesin_no_pabrik'] !== '-') {
+                                $allNoPabrik[] = $m['mesin_no_pabrik'];
+                            }
+                            $regCursor += $vol;
+                        }
+                        $newSpec['mesin_items'] = $mesinItems;
+                        $newSpec['merk']        = $mesinItems[0]['mesin_merk'] ?? '-';
+                        $newSpec['type']        = $mesinItems[0]['mesin_type'] ?? '-';
+                        $newSpec['no_pabrik']   = count($allNoPabrik) > 0 ? implode(', ', $allNoPabrik) : ($mesinItems[0]['mesin_no_pabrik'] ?? '-');
+                        $astap->merk_type       = trim(($mesinItems[0]['mesin_merk'] ?? '') . ' ' . ($mesinItems[0]['mesin_type'] ?? ''));
+                    } elseif ($hasTanahData) {
+                        $tanahItems = [];
+                        $totalLuas = 0;
+                        $allSertifikat = [];
+                        foreach ($unitItems as $uIdx => $uItem) {
+                            $t = [
+                                'tanah_hak'            => $uItem['tanah_hak'] ?? ($rawNew['tanah_hak'] ?? 'Hak Pakai'),
+                                'tanah_sertifikat_tgl' => $uItem['tanah_sertifikat_tgl'] ?? ($rawNew['tanah_sertifikat_tgl'] ?? null),
+                                'tanah_sertifikat_no'  => $uItem['tanah_sertifikat_no'] ?? ($rawNew['tanah_sertifikat_no'] ?? null),
+                                'tanah_penggunaan'     => $uItem['tanah_penggunaan'] ?? ($rawNew['tanah_penggunaan'] ?? ($astap->nama_barang ?: 'Gedung RSUD')),
+                                'tanah_asal_usul'      => $uItem['tanah_asal_usul'] ?? 'Pengadaan APBD / BLUD',
+                                'tanah_luas_m2'        => (float) ($uItem['tanah_luas_m2'] ?? ($rawNew['tanah_luas_m2'] ?? 0)),
+                                'tanah_nilai_fisik'    => $unitPrice,
+                                'tanah_kondisi'        => 'Baik',
+                                'tanah_alamat'         => $uItem['tanah_alamat'] ?? ($rawNew['tanah_alamat'] ?? ($astap->alamat_barang ?: 'RSUD Dr. H. Koesnandi')),
+                            ];
+                            $tanahItems[] = $t;
+                            $totalLuas += $t['tanah_luas_m2'];
+                            if (!empty($t['tanah_sertifikat_no']) && $t['tanah_sertifikat_no'] !== '-') {
+                                $allSertifikat[] = $t['tanah_sertifikat_no'];
+                            }
+                        }
+                        $newSpec['tanah_items']    = $tanahItems;
+                        $newSpec['luas_m2']        = $totalLuas > 0 ? $totalLuas : (float)($rawNew['tanah_luas_m2'] ?? 0);
+                        $newSpec['hak_tanah']      = $tanahItems[0]['tanah_hak'] ?? 'Hak Pakai';
+                        $newSpec['sertifikat_no']  = count($allSertifikat) > 0 ? implode(', ', $allSertifikat) : ($tanahItems[0]['tanah_sertifikat_no'] ?? null);
+                        $newSpec['sertifikat_tgl'] = $tanahItems[0]['tanah_sertifikat_tgl'] ?? null;
+                        $newSpec['penggunaan']     = $tanahItems[0]['tanah_penggunaan'] ?? null;
+                    } elseif ($hasGedungData) {
+                        $gedungItems = [];
+                        $totalLuas = 0;
+                        foreach ($unitItems as $uIdx => $uItem) {
+                            $g = [
+                                'gedung_nama_bangunan'        => $astap->nama_barang,
+                                'gedung_konstruksi_bertingkat'=> $uItem['gedung_konstruksi_bertingkat'] ?? ($rawNew['gedung_konstruksi_bertingkat'] ?? 'Bertingkat'),
+                                'gedung_konstruksi_beton'     => $uItem['gedung_konstruksi_beton'] ?? ($rawNew['gedung_konstruksi_beton'] ?? 'Beton'),
+                                'gedung_luas_lantai_m2'       => (float) ($uItem['gedung_luas_lantai_m2'] ?? ($rawNew['gedung_luas_lantai_m2'] ?? 0)),
+                                'gedung_alamat'               => $uItem['gedung_alamat'] ?? ($rawNew['gedung_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD Dr. H. Koesnandi')),
+                                'gedung_dokumen_tgl'          => $uItem['gedung_dokumen_tgl'] ?? ($rawNew['gedung_dokumen_tgl'] ?? null),
+                                'gedung_dokumen_nomor'        => $uItem['gedung_dokumen_nomor'] ?? ($rawNew['gedung_dokumen_nomor'] ?? null),
+                                'gedung_status_tanah'         => $uItem['gedung_status_tanah'] ?? ($rawNew['gedung_status_tanah'] ?? 'Tanah Pemda'),
+                                'gedung_kondisi'              => 'Baik',
+                                'gedung_nilai_fisik'          => $unitPrice,
+                            ];
+                            $gedungItems[] = $g;
+                            $totalLuas += $g['gedung_luas_lantai_m2'];
+                        }
+                        $newSpec['gedung_items']         = $gedungItems;
+                        $newSpec['luas_lantai_m2']        = $totalLuas > 0 ? $totalLuas : (float)($rawNew['gedung_luas_lantai_m2'] ?? 0);
+                        $newSpec['konstruksi_bertingkat'] = $gedungItems[0]['gedung_konstruksi_bertingkat'] ?? 'Bertingkat';
+                        $newSpec['konstruksi_beton']      = $gedungItems[0]['gedung_konstruksi_beton'] ?? 'Beton';
+                        $newSpec['dokumen_nomor']         = $gedungItems[0]['gedung_dokumen_nomor'] ?? null;
+                    } elseif ($hasJaringanData) {
+                        $jaringanItems = [];
+                        $totalLuas = 0;
+                        foreach ($unitItems as $uIdx => $uItem) {
+                            $j = [
+                                'jaringan_nama'          => $astap->nama_barang,
+                                'jaringan_konstruksi'    => $uItem['jaringan_konstruksi'] ?? ($rawNew['jaringan_konstruksi'] ?? 'Aspal / Beton'),
+                                'jaringan_panjang_km'    => $uItem['jaringan_panjang_km'] ?? ($rawNew['jaringan_panjang_km'] ?? null),
+                                'jaringan_lebar_m'       => $uItem['jaringan_lebar_m'] ?? ($rawNew['jaringan_lebar_m'] ?? null),
+                                'jaringan_luas_m2'       => (float) ($uItem['jaringan_luas_m2'] ?? ($rawNew['jaringan_luas_m2'] ?? 0)),
+                                'jaringan_alamat'        => $uItem['jaringan_alamat'] ?? ($rawNew['jaringan_alamat'] ?? ($astap->alamat_barang ?: 'Kompleks RSUD')),
+                                'jaringan_kondisi'       => 'Baik',
+                                'jaringan_nilai_fisik'   => $unitPrice,
+                            ];
+                            $jaringanItems[] = $j;
+                            $totalLuas += $j['jaringan_luas_m2'];
+                        }
+                        $newSpec['jaringan_items'] = $jaringanItems;
+                        $newSpec['konstruksi']     = $jaringanItems[0]['jaringan_konstruksi'] ?? 'Aspal / Beton';
+                    } elseif ($hasLainnyaData) {
+                        $lainnyaItems = [];
+                        foreach ($unitItems as $uIdx => $uItem) {
+                            $vol = max(1, (int) ($uItem['item_volume'] ?? ($uItem['lainnya_jumlah_barang'] ?? 1)));
+                            $l = [
+                                'lainnya_nama_barang'    => $uItem['item_nama'] ?? ($uItem['lainnya_nama_barang'] ?? $astap->nama_barang),
+                                'lainnya_judul_pencipta' => $uItem['lainnya_judul_pencipta'] ?? ($rawNew['lainnya_judul_pencipta'] ?? $astap->nama_barang),
+                                'lainnya_spesifikasi'    => $uItem['lainnya_spesifikasi'] ?? ($rawNew['lainnya_spesifikasi'] ?? '-'),
+                                'lainnya_asal_daerah'    => $uItem['lainnya_asal_daerah'] ?? ($rawNew['lainnya_asal_daerah'] ?? '-'),
+                                'lainnya_bahan'          => $uItem['lainnya_bahan'] ?? ($rawNew['lainnya_bahan'] ?? 'Kertas / Kanvas / Lainnya'),
+                                'lainnya_ukuran'         => $uItem['lainnya_ukuran'] ?? ($rawNew['lainnya_ukuran'] ?? '-'),
+                                'lainnya_kondisi'        => 'Baik',
+                                'lainnya_jumlah_barang'  => $vol,
+                                'lainnya_satuan'         => $uItem['item_satuan'] ?? ($astap->satuan ?: 'Buah'),
+                                'lainnya_nilai_satuan'   => $unitPrice,
+                                'lainnya_total_nilai'    => $vol * $unitPrice,
+                            ];
+                            $lainnyaItems[] = $l;
+                        }
+                        $newSpec['lainnya_items'] = $lainnyaItems;
+                    } else {
+                        // Pertahankan spesifikasi fisik bawaan sebelumnya jika ada
+                        if (!empty($oldSpec['mesin_items'])) $newSpec['mesin_items'] = $oldSpec['mesin_items'];
+                        if (!empty($oldSpec['tanah_items'])) $newSpec['tanah_items'] = $oldSpec['tanah_items'];
+                        if (!empty($oldSpec['gedung_items'])) $newSpec['gedung_items'] = $oldSpec['gedung_items'];
+                        if (!empty($oldSpec['jaringan_items'])) $newSpec['jaringan_items'] = $oldSpec['jaringan_items'];
+                        if (!empty($oldSpec['lainnya_items'])) $newSpec['lainnya_items'] = $oldSpec['lainnya_items'];
+                    }
                 } elseif ($targetKib === 'ASET LAIN' || $targetKib === 'ASET LAIN-LAIN' || $targetKib === 'ASET LAINNYA') {
                     $asetLainItems = [];
                     foreach ($unitItems as $uIdx => $uItem) {
@@ -958,16 +1114,18 @@ class ReklasifikasiController extends Controller
 
             $astap->save();
 
-            // Sinkronkan data ke register jika ada perubahan
+            // Sinkronkan data ke register jika ada perubahan pada kolom register yang valid
             if ($astap->registers()->exists()) {
-                $regUpdate = [
-                    'nama_barang'  => $astap->nama_barang,
-                    'harga_satuan' => $astap->harga_satuan,
-                ];
-                if ($astap->category) {
-                    $regUpdate['kelompok_kib'] = $astap->category;
+                $regUpdate = [];
+                if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'ruang_pemegang') && !empty($astap->ruang_unit)) {
+                    $regUpdate['ruang_pemegang'] = $astap->ruang_unit;
                 }
-                $astap->registers()->update($regUpdate);
+                if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'kondisi') && !empty($astap->kondisi)) {
+                    $regUpdate['kondisi'] = $astap->kondisi;
+                }
+                if (!empty($regUpdate)) {
+                    $astap->registers()->update($regUpdate);
+                }
             }
 
             // Pastikan fallback nama dan kode asal/tujuan jika masih kosong
@@ -1052,15 +1210,42 @@ class ReklasifikasiController extends Controller
             ];
             $reklas = AstapReklas::create($reklasData);
 
-            // Jika aset terkait dengan Kemitraan (Akun 1.5.2), perbarui status konsesi menjadi Selesai / Reklasifikasi
-            if ($astap->kemitraan) {
+            // Sinkronisasi status dan data Kemitraan (Akun 1.5.2)
+            if ($targetKib === 'KEMITRAAN') {
+                $spec = $astap->spesifikasi_json ?? [];
+                $kemitraanData = [
+                    'astap_id'         => $astap->id,
+                    'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Mitra Pihak Ketiga'),
+                    'pimpinan_mitra'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? null),
+                    'alamat_mitra'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? null),
+                    'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($validated['nomor_ba_reklas'] ?? '-')),
+                    'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($validated['tanggal_reklas'] ?? now())),
+                    'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? 'Sewa'),
+                    'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? null),
+                    'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? null),
+                    'status_konsesi'   => 'Aktif',
+                    'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
+                    'satuan'           => $astap->satuan ?: 'Bidang / Titik',
+                    'nilai_aset'       => (float) $astap->total_realisasi,
+                    'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
+                    'triwulan'         => (string) ($validated['triwulan'] ?? 1),
+                    'keterangan'       => $validated['keterangan'] ?? ($astap->keterangan_tambahan ?? null),
+                    'user_id'          => Auth::id(),
+                ];
+
+                if ($astap->kemitraan) {
+                    $astap->kemitraan->update($kemitraanData);
+                } else {
+                    \App\Models\AstapKemitraan::create($kemitraanData);
+                }
+            } elseif ($astap->kemitraan && $asalKibFinal === 'KEMITRAAN') {
+                // Hanya perbarui status menjadi Selesai jika asal reklas adalah Kemitraan (berakhirnya masa konsesi)
                 $astap->kemitraan->update([
                     'status_konsesi' => 'Selesai / Reklasifikasi'
                 ]);
             }
 
             DB::commit();
-
 
             $astap->refresh();
 
@@ -1069,6 +1254,8 @@ class ReklasifikasiController extends Controller
                     'success' => true,
                     'message' => 'Transaksi reklasifikasi aset berhasil dicatat!',
                     'data' => $reklas,
+                    'is_kemitraan' => ($targetKib === 'KEMITRAAN'),
+                    'cetak_bast_url' => ($targetKib === 'KEMITRAAN') ? route('astap.kemitraan.cetak_bast', ['id' => $astap->id]) : null,
                     'astap' => [
                         'id' => $astap->id,
                         'total_realisasi' => 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.'),
