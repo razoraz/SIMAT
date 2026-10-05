@@ -1076,7 +1076,7 @@
                 let list = this.unitsList || [];
                 if (!item.searchRuang || item.searchRuang.trim() === '') return list;
                 const q = item.searchRuang.toLowerCase().trim();
-                return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kode || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
+                return list.filter(u => (u.nama || '').toLowerCase().includes(q) || (u.kepala || '').toLowerCase().includes(q) || (u.tipe || '').toLowerCase().includes(q));
             },
 
             selectUnitForItem(item, unit) {
