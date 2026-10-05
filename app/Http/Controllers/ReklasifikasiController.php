@@ -828,7 +828,9 @@ class ReklasifikasiController extends Controller
                     $newSpec['merk']            = $mesinItems[0]['mesin_merk'] ?? '-';
                     $newSpec['type']            = $mesinItems[0]['mesin_type'] ?? '-';
                     $newSpec['no_pabrik']       = count($allNoPabrik) > 0 ? implode(', ', $allNoPabrik) : ($mesinItems[0]['mesin_no_pabrik'] ?? '-');
-                    $astap->merk_type           = trim(($mesinItems[0]['mesin_merk'] ?? '') . ' ' . ($mesinItems[0]['mesin_type'] ?? ''));
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'merk_type')) {
+                        $astap->merk_type = trim(($mesinItems[0]['mesin_merk'] ?? '') . ' ' . ($mesinItems[0]['mesin_type'] ?? ''));
+                    }
 
                 } elseif ($targetKib === 'KIB C') {
                     $gedungItems = [];
@@ -994,7 +996,9 @@ class ReklasifikasiController extends Controller
                         $newSpec['merk']        = $mesinItems[0]['mesin_merk'] ?? '-';
                         $newSpec['type']        = $mesinItems[0]['mesin_type'] ?? '-';
                         $newSpec['no_pabrik']   = count($allNoPabrik) > 0 ? implode(', ', $allNoPabrik) : ($mesinItems[0]['mesin_no_pabrik'] ?? '-');
-                        $astap->merk_type       = trim(($mesinItems[0]['mesin_merk'] ?? '') . ' ' . ($mesinItems[0]['mesin_type'] ?? ''));
+                        if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'merk_type')) {
+                            $astap->merk_type = trim(($mesinItems[0]['mesin_merk'] ?? '') . ' ' . ($mesinItems[0]['mesin_type'] ?? ''));
+                        }
                     } elseif ($hasTanahData) {
                         $tanahItems = [];
                         $totalLuas = 0;

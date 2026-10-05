@@ -341,7 +341,7 @@
                                 <div class="flex items-center justify-center space-x-1.5">
                                     @if($row->is_reklas_pending ?? false)
                                         <!-- Tombol Buat PKS Kemitraan (Bagi Aset Hasil Reklasifikasi yang Menunggu Kontrak Mitra) -->
-                                        <a href="{{ route('astap.tambah_kemitraan') . ($row->objek_register_id ? ('?objek_register_id=' . $row->objek_register_id) : '') }}"
+                                        <a href="{{ route('astap.create_kemitraan') . ($row->objek_register_id ? ('?objek_register_id=' . $row->objek_register_id) : '') }}"
                                             title="Buat Dokumen PKS & Tambah Aset Mitra di atas Objek ini"
                                             class="group/btn inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-extrabold text-xs transition-all duration-200 shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                             <span>➕</span>
