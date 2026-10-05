@@ -10,9 +10,17 @@
             categoryFilter: 'all',
             showDetailModal: false,
             selectedMutasi: null,
+            selectedAstapDetail: null,
+            detailPenempatanFilter: 'all',
+            detailKondisiFilter: 'all',
+            detailSearchQuery: '',
             showPrintModal: false,
             showEditForm: false,
             printDoc: null,
+            showDeleteModal: false,
+            itemToDelete: null,
+            deleteAlasan: '',
+            isDeleting: false,
 
             getQrCodeSvg(text) {
                 if (typeof window.getQrCodeSvg === 'function') {
@@ -202,6 +210,227 @@
                 this.statusFilter = 'all';
                 this.jenisFilter = 'all';
                 this.categoryFilter = 'all';
+            },
+
+            formatTanggalIndo(val) {
+                if (!val) return '-';
+                val = String(val).trim();
+                if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+                    const parts = val.split('-');
+                    return `${parts[2].slice(0, 2)}/${parts[1]}/${parts[0]}`;
+                }
+                return val;
+            },
+
+            get filteredRegisters() {
+                const target = this.selectedAstapDetail || this.selectedMutasi;
+                if (!target || !target.registers) return [];
+                const q = (this.detailSearchQuery || '').toLowerCase().trim();
+                return target.registers.filter(reg => {
+                    if (this.detailPenempatanFilter === 'sudah' && !reg.ruang_pemegang) return false;
+                    if (this.detailPenempatanFilter === 'belum' && reg.ruang_pemegang) return false;
+                    if (this.detailKondisiFilter !== 'all') {
+                        const k = reg.kondisi || 'Baik';
+                        if (this.detailKondisiFilter === 'Baik' && k !== 'Baik' && k !== 'B') return false;
+                        if (this.detailKondisiFilter === 'Kurang Baik' && k !== 'Kurang Baik' && k !== 'KB' && k !== 'Rusak Ringan' && k !== 'RR') return false;
+                        if (this.detailKondisiFilter === 'Rusak Berat' && k !== 'Rusak Berat' && k !== 'RB' && k !== 'Rusak') return false;
+                    }
+                    if (q) {
+                        const nibar = (reg.nibar || reg.no_register || '').toLowerCase();
+                        const ruang = (reg.ruang_pemegang || '').toLowerCase();
+                        if (!nibar.includes(q) && !ruang.includes(q)) return false;
+                    }
+                    return true;
+                });
+            },
+
+            syncRepeaterItemsWithVolume(items, targetTotal, qtyKeys = []) {
+                if (!Array.isArray(items) || items.length === 0) return [];
+                if (targetTotal <= 0) return [];
+
+                let remainingQuota = targetTotal;
+                let result = [];
+
+                for (let i = 0; i < items.length; i++) {
+                    if (remainingQuota <= 0) break;
+                    let item = JSON.parse(JSON.stringify(items[i]));
+
+                    let activeQtyKey = null;
+                    let curQty = 1;
+                    for (let k of qtyKeys) {
+                        if (item[k] !== undefined && item[k] !== null && item[k] !== '') {
+                            activeQtyKey = k;
+                            curQty = parseFloat(item[k]) || 1;
+                            break;
+                        }
+                    }
+
+                    if (curQty <= remainingQuota) {
+                        if (activeQtyKey) item[activeQtyKey] = curQty;
+                        result.push(item);
+                        remainingQuota -= curQty;
+                    } else {
+                        if (activeQtyKey) item[activeQtyKey] = remainingQuota;
+                        result.push(item);
+                        remainingQuota = 0;
+                        break;
+                    }
+                }
+
+                return result;
+            },
+
+            getEffectiveKibCategory(astap) {
+                if (!astap) return 'KIB B';
+                let cat = String(astap.category || '').toUpperCase().trim();
+                if (cat === 'KIB A' || cat === 'KIB B' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB E' || cat === 'KIB F' || cat === 'EXTRACOM' || cat === 'ATB' || cat === 'ASET LAIN' || cat === 'ASET LAINNYA') {
+                    return (cat === 'ASET LAINNYA') ? 'ASET LAIN' : cat;
+                }
+
+                let spec = astap.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+
+                const kibSpec = String(spec?.kategori_kib || '').toUpperCase();
+                if (kibSpec.includes('KIB A') || kibSpec.includes('TANAH')) return 'KIB A';
+                if (kibSpec.includes('KIB B') || kibSpec.includes('MESIN') || kibSpec.includes('PERALATAN')) return 'KIB B';
+                if (kibSpec.includes('KIB C') || kibSpec.includes('GEDUNG') || kibSpec.includes('BANGUNAN')) return 'KIB C';
+                if (kibSpec.includes('KIB D') || kibSpec.includes('JARINGAN') || kibSpec.includes('JALAN') || kibSpec.includes('IRIGASI')) return 'KIB D';
+                if (kibSpec.includes('KIB E') || kibSpec.includes('LAINNYA') || kibSpec.includes('BUKU')) return 'KIB E';
+
+                const kd = String(astap.kode_barang || astap.kode_108 || '');
+                if (kd.startsWith('1.3.1')) return 'KIB A';
+                if (kd.startsWith('1.3.2')) return 'KIB B';
+                if (kd.startsWith('1.3.3')) return 'KIB C';
+                if (kd.startsWith('1.3.4')) return 'KIB D';
+                if (kd.startsWith('1.3.5')) return 'KIB E';
+
+                if (spec?.mesin_items?.some(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || (parseFloat(m.mesin_nilai_satuan) > 0))) return 'KIB B';
+                if (spec?.tanah_items?.some(t => t.tanah_luas_m2 || t.tanah_hak || (parseFloat(t.tanah_nilai_satuan) > 0))) return 'KIB A';
+                if (spec?.gedung_items?.some(g => g.gedung_nama_barang || g.gedung_luas_m2 || (parseFloat(g.gedung_nilai_satuan) > 0))) return 'KIB C';
+                if (spec?.jaringan_items?.some(j => j.jaringan_nama_barang || j.jaringan_konstruksi || (parseFloat(j.jaringan_nilai_satuan) > 0))) return 'KIB D';
+                if (spec?.lainnya_items?.some(l => l.lainnya_nama_barang || l.lainnya_judul || (parseFloat(l.lainnya_nilai_satuan) > 0))) return 'KIB E';
+
+                const nama = String(astap.nama_barang || '').toLowerCase();
+                if (nama.includes('tanah')) return 'KIB A';
+                if (nama.includes('gedung') || nama.includes('bangunan')) return 'KIB C';
+                if (nama.includes('jalan') || nama.includes('jaringan') || nama.includes('irigasi')) return 'KIB D';
+                if (nama.includes('buku') || nama.includes('hewan') || nama.includes('kesenian')) return 'KIB E';
+
+                return 'KIB B';
+            },
+
+            getTanahItemsForDetail(astap) {
+                if (!astap) return [];
+                let spec = astap.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                if (spec && Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) {
+                    const valid = spec.tanah_items.filter(t => t.tanah_luas_m2 || t.tanah_hak || t.tanah_sertifikat_no || (parseFloat(t.tanah_nilai_satuan) > 0));
+                    const toSync = valid.length > 0 ? valid : spec.tanah_items;
+                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['tanah_jumlah_bidang', 'tanah_jumlah_barang']);
+                }
+                return [];
+            },
+
+            getMesinItemsForDetail(astap) {
+                if (!astap) return [];
+                let spec = astap.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                if (spec && Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) {
+                    const valid = spec.mesin_items.filter(m => m.mesin_nama_barang || m.mesin_merk || m.mesin_type || m.mesin_no_pabrik || (parseFloat(m.mesin_nilai_satuan) > 0));
+                    const toSync = valid.length > 0 ? valid : spec.mesin_items;
+                    return this.syncRepeaterItemsWithVolume(toSync, targetTotal, ['mesin_jumlah_barang']);
+                }
+                return [];
+            },
+
+            getGedungItemsForDetail(astap) {
+                if (!astap) return [];
+                let spec = astap.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                if (spec && Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) {
+                    return this.syncRepeaterItemsWithVolume(spec.gedung_items, targetTotal, ['gedung_jumlah_bangunan']);
+                }
+                return [];
+            },
+
+            getJaringanItemsForDetail(astap) {
+                if (!astap) return [];
+                let spec = astap.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                if (spec && Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) {
+                    return this.syncRepeaterItemsWithVolume(spec.jaringan_items, targetTotal, ['jaringan_jumlah', 'jaringan_jumlah_barang']);
+                }
+                return [];
+            },
+
+            getLainnyaItemsForDetail(astap) {
+                if (!astap) return [];
+                let spec = astap.spesifikasi_json;
+                if (typeof spec === 'string') {
+                    try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                }
+                const targetTotal = (astap.registers && astap.registers.length > 0) ? astap.registers.length : (parseInt(astap.jumlah_volume) || 1);
+                if (spec && Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) {
+                    return this.syncRepeaterItemsWithVolume(spec.lainnya_items, targetTotal, ['lainnya_jumlah_barang', 'lainnya_jumlah']);
+                }
+                return [];
+            },
+
+            getRincianNibar(astap, idx = 0, type = null) {
+                if (!astap || !astap.registers || astap.registers.length === 0) return null;
+                const reg = astap.registers[idx] || astap.registers[0];
+                if (!reg || !reg.nibar) return null;
+                return {
+                    label: 'NIBAR: ' + reg.nibar,
+                    tooltip: 'Nomor Induk Barang: ' + reg.nibar
+                };
+            },
+
+            getRincianKondisiStats(astap, idx = 0, type = null) {
+                return this.getKondisiStats(astap);
+            },
+
+            downloadQrCodeNibar(reg, astap) {
+                const nibar = reg.nibar || reg.no_register || (astap ? (astap.kode_barang || astap.kode) : 'ASET');
+                const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(window.location.origin + '/scan/' + nibar);
+                window.open(qrUrl, '_blank');
+            },
+
+            openDetail(item) {
+                if (!item) return;
+                this.selectedMutasi = item;
+                this.selectedAstapDetail = item;
+                if (this.selectedAstapDetail && typeof this.selectedAstapDetail.spesifikasi_json === 'string') {
+                    try {
+                        this.selectedAstapDetail.spesifikasi_json = JSON.parse(this.selectedAstapDetail.spesifikasi_json);
+                    } catch(e) {}
+                }
+                if (this.selectedAstapDetail && Array.isArray(this.selectedAstapDetail.registers)) {
+                    this.selectedAstapDetail.registers.sort((a, b) => {
+                        const numA = a.no_register_int || parseInt((a.nibar || a.no_register || '').slice(-7)) || 0;
+                        const numB = b.no_register_int || parseInt((b.nibar || b.no_register || '').slice(-7)) || 0;
+                        if (numA !== numB) return numA - numB;
+                        return (a.nibar || a.no_register || '').localeCompare(b.nibar || b.no_register || '');
+                    });
+                }
+                this.detailKondisiFilter = 'all';
+                this.detailPenempatanFilter = 'all';
+                this.detailSearchQuery = '';
+                this.showDetailModal = true;
             },
 
             openReklas(item) {
@@ -432,46 +661,66 @@
 
             deleteMutasi(item) {
                 if (!item) return;
-                const namaAset = item.nama_murni || item.nama || 'Aset';
-                if (!confirm(`⚠️ Apakah Anda yakin ingin memindahkan data pelimpahan "${namaAset}" ke Recycle Bin (Tong Sampah)?\n\nSeluruh unit register NIBAR terkait juga akan dipindahkan ke Recycle Bin.`)) {
-                    return;
-                }
+                this.itemToDelete = item;
+                this.deleteAlasan = '';
+                this.showDeleteModal = true;
+            },
 
-                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                const id = item.mutasi_id || item.id;
-                fetch(`/mutasi-eksternal/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': token,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(res => res.json())
-                .then(d => {
-                    if (d.success !== false) {
-                        this.mutasiEksternals = this.mutasiEksternals.filter(m => Number(m.id) !== Number(item.id) && Number(m.mutasi_id) !== Number(item.mutasi_id));
-                        if (this.selectedMutasi && (Number(this.selectedMutasi.id) === Number(item.id) || Number(this.selectedMutasi.mutasi_id) === Number(item.mutasi_id))) {
+            async executeDelete() {
+                if (!this.itemToDelete || this.isDeleting) return;
+                this.isDeleting = true;
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                const id = this.itemToDelete.mutasi_id || this.itemToDelete.id;
+                const targetUrl = "{{ url('/mutasi-eksternal') }}/" + id;
+
+                try {
+                    const res = await fetch(targetUrl, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            alasan: this.deleteAlasan || 'Dihapus dari modul Mutasi Eksternal'
+                        })
+                    });
+
+                    const d = await res.json();
+                    this.isDeleting = false;
+
+                    if (res.ok && d.success !== false) {
+                        const delAstapId = this.itemToDelete.id;
+                        const delMutasiId = this.itemToDelete.mutasi_id;
+
+                        this.mutasiEksternals = this.mutasiEksternals.filter(m => 
+                            Number(m.id) !== Number(delAstapId) && 
+                            Number(m.mutasi_id) !== Number(delMutasiId)
+                        );
+
+                        if (this.selectedMutasi && (Number(this.selectedMutasi.id) === Number(delAstapId) || Number(this.selectedMutasi.mutasi_id) === Number(delMutasiId))) {
                             this.showDetailModal = false;
                             this.selectedMutasi = null;
                         }
+
+                        this.showDeleteModal = false;
+                        this.itemToDelete = null;
+
                         if (typeof window.showSimatToast === 'function') {
                             window.showSimatToast(d.message || 'Data pelimpahan aset berhasil dipindahkan ke Tong Sampah.', 'success');
                         } else {
-                            alert('✓ Data pelimpahan aset berhasil dipindahkan ke Tong Sampah.');
+                            alert('✓ ' + (d.message || 'Data pelimpahan aset berhasil dipindahkan ke Tong Sampah.'));
                         }
                     } else {
-                        if (typeof window.showSimatToast === 'function') {
-                            window.showSimatToast('Gagal menghapus: ' + (d.message || 'Terjadi kesalahan.'), 'error');
-                        } else {
-                            alert('❌ Gagal menghapus: ' + (d.message || 'Terjadi kesalahan.'));
-                        }
+                        alert('❌ ' + (d.message || 'Gagal memindahkan data ke Tong Sampah.'));
                     }
-                })
-                .catch(err => {
+                } catch (err) {
+                    this.isDeleting = false;
                     console.error('Delete error:', err);
                     alert('❌ Terjadi kesalahan jaringan saat mencoba menghapus data.');
-                });
+                }
             }
         };
     }

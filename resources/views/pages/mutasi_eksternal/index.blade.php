@@ -17,6 +17,9 @@
 
         <!-- MODAL CETAK BAST PELIMPAHAN BMD (INTERAKTIF & LIVE EDIT) -->
         @include('pages.mutasi_eksternal.index_partials.modal_print_bast')
+
+        <!-- MODAL KONFIRMASI HAPUS (SOFT-DELETE) -->
+        @include('pages.mutasi_eksternal.index_partials.modal_delete')
     </div>
 
     <!-- Print Media Query Styling untuk Cetak BAST Kertas Putih Sempurna -->
