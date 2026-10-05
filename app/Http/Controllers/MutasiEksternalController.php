@@ -645,9 +645,20 @@ class MutasiEksternalController extends Controller
         if (!empty($specJson['lainnya_items']) && is_array($specJson['lainnya_items']) && count($specJson['lainnya_items']) > 0) {
             $lItems = $specJson['lainnya_items'];
             $firstL = $lItems[0];
-            $specJson['lainnya_judul'] = $firstL['lainnya_judul'] ?? null;
+            $specJson['lainnya_judul'] = $firstL['lainnya_judul'] ?? ($firstL['lainnya_nama_barang'] ?? null);
+            $specJson['lainnya_nama_barang'] = $firstL['lainnya_nama_barang'] ?? ($firstL['lainnya_judul'] ?? null);
+            $specJson['lainnya_kode_barang'] = $firstL['lainnya_kode_barang'] ?? null;
+            $specJson['kib_e_type'] = $firstL['kib_e_type'] ?? 'buku';
+            $specJson['is_extracom'] = !empty($firstL['is_extracom']);
             $specJson['lainnya_pencipta'] = $firstL['lainnya_pencipta'] ?? null;
             $specJson['lainnya_spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
+            $specJson['lainnya_tahun'] = $firstL['lainnya_tahun'] ?? null;
+            $specJson['lainnya_ukuran'] = $firstL['lainnya_ukuran'] ?? null;
+            $specJson['lainnya_asal_daerah'] = $firstL['lainnya_asal_daerah'] ?? null;
+            $specJson['lainnya_bahan'] = $firstL['lainnya_bahan'] ?? null;
+            $specJson['lainnya_no_pabrik'] = $firstL['lainnya_no_pabrik'] ?? null;
+            $specJson['lainnya_keterangan'] = $firstL['lainnya_keterangan'] ?? null;
+            $specJson['ruang_pemegang'] = $firstL['ruang_pemegang'] ?? null;
         }
 
         $ppkNama = $request->input('ppk_nama', 'BUDI HARTONO, S.Sos');
@@ -970,9 +981,20 @@ class MutasiEksternalController extends Controller
         if (!empty($specJson['lainnya_items']) && is_array($specJson['lainnya_items']) && count($specJson['lainnya_items']) > 0) {
             $lItems = $specJson['lainnya_items'];
             $firstL = $lItems[0];
-            $specJson['lainnya_judul'] = $firstL['lainnya_judul'] ?? null;
+            $specJson['lainnya_judul'] = $firstL['lainnya_judul'] ?? ($firstL['lainnya_nama_barang'] ?? null);
+            $specJson['lainnya_nama_barang'] = $firstL['lainnya_nama_barang'] ?? ($firstL['lainnya_judul'] ?? null);
+            $specJson['lainnya_kode_barang'] = $firstL['lainnya_kode_barang'] ?? null;
+            $specJson['kib_e_type'] = $firstL['kib_e_type'] ?? 'buku';
+            $specJson['is_extracom'] = !empty($firstL['is_extracom']);
             $specJson['lainnya_pencipta'] = $firstL['lainnya_pencipta'] ?? null;
             $specJson['lainnya_spesifikasi'] = $firstL['lainnya_spesifikasi'] ?? null;
+            $specJson['lainnya_tahun'] = $firstL['lainnya_tahun'] ?? null;
+            $specJson['lainnya_ukuran'] = $firstL['lainnya_ukuran'] ?? null;
+            $specJson['lainnya_asal_daerah'] = $firstL['lainnya_asal_daerah'] ?? null;
+            $specJson['lainnya_bahan'] = $firstL['lainnya_bahan'] ?? null;
+            $specJson['lainnya_no_pabrik'] = $firstL['lainnya_no_pabrik'] ?? null;
+            $specJson['lainnya_keterangan'] = $firstL['lainnya_keterangan'] ?? null;
+            $specJson['ruang_pemegang'] = $firstL['ruang_pemegang'] ?? null;
         }
 
         $fallbackPbNama = ($item->ppk_nama && !str_contains(strtolower($item->ppk_nama), 'yus')) ? $item->ppk_nama : 'BUDI HARTONO, S.Sos';

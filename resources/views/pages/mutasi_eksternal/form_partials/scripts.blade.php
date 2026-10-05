@@ -695,23 +695,41 @@
                 return qty * unitVal;
             },
 
-            // Repeater Actions: Lainnya
+            // Repeater Actions: Lainnya (KIB E)
             addLainnyaItem() {
+                if (!this.formData.lainnya_items) {
+                    this.formData.lainnya_items = [];
+                }
                 this.formData.lainnya_items.push({
+                    is_extracom: false,
+                    kib_e_type: 'buku',
+                    lainnya_kode_barang: '',
+                    lainnya_nama_barang: '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     lainnya_judul: this.formData.nama_barang || '',
-                    lainnya_jenis: 'Buku / Kepustakaan Medis',
                     lainnya_pencipta: '',
                     lainnya_spesifikasi: '',
+                    lainnya_tahun: null,
+                    lainnya_ukuran: '',
+                    lainnya_asal_daerah: '',
+                    lainnya_bahan: '',
+                    lainnya_jenis: 'Buku / Kepustakaan Medis',
                     lainnya_kondisi: 'Baik',
                     lainnya_jumlah: 1,
                     lainnya_satuan: 'Eksemplar',
-                    lainnya_nilai_satuan: 0
+                    lainnya_nilai_satuan: 0,
+                    lainnya_no_pabrik: '',
+                    lainnya_keterangan: '',
+                    ruang_pemegang: this.selectedUnitName || '',
+                    isRuangOpen: false,
+                    searchRuang: ''
                 });
                 this.syncTotalsFromItems();
             },
 
             removeLainnyaItem(idx) {
-                if (this.formData.lainnya_items.length > 1) {
+                if (this.formData.lainnya_items && this.formData.lainnya_items.length > 1) {
                     this.formData.lainnya_items.splice(idx, 1);
                     this.syncTotalsFromItems();
                 }
@@ -721,6 +739,27 @@
                 const qty = parseInt(item.lainnya_jumlah) || 1;
                 const unitVal = parseFloat(item.lainnya_nilai_satuan) || 0;
                 return qty * unitVal;
+            },
+
+            getKibEPrefix(item) {
+                if (!item) return '1.3.5';
+                if (item.kib_e_type === 'kesenian') return '1.3.5.02';
+                if (item.kib_e_type === 'hewan_tumbuhan') return '1.3.5.03';
+                return '1.3.5.01';
+            },
+
+            get totalNilaiLainnya() {
+                if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                    return this.formData.lainnya_items.reduce((sum, item) => sum + this.getLainnyaSubtotal(item), 0);
+                }
+                return Number(this.formData.total_realisasi || 0);
+            },
+
+            get totalVolumeLainnya() {
+                if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                    return this.formData.lainnya_items.reduce((sum, item) => sum + (parseInt(item.lainnya_jumlah) || 1), 0);
+                }
+                return parseInt(this.formData.jumlah_volume) || 1;
             },
 
             // Auto-Sync Calculations
@@ -817,10 +856,29 @@
                         totalVal += (q * v);
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
-                    this.formData.satuan = this.formData.lainnya_items[0].lainnya_satuan || 'Item';
+                    this.formData.satuan = this.formData.lainnya_items[0].lainnya_satuan || 'Buah';
                     this.formData.total_realisasi = totalVal;
                     if (this.formData.lainnya_items[0].lainnya_kondisi) {
                         this.formData.kondisi = this.formData.lainnya_items[0].lainnya_kondisi;
+                    }
+                    if (this.formData.lainnya_items[0].ruang_pemegang) {
+                        const matchedUnit = (this.unitsList || []).find(u => u.nama === this.formData.lainnya_items[0].ruang_pemegang);
+                        if (matchedUnit) {
+                            this.formData.unit_id = matchedUnit.id;
+                        }
+                    }
+                    const first = this.formData.lainnya_items[0];
+                    if (this.formData.lainnya_items.length === 1) {
+                        if (first.lainnya_nama_barang) {
+                            this.formData.nama_barang = first.lainnya_nama_barang;
+                        } else if (first.lainnya_judul) {
+                            this.formData.nama_barang = first.lainnya_judul;
+                        }
+                    } else {
+                        const names = this.formData.lainnya_items.map(m => m.lainnya_nama_barang || m.lainnya_judul).filter(Boolean);
+                        if (names.length > 0) {
+                            this.formData.nama_barang = names.join(', ');
+                        }
                     }
                 }
 
@@ -844,6 +902,18 @@
                     if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
                         results.push(it);
                         if (results.length >= 5) break; // Strict 5-item cutoff agar tidak lag!
+                    }
+                }
+                // Fallback jika tidak ada hasil spesifik di sub-prefix (misal 1.3.5.01), cari di parent prefix 1.3.5
+                if (results.length === 0 && prefix && prefix.length > 5) {
+                    const parentPrefix = prefix.substring(0, 5); // '1.3.5'
+                    for (let i = 0; i < list.length; i++) {
+                        const it = list[i];
+                        if (!it || !it.kode || !it.kode.startsWith(parentPrefix)) continue;
+                        if (!q || (it.nama && it.nama.toLowerCase().includes(q)) || (it.kode && it.kode.includes(q))) {
+                            results.push(it);
+                            if (results.length >= 5) break;
+                        }
                     }
                 }
                 return results;
@@ -871,6 +941,9 @@
                     item.lainnya_kode_barang = opt.kode;
                     item.lainnya_nama_barang = opt.nama;
                     item.searchFilter = opt.nama;
+                    if (!item.lainnya_judul || item.lainnya_judul.trim() === '') {
+                        item.lainnya_judul = opt.nama;
+                    }
                 }
                 item.isFilterOpen = false;
                 if (!this.formData.jenis_astap_id && opt.id) {
@@ -1369,14 +1442,29 @@
                         }];
                     } else if (this.activeKibCategory === 'lainnya' && (!this.formData.lainnya_items || this.formData.lainnya_items.length === 0)) {
                         this.formData.lainnya_items = [{
-                            lainnya_judul: init.nama_barang || '',
-                            lainnya_jenis: 'Buku / Kepustakaan Medis',
-                            lainnya_pencipta: '',
-                            lainnya_spesifikasi: '',
+                            is_extracom: init.is_extracom || false,
+                            kib_e_type: init.kib_e_type || 'buku',
+                            lainnya_kode_barang: this.selected108Item?.kode || (init.kode_barang || ''),
+                            lainnya_nama_barang: init.nama_barang || (init.nama || ''),
+                            isFilterOpen: false,
+                            searchFilter: '',
+                            lainnya_judul: init.lainnya_judul || init.nama_barang || '',
+                            lainnya_pencipta: init.lainnya_pencipta || '',
+                            lainnya_spesifikasi: init.lainnya_spesifikasi || '',
+                            lainnya_tahun: init.lainnya_tahun || null,
+                            lainnya_ukuran: init.lainnya_ukuran || '',
+                            lainnya_asal_daerah: init.lainnya_asal_daerah || '',
+                            lainnya_bahan: init.lainnya_bahan || '',
+                            lainnya_jenis: init.lainnya_jenis || 'Buku / Kepustakaan Medis',
                             lainnya_kondisi: init.kondisi || 'Baik',
                             lainnya_jumlah: init.jumlah_volume || 1,
-                            lainnya_satuan: init.satuan || 'Eksemplar',
-                            lainnya_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
+                            lainnya_satuan: init.satuan || 'Buah',
+                            lainnya_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi,
+                            lainnya_no_pabrik: init.no_pabrik || '',
+                            lainnya_keterangan: init.mutasi_keterangan || (init.keterangan || ''),
+                            ruang_pemegang: init.ruang_pemegang || (this.selectedUnitName || ''),
+                            isRuangOpen: false,
+                            searchRuang: ''
                         }];
                     } else if (this.activeKibCategory === 'mesin' && (!this.formData.mesin_items || this.formData.mesin_items.length === 0)) {
                         this.formData.mesin_items = [{
@@ -1410,6 +1498,18 @@
                     if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                         this.formData.mesin_items.forEach(it => {
                             if (it.is_extracom === undefined) it.is_extracom = false;
+                            if (it.isFilterOpen === undefined) it.isFilterOpen = false;
+                            if (it.isRuangOpen === undefined) it.isRuangOpen = false;
+                            if (it.searchRuang === undefined) it.searchRuang = '';
+                            if (!it.ruang_pemegang && this.selectedUnitName) it.ruang_pemegang = this.selectedUnitName;
+                        });
+                    }
+
+                    // Normalisasi lainnya_items yang ada agar properti reaktif Alpine tidak undefined
+                    if (this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
+                        this.formData.lainnya_items.forEach(it => {
+                            if (it.is_extracom === undefined) it.is_extracom = false;
+                            if (it.kib_e_type === undefined) it.kib_e_type = 'buku';
                             if (it.isFilterOpen === undefined) it.isFilterOpen = false;
                             if (it.isRuangOpen === undefined) it.isRuangOpen = false;
                             if (it.searchRuang === undefined) it.searchRuang = '';
