@@ -395,7 +395,7 @@
                                     <div class="flex items-center space-x-2">
                                         <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center shrink-0">4</span>
                                         <span class="text-xs font-bold text-white uppercase tracking-wider">
-                                            📝 Spesifikasi Fisik Baru (<span class="text-cyan-300 font-extrabold" x-text="reklasTujuanKib"></span>):
+                                            📝 Spesifikasi Fisik Baru (<span class="text-cyan-300 font-extrabold" x-text="reklasTujuanKib === 'KEMITRAAN' ? ('Kemitraan • Fisik ' + (getReklasKemitraanPhysicalType() === 'tanah' ? 'Tanah (KIB A)' : (getReklasKemitraanPhysicalType() === 'mesin' ? 'Peralatan & Mesin (KIB B)' : (getReklasKemitraanPhysicalType() === 'gedung' ? 'Gedung & Bangunan (KIB C)' : (getReklasKemitraanPhysicalType() === 'jaringan' ? 'Jalan & Jaringan (KIB D)' : 'Aset Lainnya (KIB E)'))))) : reklasTujuanKib"></span>):
                                         </span>
                                     </div>
                                     <span class="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/30 font-semibold">
@@ -405,280 +405,127 @@
 
                                 <div class="p-2.5 rounded-xl bg-cyan-950/20 border border-cyan-500/20 text-[11px] text-cyan-200/90 leading-relaxed flex items-center gap-2">
                                     <span>💡</span>
-                                    <span>Aset dialihkan ke kelompok <strong class="text-white" x-text="reklasTujuanKib"></strong>. Data spesifikasi lama akan diarsip ke riwayat audit, dan form di bawah otomatis disesuaikan agar register &amp; KIR terbit sesuai format fisik <strong class="text-white" x-text="reklasTujuanKib"></strong>.</span>
+                                    <span>Aset dialihkan ke kelompok <strong class="text-white" x-text="reklasTujuanKib"></strong><template x-if="reklasTujuanKib === 'KEMITRAAN'"><span> dengan wujud fisik <strong class="text-cyan-300" x-text="getReklasKemitraanPhysicalType() === 'tanah' ? 'Tanah' : (getReklasKemitraanPhysicalType() === 'mesin' ? 'Peralatan & Mesin' : (getReklasKemitraanPhysicalType() === 'gedung' ? 'Gedung & Bangunan' : (getReklasKemitraanPhysicalType() === 'jaringan' ? 'Jalan & Jaringan' : 'Aset Tetap Lainnya')))"></strong></span></template>. Data spesifikasi lama akan diarsip ke riwayat audit, dan form di bawah otomatis disesuaikan agar register &amp; KIR terbit sesuai format fisik tersebut.</span>
                                 </div>
 
-                                <!-- Multi-Unit Register Navigation & Mass Actions (Tampil bila > 1 Unit) -->
+                                 <!-- Multi-Item Navigation & Mass Actions (Tampil bila > 1 Item Rincian Barang) -->
                                 <template x-if="reklasSpekBaruItems && reklasSpekBaruItems.length > 1">
                                     <div class="p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/30 space-y-2.5 shadow-inner">
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                             <div class="flex items-center space-x-2">
                                                 <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
                                                 <span class="text-[11px] font-extrabold text-cyan-300 tracking-wide uppercase">
-                                                    Pilih Rincian Unit / Register (<span x-text="reklasSpekBaruItems.length"></span> Unit):
+                                                    Pilih Rincian Barang (<span x-text="reklasSpekBaruItems.length"></span> Item):
                                                 </span>
                                             </div>
-                                            <!-- Tombol Salin Cepat Spesifikasi ke Seluruh Unit -->
+                                            <!-- Tombol Salin Cepat Spesifikasi ke Seluruh Item -->
                                             <button type="button" @click="copyActiveSpekToAll()"
                                                 class="px-2.5 py-1 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 hover:text-white border border-cyan-500/40 hover:border-cyan-400 text-[10.5px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
                                                 <svg class="w-3.5 h-3.5 text-cyan-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
                                                 </svg>
-                                                <span>⚡ Salin Spesifikasi Unit Ini ke Semua Unit</span>
+                                                <span>⚡ Salin Spesifikasi ke Semua Item</span>
                                             </button>
                                         </div>
 
-                                        <!-- Tab Pills Horizontal Scroll -->
-                                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar">
+                                        <!-- Tab Pills: Full-Width (2-5 Item) & Scrollable (6+ Item) -->
+                                        <div class="pb-1.5 custom-scrollbar"
+                                             :class="reklasSpekBaruItems.length <= 5 
+                                                ? ('grid gap-2 ' + (reklasSpekBaruItems.length === 2 ? 'grid-cols-2' : (reklasSpekBaruItems.length === 3 ? 'grid-cols-3' : (reklasSpekBaruItems.length === 4 ? 'grid-cols-4' : 'grid-cols-5')))) 
+                                                : 'flex items-center gap-2 overflow-x-auto'">
                                             <template x-for="(uItem, uIdx) in reklasSpekBaruItems" :key="uIdx">
                                                 <button type="button" @click="switchActiveSpekUnit(uIdx)"
-                                                    class="shrink-0 px-3 py-1.5 rounded-xl border text-left transition-all text-xs flex flex-col justify-center cursor-pointer"
-                                                    :class="activeSpekUnitTab === uIdx 
-                                                        ? 'bg-gradient-to-r from-cyan-950 to-slate-900 border-cyan-400 text-cyan-200 font-extrabold shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/50' 
-                                                        : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200'">
-                                                    <div class="flex items-center space-x-1.5">
+                                                    class="px-3 py-2 rounded-xl border text-left transition-all text-xs flex flex-col justify-center cursor-pointer min-w-0"
+                                                    :class="[
+                                                        reklasSpekBaruItems.length > 5 ? 'shrink-0 min-w-[150px]' : 'w-full',
+                                                        activeSpekUnitTab === uIdx 
+                                                            ? 'bg-gradient-to-r from-cyan-950 to-slate-900 border-cyan-400 text-cyan-200 font-extrabold shadow-md shadow-cyan-950/60 ring-1 ring-cyan-400/50' 
+                                                            : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200'
+                                                    ]">
+                                                    <div class="flex items-center space-x-1.5 truncate">
                                                         <span class="w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center shrink-0"
                                                               :class="activeSpekUnitTab === uIdx ? 'bg-cyan-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
                                                               x-text="uIdx + 1"></span>
-                                                        <span class="font-mono text-[11px]" x-text="getUnitTabTitle(uIdx)"></span>
+                                                        <span class="font-mono text-[11px] truncate font-bold" x-text="getUnitTabTitle(uIdx)"></span>
                                                     </div>
-                                                    <span class="text-[9px] text-slate-400 truncate max-w-[140px] ml-5"
+                                                    <span class="text-[9px] text-slate-400 truncate ml-5.5 mt-0.5"
                                                           x-show="getUnitTabSubtitle(uItem)"
                                                           x-text="getUnitTabSubtitle(uItem)"></span>
                                                 </button>
                                             </template>
                                         </div>
 
-                                        <!-- Info Banner Unit Sedang Aktif -->
-                                        <div class="px-2.5 py-1.5 rounded-lg bg-slate-900/70 border border-slate-800/80 text-[10.5px] text-slate-300 flex items-center justify-between">
-                                            <div class="flex items-center space-x-1.5 truncate">
-                                                <span class="text-cyan-400 font-bold">Sedang Mengedit:</span>
-                                                <span class="font-bold text-white" x-text="getUnitTabTitle(activeSpekUnitTab)"></span>
+                                        <!-- Info Banner Unit Aktif -->
+                                        <div class="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between gap-2 shadow-inner">
+                                            <div class="flex items-center space-x-2 truncate">
+                                                <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0 animate-pulse"></span>
+                                                <span class="font-bold text-white truncate" x-text="getUnitTabTitle(activeSpekUnitTab)"></span>
+                                                <template x-if="getUnitFullTitle(activeSpekUnitTab) && getUnitFullTitle(activeSpekUnitTab) !== getUnitTabTitle(activeSpekUnitTab)">
+                                                    <span class="text-slate-400 text-[10.5px] truncate" x-text="'(' + getUnitFullTitle(activeSpekUnitTab) + ')'"></span>
+                                                </template>
                                                 <template x-if="reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang && reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang !== '-'">
-                                                    <span class="text-slate-400 truncate" x-text="'(' + reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang + ')'"></span>
+                                                    <span class="text-slate-400 text-[10px] truncate" x-text="'• ' + reklasSpekBaruItems[activeSpekUnitTab]?.ruang_pemegang"></span>
                                                 </template>
                                             </div>
-                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0"
+                                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700/80 shrink-0 font-semibold"
                                                   x-text="'Kondisi: ' + (reklasSpekBaruItems[activeSpekUnitTab]?.kondisi || 'Baik')"></span>
                                         </div>
-                                    </div>
-                                </template>
-
-                                <!-- Form Spesifik: KIB A - Tanah -->
-                                <template x-if="reklasTujuanKib === 'KIB A'">
-                                    <div class="space-y-3">
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Tanah (m²):</label>
-                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.tanah_luas_m2" placeholder="Contoh: 1500"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status Hak Tanah:</label>
-                                                <select x-model="reklasSpekBaru.tanah_hak"
-                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                                    <option value="Hak Pakai">Hak Pakai</option>
-                                                    <option value="Hak Milik">Hak Milik</option>
-                                                    <option value="Hak Pengelolaan">Hak Pengelolaan</option>
-                                                    <option value="Hak Guna Bangunan">Hak Guna Bangunan (HGB)</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Sertifikat Tanah:</label>
-                                                <input type="text" x-model="reklasSpekBaru.tanah_sertifikat_no" placeholder="Contoh: No. 12.04.05.001..."
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tanggal Sertifikat:</label>
-                                                <input type="date" x-model="reklasSpekBaru.tanah_sertifikat_tgl"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div class="sm:col-span-2">
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Penggunaan Bidang Tanah:</label>
-                                                <input type="text" x-model="reklasSpekBaru.tanah_penggunaan" placeholder="Contoh: Gedung Instalasi Farmasi & Rawat Inap RSUD"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div class="sm:col-span-2">
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Lokasi Fisik Tanah:</label>
-                                                <input type="text" x-model="reklasSpekBaru.tanah_alamat" placeholder="Contoh: Jl. Kapten Piere Tendean No. 1 Bondowoso"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <!-- Form Spesifik: KIB B - Peralatan & Mesin -->
-                                <template x-if="reklasTujuanKib === 'KIB B'">
-                                    <div class="space-y-3">
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Merk / Pabrikan:</label>
-                                                <input type="text" x-model="reklasSpekBaru.mesin_merk" placeholder="Contoh: GE Healthcare / Philips / Honda"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tipe / Model:</label>
-                                                <input type="text" x-model="reklasSpekBaru.mesin_type" placeholder="Contoh: Brivo XR575 / Veradius"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Pabrik / Seri:</label>
-                                                <input type="text" x-model="reklasSpekBaru.mesin_no_pabrik" placeholder="Contoh: SN-88291039"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Kapasitas:</label>
-                                                <input type="text" x-model="reklasSpekBaru.mesin_ukuran_cc" placeholder="Contoh: 500 mA / 2000 VA / 150 cc"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan / Material:</label>
-                                                <input type="text" x-model="reklasSpekBaru.mesin_bahan" placeholder="Contoh: Logam, Komponen Elektronik, Kaca Optik"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Rangka / Polisi (Opsional):</label>
-                                                <input type="text" x-model="reklasSpekBaru.mesin_no_polisi" placeholder="Contoh: P 1234 AP (jika kendaraan dinas)"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <!-- Form Spesifik: KIB C - Gedung & Bangunan -->
-                                <template x-if="reklasTujuanKib === 'KIB C'">
-                                    <div class="space-y-3">
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Bertingkat:</label>
-                                                <select x-model="reklasSpekBaru.gedung_konstruksi_bertingkat"
-                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                                    <option value="Bertingkat">Bertingkat (2 Lantai atau lebih)</option>
-                                                    <option value="Tidak Bertingkat">Tidak Bertingkat (1 Lantai)</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton / Baja:</label>
-                                                <select x-model="reklasSpekBaru.gedung_konstruksi_beton"
-                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                                    <option value="Beton">Konstruksi Beton Bertulang</option>
-                                                    <option value="Baja">Konstruksi Baja</option>
-                                                    <option value="Kayu">Konstruksi Kayu</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Lantai Gedung (m²):</label>
-                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.gedung_luas_lantai_m2" placeholder="Contoh: 450.5"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status Kepemilikan Tanah Gedung:</label>
-                                                <select x-model="reklasSpekBaru.gedung_status_tanah"
-                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                                    <option value="Tanah Pemda">Tanah Milik Pemda / RSUD</option>
-                                                    <option value="Hak Pakai">Hak Pakai</option>
-                                                    <option value="Sewa">Sewa / Pinjam Pakai</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Dokumen PBG / IMB:</label>
-                                                <input type="text" x-model="reklasSpekBaru.gedung_dokumen_nomor" placeholder="Contoh: 640/IMB/DPMPTSP/2026"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tanggal Dokumen IMB:</label>
-                                                <input type="date" x-model="reklasSpekBaru.gedung_dokumen_tgl"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div class="sm:col-span-2">
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Letak Gedung di RSUD:</label>
-                                                <input type="text" x-model="reklasSpekBaru.gedung_alamat" placeholder="Contoh: Sayap Barat RSUD Dr. H. Koesnandi"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <!-- Form Spesifik: KIB D - Jalan, Jaringan & Irigasi -->
-                                <template x-if="reklasTujuanKib === 'KIB D'">
-                                    <div class="space-y-3">
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Fisik Jaringan:</label>
-                                                <input type="text" x-model="reklasSpekBaru.jaringan_konstruksi" placeholder="Contoh: Aspal Hotmix / Paving Blok / Pipa HDPE"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Jaringan (m²):</label>
-                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.jaringan_luas_m2" placeholder="Contoh: 1200"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Panjang (m/km):</label>
-                                                <input type="text" x-model="reklasSpekBaru.jaringan_panjang_km" placeholder="Contoh: 350 Meter"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Lebar (Meter):</label>
-                                                <input type="text" x-model="reklasSpekBaru.jaringan_lebar_m" placeholder="Contoh: 6 Meter"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <!-- Form Spesifik: KIB E - Aset Tetap Lainnya -->
-                                <template x-if="reklasTujuanKib === 'KIB E'">
-                                    <div class="space-y-3">
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Judul / Pencipta / Spesifikasi:</label>
-                                                <input type="text" x-model="reklasSpekBaru.lainnya_judul_pencipta" placeholder="Judul buku, lukisan, atau instrumen musik..."
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan / Asal Usul:</label>
-                                                <input type="text" x-model="reklasSpekBaru.lainnya_bahan" placeholder="Contoh: Kanvas / Perunggu / Kayu Jati"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <!-- Form Spesifik: ATB - Aset Tak Berwujud -->
-                                <template x-if="reklasTujuanKib === 'ATB'">
-                                    <div class="space-y-3">
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nama Software / Sistem Informasi:</label>
-                                                <input type="text" x-model="reklasSpekBaru.atb_nama_software" placeholder="Contoh: Modul SIMRS Radiologi & Bridging BPJS"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Vendor / Pengembang Software:</label>
-                                                <input type="text" x-model="reklasSpekBaru.atb_pengembang" placeholder="Contoh: PT Medika Teknologi Solusindo"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Estimasi Masa Manfaat (Tahun):</label>
-                                                <input type="number" min="1" max="20" x-model="reklasSpekBaru.atb_masa_manfaat" placeholder="4"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                            <div>
-                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Registrasi Lisensi / HAKI:</label>
-                                                <input type="text" x-model="reklasSpekBaru.atb_nomor_lisensi" placeholder="Contoh: LIC-SIMRS-2026-009"
-                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-
-                                <!-- Form Spesifik: KEMITRAAN - Kemitraan Pihak Ketiga (Akun 1.5.2 Sesuai Form Kemitraan Langkah 1) -->
+                                                                <!-- Form Spesifik Dokumen PKS & Selector Wujud Fisik Kemitraan Pihak Ketiga (Akun 1.5.2) -->
                                 <template x-if="reklasTujuanKib === 'KEMITRAAN'">
-                                    <div class="space-y-4 pt-1">
+                                    <div class="space-y-4 pt-1 pb-4 mb-3 border-b border-cyan-500/20">
+                                        <!-- 1. Header Informasi & Selector Wujud Fisik Aset Kemitraan -->
+                                        <div class="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-500/40 space-y-2.5 shadow-md">
+                                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm">🤝</span>
+                                                    <span class="text-xs font-extrabold text-cyan-300 uppercase tracking-wide">
+                                                        Wujud Fisik Aset Kemitraan (Akun 1.5.2)
+                                                    </span>
+                                                </div>
+                                                <span class="text-[9.5px] text-cyan-400 font-mono bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/25 self-start sm:self-auto">
+                                                    KIB Tetap Kemitraan • Spek Sesuai Fisik
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-300 leading-relaxed">
+                                                Pilih wujud fisik aset yang dikerjasamakan/disewakan agar form spesifikasi di bawah menyesuaikan data teknis barang:
+                                            </p>
+                                            
+                                            <!-- Pill Buttons Pemilih Wujud Fisik -->
+                                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 pt-1">
+                                                <button type="button" @click="reklasKemitraanTipeFisik = 'mesin'"
+                                                    class="px-2.5 py-2 rounded-xl text-xs font-bold border transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                                                    :class="getReklasKemitraanPhysicalType() === 'mesin' ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-lg shadow-cyan-500/20 font-black ring-1 ring-cyan-300' : 'bg-slate-950/80 border-slate-700/80 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900'">
+                                                    <span class="text-base">⚙️</span>
+                                                    <span class="text-[10.5px]">Peralatan & Mesin</span>
+                                                </button>
+                                                <button type="button" @click="reklasKemitraanTipeFisik = 'tanah'"
+                                                    class="px-2.5 py-2 rounded-xl text-xs font-bold border transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                                                    :class="getReklasKemitraanPhysicalType() === 'tanah' ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-lg shadow-cyan-500/20 font-black ring-1 ring-cyan-300' : 'bg-slate-950/80 border-slate-700/80 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900'">
+                                                    <span class="text-base">🌾</span>
+                                                    <span class="text-[10.5px]">Tanah</span>
+                                                </button>
+                                                <button type="button" @click="reklasKemitraanTipeFisik = 'gedung'"
+                                                    class="px-2.5 py-2 rounded-xl text-xs font-bold border transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                                                    :class="getReklasKemitraanPhysicalType() === 'gedung' ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-lg shadow-cyan-500/20 font-black ring-1 ring-cyan-300' : 'bg-slate-950/80 border-slate-700/80 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900'">
+                                                    <span class="text-base">🏢</span>
+                                                    <span class="text-[10.5px]">Gedung & Bangunan</span>
+                                                </button>
+                                                <button type="button" @click="reklasKemitraanTipeFisik = 'jaringan'"
+                                                    class="px-2.5 py-2 rounded-xl text-xs font-bold border transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                                                    :class="getReklasKemitraanPhysicalType() === 'jaringan' ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-lg shadow-cyan-500/20 font-black ring-1 ring-cyan-300' : 'bg-slate-950/80 border-slate-700/80 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900'">
+                                                    <span class="text-base">🛣️</span>
+                                                    <span class="text-[10.5px]">Jalan & Jaringan</span>
+                                                </button>
+                                                <button type="button" @click="reklasKemitraanTipeFisik = 'lainnya'"
+                                                    class="px-2.5 py-2 rounded-xl text-xs font-bold border transition-all text-center flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95"
+                                                    :class="getReklasKemitraanPhysicalType() === 'lainnya' ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-lg shadow-cyan-500/20 font-black ring-1 ring-cyan-300' : 'bg-slate-950/80 border-slate-700/80 text-slate-300 hover:border-cyan-500/50 hover:bg-slate-900'">
+                                                    <span class="text-base">📚</span>
+                                                    <span class="text-[10.5px]">Aset Tetap Lain</span>
+                                                </button>
+                                            </div>
+                                        </div>
 
-                                        <!-- 2. Nama Perusahaan Mitra / Rekanan Pihak Ketiga (Ketik Filter seperti Form 1 Kemitraan) -->
+                                        <!-- 2. Nama Perusahaan Mitra / Rekanan Pihak Ketiga -->
                                         <div class="relative" @click.away="isReklasMitraDropdownOpen = false">
                                             <div class="flex items-center justify-between mb-1">
                                                 <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider">
@@ -720,7 +567,7 @@
                                                 </button>
                                             </div>
 
-                                            <!-- Floating Dropdown Saran / Filter Mitra (Muncul saat fokus / diketik) -->
+                                            <!-- Floating Dropdown Saran / Filter Mitra -->
                                             <div x-show="isReklasMitraDropdownOpen" 
                                                 x-cloak
                                                 x-transition:enter="transition ease-out duration-100"
@@ -739,8 +586,8 @@
 
                                                 <template x-for="(mitra, mIdx) in filteredReklasMitraList" :key="mIdx">
                                                     <div @click="selectReklasMitra(mitra)"
-                                                        class="px-3.5 py-2 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
-                                                        :class="reklasSpekBaru.kemitraan_mitra === (mitra.nama || mitra) ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-200'">
+                                                         class="px-3.5 py-2 hover:bg-cyan-500/15 cursor-pointer transition-colors group flex items-center justify-between gap-3 text-left"
+                                                         :class="reklasSpekBaru.kemitraan_mitra === (mitra.nama || mitra) ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-200'">
                                                         <div class="flex items-center gap-2.5 min-w-0">
                                                             <span class="text-xs text-cyan-400/80">🤝</span>
                                                             <div class="min-w-0">
@@ -843,6 +690,234 @@
                                             </div>
                                         </div>
                                     </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB A - Tanah (Termasuk Sewa/Kemitraan Fisik Tanah) -->
+                                <template x-if="reklasTujuanKib === 'KIB A' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'tanah')">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">🌾</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Objek Tanah Kemitraan:</span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Tanah (m²):</label>
+                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.tanah_luas_m2" placeholder="Contoh: 1500"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status Hak Tanah:</label>
+                                                <select x-model="reklasSpekBaru.tanah_hak"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Hak Pakai">Hak Pakai</option>
+                                                    <option value="Hak Milik">Hak Milik</option>
+                                                    <option value="Hak Pengelolaan">Hak Pengelolaan</option>
+                                                    <option value="Hak Guna Bangunan">Hak Guna Bangunan (HGB)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Sertifikat Tanah:</label>
+                                                <input type="text" x-model="reklasSpekBaru.tanah_sertifikat_no" placeholder="Contoh: No. 12.04.05.001..."
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tanggal Sertifikat:</label>
+                                                <input type="date" x-model="reklasSpekBaru.tanah_sertifikat_tgl"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Penggunaan Bidang Tanah:</label>
+                                                <input type="text" x-model="reklasSpekBaru.tanah_penggunaan" placeholder="Contoh: Gedung Instalasi Farmasi & Rawat Inap RSUD"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Lokasi Fisik Tanah:</label>
+                                                <input type="text" x-model="reklasSpekBaru.tanah_alamat" placeholder="Contoh: Jl. Kapten Piere Tendean No. 1 Bondowoso"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB B - Peralatan & Mesin (Termasuk Sewa/Kemitraan Fisik Mesin) -->
+                                <template x-if="reklasTujuanKib === 'KIB B' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'mesin')">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">⚙️</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Peralatan & Mesin Kemitraan:</span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Merk / Pabrikan:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_merk" placeholder="Contoh: GE Healthcare / Philips / Honda"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tipe / Model:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_type" placeholder="Contoh: Brivo XR575 / Veradius"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Pabrik / Seri:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_no_pabrik" placeholder="Contoh: SN-88291039"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Ukuran / Kapasitas:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_ukuran_cc" placeholder="Contoh: 500 mA / 2000 VA / 150 cc"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan / Material:</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_bahan" placeholder="Contoh: Logam, Komponen Elektronik, Kaca Optik"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Rangka / Polisi (Opsional):</label>
+                                                <input type="text" x-model="reklasSpekBaru.mesin_no_polisi" placeholder="Contoh: P 1234 AP (jika kendaraan dinas)"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB C - Gedung & Bangunan (Termasuk Sewa/Kemitraan Fisik Gedung) -->
+                                <template x-if="reklasTujuanKib === 'KIB C' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'gedung')">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">🏢</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Gedung & Bangunan Kemitraan:</span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Bertingkat:</label>
+                                                <select x-model="reklasSpekBaru.gedung_konstruksi_bertingkat"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Bertingkat">Bertingkat (2 Lantai atau lebih)</option>
+                                                    <option value="Tidak Bertingkat">Tidak Bertingkat (1 Lantai)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Beton / Baja:</label>
+                                                <select x-model="reklasSpekBaru.gedung_konstruksi_beton"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Beton">Konstruksi Beton Bertulang</option>
+                                                    <option value="Baja">Konstruksi Baja</option>
+                                                    <option value="Kayu">Konstruksi Kayu</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Lantai Gedung (m²):</label>
+                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.gedung_luas_lantai_m2" placeholder="Contoh: 450.5"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status Kepemilikan Tanah Gedung:</label>
+                                                <select x-model="reklasSpekBaru.gedung_status_tanah"
+                                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                                    <option value="Tanah Pemda">Tanah Milik Pemda / RSUD</option>
+                                                    <option value="Hak Pakai">Hak Pakai</option>
+                                                    <option value="Sewa">Sewa / Pinjam Pakai</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Dokumen PBG / IMB:</label>
+                                                <input type="text" x-model="reklasSpekBaru.gedung_dokumen_nomor" placeholder="Contoh: 640/IMB/DPMPTSP/2026"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Tanggal Dokumen IMB:</label>
+                                                <input type="date" x-model="reklasSpekBaru.gedung_dokumen_tgl"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Alamat / Letak Gedung di RSUD:</label>
+                                                <input type="text" x-model="reklasSpekBaru.gedung_alamat" placeholder="Contoh: Sayap Barat RSUD Dr. H. Koesnandi"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB D - Jalan, Jaringan & Irigasi (Termasuk Sewa/Kemitraan Fisik Jaringan) -->
+                                <template x-if="reklasTujuanKib === 'KIB D' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'jaringan')">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">🛣️</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Jalan & Jaringan Kemitraan:</span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Konstruksi Fisik Jaringan:</label>
+                                                <input type="text" x-model="reklasSpekBaru.jaringan_konstruksi" placeholder="Contoh: Aspal Hotmix / Paving Blok / Pipa HDPE"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Luas Jaringan (m²):</label>
+                                                <input type="number" step="0.01" min="0" x-model="reklasSpekBaru.jaringan_luas_m2" placeholder="Contoh: 1200"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Panjang (m/km):</label>
+                                                <input type="text" x-model="reklasSpekBaru.jaringan_panjang_km" placeholder="Contoh: 350 Meter"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Lebar (Meter):</label>
+                                                <input type="text" x-model="reklasSpekBaru.jaringan_lebar_m" placeholder="Contoh: 6 Meter"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: KIB E - Aset Tetap Lainnya (Termasuk Sewa/Kemitraan Fisik Lainnya) -->
+                                <template x-if="reklasTujuanKib === 'KIB E' || (reklasTujuanKib === 'KEMITRAAN' && getReklasKemitraanPhysicalType() === 'lainnya')">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center space-x-1.5 pb-1" x-show="reklasTujuanKib === 'KEMITRAAN'">
+                                            <span class="text-xs">📚</span>
+                                            <span class="text-[11px] font-extrabold text-cyan-300 uppercase tracking-wider">Spesifikasi Fisik Aset Tetap Lainnya Kemitraan:</span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Judul / Pencipta / Spesifikasi:</label>
+                                                <input type="text" x-model="reklasSpekBaru.lainnya_judul_pencipta" placeholder="Judul buku, lukisan, atau instrumen musik..."
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Bahan / Asal Usul:</label>
+                                                <input type="text" x-model="reklasSpekBaru.lainnya_bahan" placeholder="Contoh: Kanvas / Perunggu / Kayu Jati"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Form Spesifik: ATB - Aset Tak Berwujud -->
+                                <template x-if="reklasTujuanKib === 'ATB'">
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nama Software / Sistem Informasi:</label>
+                                                <input type="text" x-model="reklasSpekBaru.atb_nama_software" placeholder="Contoh: Modul SIMRS Radiologi & Bridging BPJS"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Vendor / Pengembang Software:</label>
+                                                <input type="text" x-model="reklasSpekBaru.atb_pengembang" placeholder="Contoh: PT Medika Teknologi Solusindo"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Estimasi Masa Manfaat (Tahun):</label>
+                                                <input type="number" min="1" max="20" x-model="reklasSpekBaru.atb_masa_manfaat" placeholder="4"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nomor Registrasi Lisensi / HAKI:</label>
+                                                <input type="text" x-model="reklasSpekBaru.atb_nomor_lisensi" placeholder="Contoh: LIC-SIMRS-2026-009"
+                                                       class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none">
+                                            </div>
+                                        </div>
                                 </template>
 
                                 <!-- Form Spesifik: ASET LAIN - Aset Lain-Lain (1.5.4) -->

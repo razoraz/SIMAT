@@ -471,4 +471,10 @@ class Astap extends Model
 
         return 'KIB B';
     }
+
+    public function setCategoryAttribute($value): void
+    {
+        // Category adalah atribut dinamis (accessor) yang diturunkan dari jenis_astap_id dan is_extracomtable.
+        // Mutator ini mencegah Eloquent mencoba menulis kolom 'category' ke database.
+    }
 }

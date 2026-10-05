@@ -419,11 +419,8 @@
                                 <div class="text-[11px] font-mono text-emerald-400 mt-0.5">
                                     {{ $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01.002') }}
                                 </div>
-                                <div class="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-slate-400">
+                                <div class="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
                                     <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume }} {{ $row->satuan }}</strong></span>
-                                    @if($merk || $type)
-                                        <span class="text-slate-300 font-mono">{{ trim(($merk ?? '') . ' ' . ($type ?? '')) }}</span>
-                                    @endif
                                 </div>
                             </td>
 
