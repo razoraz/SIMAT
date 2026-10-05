@@ -85,7 +85,14 @@
                         <div class="flex items-center space-x-2 text-cyan-300 font-extrabold text-xs uppercase tracking-wider">
                             <span>📜 Dokumen Perjanjian Kerja Sama (PKS) &amp; Masa Konsesi</span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <a :href="'/astap/kemitraan/' + selectedAstapDetail.id + '/cetak-bast'" target="_blank"
+                               class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-cyan-600/30 to-teal-600/30 hover:from-cyan-600/50 hover:to-teal-600/50 text-cyan-200 border border-cyan-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                               title="Cetak Lembar Draf Resmi BAST Pemanfaatan Kemitraan (Format Kedinasan A4)">
+                                <span>🖨️</span>
+                                <span>Cetak Draf BAST</span>
+                            </a>
+
                             <span class="px-2.5 py-0.5 rounded-lg text-[10.5px] font-bold border"
                                   :class="{
                                       'bg-emerald-500/20 text-emerald-300 border-emerald-500/30': selectedAstapDetail.status_konsesi === 'Aktif',
@@ -107,7 +114,8 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs pt-1">
+                    <!-- 4 Kolom Rincian PKS -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs pt-1">
                         <div>
                             <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor PKS:</span>
                             <span class="font-mono text-cyan-300 font-bold text-sm block truncate" :title="selectedAstapDetail.nomor_pks" x-text="selectedAstapDetail.nomor_pks || '-'"></span>
@@ -124,35 +132,147 @@
                             <span class="text-slate-400 block text-[10px] uppercase font-bold">Masa Konsesi / Kerjasama:</span>
                             <span class="text-slate-200 font-medium block" x-text="(formatTanggalIndo(selectedAstapDetail.tanggal_mulai) || '?') + ' s.d. ' + (formatTanggalIndo(selectedAstapDetail.tanggal_selesai) || '?')"></span>
                         </div>
+                    </div>
 
-                        <template x-if="selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar">
-                            <div class="col-span-1 sm:col-span-2 md:col-span-4 p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 flex flex-wrap items-center justify-between gap-2">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs">🏛️</span>
-                                    <div>
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Objek Aset RSUD yang Disewakan / Dikerjasamakan:</span>
-                                        <span class="text-xs font-mono font-bold text-cyan-300" x-text="'NIBAR: ' + (selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar)"></span>
+                    <!-- Objek Aset NIBAR (jika ada) -->
+                    <template x-if="selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar">
+                        <div class="w-full p-2.5 rounded-xl bg-slate-900/90 border border-cyan-500/20 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs">🏛️</span>
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Objek Aset RSUD yang Disewakan / Dikerjasamakan:</span>
+                                    <span class="text-xs font-mono font-bold text-cyan-300" x-text="'NIBAR: ' + (selectedAstapDetail.objek_nibar || selectedAstapDetail.spesifikasi_json?.objek_nibar)"></span>
+                                </div>
+                            </div>
+                            <span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-semibold">
+                                Aset Terkait BMD RSUD
+                            </span>
+                        </div>
+                    </template>
+
+                    <!-- KARTU DOKUMEN BAST & KONTRAK KERJASAMA (PRATINJAU, GANTI & HAPUS) - FULL WIDTH -->
+                    <div class="w-full pt-3 border-t border-cyan-500/20" style="width: 100%;">
+                        <!-- Input File Tersembunyi untuk Ubah / Upload Dokumen BAST -->
+                        <input type="file" id="fileInputDokumenDetail" @change="handleUploadDokumenDetail" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" class="hidden">
+
+                        <div class="w-full p-3.5 sm:p-4 rounded-2xl bg-slate-950/90 border border-cyan-500/30 shadow-md">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+                                <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+                                    <!-- Thumbnail / Ikon Dokumen -->
+                                    <div class="relative shrink-0">
+                                        <template x-if="isDokumenImage(selectedAstapDetail?.dokumen_path)">
+                                            <div @click="openDokumenPreview(selectedAstapDetail.dokumen_path, selectedAstapDetail.nama_barang)"
+                                                 class="w-12 h-12 rounded-xl border border-cyan-500/40 bg-slate-900 overflow-hidden cursor-pointer group shadow-sm flex items-center justify-center relative hover:ring-2 hover:ring-cyan-400/50 transition-all">
+                                                <img :src="'/storage/' + selectedAstapDetail.dokumen_path" alt="Thumbnail BAST" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                                <div class="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/10 flex items-center justify-center transition-colors">
+                                                    <span class="text-xs">🔍</span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!isDokumenImage(selectedAstapDetail?.dokumen_path) && selectedAstapDetail?.dokumen_path">
+                                            <div class="w-12 h-12 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 flex items-center justify-center text-xl shadow-inner">
+                                                📄
+                                            </div>
+                                        </template>
+                                        <template x-if="!selectedAstapDetail?.dokumen_path">
+                                            <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 text-slate-500 flex items-center justify-center text-xl">
+                                                📁
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center flex-wrap gap-2">
+                                            <span class="text-[10px] font-black uppercase tracking-wider text-cyan-400">
+                                                Berkas Dokumen BAST / PKS Kerja Sama
+                                            </span>
+                                            <template x-if="selectedAstapDetail?.dokumen_path">
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                                                    <span>✓</span> Terlampir
+                                                </span>
+                                            </template>
+                                            <template x-if="!selectedAstapDetail?.dokumen_path">
+                                                <span class="px-2 py-0.5 rounded text-[9.5px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                                                    Belum Ada Berkas
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <div class="text-xs font-bold text-white truncate mt-1"
+                                             :title="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : ''"
+                                             x-text="selectedAstapDetail?.dokumen_path ? selectedAstapDetail.dokumen_path.split('/').pop() : 'Belum ada berkas BAST / PKS yang diunggah untuk aset kemitraan ini.'">
+                                        </div>
+                                        <div class="text-[10.5px] text-slate-400 mt-0.5">
+                                            <template x-if="selectedAstapDetail?.dokumen_path">
+                                                <span>Format: <strong class="font-mono text-cyan-300 uppercase" x-text="selectedAstapDetail.dokumen_path.split('.').pop()"></strong> · Maks. 10 MB (1 Berkas per Kemitraan)</span>
+                                            </template>
+                                            <template x-if="!selectedAstapDetail?.dokumen_path">
+                                                <span>Maksimal 1 berkas (Format: PDF, Gambar Scan JPG/PNG, atau Dokumen Word).</span>
+                                            </template>
+                                        </div>
                                     </div>
                                 </div>
-                                <span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-semibold">
-                                    Aset Terkait BMD RSUD
-                                </span>
-                            </div>
-                        </template>
 
-                        <template x-if="selectedAstapDetail.dokumen_path">
-                            <div class="col-span-1 sm:col-span-2 md:col-span-4 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                                <span class="text-slate-400 text-[10px] uppercase font-bold flex items-center gap-1.5">
-                                    <span>📄 Berkas BAST / PKS Kerja Sama:</span>
-                                    <span class="font-mono text-cyan-300 lowercase text-[11px]" x-text="selectedAstapDetail.dokumen_path.split('/').pop()"></span>
-                                </span>
-                                <a :href="'/storage/' + selectedAstapDetail.dokumen_path" target="_blank"
-                                    class="px-3 py-1 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
-                                    <span>Unduh / Buka Dokumen</span>
-                                    <span>↗</span>
-                                </a>
+                                <!-- Tombol Aksi Dokumen: Tampilkan, Ganti, Hapus -->
+                                <div class="flex items-center flex-wrap gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800/80">
+                                    <!-- Indikator Loading -->
+                                    <template x-if="isUploadingDokumen || isDeletingDokumen">
+                                        <span class="px-3 py-1.5 rounded-xl bg-cyan-950/80 text-cyan-300 text-xs font-bold border border-cyan-500/40 flex items-center gap-1.5 animate-pulse">
+                                            <svg class="animate-spin h-3.5 w-3.5 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span x-text="isUploadingDokumen ? 'Mengunggah...' : 'Menghapus...'"></span>
+                                        </span>
+                                    </template>
+
+                                    <template x-if="!isUploadingDokumen && !isDeletingDokumen && selectedAstapDetail?.dokumen_path">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <!-- 1. Tombol Tampilkan Berkas (Pratinjau) -->
+                                            <button type="button" @click="openDokumenPreview(selectedAstapDetail.dokumen_path, selectedAstapDetail.nama_barang)"
+                                                title="Tampilkan / Pratinjau Berkas BAST"
+                                                class="px-3.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                </svg>
+                                                <span>Tampilkan Berkas</span>
+                                            </button>
+
+                                            <!-- 2. Tombol Ganti Berkas -->
+                                            <button type="button" @click="triggerUploadDokumenDetail()"
+                                                title="Ganti Berkas BAST dengan Dokumen Baru"
+                                                class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                                </svg>
+                                                <span>Ganti Berkas</span>
+                                            </button>
+
+                                            <!-- 3. Tombol Hapus Berkas -->
+                                            <button type="button" @click="deleteDokumenDetail()"
+                                                title="Hapus Berkas Dokumen BAST ini"
+                                                class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                                                <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                                <span>Hapus</span>
+                                            </button>
+                                        </div>
+                                    </template>
+
+                                    <!-- Jika Belum Ada Berkas: Tombol Unggah -->
+                                    <template x-if="!isUploadingDokumen && !isDeletingDokumen && !selectedAstapDetail?.dokumen_path">
+                                        <button type="button" @click="triggerUploadDokumenDetail()"
+                                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-extrabold text-xs transition-all flex items-center gap-1.5 shadow-md shadow-cyan-500/20 active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                            </svg>
+                                            <span>Unggah Berkas BAST</span>
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
-                        </template>
+                        </div>
                     </div>
                 </div>
 
@@ -824,3 +944,69 @@
         </div>
     </div>
 </div>
+
+<!-- ========================================================================= -->
+<!-- MODAL LIGHTBOX PRATINJAU GAMBAR DOKUMEN BAST                             -->
+<!-- ========================================================================= -->
+<template x-teleport="body">
+    <div x-show="showDokumenImageModal" x-cloak @click.self="showDokumenImageModal = false"
+         class="fixed inset-0 flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+         style="background-color: rgba(2, 6, 23, 0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+
+        <div class="relative bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[92vh] my-auto"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+
+            <!-- Header Lightbox -->
+            <div class="px-5 py-3.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between gap-3">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                    <span class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-sm border border-cyan-500/30">
+                        🖼️
+                    </span>
+                    <div class="min-w-0">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400 block">
+                            Pratinjau Berkas BAST / PKS
+                        </span>
+                        <h4 class="text-xs font-extrabold text-white truncate" x-text="previewDokumenNama"></h4>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 shrink-0">
+                    <!-- Tombol Buka Penuh / Tab Baru -->
+                    <a :href="previewDokumenUrl" target="_blank"
+                       class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center gap-1 border border-slate-700">
+                        <span>Buka Penuh</span>
+                        <span>↗</span>
+                    </a>
+                    <!-- Tombol Tutup -->
+                    <button type="button" @click="showDokumenImageModal = false"
+                            class="w-7 h-7 rounded-full bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-transparent hover:border-rose-500/30 flex items-center justify-center text-sm font-bold transition-all cursor-pointer">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body Gambar Penuh -->
+            <div class="flex-1 overflow-auto p-4 flex items-center justify-center bg-slate-950/60 custom-scrollbar min-h-[300px]">
+                <img :src="previewDokumenUrl" :alt="previewDokumenNama"
+                     class="max-w-full max-h-[72vh] object-contain rounded-xl shadow-2xl border border-slate-800/80">
+            </div>
+
+            <!-- Footer Lightbox -->
+            <div class="px-5 py-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <span class="text-[11px] font-mono text-cyan-400 truncate" x-text="previewDokumenNama"></span>
+                <button type="button" @click="showDokumenImageModal = false"
+                        class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition-all cursor-pointer">
+                    Tutup Pratinjau
+                </button>
+            </div>
+        </div>
+    </div>
+</template>

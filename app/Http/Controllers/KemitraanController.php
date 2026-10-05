@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Astap;
 use App\Models\AstapRegister;
 use App\Models\AstapKemitraan;
+use App\Models\AstapReklas;
 use App\Models\JenisAstap;
 use App\Models\Unit;
 use Illuminate\Http\Request;
@@ -168,9 +169,19 @@ class KemitraanController extends Controller
 
         $dbMitraKemitraans = AstapKemitraan::getDistinctMitras();
 
+        // Ambil seluruh riwayat reklasifikasi aset BMD RSUD ke Kemitraan (1.5.2)
+        $reklasKemitraanRecords = AstapReklas::where(function ($rq) {
+            $rq->where('tujuan_kib', 'KEMITRAAN')
+               ->orWhere('tujuan_kode', 'like', '1.5.2%');
+        })
+        ->with(['astap.registers.unit', 'astap.jenisAstap', 'astap.unit'])
+        ->orderBy('tanggal_reklas', 'desc')
+        ->get();
+
         return view('pages.kemitraan.index', compact(
             'kemitraanRecords',
             'kemitraanAstaps',
+            'reklasKemitraanRecords',
             'totalNilaiKemitraan',
             'totalVolumeUnit',
             'totalAktif',
@@ -262,5 +273,91 @@ class KemitraanController extends Controller
 
         return redirect()->route('master.kemitraan')
             ->with('success', 'Data Aset Kemitraan berhasil dipindahkan ke Pusat Pemulihan Data (Recycle Bin).');
+    }
+
+    /**
+     * Cetak Draf Dokumen Resmi BAST Pemanfaatan BMD Kemitraan (Format Kedinasan A4)
+     */
+    public function cetakBast(Request $request, $id)
+    {
+        Carbon::setLocale('id');
+
+        // Cari berdasarkan ASTAP ID atau Kemitraan ID
+        $astap = Astap::with(['jenisAstap', 'registers.unit', 'kemitraan', 'unit'])->find($id);
+        if (!$astap) {
+            $kemitraan = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit'])->findOrFail($id);
+            $astap = $kemitraan->astap;
+        } else {
+            $kemitraan = $astap->kemitraan;
+        }
+
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+
+        // Objek Aset Terkait (Jika ada aset tanah RSUD yang disewakan / dimanfaatkan)
+        $objekAset = null;
+        if (!empty($spec['objek_astap_id'])) {
+            $objekAset = Astap::with(['jenisAstap', 'registers'])->find($spec['objek_astap_id']);
+        }
+
+        // Tanggal BAST & Hari
+        $tglPks = $kemitraan?->tanggal_pks ?: ($spec['tanggal_pks'] ?? ($astap->bast_dokumen_tanggal ?? now()));
+        $carbonTgl = Carbon::parse($tglPks);
+        $hariTgl = $carbonTgl->isoFormat('dddd');
+        $tglFormatted = $carbonTgl->isoFormat('D MMMM Y');
+        $tahun = $carbonTgl->format('Y');
+
+        // Pejabat Pihak Pertama (RSUD Dr. H. Koesnandi)
+        $pihakSatu = [
+            'nama'        => 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
+            'nip'         => '19771002 200604 1 006',
+            'pangkat'     => 'Pembina Tingkat I (IV/b)',
+            'jabatan'     => 'Direktur RSUD dr. H. Koesnandi Bondowoso',
+            'instansi'    => 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
+            'alamat'      => 'Jl. Kapten Piere Tendean No. 1, Bondowoso',
+        ];
+
+        // Pejabat Pihak Kedua (Mitra)
+        $pihakDua = [
+            'perusahaan'  => $kemitraan?->mitra_nama ?: ($spec['mitra_nama'] ?? 'Mitra Kerja Sama'),
+            'pimpinan'    => $kemitraan?->pimpinan_mitra ?: ($spec['mitra_pimpinan'] ?? 'Pimpinan / Direktur Rekanan'),
+            'alamat'      => $kemitraan?->alamat_mitra ?: ($spec['mitra_alamat'] ?? 'Alamat Domisili Mitra'),
+            'jabatan'     => 'Pimpinan / Kuasa Direksi',
+        ];
+
+        // Pejabat Pengurus Barang Pengguna (Saksi / Mengetahui)
+        $pengurusBarang = [
+            'nama'        => 'BUDI HARTONO, S.Sos',
+            'nip'         => '19760229 200801 1 010',
+            'jabatan'     => 'Pengurus Barang Pengguna RSUD dr. H. Koesnandi',
+        ];
+
+        // Rincian Objek Fisik (Spesifikasi Tanah KIB A atau Gedung Bangunan)
+        $tanahItems = $spec['tanah_items'] ?? [];
+        $luasTotal = (float) ($spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($objekAset?->spesifikasi_json['luas_m2'] ?? 0)));
+        $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($objekAset?->spesifikasi_json['sertifikat_no'] ?? '-'));
+        $hakTanah = $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? ($objekAset?->spesifikasi_json['hak_tanah'] ?? 'Hak Pakai'));
+
+        // Nomor Surat BAST
+        $nomorPks = $kemitraan?->nomor_pks ?: ($spec['nomor_pks'] ?? ($spec['perjanjian_nomor'] ?? ($astap->bast_dokumen_nomor ?: '000.2.3.2/BAST-KSO/430.10.7/' . $tahun)));
+        $nomorBast = '000.2.3.2/BAST-KMT/' . ($kemitraan?->id ?: $astap->id) . '/430.10.7/' . $tahun;
+
+        return view('pages.kemitraan.cetak_bast', [
+            'astap'          => $astap,
+            'kemitraan'      => $kemitraan,
+            'spec'           => $spec,
+            'objekAset'      => $objekAset,
+            'pihakSatu'      => $pihakSatu,
+            'pihakDua'       => $pihakDua,
+            'pengurusBarang' => $pengurusBarang,
+            'hariTgl'        => $hariTgl,
+            'tglFormatted'   => $tglFormatted,
+            'carbonTgl'      => $carbonTgl,
+            'nomorBast'      => $nomorBast,
+            'nomorPks'       => $nomorPks,
+            'luasTotal'      => $luasTotal,
+            'sertifikatNo'   => $sertifikatNo,
+            'hakTanah'       => $hakTanah,
+            'tanahItems'     => $tanahItems,
+        ]);
     }
 }

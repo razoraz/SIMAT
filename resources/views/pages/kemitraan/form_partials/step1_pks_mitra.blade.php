@@ -179,8 +179,21 @@
                         </template>
 
                         <template x-if="filteredObjekAsetList.length === 0">
-                            <div class="p-4 text-center text-xs text-slate-500">
-                                Tidak ada data aset BMD RSUD yang cocok dengan kata kunci pencarian.
+                            <div class="p-6 text-center text-xs space-y-2">
+                                <template x-if="dbObjekAsetList.length === 0">
+                                    <div class="space-y-1.5">
+                                        <div class="text-2xl">🏛️</div>
+                                        <div class="font-bold text-slate-200">Belum Ada Aset RSUD yang Direklasifikasi ke Kemitraan</div>
+                                        <p class="text-[11px] text-slate-400 max-w-md mx-auto leading-relaxed">
+                                            Aset tanah/gedung milik RSUD yang disewakan ke mitra harus direklasifikasi terlebih dahulu ke Akun 1.5.2 pada Menu Reklasifikasi ASTAP agar dapat dipilih di sini.
+                                        </p>
+                                    </div>
+                                </template>
+                                <template x-if="dbObjekAsetList.length > 0">
+                                    <div class="text-slate-400 py-2">
+                                        Tidak ada aset kemitraan yang cocok dengan kata kunci pencarian.
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </div>
@@ -538,21 +551,23 @@
 
 
         <!-- Nomor & Tanggal PKS -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5">
-                    Nomor Dokumen Perjanjian Kerja Sama (PKS / MoU) <span class="text-rose-400">*</span>
-                </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <div class="flex flex-col">
+                <div class="h-7 flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-200">
+                        Nomor Dokumen Perjanjian Kerja Sama (PKS / MoU) <span class="text-rose-400">*</span>
+                    </label>
+                </div>
                 <input type="text" x-model="formData.nomor_pks" required
                     placeholder="Contoh: 000.2.3.2/PKS-KSO/430.10.7/2026"
                     class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none">
             </div>
-            <div>
-                <div class="flex items-center justify-between mb-1.5">
+            <div class="flex flex-col">
+                <div class="h-7 flex items-center justify-between mb-1.5 gap-2">
                     <label class="block text-xs font-bold text-slate-200">
                         Tanggal Penandatanganan PKS <span class="text-rose-400">*</span>
                     </label>
-                    <span class="text-[10px] font-mono text-cyan-400/80 bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
+                    <span class="text-[10px] font-mono text-cyan-300 bg-cyan-950/50 px-2 py-0.5 rounded-md border border-cyan-700/50 shrink-0">Maks: Hari Ini</span>
                 </div>
                 <input type="text" 
                     x-datepicker="{ maxDate: 'today' }" 
@@ -589,15 +604,15 @@
                     </span>
                 </template>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block text-[11px] font-semibold text-slate-400">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <div class="flex flex-col">
+                    <div class="h-7 flex items-center justify-between mb-1.5 gap-2">
+                        <label class="text-[11px] font-semibold text-slate-300 truncate">
                             Tanggal Mulai Berlaku Kerjasama
                         </label>
-                        <div class="flex items-center gap-1.5 text-[9.5px] font-mono text-cyan-400/90">
-                            <span x-show="formData.tanggal_pks" class="bg-slate-800/70 px-1.5 py-0.5 rounded border border-slate-700">Min (PKS): <span x-text="formatTanggalIndo(formData.tanggal_pks)"></span></span>
-                            <span class="bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">Maks: Hari Ini</span>
+                        <div class="flex items-center gap-1.5 text-[9.5px] font-mono text-cyan-400/90 shrink-0">
+                            <span x-show="formData.tanggal_pks" class="bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/80 text-[9.5px]">Min (PKS): <span class="text-cyan-300 font-semibold" x-text="formatTanggalIndo(formData.tanggal_pks)"></span></span>
+                            <span class="bg-cyan-950/50 text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-700/50 text-[9.5px]">Maks: Hari Ini</span>
                         </div>
                     </div>
                     <input type="text" 
@@ -615,14 +630,16 @@
                         </div>
                     </template>
                 </div>
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-[11px] font-semibold text-slate-400">
+                <div class="flex flex-col">
+                    <div class="h-7 flex items-center justify-between mb-1.5 gap-2">
+                        <label class="text-[11px] font-semibold text-slate-300 truncate">
                             Tanggal Berakhir Kerjasama (Konsesi Berakhir)
                         </label>
-                        <span x-show="formData.tanggal_mulai || formData.tanggal_pks" class="text-[9.5px] font-mono text-cyan-400/90">
-                            Min: <span x-text="formatTanggalIndo(formData.tanggal_mulai || formData.tanggal_pks)"></span>
-                        </span>
+                        <div class="flex items-center gap-1.5 text-[9.5px] font-mono text-cyan-400/90 shrink-0">
+                            <span x-show="formData.tanggal_mulai || formData.tanggal_pks" class="bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/80 text-[9.5px]">
+                                Min: <span class="text-cyan-300 font-semibold" x-text="formatTanggalIndo(formData.tanggal_mulai || formData.tanggal_pks)"></span>
+                            </span>
+                        </div>
                     </div>
                     <input type="text" 
                         x-datepicker="{ minDate: formatDateToIso(formData.tanggal_mulai || formData.tanggal_pks) || undefined }" 
@@ -680,65 +697,6 @@
                     <option value="TW IV">TW IV (Oktober - Desember)</option>
                 </select>
             </div>
-        </div>
-
-        <!-- Unggah Berkas Dokumen BAST / PKS Kerja Sama (Diletakkan di antara Tahun/Triwulan dan Ruang Lingkup) -->
-        <div class="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-lg">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                        </svg>
-                        <span>Unggah Berkas Dokumen BAST / PKS Kerja Sama</span>
-                    </span>
-                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-800/40">
-                        Opsional
-                    </span>
-                </div>
-                <span class="text-[10px] text-slate-400 font-mono">Format: PDF, JPG, PNG, DOC/DOCX (Maks. 10 MB)</span>
-            </div>
-
-            <!-- Drag & Drop / Click Upload Box -->
-            <div class="p-4 rounded-2xl bg-slate-950/60 border-2 border-dashed border-slate-700 hover:border-cyan-400/60 transition-all text-center relative group">
-                <input type="file" @change="handleFileSelect" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                
-                <div class="space-y-1.5 pointer-events-none">
-                    <div class="w-10 h-10 mx-auto rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-lg shadow-inner">
-                        📁
-                    </div>
-                    <p class="text-xs font-bold text-slate-300 group-hover:text-cyan-300 transition-colors">
-                        <span x-show="!selectedFile">Klik atau seret berkas BAST / PKS Kerja Sama ke sini</span>
-                        <span x-show="selectedFile" class="text-cyan-400 font-mono" x-text="selectedFile ? ('📄 ' + selectedFile.name + ' (' + (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB)') : ''"></span>
-                    </p>
-                    <p class="text-[10.5px] text-slate-500">Maksimal 10 MB (Format: PDF, Gambar Scan, Dokumen Word)</p>
-                </div>
-            </div>
-
-            <!-- Info Berkas yang Sudah Tersimpan (Mode Edit) -->
-            <template x-if="isEditMode && formData.dokumen_path">
-                <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                    <span class="text-slate-300 truncate">📄 File Tersimpan: <strong class="text-cyan-300 font-mono" x-text="formData.dokumen_path.split('/').pop()"></strong></span>
-                    <a :href="'/storage/' + formData.dokumen_path" target="_blank" class="text-cyan-400 hover:underline font-bold text-[11px] shrink-0 ml-2 flex items-center gap-1">
-                        <span>Lihat Berkas BAST</span>
-                        <span>↗</span>
-                    </a>
-                </div>
-            </template>
-
-            <!-- Aksi Jika File Terpilih -->
-            <template x-if="selectedFile">
-                <div class="flex items-center justify-between px-1 text-[11px]">
-                    <span class="text-emerald-400 font-semibold flex items-center gap-1">
-                        <span>✓</span>
-                        <span>Berkas siap disimpan ke sistem bersama aset kemitraan</span>
-                    </span>
-                    <button type="button" @click="selectedFile = null" class="text-rose-400 hover:underline font-medium cursor-pointer">
-                        ✕ Batal / Ganti Berkas
-                    </button>
-                </div>
-            </template>
         </div>
 
         <!-- Ruang Lingkup & Keterangan Kerjasama -->

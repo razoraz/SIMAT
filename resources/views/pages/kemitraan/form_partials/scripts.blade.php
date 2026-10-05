@@ -28,6 +28,8 @@
             isPejabatDropdownOpen: false,
             isAlamatDropdownOpen: false,
             selectedFile: null,
+            selectedFilePreview: null,
+            isImageFile: false,
 
             handleFileSelect(event) {
                 const file = event.target.files && event.target.files[0];
@@ -38,7 +40,36 @@
                     event.target.value = '';
                     return;
                 }
+
+                if (this.selectedFilePreview) {
+                    URL.revokeObjectURL(this.selectedFilePreview);
+                }
+
                 this.selectedFile = file;
+                const ext = file.name.split('.').pop().toLowerCase();
+                this.isImageFile = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext);
+
+                if (this.isImageFile) {
+                    this.selectedFilePreview = URL.createObjectURL(file);
+                } else {
+                    this.selectedFilePreview = null;
+                }
+            },
+
+            removeSelectedFile() {
+                if (this.selectedFilePreview) {
+                    URL.revokeObjectURL(this.selectedFilePreview);
+                }
+                this.selectedFile = null;
+                this.selectedFilePreview = null;
+                this.isImageFile = false;
+                const input = document.getElementById('inputDokumenBastForm');
+                if (input) input.value = '';
+            },
+
+            triggerFormFileSelect() {
+                const input = document.getElementById('inputDokumenBastForm');
+                if (input) input.click();
             },
 
             // Daftar PPK dari riwayat kemitraan (object: {nama, nip})
@@ -288,12 +319,24 @@
                 return Number(val).toLocaleString('id-ID');
             },
 
+            cleanDateString(val) {
+                if (!val) return '';
+                val = String(val).trim();
+                if (val.includes('T')) {
+                    val = val.split('T')[0];
+                }
+                return val;
+            },
+
             formatTanggalIndo(val) {
                 if (!val) return '';
                 val = String(val).trim();
-                if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-                    const parts = val.split('-');
-                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                if (val.includes('T')) {
+                    val = val.split('T')[0];
+                }
+                if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/.test(val)) {
+                    const parts = val.split(/[\/\-]/);
+                    return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
                 }
                 return val;
             },
@@ -910,10 +953,10 @@
                 this.formData.mitra_pimpinan = kemitraan.mitra_pimpinan || spec.mitra_pimpinan || '';
                 this.formData.mitra_alamat = kemitraan.mitra_alamat || spec.mitra_alamat || '';
                 this.formData.nomor_pks = kemitraan.nomor_pks || d.bast_dokumen_nomor || spec.nomor_pks || '';
-                this.formData.tanggal_pks = kemitraan.tanggal_pks || d.bast_dokumen_tanggal || spec.tanggal_pks || '';
+                this.formData.tanggal_pks = this.cleanDateString(kemitraan.tanggal_pks || d.bast_dokumen_tanggal || spec.tanggal_pks || '');
                 this.formData.skema_kemitraan = kemitraan.skema_kemitraan || spec.skema_kemitraan || 'Sewa';
-                this.formData.tanggal_mulai = kemitraan.tanggal_mulai || spec.tanggal_mulai || '';
-                this.formData.tanggal_selesai = kemitraan.tanggal_selesai || spec.tanggal_selesai || '';
+                this.formData.tanggal_mulai = this.cleanDateString(kemitraan.tanggal_mulai || spec.tanggal_mulai || '');
+                this.formData.tanggal_selesai = this.cleanDateString(kemitraan.tanggal_selesai || spec.tanggal_selesai || '');
                 this.formData.tahun_perolehan = d.tahun_perolehan || kemitraan.tahun || {{ date('Y') }};
                 this.formData.triwulan = d.triwulan || kemitraan.triwulan || 'TW I';
                 this.formData.kemitraan_keterangan = d.keterangan_tambahan || kemitraan.keterangan || spec.keterangan || '';
@@ -2046,6 +2089,11 @@
                         this.setStepError(1, msg);
                         return false;
                     }
+                    // Sanitasi format tanggal sebelum validasi
+                    if (this.formData.tanggal_pks) this.formData.tanggal_pks = this.cleanDateString(this.formData.tanggal_pks);
+                    if (this.formData.tanggal_mulai) this.formData.tanggal_mulai = this.cleanDateString(this.formData.tanggal_mulai);
+                    if (this.formData.tanggal_selesai) this.formData.tanggal_selesai = this.cleanDateString(this.formData.tanggal_selesai);
+
                     if (!this.formData.tanggal_pks) {
                         const msg = 'Mohon isi tanggal penandatanganan PKS.';
                         this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
@@ -2053,8 +2101,14 @@
                         return false;
                     }
                     const tPks = this.parseDateToTimestamp(this.formData.tanggal_pks);
+                    if (!tPks || tPks <= 0) {
+                        const msg = 'Format tanggal penandatanganan PKS tidak valid.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        return false;
+                    }
                     const today = this.getTodayTimestamp();
-                    if (tPks > 0 && tPks > today) {
+                    if (tPks > today) {
                         const msg = 'Tanggal penandatanganan PKS tidak boleh melebihi tanggal hari ini.';
                         this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
                         this.setStepError(1, msg);
@@ -2066,21 +2120,7 @@
                         this.setStepError(1, msg);
                         return false;
                     }
-                    if (this.formData.tanggal_mulai) {
-                        const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
-                        if (tMulai > 0 && tMulai > today) {
-                            const msg = 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.';
-                            this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
-                            this.setStepError(1, msg);
-                            return false;
-                        }
-                        if (tPks > 0 && tMulai > 0 && tMulai < tPks) {
-                            const msg = 'Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.';
-                            this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
-                            this.setStepError(1, msg);
-                            return false;
-                        }
-                    }
+                    // Validasi tanggal mulai & selesai (fleksibel untuk masa depan dan berlaku surut)
                     if (this.formData.tanggal_mulai && this.formData.tanggal_selesai) {
                         const tMulai = this.parseDateToTimestamp(this.formData.tanggal_mulai);
                         const tSelesai = this.parseDateToTimestamp(this.formData.tanggal_selesai);
@@ -2472,6 +2512,11 @@
                         lainnya_items: this.formData.lainnya_items
                     };
                 }
+
+                // Bersihkan string tanggal sebelum dikirim ke backend
+                if (this.formData.tanggal_pks) this.formData.tanggal_pks = this.cleanDateString(this.formData.tanggal_pks);
+                if (this.formData.tanggal_mulai) this.formData.tanggal_mulai = this.cleanDateString(this.formData.tanggal_mulai);
+                if (this.formData.tanggal_selesai) this.formData.tanggal_selesai = this.cleanDateString(this.formData.tanggal_selesai);
 
                 this.formData.spesifikasi_json = specJson;
                 this.isSubmitting = true;

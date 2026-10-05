@@ -8,7 +8,8 @@
      x-transition:leave="transition ease-in duration-200 transform opacity-100 translate-y-0 scale-100"
      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
      x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-     class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3"
+     class="fixed bottom-6 right-6 max-w-sm w-full bg-slate-900/95 border rounded-2xl p-4 shadow-2xl backdrop-blur-md flex items-center justify-between space-x-3"
+     style="z-index: 999999 !important;"
      :class="{
          'border-emerald-500/40 text-emerald-300': toast.type === 'success',
          'border-rose-500/40 text-rose-300': toast.type === 'error',

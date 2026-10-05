@@ -9569,29 +9569,64 @@
                 reklasKemitraanTipeFisik: 'mesin', // 'tanah' | 'mesin' | 'gedung' | 'jaringan' | 'lainnya'
 
                 getReklasKemitraanPhysicalType() {
-                    if (this.reklasKemitraanTipeFisik) return this.reklasKemitraanTipeFisik;
                     return this.detectKemitraanPhysicalType();
                 },
 
                 detectKemitraanPhysicalType(item) {
                     const it = item || this.selectedAstapReklas;
-                    const kode = this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || (it?.kode_barang || '');
-                    const nama = ((this.reklasSubSubRincianNama || '') + ' ' + (this.reklasSubRincianNama || '') + ' ' + (it?.nama_barang || '')).toLowerCase();
 
-                    if (kode) {
-                        if (kode.endsWith('.001') || kode.endsWith('.01') || kode.includes('.01.01.001') || kode.startsWith('1.3.1')) return 'tanah';
-                        if (kode.endsWith('.002') || kode.endsWith('.02') || kode.includes('.01.01.002') || kode.startsWith('1.3.2')) return 'mesin';
-                        if (kode.endsWith('.003') || kode.endsWith('.03') || kode.includes('.01.01.003') || kode.startsWith('1.3.3')) return 'gedung';
-                        if (kode.endsWith('.004') || kode.endsWith('.04') || kode.includes('.01.01.004') || kode.startsWith('1.3.4')) return 'jaringan';
-                        if (kode.endsWith('.005') || kode.endsWith('.05') || kode.includes('.01.01.005') || kode.startsWith('1.3.5')) return 'lainnya';
+                    // 1. PRIORITAS UTAMA: Lihat Gambar 3 (SUB-SUB 108 / IDENTITAS BARANG yang dipilih)
+                    const subSubKd = this.reklasSubSubRincianKode || '';
+                    const subSubNm = (this.reklasSubSubRincianNama || '').toLowerCase();
+                    if (subSubKd) {
+                        if (subSubKd.endsWith('.001') || subSubKd.endsWith('.01') || subSubKd.includes('.01.01.001')) return 'tanah';
+                        if (subSubKd.endsWith('.002') || subSubKd.endsWith('.02') || subSubKd.includes('.01.01.002')) return 'mesin';
+                        if (subSubKd.endsWith('.003') || subSubKd.endsWith('.03') || subSubKd.includes('.01.01.003')) return 'gedung';
+                        if (subSubKd.endsWith('.004') || subSubKd.endsWith('.04') || subSubKd.includes('.01.01.004')) return 'jaringan';
+                        if (subSubKd.endsWith('.005') || subSubKd.endsWith('.05') || subSubKd.includes('.01.01.005')) return 'lainnya';
+                    }
+                    if (subSubNm) {
+                        if (subSubNm.includes('tanah') || subSubNm.includes('lahan')) return 'tanah';
+                        if (subSubNm.includes('gedung') || subSubNm.includes('bangunan')) return 'gedung';
+                        if (subSubNm.includes('jalan') || subSubNm.includes('jaringan') || subSubNm.includes('irigasi') || subSubNm.includes('pipa')) return 'jaringan';
+                        if (subSubNm.includes('peralatan') || subSubNm.includes('mesin') || subSubNm.includes('alat') || subSubNm.includes('kendaraan') || subSubNm.includes('alkes')) return 'mesin';
+                        if (subSubNm.includes('lainnya') || subSubNm.includes('buku') || subSubNm.includes('seni')) return 'lainnya';
                     }
 
-                    if (nama.includes('tanah') || nama.includes('lahan') || nama.includes('kavling')) return 'tanah';
-                    if (nama.includes('gedung') || nama.includes('bangunan') || nama.includes('ruang') || nama.includes('paviliun') || nama.includes('rumah')) return 'gedung';
-                    if (nama.includes('jalan') || nama.includes('irigasi') || nama.includes('jaringan') || nama.includes('pipa') || nama.includes('saluran') || nama.includes('kabel')) return 'jaringan';
-                    if (nama.includes('lainnya') || nama.includes('buku') || nama.includes('seni') || nama.includes('hewan') || nama.includes('tanaman')) return 'lainnya';
-                    if (nama.includes('mesin') || nama.includes('alat') || nama.includes('kendaraan') || nama.includes('peralatan') || nama.includes('alkes')) return 'mesin';
+                    // 2. PRIORITAS KEDUA: Lihat Sub-Rincian 108 (Nomor 2)
+                    const subNm = (this.reklasSubRincianNama || '').toLowerCase();
+                    const subKd = this.reklasSubRincianKode || '';
+                    if (subKd) {
+                        if (subKd.endsWith('.01') || subKd.includes('.01.01')) {
+                            // Sub-rincian sewa tanah vs sewa peralatan vs gedung
+                            if (subNm.includes('tanah')) return 'tanah';
+                            if (subNm.includes('gedung') || subNm.includes('bangunan')) return 'gedung';
+                            if (subNm.includes('jalan') || subNm.includes('jaringan')) return 'jaringan';
+                            if (subNm.includes('peralatan') || subNm.includes('mesin')) return 'mesin';
+                        }
+                    }
+                    if (subNm.includes('tanah')) return 'tanah';
+                    if (subNm.includes('gedung') || subNm.includes('bangunan')) return 'gedung';
+                    if (subNm.includes('jalan') || subNm.includes('jaringan')) return 'jaringan';
+                    if (subNm.includes('peralatan') || subNm.includes('mesin')) return 'mesin';
 
+                    // 3. PRIORITAS KETIGA: Lihat Data Aset Asal (Nama Barang / Kode Asal)
+                    const asalNama = (it?.nama_barang || '').toLowerCase();
+                    const asalKode = (it?.kode_barang || it?.jenis_aset_kode || '');
+
+                    if (asalKode.startsWith('1.3.1') || asalKode.endsWith('.001')) return 'tanah';
+                    if (asalKode.startsWith('1.3.3') || asalKode.endsWith('.003')) return 'gedung';
+                    if (asalKode.startsWith('1.3.4') || asalKode.endsWith('.004')) return 'jaringan';
+                    if (asalKode.startsWith('1.3.5') || asalKode.endsWith('.005')) return 'lainnya';
+                    if (asalKode.startsWith('1.3.2') || asalKode.endsWith('.002')) return 'mesin';
+
+                    if (asalNama.includes('tanah') || asalNama.includes('lahan') || asalNama.includes('kavling')) return 'tanah';
+                    if (asalNama.includes('gedung') || asalNama.includes('bangunan') || asalNama.includes('ruang') || asalNama.includes('paviliun') || asalNama.includes('rumah')) return 'gedung';
+                    if (asalNama.includes('jalan') || asalNama.includes('irigasi') || asalNama.includes('jaringan') || asalNama.includes('pipa') || asalNama.includes('saluran') || asalNama.includes('kabel')) return 'jaringan';
+                    if (asalNama.includes('lainnya') || asalNama.includes('buku') || asalNama.includes('seni') || asalNama.includes('hewan') || asalNama.includes('tanaman')) return 'lainnya';
+                    if (asalNama.includes('mesin') || asalNama.includes('alat') || asalNama.includes('kendaraan') || asalNama.includes('peralatan') || asalNama.includes('alkes')) return 'mesin';
+
+                    // 4. PRIORITAS KEEMPAT: Spesifikasi JSON lama jika ada
                     if (it) {
                         let spec = it.spesifikasi_json;
                         if (typeof spec === 'string') { try { spec = JSON.parse(spec); } catch(e){} }
@@ -9606,6 +9641,7 @@
                             if (spec.merk || spec.type || spec.no_pabrik) return 'mesin';
                         }
                     }
+
                     return 'mesin';
                 },
 
@@ -9839,12 +9875,14 @@
 
                 openReklas(item) {
                     this.selectedAstapReklas = item;
+                    const kode = item.kode_barang || item.jenis_aset_kode || item.kode_rekening || '';
                     const isExtracomNow = this.isCurrentAstapExtracom();
                     const cat = (typeof this.getEffectiveKibCategory === 'function')
                         ? this.getEffectiveKibCategory(item)
                         : (typeof resolveItemCategory === 'function' ? resolveItemCategory(item) : (item.category || ''));
-                    const kode = item.kode_barang || item.jenis_aset_kode || '';
-                    const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || kode.startsWith('1.5.2') || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
+                    const namaBarang = (item.nama_barang || '').toLowerCase();
+                    const isKemitraanOrSewa = (cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || kode.startsWith('1.4') || namaBarang.includes('kemitraan') || namaBarang.startsWith('sewa '));
+                    const isNonExtracom = (kode.startsWith('1.3.1') || kode.startsWith('1.3.3') || kode.startsWith('1.3.4') || kode.startsWith('1.3.6') || kode.startsWith('1.5.3') || isKemitraanOrSewa || cat === 'KIB A' || cat === 'KIB C' || cat === 'KIB D' || cat === 'KIB F' || cat === 'ATB' || cat === 'KEMITRAAN');
 
                     if (isExtracomNow) {
                         // Kebalikan: dari Ekstrakomptabel dikapitalisasi ke Intrakomptabel
@@ -9854,7 +9892,7 @@
                         // Proyek KDP selesai -> Kapitalisasi ke KIB C / D Definitif
                         this.reklasJenis = 'kdp';
                         this.reklasTujuanKib = 'KIB C';
-                    } else if (cat === 'KEMITRAAN' || kode.startsWith('1.5.2')) {
+                    } else if (isKemitraanOrSewa) {
                         this.reklasJenis = 'pindah_kib';
                         this.reklasTujuanKib = 'KEMITRAAN';
                         this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
@@ -10029,7 +10067,7 @@
                     }
                     this.reklasNomorBa = docs.length > 0 ? docs.join(' | ') : '';
                     if (this.reklasJenis === 'pindah_kib') {
-                        if (cat === 'KEMITRAAN' || kode.startsWith('1.5.2')) {
+                        if (isKemitraanOrSewa) {
                             this.reklasTujuanKib = 'KEMITRAAN';
                             this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(item);
                         } else {
@@ -10065,9 +10103,14 @@
                         ? this.getEffectiveKibCategory(it)
                         : (typeof resolveItemCategory === 'function' ? resolveItemCategory(it) : (it.category || 'KIB B'));
                     const kode = it.kode_barang || it.jenis_aset_kode || '';
+                    const namaBarang = (it.nama_barang || '').toLowerCase();
+                    const isKemitraanOrSewa = (cat === 'KEMITRAAN' || kode.startsWith('1.5.2') || kode.startsWith('1.4') || namaBarang.includes('kemitraan') || namaBarang.startsWith('sewa '));
 
                     if (this.reklasJenis === 'pindah_kib') {
-                        if (!this.reklasTujuanKib) {
+                        if (isKemitraanOrSewa) {
+                            this.reklasTujuanKib = 'KEMITRAAN';
+                            this.reklasKemitraanTipeFisik = this.detectKemitraanPhysicalType(it);
+                        } else if (!this.reklasTujuanKib || this.reklasTujuanKib === 'EKSTRAKOMPTABEL') {
                             this.reklasTujuanKib = (cat && cat !== 'EXTRACOM') ? cat : 'KIB B';
                         }
                     } else if (this.reklasJenis === 'intracom') {
@@ -10801,6 +10844,25 @@
                         }
                     }
 
+                    // Validasi form Kemitraan Pihak Ketiga (Wajib ada Nama Mitra, Nomor Dokumen PKS, dan Tanggal PKS)
+                    if (this.reklasTujuanKib === 'KEMITRAAN') {
+                        const mitraNama = (this.reklasSpekBaru?.kemitraan_mitra || '').trim();
+                        if (!mitraNama) {
+                            this.showToast('Nama Perusahaan Mitra / Rekanan wajib diisi!', 'warning');
+                            return;
+                        }
+                        const pksNo = (this.reklasSpekBaru?.kemitraan_perjanjian_no || '').trim();
+                        if (!pksNo) {
+                            this.showToast('Nomor Dokumen Perjanjian (PKS / MoU) wajib diisi!', 'warning');
+                            return;
+                        }
+                        const pksTgl = (this.reklasSpekBaru?.kemitraan_tanggal_pks || '').trim();
+                        if (!pksTgl) {
+                            this.showToast('Tanggal Penandatanganan PKS wajib dipilih!', 'warning');
+                            return;
+                        }
+                    }
+
                     this.syncCurrentSpekToActiveItem();
                     this.isSubmittingReklas = true;
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
@@ -10839,9 +10901,14 @@
                             targetKib = asalKib;
                         }
 
+                        let rawNilai = it.jumlah_realisasi_raw ?? it.total_realisasi_num ?? it.total_realisasi ?? it.harga_satuan ?? 0;
+                        if (typeof rawNilai === 'string') {
+                            rawNilai = parseFloat(rawNilai.replace(/[^0-9.-]/g, '')) || 0;
+                        }
+
                         let nilaiReklas = (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom') 
                             ? this.getReklasExtracomTotal()
-                            : (this.reklasJenis === 'koreksi_nilai' ? (parseFloat(this.reklasNominalKoreksi) || 0) : parseFloat(it.jumlah_realisasi_raw || it.total_realisasi_num || it.total_realisasi || it.harga_satuan || 0));
+                            : (this.reklasJenis === 'koreksi_nilai' ? (parseFloat(this.reklasNominalKoreksi) || 0) : rawNilai);
 
                         const targetKode = (this.reklasSubSubRincianKode || this.reklasSubRincianKode || this.reklasTujuanKode || '').trim() || null;
                         const targetNama = (this.reklasSubSubRincianNama || this.reklasSubRincianNama || this.reklasTujuanNama || '').trim() || null;
@@ -10884,6 +10951,16 @@
 
                         const resJson = await res.json();
 
+                        if (!res.ok || !resJson.success) {
+                            let errMsg = resJson.message || 'Gagal mencatat reklasifikasi.';
+                            if (resJson.errors && typeof resJson.errors === 'object') {
+                                const firstErr = Object.values(resJson.errors).flat()[0];
+                                if (firstErr) errMsg = firstErr;
+                            }
+                            this.showToast(errMsg, 'error');
+                            return;
+                        }
+
                         if (resJson.success) {
                             it.is_reklas = true;
                             it.jenis_reklas = jenisReklasDb;
@@ -10919,7 +10996,14 @@
                                 }
                             }
 
-                            this.showToast(resJson.message || 'Reklasifikasi aset berhasil dicatat!', 'success');
+                            if (resJson.cetak_bast_url) {
+                                this.showToast('Reklasifikasi ke Kemitraan berhasil! Draf resmi BAST dibuka di tab baru.', 'success');
+                                setTimeout(() => {
+                                    window.open(resJson.cetak_bast_url, '_blank');
+                                }, 700);
+                            } else {
+                                this.showToast(resJson.message || 'Reklasifikasi aset berhasil dicatat!', 'success');
+                            }
                             this.showReklasModal = false;
                         } else {
                             this.showToast(resJson.message || 'Gagal mencatat reklasifikasi.', 'error');

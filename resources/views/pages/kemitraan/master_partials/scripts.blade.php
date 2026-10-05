@@ -505,6 +505,124 @@
                 this.showDetailModal = true;
             },
 
+            // ─── Fitur Dokumen BAST & Berkas Kerjasama (Modal Detail) ───────────
+            showDokumenImageModal: false,
+            previewDokumenUrl: '',
+            previewDokumenNama: '',
+            isUploadingDokumen: false,
+            isDeletingDokumen: false,
+
+            // Cek apakah berkas merupakan format gambar
+            isDokumenImage(path) {
+                if (!path) return false;
+                const ext = String(path).split('.').pop().toLowerCase();
+                return ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'].includes(ext);
+            },
+
+            // Buka Pratinjau Dokumen BAST (Gambar via Lightbox, PDF di Tab Baru)
+            openDokumenPreview(path, nama) {
+                if (!path) return;
+                const url = path.startsWith('http') || path.startsWith('/') ? path : ('/storage/' + path);
+                if (this.isDokumenImage(path)) {
+                    this.previewDokumenUrl = url;
+                    this.previewDokumenNama = nama || (path.split('/').pop() || 'Pratinjau Berkas BAST');
+                    this.showDokumenImageModal = true;
+                } else {
+                    window.open(url, '_blank');
+                }
+            },
+
+            // Memicu dialog upload file BAST dari detail
+            triggerUploadDokumenDetail() {
+                const input = document.getElementById('fileInputDokumenDetail');
+                if (input) input.click();
+            },
+
+            // Upload atau Ubah Dokumen BAST dari Modal Detail
+            async handleUploadDokumenDetail(event) {
+                const file = event.target.files && event.target.files[0];
+                if (!file) return;
+
+                if (file.size > 10 * 1024 * 1024) {
+                    this.showToast('Gagal Mengunggah', 'Ukuran berkas melebihi batas maksimal 10 MB.', 'danger');
+                    event.target.value = '';
+                    return;
+                }
+
+                const astapId = this.selectedAstapDetail?.id;
+                if (!astapId) {
+                    this.showToast('Error', 'ID aset tidak ditemukan.', 'danger');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('dokumen_file', file);
+                formData.append('_token', '{{ csrf_token() }}');
+
+                this.isUploadingDokumen = true;
+                try {
+                    const res = await fetch(`/astap/kemitraan/${astapId}/upload-dokumen`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                        this.selectedAstapDetail.dokumen_path = json.dokumen_path;
+                        if (this.selectedAstapDetail.kemitraan) {
+                            this.selectedAstapDetail.kemitraan.dokumen_path = json.dokumen_path;
+                        }
+                        this.showToast('Berhasil', json.message || 'Berkas BAST berhasil diperbarui.', 'success');
+                    } else {
+                        this.showToast('Gagal', json.message || 'Terjadi kesalahan saat mengunggah berkas.', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Error', 'Gagal menghubungi server.', 'danger');
+                } finally {
+                    this.isUploadingDokumen = false;
+                    event.target.value = '';
+                }
+            },
+
+            // Hapus Berkas Dokumen BAST dari Modal Detail
+            async deleteDokumenDetail() {
+                const astapId = this.selectedAstapDetail?.id;
+                if (!astapId) return;
+
+                if (!confirm('Apakah Anda yakin ingin menghapus berkas dokumen BAST ini dari sistem?')) {
+                    return;
+                }
+
+                this.isDeletingDokumen = true;
+                try {
+                    const res = await fetch(`/astap/kemitraan/${astapId}/delete-dokumen`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                    const json = await res.json();
+                    if (json.success) {
+                        this.selectedAstapDetail.dokumen_path = null;
+                        if (this.selectedAstapDetail.kemitraan) {
+                            this.selectedAstapDetail.kemitraan.dokumen_path = null;
+                        }
+                        this.showToast('Berhasil', json.message || 'Berkas BAST berhasil dihapus.', 'success');
+                    } else {
+                        this.showToast('Gagal', json.message || 'Gagal menghapus berkas.', 'danger');
+                    }
+                } catch (e) {
+                    this.showToast('Error', 'Gagal menghubungi server.', 'danger');
+                } finally {
+                    this.isDeletingDokumen = false;
+                }
+            },
+
             // Hitung statistik kondisi aset terdaftar (Standar 3 Kondisi: Baik, Kurang Baik, Rusak Berat)
             getKondisiStats(item) {
                 if (!item) return { total: 0, baik: 0, kurang_baik: 0, rusak_berat: 0, pct_baik: 100, pct_kb: 0, pct_rb: 0, kondisi_dominan: 'Baik', is_multi: false, text: 'Baik (100%)', badge_class: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', dot_class: 'bg-emerald-400' };
@@ -1514,6 +1632,84 @@
                 if (it.bast_dokumen_nomor) return 'PKS: ' + it.bast_dokumen_nomor;
                 if (this.reklasNomorBa) return this.reklasNomorBa;
                 return 'Dokumen Perjanjian Kemitraan';
+            },
+
+            reklasKemitraanTipeFisik: 'mesin',
+
+            getReklasKemitraanPhysicalType() {
+                return this.detectKemitraanPhysicalType();
+            },
+
+            detectKemitraanPhysicalType(item) {
+                const it = item || this.selectedAstapReklas;
+
+                // 1. PRIORITAS UTAMA: Lihat Gambar 3 (SUB-SUB 108 / IDENTITAS BARANG yang dipilih)
+                const subSubKd = this.reklasSubSubRincianKode || '';
+                const subSubNm = (this.reklasSubSubRincianNama || '').toLowerCase();
+                if (subSubKd) {
+                    if (subSubKd.endsWith('.001') || subSubKd.endsWith('.01') || subSubKd.includes('.01.01.001')) return 'tanah';
+                    if (subSubKd.endsWith('.002') || subSubKd.endsWith('.02') || subSubKd.includes('.01.01.002')) return 'mesin';
+                    if (subSubKd.endsWith('.003') || subSubKd.endsWith('.03') || subSubKd.includes('.01.01.003')) return 'gedung';
+                    if (subSubKd.endsWith('.004') || subSubKd.endsWith('.04') || subSubKd.includes('.01.01.004')) return 'jaringan';
+                    if (subSubKd.endsWith('.005') || subSubKd.endsWith('.05') || subSubKd.includes('.01.01.005')) return 'lainnya';
+                }
+                if (subSubNm) {
+                    if (subSubNm.includes('tanah') || subSubNm.includes('lahan')) return 'tanah';
+                    if (subSubNm.includes('gedung') || subSubNm.includes('bangunan')) return 'gedung';
+                    if (subSubNm.includes('jalan') || subSubNm.includes('jaringan') || subSubNm.includes('irigasi') || subSubNm.includes('pipa')) return 'jaringan';
+                    if (subSubNm.includes('peralatan') || subSubNm.includes('mesin') || subSubNm.includes('alat') || subSubNm.includes('kendaraan') || subSubNm.includes('alkes')) return 'mesin';
+                    if (subSubNm.includes('lainnya') || subSubNm.includes('buku') || subSubNm.includes('seni')) return 'lainnya';
+                }
+
+                // 2. PRIORITAS KEDUA: Lihat Sub-Rincian 108 (Nomor 2)
+                const subNm = (this.reklasSubRincianNama || '').toLowerCase();
+                const subKd = this.reklasSubRincianKode || '';
+                if (subKd) {
+                    if (subKd.endsWith('.01') || subKd.includes('.01.01')) {
+                        if (subNm.includes('tanah')) return 'tanah';
+                        if (subNm.includes('gedung') || subNm.includes('bangunan')) return 'gedung';
+                        if (subNm.includes('jalan') || subNm.includes('jaringan')) return 'jaringan';
+                        if (subNm.includes('peralatan') || subNm.includes('mesin')) return 'mesin';
+                    }
+                }
+                if (subNm.includes('tanah')) return 'tanah';
+                if (subNm.includes('gedung') || subNm.includes('bangunan')) return 'gedung';
+                if (subNm.includes('jalan') || subNm.includes('jaringan')) return 'jaringan';
+                if (subNm.includes('peralatan') || subNm.includes('mesin')) return 'mesin';
+
+                // 3. PRIORITAS KETIGA: Lihat Data Aset Asal (Nama Barang / Kode Asal)
+                const asalNama = (it?.nama_barang || '').toLowerCase();
+                const asalKode = (it?.kode_barang || it?.jenis_aset_kode || '');
+
+                if (asalKode.startsWith('1.3.1') || asalKode.endsWith('.001')) return 'tanah';
+                if (asalKode.startsWith('1.3.3') || asalKode.endsWith('.003')) return 'gedung';
+                if (asalKode.startsWith('1.3.4') || asalKode.endsWith('.004')) return 'jaringan';
+                if (asalKode.startsWith('1.3.5') || asalKode.endsWith('.005')) return 'lainnya';
+                if (asalKode.startsWith('1.3.2') || asalKode.endsWith('.002')) return 'mesin';
+
+                if (asalNama.includes('tanah') || asalNama.includes('lahan') || asalNama.includes('kavling')) return 'tanah';
+                if (asalNama.includes('gedung') || asalNama.includes('bangunan') || asalNama.includes('ruang') || asalNama.includes('paviliun') || asalNama.includes('rumah')) return 'gedung';
+                if (asalNama.includes('jalan') || asalNama.includes('irigasi') || asalNama.includes('jaringan') || asalNama.includes('pipa') || asalNama.includes('saluran') || asalNama.includes('kabel')) return 'jaringan';
+                if (asalNama.includes('lainnya') || asalNama.includes('buku') || asalNama.includes('seni') || asalNama.includes('hewan') || asalNama.includes('tanaman')) return 'lainnya';
+                if (asalNama.includes('mesin') || asalNama.includes('alat') || asalNama.includes('kendaraan') || asalNama.includes('peralatan') || asalNama.includes('alkes')) return 'mesin';
+
+                // 4. PRIORITAS KEEMPAT: Spesifikasi JSON lama jika ada
+                if (it) {
+                    let spec = it.spesifikasi_json;
+                    if (typeof spec === 'string') { try { spec = JSON.parse(spec); } catch(e){} }
+                    if (spec && typeof spec === 'object') {
+                        if (Array.isArray(spec.tanah_items) && spec.tanah_items.length > 0) return 'tanah';
+                        if (Array.isArray(spec.gedung_items) && spec.gedung_items.length > 0) return 'gedung';
+                        if (Array.isArray(spec.jaringan_items) && spec.jaringan_items.length > 0) return 'jaringan';
+                        if (Array.isArray(spec.lainnya_items) && spec.lainnya_items.length > 0) return 'lainnya';
+                        if (Array.isArray(spec.mesin_items) && spec.mesin_items.length > 0) return 'mesin';
+                        if (spec.luas_m2 || spec.hak_tanah || spec.sertifikat_no) return 'tanah';
+                        if (spec.konstruksi_bertingkat || spec.luas_lantai_m2) return 'gedung';
+                        if (spec.merk || spec.type || spec.no_pabrik) return 'mesin';
+                    }
+                }
+
+                return 'mesin';
             },
 
             get reklasTargetJenisKode() {

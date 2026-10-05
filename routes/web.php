@@ -1438,21 +1438,36 @@ Route::middleware('auth')->group(function () {
                     ->get()
                     ->keyBy('objek_register_id');
 
+                // Kumpulkan riwayat reklasifikasi ke Kemitraan (1.5.2) beserta KIB asalnya
+                $reklasKemitraans = \App\Models\AstapReklas::where(function($rq) {
+                        $rq->where('tujuan_kib', 'KEMITRAAN')
+                           ->orWhere('tujuan_kode', 'like', '1.5.2%');
+                    })
+                    ->orderBy('tanggal_reklas', 'desc')
+                    ->get()
+                    ->keyBy('astap_id');
+
+                $reklasKemitraanAstapIds = $reklasKemitraans->keys()->toArray();
+
+                // HANYA ambil aset register dari BMD RSUD yang memiliki riwayat reklasifikasi ke Kemitraan (Akun 1.5.2)
+                if (empty($reklasKemitraanAstapIds)) {
+                    return collect([]);
+                }
+
                 return \App\Models\AstapRegister::where('is_deleted', 0)
+                    ->whereIn('astap_id', $reklasKemitraanAstapIds)
                     ->whereHas('astap', function($q) {
-                        $q->where('is_deleted', 0)
-                          ->where(function($sq) {
-                              $sq->whereNull('sumber_dana')
-                                 ->orWhere('sumber_dana', '!=', 'kemitraan');
-                          });
+                        $q->where('is_deleted', 0);
                     })
                     ->with(['astap.jenisAstap', 'astap.unit', 'unit'])
                     ->get()
-                    ->map(function($reg) use ($activeKemitraanByRegId) {
+                    ->map(function($reg) use ($activeKemitraanByRegId, $reklasKemitraans) {
                         $astap = $reg->astap;
                         $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?: []);
+                        $reklasRow = $reklasKemitraans[$astap->id] ?? null;
                         
-                        $kib = $astap->category ?: (
+                        // KIB Asal Aset BMD RSUD (KIB A Tanah, KIB B Mesin, KIB C Gedung, dsb)
+                        $kib = $reklasRow?->asal_kib ?: (
                             str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.1') ? 'KIB A' : (
                             str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.2') ? 'KIB B' : (
                             str_starts_with($astap->jenisAstap?->jenis ?? '', '1.3.3') ? 'KIB C' : (
@@ -1554,6 +1569,26 @@ Route::middleware('auth')->group(function () {
                     }
                 }
 
+                // Sanitasi input tanggal: tangani ISO string (misal 2026-09-29T17:00:00.000000Z) dari datepicker
+                $cleanDateInput = function($val) {
+                    if (empty($val)) return null;
+                    $val = trim((string)$val);
+                    if (strpos($val, 'T') !== false) {
+                        $val = explode('T', $val)[0];
+                    }
+                    return $val;
+                };
+
+                $dateMerges = [];
+                foreach (['tanggal_pks', 'tanggal_mulai', 'tanggal_selesai'] as $df) {
+                    if ($request->has($df) && !empty($request->input($df))) {
+                        $dateMerges[$df] = $cleanDateInput($request->input($df));
+                    }
+                }
+                if (!empty($dateMerges)) {
+                    $request->merge($dateMerges);
+                }
+
                 $data = $request->validate([
                     'nama_barang'          => 'required|string|max:500',
                     'jenis_astap_id'       => 'required|integer|exists:jenis_astaps,id',
@@ -1571,10 +1606,10 @@ Route::middleware('auth')->group(function () {
                     'ppk_nip'              => 'nullable|string|max:100',
                     'nomor_pks'            => 'required|string|max:255',
                     // Format tanggal PKS: toleran DD/MM/YYYY atau YYYY-MM-DD
-                    'tanggal_pks'          => ['required', 'string', 'regex:/^(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{1,2}-\d{1,2})$/'],
+                    'tanggal_pks'          => ['required', 'string', 'regex:/^(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/'],
                     // tanggal_mulai & selesai boleh kosong — diparse manual di bawah
-                    'tanggal_mulai'        => 'nullable|string|max:20',
-                    'tanggal_selesai'      => 'nullable|string|max:20',
+                    'tanggal_mulai'        => 'nullable|string|max:50',
+                    'tanggal_selesai'      => 'nullable|string|max:50',
                     'kemitraan_keterangan' => 'nullable|string|max:2000',
                     'unit_id'              => 'nullable|integer|exists:units,id',
                     'alamat_barang'        => 'nullable|string|max:1000',
@@ -1613,27 +1648,10 @@ Route::middleware('auth')->group(function () {
                     ], 422);
                 }
 
-                // Validasi Tanggal Mulai: tidak boleh lebih dari tanggal hari ini dan harus >= tanggal_pks
+                // Validasi Tanggal Mulai & Selesai Kerjasama
+                // Fleksibel untuk kontrak di masa depan maupun berlaku surut administratif
                 if (!empty($data['tanggal_mulai'])) {
                     $tMulai = $parseDateHelper($data['tanggal_mulai']);
-                    if ($tMulai && $tMulai > $todayTimestamp) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.',
-                            'errors'  => [
-                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama tidak boleh melebihi tanggal hari ini.']
-                            ]
-                        ], 422);
-                    }
-                    if ($tMulai && $tPks && $tMulai < $tPks) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.',
-                            'errors'  => [
-                                'tanggal_mulai' => ['Tanggal mulai berlaku kerjasama harus di atas atau sama dengan tanggal penandatanganan PKS.']
-                            ]
-                        ], 422);
-                    }
                 }
 
                 // Validasi Tanggal Berakhir: tidak boleh lebih awal dari tanggal mulai
@@ -1704,12 +1722,25 @@ Route::middleware('auth')->group(function () {
                     }
                 }
 
-                // Handle Upload Berkas Dokumen BAST / PKS Kerja Sama
+                // Handle Berkas Dokumen BAST / PKS Kerja Sama (Bisa diunggah baru atau otomatis mewarisi dokumen BAST awal)
                 $dokumenPath = null;
                 if ($request->hasFile('dokumen_file')) {
                     $file = $request->file('dokumen_file');
                     $filename = 'BAST_KEMITRAAN_' . time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
                     $dokumenPath = $file->storeAs('dokumen_kemitraan', $filename, 'public');
+                } else {
+                    // Otomatis mewarisi dokumen BAST dari objek tanah BMD yang disewa / dikerjasamakan
+                    if (!empty($data['objek_astap_id'])) {
+                        $parentAstap = \App\Models\Astap::with('kemitraan')->find($data['objek_astap_id']);
+                        $dokumenPath = $parentAstap?->kemitraan?->dokumen_path ?: ($parentAstap?->spesifikasi_json['dokumen_path'] ?? null);
+                    }
+                    if (!$dokumenPath && !empty($data['nomor_pks'])) {
+                        $existingKemitraan = \App\Models\AstapKemitraan::where('nomor_pks', $data['nomor_pks'])
+                            ->whereNotNull('dokumen_path')
+                            ->where('dokumen_path', '!=', '')
+                            ->first();
+                        $dokumenPath = $existingKemitraan?->dokumen_path;
+                    }
                 }
 
                 $astapPayload = [
@@ -2167,6 +2198,68 @@ Route::middleware('auth')->group(function () {
                     ->with('success', 'Data Aset Kemitraan "' . $item->nama_barang . '" berhasil ditambahkan.');
             })->name('astap.store_kemitraan');
 
+            // ─── API Upload / Ubah & Hapus Berkas BAST Kemitraan ─────────────────
+            Route::post('/astap/kemitraan/{id}/upload-dokumen', function(\Illuminate\Http\Request $request, $id) {
+                $request->validate([
+                    'dokumen_file' => 'required|file|mimes:pdf,jpg,jpeg,png,webp,doc,docx|max:10240'
+                ]);
+
+                $astap = \App\Models\Astap::with('kemitraan')->findOrFail($id);
+                $kemitraan = $astap->kemitraan ?: \App\Models\AstapKemitraan::where('astap_id', $astap->id)->first();
+
+                // Hapus berkas lama jika ada
+                $oldPath = $kemitraan?->dokumen_path ?: ($astap->spesifikasi_json['dokumen_path'] ?? null);
+                if ($oldPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+
+                $file = $request->file('dokumen_file');
+                $filename = 'BAST_KEMITRAAN_' . time() . '_' . \Illuminate\Support\Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                $newPath = $file->storeAs('dokumen_kemitraan', $filename, 'public');
+
+                if ($kemitraan) {
+                    $kemitraan->update(['dokumen_path' => $newPath]);
+                }
+
+                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                $spec['dokumen_path'] = $newPath;
+                $astap->update(['spesifikasi_json' => $spec]);
+
+                return response()->json([
+                    'success'      => true,
+                    'message'      => 'Berkas dokumen BAST berhasil diunggah/diperbarui.',
+                    'dokumen_path' => $newPath,
+                    'file_url'     => asset('storage/' . $newPath),
+                    'file_name'    => $filename
+                ]);
+            })->name('astap.kemitraan.upload_dokumen');
+
+            Route::delete('/astap/kemitraan/{id}/delete-dokumen', function($id) {
+                $astap = \App\Models\Astap::with('kemitraan')->findOrFail($id);
+                $kemitraan = $astap->kemitraan ?: \App\Models\AstapKemitraan::where('astap_id', $astap->id)->first();
+
+                $oldPath = $kemitraan?->dokumen_path ?: ($astap->spesifikasi_json['dokumen_path'] ?? null);
+                if ($oldPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($oldPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+
+                if ($kemitraan) {
+                    $kemitraan->update(['dokumen_path' => null]);
+                }
+
+                $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json ?? '[]', true) ?: []);
+                unset($spec['dokumen_path']);
+                $astap->update(['spesifikasi_json' => $spec]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Berkas dokumen BAST berhasil dihapus dari sistem.'
+                ]);
+            })->name('astap.kemitraan.delete_dokumen');
+
+            // Cetak Dokumen Resmi BAST Pemanfaatan BMD Kemitraan (Format Kedinasan A4)
+            Route::get('/astap/kemitraan/{id}/cetak-bast', [\App\Http\Controllers\KemitraanController::class, 'cetakBast'])->name('astap.kemitraan.cetak_bast');
+
             // ─── Form Kemitraan Pihak Ketiga (Edit & Update) ─────────────────
             Route::get('/astap/{id}/edit-kemitraan', function ($id) use ($getDistinctPenyedias, $getDistinctPejabats, $getDistinctMitras, $getObjekAsetKemitraans) {
                 $astap = \App\Models\Astap::with(['registers.unit', 'jenisAstap', 'kemitraan'])->findOrFail($id);
@@ -2221,6 +2314,26 @@ Route::middleware('auth')->group(function () {
 
                 $astap = \App\Models\Astap::with(['registers', 'kemitraan'])->findOrFail($id);
 
+                // Sanitasi input tanggal: tangani ISO string (misal 2026-09-29T17:00:00.000000Z) dari datepicker
+                $cleanDateInput = function($val) {
+                    if (empty($val)) return null;
+                    $val = trim((string)$val);
+                    if (strpos($val, 'T') !== false) {
+                        $val = explode('T', $val)[0];
+                    }
+                    return $val;
+                };
+
+                $dateMerges = [];
+                foreach (['tanggal_pks', 'tanggal_mulai', 'tanggal_selesai'] as $df) {
+                    if ($request->has($df) && !empty($request->input($df))) {
+                        $dateMerges[$df] = $cleanDateInput($request->input($df));
+                    }
+                }
+                if (!empty($dateMerges)) {
+                    $request->merge($dateMerges);
+                }
+
                 $data = $request->validate([
                     'nama_barang'          => 'required|string|max:500',
                     'jenis_astap_id'       => 'required|integer|exists:jenis_astaps,id',
@@ -2236,9 +2349,9 @@ Route::middleware('auth')->group(function () {
                     'ppk_nama'             => 'nullable|string|max:255',
                     'ppk_nip'              => 'nullable|string|max:100',
                     'nomor_pks'            => 'required|string|max:255',
-                    'tanggal_pks'          => ['required', 'string', 'regex:/^(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{1,2}-\d{1,2})$/'],
-                    'tanggal_mulai'        => 'nullable|string|max:20',
-                    'tanggal_selesai'      => 'nullable|string|max:20',
+                    'tanggal_pks'          => ['required', 'string', 'regex:/^(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}|\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2})/'],
+                    'tanggal_mulai'        => 'nullable|string|max:50',
+                    'tanggal_selesai'      => 'nullable|string|max:50',
                     'kemitraan_keterangan' => 'nullable|string|max:2000',
                     'unit_id'              => 'nullable|integer|exists:units,id',
                     'alamat_barang'        => 'nullable|string|max:1000',

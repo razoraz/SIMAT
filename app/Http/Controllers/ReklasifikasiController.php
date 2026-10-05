@@ -1114,16 +1114,18 @@ class ReklasifikasiController extends Controller
 
             $astap->save();
 
-            // Sinkronkan data ke register jika ada perubahan
+            // Sinkronkan data ke register jika ada perubahan pada kolom register yang valid
             if ($astap->registers()->exists()) {
-                $regUpdate = [
-                    'nama_barang'  => $astap->nama_barang,
-                    'harga_satuan' => $astap->harga_satuan,
-                ];
-                if ($astap->category) {
-                    $regUpdate['kelompok_kib'] = $astap->category;
+                $regUpdate = [];
+                if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'ruang_pemegang') && !empty($astap->ruang_unit)) {
+                    $regUpdate['ruang_pemegang'] = $astap->ruang_unit;
                 }
-                $astap->registers()->update($regUpdate);
+                if (\Illuminate\Support\Facades\Schema::hasColumn('astap_registers', 'kondisi') && !empty($astap->kondisi)) {
+                    $regUpdate['kondisi'] = $astap->kondisi;
+                }
+                if (!empty($regUpdate)) {
+                    $astap->registers()->update($regUpdate);
+                }
             }
 
             // Pastikan fallback nama dan kode asal/tujuan jika masih kosong
@@ -1208,15 +1210,42 @@ class ReklasifikasiController extends Controller
             ];
             $reklas = AstapReklas::create($reklasData);
 
-            // Jika aset terkait dengan Kemitraan (Akun 1.5.2), perbarui status konsesi menjadi Selesai / Reklasifikasi
-            if ($astap->kemitraan) {
+            // Sinkronisasi status dan data Kemitraan (Akun 1.5.2)
+            if ($targetKib === 'KEMITRAAN') {
+                $spec = $astap->spesifikasi_json ?? [];
+                $kemitraanData = [
+                    'astap_id'         => $astap->id,
+                    'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Mitra Pihak Ketiga'),
+                    'pimpinan_mitra'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? null),
+                    'alamat_mitra'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? null),
+                    'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($validated['nomor_ba_reklas'] ?? '-')),
+                    'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($validated['tanggal_reklas'] ?? now())),
+                    'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? 'Sewa'),
+                    'tanggal_mulai'    => $spec['tanggal_mulai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_mulai'] ?? null),
+                    'tanggal_selesai'  => $spec['tanggal_selesai'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_selesai'] ?? null),
+                    'status_konsesi'   => 'Aktif',
+                    'jumlah_volume'    => max(1, (int) $astap->jumlah_volume),
+                    'satuan'           => $astap->satuan ?: 'Bidang / Titik',
+                    'nilai_aset'       => (float) $astap->total_realisasi,
+                    'tahun'            => (int) ($validated['tahun'] ?? date('Y')),
+                    'triwulan'         => (string) ($validated['triwulan'] ?? 1),
+                    'keterangan'       => $validated['keterangan'] ?? ($astap->keterangan_tambahan ?? null),
+                    'user_id'          => Auth::id(),
+                ];
+
+                if ($astap->kemitraan) {
+                    $astap->kemitraan->update($kemitraanData);
+                } else {
+                    \App\Models\AstapKemitraan::create($kemitraanData);
+                }
+            } elseif ($astap->kemitraan && $asalKibFinal === 'KEMITRAAN') {
+                // Hanya perbarui status menjadi Selesai jika asal reklas adalah Kemitraan (berakhirnya masa konsesi)
                 $astap->kemitraan->update([
                     'status_konsesi' => 'Selesai / Reklasifikasi'
                 ]);
             }
 
             DB::commit();
-
 
             $astap->refresh();
 
@@ -1225,6 +1254,8 @@ class ReklasifikasiController extends Controller
                     'success' => true,
                     'message' => 'Transaksi reklasifikasi aset berhasil dicatat!',
                     'data' => $reklas,
+                    'is_kemitraan' => ($targetKib === 'KEMITRAAN'),
+                    'cetak_bast_url' => ($targetKib === 'KEMITRAAN') ? route('astap.kemitraan.cetak_bast', ['id' => $astap->id]) : null,
                     'astap' => [
                         'id' => $astap->id,
                         'total_realisasi' => 'Rp ' . number_format($astap->total_realisasi, 0, ',', '.'),
