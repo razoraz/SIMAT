@@ -278,4 +278,35 @@
         </div>
     </div>
 
+    <!-- BANNER PERINGATAN EXTRACOM (> RP 300.000) -->
+    <div x-show="hasExtracomViolation" x-cloak
+         class="mt-4 p-4 sm:p-5 rounded-3xl bg-rose-950/40 border border-rose-500/50 text-rose-300 shadow-xl shadow-rose-950/40 flex items-start space-x-3.5 transition-all">
+        <div class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-xl shrink-0 text-rose-400 shadow-lg shadow-rose-500/20">
+            ⚠️
+        </div>
+        <div class="space-y-2 flex-1 min-w-0">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <h4 class="font-extrabold text-rose-100 text-xs sm:text-sm tracking-wide">
+                    Peringatan: Nilai Satuan Ekstrakomtabel (Extracom) Melebihi Rp 300.000!
+                </h4>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                    Tidak Dapat Lanjut ke Tahap 3
+                </span>
+            </div>
+            <p class="text-xs text-rose-200/90 leading-relaxed">
+                Terdapat rincian barang yang Anda beri status <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Ekstrakomtabel (≤ 300rb)</span> namun diisi dengan nilai satuan per unit lebih dari <strong>Rp 300.000</strong>. Anda harus menyesuaikannya sebelum dapat melanjutkan ke Tahap 3:
+            </p>
+            <div class="p-3 rounded-2xl bg-slate-950/80 border border-rose-500/20 text-[11.5px] text-slate-300 space-y-1.5 shadow-inner">
+                <div class="flex items-start gap-2">
+                    <span class="text-emerald-400 font-bold">1.</span>
+                    <span>Jika nilai perolehan memang <strong>&gt; Rp 300.000</strong>: Klik tombol status akuntansi <strong>⚙️ Aset Tetap Reguler (Intrakomptabel)</strong> pada kartu rincian barang di atas.</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <span class="text-amber-400 font-bold">2.</span>
+                    <span>Jika barang benar-benar <strong>Ekstrakomtabel</strong>: Perbaiki nilai satuan agar <strong>maksimal Rp 300.000</strong>.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>

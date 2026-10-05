@@ -549,30 +549,54 @@
 
             // Repeater Actions: Tanah
             addTanahItem() {
+                if (!this.formData.tanah_items) {
+                    this.formData.tanah_items = [];
+                }
                 this.formData.tanah_items.push({
+                    tanah_kode_barang: '',
                     tanah_nama_barang: this.formData.nama_barang || '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     tanah_hak: 'Hak Pakai',
                     tanah_sertifikat_tgl: '',
                     tanah_sertifikat_no: '',
                     tanah_kondisi: 'Baik',
                     tanah_penggunaan: 'Bangunan Fasilitas Kesehatan & Pelayanan Rumah Sakit',
-                    tanah_jumlah_bidang: 1,
+                    tanah_jumlah_barang: 1,
+                    tanah_satuan: 'Bidang',
                     tanah_luas_m2: '',
                     tanah_alamat: this.formData.alamat_barang || '',
+                    tanah_nilai_satuan: 0,
                     tanah_nilai_fisik: 0
                 });
                 this.syncTotalsFromItems();
             },
 
             removeTanahItem(idx) {
-                if (this.formData.tanah_items.length > 1) {
+                if (this.formData.tanah_items && this.formData.tanah_items.length > 1) {
                     this.formData.tanah_items.splice(idx, 1);
                     this.syncTotalsFromItems();
                 }
             },
 
             getTanahSubtotal(item) {
-                return parseFloat(item.tanah_nilai_fisik) || 0;
+                const qty = parseInt(item.tanah_jumlah_barang) || parseInt(item.tanah_jumlah_bidang) || 1;
+                const unitVal = parseFloat(item.tanah_nilai_satuan) || parseFloat(item.tanah_nilai_fisik) || 0;
+                return qty * unitVal;
+            },
+
+            get totalNilaiTanah() {
+                if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
+                    return this.formData.tanah_items.reduce((sum, item) => sum + this.getTanahSubtotal(item), 0);
+                }
+                return Number(this.formData.total_realisasi || 0);
+            },
+
+            get totalVolumeTanah() {
+                if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
+                    return this.formData.tanah_items.reduce((sum, item) => sum + (parseInt(item.tanah_jumlah_barang) || 1), 0);
+                }
+                return parseInt(this.formData.jumlah_volume) || 1;
             },
 
             // Repeater Actions: Mesin
@@ -637,14 +661,23 @@
 
             // Repeater Actions: Gedung
             addGedungItem() {
+                if (!this.formData.gedung_items) {
+                    this.formData.gedung_items = [];
+                }
                 this.formData.gedung_items.push({
+                    gedung_kode_barang: '',
                     gedung_nama_barang: this.formData.nama_barang || '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     gedung_luas_m2: '',
                     gedung_bertingkat: 'Tidak',
                     gedung_beton: 'Beton',
                     gedung_kondisi: 'Baik',
                     gedung_status_tanah: 'Tanah Pemkab Bondowoso',
                     gedung_dokumen_no: '',
+                    gedung_dokumen_tgl: '',
+                    gedung_fungsi: '',
+                    gedung_alamat: this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                     gedung_jumlah_bangunan: 1,
                     gedung_satuan: 'Gedung',
                     gedung_nilai_satuan: 0
@@ -653,7 +686,7 @@
             },
 
             removeGedungItem(idx) {
-                if (this.formData.gedung_items.length > 1) {
+                if (this.formData.gedung_items && this.formData.gedung_items.length > 1) {
                     this.formData.gedung_items.splice(idx, 1);
                     this.syncTotalsFromItems();
                 }
@@ -665,16 +698,42 @@
                 return qty * unitVal;
             },
 
+            get totalNilaiGedung() {
+                if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                    return this.formData.gedung_items.reduce((sum, item) => sum + this.getGedungSubtotal(item), 0);
+                }
+                return Number(this.formData.total_realisasi || 0);
+            },
+
+            get totalVolumeGedung() {
+                if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                    return this.formData.gedung_items.reduce((sum, item) => sum + (parseInt(item.gedung_jumlah_bangunan) || 1), 0);
+                }
+                return parseInt(this.formData.jumlah_volume) || 1;
+            },
+
             // Repeater Actions: Jaringan
             addJaringanItem() {
+                if (!this.formData.jaringan_items) {
+                    this.formData.jaringan_items = [];
+                }
                 this.formData.jaringan_items.push({
+                    jaringan_kode_barang: '',
                     jaringan_nama_barang: this.formData.nama_barang || '',
+                    isFilterOpen: false,
+                    searchFilter: '',
                     jaringan_luas_m2: '',
+                    jaringan_panjang_m: '',
+                    jaringan_lebar_m: '',
                     jaringan_bertingkat: 'Tidak',
+                    jaringan_konstruksi: 'Aspal Hotmix',
                     jaringan_beton: 'Beton',
                     jaringan_kondisi: 'Baik',
                     jaringan_status_tanah: 'Tanah Pemkab Bondowoso',
                     jaringan_dokumen_no: '',
+                    jaringan_dokumen_tgl: '',
+                    jaringan_keterangan: '',
+                    jaringan_alamat: this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                     jaringan_jumlah: 1,
                     jaringan_satuan: 'Ruas',
                     jaringan_nilai_satuan: 0
@@ -683,7 +742,7 @@
             },
 
             removeJaringanItem(idx) {
-                if (this.formData.jaringan_items.length > 1) {
+                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 1) {
                     this.formData.jaringan_items.splice(idx, 1);
                     this.syncTotalsFromItems();
                 }
@@ -693,6 +752,20 @@
                 const qty = parseInt(item.jaringan_jumlah) || 1;
                 const unitVal = parseFloat(item.jaringan_nilai_satuan) || 0;
                 return qty * unitVal;
+            },
+
+            get totalNilaiJaringan() {
+                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                    return this.formData.jaringan_items.reduce((sum, item) => sum + this.getJaringanSubtotal(item), 0);
+                }
+                return Number(this.formData.total_realisasi || 0);
+            },
+
+            get totalVolumeJaringan() {
+                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                    return this.formData.jaringan_items.reduce((sum, item) => sum + (parseInt(item.jaringan_jumlah) || 1), 0);
+                }
+                return parseInt(this.formData.jumlah_volume) || 1;
             },
 
             // Repeater Actions: Lainnya (KIB E)
@@ -765,12 +838,32 @@
             // Auto-Sync Calculations
             syncTotalsFromItems() {
                 if (this.isTanah && this.formData.tanah_items && this.formData.tanah_items.length > 0) {
-                    this.formData.jumlah_volume = this.formData.tanah_items.length;
-                    this.formData.satuan = 'Bidang';
-                    const sum = this.formData.tanah_items.reduce((acc, it) => acc + (parseFloat(it.tanah_nilai_fisik) || 0), 0);
-                    this.formData.total_realisasi = sum;
+                    let totalQty = 0;
+                    let totalVal = 0;
+                    this.formData.tanah_items.forEach(it => {
+                        const q = parseInt(it.tanah_jumlah_barang) || parseInt(it.tanah_jumlah_bidang) || 1;
+                        const v = parseFloat(it.tanah_nilai_satuan) || parseFloat(it.tanah_nilai_fisik) || 0;
+                        totalQty += q;
+                        totalVal += (q * v);
+                    });
+                    this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
+                    this.formData.satuan = this.formData.tanah_items[0].tanah_satuan || 'Bidang';
+                    this.formData.total_realisasi = totalVal;
                     if (this.formData.tanah_items[0].tanah_kondisi) {
                         this.formData.kondisi = this.formData.tanah_items[0].tanah_kondisi;
+                    }
+                    if (this.formData.tanah_items[0].tanah_alamat) {
+                        this.formData.alamat_barang = this.formData.tanah_items[0].tanah_alamat;
+                    }
+                    if (this.formData.tanah_items.length === 1) {
+                        if (this.formData.tanah_items[0].tanah_nama_barang) {
+                            this.formData.nama_barang = this.formData.tanah_items[0].tanah_nama_barang;
+                        }
+                    } else {
+                        const names = this.formData.tanah_items.map(m => m.tanah_nama_barang).filter(Boolean);
+                        if (names.length > 0) {
+                            this.formData.nama_barang = names.join(', ');
+                        }
                     }
                 } else if (this.isMesin && this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                     let totalQty = 0;
@@ -831,6 +924,19 @@
                     if (this.formData.gedung_items[0].gedung_kondisi) {
                         this.formData.kondisi = this.formData.gedung_items[0].gedung_kondisi;
                     }
+                    if (this.formData.gedung_items[0].gedung_alamat) {
+                        this.formData.alamat_barang = this.formData.gedung_items[0].gedung_alamat;
+                    }
+                    if (this.formData.gedung_items.length === 1) {
+                        if (this.formData.gedung_items[0].gedung_nama_barang) {
+                            this.formData.nama_barang = this.formData.gedung_items[0].gedung_nama_barang;
+                        }
+                    } else {
+                        const names = this.formData.gedung_items.map(m => m.gedung_nama_barang).filter(Boolean);
+                        if (names.length > 0) {
+                            this.formData.nama_barang = names.join(', ');
+                        }
+                    }
                 } else if (this.isJaringan && this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
@@ -845,6 +951,19 @@
                     this.formData.total_realisasi = totalVal;
                     if (this.formData.jaringan_items[0].jaringan_kondisi) {
                         this.formData.kondisi = this.formData.jaringan_items[0].jaringan_kondisi;
+                    }
+                    if (this.formData.jaringan_items[0].jaringan_alamat) {
+                        this.formData.alamat_barang = this.formData.jaringan_items[0].jaringan_alamat;
+                    }
+                    if (this.formData.jaringan_items.length === 1) {
+                        if (this.formData.jaringan_items[0].jaringan_nama_barang) {
+                            this.formData.nama_barang = this.formData.jaringan_items[0].jaringan_nama_barang;
+                        }
+                    } else {
+                        const names = this.formData.jaringan_items.map(m => m.jaringan_nama_barang).filter(Boolean);
+                        if (names.length > 0) {
+                            this.formData.nama_barang = names.join(', ');
+                        }
                     }
                 } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
                     let totalQty = 0;
@@ -1042,10 +1161,13 @@
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     return;
                 }
-                if (this.validateStep(this.currentStep)) {
-                    this.currentStep = s;
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                if (s > this.currentStep) {
+                    for (let stepCheck = this.currentStep; stepCheck < s; stepCheck++) {
+                        if (!this.validateStep(stepCheck)) return;
+                    }
                 }
+                this.currentStep = s;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             },
 
             nextStep() {
@@ -1060,6 +1182,111 @@
                     this.currentStep--;
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
+            },
+
+            // Helper validasi batasan Ekstrakomtabel (Extracom <= Rp 300.000)
+            getExtracomViolations() {
+                const violations = [];
+                if (this.isMesin && Array.isArray(this.formData.mesin_items)) {
+                    this.formData.mesin_items.forEach((item, idx) => {
+                        const val = parseFloat(item.mesin_nilai_satuan) || 0;
+                        if (item.is_extracom && val > 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'mesin',
+                                itemNumber: idx + 1,
+                                nama: (item.mesin_nama_barang || this.formData.nama_barang || `Barang Mesin #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
+                            });
+                        }
+                    });
+                } else if (this.isLainnya && Array.isArray(this.formData.lainnya_items)) {
+                    this.formData.lainnya_items.forEach((item, idx) => {
+                        const val = parseFloat(item.lainnya_nilai_satuan) || 0;
+                        if (item.is_extracom && val > 300000) {
+                            violations.push({
+                                index: idx,
+                                type: 'lainnya',
+                                itemNumber: idx + 1,
+                                nama: (item.lainnya_nama_barang || item.lainnya_judul || this.formData.nama_barang || `Item Lainnya #${idx + 1}`),
+                                nilai: val,
+                                nilaiFormatted: 'Rp ' + Number(val).toLocaleString('id-ID')
+                            });
+                        }
+                    });
+                }
+                return violations;
+            },
+
+            get hasExtracomViolation() {
+                return this.getExtracomViolations().length > 0;
+            },
+
+            showExtracomAlert(violations) {
+                const listHtml = violations.map(v => `
+                    <li class="flex items-start gap-2.5 text-rose-300 py-1.5 border-b border-slate-800/80 last:border-0">
+                        <span class="text-rose-400 font-bold shrink-0 mt-0.5">⚠️</span> 
+                        <div class="text-left leading-snug">
+                            <span class="font-extrabold text-white block text-xs">${v.nama}</span>
+                            <span class="text-[11px] text-slate-300">
+                                Nilai Satuan Input: <strong class="font-mono text-rose-400 font-bold">${v.nilaiFormatted}</strong> 
+                                <span class="text-rose-300/80">(Batas Maksimal Ekstrakomtabel: <strong class="font-mono text-amber-300">Rp 300.000</strong>)</span>
+                            </span>
+                        </div>
+                    </li>
+                `).join('');
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Nilai Ekstrakomtabel Melebihi Rp 300.000!',
+                        html: `
+                            <div class="text-left text-xs space-y-3 text-slate-300">
+                                <p class="text-slate-200 leading-relaxed">
+                                    Anda <strong>tidak dapat melanjutkan ke Tahap 3</strong> karena item berikut dipilih berstatus <span class="px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Ekstrakomtabel (Extracom)</span> tetapi nilai satuannya melebihi batas regulasi <strong>Rp 300.000</strong>:
+                                </p>
+                                <ul class="p-3.5 rounded-2xl bg-slate-950/90 border border-rose-500/40 space-y-1.5 shadow-inner">
+                                    ${listHtml}
+                                </ul>
+                                <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-[11px] leading-relaxed space-y-1">
+                                    <div class="font-bold text-indigo-300 flex items-center gap-1.5">
+                                        <span>💡</span> Petunjuk Solusi:
+                                    </div>
+                                    <ul class="list-disc pl-4 space-y-1 text-slate-300 text-[10.5px]">
+                                        <li>Jika nilai perolehan per unit memang <strong>&gt; Rp 300.000</strong>: Ubah status akuntansi item menjadi <strong>⚙️ Aset Tetap Reguler (Intrakomptabel)</strong>.</li>
+                                        <li>Jika barang benar-benar <strong>Ekstrakomtabel</strong>: Perbaiki nilai satuan agar <strong>&le; Rp 300.000</strong>.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: 'Perbaiki Nilai Satuan &rarr;',
+                        confirmButtonColor: '#f43f5e',
+                        background: '#0f172a',
+                        color: '#ffffff',
+                        customClass: {
+                            popup: 'rounded-3xl border border-rose-500/30 shadow-2xl'
+                        }
+                    }).then(() => {
+                        this.focusFirstExtracomViolation();
+                    });
+                } else {
+                    const msg = violations.map(v => `${v.nama}: ${v.nilaiFormatted} (Maks. Rp 300.000)`).join(', ');
+                    this.showToast('Batas Nilai Extracom Terlampaui', msg, 'error');
+                    this.focusFirstExtracomViolation();
+                }
+            },
+
+            focusFirstExtracomViolation() {
+                setTimeout(() => {
+                    const el = document.querySelector('.border-rose-500[placeholder*="300.000"]') ||
+                               document.querySelector('input.border-rose-500') ||
+                               document.querySelector('input[placeholder*="Maks. 300.000"]');
+                    if (el) {
+                        el.focus();
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
             },
 
             validateStep(s) {
@@ -1126,6 +1353,13 @@
 
                     if (missing.length > 0) {
                         this.showValidationAlert(2, missing);
+                        return false;
+                    }
+
+                    // VALIDASI EXTRACOM: Nilai satuan tidak boleh melebihi Rp 300.000
+                    const extracomViolations = this.getExtracomViolations();
+                    if (extracomViolations.length > 0) {
+                        this.showExtracomAlert(extracomViolations);
                         return false;
                     }
                 } else if (s === 3) {
@@ -1274,6 +1508,7 @@
                         specJson.gedung_bertingkat = firstG.gedung_bertingkat || 'Tidak';
                         specJson.gedung_beton = firstG.gedung_beton || 'Beton';
                         specJson.gedung_status_tanah = firstG.gedung_status_tanah || 'Tanah Pemda';
+                        specJson.gedung_alamat = firstG.gedung_alamat || this.formData.alamat_barang || '';
                     }
                 } else if (this.isJaringan) {
                     specJson.kategori_kib = 'KIB D (Jalan, Irigasi & Jaringan)';
@@ -1285,6 +1520,7 @@
                         specJson.jaringan_beton = firstJ.jaringan_beton || 'Beton';
                         specJson.jaringan_status_tanah = firstJ.jaringan_status_tanah || 'Tanah Pemda';
                         specJson.jaringan_dokumen_no = firstJ.jaringan_dokumen_no || '';
+                        specJson.jaringan_alamat = firstJ.jaringan_alamat || this.formData.alamat_barang || '';
                     }
                 } else if (this.isLainnya) {
                     specJson.kategori_kib = 'KIB E (Aset Tetap Lainnya)';
@@ -1411,31 +1647,46 @@
                             tanah_penggunaan: init.tanah_penggunaan || 'Bangunan Fasilitas Pelayanan Rumah Sakit',
                             tanah_jumlah_bidang: init.jumlah_volume || 1,
                             tanah_luas_m2: init.tanah_luas_m2 || '',
-                            tanah_alamat: init.alamat_barang || '',
+                            tanah_alamat: init.tanah_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                             tanah_nilai_fisik: init.total_realisasi || 0
                         }];
                     } else if (this.activeKibCategory === 'gedung' && (!this.formData.gedung_items || this.formData.gedung_items.length === 0)) {
                         this.formData.gedung_items = [{
+                            gedung_kode_barang: this.selected108Item?.kode || (init.kode_barang || ''),
                             gedung_nama_barang: init.nama_barang || '',
+                            isFilterOpen: false,
+                            searchFilter: '',
                             gedung_luas_m2: init.gedung_luas_m2 || '',
                             gedung_bertingkat: init.gedung_bertingkat || 'Tidak',
                             gedung_beton: init.gedung_beton || 'Beton',
                             gedung_kondisi: init.kondisi || 'Baik',
                             gedung_status_tanah: init.gedung_status_tanah || 'Tanah Pemda',
                             gedung_dokumen_no: init.gedung_dokumen_no || '',
+                            gedung_dokumen_tgl: init.gedung_dokumen_tgl || '',
+                            gedung_fungsi: init.gedung_fungsi || init.keterangan || '',
+                            gedung_alamat: init.gedung_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                             gedung_jumlah_bangunan: init.jumlah_volume || 1,
                             gedung_satuan: init.satuan || 'Gedung',
                             gedung_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
                         }];
                     } else if (this.activeKibCategory === 'jaringan' && (!this.formData.jaringan_items || this.formData.jaringan_items.length === 0)) {
                         this.formData.jaringan_items = [{
+                            jaringan_kode_barang: this.selected108Item?.kode || (init.kode_barang || ''),
                             jaringan_nama_barang: init.nama_barang || '',
+                            isFilterOpen: false,
+                            searchFilter: '',
                             jaringan_luas_m2: init.jaringan_luas_m2 || '',
+                            jaringan_panjang_m: init.jaringan_panjang_m || '',
+                            jaringan_lebar_m: init.jaringan_lebar_m || '',
                             jaringan_bertingkat: init.jaringan_bertingkat || 'Tidak',
+                            jaringan_konstruksi: init.jaringan_konstruksi || 'Aspal Hotmix',
                             jaringan_beton: init.jaringan_beton || 'Beton',
                             jaringan_kondisi: init.kondisi || 'Baik',
                             jaringan_status_tanah: init.jaringan_status_tanah || 'Tanah Pemda',
                             jaringan_dokumen_no: init.jaringan_dokumen_no || '',
+                            jaringan_dokumen_tgl: init.jaringan_dokumen_tgl || '',
+                            jaringan_keterangan: init.jaringan_keterangan || init.keterangan || '',
+                            jaringan_alamat: init.jaringan_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
                             jaringan_jumlah: init.jumlah_volume || 1,
                             jaringan_satuan: init.satuan || 'Ruas',
                             jaringan_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi
@@ -1492,6 +1743,33 @@
                             isRuangOpen: false,
                             searchRuang: ''
                         }];
+                    }
+
+                    // Normalisasi tanah_items yang ada
+                    if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
+                        this.formData.tanah_items.forEach(it => {
+                            if (it.isFilterOpen === undefined) it.isFilterOpen = false;
+                            if (it.searchFilter === undefined) it.searchFilter = '';
+                            if (!it.tanah_alamat) it.tanah_alamat = this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                        });
+                    }
+
+                    // Normalisasi gedung_items yang ada
+                    if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
+                        this.formData.gedung_items.forEach(it => {
+                            if (it.isFilterOpen === undefined) it.isFilterOpen = false;
+                            if (it.searchFilter === undefined) it.searchFilter = '';
+                            if (!it.gedung_alamat) it.gedung_alamat = this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                        });
+                    }
+
+                    // Normalisasi jaringan_items yang ada
+                    if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
+                        this.formData.jaringan_items.forEach(it => {
+                            if (it.isFilterOpen === undefined) it.isFilterOpen = false;
+                            if (it.searchFilter === undefined) it.searchFilter = '';
+                            if (!it.jaringan_alamat) it.jaringan_alamat = this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                        });
                     }
 
                     // Normalisasi mesin_items yang ada agar properti reaktif Alpine tidak undefined

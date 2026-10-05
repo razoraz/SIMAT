@@ -439,10 +439,22 @@ class MutasiEksternalController extends Controller
                 'status'                    => $m->status ?: 'Disahkan (Selesai)',
                 'alasan_mutasi'             => $m->alasan_mutasi ?: 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnadi.',
                 'tgl_estimasi_kembali'      => $m->tgl_estimasi_kembali ? $m->tgl_estimasi_kembali->format('Y-m-d') : null,
-                'dokumen_lampiran'          => $m->dokumen_lampiran,
-                'dokumen_lampiran_url'      => $m->dokumen_lampiran ? asset('storage/' . $m->dokumen_lampiran) : null,
+                'dokumen_lampiran'          => $m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null),
+                'dokumen_lampiran_url'      => ($m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null)) ? asset('storage/' . ($m->dokumen_lampiran ?: $astap->spesifikasi_json['dokumen_lampiran'])) : null,
                 'nilai_perolehan'           => $nilaiReal,
                 'nilai_perolehan_formatted' => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
+                'total_realisasi'           => 'Rp ' . number_format($nilaiReal, 0, ',', '.'),
+                'nilai_realisasi'           => $nilaiReal,
+                'bast_nomor'                => $nomorBamb,
+                'mutasi_nomor_bamb'         => $nomorBamb,
+                'mutasi_tanggal'            => (string) $tglRaw,
+                'mutasi_asal'               => $opdAsal,
+                'mutasi_keterangan'         => $m->alasan_mutasi,
+                'ppk_nama'                  => $pjNama,
+                'ppk_nip'                   => $pjNip,
+                'alamat_barang'             => $astap?->alamat_barang ?: 'RSUD Dr. H. Koesnandi',
+                'created_at'                => $astap?->created_at ? $astap->created_at->format('Y-m-d H:i:s') : (string) $tglRaw,
+                'spesifikasi_json'          => $astap?->spesifikasi_json ?: [],
             ];
         })->values()->toArray();
 
@@ -557,10 +569,6 @@ class MutasiEksternalController extends Controller
             ],
         ];
 
-        if ($dokumenPath) {
-            $astapPayload['spesifikasi_json']['dokumen_lampiran'] = $dokumenPath;
-        }
-
         $specJson = $astapPayload['spesifikasi_json'];
 
         // Handle stringified or array spesifikasi_json
@@ -575,6 +583,10 @@ class MutasiEksternalController extends Controller
             if (is_array($incomingSpec)) {
                 $specJson = array_merge($specJson, $incomingSpec);
             }
+        }
+
+        if ($dokumenPath) {
+            $specJson['dokumen_lampiran'] = $dokumenPath;
         }
 
         $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
@@ -672,6 +684,34 @@ class MutasiEksternalController extends Controller
             $specJson['ppk_nip'] = $ppkNip;
         }
         $astapPayload['spesifikasi_json'] = $specJson;
+
+        // Validasi batasan nilai satuan Ekstrakomtabel (Extracom <= Rp 300.000)
+        $mesinItems = $specJson['mesin_items'] ?? [];
+        if (is_array($mesinItems)) {
+            foreach ($mesinItems as $idx => $m) {
+                if (!empty($m['is_extracom']) && (float)($m['mesin_nilai_satuan'] ?? 0) > 300000) {
+                    $namaItem = $m['mesin_nama_barang'] ?? ('Item Mesin #' . ($idx + 1));
+                    $msg = "Nilai satuan untuk barang Ekstrakomtabel (Extracom) '{$namaItem}' tidak boleh melebihi Rp 300.000.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
+            }
+        }
+        $lainnyaItems = $specJson['lainnya_items'] ?? [];
+        if (is_array($lainnyaItems)) {
+            foreach ($lainnyaItems as $idx => $l) {
+                if (!empty($l['is_extracom']) && (float)($l['lainnya_nilai_satuan'] ?? 0) > 300000) {
+                    $namaItem = $l['lainnya_nama_barang'] ?? ($l['lainnya_judul'] ?? ('Item Lainnya #' . ($idx + 1)));
+                    $msg = "Nilai satuan untuk barang Ekstrakomtabel (Extracom) '{$namaItem}' tidak boleh melebihi Rp 300.000.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
+            }
+        }
 
         $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
             // 1. Simpan ke tabel master astaps
@@ -895,9 +935,7 @@ class MutasiEksternalController extends Controller
         $specJson['pj_asal_nama'] = $request->input('pj_asal_nama');
         $specJson['pj_asal_nip'] = $request->input('pj_asal_nip');
         $specJson['pj_asal_jabatan'] = $request->input('pj_asal_jabatan');
-        if ($dokumenPath) {
-            $specJson['dokumen_lampiran'] = $dokumenPath;
-        }
+        $existingDoc = $item->mutasiEksternal?->dokumen_lampiran ?: ($specJson['dokumen_lampiran'] ?? null);
 
         // Handle stringified or array spesifikasi_json
         if ($request->has('spesifikasi_json')) {
@@ -911,6 +949,12 @@ class MutasiEksternalController extends Controller
             if (is_array($incomingSpec)) {
                 $specJson = array_merge($specJson, $incomingSpec);
             }
+        }
+
+        if ($dokumenPath) {
+            $specJson['dokumen_lampiran'] = $dokumenPath;
+        } elseif (!empty($existingDoc)) {
+            $specJson['dokumen_lampiran'] = $existingDoc;
         }
 
         $repeaterKeys = ['tanah_items', 'mesin_items', 'gedung_items', 'jaringan_items', 'lainnya_items', 'atb_items', 'kdp_items', 'merk', 'type', 'ukuran', 'bahan', 'no_pabrik', 'no_rangka', 'no_mesin', 'no_polisi', 'sertifikat_nomor'];
@@ -1011,7 +1055,35 @@ class MutasiEksternalController extends Controller
         }
         $astapPayload['spesifikasi_json'] = $specJson;
 
-        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
+        // Validasi batasan nilai satuan Ekstrakomtabel (Extracom <= Rp 300.000)
+        $mesinItems = $specJson['mesin_items'] ?? [];
+        if (is_array($mesinItems)) {
+            foreach ($mesinItems as $idx => $m) {
+                if (!empty($m['is_extracom']) && (float)($m['mesin_nilai_satuan'] ?? 0) > 300000) {
+                    $namaItem = $m['mesin_nama_barang'] ?? ('Item Mesin #' . ($idx + 1));
+                    $msg = "Nilai satuan untuk barang Ekstrakomtabel (Extracom) '{$namaItem}' tidak boleh melebihi Rp 300.000.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
+            }
+        }
+        $lainnyaItems = $specJson['lainnya_items'] ?? [];
+        if (is_array($lainnyaItems)) {
+            foreach ($lainnyaItems as $idx => $l) {
+                if (!empty($l['is_extracom']) && (float)($l['lainnya_nilai_satuan'] ?? 0) > 300000) {
+                    $namaItem = $l['lainnya_nama_barang'] ?? ($l['lainnya_judul'] ?? ('Item Lainnya #' . ($idx + 1)));
+                    $msg = "Nilai satuan untuk barang Ekstrakomtabel (Extracom) '{$namaItem}' tidak boleh melebihi Rp 300.000.";
+                    if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['total_realisasi' => $msg]);
+                }
+            }
+        }
+
+        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $existingDoc, $request) {
             // 1. Update master Astap
             $item->update($astapPayload);
 
@@ -1039,7 +1111,7 @@ class MutasiEksternalController extends Controller
                     'pj_tujuan_jabatan'   => 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
                     'nomor_sk_dasar'      => $request->input('nomor_sk_dasar') ?: null,
                     'tgl_estimasi_kembali'=> $request->input('tgl_estimasi_kembali'),
-                    'dokumen_lampiran'    => $dokumenPath,
+                    'dokumen_lampiran'    => $dokumenPath ?: ($existingDoc ?: null),
                     'status'              => 'Disahkan (Selesai)',
                     'jumlah_volume'       => $totalVolume,
                     'satuan'              => $data['satuan'],
@@ -1141,32 +1213,41 @@ class MutasiEksternalController extends Controller
     {
         $user = Auth::user();
         $deleterName = $user ? ($user->name . ' (' . ucfirst($user->role ?? 'user') . ')') : 'Administrator';
+        $reason = $request->input('alasan', 'Dihapus dari modul Mutasi Eksternal');
 
-        // Coba cari di MutasiEksternal terlebih dahulu (bisa berdasarkan astap_id atau id mutasi)
-        $mutasi = MutasiEksternal::where('astap_id', $id)->orWhere('id', $id)->first();
+        // Coba cari di MutasiEksternal terlebih dahulu (bisa ID mutasi atau astap_id)
+        $mutasi = MutasiEksternal::find($id) ?: MutasiEksternal::where('astap_id', $id)->first();
         $astap  = $mutasi ? $mutasi->astap : Astap::find($id);
 
         if (!$mutasi && !$astap) {
             return response()->json(['success' => false, 'message' => 'Data Mutasi Eksternal tidak ditemukan.'], 404);
         }
 
-        DB::transaction(function () use ($mutasi, $astap, $deleterName, $user) {
+        DB::transaction(function () use ($mutasi, $astap, $deleterName, $user, $reason) {
             if ($mutasi) {
-                $mutasi->update([
+                $payload = [
                     'is_deleted'    => 1,
                     'deleted_by'    => $deleterName,
                     'deleted_by_id' => $user?->id,
                     'deleted_at'    => now(),
-                ]);
+                ];
+                if (\Illuminate\Support\Facades\Schema::hasColumn('mutasi_eksternals', 'alasan_hapus')) {
+                    $payload['alasan_hapus'] = $reason;
+                }
+                $mutasi->update($payload);
             }
 
             if ($astap) {
-                $astap->update([
+                $astapPayload = [
                     'is_deleted'    => 1,
                     'deleted_by'    => $deleterName,
                     'deleted_by_id' => $user?->id,
                     'deleted_at'    => now(),
-                ]);
+                ];
+                if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'alasan_hapus')) {
+                    $astapPayload['alasan_hapus'] = $reason;
+                }
+                $astap->update($astapPayload);
 
                 AstapRegister::where('astap_id', $astap->id)->update([
                     'is_deleted'    => 1,
@@ -1178,7 +1259,7 @@ class MutasiEksternalController extends Controller
         });
 
         $msg = 'Data Mutasi Eksternal berhasil dipindahkan ke Recycle Bin.';
-        if ($request->ajax() || $request->wantsJson()) {
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest' || $request->isJson()) {
             return response()->json([
                 'success' => true,
                 'message' => $msg,

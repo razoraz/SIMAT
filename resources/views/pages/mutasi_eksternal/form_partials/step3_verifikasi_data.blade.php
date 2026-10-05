@@ -227,6 +227,39 @@
 
         </div>
 
+        <!-- Status Berkas Lampiran BAMB / BAST (Feedback Visual Sebelum Simpan) -->
+        <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center space-x-2.5">
+                <span class="text-base" x-text="selectedFile ? '📁' : (isEdit && formData.dokumen_lampiran_path ? '📄' : '📎')"></span>
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Berkas Lampiran Berita Acara (BAMB / BAST):</span>
+                    <template x-if="selectedFile">
+                        <span class="font-mono font-bold text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span x-text="selectedFile.name"></span>
+                            <span class="text-slate-400 text-[10px] font-normal" x-text="'(' + (selectedFile.size / 1024).toFixed(1) + ' KB) • Siap diunggah'"></span>
+                        </span>
+                    </template>
+                    <template x-if="!selectedFile && isEdit && formData.dokumen_lampiran_path">
+                        <span class="font-mono font-bold text-indigo-300 flex items-center gap-1.5 mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                            <span x-text="formData.dokumen_lampiran_path.split('/').pop()"></span>
+                            <span class="text-slate-400 text-[10px] font-normal">• Tersimpan di sistem</span>
+                        </span>
+                    </template>
+                    <template x-if="!selectedFile && (!isEdit || !formData.dokumen_lampiran_path)">
+                        <span class="text-slate-400 italic block mt-0.5">Tidak ada berkas yang dilampirkan (Boleh dikosongkan/opsional)</span>
+                    </template>
+                </div>
+            </div>
+            <div>
+                <span class="px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold border"
+                    :class="selectedFile ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : (isEdit && formData.dokumen_lampiran_path ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-slate-800 text-slate-400 border-slate-700')"
+                    x-text="selectedFile ? 'Berkas Baru Terpilih ✓' : (isEdit && formData.dokumen_lampiran_path ? 'Berkas Tersimpan ✓' : 'Tanpa Lampiran')">
+                </span>
+            </div>
+        </div>
+
         <!-- Catatan Tambahan Jika Ada -->
         <template x-if="formData.mutasi_keterangan">
             <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 space-y-1">
@@ -299,7 +332,7 @@
 
             <!-- KIB A Tanah -->
             <template x-if="isTanah">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Jumlah Bidang:</span>
                         <span class="font-extrabold text-white block" x-text="(formData.tanah_items ? formData.tanah_items.length : 1) + ' Bidang'"></span>
@@ -311,6 +344,10 @@
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Hak Tanah:</span>
                         <span class="font-semibold text-white block" x-text="formData.tanah_items && formData.tanah_items[0] ? formData.tanah_items[0].tanah_hak : 'Hak Pakai'"></span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Letak / Alamat Fisik:</span>
+                        <span class="text-emerald-400 font-semibold block truncate" x-text="(formData.tanah_items && formData.tanah_items[0] ? formData.tanah_items[0].tanah_alamat : '') || formData.alamat_barang || '-'"></span>
                     </div>
                 </div>
             </template>
@@ -349,7 +386,7 @@
 
             <!-- KIB C Gedung & Bangunan -->
             <template x-if="isGedung">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Jumlah Bangunan:</span>
                         <span class="font-bold text-white block" x-text="(formData.gedung_items ? formData.gedung_items.length : 1) + ' Gedung'"></span>
@@ -362,12 +399,16 @@
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi:</span>
                         <span class="text-white block" x-text="firstGedungItem?.gedung_beton || 'Beton Bertulang'"></span>
                     </div>
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Letak / Alamat Fisik:</span>
+                        <span class="text-emerald-400 font-semibold block truncate" x-text="firstGedungItem?.gedung_alamat || formData.alamat_barang || '-'"></span>
+                    </div>
                 </div>
             </template>
 
             <!-- KIB D Jaringan & Irigasi -->
             <template x-if="isJaringan">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Total Ruas / Titik:</span>
                         <span class="font-bold text-white block" x-text="(formData.jaringan_items ? formData.jaringan_items.length : 1) + ' Ruas'"></span>
@@ -379,6 +420,10 @@
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Konstruksi:</span>
                         <span class="text-white block" x-text="firstJaringanItem?.jaringan_beton || 'Beton Bertulang'"></span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Letak / Alamat Fisik:</span>
+                        <span class="text-emerald-400 font-semibold block truncate" x-text="firstJaringanItem?.jaringan_alamat || formData.alamat_barang || '-'"></span>
                     </div>
                 </div>
             </template>
