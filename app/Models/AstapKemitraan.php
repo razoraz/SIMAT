@@ -61,6 +61,26 @@ class AstapKemitraan extends Model
         $this->attributes['tanggal_selesai'] = Astap::parseDateInput($value);
     }
 
+    public function getPimpinanMitraAttribute()
+    {
+        return $this->attributes['mitra_pimpinan'] ?? null;
+    }
+
+    public function setPimpinanMitraAttribute($value)
+    {
+        $this->attributes['mitra_pimpinan'] = $value;
+    }
+
+    public function getAlamatMitraAttribute()
+    {
+        return $this->attributes['mitra_alamat'] ?? null;
+    }
+
+    public function setAlamatMitraAttribute($value)
+    {
+        $this->attributes['mitra_alamat'] = $value;
+    }
+
     /**
      * Hitung sisa hari konsesi kerjasama
      */

@@ -1216,8 +1216,8 @@ class ReklasifikasiController extends Controller
                 $kemitraanData = [
                     'astap_id'         => $astap->id,
                     'mitra_nama'       => $spec['mitra_nama'] ?? ($validated['spesifikasi_baru']['kemitraan_mitra'] ?? 'Mitra Pihak Ketiga'),
-                    'pimpinan_mitra'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? null),
-                    'alamat_mitra'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? null),
+                    'mitra_pimpinan'   => $spec['mitra_pimpinan'] ?? ($validated['spesifikasi_baru']['kemitraan_pimpinan'] ?? null),
+                    'mitra_alamat'     => $spec['mitra_alamat'] ?? ($validated['spesifikasi_baru']['kemitraan_alamat'] ?? null),
                     'nomor_pks'        => $spec['perjanjian_nomor'] ?? ($validated['spesifikasi_baru']['kemitraan_perjanjian_no'] ?? ($validated['nomor_ba_reklas'] ?? '-')),
                     'tanggal_pks'      => $spec['tanggal_pks'] ?? ($validated['spesifikasi_baru']['kemitraan_tanggal_pks'] ?? ($validated['tanggal_reklas'] ?? now())),
                     'skema_kemitraan'  => $spec['skema_kemitraan'] ?? ($validated['spesifikasi_baru']['kemitraan_skema'] ?? 'Sewa'),
@@ -1275,6 +1275,11 @@ class ReklasifikasiController extends Controller
             return redirect()->back()->with('success', 'Transaksi reklasifikasi aset berhasil dicatat!');
         } catch (\Throwable $th) {
             DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('DEBUG REKLAS ERROR: ' . $th->getMessage(), [
+                'exception' => $th,
+                'sql' => ($th instanceof \Illuminate\Database\QueryException) ? $th->getSql() : null,
+                'bindings' => ($th instanceof \Illuminate\Database\QueryException) ? $th->getBindings() : null,
+            ]);
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
