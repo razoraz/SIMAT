@@ -18,15 +18,25 @@
 
     </div>
 
+    <!-- ===== BANNER ERROR INLINE LANGKAH 1 ===== -->
+    <template x-if="stepErrors[1]">
+        <div class="flex items-start gap-3 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 shadow-lg shadow-rose-500/10 animate-[fadeInDown_0.25s_ease-out]">
+            <span class="text-rose-400 text-lg mt-0.5 shrink-0">⚠️</span>
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian — Data Langkah 1 Belum Lengkap</p>
+                <p class="text-xs text-rose-200/90 leading-relaxed" x-text="stepErrors[1]"></p>
+            </div>
+            <button type="button" @click="clearStepError(1)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">✕</button>
+        </div>
+    </template>
+
     <!-- Bagian 1: Identitas SKPD Pengirim BMD -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-indigo-500/30 space-y-5 shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>🏛️ Instansi / SKPD Pengirim BMD</span>
-                </span>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40">Kolom Wajib Ada Di Sini</span>
-            </div>
+            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🏛️ Instansi / SKPD Pengirim BMD</span>
+                <span class="text-rose-400">*</span>
+            </span>
             <span class="text-[10px] font-bold text-indigo-300 bg-indigo-400/10 px-2 py-0.5 rounded-lg border border-indigo-400/20">
                 Pelimpahan BMD · Antar-OPD
             </span>
@@ -35,9 +45,8 @@
         <!-- Instansi / SKPD Pengirim (Combobox Autocomplete) -->
         <div class="relative space-y-1.5" @click.away="isSkpdDropdownOpen = false">
             <div class="flex items-center justify-between">
-                <label class="block text-xs font-bold text-slate-200 flex items-center gap-2">
-                    <span>Instansi / SKPD Asal Pengirim BMD</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40">Wajib Diisi</span>
+                <label class="block text-xs font-bold text-slate-200">
+                    Instansi / SKPD Asal Pengirim BMD <span class="text-rose-400">*</span>
                 </label>
             </div>
 
@@ -210,12 +219,10 @@
     <!-- Bagian 2: Dokumen Legalitas Berita Acara (BAMB / BAST) & Periode Pembukuan -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-indigo-500/30 space-y-5 shadow-xl">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>📜 Dokumen Berita Acara (BAMB / BAST) &amp; Periode Pembukuan</span>
-                </span>
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40">Kolom Wajib Ada Di Sini</span>
-            </div>
+            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>📜 Dokumen Berita Acara (BAMB / BAST) &amp; Periode Pembukuan</span>
+                <span class="text-rose-400">*</span>
+            </span>
             <span class="text-[10px] font-bold text-indigo-300 bg-indigo-400/10 px-2 py-0.5 rounded-lg border border-indigo-400/20">
                 BAMB / BAST Resmi
             </span>
@@ -226,9 +233,8 @@
             
             <!-- Nomor Dokumen BAMB / BAST -->
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                    <span>Nomor Berita Acara (BAMB / BAST)</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-500/20 text-rose-300 border border-rose-500/40">Wajib Diisi</span>
+                <label class="block text-xs font-bold text-slate-200 mb-1.5">
+                    Nomor Berita Acara (BAMB / BAST) <span class="text-rose-400">*</span>
                 </label>
                 <input type="text" x-model="formData.mutasi_nomor_bamb" required
                     placeholder="Contoh: 028/123/BAMB/430.10.2/2026"
@@ -237,21 +243,29 @@
 
             <!-- Tanggal Dokumen BAMB -->
             <div>
-                <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                    <span>Tanggal Dokumen BAMB</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Maks. Hari Ini</span>
-                </label>
-                <input type="text" x-datepicker="{ maxDate: 'today' }" x-model="formData.mutasi_tanggal" 
-                    @change="
-                        const todayIso = new Date().toISOString().split('T')[0];
-                        if (formData.mutasi_tanggal > todayIso) {
-                            formData.mutasi_tanggal = todayIso;
-                        }
-                        onTanggalChange(formData.mutasi_tanggal);
-                    "
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-bold text-slate-200">
+                        Tanggal Dokumen BAMB / BAST <span class="text-rose-400">*</span>
+                    </label>
+                    <span class="text-[10px] font-mono text-indigo-400/80 bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-800/40">Maks: Hari Ini</span>
+                </div>
+                <input type="text" 
+                    x-datepicker="{ maxDate: 'today' }" 
+                    x-model="formData.mutasi_tanggal" 
+                    @input="onTanggalChange($event.target.value)"
+                    @change="onTanggalChange($event.target.value)"
                     placeholder="dd/mm/yyyy"
                     required
-                    class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none shadow-inner">
+                    :class="isTanggalBambInvalid() ? 'border-rose-500 focus:border-rose-400 bg-rose-950/20' : 'border-slate-700 focus:border-indigo-400 bg-slate-900'"
+                    class="w-full border rounded-xl px-3.5 py-2.5 text-xs text-white font-semibold focus:outline-none transition-colors shadow-inner">
+                
+                <!-- Peringatan Visual Jika Tanggal BAMB Lebih dari Hari Ini -->
+                <template x-if="isTanggalBambInvalid()">
+                    <div class="mt-1.5 flex items-center gap-1.5 text-[10.5px] text-rose-400 font-semibold animate-pulse">
+                        <span>⚠️</span>
+                        <span>Tanggal dokumen Berita Acara tidak boleh melebihi tanggal hari ini!</span>
+                    </div>
+                </template>
             </div>
 
             <!-- Alamat Instansi -->
@@ -268,8 +282,10 @@
             <!-- Tahun Perolehan BMD -->
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                    <span>Tahun Pembukuan BMD</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Otomatis</span>
+                    <span>Tahun Pembukuan BMD <span class="text-rose-400">*</span></span>
+                    <span class="inline-flex items-center gap-1 text-[10px] text-indigo-400/90 font-medium bg-indigo-950/40 px-2 py-0.5 rounded-md border border-indigo-800/40">
+                        Sinkron BAMB
+                    </span>
                 </label>
                 <input type="number" x-model.number="formData.tahun_perolehan" min="1990" max="2100" required
                     class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono font-bold focus:outline-none shadow-inner">
@@ -278,15 +294,17 @@
             <!-- Triwulan Pembukuan -->
             <div>
                 <label class="block text-xs font-bold text-slate-200 mb-1.5 flex items-center justify-between">
-                    <span>Triwulan Pembukuan</span>
-                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Otomatis</span>
+                    <span>Periode Triwulan Pembukuan <span class="text-rose-400">*</span></span>
+                    <span class="inline-flex items-center gap-1 text-[10px] text-indigo-400/90 font-medium bg-indigo-950/40 px-2 py-0.5 rounded-md border border-indigo-800/40">
+                        Sinkron BAMB
+                    </span>
                 </label>
                 <select x-model="formData.triwulan" required
                     class="w-full bg-slate-900 border border-slate-700 focus:border-indigo-400 rounded-xl px-3.5 py-2.5 text-xs text-white font-bold focus:outline-none shadow-inner">
-                    <option value="TW I">Triwulan I (Jan - Mar)</option>
-                    <option value="TW II">Triwulan II (Apr - Jun)</option>
-                    <option value="TW III">Triwulan III (Jul - Sep)</option>
-                    <option value="TW IV">Triwulan IV (Okt - Des)</option>
+                    <option value="TW I">TW I (Januari - Maret)</option>
+                    <option value="TW II">TW II (April - Juni)</option>
+                    <option value="TW III">TW III (Juli - September)</option>
+                    <option value="TW IV">TW IV (Oktober - Desember)</option>
                 </select>
             </div>
 

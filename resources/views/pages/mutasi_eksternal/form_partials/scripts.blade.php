@@ -6,6 +6,7 @@
         return {
             currentStep: 1,
             totalSteps: 3,
+            stepErrors: { 1: '', 2: '', 3: '' },
             isSubmitting: false,
             isDataVerified: false,
             isEdit: {{ Js::from($isEdit) }},
@@ -106,6 +107,41 @@
                 setTimeout(() => {
                     this.toast.show = false;
                 }, 5000);
+            },
+
+            // Helper: set / clear error pada step tertentu
+            setStepError(s, msg) {
+                this.stepErrors[s] = msg || '';
+            },
+
+            clearStepError(s) {
+                this.stepErrors[s] = '';
+            },
+
+            clearAllStepErrors() {
+                this.stepErrors = { 1: '', 2: '', 3: '' };
+            },
+
+            parseDateToTimestamp(d) {
+                if (!d) return 0;
+                if (d.includes('/')) {
+                    const parts = d.split('/');
+                    if (parts.length === 3) {
+                        return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+                    }
+                }
+                return new Date(d).getTime();
+            },
+
+            getTodayTimestamp() {
+                const now = new Date();
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+            },
+
+            isTanggalBambInvalid() {
+                if (!this.formData.mutasi_tanggal) return false;
+                const t = this.parseDateToTimestamp(this.formData.mutasi_tanggal);
+                return t > 0 && t > this.getTodayTimestamp();
             },
 
             // Formatters
@@ -1290,69 +1326,222 @@
             },
 
             validateStep(s) {
+                // Bersihkan error lama untuk step ini sebelum validasi ulang
+                this.clearStepError(s);
+
                 if (s === 1) {
-                    let missing = [];
                     if (!this.formData.mutasi_asal || !this.formData.mutasi_asal.trim()) {
-                        missing.push('Instansi / SKPD Asal Pengirim BMD');
+                        const msg = 'Mohon isi nama instansi / SKPD asal pengirim BMD.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        this.focusFirstMissingField(1);
+                        return false;
                     }
                     if (!this.formData.mutasi_nomor_bamb || !this.formData.mutasi_nomor_bamb.trim()) {
-                        missing.push('Nomor Berita Acara (BAMB / BAST)');
+                        const msg = 'Mohon isi nomor dokumen Berita Acara (BAMB / BAST).';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        this.focusFirstMissingField(1);
+                        return false;
                     }
                     if (!this.formData.mutasi_tanggal) {
-                        missing.push('Tanggal Dokumen Berita Acara');
-                    } else {
-                        const todayIso = new Date().toISOString().split('T')[0];
-                        if (this.formData.mutasi_tanggal > todayIso) {
-                            missing.push('Tanggal Dokumen Berita Acara tidak boleh melebihi tanggal hari ini');
-                        }
+                        const msg = 'Mohon isi tanggal dokumen Berita Acara (BAMB).';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        this.focusFirstMissingField(1);
+                        return false;
+                    }
+                    const tBamb = this.parseDateToTimestamp(this.formData.mutasi_tanggal);
+                    const today = this.getTodayTimestamp();
+                    if (tBamb > 0 && tBamb > today) {
+                        const msg = 'Tanggal dokumen Berita Acara tidak boleh melebihi tanggal hari ini.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        this.focusFirstMissingField(1);
+                        return false;
                     }
                     if (!this.formData.tahun_perolehan) {
-                        missing.push('Tahun Perolehan BMD');
+                        const msg = 'Mohon tentukan tahun pembukuan BMD.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        this.focusFirstMissingField(1);
+                        return false;
                     }
-
-                    if (missing.length > 0) {
-                        this.showValidationAlert(1, missing);
+                    if (!this.formData.triwulan) {
+                        const msg = 'Mohon pilih periode triwulan pembukuan.';
+                        this.showToast('Validasi Langkah 1 Gagal', msg, 'error');
+                        this.setStepError(1, msg);
+                        this.focusFirstMissingField(1);
                         return false;
                     }
                 } else if (s === 2) {
-                    let missing = [];
                     if (!this.formData.jenis_astap_id) {
                         this.ensureJenisAstapId();
                     }
                     if (!this.formData.jenis_astap_id) {
-                        missing.push('Klasifikasi Kategori KIB Permendagri 108');
-                    }
-                    if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
-                        if (this.selected108Item && this.selected108Item.nama) {
-                            this.formData.nama_barang = this.selected108Item.nama;
-                        } else if (this.firstMesinItem && (this.firstMesinItem.mesin_merk || this.firstMesinItem.mesin_type)) {
-                            this.formData.nama_barang = [this.firstMesinItem.mesin_merk, this.firstMesinItem.mesin_type].filter(Boolean).join(' ');
-                        } else if (this.formData.tanah_items?.[0]?.tanah_nama_barang) {
-                            this.formData.nama_barang = this.formData.tanah_items[0].tanah_nama_barang;
-                        } else if (this.formData.gedung_items?.[0]?.gedung_nama_barang) {
-                            this.formData.nama_barang = this.formData.gedung_items[0].gedung_nama_barang;
-                        } else if (this.formData.jaringan_items?.[0]?.jaringan_nama_barang) {
-                            this.formData.nama_barang = this.formData.jaringan_items[0].jaringan_nama_barang;
-                        } else if (this.formData.lainnya_items?.[0]?.lainnya_judul) {
-                            this.formData.nama_barang = this.formData.lainnya_items[0].lainnya_judul;
-                        } else {
-                            this.formData.nama_barang = 'Aset Pelimpahan SKPD';
-                        }
-                    }
-                    if (!this.formData.total_realisasi || Number(this.formData.total_realisasi) <= 0) {
-                        missing.push('Nilai Perolehan Satuan pada rincian unit KIB di atas (Total Nilai BMD harus > 0)');
-                    }
-                    if (this.isTanah && this.formData.tanah_items) {
-                        const todayIso = new Date().toISOString().split('T')[0];
-                        this.formData.tanah_items.forEach((item, idx) => {
-                            if (item.tanah_sertifikat_tgl && item.tanah_sertifikat_tgl > todayIso) {
-                                missing.push(`Tanggal Sertifikat Tanah #${idx + 1} tidak boleh melebihi tanggal hari ini`);
-                            }
-                        });
+                        const msg = 'Mohon pilih klasifikasi kode barang 108 — pilih salah satu kategori KIB aset tetap.';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
+                        return false;
                     }
 
-                    if (missing.length > 0) {
-                        this.showValidationAlert(2, missing);
+                    // Validasi rincian repeater spesifik KIB
+                    if (this.isMesin) {
+                        this.syncTotalsFromItems();
+                        if (!this.formData.mesin_items || this.formData.mesin_items.length === 0) {
+                            const msg = 'Mohon tambahkan minimal 1 item barang / unit pada rincian mesin.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
+                            return false;
+                        }
+                        for (let i = 0; i < this.formData.mesin_items.length; i++) {
+                            const it = this.formData.mesin_items[i];
+                            const num = i + 1;
+                            if (!it.mesin_nama_barang || !it.mesin_nama_barang.trim()) {
+                                const msg = `Nama Barang / Unit #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (!it.mesin_jumlah_barang || parseInt(it.mesin_jumlah_barang) < 1) {
+                                const msg = `Jumlah volume pada Barang #${num} minimal 1 unit.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (parseFloat(it.mesin_nilai_satuan) <= 0 || isNaN(parseFloat(it.mesin_nilai_satuan))) {
+                                const msg = `Nilai satuan pada Barang #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (it.is_extracom && parseFloat(it.mesin_nilai_satuan) > 300000) {
+                                const msg = `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`;
+                                this.showToast('Validasi Extracom Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                        }
+                    } else if (this.isTanah) {
+                        this.syncTotalsFromItems();
+                        if (!this.formData.tanah_items || this.formData.tanah_items.length === 0) {
+                            const msg = 'Mohon tambahkan minimal 1 bidang tanah pada rincian tanah.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
+                            return false;
+                        }
+                        for (let i = 0; i < this.formData.tanah_items.length; i++) {
+                            const it = this.formData.tanah_items[i];
+                            const num = i + 1;
+                            if (!it.tanah_luas_m2 || parseFloat(it.tanah_luas_m2) <= 0) {
+                                const msg = `Luas tanah (m²) pada Bidang Tanah #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                        }
+                    } else if (this.isGedung) {
+                        this.syncTotalsFromItems();
+                        if (!this.formData.gedung_items || this.formData.gedung_items.length === 0) {
+                            const msg = 'Mohon tambahkan minimal 1 bangunan gedung pada rincian gedung.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
+                            return false;
+                        }
+                        for (let i = 0; i < this.formData.gedung_items.length; i++) {
+                            const it = this.formData.gedung_items[i];
+                            const num = i + 1;
+                            if (!it.gedung_nama_barang || !it.gedung_nama_barang.trim()) {
+                                const msg = `Nama Bangunan #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (!it.gedung_jumlah_bangunan || parseInt(it.gedung_jumlah_bangunan) < 1) {
+                                const msg = `Jumlah unit pada Bangunan #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                        }
+                    } else if (this.isJaringan) {
+                        this.syncTotalsFromItems();
+                        if (!this.formData.jaringan_items || this.formData.jaringan_items.length === 0) {
+                            const msg = 'Mohon tambahkan minimal 1 ruas pada rincian jalan & jaringan.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
+                            return false;
+                        }
+                        for (let i = 0; i < this.formData.jaringan_items.length; i++) {
+                            const it = this.formData.jaringan_items[i];
+                            const num = i + 1;
+                            if (!it.jaringan_nama_barang || !it.jaringan_nama_barang.trim()) {
+                                const msg = `Nama Ruas #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (!it.jaringan_jumlah || parseInt(it.jaringan_jumlah) < 1) {
+                                const msg = `Jumlah volume pada Ruas #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                        }
+                    } else if (this.isLainnya) {
+                        this.syncTotalsFromItems();
+                        if (!this.formData.lainnya_items || this.formData.lainnya_items.length === 0) {
+                            const msg = 'Mohon tambahkan minimal 1 item pada rincian aset tetap lainnya.';
+                            this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                            this.setStepError(2, msg);
+                            return false;
+                        }
+                        for (let i = 0; i < this.formData.lainnya_items.length; i++) {
+                            const it = this.formData.lainnya_items[i];
+                            const num = i + 1;
+                            if (!it.lainnya_nama_barang || !it.lainnya_nama_barang.trim()) {
+                                const msg = `Nama Barang pada Item #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (!it.lainnya_jumlah || parseInt(it.lainnya_jumlah) < 1) {
+                                const msg = `Jumlah volume pada Item #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (it.is_extracom && parseFloat(it.lainnya_nilai_satuan) > 300000) {
+                                const msg = `Nilai satuan pada Barang Extracom #${num} tidak boleh melebihi Rp 300.000.`;
+                                this.showToast('Validasi Extracom Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                        }
+                    }
+
+                    if (!this.formData.nama_barang || !this.formData.nama_barang.trim()) {
+                        const msg = 'Mohon isi nama spesifik barang pelimpahan BMD.';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
+                        return false;
+                    }
+                    if (!this.formData.jumlah_volume || this.formData.jumlah_volume < 1) {
+                        const msg = 'Jumlah volume barang minimal 1 unit.';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
+                        return false;
+                    }
+                    if (!this.formData.satuan || !this.formData.satuan.trim()) {
+                        const msg = 'Mohon isi satuan barang (contoh: Unit, Set, Buah).';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
+                        return false;
+                    }
+                    if (!this.formData.total_realisasi || Number(this.formData.total_realisasi) <= 0) {
+                        const msg = 'Mohon masukkan total nilai perolehan BMD (Rp).';
+                        this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                        this.setStepError(2, msg);
                         return false;
                     }
 
@@ -1360,23 +1549,50 @@
                     const extracomViolations = this.getExtracomViolations();
                     if (extracomViolations.length > 0) {
                         this.showExtracomAlert(extracomViolations);
+                        const msg = 'Nilai satuan barang Extracom tidak boleh melebihi Rp 300.000.';
+                        this.showToast('Validasi Extracom Gagal', msg, 'error');
+                        this.setStepError(2, msg);
                         return false;
                     }
                 } else if (s === 3) {
-                    if (!this.isDataVerified) {
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Verifikasi Data Belum Dicentang',
-                                text: 'Mohon centang kotak pernyataan verifikasi data serah terima di bagian bawah sebelum menyimpan ke database.',
-                                confirmButtonText: 'Baik, Saya Mengerti',
-                                confirmButtonColor: '#6366f1',
-                                background: '#0f172a',
-                                color: '#ffffff'
-                            });
-                        } else {
-                            this.showToast('Verifikasi Diperlukan', 'Mohon centang pernyataan verifikasi di bagian bawah.', 'warning');
+                    const today = this.getTodayTimestamp();
+                    if (this.isTanah && this.formData.tanah_items) {
+                        for (let i = 0; i < this.formData.tanah_items.length; i++) {
+                            const tgl = this.formData.tanah_items[i].tanah_sertifikat_tgl;
+                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
+                                const msg = `Tanggal Sertifikat pada Bidang Tanah #${i + 1} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(3, msg);
+                                return false;
+                            }
                         }
+                    }
+                    if (this.isGedung && this.formData.gedung_items) {
+                        for (let i = 0; i < this.formData.gedung_items.length; i++) {
+                            const tgl = this.formData.gedung_items[i].gedung_dokumen_tgl;
+                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
+                                const msg = `Tanggal Dokumen pada Bangunan #${i + 1} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(3, msg);
+                                return false;
+                            }
+                        }
+                    }
+                    if (this.isJaringan && this.formData.jaringan_items) {
+                        for (let i = 0; i < this.formData.jaringan_items.length; i++) {
+                            const tgl = this.formData.jaringan_items[i].jaringan_dokumen_tgl;
+                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
+                                const msg = `Tanggal Dokumen pada Ruas #${i + 1} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(3, msg);
+                                return false;
+                            }
+                        }
+                    }
+                    if (!this.isDataVerified) {
+                        const msg = 'Mohon centang pernyataan bahwa data serah terima BMD telah diverifikasi dengan benar sebelum disimpan.';
+                        this.showToast('Verifikasi Diperlukan', msg, 'warning');
+                        this.setStepError(3, msg);
                         return false;
                     }
                 }
@@ -1448,7 +1664,25 @@
 
             // Form Submit via AJAX
             async submitForm() {
-                if (!this.validateStep(1) || !this.validateStep(2) || !this.validateStep(3)) return;
+                // Bersihkan semua error lama terlebih dahulu
+                this.clearAllStepErrors();
+
+                // Validasi per step dan otomatis navigasi ke step bermasalah
+                if (!this.validateStep(1)) {
+                    this.currentStep = 1;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                if (!this.validateStep(2)) {
+                    this.currentStep = 2;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
+                if (!this.validateStep(3)) {
+                    this.currentStep = 3;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
 
                 this.syncTotalsFromItems();
 
