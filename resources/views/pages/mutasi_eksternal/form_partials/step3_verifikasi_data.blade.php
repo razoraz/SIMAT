@@ -29,6 +29,18 @@
         </div>
     </div>
 
+    <!-- ===== BANNER ERROR INLINE LANGKAH 3 ===== -->
+    <template x-if="stepErrors[3]">
+        <div class="flex items-start gap-3 p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 shadow-lg shadow-rose-500/10 animate-[fadeInDown_0.25s_ease-out]">
+            <span class="text-rose-400 text-lg mt-0.5 shrink-0">⚠️</span>
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-rose-300 mb-0.5">Perhatian — Verifikasi Langkah 3 Diperlukan</p>
+                <p class="text-xs text-rose-200/90 leading-relaxed" x-text="stepErrors[3]"></p>
+            </div>
+            <button type="button" @click="clearStepError(3)" class="ml-auto shrink-0 text-rose-400 hover:text-rose-200 transition-colors text-sm leading-none">✕</button>
+        </div>
+    </template>
+
     <!-- 2. SEKSI UTAMA 1: DOKUMEN BERITA ACARA & KEDUA BELAH PIHAK (PIHAK I & PIHAK II) -->
     <div class="p-6 rounded-3xl bg-slate-950/80 border border-slate-800 shadow-xl space-y-5">
         
@@ -578,7 +590,7 @@
             <label for="confirmVerification" class="cursor-pointer select-none space-y-1.5">
                 <div class="flex items-center gap-2 flex-wrap">
                     <span class="text-sm font-extrabold text-white">
-                        Pernyataan Verifikasi &amp; Pengesahan Serah Terima BMD
+                        Pernyataan Verifikasi &amp; Pengesahan Serah Terima BMD <span class="text-rose-400">*</span>
                     </span>
                     <span x-show="isDataVerified" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
                         <span>✓</span>

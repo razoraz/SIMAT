@@ -40,48 +40,57 @@
             <!-- Step 1 Tab -->
             <button type="button" @click="goToStep(1)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 transition-all">
                 <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
-                    <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0"
-                         :class="currentStep === 1 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30' : (currentStep > 1 ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
-                        <span x-show="currentStep <= 1">1</span>
-                        <span x-show="currentStep > 1">✓</span>
+                    <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0 relative"
+                         :class="stepErrors[1] ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-lg shadow-rose-500/20' : (currentStep === 1 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30' : (currentStep > 1 ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800'))">
+                        <span x-show="!stepErrors[1] && currentStep <= 1">1</span>
+                        <span x-show="!stepErrors[1] && currentStep > 1">✓</span>
+                        <span x-show="stepErrors[1]">!</span>
                     </div>
                     <div class="min-w-0">
-                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 1 ? 'text-indigo-400' : 'text-slate-500'">Langkah 1</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate"
+                              :class="stepErrors[1] ? 'text-rose-400' : (currentStep === 1 ? 'text-indigo-400' : 'text-slate-500')">Langkah 1</span>
                         <span class="text-[11px] sm:text-xs font-bold text-white block truncate">BAMB &amp; SKPD Pengirim</span>
                     </div>
                 </div>
-                <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 1 ? 'bg-indigo-500' : 'bg-slate-950'"></div>
+                <div class="h-1 sm:h-1.5 rounded-full w-full transition-all"
+                     :class="stepErrors[1] ? 'bg-rose-500' : (currentStep >= 1 ? 'bg-indigo-500' : 'bg-slate-950')"></div>
             </button>
 
             <!-- Step 2 Tab -->
             <button type="button" @click="goToStep(2)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 transition-all">
                 <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
-                    <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0"
-                         :class="currentStep === 2 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30' : (currentStep > 2 ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800')">
-                        <span x-show="currentStep <= 2">2</span>
-                        <span x-show="currentStep > 2">✓</span>
+                    <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0 relative"
+                         :class="stepErrors[2] ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-lg shadow-rose-500/20' : (currentStep === 2 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30' : (currentStep > 2 ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/40' : 'bg-slate-950 text-slate-500 border border-slate-800'))">
+                        <span x-show="!stepErrors[2] && currentStep <= 2">2</span>
+                        <span x-show="!stepErrors[2] && currentStep > 2">✓</span>
+                        <span x-show="stepErrors[2]">!</span>
                     </div>
                     <div class="min-w-0">
-                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 2 ? 'text-indigo-400' : 'text-slate-500'">Langkah 2</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate"
+                              :class="stepErrors[2] ? 'text-rose-400' : (currentStep === 2 ? 'text-indigo-400' : 'text-slate-500')">Langkah 2</span>
                         <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Klasifikasi 108 &amp; Fisik Aset</span>
                     </div>
                 </div>
-                <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 2 ? 'bg-indigo-500' : 'bg-slate-950'"></div>
+                <div class="h-1 sm:h-1.5 rounded-full w-full transition-all"
+                     :class="stepErrors[2] ? 'bg-rose-500' : (currentStep >= 2 ? 'bg-indigo-500' : 'bg-slate-950')"></div>
             </button>
 
             <!-- Step 3 Tab -->
             <button type="button" @click="goToStep(3)" class="text-left group cursor-pointer p-2 sm:p-0 rounded-xl hover:bg-slate-800/40 transition-all">
                 <div class="flex items-center space-x-2 sm:space-x-3 mb-1.5 sm:mb-2">
-                    <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0"
-                         :class="currentStep === 3 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30' : 'bg-slate-950 text-slate-500 border border-slate-800'">
-                        <span>3</span>
+                    <div class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center transition-all shrink-0 relative"
+                         :class="stepErrors[3] ? 'bg-rose-500/20 text-rose-300 border border-rose-500/60 shadow-lg shadow-rose-500/20' : (currentStep === 3 ? 'bg-indigo-500 text-white font-black shadow-lg shadow-indigo-500/30' : 'bg-slate-950 text-slate-500 border border-slate-800')">
+                        <span x-show="!stepErrors[3]">3</span>
+                        <span x-show="stepErrors[3]">!</span>
                     </div>
                     <div class="min-w-0">
-                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate" :class="currentStep === 3 ? 'text-indigo-400' : 'text-slate-500'">Langkah 3</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider block truncate"
+                              :class="stepErrors[3] ? 'text-rose-400' : (currentStep === 3 ? 'text-indigo-400' : 'text-slate-500')">Langkah 3</span>
                         <span class="text-[11px] sm:text-xs font-bold text-white block truncate">Verifikasi Data Pelimpahan</span>
                     </div>
                 </div>
-                <div class="h-1 sm:h-1.5 rounded-full w-full transition-all" :class="currentStep >= 3 ? 'bg-indigo-500' : 'bg-slate-950'"></div>
+                <div class="h-1 sm:h-1.5 rounded-full w-full transition-all"
+                     :class="stepErrors[3] ? 'bg-rose-500' : (currentStep >= 3 ? 'bg-indigo-500' : 'bg-slate-950')"></div>
             </button>
 
         </div>
