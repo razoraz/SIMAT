@@ -94,7 +94,9 @@
                     <option value="KDP_TO_DEFINITIF" {{ ($selectedJenis ?? '') == 'KDP_TO_DEFINITIF' ? 'selected' : '' }} class="bg-slate-900 text-white">KDP Selesai ➔ Definitif</option>
                     <option value="EKSTRAKOMPTABEL" {{ ($selectedJenis ?? '') == 'EKSTRAKOMPTABEL' ? 'selected' : '' }} class="bg-slate-900 text-white">Ekstrakomptabel (≤ Rp 300rb)</option>
                     <option value="KAPITALISASI_INTRAKOM" {{ ($selectedJenis ?? '') == 'KAPITALISASI_INTRAKOM' ? 'selected' : '' }} class="bg-slate-900 text-white">Kapitalisasi Intrakomptabel</option>
-                    <option value="HIBAH_MASUK" {{ ($selectedJenis ?? '') == 'HIBAH_MASUK' ? 'selected' : '' }} class="bg-slate-900 text-white">Hibah Masuk</option>
+                    <option value="HIBAH_KELUAR" {{ ($selectedJenis ?? '') == 'HIBAH_KELUAR' ? 'selected' : '' }} class="bg-slate-900 text-white">Hibah Keluar (Dihibahkan)</option>
+                    <option value="HIBAH_MASUK" {{ ($selectedJenis ?? '') == 'HIBAH_MASUK' ? 'selected' : '' }} class="bg-slate-900 text-white">Hibah Masuk (Bantuan Pemerintah)</option>
+                    <option value="MUTASI_EKSTERNAL" {{ ($selectedJenis ?? '') == 'MUTASI_EKSTERNAL' ? 'selected' : '' }} class="bg-slate-900 text-white">Mutasi Eksternal (Antar-OPD)</option>
                     <option value="KOREKSI_LAIN" {{ ($selectedJenis ?? '') == 'KOREKSI_LAIN' ? 'selected' : '' }} class="bg-slate-900 text-white">Koreksi Nilai / Audit BPK</option>
                 </select>
             </div>
@@ -114,7 +116,9 @@
                         'KDP_TO_DEFINITIF'    => 'KDP ➔ Definitif',
                         'EKSTRAKOMPTABEL'     => 'Ekstrakomptabel',
                         'KAPITALISASI_INTRAKOM'=> 'Kapitalisasi Intrakom',
+                        'HIBAH_KELUAR'        => 'Hibah Keluar',
                         'HIBAH_MASUK'         => 'Hibah Masuk',
+                        'MUTASI_EKSTERNAL'    => 'Mutasi Antar-OPD',
                         'KOREKSI_LAIN'        => 'Koreksi Nilai / BPK',
                     ];
                 @endphp

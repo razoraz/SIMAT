@@ -496,6 +496,9 @@
                     keterangan: '',
                     tipe_koreksi: 'kurang',
                     nilai_realisasi_baru: 0,
+                    pihak_hibah: '',
+                    skpd_tujuan: '',
+                    tanggal_bast: '',
                     spekBaru: {
                         tanah_luas_m2: '',
                         tanah_hak: 'Hak Pakai',
@@ -604,12 +607,24 @@
                     if (this.selectedAstap) {
                         this.formData.nilai_reklas = parseFloat(this.selectedAstap.total_realisasi || 0);
                     }
+                } else if (this.formData.jenis_reklas === 'HIBAH_KELUAR') {
+                    const hibahRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_HIBAH');
+                    if (hibahRow) {
+                        this.formData.jenis_reklasifikasi_tujuan_id = hibahRow.id;
+                    }
+                    this.formData.tujuan_kib = 'HIBAH';
                 } else if (this.formData.jenis_reklas === 'HIBAH_MASUK') {
                     const hibahRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_HIBAH');
                     if (hibahRow) {
                         this.formData.jenis_reklasifikasi_asal_id = hibahRow.id;
                     }
                     this.formData.asal_kib = 'HIBAH';
+                } else if (this.formData.jenis_reklas === 'MUTASI_EKSTERNAL') {
+                    const mutasiRow = (window.templateRows || []).find(r => r.kode_prefix === 'KOR_LAIN');
+                    if (mutasiRow) {
+                        this.formData.jenis_reklasifikasi_tujuan_id = mutasiRow.id;
+                    }
+                    this.formData.tujuan_kib = 'KOREKSI';
                 } else if (this.formData.jenis_reklas === 'KOREKSI_LAIN') {
                     const currentTot = parseFloat(this.selectedAstap?.total_realisasi || 0);
                     if (!this.formData.nilai_realisasi_baru || this.formData.nilai_realisasi_baru === 0) {
@@ -794,7 +809,9 @@
                     'DEFINITIF_TO_KDP': 'Definitif ➔ KDP (Reversi)',
                     'EKSTRAKOMPTABEL': 'Ekstrakomptabel (Nilai ≤ Rp 300.000)',
                     'KAPITALISASI_INTRAKOM': 'Kapitalisasi Intrakomptabel',
-                    'HIBAH_MASUK': 'Hibah / Bantuan Masuk',
+                    'HIBAH_KELUAR': 'Hibah Keluar (Dihibahkan ke Luar)',
+                    'HIBAH_MASUK': 'Hibah Masuk / Bantuan Pemerintah',
+                    'MUTASI_EKSTERNAL': 'Mutasi Eksternal (Antar-OPD)',
                     'KOREKSI_LAIN': 'Koreksi Nilai / Audit BPK',
                 };
                 return map[code] || code;
@@ -868,6 +885,20 @@
                     if (raw.alamat || raw.tanah_alamat || raw.gedung_alamat || raw.jaringan_alamat) out['Alamat Lokasi'] = raw.alamat || raw.tanah_alamat || raw.gedung_alamat || raw.jaringan_alamat;
                 }
 
+                // Metadata Hibah & Mutasi Eksternal
+                if (raw.hibah_info) {
+                    out['Tipe Hibah'] = raw.hibah_info.tipe === 'keluar' ? 'Hibah Keluar (Dihibahkan ke Pihak Lain)' : 'Hibah Masuk (Bantuan Pemerintah)';
+                    if (raw.hibah_info.pihak) out['Pihak Terkait / Lembaga'] = raw.hibah_info.pihak;
+                    if (raw.hibah_info.nomor_bast) out['No. BAST Hibah'] = raw.hibah_info.nomor_bast;
+                    if (raw.hibah_info.tanggal_bast) out['Tgl. BAST Hibah'] = raw.hibah_info.tanggal_bast;
+                }
+                if (raw.mutasi_info) {
+                    out['Tipe Mutasi'] = 'Mutasi Keluar Antar-OPD / SKPD';
+                    if (raw.mutasi_info.skpd_tujuan) out['SKPD / OPD Penerima'] = raw.mutasi_info.skpd_tujuan;
+                    if (raw.mutasi_info.nomor_bast) out['No. BAST Mutasi'] = raw.mutasi_info.nomor_bast;
+                    if (raw.mutasi_info.tanggal_bast) out['Tgl. BAST Mutasi'] = raw.mutasi_info.tanggal_bast;
+                }
+
                 return out;
             },
 
@@ -884,8 +915,17 @@
                         return `Telah diselesaikan konstruksi fisik / KDP atas aset "${nama}" senilai Rp ${nilai}${noBa} dan dikapitalisasi menjadi aset tetap definitif (${this.formData.tujuan_kib || 'Gedung dan Bangunan'}).`;
                     case 'EKSTRAKOMPTABEL':
                         return `Telah dilakukan koreksi pengalihan ke Ekstrakomptabel atas aset "${nama}" senilai Rp ${nilai}${noBa} karena nilai perolehan satuan berada di bawah batas kapitalisasi (≤ Rp 300.000).`;
+                    case 'KAPITALISASI_INTRAKOM':
+                        return `Telah dilakukan kapitalisasi intrakomptabel atas aset ekstrakomptabel "${nama}" senilai Rp ${nilai}${noBa} ke dalam aset tetap ${this.formData.tujuan_kib || 'KIB B'} karena nilai satuan memenuhi kriteria kapitalisasi.`;
+                    case 'HIBAH_KELUAR':
+                        const pihakKeluar = this.formData.pihak_hibah ? ` kepada ${this.formData.pihak_hibah}` : '';
+                        return `Telah dihibahkan aset tetap "${nama}" senilai Rp ${nilai}${pihakKeluar}${noBa} berdasarkan Berita Acara Serah Terima (BAST) Hibah.`;
                     case 'HIBAH_MASUK':
-                        return `Telah dicatat penambahan aset tetap melalui reklasifikasi hibah/bantuan pemerintah atas barang "${nama}" senilai Rp ${nilai}${noBa}.`;
+                        const pihakMasuk = this.formData.pihak_hibah ? ` dari ${this.formData.pihak_hibah}` : '';
+                        return `Telah dicatat penambahan aset tetap melalui reklasifikasi hibah/bantuan pemerintah${pihakMasuk} atas barang "${nama}" senilai Rp ${nilai}${noBa}.`;
+                    case 'MUTASI_EKSTERNAL':
+                        const skpd = this.formData.skpd_tujuan ? ` ke ${this.formData.skpd_tujuan}` : '';
+                        return `Telah dilakukan mutasi keluar antar-OPD atas aset "${nama}" senilai Rp ${nilai}${skpd}${noBa} berdasarkan BAST Mutasi Antar-SKPD.`;
                     case 'KOREKSI_LAIN':
                         const tipeText = this.formData.tipe_koreksi === 'tambah' ? 'penambahan nilai buku (kapitalisasi susulan)' : 'pengurangan nilai buku (temuan audit BPK / penyesuaian dana)';
                         const lamaFmt = new Intl.NumberFormat('id-ID').format(this.selectedAstap?.total_realisasi || 0);
@@ -908,6 +948,9 @@
                         alasan_reklas: (this.formData.alasan_reklas || '').trim() || (this.formData.keterangan || '').trim() || null,
                         keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),
                         spesifikasi_baru: (['KOREKSI_REKENING', 'KDP_TO_DEFINITIF'].includes(this.formData.jenis_reklas) && this.formData.tujuan_kib) ? this.formData.spekBaru : null,
+                        pihak_hibah: this.formData.pihak_hibah || null,
+                        skpd_tujuan: this.formData.skpd_tujuan || null,
+                        tanggal_bast: this.formData.tanggal_bast || null,
                     };
 
                     const response = await fetch('{{ route("master.reklasifikasi.store") }}', {

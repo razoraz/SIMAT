@@ -107,7 +107,7 @@
                         <label class="block text-slate-300 font-bold text-xs uppercase tracking-wider mb-2">
                             🎯 Pilih Jenis Reklasifikasi:
                         </label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                             <!-- 1. Ekstrakomptabel / Kapitalisasi Intrakomptabel -->
                             <label class="relative flex items-center p-3.5 rounded-2xl border transition-all select-none"
                                    style="gap: 12px;"
@@ -212,8 +212,40 @@
                                     <div x-show="reklasJenis === 'koreksi_nilai'" class="rounded-full bg-cyan-400" style="width: 8px; height: 8px;"></div>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-xs" :class="reklasJenis === 'koreksi_nilai' ? 'text-cyan-300' : 'text-white'">Koreksi Nilai Realisasi / Audit BPK</div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Penyesuaian nilai realisasi belanja modal hasil pemeriksaan BPK / rekonsiliasi LKD</div>
+                                    <div class="font-bold text-xs" :class="reklasJenis === 'koreksi_nilai' ? 'text-cyan-300' : 'text-white'">Koreksi Nilai Realisasi / BPK</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Penyesuaian nilai realisasi hasil pemeriksaan BPK / rekonsiliasi LKD</div>
+                                </div>
+                            </label>
+
+                            <!-- 5. Hibah (Bantuan Pemerintah) -->
+                            <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
+                                   style="gap: 12px;"
+                                   :class="reklasJenis === 'hibah' ? 'bg-purple-500/10 border-purple-500/50 shadow-sm shadow-purple-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
+                                <input type="radio" name="reklas_jenis" value="hibah" x-model="reklasJenis" class="hidden" style="display: none;">
+                                <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
+                                     style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
+                                     :class="reklasJenis === 'hibah' ? 'border-purple-400 bg-purple-500/20' : 'border-slate-700 bg-slate-900'">
+                                    <div x-show="reklasJenis === 'hibah'" class="rounded-full bg-purple-400" style="width: 8px; height: 8px;"></div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-bold text-xs" :class="reklasJenis === 'hibah' ? 'text-purple-300' : 'text-white'">Hibah (Bantuan Pemerintah)</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Penyerahan hibah keluar (BAST) atau penerimaan hibah masuk tanpa kas</div>
+                                </div>
+                            </label>
+
+                            <!-- 6. Mutasi Eksternal (Antar-OPD) -->
+                            <label class="relative flex items-center p-3.5 rounded-2xl border cursor-pointer transition-all select-none"
+                                   style="gap: 12px;"
+                                   :class="reklasJenis === 'mutasi_eksternal' ? 'bg-teal-500/10 border-teal-500/50 shadow-sm shadow-teal-500/10' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'">
+                                <input type="radio" name="reklas_jenis" value="mutasi_eksternal" x-model="reklasJenis" class="hidden" style="display: none;">
+                                <div class="flex items-center justify-center rounded-full border shrink-0 transition-all"
+                                     style="width: 18px; height: 18px; min-width: 18px; margin-right: 6px;"
+                                     :class="reklasJenis === 'mutasi_eksternal' ? 'border-teal-400 bg-teal-500/20' : 'border-slate-700 bg-slate-900'">
+                                    <div x-show="reklasJenis === 'mutasi_eksternal'" class="rounded-full bg-teal-400" style="width: 8px; height: 8px;"></div>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-bold text-xs" :class="reklasJenis === 'mutasi_eksternal' ? 'text-teal-300' : 'text-white'">Mutasi Eksternal Antar-OPD</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Pengalihan barang RSUD ke dinas/SKPD lain di lingkungan Pemkab</div>
                                 </div>
                             </label>
                         </div>
@@ -950,16 +982,96 @@
                         </div>
 
 
-                        <!-- Jika KDP: Pilihan KIB Tujuan Definitif -->
-                        <div x-show="reklasJenis === 'kdp'" class="space-y-2">
-                            <label class="block text-rose-300 font-bold text-[10.5px] uppercase tracking-wider mb-1">🏗️ Alihkan KDP Selesai ke KIB Definitif:</label>
-                            <select x-model="reklasTujuanKib"
-                                    class="w-full bg-slate-900 border border-rose-500/50 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-rose-400">
-                                <option value="KIB C">KIB C - Gedung &amp; Bangunan (Definitif)</option>
-                                <option value="KIB D">KIB D - Jalan, Jaringan &amp; Irigasi (Definitif)</option>
-                                <option value="KIB B">KIB B - Peralatan &amp; Mesin (Instalasi Mekanikal Gedung)</option>
-                            </select>
-                            <p class="text-[10px] text-slate-400 mt-1">Akumulasi nilai KDP akan dikapitalisasi dan dicatat sebagai aset tetap definitif di neraca.</p>
+                        <!-- Jika KDP: Pilihan KIB Tujuan Definitif & Kunci Progres Fisik 100% -->
+                        <div x-show="reklasJenis === 'kdp'" class="space-y-3.5">
+                            <!-- 1. Pilihan KIB Tujuan Definitif -->
+                            <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-rose-500/30 shadow-lg shadow-rose-950/20 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-rose-300 font-bold text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                                        <span>🏗️</span>
+                                        <span>Alihkan KDP Selesai ke KIB Definitif:</span>
+                                    </label>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                        KIB F &rarr; Definitif
+                                    </span>
+                                </div>
+                                <select x-model="reklasTujuanKib"
+                                        class="w-full bg-slate-900 border border-rose-500/40 rounded-xl px-3 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400/50 transition-all cursor-pointer">
+                                    <option value="KIB C">🏛️ KIB C - Gedung &amp; Bangunan (Definitif)</option>
+                                    <option value="KIB D">🛣️ KIB D - Jalan, Jaringan &amp; Irigasi (Definitif)</option>
+                                </select>
+                                <p class="text-[10px] text-slate-400 leading-relaxed">
+                                    Akumulasi belanja modal KDP akan dikapitalisasi dan dibukukan sebagai aset tetap definitif pada kelompok KIB di atas.
+                                </p>
+                            </div>
+
+                            <!-- 2. Panel Transformasi Progres Fisik Konstruksi (Otomatis 100% Selesai) -->
+                            <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-slate-950/70 to-slate-900 border border-emerald-500/40 shadow-xl shadow-emerald-950/30 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs">
+                                            ✅
+                                        </span>
+                                        <div>
+                                            <h4 class="text-xs font-black text-white tracking-wide">Transformasi Progres Fisik KDP</h4>
+                                            <p class="text-[10px] text-emerald-300/80">Syarat mutlak kapitalisasi KDP ke aset definitif</p>
+                                        </div>
+                                    </div>
+                                    <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm animate-pulse">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                        <span>DIKUNCI 100%</span>
+                                    </span>
+                                </div>
+
+                                <!-- Komparasi Progres Semula vs Progres Baru -->
+                                <div class="grid grid-cols-1 sm:grid-cols-11 gap-2.5 items-center bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                                    <!-- Progres Awal -->
+                                    <div class="sm:col-span-5 bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80 flex items-center justify-between">
+                                        <div>
+                                            <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Progres Semula (KIB F):</span>
+                                            <span class="text-xs font-extrabold text-amber-300 font-mono" x-text="(reklasKdpProgresAwal || 0) + '% Fisik'"></span>
+                                        </div>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold">
+                                            Dalam Pengerjaan
+                                        </span>
+                                    </div>
+
+                                    <!-- Indikator Panah -->
+                                    <div class="sm:col-span-1 text-center py-1 sm:py-0">
+                                        <span class="text-emerald-400 font-black text-sm">&rarr;</span>
+                                    </div>
+
+                                    <!-- Progres Baru (100%) -->
+                                    <div class="sm:col-span-5 bg-emerald-950/40 p-2.5 rounded-lg border border-emerald-500/40 flex items-center justify-between">
+                                        <div>
+                                            <span class="text-[9.5px] font-bold text-emerald-300 uppercase tracking-wider block">Progres Baru (Definitif):</span>
+                                            <span class="text-xs font-black text-emerald-200 font-mono">100% Selesai Penuh</span>
+                                        </div>
+                                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                                            Terbit BAST 100%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Progress Bar Visual 100% -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-[10px] font-medium text-slate-400">
+                                        <span>Tingkat Kesiapan Aset:</span>
+                                        <span class="font-mono font-bold text-emerald-300">100% (Pekerjaan Fisik Selesai)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-950 rounded-full h-2.5 p-0.5 border border-slate-800 overflow-hidden">
+                                        <div class="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 h-1.5 rounded-full w-full transition-all duration-500 shadow-sm shadow-emerald-500/50"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Catatan Akuntansi & Neraca RSUD -->
+                                <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-[10.5px] text-slate-300 leading-relaxed flex items-start space-x-2">
+                                    <span class="text-emerald-400 text-xs shrink-0 mt-0.5">ℹ️</span>
+                                    <div>
+                                        <strong class="text-white">Dampak Buku &amp; Neraca:</strong> Saldo <span class="text-rose-300 font-mono font-bold">KIB F (Konstruksi)</span> akan dinihilkan / berkurang (-) di neraca, dan berpindah menjadi <span class="text-emerald-300 font-mono font-bold" x-text="reklasTujuanKib || 'KIB Definitif'"></span> aktif (+) yang siap dioperasikan serta dihitung penyusutannya.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Jika Koreksi Nilai / Audit BPK (Koreksi Lain-Lain) -->
@@ -1303,11 +1415,163 @@
                             </div>
                         </div>
 
-                        <!-- Keterangan / Alasan Reklasifikasi -->
-                        <div>
-                            <label class="block text-slate-400 font-bold text-[10.5px] uppercase tracking-wider mb-1">📝 Alasan / Penjelasan Reklasifikasi:</label>
-                            <textarea x-model="reklasAlasan" rows="2" placeholder="Tuliskan catatan tambahan jika ada..."
-                                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+                        <!-- Jika Hibah (Bantuan Pemerintah) -->
+                        <div x-show="reklasJenis === 'hibah'" class="space-y-4">
+                            <!-- Toggle Mode Hibah: Keluar vs Masuk -->
+                            <div class="space-y-1.5">
+                                <label class="block text-purple-300 font-bold text-xs uppercase tracking-wider">
+                                    🎁 Arah Alur Transaksi Hibah:
+                                </label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <label class="relative flex items-center p-3 rounded-xl border cursor-pointer transition-all select-none"
+                                           :class="reklasTipeHibah === 'keluar' ? 'bg-purple-500/15 border-purple-500/50 shadow-sm shadow-purple-500/10' : 'bg-slate-900 border-slate-800 hover:border-slate-700'">
+                                        <input type="radio" name="reklas_tipe_hibah" value="keluar" x-model="reklasTipeHibah" class="hidden">
+                                        <div class="flex items-center justify-center rounded-full border shrink-0 mr-2.5"
+                                             style="width: 16px; height: 16px;"
+                                             :class="reklasTipeHibah === 'keluar' ? 'border-purple-400 bg-purple-500/20' : 'border-slate-700 bg-slate-950'">
+                                            <div x-show="reklasTipeHibah === 'keluar'" class="rounded-full bg-purple-400" style="width: 6px; height: 6px;"></div>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-xs" :class="reklasTipeHibah === 'keluar' ? 'text-purple-300' : 'text-white'">📤 Hibah Keluar (Aset Diserahkan)</div>
+                                            <div class="text-[10px] text-slate-400 mt-0.5">Aset RSUD diserahkan ke Puskesmas/Desa/Instansi lain</div>
+                                        </div>
+                                    </label>
+
+                                    <label class="relative flex items-center p-3 rounded-xl border cursor-pointer transition-all select-none"
+                                           :class="reklasTipeHibah === 'masuk' ? 'bg-purple-500/15 border-purple-500/50 shadow-sm shadow-purple-500/10' : 'bg-slate-900 border-slate-800 hover:border-slate-700'">
+                                        <input type="radio" name="reklas_tipe_hibah" value="masuk" x-model="reklasTipeHibah" class="hidden">
+                                        <div class="flex items-center justify-center rounded-full border shrink-0 mr-2.5"
+                                             style="width: 16px; height: 16px;"
+                                             :class="reklasTipeHibah === 'masuk' ? 'border-purple-400 bg-purple-500/20' : 'border-slate-700 bg-slate-950'">
+                                            <div x-show="reklasTipeHibah === 'masuk'" class="rounded-full bg-purple-400" style="width: 6px; height: 6px;"></div>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="font-bold text-xs" :class="reklasTipeHibah === 'masuk' ? 'text-purple-300' : 'text-white'">📥 Hibah Masuk (Bantuan Diterima)</div>
+                                            <div class="text-[10px] text-slate-400 mt-0.5">RSUD menerima bantuan alat/hibah dari Kemenkes/CSR</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Field Informasi BAST Hibah -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        📄 Nomor Dokumen BAST Hibah: <span class="text-rose-400">*</span>
+                                    </label>
+                                    <input type="text" x-model="reklasNomorBastHibah" placeholder="Contoh: 028/BAST-HB/430.10.7/2026..."
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-purple-200 focus:outline-none focus:border-purple-500">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        📅 Tanggal BAST Hibah: <span class="text-rose-400">*</span>
+                                    </label>
+                                    <input type="date" x-model="reklasTanggalBastHibah"
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-purple-500">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider"
+                                           x-text="reklasTipeHibah === 'keluar' ? '🏢 Instansi / Pihak Penerima Hibah:' : '🏢 Instansi / Pihak Pemberi Hibah:'">
+                                    </label>
+                                    <input type="text" x-model="reklasPihakHibah" :placeholder="reklasTipeHibah === 'keluar' ? 'Contoh: Puskesmas Curahdami / Dinas Kesehatan...' : 'Contoh: Kementerian Kesehatan RI / CSR Bank Jatim...'"
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        🏷️ Nilai Buku Aset yang Dihibahkan:
+                                    </label>
+                                    <div class="p-2.5 rounded-xl bg-purple-950/30 border border-purple-500/40 flex items-center justify-between">
+                                        <span class="text-[10px] text-purple-300 font-bold">Total Nilai:</span>
+                                        <span class="text-sm font-mono font-extrabold text-purple-300" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Box Penjelasan Dampak Neraca BMD -->
+                            <div class="p-3 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-start space-x-2.5">
+                                <span class="text-purple-400 text-sm shrink-0">💡</span>
+                                <div class="text-[11px] text-purple-200/90 leading-relaxed">
+                                    <template x-if="reklasTipeHibah === 'keluar'">
+                                        <span>Transaksi ini akan mencatat <strong>Mutasi Kurang (−)</strong> di KIB dan mengisi penyeimbang <strong>Mutasi Tambah (+) di Baris 40: Hibah (KOR_HIBAH)</strong> serta mengisi <strong>Kolom 12 (DIHIBAHKAN)</strong> pada Laporan Rekonsiliasi BMD.</span>
+                                    </template>
+                                    <template x-if="reklasTipeHibah === 'masuk'">
+                                        <span>Transaksi ini akan mencatat <strong>Mutasi Tambah (+)</strong> di KIB dan menetralkan belanja kas via <strong>Mutasi Kurang (−) di Baris 40: Hibah (KOR_HIBAH)</strong> pada Laporan Rekonsiliasi BMD.</span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Jika Mutasi Eksternal (Antar-OPD) -->
+                        <div x-show="reklasJenis === 'mutasi_eksternal'" class="space-y-4">
+                            <!-- Field Informasi Mutasi Antar-OPD -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        🏛️ SKPD / Dinas Penerima Mutasi: <span class="text-rose-400">*</span>
+                                    </label>
+                                    <input type="text" x-model="reklasSkpdTujuan" placeholder="Contoh: Dinas Kesehatan Kab. Bondowoso / BPBD..."
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-teal-200 focus:outline-none focus:border-teal-500 font-medium">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        🏷️ Nilai Aset yang Dimutasikan:
+                                    </label>
+                                    <div class="p-2.5 rounded-xl bg-teal-950/30 border border-teal-500/40 flex items-center justify-between">
+                                        <span class="text-[10px] text-teal-300 font-bold">Total Nilai:</span>
+                                        <span class="text-sm font-mono font-extrabold text-teal-300" x-text="selectedAstapReklas?.jumlah_realisasi || 'Rp 0'"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        📄 Nomor BAST Mutasi Antar-OPD: <span class="text-rose-400">*</span>
+                                    </label>
+                                    <input type="text" x-model="reklasNomorBastMutasi" placeholder="Contoh: 028/BAST-MUTASI/430.10.7/2026..."
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-500">
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider">
+                                        📅 Tanggal BAST Mutasi: <span class="text-rose-400">*</span>
+                                    </label>
+                                    <input type="date" x-model="reklasTanggalBastMutasi"
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-teal-500">
+                                </div>
+                            </div>
+
+                            <!-- Box Penjelasan Dampak Neraca BMD -->
+                            <div class="p-3 rounded-xl bg-teal-950/30 border border-teal-500/30 flex items-start space-x-2.5">
+                                <span class="text-teal-400 text-sm shrink-0">💡</span>
+                                <div class="text-[11px] text-teal-200/90 leading-relaxed">
+                                    Aset ini akan dialihkan keluar dari RSUD dr. H. Koesnandi ke SKPD penerima. Di laporan rekon BMD, transaksi ini mencatat <strong>Mutasi Kurang (−)</strong> di KIB asal dan mengisi penyeimbang <strong>Mutasi Tambah (+) di Baris 42: Koreksi Lain-Lain (KOR_LAIN)</strong> serta mengisi <strong>Kolom 13 (MUTASI −)</strong>.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alasan Reklasifikasi (Wajib Diisi untuk Semua Jenis Reklas) -->
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-indigo-300 font-bold text-[10.5px] uppercase tracking-wider flex items-center space-x-1.5">
+                                    <span>📝</span>
+                                    <span>Alasan Kenapa Melakukan Reklasifikasi:</span>
+                                    <span class="text-rose-400 font-black text-xs">*</span>
+                                </label>
+                                <span class="px-2 py-0.5 rounded text-[9.5px] font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                    Wajib Diisi
+                                </span>
+                            </div>
+                            <textarea x-model="reklasAlasan" rows="2" 
+                                      placeholder="Tuliskan alasan kenapa melakukan reklasifikasi (contoh: Pekerjaan fisik KDP telah selesai 100% dan terbit BAST / Koreksi salah rekening Simda BMD / Hasil temuan audit BPK)..."
+                                      :class="(!reklasAlasan || !reklasAlasan.trim()) ? 'border-rose-500/60 focus:border-rose-400 focus:ring-1 focus:ring-rose-400/40' : 'border-indigo-500/40 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/40'"
+                                      class="w-full bg-slate-900/90 border rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-all resize-none placeholder-slate-500"></textarea>
+                            <p class="text-[10px] text-slate-400 flex items-center space-x-1">
+                                <span class="text-amber-400">⚠️</span>
+                                <span>Alasan reklasifikasi wajib diisi untuk semua jenis reklasifikasi sebagai dasar pencatatan berita acara &amp; audit.</span>
+                            </p>
                         </div>
                     </div>
 

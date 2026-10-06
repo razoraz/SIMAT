@@ -92,7 +92,7 @@
                 <label class="block text-xs font-bold text-slate-200 uppercase tracking-wider">
                     2. Jenis Reklasifikasi <span class="text-rose-400">*</span>
                 </label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                     <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
                         :class="formData.jenis_reklas === 'KOREKSI_REKENING' ? 'border-indigo-500 bg-indigo-500/10 shadow-sm shadow-indigo-500/10' : ''">
                         <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_REKENING" @change="onJenisReklasChange()" class="text-indigo-600 focus:ring-0">
@@ -115,7 +115,7 @@
                         :class="formData.jenis_reklas === 'EKSTRAKOMPTABEL' ? 'border-rose-500 bg-rose-500/10 shadow-sm shadow-rose-500/10' : ''">
                         <input type="radio" x-model="formData.jenis_reklas" value="EKSTRAKOMPTABEL" @change="onJenisReklasChange()" class="text-rose-600 focus:ring-0">
                         <div>
-                            <p class="text-xs font-bold text-white">Ekstrakomptabel</p>
+                            <p class="text-xs font-bold text-white">Ekstrakomptabel (≤ Rp 300rb)</p>
                             <p class="text-[10px] text-slate-400">Nilai satuan ≤ Rp 300.000 (di bawah batas kapitalisasi)</p>
                         </div>
                     </label>
@@ -125,7 +125,16 @@
                         <input type="radio" x-model="formData.jenis_reklas" value="KAPITALISASI_INTRAKOM" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0">
                         <div>
                             <p class="text-xs font-bold text-white">Kapitalisasi Intrakomptabel</p>
-                            <p class="text-[10px] text-slate-400">Naikkan aset ekstrakomptabel → Aset Tetap (nilai sudah > Rp 300.000)</p>
+                            <p class="text-[10px] text-slate-400">Naikkan aset ekstrakomptabel → Aset Tetap (> Rp 300.000)</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
+                        :class="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'border-purple-500 bg-purple-500/10 shadow-sm shadow-purple-500/10' : ''">
+                        <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_KELUAR" @change="onJenisReklasChange()" class="text-purple-600 focus:ring-0">
+                        <div>
+                            <p class="text-xs font-bold text-white">Hibah Keluar (Dihibahkan)</p>
+                            <p class="text-[10px] text-slate-400">Dihibahkan ke luar (Koreksi Baris 40 / Kolom 12)</p>
                         </div>
                     </label>
 
@@ -133,12 +142,21 @@
                         :class="formData.jenis_reklas === 'HIBAH_MASUK' ? 'border-amber-500 bg-amber-500/10 shadow-sm shadow-amber-500/10' : ''">
                         <input type="radio" x-model="formData.jenis_reklas" value="HIBAH_MASUK" @change="onJenisReklasChange()" class="text-amber-600 focus:ring-0">
                         <div>
-                            <p class="text-xs font-bold text-white">Hibah / Bantuan Masuk</p>
-                            <p class="text-[10px] text-slate-400">Penerimaan dari pihak ketiga / instansi lain</p>
+                            <p class="text-xs font-bold text-white">Hibah Masuk (Bantuan)</p>
+                            <p class="text-[10px] text-slate-400">Penerimaan bantuan pemerintah / pihak ketiga non-kas</p>
                         </div>
                     </label>
 
-                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none sm:col-span-2"
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none"
+                        :class="formData.jenis_reklas === 'MUTASI_EKSTERNAL' ? 'border-teal-500 bg-teal-500/10 shadow-sm shadow-teal-500/10' : ''">
+                        <input type="radio" x-model="formData.jenis_reklas" value="MUTASI_EKSTERNAL" @change="onJenisReklasChange()" class="text-teal-600 focus:ring-0">
+                        <div>
+                            <p class="text-xs font-bold text-white">Mutasi Antar-OPD</p>
+                            <p class="text-[10px] text-slate-400">Pindah ke SKPD / OPD lain (Koreksi Baris 42 / Kolom 13)</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-800 cursor-pointer transition-all select-none sm:col-span-2 lg:col-span-2"
                         :class="formData.jenis_reklas === 'KOREKSI_LAIN' ? 'border-cyan-500 bg-cyan-500/10 shadow-sm shadow-cyan-500/10' : ''">
                         <input type="radio" x-model="formData.jenis_reklas" value="KOREKSI_LAIN" @change="onJenisReklasChange()" class="text-cyan-500 focus:ring-0">
                         <div class="flex-1">
@@ -256,6 +274,98 @@
                         <span class="text-[10px] text-slate-400 block font-semibold">Dampak Matriks Neraca:</span>
                         <span class="text-[11px] font-bold" :class="formData.tipe_koreksi === 'tambah' ? 'text-emerald-400' : 'text-rose-400'"
                               x-text="formData.tipe_koreksi === 'tambah' ? 'Mutasi Tambah Akun Aset Tetap' : 'Mutasi Kurang Akun Aset Tetap'"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2C. Panel Khusus Hibah (Keluar / Masuk) -->
+            <div x-show="formData.jenis_reklas === 'HIBAH_KELUAR' || formData.jenis_reklas === 'HIBAH_MASUK'"
+                 x-transition.duration.200ms
+                 class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-purple-500/30 space-y-4 shadow-xl">
+                
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-black flex items-center justify-center">🎁</span>
+                        <span class="text-xs font-bold text-white uppercase tracking-wider">
+                            Informasi Berita Acara Serah Terima (BAST) Hibah
+                        </span>
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                        Penyeimbang: Baris 40 (Koreksi Hibah / Kolom 12)
+                    </span>
+                </div>
+
+                <div class="p-3 rounded-xl bg-purple-950/25 border border-purple-500/20 text-xs text-purple-200/90 leading-relaxed flex items-start gap-2.5">
+                    <span class="text-base shrink-0 mt-0.5">💡</span>
+                    <div>
+                        <strong class="text-white block mb-0.5" x-text="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'Hibah Keluar (Menyerahkan Aset ke Pihak Lain):' : 'Hibah Masuk (Menerima Bantuan Pemerintah):'"></strong>
+                        <span x-text="formData.jenis_reklas === 'HIBAH_KELUAR' 
+                            ? 'Aset tetap RSUD berkurang (Mutasi Kurang -). Baris 40 (Koreksi Hibah) bertambah (+) pada Kolom 12 (Dihibahkan) sebagai penyeimbang seimbang (TRUE).'
+                            : 'Fisik aset bertambah di RSUD (Mutasi Tambah +). Baris 40 (Koreksi Hibah) berkurang (-) sebagai penyeimbang agar belanja modal kas daerah tidak membengkak.'"></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Pihak Terkait / Lembaga / Penerima / Pemberi: <span class="text-rose-400">*</span>
+                        </label>
+                        <input type="text" x-model="formData.pihak_hibah"
+                               :placeholder="formData.jenis_reklas === 'HIBAH_KELUAR' ? 'Contoh: Puskesmas Tamanan / Yayasan Sosial' : 'Contoh: Kementerian Kesehatan RI / Dinkes Prov'"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Tanggal BAST Hibah: <span class="text-rose-400">*</span>
+                        </label>
+                        <input type="date" x-model="formData.tanggal_bast"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-purple-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2D. Panel Khusus Mutasi Eksternal (Antar-OPD / SKPD) -->
+            <div x-show="formData.jenis_reklas === 'MUTASI_EKSTERNAL'"
+                 x-transition.duration.200ms
+                 class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-teal-500/30 space-y-4 shadow-xl">
+                
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/40 text-xs font-black flex items-center justify-center">🏛️</span>
+                        <span class="text-xs font-bold text-white uppercase tracking-wider">
+                            Informasi Mutasi Antar-OPD / SKPD Pemerintah Daerah
+                        </span>
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                        Penyeimbang: Baris 42 (Koreksi Lain / Kolom 13)
+                    </span>
+                </div>
+
+                <div class="p-3 rounded-xl bg-teal-950/25 border border-teal-500/20 text-xs text-teal-200/90 leading-relaxed flex items-start gap-2.5">
+                    <span class="text-base shrink-0 mt-0.5">💡</span>
+                    <div>
+                        <strong class="text-white block mb-0.5">Pengalihan Aset Keluar RSUD Antar-Perangkat Daerah:</strong>
+                        <span>Aset tetap RSUD dialihkan ke Dinas/Badan/Kecamatan lain di lingkungan Pemkab Bondowoso. Aset RSUD berkurang (Mutasi Kurang -), dan disinkronkan ke Baris 42 Koreksi Lain-Lain (Kolom 13 Mutasi -) sehingga neraca rekonsiliasi belanja modal BPKAD seimbang.</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            SKPD / OPD Penerima: <span class="text-rose-400">*</span>
+                        </label>
+                        <input type="text" x-model="formData.skpd_tujuan"
+                               placeholder="Contoh: Dinas Kesehatan / BPKAD / Satpol PP"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Tanggal BAST Mutasi Eksternal: <span class="text-rose-400">*</span>
+                        </label>
+                        <input type="date" x-model="formData.tanggal_bast"
+                               class="w-full bg-slate-900 border border-slate-700 focus:border-teal-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     </div>
                 </div>
             </div>

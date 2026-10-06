@@ -278,12 +278,18 @@ class ReklasifikasiController extends Controller
             'triwulan' => 'required|integer|between:1,4',
             'tahun' => 'required|integer|min:2000|max:2099',
             'nomor_ba_reklas' => 'nullable|string|max:150',
-            'alasan_reklas' => 'nullable|string',
+            'alasan_reklas' => 'required|string|min:3|max:1000',
             'keterangan' => 'nullable|string',
             'reklas_items' => 'nullable|array',
             'spesifikasi_baru' => 'nullable|array',
             'jumlah_anggaran' => 'nullable|numeric|min:0',
             'tipe_koreksi' => 'nullable|string|in:kurang,tambah',
+            'pihak_hibah' => 'nullable|string|max:255',
+            'skpd_tujuan' => 'nullable|string|max:255',
+            'tanggal_bast' => 'nullable|date',
+        ], [
+            'alasan_reklas.required' => 'Alasan kenapa melakukan reklasifikasi wajib diisi untuk semua jenis reklasifikasi.',
+            'alasan_reklas.min' => 'Alasan reklasifikasi minimal berisi 3 karakter penjelasan.',
         ]);
 
         // Jika jenis reklasifikasi adalah Ekstrakomptabel atau Kapitalisasi ke Intrakomptabel
@@ -330,6 +336,7 @@ class ReklasifikasiController extends Controller
         DB::beginTransaction();
         try {
             $astap = Astap::findOrFail($validated['astap_id']);
+            $specLama = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
 
             // Catat identitas rekening & KIB asal sebelum aset dimodifikasi
             $asalKibAset = ($validated['asal_kib'] ?? null) ?: ($astap->category ?: 'KIB B');
@@ -469,8 +476,25 @@ class ReklasifikasiController extends Controller
             } elseif ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
                 $asalKodeAset = '1.3.6.01.01';
                 $asalNamaAset = 'Konstruksi Dalam Pengerjaan (KIB F)';
-                $targetKib = $validated['tujuan_kib'] ?: 'KIB C';
+                $targetKib = ($validated['tujuan_kib'] === 'KIB D') ? 'KIB D' : 'KIB C';
                 $astap->category = $targetKib;
+
+                // Mutlak KDP: Progres fisik konstruksi diubah dan dikunci menjadi 100% (Pekerjaan Selesai Penuh & Terbit BAST)
+                $specKdp = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                $specKdp['progres_persen'] = 100;
+                $specKdp['kdp_progres_persen'] = 100;
+                $specKdp['progres_fisik'] = '100%';
+                $specKdp['status_kdp'] = 'Selesai 100%';
+                if (isset($specKdp['kdp_items']) && is_array($specKdp['kdp_items'])) {
+                    foreach ($specKdp['kdp_items'] as &$kItem) {
+                        $kItem['kdp_progres_persen'] = 100;
+                        $kItem['progres_persen'] = 100;
+                        $kItem['progres_fisik'] = '100%';
+                    }
+                    unset($kItem);
+                }
+                $astap->spesifikasi_json = $specKdp;
+                $specBaru = $specKdp;
                 if ($targetKib === 'KIB D') {
                     $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.4%')->first();
                     if (!$matchingJenis) {
@@ -482,21 +506,6 @@ class ReklasifikasiController extends Controller
                                 'uraian_sub_rincian' => 'Jalan, Jaringan dan Irigasi',
                                 'sub_sub_rincian_objek' => '1.3.4.01.01.01',
                                 'uraian_sub_sub_rincian' => 'Jalan, Jaringan dan Irigasi',
-                            ]
-                        );
-                    }
-                    if ($matchingJenis) $astap->jenis_astap_id = $matchingJenis->id;
-                } elseif ($targetKib === 'KIB B') {
-                    $matchingJenis = JenisAstap::where('jenis', 'like', '1.3.2%')->first();
-                    if (!$matchingJenis) {
-                        $matchingJenis = JenisAstap::firstOrCreate(
-                            ['jenis' => '1.3.2.01'],
-                            [
-                                'nama_jenis' => 'Peralatan dan Mesin',
-                                'sub_rincian_objek' => '1.3.2.01.01',
-                                'uraian_sub_rincian' => 'Peralatan dan Mesin',
-                                'sub_sub_rincian_objek' => '1.3.2.01.01.01',
-                                'uraian_sub_sub_rincian' => 'Peralatan dan Mesin',
                             ]
                         );
                     }
@@ -690,6 +699,10 @@ class ReklasifikasiController extends Controller
                 $matchingTujuanRow = null;
                 if ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL' || $targetKib === 'EKSTRAKOMPTABEL') {
                     $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM');
+                } elseif ($validated['jenis_reklas'] === 'HIBAH_KELUAR' || $targetKib === 'HIBAH') {
+                    $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_HIBAH');
+                } elseif ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
+                    $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_LAIN');
                 } elseif ($validated['jenis_reklas'] === 'DEFINITIF_TO_KDP') {
                     $matchingTujuanRow = $allTemplateRows->firstWhere('kode_prefix', '1.3.6.01');
                 } elseif ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
@@ -731,8 +744,9 @@ class ReklasifikasiController extends Controller
             }
 
             // Penyesuaian spesifikasi fisik sesuai KIB Tujuan (misal KIB B Mesin -> KIB A Tanah, atau KDP -> Gedung)
-            $specLama = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
-            $specBaru = null;
+            if (!isset($specBaru)) {
+                $specBaru = null;
+            }
 
             if ($request->has('spesifikasi_baru') && is_array($request->input('spesifikasi_baru')) && !empty($targetKib)) {
                 $rawNew = $request->input('spesifikasi_baru');
@@ -1123,8 +1137,75 @@ class ReklasifikasiController extends Controller
                     $newSpec['aset_lain_kondisi'] = $asetLainItems[0]['aset_lain_kondisi'] ?? 'Rusak Berat (Menunggu Penghapusan)';
                 }
 
+                if ($validated['jenis_reklas'] === 'KDP_TO_DEFINITIF') {
+                    $newSpec['progres_persen'] = 100;
+                    $newSpec['kdp_progres_persen'] = 100;
+                    $newSpec['progres_fisik'] = '100%';
+                    $newSpec['status_kdp'] = 'Selesai 100%';
+                }
+
                 $astap->spesifikasi_json = $newSpec;
                 $specBaru = $newSpec;
+            }
+
+            // Penanganan khusus status dan spesifikasi untuk Hibah Keluar, Hibah Masuk, dan Mutasi Eksternal
+            if ($validated['jenis_reklas'] === 'HIBAH_KELUAR') {
+                $astap->is_reklas = 1;
+                $astap->jenis_reklas = 'HIBAH_KELUAR';
+                $tujuanKodeAset = 'KOR_HIBAH';
+                $tujuanNamaAset = 'Koreksi Hibah / Bantuan Pemerintah (Dihibahkan)';
+                if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                    $astap->kondisi = 'Dihibahkan';
+                }
+                $currSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                $currSpec['status_barang'] = 'Dihibahkan';
+                $currSpec['hibah_info'] = [
+                    'tipe'         => 'keluar',
+                    'pihak'        => $validated['pihak_hibah'] ?? ($request->input('pihak_hibah') ?? null),
+                    'nomor_bast'   => $validated['nomor_ba_reklas'] ?? null,
+                    'tanggal_bast' => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
+                    'alasan'       => $validated['alasan_reklas'],
+                ];
+                $astap->spesifikasi_json = $currSpec;
+                $specBaru = $currSpec;
+            } elseif ($validated['jenis_reklas'] === 'HIBAH_MASUK') {
+                $astap->is_reklas = 1;
+                $astap->jenis_reklas = 'HIBAH_MASUK';
+                $astap->sumber_dana = 'hibah';
+                $asalKodeAset = 'KOR_HIBAH';
+                $asalNamaAset = 'Koreksi Hibah / Bantuan Pemerintah Masuk';
+                $currSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                $currSpec['hibah_info'] = [
+                    'tipe'         => 'masuk',
+                    'pihak'        => $validated['pihak_hibah'] ?? ($request->input('pihak_hibah') ?? null),
+                    'nomor_bast'   => $validated['nomor_ba_reklas'] ?? null,
+                    'tanggal_bast' => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
+                    'alasan'       => $validated['alasan_reklas'],
+                ];
+                $astap->spesifikasi_json = $currSpec;
+                $specBaru = $currSpec;
+            } elseif ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
+                $astap->is_reklas = 1;
+                $astap->jenis_reklas = 'MUTASI_EKSTERNAL';
+                $tujuanKodeAset = 'KOR_LAIN';
+                $tujuanNamaAset = 'Koreksi Lain-Lain (Mutasi Keluar Antar-OPD)';
+                if (\Illuminate\Support\Facades\Schema::hasColumn('astaps', 'kondisi')) {
+                    $astap->kondisi = 'Mutasi Keluar OPD';
+                }
+                $currSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                $currSpec['status_barang'] = 'Mutasi Keluar OPD';
+                $currSpec['mutasi_info'] = [
+                    'skpd_tujuan'  => $validated['skpd_tujuan'] ?? ($request->input('skpd_tujuan') ?? null),
+                    'nomor_bast'   => $validated['nomor_ba_reklas'] ?? null,
+                    'tanggal_bast' => $validated['tanggal_bast'] ?? ($request->input('tanggal_bast') ?? null),
+                    'alasan'       => $validated['alasan_reklas'],
+                ];
+                $astap->spesifikasi_json = $currSpec;
+                $specBaru = $currSpec;
+            }
+
+            if ($specBaru === null) {
+                $specBaru = $astap->spesifikasi_json;
             }
 
             $astap->save();
@@ -1166,7 +1247,11 @@ class ReklasifikasiController extends Controller
 
             // Resolusi otomatis ID Baris Asal jika belum disertakan
             if (empty($asalId)) {
-                if ($asalKibFinal === 'KEMITRAAN') {
+                if ($validated['jenis_reklas'] === 'HIBAH_MASUK' || $asalKibFinal === 'HIBAH') {
+                    $asalId = $allTemplateRows->firstWhere('kode_prefix', 'KOR_HIBAH')?->id;
+                } elseif ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM' || $asalKibFinal === 'EKSTRAKOMPTABEL') {
+                    $asalId = $allTemplateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM')?->id;
+                } elseif ($asalKibFinal === 'KEMITRAAN') {
                     $asalId = $allTemplateRows->firstWhere('kode_prefix', '1.5.2')?->id;
                 } elseif ($asalKibFinal === 'ATB') {
                     $asalId = $allTemplateRows->firstWhere('kode_prefix', '1.5.3')?->id;
@@ -1184,7 +1269,13 @@ class ReklasifikasiController extends Controller
 
             // Resolusi otomatis ID Baris Tujuan jika belum disertakan
             if (empty($tujuanId)) {
-                if ($tujuanKibFinal === 'KEMITRAAN') {
+                if ($validated['jenis_reklas'] === 'HIBAH_KELUAR' || $tujuanKibFinal === 'HIBAH') {
+                    $tujuanId = $allTemplateRows->firstWhere('kode_prefix', 'KOR_HIBAH')?->id;
+                } elseif ($validated['jenis_reklas'] === 'MUTASI_EKSTERNAL') {
+                    $tujuanId = $allTemplateRows->firstWhere('kode_prefix', 'KOR_LAIN')?->id;
+                } elseif ($validated['jenis_reklas'] === 'EKSTRAKOMPTABEL' || $tujuanKibFinal === 'EKSTRAKOMPTABEL') {
+                    $tujuanId = $allTemplateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM')?->id;
+                } elseif ($tujuanKibFinal === 'KEMITRAAN') {
                     $tujuanId = $allTemplateRows->firstWhere('kode_prefix', '1.5.2')?->id;
                 } elseif ($tujuanKibFinal === 'ATB') {
                     $tujuanId = $allTemplateRows->firstWhere('kode_prefix', '1.5.3')?->id;
@@ -1527,6 +1618,10 @@ class ReklasifikasiController extends Controller
             return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_HIBAH')?->id);
         }
 
+        if ($reklas->jenis_reklas === 'KOREKSI_LAIN' && $reklas->keterangan && str_contains($reklas->keterangan, 'penambahan nilai')) {
+            return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_LAIN')?->id);
+        }
+
         if ($reklas->jenis_reklas === 'KDP_TO_DEFINITIF') {
             return (int) ($templateRows->firstWhere('kode_prefix', '1.3.6.01')?->id);
         }
@@ -1574,6 +1669,26 @@ class ReklasifikasiController extends Controller
 
         if ($reklas->jenis_reklas === 'EKSTRAKOMPTABEL' || $reklas->tujuan_kib === 'EKSTRAKOMPTABEL') {
             return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_EXTRACOM')?->id);
+        }
+
+        if ($reklas->jenis_reklas === 'HIBAH_KELUAR' || $reklas->tujuan_kib === 'HIBAH') {
+            return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_HIBAH')?->id);
+        }
+
+        if ($reklas->jenis_reklas === 'MUTASI_EKSTERNAL' || $reklas->tujuan_kib === 'MUTASI_OPD') {
+            return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_LAIN')?->id);
+        }
+
+        if ($reklas->jenis_reklas === 'KOREKSI_LAIN') {
+            if (!($reklas->keterangan && str_contains($reklas->keterangan, 'penambahan nilai'))) {
+                return (int) ($templateRows->firstWhere('kode_prefix', 'KOR_LAIN')?->id);
+            }
+        }
+
+        if ($reklas->jenis_reklas === 'HIBAH_MASUK') {
+            $targetKib = $reklas->tujuan_kib ?: ($reklas->astap?->category ?: 'KIB B');
+            $row = $templateRows->firstWhere('kelompok_kib', $targetKib);
+            if ($row) return (int) $row->id;
         }
 
         if ($reklas->jenis_reklas === 'DEFINITIF_TO_KDP') {

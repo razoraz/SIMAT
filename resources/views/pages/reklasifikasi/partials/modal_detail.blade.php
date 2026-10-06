@@ -145,6 +145,66 @@
                         </div>
                     </div>
 
+                    <!-- 2B. Informasi Administrasi BAST Hibah / Mutasi Eksternal -->
+                    <template x-if="detailItem.jenis_reklas === 'HIBAH_KELUAR' || detailItem.jenis_reklas === 'HIBAH_MASUK' || (detailItem.spesifikasi_baru && detailItem.spesifikasi_baru.hibah_info)">
+                        <div class="p-4 rounded-2xl bg-purple-950/30 border border-purple-500/30 space-y-3 shadow-lg shadow-purple-500/5">
+                            <div class="flex items-center justify-between border-b border-purple-500/20 pb-2.5">
+                                <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                    <span>🎁</span> Dokumen Berita Acara Serah Terima (BAST) Hibah
+                                </h5>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                                      x-text="detailItem.jenis_reklas === 'HIBAH_KELUAR' ? 'Hibah Keluar (Dihibahkan)' : 'Hibah Masuk (Bantuan)'"></span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pihak Terkait / Lembaga:</span>
+                                    <span class="font-bold text-purple-200 mt-1 inline-block"
+                                          x-text="detailItem.spesifikasi_baru?.hibah_info?.pihak || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nomor BAST Hibah:</span>
+                                    <span class="font-bold font-mono text-white mt-1 inline-block"
+                                          x-text="detailItem.spesifikasi_baru?.hibah_info?.nomor_bast || detailItem.nomor_ba_reklas || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tanggal BAST:</span>
+                                    <span class="font-bold text-white mt-1 inline-block"
+                                          x-text="formatDateIndo(detailItem.spesifikasi_baru?.hibah_info?.tanggal_bast || detailItem.tanggal_reklas)"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="detailItem.jenis_reklas === 'MUTASI_EKSTERNAL' || (detailItem.spesifikasi_baru && detailItem.spesifikasi_baru.mutasi_info)">
+                        <div class="p-4 rounded-2xl bg-teal-950/30 border border-teal-500/30 space-y-3 shadow-lg shadow-teal-500/5">
+                            <div class="flex items-center justify-between border-b border-teal-500/20 pb-2.5">
+                                <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                    <span>🏛️</span> Dokumen BAST Mutasi Eksternal (Antar-OPD / SKPD)
+                                </h5>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                                    Mutasi Keluar Antar-OPD
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">SKPD / OPD Penerima:</span>
+                                    <span class="font-bold text-teal-200 mt-1 inline-block"
+                                          x-text="detailItem.spesifikasi_baru?.mutasi_info?.skpd_tujuan || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nomor BAST Mutasi:</span>
+                                    <span class="font-bold font-mono text-white mt-1 inline-block"
+                                          x-text="detailItem.spesifikasi_baru?.mutasi_info?.nomor_bast || detailItem.nomor_ba_reklas || '-'"></span>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tanggal BAST:</span>
+                                    <span class="font-bold text-white mt-1 inline-block"
+                                          x-text="formatDateIndo(detailItem.spesifikasi_baru?.mutasi_info?.tanggal_bast || detailItem.tanggal_reklas)"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
                     <!-- 3. Perpindahan Rekening / Kelompok KIB atau Posisi Aset -->
                     <div class="p-4 rounded-2xl bg-gradient-to-br from-slate-950/90 to-slate-900/90 border border-slate-800 space-y-3">
                         <template x-if="detailItem.jenis_reklas === 'KOREKSI_LAIN'">

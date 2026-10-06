@@ -131,6 +131,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/REKLAS/EXTRACOM/001',
+            'alasan_reklas' => 'Nilai perolehan satuan barang di bawah batas kapitalisasi aset tetap',
             'keterangan' => 'Reklasifikasi 2 barang berbeda ke Ekstrakomptabel',
             'reklas_items' => [
                 [
@@ -197,6 +198,7 @@ class ReklasifikasiTest extends TestCase
             'tanggal_reklas' => '2026-03-21',
             'triwulan' => 1,
             'tahun' => 2026,
+            'alasan_reklas' => 'Pengujian batas nilai ekstrakomptabel',
             'reklas_items' => [
                 [
                     'nama_barang' => 'Alat Kesehatan Mahal',
@@ -258,6 +260,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/KAPITALISASI/001',
+            'alasan_reklas' => 'Nilai perolehan melampaui batas minimum kapitalisasi intrakomptabel',
             'keterangan' => 'Kapitalisasi balik ke Intrakomptabel KIB B',
             'reklas_items' => [
                 [
@@ -326,6 +329,7 @@ class ReklasifikasiTest extends TestCase
             'tanggal_reklas' => '2026-03-21',
             'triwulan' => 1,
             'tahun' => 2026,
+            'alasan_reklas' => 'Pengujian batas nilai intrakomptabel',
             'reklas_items' => [
                 [
                     'nama_barang' => 'Barang Ekstrakom Murah',
@@ -390,6 +394,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/KDP-SELESAI/001',
+            'alasan_reklas' => 'Pekerjaan konstruksi fisik telah selesai 100% dan terbit BAST',
             'keterangan' => 'Kapitalisasi KDP selesai fisik 100%',
         ];
 
@@ -455,6 +460,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/START-KDP/001',
+            'alasan_reklas' => 'Pengalihan belanja fisik baru ke konstruksi dalam pengerjaan KIB F',
             'keterangan' => 'Pengalihan belanja fisik baru ke KDP KIB F',
         ];
 
@@ -498,6 +504,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'LHP-BPK/2026/04/RSDK',
+            'alasan_reklas' => 'Koreksi penyesuaian nilai buku hasil audit LHP BPK',
             'keterangan' => 'Koreksi nilai audit BPK atas kelebihan beban administrasi',
         ];
 
@@ -556,6 +563,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/PINDAH-KIB/002',
+            'alasan_reklas' => 'Penyesuaian klasifikasi jenis aset sesuai standar Simda BMD 108',
             'keterangan' => 'Pindah KIB B ke KIB D penyesuaian kodefikasi 108',
         ];
 
@@ -620,6 +628,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'LHP-BPK/2026/04/AUDIT',
+            'alasan_reklas' => 'Penyesuaian kapitalisasi rincian barang hasil audit BPK',
             'keterangan' => 'Koreksi nilai kapitalisasi barang 1 hasil temuan BPK',
             'reklas_items' => [
                 [
@@ -717,6 +726,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 2,
             'tahun' => 2026,
             'nomor_ba_reklas' => '000.2.3/BA-REKLAS/RSUD/IV/2026',
+            'alasan_reklas' => 'Koreksi klasifikasi rekening dari peralatan mesin ke bangunan gedung instalasi',
             'keterangan' => 'Koreksi salah kamar dari peralatan mesin ke bangunan instalasi permanen gas medis',
             'spesifikasi_baru' => [
                 'gedung_konstruksi_bertingkat' => 'Tidak Bertingkat',
@@ -803,6 +813,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/REKLAS/KURANG/001',
+            'alasan_reklas' => 'Penyesuaian nilai belanja ke akun ekstrakomptabel',
             'reklas_items' => [
                 [
                     'nama_barang' => 'Kursi Kerja Besi Ekonomis',
@@ -886,6 +897,7 @@ class ReklasifikasiTest extends TestCase
             'triwulan' => 1,
             'tahun' => 2026,
             'nomor_ba_reklas' => 'BA/REKLAS/BC/001',
+            'alasan_reklas' => 'Koreksi pemindahan antar KIB B ke KIB C',
         ];
 
         $postRes = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
@@ -1133,6 +1145,257 @@ class ReklasifikasiTest extends TestCase
         $logReklas = $res->viewData('logReklas');
         $this->assertTrue($logReklas->contains('jenis_reklas', 'EKSTRAKOMPTABEL'));
         $this->assertFalse($logReklas->contains('jenis_reklas', 'KOREKSI_REKENING'));
+    }
+
+    public function test_can_reklas_kdp_to_definitif_and_locks_progres_to_100_percent()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        // Aset KDP dengan progres fisik semula 60%
+        $astap = Astap::create([
+            'nama_barang' => 'Pembangunan Gedung Rawat Inap Terpadu',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 500000000,
+            'total_realisasi' => 500000000,
+            'jumlah_anggaran' => 500000000,
+            'category' => 'KIB F',
+            'user_id' => $admin->id,
+            'spesifikasi_json' => [
+                'progres_persen' => 60,
+                'kdp_progres_persen' => 60,
+                'progres_fisik' => '60%',
+                'kdp_items' => [
+                    [
+                        'kdp_nama_barang' => 'Pembangunan Gedung Rawat Inap Terpadu',
+                        'kdp_progres_persen' => 60,
+                        'kdp_nilai_fisik' => 500000000,
+                    ]
+                ]
+            ]
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KDP_TO_DEFINITIF',
+            'asal_kib' => 'KIB F',
+            'tujuan_kib' => 'KIB C',
+            'nilai_reklas' => 500000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BAST/KDP/2026/001',
+            'alasan_reklas' => 'Pekerjaan konstruksi fisik telah selesai 100% dan terbit BAST',
+            'keterangan' => 'Kapitalisasi KDP selesai ke KIB C Definitif',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('KIB C', $astap->category);
+        $this->assertTrue((bool)$astap->is_reklas);
+        $this->assertEquals('KDP_TO_DEFINITIF', $astap->jenis_reklas);
+
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : json_decode($astap->spesifikasi_json, true);
+        $this->assertEquals(100, $spec['progres_persen']);
+        $this->assertEquals(100, $spec['kdp_progres_persen']);
+        $this->assertEquals('100%', $spec['progres_fisik']);
+        $this->assertEquals(100, $spec['kdp_items'][0]['kdp_progres_persen']);
+
+        // Validasi audit log mencatat spesifikasi lama (60%) dan spesifikasi baru (100%)
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $this->assertEquals('KIB F', $reklas->asal_kib);
+        $this->assertEquals('KIB C', $reklas->tujuan_kib);
+        $this->assertEquals(60, $reklas->spesifikasi_lama['progres_persen']);
+        $this->assertEquals(100, $reklas->spesifikasi_baru['progres_persen']);
+    }
+
+    public function test_reklas_rejects_empty_alasan_reklas()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Test Validasi Alasan Reklas',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 1000000,
+            'total_realisasi' => 1000000,
+            'jumlah_anggaran' => 1000000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'KIB C',
+            'nilai_reklas' => 1000000,
+            'tanggal_reklas' => '2026-03-25',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            // sengaja tidak mengisi alasan_reklas
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['alasan_reklas']);
+        $response->assertSee('Alasan kenapa melakukan reklasifikasi wajib diisi untuk semua jenis reklasifikasi.');
+    }
+
+    public function test_can_reklas_hibah_keluar_and_balance_with_kor_hibah()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Ambulance Standby Test',
+            'category' => 'KIB B',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 350000000,
+            'total_realisasi' => 350000000,
+            'jumlah_anggaran' => 350000000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'HIBAH_KELUAR',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'HIBAH',
+            'nilai_reklas' => 350000000,
+            'tanggal_reklas' => '2026-03-26',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BAST-HIBAH/001/RSUD/2026',
+            'alasan_reklas' => 'Hibah ambulance operasional kepada Puskesmas Tamanan',
+            'keterangan' => 'Penyerahan aset hibah keluar resmi sesuai SK Bupati',
+            'pihak_hibah' => 'Puskesmas Tamanan',
+            'tanggal_bast' => '2026-03-26',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('HIBAH_KELUAR', $astap->jenis_reklas);
+        $this->assertTrue((bool)$astap->is_reklas);
+
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : json_decode($astap->spesifikasi_json, true);
+        $this->assertEquals('Dihibahkan', $spec['status_barang']);
+        $this->assertNotNull($spec['hibah_info']);
+        $this->assertEquals('keluar', $spec['hibah_info']['tipe']);
+        $this->assertEquals('Puskesmas Tamanan', $spec['hibah_info']['pihak']);
+
+        // Verifikasi balancing row: Asal = KIB B, Tujuan = Baris 40 Koreksi Hibah (KOR_HIBAH)
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $korHibahRow = JenisReklasifikasi::where('kode_prefix', 'KOR_HIBAH')->first();
+        $this->assertEquals($korHibahRow->id, $reklas->jenis_reklasifikasi_tujuan_id);
+    }
+
+    public function test_can_reklas_hibah_masuk_and_balance_with_kor_hibah()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Alat CT Scan Bantuan Kemenkes',
+            'category' => 'KIB B',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 2000000000,
+            'total_realisasi' => 2000000000,
+            'jumlah_anggaran' => 2000000000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'HIBAH_MASUK',
+            'asal_kib' => 'HIBAH',
+            'tujuan_kib' => 'KIB B',
+            'nilai_reklas' => 2000000000,
+            'tanggal_reklas' => '2026-03-26',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BAST-KEMENKES/099/2026',
+            'alasan_reklas' => 'Penerimaan hibah alat CT Scan dari Kemenkes RI',
+            'keterangan' => 'Pencatatan aset hibah masuk bantuan pemerintah',
+            'pihak_hibah' => 'Kementerian Kesehatan RI',
+            'tanggal_bast' => '2026-03-26',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('hibah', $astap->sumber_dana);
+        $this->assertEquals('HIBAH_MASUK', $astap->jenis_reklas);
+
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : json_decode($astap->spesifikasi_json, true);
+        $this->assertNotNull($spec['hibah_info']);
+        $this->assertEquals('masuk', $spec['hibah_info']['tipe']);
+        $this->assertEquals('Kementerian Kesehatan RI', $spec['hibah_info']['pihak']);
+
+        // Verifikasi balancing row: Asal = Baris 40 Koreksi Hibah (KOR_HIBAH), Tujuan = KIB B
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $korHibahRow = JenisReklasifikasi::where('kode_prefix', 'KOR_HIBAH')->first();
+        $this->assertEquals($korHibahRow->id, $reklas->jenis_reklasifikasi_asal_id);
+    }
+
+    public function test_can_reklas_mutasi_eksternal_and_balance_with_kor_lain()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Laptop Operasional Kantor',
+            'category' => 'KIB B',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 15000000,
+            'total_realisasi' => 15000000,
+            'jumlah_anggaran' => 15000000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'MUTASI_EKSTERNAL',
+            'asal_kib' => 'KIB B',
+            'tujuan_kib' => 'KOREKSI',
+            'nilai_reklas' => 15000000,
+            'tanggal_reklas' => '2026-03-27',
+            'triwulan' => 1,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => 'BAST-MUTASI/042/2026',
+            'alasan_reklas' => 'Alih status penggunaan barang ke Dinas Kesehatan',
+            'keterangan' => 'Mutasi antar-OPD di lingkungan Pemkab Bondowoso',
+            'skpd_tujuan' => 'Dinas Kesehatan Kabupaten Bondowoso',
+            'tanggal_bast' => '2026-03-27',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $astap->refresh();
+        $this->assertEquals('MUTASI_EKSTERNAL', $astap->jenis_reklas);
+
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : json_decode($astap->spesifikasi_json, true);
+        $this->assertEquals('Mutasi Keluar OPD', $spec['status_barang']);
+        $this->assertNotNull($spec['mutasi_info']);
+        $this->assertEquals('Dinas Kesehatan Kabupaten Bondowoso', $spec['mutasi_info']['skpd_tujuan']);
+
+        // Verifikasi balancing row: Tujuan = Baris 42 Koreksi Lain-Lain (KOR_LAIN)
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $korLainRow = JenisReklasifikasi::where('kode_prefix', 'KOR_LAIN')->first();
+        $this->assertEquals($korLainRow->id, $reklas->jenis_reklasifikasi_tujuan_id);
     }
 }
 
