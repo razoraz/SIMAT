@@ -388,7 +388,7 @@
             },
 
             // Buka Modal Detail & Siapkan Data Terstandar ASTAP
-            openDetail(kemitraan, astap, register) {
+            openDetail(kemitraan, astap, register, isDimanfaatkan = false) {
                 let spec = astap?.spesifikasi_json || {};
                 if (typeof spec === 'string') {
                     try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
@@ -483,7 +483,8 @@
                     tanggal_selesai: kemitraan?.tanggal_selesai || spec.tanggal_selesai || null,
                     status_konsesi: kemitraan?.status_konsesi || 'Aktif',
                     sisa_hari_konsesi: kemitraan?.sisa_hari_konsesi ?? null,
-                    dokumen_path: kemitraan?.dokumen_path || spec.dokumen_path || null
+                    dokumen_path: kemitraan?.dokumen_path || spec.dokumen_path || null,
+                    is_dimanfaatkan: Boolean(isDimanfaatkan || kemitraan?.is_reklas_pending)
                 };
 
                 // Kompatibilitas state lama

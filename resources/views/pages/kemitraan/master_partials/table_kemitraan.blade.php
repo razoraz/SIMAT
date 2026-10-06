@@ -16,28 +16,18 @@
             return true;
         }
 
-        // 2. ATAU jika aset tersebut merupakan hasil reklasifikasi dari aset tetap RSUD (KIB A / C) ke Kemitraan (1.5.2)
-        if (!empty($astap?->reklas_riwayat) || ($astap?->asal_usul ?? '') === 'Reklasifikasi') {
-            return true;
-        }
-
+        // 2. ATAU jika secara eksplisit menautkan objek aset BMD
         return false;
     };
 
     $recordsDimanfaatkan = collect($kemitraanRecords ?? [])->filter(fn($r) => $isDimanfaatkan($r))->values();
     $recordsDitambahkan  = collect($kemitraanRecords ?? [])->filter(fn($r) => !$isDimanfaatkan($r))->values();
 
-    // Integrasikan Aset BMD RSUD yang telah direklasifikasi ke Kemitraan (1.5.2) namun belum dibuatkan PKS
-    $existingAstapIdsInDimanfaatkan = $recordsDimanfaatkan->map(function($r) {
-        return [
-            $r->astap_id ?? null,
-            $r->objek_astap_id ?? null,
-            $r->objekRegister?->astap_id ?? null,
-        ];
-    })->flatten()->filter()->unique()->toArray();
-
+    // Integrasikan Aset BMD RSUD yang merupakan hasil reklasifikasi ke Kemitraan (1.5.2) ke Tabel Atas
+    $seenReklasAstapIds = [];
     foreach ($reklasKemitraanRecords ?? [] as $reklasItem) {
-        if (!in_array($reklasItem->astap_id, $existingAstapIdsInDimanfaatkan)) {
+        if (!in_array($reklasItem->astap_id, $seenReklasAstapIds)) {
+            $seenReklasAstapIds[] = $reklasItem->astap_id; // Kunci agar unik dan tidak dobel/kembar
             $rAstap = $reklasItem->astap;
             if ($rAstap) {
                 $rReg = $rAstap->registers->first();
@@ -199,8 +189,8 @@
                 <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
                     <tr>
                         <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
-                        <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Mitra</th>
-                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Objek Aset BMD RSUD (Semua KIB)</th>
+                        <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
+                        <th class="py-3.5 px-4 min-w-[240px] bg-slate-950">Identitas Barang &amp; Spesifikasi (Akun 108)</th>
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
@@ -262,37 +252,24 @@
                                 @endif
                             </td>
 
-                            <!-- 3. Objek Aset BMD RSUD (Semua KIB) -->
+                            <!-- 3. Identitas Barang & Spesifikasi (Akun 108) -->
                             <td class="py-4 px-4">
-                                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-                                    @if($nibarObjek)
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
-                                            NIBAR: {{ $nibarObjek }}
-                                        </span>
-                                    @else
-                                        <span class="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                                            Aset BMD RSUD
-                                        </span>
-                                    @endif
-                                    <span class="text-[10.5px] font-mono text-slate-400">
-                                        {{ $objekAsetBmd?->kode_108 ?: ($astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01')) }}
-                                    </span>
-                                </div>
                                 <div class="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
                                     {{ $namaObjekBmd }}
                                 </div>
-                                @if($objekAsetBmd && $astap && $astap->nama_barang !== $namaObjekBmd)
-                                    <div class="text-[10.5px] text-cyan-400/80 mt-0.5 flex items-center gap-1">
-                                        <span>🔗 Pemanfaatan Akun:</span>
-                                        <span class="font-semibold">{{ $astap->nama_barang }}</span>
-                                    </div>
-                                @endif
-                                <div class="flex items-center flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10.5px] text-slate-400">
+                                <div class="text-[11px] font-mono text-cyan-400 mt-0.5">
+                                    {{ $objekAsetBmd?->kode_108 ?: ($astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: '1.5.2.01.01.001')) }}
+                                </div>
+                                <div class="flex items-center flex-wrap gap-2 mt-1 text-[10px] text-slate-400">
+                                    <span>Vol: <strong class="text-slate-200">{{ $row->jumlah_volume ?? ($astap?->jumlah_volume ?? 1) }} {{ $row->satuan ?? ($astap?->satuan ?? 'Bidang') }}</strong></span>
+                                    @if($nibarObjek)
+                                        <span class="px-1.5 py-0.5 rounded font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">NIBAR: {{ $nibarObjek }}</span>
+                                    @endif
                                     @if($luasObjek)
-                                        <span>📐 Luas: <strong class="font-mono text-cyan-300">{{ $luasObjek }} m²</strong></span>
+                                        <span>· 📐 {{ $luasObjek }} m²</span>
                                     @endif
                                     @if($sertifikatObjek)
-                                        <span>📜 Sertifikat: <strong class="text-slate-300 font-mono">{{ $sertifikatObjek }}</strong></span>
+                                        <span>· 📜 {{ $sertifikatObjek }}</span>
                                     @endif
                                 </div>
                             </td>
@@ -340,94 +317,47 @@
                             <!-- 7. Aksi (Sticky Right) -->
                             <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                 <div class="flex items-center justify-center space-x-1.5">
-                                    @if($row->is_reklas_pending ?? false)
-                                        <!-- Tombol Buat PKS Kemitraan (Bagi Aset Hasil Reklasifikasi yang Menunggu Kontrak Mitra) -->
-                                        <a href="{{ route('astap.create_kemitraan') . ($row->objek_register_id ? ('?objek_register_id=' . $row->objek_register_id) : '') }}"
-                                            title="Buat Dokumen PKS & Tambah Aset Mitra di atas Objek ini"
-                                            class="group/btn inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white font-extrabold text-xs transition-all duration-200 shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <span>➕</span>
-                                            <span>Buat PKS</span>
-                                        </a>
+                                    <!-- 1. Tombol Detail -->
+                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, true)"
+                                        title="Lihat Detail Lengkap PKS & Objek Aset"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                        <span>Detail</span>
+                                    </button>
 
-                                        @if($targetPrintId)
-                                        <!-- Tombol Cetak BAST -->
-                                        <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $targetPrintId]) }}"
-                                            target="_blank"
-                                            title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                            </svg>
-                                            <span>Cetak BAST</span>
-                                        </a>
-                                        @endif
+                                    @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                    <!-- 2. Tombol Reklas -->
+                                    <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
+                                        title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        <span>Reklas</span>
+                                    </button>
 
-                                        <!-- Tombol Detail Aset BMD RSUD -->
-                                        <button type="button" @click="openDetail(null, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
-                                            title="Lihat Detail Data Aset BMD RSUD"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 font-bold text-xs transition-all duration-200 shadow-sm hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                            </svg>
-                                            <span>Detail Aset</span>
-                                        </button>
-                                    @else
-                                        <!-- 1. Tombol Detail -->
-                                        <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
-                                            title="Lihat Detail Lengkap PKS & Objek Aset"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                            </svg>
-                                            <span>Detail</span>
-                                        </button>
+                                    <!-- 3. Tombol Ubah -->
+                                    <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"
+                                        title="Ubah Data Aset Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        <span>Ubah</span>
+                                    </a>
 
-                                        @if($targetPrintId)
-                                        <!-- Tombol Cetak BAST -->
-                                        <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $targetPrintId]) }}"
-                                            target="_blank"
-                                            title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                            </svg>
-                                            <span>Cetak BAST</span>
-                                        </a>
-                                        @endif
-
-                                        @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
-                                        <!-- 2. Tombol Reklas -->
-                                        <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
-                                            title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                            </svg>
-                                            <span>Reklas</span>
-                                        </button>
-
-                                        <!-- 3. Tombol Ubah -->
-                                        <a href="{{ route('astap.edit_kemitraan', ['id' => $astap?->id]) }}"
-                                            title="Ubah Data Aset Kemitraan"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                            <span>Ubah</span>
-                                        </a>
-
-                                        <!-- 4. Tombol Hapus -->
-                                        <button type="button" @click="confirmDelete({{ $row->id }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
-                                            title="Hapus / Batalkan Aset Kemitraan"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                            <span>Hapus</span>
-                                        </button>
-                                        @endif
+                                    <!-- 4. Tombol Hapus -->
+                                    <button type="button" @click="confirmDelete({{ $row->id ?: ($astap?->kemitraan?->id ?: ($row->astap_id ?: $astap?->id)) }}, '{{ addslashes($astap?->nama_barang ?: 'Aset Kemitraan') }}')"
+                                        title="Hapus / Batalkan Aset Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <span>Hapus</span>
+                                    </button>
                                     @endif
                                 </div>
                             </td>
@@ -586,7 +516,7 @@
                             <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
-                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
+                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
                                         title="Lihat Detail Lengkap PKS & Aset Kemitraan"
                                         class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
                                         <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -595,19 +525,6 @@
                                         </svg>
                                         <span>Detail</span>
                                     </button>
-
-                                    @if($targetPrintId)
-                                    <!-- Tombol Cetak BAST -->
-                                    <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $targetPrintId]) }}"
-                                        target="_blank"
-                                        title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
-                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                        </svg>
-                                        <span>Cetak BAST</span>
-                                    </a>
-                                    @endif
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     <!-- 2. Tombol Reklas -->
@@ -798,22 +715,10 @@
                             <!-- 8. Aksi (Sticky Right) -->
                             <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                 <div class="flex items-center justify-center space-x-1.5">
-                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
+                                    <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
                                         class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all">
                                         Detail
                                     </button>
-                                    @php
-                                        $t3PrintId = $row->id ?: ($row->astap_id ?: ($astap?->id ?: null));
-                                    @endphp
-                                    @if($t3PrintId)
-                                    <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $t3PrintId]) }}"
-                                        target="_blank"
-                                        title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
-                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all inline-flex items-center gap-1 shadow-sm">
-                                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                        <span>Cetak BAST</span>
-                                    </a>
-                                    @endif
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         class="px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 font-bold text-xs transition-all">

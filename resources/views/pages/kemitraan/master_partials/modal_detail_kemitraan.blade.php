@@ -86,12 +86,14 @@
                             <span>📜 Dokumen Perjanjian Kerja Sama (PKS) &amp; Masa Konsesi</span>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <a :href="'/astap/kemitraan/' + (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id) + '/cetak-bast'" target="_blank"
-                               class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-cyan-600/30 to-teal-600/30 hover:from-cyan-600/50 hover:to-teal-600/50 text-cyan-200 border border-cyan-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
-                               title="Cetak Lembar Draf Resmi BAST Pemanfaatan Kemitraan (Format Kedinasan A4)">
-                                <span>🖨️</span>
-                                <span>Cetak Draf BAST</span>
-                            </a>
+                            <template x-if="selectedAstapDetail && selectedAstapDetail.is_dimanfaatkan">
+                                <a :href="'/astap/kemitraan/' + (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id) + '/cetak-bast'" target="_blank"
+                                   class="px-2.5 py-1 rounded-xl text-[10.5px] font-extrabold bg-gradient-to-r from-cyan-600/30 to-teal-600/30 hover:from-cyan-600/50 hover:to-teal-600/50 text-cyan-200 border border-cyan-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+                                   title="Cetak Lembar Draf Resmi BAST Pemanfaatan Kemitraan (Format Kedinasan A4)">
+                                    <span>🖨️</span>
+                                    <span>Cetak Draf BAST</span>
+                                </a>
+                            </template>
 
                             <span class="px-2.5 py-0.5 rounded-lg text-[10.5px] font-bold border"
                                   :class="{
@@ -924,8 +926,8 @@
         <!-- Modal Footer -->
         <div class="pt-4 border-t border-slate-800 flex items-center justify-between flex-wrap gap-2.5">
             <div class="flex items-center gap-2 flex-wrap">
-                <!-- Tombol Cetak Dokumen Resmi BAST Pemanfaatan Kemitraan (Format Kedinasan A4) -->
-                <template x-if="selectedAstapDetail && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
+                <!-- Tombol Cetak Dokumen Resmi BAST Pemanfaatan Kemitraan (Hanya Untuk Aset Hasil Reklas / Dimanfaatkan) -->
+                <template x-if="selectedAstapDetail && selectedAstapDetail.is_dimanfaatkan && (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id)">
                     <a :href="'/astap/kemitraan/' + (selectedAstapDetail.kemitraan_id || selectedAstapDetail.id) + '/cetak-bast'" target="_blank"
                         class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 flex items-center gap-2 cursor-pointer"
                         title="Cetak Lembar Dokumen Resmi BAST Pemanfaatan BMD Kemitraan (Format Kedinasan A4)">

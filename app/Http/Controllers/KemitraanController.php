@@ -169,14 +169,16 @@ class KemitraanController extends Controller
 
         $dbMitraKemitraans = AstapKemitraan::getDistinctMitras();
 
-        // Ambil seluruh riwayat reklasifikasi aset BMD RSUD ke Kemitraan (1.5.2)
+        // Ambil riwayat reklasifikasi aset BMD RSUD ke Kemitraan (1.5.2) - ambil riwayat terbaru per aset
         $reklasKemitraanRecords = AstapReklas::where(function ($rq) {
             $rq->where('tujuan_kib', 'KEMITRAAN')
                ->orWhere('tujuan_kode', 'like', '1.5.2%');
         })
         ->with(['astap.registers.unit', 'astap.jenisAstap', 'astap.unit'])
         ->orderBy('tanggal_reklas', 'desc')
-        ->get();
+        ->orderBy('id', 'desc')
+        ->get()
+        ->unique('astap_id');
 
         return view('pages.kemitraan.index', compact(
             'kemitraanRecords',
