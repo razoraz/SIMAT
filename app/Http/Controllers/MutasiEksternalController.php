@@ -292,27 +292,6 @@ class MutasiEksternalController extends Controller
     }
 
     /**
-     * Dapatkan daftar instansi/SKPD pengirim yang pernah tercatat di database.
-     */
-    public static function getDistinctSkpdAsals()
-    {
-        $directory = self::getSkpdDirectory();
-        $list = array_keys($directory);
-
-        $dbExtras = AstapPelimpahanSkpd::whereNotNull('skpd_asal')
-            ->where('skpd_asal', '!=', '')
-            ->distinct()
-            ->pluck('skpd_asal')
-            ->toArray();
-
-        return collect(array_merge($list, $dbExtras))
-            ->map(fn($v) => trim($v))
-            ->filter()
-            ->unique()
-            ->values();
-    }
-
-    /**
      * Tampilkan katalog data Mutasi Eksternal (Transfer Antar-OPD / Pelimpahan SKPD).
      */
     public function index(Request $request)
@@ -713,6 +692,16 @@ class MutasiEksternalController extends Controller
             }
         }
 
+        $isExtracom = false;
+        if (!empty($specJson['is_extracom'])) {
+            $isExtracom = true;
+        } elseif (!empty($specJson['mesin_items']) && is_array($specJson['mesin_items'])) {
+            $isExtracom = collect($specJson['mesin_items'])->contains(fn($it) => !empty($it['is_extracom']));
+        } elseif (!empty($specJson['lainnya_items']) && is_array($specJson['lainnya_items'])) {
+            $isExtracom = collect($specJson['lainnya_items'])->contains(fn($it) => !empty($it['is_extracom']));
+        }
+        $astapPayload['is_extracomtable'] = $isExtracom;
+
         $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
             // 1. Simpan ke tabel master astaps
             $item = Astap::create($astapPayload);
@@ -1082,6 +1071,16 @@ class MutasiEksternalController extends Controller
                 }
             }
         }
+
+        $isExtracom = false;
+        if (!empty($specJson['is_extracom'])) {
+            $isExtracom = true;
+        } elseif (!empty($specJson['mesin_items']) && is_array($specJson['mesin_items'])) {
+            $isExtracom = collect($specJson['mesin_items'])->contains(fn($it) => !empty($it['is_extracom']));
+        } elseif (!empty($specJson['lainnya_items']) && is_array($specJson['lainnya_items'])) {
+            $isExtracom = collect($specJson['lainnya_items'])->contains(fn($it) => !empty($it['is_extracom']));
+        }
+        $astapPayload['is_extracomtable'] = $isExtracom;
 
         DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $existingDoc, $request) {
             // 1. Update master Astap
