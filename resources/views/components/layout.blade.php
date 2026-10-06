@@ -290,6 +290,7 @@
          " 
          class="min-h-screen flex bg-slate-950 relative">
         
+        @if(!($noSidebar ?? false))
         <!-- Mobile Dark Backdrop Overlay -->
         <div x-show="sidebarOpen && isMobile" 
              x-transition:enter="transition-opacity ease-linear duration-300"
@@ -304,11 +305,12 @@
 
         <!-- Panggil Sidebar -->
         @include('partials.sidebar')
+        @endif
 
         <!-- Area Konten Utama -->
         <div class="flex-1 flex flex-col min-w-0 min-h-screen w-full">
             <!-- Panggil Topbar -->
-            @include('partials.topbar')
+            @include('partials.topbar', ['noSidebar' => $noSidebar ?? false])
 
             <!-- Slot Konten Utama -->
             <main class="flex-1 p-3 sm:p-6 lg:p-8 page-fade-in {{ ($fullWidth ?? false) ? 'w-full max-w-none' : 'max-w-7xl mx-auto w-full' }}">

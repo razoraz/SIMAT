@@ -18,10 +18,42 @@
                             Menampilkan <span class="text-emerald-400 font-bold" x-text="filteredAstaps.length"></span> dari <span class="text-white font-bold" x-text="astaps.length"></span> Data
                         </span>
                         <button type="button" @click="resetFilters()"
-                            class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all">
+                            class="px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold border border-slate-700 transition-all cursor-pointer active:scale-95">
                             🔄 Reset
                         </button>
+                        
+                        <!-- Tombol Tutup Buku BMD (Rekonsiliasi BPKAD) -->
+                        <a href="{{ route('tutup_buku.index') }}"
+                            title="Buka Halaman Manajemen Tutup Buku BMD (Triwulan & Tahunan)"
+                            class="px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 shadow-sm cursor-pointer active:scale-95 bg-slate-800/80 hover:bg-slate-700/80 text-amber-300 hover:text-amber-200 border-amber-500/30 hover:border-amber-500/50">
+                            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span>🔒 Tutup Buku</span>
+                        </a>
                     </div>
+                </div>
+
+                <!-- Status Banner Periode Terkunci (Read-Only) -->
+                <div x-show="isCurrentFilterLocked" x-cloak
+                     class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-slate-950 to-amber-950/20 border border-amber-500/40 flex items-center justify-between gap-3 text-xs shadow-lg shadow-amber-950/20">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 flex items-center justify-center shrink-0 text-sm">
+                            🔒
+                        </span>
+                        <div>
+                            <div class="font-bold text-amber-300 flex items-center gap-2">
+                                <span>PERIODE DITUTUP BUKU (READ-ONLY)</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-900/60 text-amber-200 border border-amber-700/60"
+                                      x-text="'T.A. ' + (tahunFilter !== 'all' ? tahunFilter : new Date().getFullYear()) + (triwulanFilter !== 'all' ? ' TW ' + triwulanFilter : '')"></span>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                Periode ini telah ditutup buku resmi berdasarkan Berita Acara Rekonsiliasi (BAR) BPKAD. Penambahan, perubahan nilai, dan penghapusan aset dikunci untuk sinkronisasi saldo.
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{{ route('tutup_buku.index') }}"
+                            class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-[11px] transition-all shrink-0">
+                        Kelola Periode ➔
+                    </a>
                 </div>
 
                 <!-- Advanced Filter Collapsible Bar (5 Kolom: KIB, Tahun, Triwulan, Kondisi, Sumber Perolehan) -->
@@ -55,7 +87,7 @@
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tahun Perolehan</label>
                         <div class="relative">
-                            <select x-model="tahunFilter"
+                            <select x-model="tahunFilter" @change="if (tahunFilter !== 'all') fetchTutupBukuStatus(parseInt(tahunFilter))"
                                 style="background-image: none !important; -webkit-appearance: none; -moz-appearance: none; appearance: none;"
                                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 pr-8 text-xs font-semibold text-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer hover:bg-slate-900/80 transition-all">
                                 <option value="all" class="bg-slate-900 text-slate-200 py-2 font-medium">Semua Tahun</option>

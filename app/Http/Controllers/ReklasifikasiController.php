@@ -1442,6 +1442,17 @@ class ReklasifikasiController extends Controller
     public function destroy(Request $request, $id)
     {
         $reklas = AstapReklas::findOrFail($id);
+
+        // Proteksi Integritas Tutup Buku (Periode Terkunci)
+        if (\App\Models\PeriodeTutupBuku::isLocked($reklas->tahun, $reklas->triwulan)) {
+            $lockInfo = \App\Models\PeriodeTutupBuku::getLockInfo($reklas->tahun, $reklas->triwulan);
+            $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+            return response()->json([
+                'success' => false,
+                'message' => "Pembatalan reklasifikasi ditolak karena periode T.A. {$reklas->tahun} Triwulan {$reklas->triwulan} telah resmi DITUTUP BUKU (BAR BPKAD: {$barNo}). Buka kunci periode terlebih dahulu jika terdapat koreksi darurat.",
+            ], 422);
+        }
+
         $astapId  = $reklas->astap_id;
         $jenisReklas = $reklas->jenis_reklas;
 

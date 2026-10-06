@@ -17,7 +17,8 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800/80">
                         <template x-for="(item, index) in filteredAstaps" :key="item.id">
-                            <tr class="group hover:bg-slate-800/40 transition-colors">
+                            <tr class="group transition-colors"
+                                :class="isItemLocked(item) ? 'bg-amber-950/10 hover:bg-amber-950/20' : 'hover:bg-slate-800/40'">
                                 <!-- Nomor Urut 1, 2, 3... -->
                                 <td class="px-4 py-4 text-center font-bold text-slate-400 whitespace-nowrap" x-text="index + 1"></td>
 
@@ -74,7 +75,17 @@
                                 </td>
 
                                 <!-- Tahun Masuk / Perolehan -->
-                                <td class="px-4 py-4 text-center font-mono font-bold text-slate-200 whitespace-nowrap" x-text="item.tahun_perolehan"></td>
+                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                    <div class="font-mono font-bold text-slate-200" x-text="item.tahun_perolehan"></div>
+                                    <div class="text-[10px] font-mono text-slate-400 mt-0.5" x-text="item.triwulan || 'TW I'"></div>
+                                    <template x-if="isItemLocked(item)">
+                                        <div class="mt-1">
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                                <span>🔒</span><span>TERKUNCI</span>
+                                            </span>
+                                        </div>
+                                    </template>
+                                </td>
 
                                 <!-- Volume / Kuantitas / Luas Aset -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
@@ -140,33 +151,43 @@
 
                                         @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                         <!-- 2. Tombol Reklas (Reklasifikasi Aset) -->
-                                        <button type="button" @click="openReklas(item)"
-                                            title="Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <button type="button" @click="if (isItemLocked(item)) { showLockedWarning(item); } else { openReklas(item); }"
+                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : 'Reklasifikasi Aset (Pindah KIB / Ekstrakom / Koreksi)'"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"
+                                            :class="isItemLocked(item) 
+                                                ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400' 
+                                                : 'bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer'">
+                                            <svg class="w-3.5 h-3.5" :class="isItemLocked(item) ? 'text-slate-500' : 'text-indigo-400 group-hover/btn:text-white group-hover/btn:rotate-180 transition-all duration-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                                             </svg>
-                                            <span>Reklas</span>
+                                            <span x-text="isItemLocked(item) ? '🔒 Reklas' : 'Reklas'"></span>
                                         </button>
 
                                         <!-- 3. Tombol Ubah (Form Edit) -->
-                                        <a :href="'/astap/' + item.id + '/edit'"
-                                            title="Ubah Data ASTAP (Form Lengkap)"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <a :href="isItemLocked(item) ? '#' : ('/astap/' + item.id + '/edit')"
+                                            @click="if (isItemLocked(item)) { $event.preventDefault(); showLockedWarning(item); }"
+                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : 'Ubah Data ASTAP (Form Lengkap)'"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"
+                                            :class="isItemLocked(item)
+                                                ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400'
+                                                : 'bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer'">
+                                            <svg class="w-3.5 h-3.5" :class="isItemLocked(item) ? 'text-slate-500' : 'text-cyan-400 group-hover/btn:text-white group-hover/btn:rotate-12 transition-all duration-200'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
-                                            <span>Ubah</span>
+                                            <span x-text="isItemLocked(item) ? '🔒 Ubah' : 'Ubah'"></span>
                                         </a>
 
                                         <!-- 4. Tombol Hapus -->
                                         <button type="button" @click="deleteAstap(item)"
-                                            title="Hapus Data ASTAP"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            :title="isItemLocked(item) ? 'Periode Terkunci (Tutup Buku BPKAD)' : 'Hapus Data ASTAP'"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl font-bold text-xs transition-all duration-200 shadow-sm leading-none"
+                                            :class="isItemLocked(item)
+                                                ? 'bg-slate-800/60 text-slate-500 border border-slate-700/60 cursor-pointer hover:bg-slate-800 hover:text-slate-400'
+                                                : 'bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer'">
+                                            <svg class="w-3.5 h-3.5" :class="isItemLocked(item) ? 'text-slate-500' : 'text-rose-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                             </svg>
-                                            <span>Hapus</span>
+                                            <span x-text="isItemLocked(item) ? '🔒 Hapus' : 'Hapus'"></span>
                                         </button>
                                         @endif
                                     </div>

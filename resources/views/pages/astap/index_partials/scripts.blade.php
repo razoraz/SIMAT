@@ -9578,6 +9578,223 @@
                 reklasKdpProgresAwal: 0,
                 reklasKemitraanTipeFisik: 'mesin', // 'tanah' | 'mesin' | 'gedung' | 'jaringan' | 'lainnya'
 
+                // State Modal Manajemen Periode & Tutup Buku BMD (Rekonsiliasi BPKAD)
+                tutupBukuModalOpen: false,
+                tutupBukuTab: 'overview', // 'overview' | 'form_lock' | 'form_unlock'
+                tutupBukuYear: new Date().getFullYear(),
+                tutupBukuPeriods: [],
+                tutupBukuStatusCache: {},
+                isSubmittingTutupBuku: false,
+                formLock: {
+                    tahun: new Date().getFullYear(),
+                    triwulan: 1,
+                    nomor_bar_bpkad: '',
+                    tanggal_tutup: new Date().toLocaleDateString('en-CA'),
+                    keterangan: '',
+                },
+                formUnlock: {
+                    tahun: new Date().getFullYear(),
+                    triwulan: 1,
+                    alasan_unlock: '',
+                },
+
+                get availableYearsTutupBuku() {
+                    return this.availableYears;
+                },
+
+                // Konversi format triwulan ke integer 1-4 atau 0
+                normalizeTriwulanNumber(tw) {
+                    if (tw === undefined || tw === null) return 1;
+                    if (typeof tw === 'number') return (tw >= 0 && tw <= 4) ? tw : 1;
+                    const str = String(tw).toUpperCase().trim();
+                    if (str.includes('IV') || str.includes('4')) return 4;
+                    if (str.includes('III') || str.includes('3')) return 3;
+                    if (str.includes('II') || str.includes('2')) return 2;
+                    if (str.includes('I') || str.includes('1')) return 1;
+                    if (str.includes('TAHUN') || str.includes('0')) return 0;
+                    return 1;
+                },
+
+                // Cek apakah periode (tahun & triwulan) berstatus terkunci
+                isPeriodLocked(year, tw) {
+                    const yr = parseInt(year);
+                    if (isNaN(yr)) return false;
+                    const periods = this.tutupBukuStatusCache[yr] || (this.tutupBukuYear === yr ? this.tutupBukuPeriods : null);
+                    if (!periods || !Array.isArray(periods)) return false;
+
+                    // Kunci tahunan (triwulan = 0) mengunci semua triwulan di tahun tersebut
+                    const annualPeriod = periods.find(p => p.triwulan === 0);
+                    if (annualPeriod && annualPeriod.is_locked) {
+                        return true;
+                    }
+
+                    if (tw !== undefined && tw !== null && tw !== 'all') {
+                        const twNum = this.normalizeTriwulanNumber(tw);
+                        const match = periods.find(p => p.triwulan === twNum);
+                        return match ? Boolean(match.is_locked) : false;
+                    }
+
+                    return false;
+                },
+
+                // Cek apakah filter tahun & triwulan saat ini berstatus terkunci
+                get isCurrentFilterLocked() {
+                    if (this.tahunFilter === 'all') return false;
+                    const yr = parseInt(this.tahunFilter);
+                    if (isNaN(yr)) return false;
+
+                    if (this.triwulanFilter === 'all') {
+                        return this.isPeriodLocked(yr, 0);
+                    }
+                    return this.isPeriodLocked(yr, this.triwulanFilter);
+                },
+
+                // Cek apakah aset tertentu berada pada periode terkunci
+                isItemLocked(item) {
+                    if (!item) return false;
+                    const yr = parseInt(item.tahun_perolehan || (item.kemitraan && item.kemitraan.tahun));
+                    const tw = item.triwulan || 'TW I';
+                    return this.isPeriodLocked(yr, tw);
+                },
+
+                // Buka Modal Tutup Buku
+                openModalTutupBuku() {
+                    if (this.tahunFilter !== 'all') {
+                        this.tutupBukuYear = parseInt(this.tahunFilter);
+                    } else if (!this.tutupBukuYear) {
+                        this.tutupBukuYear = new Date().getFullYear();
+                    }
+                    this.tutupBukuTab = 'overview';
+                    this.formLock.tahun = this.tutupBukuYear;
+                    this.formUnlock.tahun = this.tutupBukuYear;
+                    this.tutupBukuModalOpen = true;
+                    this.fetchTutupBukuStatus();
+                },
+
+                closeModalTutupBuku() {
+                    this.tutupBukuModalOpen = false;
+                },
+
+                async fetchTutupBukuStatus(targetYear) {
+                    const yr = targetYear || this.tutupBukuYear || new Date().getFullYear();
+                    try {
+                        const res = await fetch(`/api/tutup-buku/status?tahun=${yr}`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const data = await res.json();
+                        if (data.success && Array.isArray(data.periods)) {
+                            this.tutupBukuStatusCache[yr] = data.periods;
+                            if (this.tutupBukuYear === yr) {
+                                this.tutupBukuPeriods = data.periods;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('fetchTutupBukuStatus error:', e);
+                    }
+                },
+
+                prepareLockPeriod(tw) {
+                    this.formLock.tahun = this.tutupBukuYear;
+                    this.formLock.triwulan = tw;
+                    this.formLock.tanggal_tutup = new Date().toLocaleDateString('en-CA');
+                    this.tutupBukuTab = 'form_lock';
+                },
+
+                prepareUnlockPeriod(tw) {
+                    this.formUnlock.tahun = this.tutupBukuYear;
+                    this.formUnlock.triwulan = tw;
+                    this.formUnlock.alasan_unlock = '';
+                    this.tutupBukuTab = 'form_unlock';
+                },
+
+                async submitLockPeriod() {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    if (!this.formLock.nomor_bar_bpkad || !this.formLock.tanggal_tutup) {
+                        this.showToast('Harap lengkapi nomor BAR BPKAD dan tanggal penutupan!', 'error');
+                        return;
+                    }
+                    this.isSubmittingTutupBuku = true;
+                    try {
+                        const res = await fetch('/api/tutup-buku/lock', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(this.formLock)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            this.showToast(data.message || 'Periode berhasil ditutup buku resmi.', 'success');
+                            await this.fetchTutupBukuStatus(this.tutupBukuYear);
+                            this.tutupBukuTab = 'overview';
+                        } else {
+                            this.showToast(data.message || 'Gagal menutup buku periode.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('submitLockPeriod error:', err);
+                        this.showToast('Terjadi kesalahan jaringan saat menyimpan status tutup buku.', 'error');
+                    } finally {
+                        this.isSubmittingTutupBuku = false;
+                    }
+                },
+
+                async submitUnlockPeriod() {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    if (!this.formUnlock.alasan_unlock || this.formUnlock.alasan_unlock.length < 5) {
+                        this.showToast('Uraikan alasan pembukaan kunci minimal 5 karakter!', 'error');
+                        return;
+                    }
+                    this.isSubmittingTutupBuku = true;
+                    try {
+                        const res = await fetch('/api/tutup-buku/unlock', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(this.formUnlock)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            this.showToast(data.message || 'Kunci periode berhasil dibuka kembali.', 'success');
+                            await this.fetchTutupBukuStatus(this.tutupBukuYear);
+                            this.tutupBukuTab = 'overview';
+                        } else {
+                            this.showToast(data.message || 'Gagal membuka kunci periode.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('submitUnlockPeriod error:', err);
+                        this.showToast('Terjadi kesalahan jaringan saat membuka kunci periode.', 'error');
+                    } finally {
+                        this.isSubmittingTutupBuku = false;
+                    }
+                },
+
+                showLockedWarning(item) {
+                    const yr = item?.tahun_perolehan || '-';
+                    const tw = item?.triwulan || '-';
+                    const name = item?.nama_barang || 'Aset';
+                    this.askConfirmation({
+                        title: 'Periode Telah Ditutup Buku (Read-Only)',
+                        message: `Aset "${name}" berada pada periode yang telah resmi ditutup buku (T.A. ${yr} ${tw}) berdasarkan Berita Acara Rekonsiliasi (BAR) BPKAD.`,
+                        itemName: `${name} (T.A. ${yr} ${tw})`,
+                        itemDetails: {
+                            nama: name,
+                            kode: item?.kode_barang || '-',
+                            badgeText: 'STATUS TERKUNCI 🔒'
+                        },
+                        type: 'danger',
+                        isBlocked: true,
+                        actionUrl: null,
+                        assetWarning: 'Data aset pada periode yang telah ditutup buku dilindungi secara permanen demi kepatuhan LKPD audited BPK RI. Jika diperlukan revisi mendesak, silakan lakukan pembukaan kunci melalui tombol Tutup Buku (khusus Master Administrator).',
+                        btnText: null,
+                        onConfirm: null
+                    });
+                },
+
                 isReklasBelanjaModal() {
                     const it = this.selectedAstapReklas;
                     if (!it) return true;
@@ -11958,6 +12175,12 @@
                 deleteAstap(item) {
                     if (!item) return;
 
+                    // 0. Validasi Proteksi Periode Terkunci (Tutup Buku)
+                    if (this.isItemLocked(item)) {
+                        this.showLockedWarning(item);
+                        return;
+                    }
+
                     // 1. Validasi Penempatan: Cek apakah ada unit register yang SUDAH DITEMPATKAN di unit & paviliun
                     const regs = Array.isArray(item.registers) ? item.registers : [];
                     const placedRegs = regs.filter(r => this.isRegisterPlacedInUnit(r));
@@ -12933,6 +13156,12 @@
                                 this.openReklas(target);
                             }, 350);
                         }
+                    }
+
+                    // Inisialisasi status Tutup Buku BMD (Rekon BPKAD)
+                    this.fetchTutupBukuStatus(new Date().getFullYear());
+                    if (this.tahunFilter !== 'all') {
+                        this.fetchTutupBukuStatus(parseInt(this.tahunFilter));
                     }
                 }
             };

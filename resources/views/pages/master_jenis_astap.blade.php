@@ -1,1 +1,0 @@
-@include('pages.master.jenis_astap.index')

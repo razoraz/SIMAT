@@ -852,6 +852,12 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('api.kemitraan.mitras');
 
+    // 9. Manajemen Halaman & API Tutup Buku BMD (Penutupan Rekon BPKAD)
+    Route::get('/tutup-buku', [\App\Http\Controllers\TutupBukuController::class, 'index'])->name('tutup_buku.index');
+    Route::get('/api/tutup-buku/status', [\App\Http\Controllers\TutupBukuController::class, 'status'])->name('tutup_buku.status');
+    Route::post('/api/tutup-buku/lock', [\App\Http\Controllers\TutupBukuController::class, 'lock'])->name('tutup_buku.lock');
+    Route::post('/api/tutup-buku/unlock', [\App\Http\Controllers\TutupBukuController::class, 'unlock'])->name('tutup_buku.unlock');
+
     // Rute Khusus Master Admin & Admin Operasional (Sub Admin Dibatasi)
     Route::middleware([RoleMiddleware::class . ':master_admin,admin'])->group(function () {
         // Berita Acara (BAST)
@@ -4369,6 +4375,18 @@ Route::middleware('auth')->group(function () {
                 return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
             }
 
+            // Proteksi Integritas Tutup Buku (Periode Terkunci)
+            $twInt = \App\Models\PeriodeTutupBuku::parseTriwulan($astap->triwulan);
+            $tahunAset = (int) ($astap->tahun_perolehan ?: date('Y'));
+            if (\App\Models\PeriodeTutupBuku::isLocked($tahunAset, $twInt)) {
+                $lockInfo = \App\Models\PeriodeTutupBuku::getLockInfo($tahunAset, $twInt);
+                $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+                return response()->json([
+                    'success' => false,
+                    'message' => "Data ASTAP \"{$astap->nama_barang}\" tidak dapat diubah karena periode T.A. {$tahunAset} Triwulan {$twInt} telah resmi DITUTUP BUKU (BAR BPKAD: {$barNo}). Buka kunci periode terlebih dahulu jika terdapat revisi darurat."
+                ], 422);
+            }
+
             $data = $request->all();
             $isExtracom = !empty($data['is_extracomtable']);
             $hasMesinItems = !empty($data['mesin_items']) && is_array($data['mesin_items']) && count($data['mesin_items']) > 0;
@@ -5710,6 +5728,19 @@ Route::middleware('auth')->group(function () {
             $astap = \App\Models\Astap::with('registers.unit')->find($id);
             if (!$astap) {
                 return response()->json(['success' => false, 'message' => 'Data ASTAP tidak ditemukan.'], 404);
+            }
+
+            // Validasi Proteksi Tutup Buku (Periode Terkunci)
+            $twInt = \App\Models\PeriodeTutupBuku::parseTriwulan($astap->triwulan);
+            $tahunAset = (int) ($astap->tahun_perolehan ?: date('Y'));
+            if (\App\Models\PeriodeTutupBuku::isLocked($tahunAset, $twInt)) {
+                $lockInfo = \App\Models\PeriodeTutupBuku::getLockInfo($tahunAset, $twInt);
+                $barNo = $lockInfo?->nomor_bar_bpkad ?: '-';
+                return response()->json([
+                    'success' => false,
+                    'is_blocked' => true,
+                    'message' => "Aset \"{$astap->nama_barang}\" tidak dapat dihapus karena berada pada periode yang telah resmi DITUTUP BUKU (T.A. {$tahunAset} Triwulan {$twInt}) berdasarkan BAR BPKAD: {$barNo}. Buka kunci periode terlebih dahulu jika terdapat koreksi darurat."
+                ], 422);
             }
 
             // Validasi Proteksi Penempatan Ruangan (Unit / Paviliun):

@@ -709,6 +709,47 @@
                 class="w-full bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl p-3 text-xs text-white focus:outline-none"></textarea>
         </div>
 
+        <!-- Unggah Berkas Dokumen BAST / PKS Kerja Sama -->
+        <div class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-slate-200">
+                    Unggah Berkas Dokumen BAST / PKS Kerja Sama
+                </label>
+                <span class="text-[10.5px] text-slate-400 font-mono">Format: PDF, JPG, PNG (Maks 10MB)</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-3">
+                <input type="file" id="inputDokumenBastForm" name="dokumen_file" accept=".pdf,.jpg,.jpeg,.png" class="hidden"
+                       @change="handleFormFileSelect($event)">
+
+                <button type="button" @click="triggerFormFileSelect()"
+                        class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-cyan-300 border border-slate-700/80 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-sm">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                    <span>Pilih Berkas Dokumen</span>
+                </button>
+
+                <div class="flex-1 min-w-0 w-full">
+                    <template x-if="selectedFile">
+                        <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-emerald-950/30 border border-emerald-500/40 text-xs text-emerald-300 font-mono">
+                            <span class="truncate" x-text="selectedFile.name"></span>
+                            <button type="button" @click="clearFormFileSelect()" class="text-rose-400 hover:text-rose-300 font-bold ml-2">✕</button>
+                        </div>
+                    </template>
+                    <template x-if="!selectedFile && formData.dokumen_path">
+                        <div class="flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 font-mono">
+                            <span class="truncate" x-text="'Tersimpan: ' + formData.dokumen_path.split('/').pop()"></span>
+                            <a :href="'/storage/' + formData.dokumen_path" target="_blank" class="text-cyan-400 hover:underline text-[11px] ml-2 font-sans font-bold">Lihat</a>
+                        </div>
+                    </template>
+                    <template x-if="!selectedFile && !formData.dokumen_path">
+                        <span class="text-xs text-slate-500 italic block pl-1">Belum ada berkas dokumen yang dipilih (opsional).</span>
+                    </template>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </div>

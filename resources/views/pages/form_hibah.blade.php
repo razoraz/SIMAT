@@ -1,1 +1,0 @@
-@include('pages.hibah.form')

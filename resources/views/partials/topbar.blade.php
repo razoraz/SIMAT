@@ -2,6 +2,7 @@
 <header class="h-16 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0 shadow-lg shadow-black/20">
     <!-- Left Section: Hamburger & Breadcrumb -->
     <div class="flex items-center space-x-3 sm:space-x-4">
+        @if(!($noSidebar ?? false))
         <button type="button" @click="sidebarOpen = !sidebarOpen"
             class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 focus:outline-none transition-all"
             aria-label="Toggle Navigation">
@@ -9,6 +10,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
         </button>
+        @else
+        <a href="{{ route('astap.index') }}"
+           class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold border border-slate-700 transition-all shadow-sm">
+            <span>⬅</span>
+            <span>Kembali ke ASTAP</span>
+        </a>
+        @endif
 
         <div>
             <h1 class="text-sm font-bold text-white tracking-tight">@yield('page-title', 'Dashboard')</h1>
