@@ -60,11 +60,6 @@ class MutasiEksternal extends Model
         return $query->where('tipe', 'masuk');
     }
 
-    public function scopeKeluar($query)
-    {
-        return $query->where('tipe', 'keluar');
-    }
-
     // ─── Relations ──────────────────────────────────────────────────────────
 
     /**

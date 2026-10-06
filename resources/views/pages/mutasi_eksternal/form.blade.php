@@ -10,7 +10,7 @@
     $initialAstap = null;
     if ($isEdit) {
         $firstReg = $astap->registers ? $astap->registers->first() : null;
-        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : [];
+        $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (is_string($astap->spesifikasi_json) ? (json_decode($astap->spesifikasi_json, true) ?: []) : []);
         $me = $astap->mutasiEksternal;
         
         $rawTgl = $me?->tanggal_mutasi ?: ($astap->pelimpahanSkpd?->tanggal_bamb ?: ($astap->mutasi_tanggal ?: ($astap->bast_dokumen_tanggal ?: ($spec['tanggal_bamb'] ?? null))));

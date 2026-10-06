@@ -28,9 +28,6 @@
             isSkpdDropdownOpen: false,
             isPejabatDropdownOpen: false,
 
-            // Filter & Search 108
-            search108Query: '',
-            filtered108Results: [],
             activeKibCategory: 'mesin',
 
             // Form Data State
@@ -71,22 +68,7 @@
                 mesin_items: [],
                 gedung_items: [],
                 jaringan_items: [],
-                lainnya_items: [],
-
-                // Legacy flat specs support
-                merk: '',
-                type: '',
-                no_pabrik: '',
-                ukuran: '',
-                bahan: '',
-                no_rangka: '',
-                no_mesin: '',
-                no_polisi: '',
-                sertifikat_nomor: '',
-                gedung_luas_m2: '',
-                gedung_bertingkat: 'Tidak',
-                gedung_beton: 'Beton',
-                gedung_status_tanah: 'Tanah Pemda'
+                lainnya_items: []
             },
 
             selectedFile: null,
@@ -171,11 +153,13 @@
                     const parts = str.split('-');
                     year = parseInt(parts[0], 10);
                     month = parseInt(parts[1], 10);
-                } else if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) {
-                    const d = new Date(str);
-                    if (!isNaN(d.getTime())) {
-                        year = d.getFullYear();
-                        month = d.getMonth() + 1;
+                } else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(str)) {
+                    const parts = str.split('/');
+                    const m = parseInt(parts[1], 10);
+                    const y = parseInt(parts[2], 10);
+                    if (!isNaN(y) && !isNaN(m)) {
+                        year = y;
+                        month = m;
                     }
                 } else {
                     const d = new Date(str);
@@ -198,11 +182,6 @@
 
             onTanggalChange(val) {
                 if (!val) return;
-                const todayIso = new Date().toISOString().split('T')[0];
-                if (val > todayIso) {
-                    this.formData.mutasi_tanggal = todayIso;
-                    val = todayIso;
-                }
                 this.formData.triwulan = this.calcTriwulanFromDate(val);
             },
 
@@ -309,27 +288,12 @@
                 this.showToast('Pejabat Dipilih', 'Pejabat Penyerah diset: ' + p.nama, 'info');
             },
 
-            // Handler ketika Pejabat Penyerah dipilih dari input langsung
-            onPejabatPenyerahSelect(event) {
-                const val = (event.target.value || '').trim();
-                if (!val) return;
-                const found = (this.availablePejabatPenyerahs || []).find(p => p.nama && p.nama.toLowerCase() === val.toLowerCase())
-                    || (this.pejabatPenyerahList || []).find(p => p.nama && p.nama.toLowerCase() === val.toLowerCase());
-                if (found) {
-                    if (found.nip) this.formData.pj_asal_nip = found.nip;
-                    if (found.jabatan) this.formData.pj_asal_jabatan = found.jabatan;
-                    if (found.skpd && !this.formData.mutasi_asal) {
-                        this.formData.mutasi_asal = found.skpd;
-                    }
-                }
-            },
-
             selectSkpd(name) {
                 this.formData.mutasi_asal = name;
                 this.isSkpdDropdownOpen = false;
-                this.syncPejabatFromSkpd(name, false);
+                this.syncPejabatFromSkpd(name, true);
                 const alamat = this.getSkpdAlamatInfo(name);
-                if (alamat && !this.formData.alamat_instansi) {
+                if (alamat) {
                     this.formData.alamat_instansi = alamat;
                 }
             },
@@ -427,48 +391,6 @@
                 return this.allFlat108.find(i => Number(i.id) === Number(this.formData.jenis_astap_id)) || null;
             },
 
-            filter108List() {
-                const q = (this.search108Query || '').toLowerCase().trim();
-                if (!q) {
-                    this.filtered108Results = [];
-                    return;
-                }
-                const activePrefix = this.activeKibCode;
-                this.filtered108Results = this.allFlat108
-                    .filter(i => (i.kode && i.kode.toLowerCase().includes(q)) || (i.nama && i.nama.toLowerCase().includes(q)) || (i.path && i.path.toLowerCase().includes(q)))
-                    .sort((a, b) => {
-                        const aMatch = a.kode && a.kode.startsWith(activePrefix) ? 1 : 0;
-                        const bMatch = b.kode && b.kode.startsWith(activePrefix) ? 1 : 0;
-                        return bMatch - aMatch;
-                    })
-                    .slice(0, 30);
-            },
-
-            select108FromSearch(item) {
-                this.formData.jenis_astap_id = item.id;
-                if (!this.formData.nama_barang || this.formData.nama_barang.trim() === '') {
-                    this.formData.nama_barang = item.nama;
-                }
-                this.search108Query = '';
-                this.filtered108Results = [];
-
-                // Otomatis sesuaikan activeKibCategory dari kode 108 dengan seed default true
-                if (item.kode.startsWith('1.3.1')) this.selectKibCategory('tanah', true);
-                else if (item.kode.startsWith('1.3.2')) this.selectKibCategory('mesin', true);
-                else if (item.kode.startsWith('1.3.3')) this.selectKibCategory('gedung', true);
-                else if (item.kode.startsWith('1.3.4')) this.selectKibCategory('jaringan', true);
-                else if (item.kode.startsWith('1.3.5')) this.selectKibCategory('lainnya', true);
-                
-                // Pastikan nama barang item pertama terisi jika masih kosong
-                this.syncSingleItemName();
-            },
-
-            clear108Selection() {
-                this.formData.jenis_astap_id = '';
-                this.search108Query = '';
-                this.filtered108Results = [];
-            },
-
             selectKibCategory(cat, seedDefault = true) {
                 this.activeKibCategory = cat;
                 if (seedDefault) {
@@ -490,10 +412,18 @@
 
             // Pastikan jenis_astap_id terisi otomatis sesuai KIB aktif jika belum dipilih
             ensureJenisAstapId() {
-                if (this.isMesin && this.formData.mesin_items?.length > 0) {
-                    const itemWithKode = this.formData.mesin_items.find(i => i.mesin_kode_barang);
+                let activeItems = [];
+                let codeKey = '';
+                if (this.isTanah) { activeItems = this.formData.tanah_items || []; codeKey = 'tanah_kode_barang'; }
+                else if (this.isMesin) { activeItems = this.formData.mesin_items || []; codeKey = 'mesin_kode_barang'; }
+                else if (this.isGedung) { activeItems = this.formData.gedung_items || []; codeKey = 'gedung_kode_barang'; }
+                else if (this.isJaringan) { activeItems = this.formData.jaringan_items || []; codeKey = 'jaringan_kode_barang'; }
+                else if (this.isLainnya) { activeItems = this.formData.lainnya_items || []; codeKey = 'lainnya_kode_barang'; }
+
+                if (activeItems.length > 0 && codeKey) {
+                    const itemWithKode = activeItems.find(i => i && i[codeKey]);
                     if (itemWithKode) {
-                        const found = this.allFlat108.find(x => x.kode === itemWithKode.mesin_kode_barang);
+                        const found = this.allFlat108.find(x => x.kode === itemWithKode[codeKey]);
                         if (found) {
                             this.formData.jenis_astap_id = found.id;
                             return;
@@ -523,63 +453,6 @@
                     this.formData.jaringan_items[0].jaringan_nama_barang = name;
                 } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items[0] && !this.formData.lainnya_items[0].lainnya_judul) {
                     this.formData.lainnya_items[0].lainnya_judul = name;
-                }
-            },
-
-            // Input Sinkronisasi Form Induk Langkah 2
-            onNamaBarangInput(val) {
-                this.formData.nama_barang = val;
-                this.syncSingleItemName();
-            },
-
-            onTotalRealisasiInput(val) {
-                let raw = String(val).replace(/\D/g, '');
-                const num = raw ? parseInt(raw, 10) : 0;
-                this.formData.total_realisasi = num;
-                
-                // Jika hanya 1 item dalam repeater, sinkronkan nilai satuannya
-                if (!this.isMultiItemActive) {
-                    const vol = Math.max(1, parseInt(this.formData.jumlah_volume) || 1);
-                    const unitPrice = Math.round(num / vol);
-                    if (this.isTanah && this.formData.tanah_items && this.formData.tanah_items.length === 1) {
-                        this.formData.tanah_items[0].tanah_nilai_fisik = num;
-                    } else if (this.isMesin && this.formData.mesin_items && this.formData.mesin_items.length === 1) {
-                        this.formData.mesin_items[0].mesin_nilai_satuan = unitPrice;
-                    } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length === 1) {
-                        this.formData.gedung_items[0].gedung_nilai_satuan = unitPrice;
-                    } else if (this.isJaringan && this.formData.jaringan_items && this.formData.jaringan_items.length === 1) {
-                        this.formData.jaringan_items[0].jaringan_nilai_satuan = unitPrice;
-                    } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items.length === 1) {
-                        this.formData.lainnya_items[0].lainnya_nilai_satuan = unitPrice;
-                    }
-                }
-            },
-
-            onJumlahVolumeInput(val) {
-                const vol = Math.max(1, parseInt(val) || 1);
-                this.formData.jumlah_volume = vol;
-                if (!this.isMultiItemActive) {
-                    if (this.isMesin && this.formData.mesin_items && this.formData.mesin_items.length === 1) {
-                        this.formData.mesin_items[0].mesin_jumlah_barang = vol;
-                        if (this.formData.total_realisasi > 0) {
-                            this.formData.mesin_items[0].mesin_nilai_satuan = Math.round(this.formData.total_realisasi / vol);
-                        }
-                    } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length === 1) {
-                        this.formData.gedung_items[0].gedung_jumlah_bangunan = vol;
-                        if (this.formData.total_realisasi > 0) {
-                            this.formData.gedung_items[0].gedung_nilai_satuan = Math.round(this.formData.total_realisasi / vol);
-                        }
-                    } else if (this.isJaringan && this.formData.jaringan_items && this.formData.jaringan_items.length === 1) {
-                        this.formData.jaringan_items[0].jaringan_jumlah = vol;
-                        if (this.formData.total_realisasi > 0) {
-                            this.formData.jaringan_items[0].jaringan_nilai_satuan = Math.round(this.formData.total_realisasi / vol);
-                        }
-                    } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items.length === 1) {
-                        this.formData.lainnya_items[0].lainnya_jumlah = vol;
-                        if (this.formData.total_realisasi > 0) {
-                            this.formData.lainnya_items[0].lainnya_nilai_satuan = Math.round(this.formData.total_realisasi / vol);
-                        }
-                    }
                 }
             },
 
@@ -626,13 +499,6 @@
                     return this.formData.tanah_items.reduce((sum, item) => sum + this.getTanahSubtotal(item), 0);
                 }
                 return Number(this.formData.total_realisasi || 0);
-            },
-
-            get totalVolumeTanah() {
-                if (this.formData.tanah_items && this.formData.tanah_items.length > 0) {
-                    return this.formData.tanah_items.reduce((sum, item) => sum + (parseInt(item.tanah_jumlah_barang) || 1), 0);
-                }
-                return parseInt(this.formData.jumlah_volume) || 1;
             },
 
             // Repeater Actions: Mesin
@@ -688,13 +554,6 @@
                 return Number(this.formData.total_realisasi || 0);
             },
 
-            get totalVolumeMesin() {
-                if (this.formData.mesin_items && this.formData.mesin_items.length > 0) {
-                    return this.formData.mesin_items.reduce((sum, item) => sum + (parseInt(item.mesin_jumlah_barang) || 1), 0);
-                }
-                return parseInt(this.formData.jumlah_volume) || 1;
-            },
-
             // Repeater Actions: Gedung
             addGedungItem() {
                 if (!this.formData.gedung_items) {
@@ -739,13 +598,6 @@
                     return this.formData.gedung_items.reduce((sum, item) => sum + this.getGedungSubtotal(item), 0);
                 }
                 return Number(this.formData.total_realisasi || 0);
-            },
-
-            get totalVolumeGedung() {
-                if (this.formData.gedung_items && this.formData.gedung_items.length > 0) {
-                    return this.formData.gedung_items.reduce((sum, item) => sum + (parseInt(item.gedung_jumlah_bangunan) || 1), 0);
-                }
-                return parseInt(this.formData.jumlah_volume) || 1;
             },
 
             // Repeater Actions: Jaringan
@@ -795,13 +647,6 @@
                     return this.formData.jaringan_items.reduce((sum, item) => sum + this.getJaringanSubtotal(item), 0);
                 }
                 return Number(this.formData.total_realisasi || 0);
-            },
-
-            get totalVolumeJaringan() {
-                if (this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
-                    return this.formData.jaringan_items.reduce((sum, item) => sum + (parseInt(item.jaringan_jumlah) || 1), 0);
-                }
-                return parseInt(this.formData.jumlah_volume) || 1;
             },
 
             // Repeater Actions: Lainnya (KIB E)
@@ -932,18 +777,6 @@
                         if (names.length > 0) {
                             this.formData.nama_barang = names.join(', ');
                         }
-                    }
-                    if (first) {
-                        this.formData.merk = first.mesin_merk || '';
-                        this.formData.type = first.mesin_type || '';
-                        this.formData.no_pabrik = first.mesin_no_pabrik || '';
-                        this.formData.bahan = first.mesin_bahan || '';
-                        this.formData.ukuran = first.mesin_ukuran || '';
-                        this.formData.tahun_pembuatan = first.mesin_tahun_pembuatan || null;
-                        this.formData.no_rangka = first.mesin_no_rangka || '';
-                        this.formData.no_mesin = first.mesin_no_mesin || '';
-                        this.formData.no_polisi = first.mesin_no_polisi || '';
-                        this.formData.no_bpkb = first.mesin_no_bpkb || '';
                     }
                 } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length > 0) {
                     let totalQty = 0;
@@ -1101,7 +934,7 @@
                     }
                 }
                 item.isFilterOpen = false;
-                if (!this.formData.jenis_astap_id && opt.id) {
+                if (opt.id) {
                     this.formData.jenis_astap_id = opt.id;
                 }
                 this.syncTotalsFromItems();
@@ -1386,6 +1219,7 @@
                     }
 
                     // Validasi rincian repeater spesifik KIB
+                    const today = this.getTodayTimestamp();
                     if (this.isMesin) {
                         this.syncTotalsFromItems();
                         if (!this.formData.mesin_items || this.formData.mesin_items.length === 0) {
@@ -1433,8 +1267,32 @@
                         for (let i = 0; i < this.formData.tanah_items.length; i++) {
                             const it = this.formData.tanah_items[i];
                             const num = i + 1;
+                            if (!it.tanah_nama_barang || !it.tanah_nama_barang.trim()) {
+                                const msg = `Nama/Jenis Tanah pada Bidang #${num} tidak boleh kosong.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
                             if (!it.tanah_luas_m2 || parseFloat(it.tanah_luas_m2) <= 0) {
                                 const msg = `Luas tanah (m²) pada Bidang Tanah #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (it.tanah_sertifikat_tgl && this.parseDateToTimestamp(it.tanah_sertifikat_tgl) > today) {
+                                const msg = `Tanggal Sertifikat pada Bidang Tanah #${num} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (!it.tanah_jumlah_barang || parseInt(it.tanah_jumlah_barang) < 1) {
+                                const msg = `Jumlah volume pada Bidang Tanah #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (parseFloat(it.tanah_nilai_satuan) <= 0 || isNaN(parseFloat(it.tanah_nilai_satuan))) {
+                                const msg = `Nilai perolehan satuan pada Bidang Tanah #${num} harus lebih dari 0.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
@@ -1463,6 +1321,18 @@
                                 this.setStepError(2, msg);
                                 return false;
                             }
+                            if (parseFloat(it.gedung_nilai_satuan) <= 0 || isNaN(parseFloat(it.gedung_nilai_satuan))) {
+                                const msg = `Nilai satuan pada Bangunan #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (it.gedung_dokumen_tgl && this.parseDateToTimestamp(it.gedung_dokumen_tgl) > today) {
+                                const msg = `Tanggal Dokumen Izin pada Bangunan #${num} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
                         }
                     } else if (this.isJaringan) {
                         this.syncTotalsFromItems();
@@ -1487,6 +1357,18 @@
                                 this.setStepError(2, msg);
                                 return false;
                             }
+                            if (parseFloat(it.jaringan_nilai_satuan) <= 0 || isNaN(parseFloat(it.jaringan_nilai_satuan))) {
+                                const msg = `Nilai satuan pada Ruas #${num} harus lebih dari 0.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (it.jaringan_dokumen_tgl && this.parseDateToTimestamp(it.jaringan_dokumen_tgl) > today) {
+                                const msg = `Tanggal Dokumen Kontrak pada Ruas #${num} tidak boleh melebihi tanggal hari ini.`;
+                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
                         }
                     } else if (this.isLainnya) {
                         this.syncTotalsFromItems();
@@ -1499,14 +1381,21 @@
                         for (let i = 0; i < this.formData.lainnya_items.length; i++) {
                             const it = this.formData.lainnya_items[i];
                             const num = i + 1;
-                            if (!it.lainnya_nama_barang || !it.lainnya_nama_barang.trim()) {
-                                const msg = `Nama Barang pada Item #${num} tidak boleh kosong.`;
+                            const nama = it.lainnya_nama_barang || it.lainnya_judul;
+                            if (!nama || !nama.trim()) {
+                                const msg = `Nama Barang/Judul pada Item #${num} tidak boleh kosong.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
                             }
                             if (!it.lainnya_jumlah || parseInt(it.lainnya_jumlah) < 1) {
                                 const msg = `Jumlah volume pada Item #${num} minimal 1.`;
+                                this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
+                                this.setStepError(2, msg);
+                                return false;
+                            }
+                            if (parseFloat(it.lainnya_nilai_satuan) <= 0 || isNaN(parseFloat(it.lainnya_nilai_satuan))) {
+                                const msg = `Nilai satuan pada Item #${num} harus lebih dari 0.`;
                                 this.showToast('Validasi Langkah 2 Gagal', msg, 'error');
                                 this.setStepError(2, msg);
                                 return false;
@@ -1555,40 +1444,6 @@
                         return false;
                     }
                 } else if (s === 3) {
-                    const today = this.getTodayTimestamp();
-                    if (this.isTanah && this.formData.tanah_items) {
-                        for (let i = 0; i < this.formData.tanah_items.length; i++) {
-                            const tgl = this.formData.tanah_items[i].tanah_sertifikat_tgl;
-                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
-                                const msg = `Tanggal Sertifikat pada Bidang Tanah #${i + 1} tidak boleh melebihi tanggal hari ini.`;
-                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
-                                this.setStepError(3, msg);
-                                return false;
-                            }
-                        }
-                    }
-                    if (this.isGedung && this.formData.gedung_items) {
-                        for (let i = 0; i < this.formData.gedung_items.length; i++) {
-                            const tgl = this.formData.gedung_items[i].gedung_dokumen_tgl;
-                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
-                                const msg = `Tanggal Dokumen pada Bangunan #${i + 1} tidak boleh melebihi tanggal hari ini.`;
-                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
-                                this.setStepError(3, msg);
-                                return false;
-                            }
-                        }
-                    }
-                    if (this.isJaringan && this.formData.jaringan_items) {
-                        for (let i = 0; i < this.formData.jaringan_items.length; i++) {
-                            const tgl = this.formData.jaringan_items[i].jaringan_dokumen_tgl;
-                            if (tgl && this.parseDateToTimestamp(tgl) > today) {
-                                const msg = `Tanggal Dokumen pada Ruas #${i + 1} tidak boleh melebihi tanggal hari ini.`;
-                                this.showToast('Validasi Tanggal Gagal', msg, 'error');
-                                this.setStepError(3, msg);
-                                return false;
-                            }
-                        }
-                    }
                     if (!this.isDataVerified) {
                         const msg = 'Mohon centang pernyataan bahwa data serah terima BMD telah diverifikasi dengan benar sebelum disimpan.';
                         this.showToast('Verifikasi Diperlukan', msg, 'warning');
@@ -1597,44 +1452,6 @@
                     }
                 }
                 return true;
-            },
-
-            showValidationAlert(stepNum, missingFields) {
-                const listHtml = missingFields.map(f => `
-                    <li class="flex items-center gap-2 text-rose-300">
-                        <span class="text-rose-400 font-bold">✕</span> 
-                        <span class="font-bold text-white">${f}</span>
-                    </li>
-                `).join('');
-                
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Kolom Wajib Belum Diisi',
-                        html: `
-                            <div class="text-left text-xs space-y-3 text-slate-300">
-                                <p class="text-slate-200">
-                                    Tombol <strong>Lanjut ke Langkah ${stepNum + 1}</strong> belum dapat memproses karena kolom wajib berikut masih kosong:
-                                </p>
-                                <ul class="p-3.5 rounded-2xl bg-slate-900/90 border border-rose-500/40 space-y-2">
-                                    ${listHtml}
-                                </ul>
-                                <div class="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-[11px] leading-relaxed">
-                                    💡 <strong>Catatan: Tidak harus mengisi semua kolom di layar!</strong> Kolom lain seperti SK Bupati, Pejabat Penyerah, dan Berkas Lampiran bersifat <em>opsional</em> (bisa dikosongkan/diisi nanti).
-                                </div>
-                            </div>
-                        `,
-                        confirmButtonText: 'Lengkapi Sekarang &rarr;',
-                        confirmButtonColor: '#6366f1',
-                        background: '#0f172a',
-                        color: '#ffffff'
-                    }).then(() => {
-                        this.focusFirstMissingField(stepNum);
-                    });
-                } else {
-                    this.showToast('Kolom Wajib Belum Diisi', missingFields.join(', '), 'error');
-                    this.focusFirstMissingField(stepNum);
-                }
             },
 
             focusFirstMissingField(stepNum) {
@@ -1791,12 +1608,12 @@
                 postData.append('ppk_nip', this.formData.ppk_nip || '');
                 postData.append('from', this.formData.from || 'eksternal');
 
-                // Append specs
-                postData.append('tanah_items', JSON.stringify(this.formData.tanah_items || []));
-                postData.append('mesin_items', JSON.stringify(this.formData.mesin_items || []));
-                postData.append('gedung_items', JSON.stringify(this.formData.gedung_items || []));
-                postData.append('jaringan_items', JSON.stringify(this.formData.jaringan_items || []));
-                postData.append('lainnya_items', JSON.stringify(this.formData.lainnya_items || []));
+                // Append specs (hanya kirim items sesuai kategori KIB aktif agar tidak mengotori data)
+                postData.append('tanah_items', JSON.stringify(this.isTanah ? (this.formData.tanah_items || []) : []));
+                postData.append('mesin_items', JSON.stringify(this.isMesin ? (this.formData.mesin_items || []) : []));
+                postData.append('gedung_items', JSON.stringify(this.isGedung ? (this.formData.gedung_items || []) : []));
+                postData.append('jaringan_items', JSON.stringify(this.isJaringan ? (this.formData.jaringan_items || []) : []));
+                postData.append('lainnya_items', JSON.stringify(this.isLainnya ? (this.formData.lainnya_items || []) : []));
                 postData.append('spesifikasi_json', JSON.stringify(specJson));
 
                 if (this.selectedFile) {
@@ -1879,9 +1696,12 @@
                             tanah_sertifikat_no: init.tanah_sertifikat_no || init.sertifikat_nomor || '',
                             tanah_kondisi: init.kondisi || 'Baik',
                             tanah_penggunaan: init.tanah_penggunaan || 'Bangunan Fasilitas Pelayanan Rumah Sakit',
+                            tanah_jumlah_barang: init.jumlah_volume || 1,
                             tanah_jumlah_bidang: init.jumlah_volume || 1,
+                            tanah_satuan: init.satuan || 'Bidang',
                             tanah_luas_m2: init.tanah_luas_m2 || '',
                             tanah_alamat: init.tanah_alamat || init.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1',
+                            tanah_nilai_satuan: init.jumlah_volume > 0 ? Math.round(init.total_realisasi / init.jumlah_volume) : init.total_realisasi,
                             tanah_nilai_fisik: init.total_realisasi || 0
                         }];
                     } else if (this.activeKibCategory === 'gedung' && (!this.formData.gedung_items || this.formData.gedung_items.length === 0)) {
@@ -1985,6 +1805,9 @@
                             if (it.isFilterOpen === undefined) it.isFilterOpen = false;
                             if (it.searchFilter === undefined) it.searchFilter = '';
                             if (!it.tanah_alamat) it.tanah_alamat = this.formData.alamat_barang || 'RSUD Dr. H. Koesnandi Bondowoso, Jl. Piere Tendean No. 1';
+                            if (!it.tanah_jumlah_barang && it.tanah_jumlah_bidang) it.tanah_jumlah_barang = it.tanah_jumlah_bidang;
+                            if (!it.tanah_satuan) it.tanah_satuan = this.formData.satuan || 'Bidang';
+                            if (!it.tanah_nilai_satuan && it.tanah_nilai_fisik) it.tanah_nilai_satuan = it.tanah_nilai_fisik;
                         });
                     }
 

@@ -1,12 +1,8 @@
 <script>
     function mutasiEksternalCatalog() {
         return {
-            userRole: {{ Js::from(Auth::user()?->role ?? 'admin') }},
-            userName: {{ Js::from(Auth::user()?->name ?? 'Admin') }},
-
             searchQuery: '',
             statusFilter: 'all',
-            jenisFilter: 'all',
             categoryFilter: 'all',
             showDetailModal: false,
             selectedMutasi: null,
@@ -38,11 +34,6 @@
                     // Filter Kategori KIB
                     if (this.categoryFilter !== 'all') {
                         if ((item.category || '').toLowerCase() !== this.categoryFilter.toLowerCase()) return false;
-                    }
-
-                    // Filter Jenis Transaksi
-                    if (this.jenisFilter !== 'all') {
-                        if (item.jenis !== this.jenisFilter) return false;
                     }
 
                     // Filter Status BAST
@@ -99,29 +90,12 @@
                 return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('selesai') || (m.status || '').toLowerCase().includes('disahkan')).length;
             },
 
-            get countPinjamAktif() {
-                return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('peminjaman')).length;
-            },
-
             get countMenunggu() {
                 return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('menunggu')).length;
             },
 
-            get countTransfer() {
-                return this.mutasiEksternals.filter(m => m.jenis === 'Transfer Antar-OPD').length;
-            },
-
-            get countBpkad() {
-                return this.mutasiEksternals.filter(m => m.jenis === 'Penyerahan ke BPKAD').length;
-            },
-
             formatRupiah(val) {
                 return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
-            },
-
-            openDetail(item) {
-                this.selectedMutasi = item;
-                this.showDetailModal = true;
             },
 
             // Hitung statistik kondisi dari registers suatu aset (Hanya 3 Kondisi: Baik, Kurang Baik, Rusak Berat)
@@ -208,7 +182,6 @@
             resetFilters() {
                 this.searchQuery = '';
                 this.statusFilter = 'all';
-                this.jenisFilter = 'all';
                 this.categoryFilter = 'all';
             },
 
@@ -398,10 +371,6 @@
                     label: 'NIBAR: ' + reg.nibar,
                     tooltip: 'Nomor Induk Barang: ' + reg.nibar
                 };
-            },
-
-            getRincianKondisiStats(astap, idx = 0, type = null) {
-                return this.getKondisiStats(astap);
             },
 
             downloadQrCodeNibar(reg, astap) {
@@ -652,11 +621,6 @@
                     iframe.contentWindow.focus();
                     iframe.contentWindow.print();
                 }, 350);
-            },
-
-            cetakBast(item) {
-                if (!item) return;
-                this.openPrintModal(item);
             },
 
             deleteMutasi(item) {
