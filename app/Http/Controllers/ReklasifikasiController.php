@@ -284,6 +284,8 @@ class ReklasifikasiController extends Controller
             'spesifikasi_baru' => 'nullable|array',
             'jumlah_anggaran' => 'nullable|numeric|min:0',
             'tipe_koreksi' => 'nullable|string|in:kurang,tambah',
+            'sub_koreksi' => 'nullable|string|in:biasa,lkd,manset',
+            'tanggal_dokumen_koreksi' => 'nullable|date',
             'pihak_hibah' => 'nullable|string|max:255',
             'skpd_tujuan' => 'nullable|string|max:255',
             'tanggal_bast' => 'nullable|date',
@@ -531,6 +533,8 @@ class ReklasifikasiController extends Controller
             } elseif ($validated['jenis_reklas'] === 'KOREKSI_LAIN') {
                 $selisih = (float) $validated['nilai_reklas'];
                 $tipe = $request->input('tipe_koreksi', 'kurang');
+                $subKoreksi = in_array($request->input('sub_koreksi'), ['biasa', 'lkd', 'manset']) ? $request->input('sub_koreksi') : 'biasa';
+                $validated['sub_koreksi'] = $subKoreksi;
 
                 // Jika ada penyesuaian nilai anggaran (bisa diubah)
                 if ($request->filled('jumlah_anggaran')) {
@@ -583,7 +587,6 @@ class ReklasifikasiController extends Controller
                         $astap->harga_satuan = (float) ($firstItem['harga_satuan'] ?? 0);
                     }
 
-                    $astap->spesifikasi_json = $spec;
                     if ($totalBaru >= 0) {
                         $astap->total_realisasi = $totalBaru;
                         if ($astap->jumlah_volume > 0) {
@@ -593,6 +596,19 @@ class ReklasifikasiController extends Controller
                         $validated['nilai_reklas'] = $selisih;
                         $tipe = ($totalBaru >= $oldRealisasi) ? 'tambah' : 'kurang';
                     }
+
+                    $spec['koreksi_info'] = [
+                        'sub_koreksi'            => $subKoreksi,
+                        'tipe_koreksi'           => $tipe,
+                        'nilai_semula'           => $oldRealisasi,
+                        'nilai_baru'             => (float) $astap->total_realisasi,
+                        'selisih'                => $selisih,
+                        'nomor_dokumen'          => $validated['nomor_ba_reklas'] ?? null,
+                        'tanggal_dokumen'        => $request->input('tanggal_dokumen_koreksi') ?? ($validated['tanggal_reklas'] ?? null),
+                        'alasan'                 => $validated['alasan_reklas'] ?? null,
+                    ];
+                    $astap->spesifikasi_json = $spec;
+                    $specBaru = $spec;
                 } else {
                     $oldRealisasi = (float) $astap->total_realisasi;
                     if ($request->filled('nilai_realisasi_baru')) {
@@ -611,12 +627,32 @@ class ReklasifikasiController extends Controller
                     if ($astap->jumlah_volume > 0) {
                         $astap->harga_satuan = $astap->total_realisasi / $astap->jumlah_volume;
                     }
+
+                    $currSpec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
+                    $currSpec['koreksi_info'] = [
+                        'sub_koreksi'            => $subKoreksi,
+                        'tipe_koreksi'           => $tipe,
+                        'nilai_semula'           => $oldRealisasi,
+                        'nilai_baru'             => (float) $astap->total_realisasi,
+                        'selisih'                => $selisih,
+                        'nomor_dokumen'          => $validated['nomor_ba_reklas'] ?? null,
+                        'tanggal_dokumen'        => $request->input('tanggal_dokumen_koreksi') ?? ($validated['tanggal_reklas'] ?? null),
+                        'alasan'                 => $validated['alasan_reklas'] ?? null,
+                    ];
+                    $astap->spesifikasi_json = $currSpec;
+                    $specBaru = $currSpec;
                 }
 
                 // Tentukan baris penyeimbang di neraca untuk KOREKSI_LAIN
                 $allTemplateRows = JenisReklasifikasi::active()->get();
                 $korLainRow = $allTemplateRows->firstWhere('kode_prefix', 'KOR_LAIN');
                 $astapRow = $this->matchAstapToRow($astap, $allTemplateRows);
+
+                $labelSub = match ($subKoreksi) {
+                    'lkd'    => 'Temuan Audit LHP BPK',
+                    'manset' => 'Penyelarasan Bidang Aset BPKAD / Manset',
+                    default  => 'Rekonsiliasi Internal Kas RSUD',
+                };
 
                 if ($tipe === 'tambah') {
                     // Nilai aset bertambah: Penyeimbang (Asal) -> Akun Aset Tetap (Tujuan)
@@ -627,7 +663,7 @@ class ReklasifikasiController extends Controller
                     $tujuanKodeAset = $asalKodeAset;
                     $tujuanNamaAset = $asalNamaAset;
                     $asalKodeAset = 'KOR_LAIN';
-                    $asalNamaAset = 'Koreksi Lain-Lain (Penambahan Nilai)';
+                    $asalNamaAset = "Koreksi Lain-Lain (Penambahan Nilai - {$labelSub})";
                 } else {
                     // Nilai aset berkurang: Akun Aset Tetap (Asal) -> Penyeimbang (Tujuan)
                     $validated['jenis_reklasifikasi_asal_id'] = $astapRow?->id;
@@ -635,7 +671,7 @@ class ReklasifikasiController extends Controller
                     $validated['asal_kib'] = $astap->category ?: ($astapRow?->kelompok_kib ?: 'KIB B');
                     $validated['tujuan_kib'] = 'KOREKSI';
                     $tujuanKodeAset = 'KOR_LAIN';
-                    $tujuanNamaAset = 'Koreksi Lain-Lain (Pengurangan Nilai / Audit BPK)';
+                    $tujuanNamaAset = "Koreksi Lain-Lain (Pengurangan Nilai - {$labelSub})";
                 }
             } elseif ($validated['jenis_reklas'] === 'KOREKSI_REKENING') {
                 $targetKib = $validated['tujuan_kib'] ?? null;
@@ -1297,6 +1333,7 @@ class ReklasifikasiController extends Controller
                 'jenis_reklasifikasi_asal_id'   => $asalId,
                 'jenis_reklasifikasi_tujuan_id' => $tujuanId,
                 'jenis_reklas'                  => $validated['jenis_reklas'],
+                'sub_koreksi'                   => $validated['sub_koreksi'] ?? ($subKoreksi ?? null),
                 'asal_kib'                      => $asalKibFinal,
                 'asal_kode'                     => $asalKodeAset ?? null,
                 'asal_nama'                     => $asalNamaAset ?? null,

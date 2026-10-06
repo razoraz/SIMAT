@@ -812,6 +812,11 @@ Route::middleware('auth')->group(function () {
     // 4c. Rekonsiliasi Belanja Modal (RMB) - Format Resmi BPKAD
     Route::get('/audit-pemulihan/rmb', [\App\Http\Controllers\RmbController::class, 'index'])->name('rmb.index');
 
+    // 4d. Audit & Ledger Koreksi Nilai BMD (Biasa, LKD, Manset)
+    Route::get('/audit-pemulihan/koreksi', [\App\Http\Controllers\AuditKoreksiController::class, 'index'])->name('audit_koreksi.index');
+    Route::get('/audit-pemulihan/koreksi/export', [\App\Http\Controllers\AuditKoreksiController::class, 'export'])->name('audit_koreksi.export');
+    Route::get('/audit-pemulihan/koreksi/{id}', [\App\Http\Controllers\AuditKoreksiController::class, 'show'])->name('audit_koreksi.show');
+
     // 5. Unit & Paviliun Index
     Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index')->middleware('module:unit');
 

@@ -398,7 +398,7 @@
         <!-- Section 4: Audit & Pemulihan (Dropdown) -->
         @if ($role === 'admin' || $role === 'master_admin')
             @php
-                $isPemulihanActive = request()->routeIs('recycle_bin.*') || request()->routeIs('rmb.*');
+                $isPemulihanActive = request()->routeIs('recycle_bin.*') || request()->routeIs('rmb.*') || request()->routeIs('audit_koreksi.*');
             @endphp
             <div x-data="{ pemulihanOpen: {{ $isPemulihanActive ? 'true' : 'false' }} }" class="space-y-1">
                 <button type="button" @click="pemulihanOpen = !pemulihanOpen"
@@ -428,6 +428,15 @@
                                 d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         <span>Rekon Belanja Modal (RMB)</span>
+                    </a>
+
+                    <a href="{{ route('audit_koreksi.index') }}" @click="if (isMobile) sidebarOpen = false"
+                        class="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 {{ request()->routeIs('audit_koreksi.*') ? 'bg-gradient-to-r from-emerald-600/20 to-teal-600/20 text-emerald-400 border border-emerald-500/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>Audit Koreksi Nilai BMD</span>
                     </a>
 
                     <a href="{{ route('recycle_bin.index') }}" @click="if (isMobile) sidebarOpen = false"

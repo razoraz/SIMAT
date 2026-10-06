@@ -70,7 +70,11 @@
                                 'HIBAH_KELUAR'         => ['bg' => 'bg-purple-500/15', 'text' => 'text-purple-300', 'border' => 'border-purple-500/40', 'icon' => '📤', 'label' => 'Hibah Keluar (BAST)'],
                                 'HIBAH_MASUK'          => ['bg' => 'bg-amber-500/15', 'text' => 'text-amber-300', 'border' => 'border-amber-500/40', 'icon' => '📥', 'label' => 'Hibah Masuk (Bantuan)'],
                                 'MUTASI_EKSTERNAL'     => ['bg' => 'bg-teal-500/15', 'text' => 'text-teal-300', 'border' => 'border-teal-500/40', 'icon' => '🏛️', 'label' => 'Mutasi Keluar Antar-OPD'],
-                                'KOREKSI_LAIN'         => ['bg' => 'bg-cyan-500/15', 'text' => 'text-cyan-300', 'border' => 'border-cyan-500/40', 'icon' => '⚖️', 'label' => 'Koreksi Nilai / BPK'],
+                                'KOREKSI_LAIN'         => match ($item->sub_koreksi) {
+                                    'lkd'    => ['bg' => 'bg-cyan-500/15', 'text' => 'text-cyan-300', 'border' => 'border-cyan-500/40', 'icon' => '⚖️', 'label' => 'Koreksi LKD (BPK)'],
+                                    'manset' => ['bg' => 'bg-emerald-500/15', 'text' => 'text-emerald-300', 'border' => 'border-emerald-500/40', 'icon' => '🏢', 'label' => 'Koreksi Manset (BPKAD)'],
+                                    default  => ['bg' => 'bg-indigo-500/15', 'text' => 'text-indigo-300', 'border' => 'border-indigo-500/40', 'icon' => '📝', 'label' => 'Koreksi Biasa (Internal)'],
+                                },
                                 default                => ['bg' => 'bg-slate-500/15', 'text' => 'text-slate-300', 'border' => 'border-slate-500/40', 'icon' => '📄', 'label' => $item->jenis_reklas],
                             };
 
@@ -150,15 +154,24 @@
                                         $kibAsal = ($item->asal_kib && $item->asal_kib !== 'KOREKSI') 
                                             ? $item->asal_kib 
                                             : (($item->tujuan_kib && $item->tujuan_kib !== 'KOREKSI') ? $item->tujuan_kib : ($item->astap->category ?? 'KIB B'));
+                                        $subKor = $item->sub_koreksi;
                                     @endphp
                                     <div class="flex items-center gap-1.5 text-xs font-bold">
-                                        <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 shrink-0">
+                                        <span class="px-2.5 py-0.5 rounded-full border shrink-0 {{ $subKor === 'lkd' ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40' : ($subKor === 'manset' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40' : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/40') }}">
                                             {{ $kibAsal }} (Tetap)
                                         </span>
                                     </div>
-                                    <div class="text-[10px] text-cyan-300/80 mt-1 flex items-center gap-1">
-                                        <span>⚖️</span>
-                                        <span>Audit LHP BPK / Rekonsiliasi Nilai</span>
+                                    <div class="text-[10px] mt-1 flex items-center gap-1 {{ $subKor === 'lkd' ? 'text-cyan-300/80' : ($subKor === 'manset' ? 'text-emerald-300/80' : 'text-indigo-300/80') }}">
+                                        @if ($subKor === 'lkd')
+                                            <span>⚖️</span>
+                                            <span>Temuan LHP BPK / Rekon LKPD</span>
+                                        @elseif ($subKor === 'manset')
+                                            <span>🏢</span>
+                                            <span>Penyelarasan SIMDA BMD / Manset</span>
+                                        @else
+                                            <span>📝</span>
+                                            <span>Rekonsiliasi Kas Internal RSUD</span>
+                                        @endif
                                     </div>
 
                                 @elseif ($item->jenis_reklas === 'EKSTRAKOMPTABEL')

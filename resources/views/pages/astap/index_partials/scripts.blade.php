@@ -9561,10 +9561,12 @@
                 reklasAlasan: '',
                 reklasExtracomItems: [],
                 reklasTipeKoreksiNilai: 'kurang', // 'kurang' | 'tambah'
+                reklasSubKoreksi: 'biasa', // 'biasa' | 'lkd' | 'manset'
                 reklasNominalKoreksi: 0,
                 reklasNilaiRealisasiBaru: 0,
                 reklasNilaiAnggaran: 0,
                 reklasNoDokumenKoreksi: '',
+                reklasDokumenTglKoreksi: new Date().toLocaleDateString('en-CA'),
                 reklasTipeHibah: 'keluar', // 'keluar' | 'masuk'
                 reklasNomorBastHibah: '',
                 reklasTanggalBastHibah: new Date().toLocaleDateString('en-CA'),
@@ -10111,6 +10113,9 @@
                     this.isReklasSubSubRincianOpen = false;
                     this.reklasTanggal = new Date().toLocaleDateString('en-CA');
                     this.reklasAlasan = '';
+                    this.reklasSubKoreksi = 'biasa';
+                    this.reklasNoDokumenKoreksi = '';
+                    this.reklasDokumenTglKoreksi = new Date().toLocaleDateString('en-CA');
                     this.reklasTipeHibah = 'keluar';
                     this.reklasNomorBastHibah = '';
                     this.reklasTanggalBastHibah = new Date().toLocaleDateString('en-CA');
@@ -10807,8 +10812,17 @@
                         const valBaru = 'Rp ' + Number(this.getReklasNilaiBaru()).toLocaleString('id-ID');
                         const tipeStr = this.reklasTipeKoreksiNilai === 'kurang' ? 'pengurangan nilai buku sebesar' : 'penambahan nilai buku sebesar';
                         const cleanDoc = (this.reklasNoDokumenKoreksi || this.reklasNomorBa || '').trim();
-                        const docStr = cleanDoc ? ` berdasarkan dokumen/LHP ${cleanDoc}` : ' berdasarkan rekomendasi audit BPK / rekonsiliasi';
-                        narasi = `Koreksi nilai aset tetap pada ${subRek} ${subNama} semula ${valAwal} disesuaikan menjadi ${valBaru} (${tipeStr} ${selisihVal})${docStr}${spacerTgl} pada RSUD dr.H.Koesnandi.`;
+                        let subLabel = 'Rekonsiliasi Internal RSUD';
+                        let docPrefix = 'Dokumen Rekon';
+                        if (this.reklasSubKoreksi === 'lkd') {
+                            subLabel = 'Tindak Lanjut LHP BPK RI';
+                            docPrefix = 'LHP BPK RI';
+                        } else if (this.reklasSubKoreksi === 'manset') {
+                            subLabel = 'Penyelarasan Bidang Aset BPKAD (Manset)';
+                            docPrefix = 'BA Rekonsiliasi Manset';
+                        }
+                        const docStr = cleanDoc ? ` berdasarkan ${docPrefix} No. ${cleanDoc}` : ` berdasarkan ${subLabel}`;
+                        narasi = `Koreksi nilai aset tetap (${subLabel}) pada ${subRek} ${subNama} semula ${valAwal} disesuaikan menjadi ${valBaru} (${tipeStr} ${selisihVal})${docStr}${spacerTgl} pada RSUD dr.H.Koesnandi.`;
                     } else if (this.reklasJenis === 'hibah') {
                         const val = it.jumlah_realisasi || ('Rp ' + Number(it.total_realisasi_num || 0).toLocaleString('id-ID'));
                         const vol = (it.jumlah_volume || 1) + ' Unit';
@@ -11026,6 +11040,7 @@
                             astap_id: it.id,
                             jenis_reklas: jenisReklasDb,
                             tipe_koreksi: this.reklasTipeKoreksiNilai,
+                            sub_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasSubKoreksi : null,
                             asal_kib: asalKib,
                             tujuan_kib: targetKib,
                             tujuan_kode: targetKode,
@@ -11040,6 +11055,7 @@
                             pihak_hibah: (this.reklasJenis === 'hibah') ? this.reklasPihakHibah : null,
                             skpd_tujuan: (this.reklasJenis === 'mutasi_eksternal') ? this.reklasSkpdTujuan : null,
                             tanggal_bast: (this.reklasJenis === 'hibah') ? this.reklasTanggalBastHibah : ((this.reklasJenis === 'mutasi_eksternal') ? this.reklasTanggalBastMutasi : null),
+                            tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
                             keterangan: this.getReklasNarasiPreview(),
                             progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
                             jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? this.reklasNilaiAnggaran : (parseFloat(it.jumlah_anggaran) || null),

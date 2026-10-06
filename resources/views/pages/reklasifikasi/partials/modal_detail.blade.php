@@ -211,17 +211,21 @@
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
                                     <h5 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                        <span>⚖️</span> Posisi Rekening &amp; Penyesuaian Nilai (Audit BPK)
+                                        <span x-text="detailItem.sub_koreksi === 'lkd' ? '⚖️' : (detailItem.sub_koreksi === 'manset' ? '🏢' : '📝')"></span>
+                                        <span x-text="detailItem.sub_koreksi === 'lkd' ? 'Koreksi Nilai LKD (Audit BPK RI)' : (detailItem.sub_koreksi === 'manset' ? 'Koreksi Nilai Manset (BPKAD)' : 'Koreksi Nilai Biasa (Internal RSUD)')"></span>
                                     </h5>
-                                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                                        Rekening Tetap (Tanpa Pindah KIB)
+                                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
+                                          :class="detailItem.sub_koreksi === 'lkd' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : (detailItem.sub_koreksi === 'manset' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30')"
+                                          x-text="detailItem.sub_koreksi === 'lkd' ? 'RMB: Kolom 16 (−) / 6 (+)' : (detailItem.sub_koreksi === 'manset' ? 'RMB: Kolom 17 (−) / 7 (+)' : 'RMB: Kolom 15 (−) / 5 (+)')">
                                     </span>
                                 </div>
-                                <div class="p-3.5 rounded-xl bg-cyan-950/20 border border-cyan-500/25 flex items-start gap-3">
+                                <div class="p-3.5 rounded-xl border flex items-start gap-3"
+                                     :class="detailItem.sub_koreksi === 'lkd' ? 'bg-cyan-950/20 border-cyan-500/25 text-cyan-200/90' : (detailItem.sub_koreksi === 'manset' ? 'bg-emerald-950/20 border-emerald-500/25 text-emerald-200/90' : 'bg-indigo-950/20 border-indigo-500/25 text-indigo-200/90')">
                                     <span class="text-lg shrink-0 mt-0.5">💡</span>
-                                    <div class="text-xs text-cyan-200/90 leading-relaxed">
+                                    <div class="text-xs leading-relaxed">
                                         <strong class="text-white">Aset Tetap pada Kelompok &amp; Rekening Semula:</strong><br>
-                                        Aset ini <span class="text-cyan-300 font-bold">tidak mengalami pemindahan kamar KIB ataupun kode rekening 108</span>. Transaksi ini murni penyesuaian nominal nilai buku realisasi belanja modal hasil pemeriksaan BPK RI / rekonsiliasi LKD.
+                                        Aset ini <span class="font-bold underline" :class="detailItem.sub_koreksi === 'lkd' ? 'text-cyan-300' : (detailItem.sub_koreksi === 'manset' ? 'text-emerald-300' : 'text-indigo-300')">tidak mengalami pemindahan kamar KIB ataupun kode rekening 108</span>. Transaksi ini murni penyesuaian nominal buku realisasi belanja modal
+                                        <span x-text="detailItem.sub_koreksi === 'lkd' ? 'atas rekomendasi audit BPK RI / LHP LKPD.' : (detailItem.sub_koreksi === 'manset' ? 'untuk penyelarasan dengan sistem SIMDA BMD / E-Manset BPKAD.' : 'hasil rekonsiliasi internal kas RSUD.')"></span>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

@@ -1075,13 +1075,217 @@
                         </div>
 
                         <!-- Jika Koreksi Nilai / Audit BPK (Koreksi Lain-Lain) -->
-                        <div x-show="reklasJenis === 'koreksi_nilai'" class="space-y-3.5">
-                            <!-- Banner Info Koreksi Temuan BPK -->
-                            <div class="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/30 flex items-start space-x-2.5">
-                                <span class="text-cyan-400 text-base shrink-0">💡</span>
-                                <div class="text-[11px] text-cyan-200/90 leading-relaxed">
-                                    <strong>Penyesuaian Nilai Kapitalisasi &amp; Anggaran (Temuan Audit BPK):</strong><br>
-                                    Ubah nilai kapitalisasi satuan pada masing-masing barang (Barang 1, 2, dst) di bawah. <strong>Total Nilai Realisasi</strong> akan terkalkulasi secara otomatis. <strong>Nilai Anggaran (DPA/RBA)</strong> dapat disesuaikan jika terdapat revisi pagu anggaran.
+                        <div x-show="reklasJenis === 'koreksi_nilai'" class="space-y-4">
+                            <!-- 1. Pilihan 3 Sub-Kategori Koreksi Nilai Resmi -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-cyan-300 font-extrabold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                                        <span>⚖️</span>
+                                        <span>Sub-Kategori Koreksi Nilai (RMB PMDN 108):</span>
+                                        <span class="text-rose-400">*</span>
+                                    </label>
+                                    <span class="text-[9.5px] font-mono font-bold text-slate-400">Pilih klasifikasi audit / rekon</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <!-- A. Koreksi Biasa (Internal RSUD) -->
+                                    <label class="relative flex flex-col p-3 rounded-2xl border cursor-pointer transition-all select-none group"
+                                           :class="reklasSubKoreksi === 'biasa' 
+                                                ? 'bg-indigo-500/15 border-indigo-500/60 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/40' 
+                                                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'">
+                                        <input type="radio" name="reklas_sub_koreksi" value="biasa" x-model="reklasSubKoreksi" class="hidden" style="display: none;">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
+                                                     :class="reklasSubKoreksi === 'biasa' ? 'border-indigo-400 bg-indigo-500/30' : 'border-slate-700 bg-slate-900'">
+                                                    <div x-show="reklasSubKoreksi === 'biasa'" class="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
+                                                </div>
+                                                <span class="text-xs font-black" :class="reklasSubKoreksi === 'biasa' ? 'text-indigo-300' : 'text-white'">
+                                                    Koreksi Biasa
+                                                </span>
+                                            </div>
+                                            <span class="text-xs">📝</span>
+                                        </div>
+                                        <div class="text-[9.5px] text-slate-400 leading-tight">
+                                            Internal kas RSUD, pembulatan SP2D, koreksi salah catat belanja.
+                                        </div>
+                                        <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono">
+                                            <span class="text-slate-500">RMB:</span>
+                                            <span class="font-bold" :class="reklasSubKoreksi === 'biasa' ? 'text-indigo-300' : 'text-slate-400'">
+                                                Kolom 15 (−) / 5 (+)
+                                            </span>
+                                        </div>
+                                    </label>
+
+                                    <!-- B. Koreksi LKD (BPK RI) -->
+                                    <label class="relative flex flex-col p-3 rounded-2xl border cursor-pointer transition-all select-none group"
+                                           :class="reklasSubKoreksi === 'lkd' 
+                                                ? 'bg-cyan-500/15 border-cyan-500/60 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-500/40' 
+                                                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'">
+                                        <input type="radio" name="reklas_sub_koreksi" value="lkd" x-model="reklasSubKoreksi" class="hidden" style="display: none;">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
+                                                     :class="reklasSubKoreksi === 'lkd' ? 'border-cyan-400 bg-cyan-500/30' : 'border-slate-700 bg-slate-900'">
+                                                    <div x-show="reklasSubKoreksi === 'lkd'" class="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
+                                                </div>
+                                                <span class="text-xs font-black" :class="reklasSubKoreksi === 'lkd' ? 'text-cyan-300' : 'text-white'">
+                                                    Koreksi LKD
+                                                </span>
+                                            </div>
+                                            <span class="text-xs">⚖️</span>
+                                        </div>
+                                        <div class="text-[9.5px] text-slate-400 leading-tight">
+                                            Temuan audit BPK RI, rekomendasi LHP LKPD, kelebihan bayar/TGR.
+                                        </div>
+                                        <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono">
+                                            <span class="text-slate-500">RMB:</span>
+                                            <span class="font-bold" :class="reklasSubKoreksi === 'lkd' ? 'text-cyan-300' : 'text-slate-400'">
+                                                Kolom 16 (−) / 6 (+)
+                                            </span>
+                                        </div>
+                                    </label>
+
+                                    <!-- C. Koreksi Manset (BPKAD) -->
+                                    <label class="relative flex flex-col p-3 rounded-2xl border cursor-pointer transition-all select-none group"
+                                           :class="reklasSubKoreksi === 'manset' 
+                                                ? 'bg-emerald-500/15 border-emerald-500/60 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/40' 
+                                                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'">
+                                        <input type="radio" name="reklas_sub_koreksi" value="manset" x-model="reklasSubKoreksi" class="hidden" style="display: none;">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <div class="flex items-center space-x-2">
+                                                <div class="w-4 h-4 rounded-full border flex items-center justify-center transition-all"
+                                                     :class="reklasSubKoreksi === 'manset' ? 'border-emerald-400 bg-emerald-500/30' : 'border-slate-700 bg-slate-900'">
+                                                    <div x-show="reklasSubKoreksi === 'manset'" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                                                </div>
+                                                <span class="text-xs font-black" :class="reklasSubKoreksi === 'manset' ? 'text-emerald-300' : 'text-white'">
+                                                    Koreksi Manset
+                                                </span>
+                                            </div>
+                                            <span class="text-xs">🏢</span>
+                                        </div>
+                                        <div class="text-[9.5px] text-slate-400 leading-tight">
+                                            Penyelarasan SIMDA BMD / E-Manset BPKAD Kab. Bondowoso.
+                                        </div>
+                                        <div class="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[9px] font-mono">
+                                            <span class="text-slate-500">RMB:</span>
+                                            <span class="font-bold" :class="reklasSubKoreksi === 'manset' ? 'text-emerald-300' : 'text-slate-400'">
+                                                Kolom 17 (−) / 7 (+)
+                                            </span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 2. Dynamic Info Banner & Pemetaan Kolom RMB -->
+                            <div class="p-3 rounded-2xl border text-[11px] leading-relaxed flex items-start gap-2.5 transition-all shadow-inner"
+                                 :class="{
+                                     'bg-indigo-950/30 border-indigo-500/35 text-indigo-200': reklasSubKoreksi === 'biasa',
+                                     'bg-cyan-950/30 border-cyan-500/35 text-cyan-200': reklasSubKoreksi === 'lkd',
+                                     'bg-emerald-950/30 border-emerald-500/35 text-emerald-200': reklasSubKoreksi === 'manset'
+                                 }">
+                                <span class="text-base shrink-0">💡</span>
+                                <div class="flex-1">
+                                    <template x-if="reklasSubKoreksi === 'biasa'">
+                                        <div>
+                                            <strong>Koreksi Biasa (Internal RSUD):</strong> Digunakan jika ada kesalahan input nominal, pembulatan SP2D, atau selisih pencatatan antara bendahara pengeluaran dan aset.
+                                            Di matriks RMB 21 kolom, pengurangan akan masuk ke <strong>Kolom 15 (KOREKSI −)</strong> dan penambahan ke <strong>Kolom 5 (Koreksi Rekening +)</strong>.
+                                        </div>
+                                    </template>
+                                    <template x-if="reklasSubKoreksi === 'lkd'">
+                                        <div>
+                                            <strong>Koreksi LKD (BPK RI):</strong> Digunakan untuk menindaklanjuti temuan resmi LHP BPK atas LKPD, kelebihan bayar yang telah disetor ke Kasda, atau koreksi kapitalisasi auditor eksternal.
+                                            Di matriks RMB 21 kolom, pengurangan akan masuk ke <strong>Kolom 16 (KOREKSI LKD −)</strong> dan penambahan ke <strong>Kolom 6 (Koreksi LKD +)</strong>.
+                                        </div>
+                                    </template>
+                                    <template x-if="reklasSubKoreksi === 'manset'">
+                                        <div>
+                                            <strong>Koreksi Manset (Bidang Aset BPKAD):</strong> Digunakan untuk menyelaraskan nilai saldo aset antara SIMAT RSUD dengan aplikasi SIMDA BMD / E-Manset BPKAD Bondowoso.
+                                            Di matriks RMB 21 kolom, pengurangan akan masuk ke <strong>Kolom 17 (KOREKSI MANSET −)</strong> dan penambahan ke <strong>Kolom 7 (Koreksi Manset +)</strong>.
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- 3. Dokumen Dasar Penyesuaian (Contextual Inputs) -->
+                            <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>📄</span>
+                                    <span>Dokumen Dasar Penyesuaian Nilai:</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                                    <div class="sm:col-span-8 space-y-1">
+                                        <label class="block text-[10px] font-bold text-slate-300"
+                                               x-text="reklasSubKoreksi === 'lkd' ? 'Nomor LHP BPK RI / Rekomendasi' : (reklasSubKoreksi === 'manset' ? 'Nomor BA Rekonsiliasi Manset BPKAD' : 'Nomor Dokumen / Nota Rekonsiliasi Internal')"></label>
+                                        <input type="text" x-model="reklasNoDokumenKoreksi"
+                                               :placeholder="reklasSubKoreksi === 'lkd' ? 'Contoh: 12/LHP/XVIII.SBY/05/2026' : (reklasSubKoreksi === 'manset' ? 'Contoh: 000.2/BA-MANSET/BPKAD/2026' : 'Contoh: 000.1.2/BA-REKON/RSUD/2026')"
+                                               class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl text-xs font-mono text-white focus:outline-none">
+                                    </div>
+                                    <div class="sm:col-span-4 space-y-1">
+                                        <label class="block text-[10px] font-bold text-slate-300">Tanggal Dokumen</label>
+                                        <input type="date" x-model="reklasDokumenTglKoreksi"
+                                               class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl text-xs font-mono text-white focus:outline-none">
+                                    </div>
+                                </div>
+
+                                <!-- Preset Cepat Alasan Koreksi Nilai -->
+                                <div class="pt-1 space-y-1.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Pilih Preset Alasan Cepat:</span>
+                                        <span class="text-[9px] text-slate-500">Klik untuk isi otomatis ke alasan</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <template x-if="reklasSubKoreksi === 'biasa'">
+                                            <div class="contents">
+                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai buku karena salah hitung nilai administrasi/ongkir pada SP2D.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-indigo-950/60 text-slate-300 hover:text-indigo-200 border border-slate-700 hover:border-indigo-500/40 transition-all cursor-pointer">
+                                                    + Salah Hitung SP2D
+                                                </button>
+                                                <button type="button" @click="reklasAlasan = 'Koreksi selisih pembulatan nilai kuitansi faktur belanja modal.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-indigo-950/60 text-slate-300 hover:text-indigo-200 border border-slate-700 hover:border-indigo-500/40 transition-all cursor-pointer">
+                                                    + Selisih Pembulatan
+                                                </button>
+                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai realisasi hasil rekonsiliasi internal bendahara pengeluaran dan pengurus barang.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-indigo-950/60 text-slate-300 hover:text-indigo-200 border border-slate-700 hover:border-indigo-500/40 transition-all cursor-pointer">
+                                                    + Rekon Internal Kas
+                                                </button>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="reklasSubKoreksi === 'lkd'">
+                                            <div class="contents">
+                                                <button type="button" @click="reklasAlasan = 'Tindak lanjut temuan LHP BPK RI atas kelebihan bayar pekerjaan belanja modal yang telah disetor ke Kasda.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer">
+                                                    + Kelebihan Bayar / TGR
+                                                </button>
+                                                <button type="button" @click="reklasAlasan = 'Rekomendasi BPK RI atas penyesuaian nilai batas kapitalisasi aset tetap belanja modal.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer">
+                                                    + Rekomendasi LHP BPK
+                                                </button>
+                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai buku hasil uji petik fisik tim auditor eksternal BPK RI.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer">
+                                                    + Uji Petik Auditor BPK
+                                                </button>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="reklasSubKoreksi === 'manset'">
+                                            <div class="contents">
+                                                <button type="button" @click="reklasAlasan = 'Penyelarasan nilai saldo buku register SIMDA BMD bidang aset BPKAD dengan SIMAT RSUD.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-200 border border-slate-700 hover:border-emerald-500/40 transition-all cursor-pointer">
+                                                    + Penyelarasan SIMDA BMD
+                                                </button>
+                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai kapitalisasi hasil rekonsiliasi berkala semesteran e-Manset BPKAD Bondowoso.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-200 border border-slate-700 hover:border-emerald-500/40 transition-all cursor-pointer">
+                                                    + Rekon Semesteran Manset
+                                                </button>
+                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nominal buku aset berdasarkan Berita Acara Rekonsiliasi Aset Pemkab Bondowoso.'"
+                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-200 border border-slate-700 hover:border-emerald-500/40 transition-all cursor-pointer">
+                                                    + BA Rekonsiliasi Pemkab
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
 

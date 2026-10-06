@@ -211,6 +211,26 @@ class RmbController extends Controller
             if (!$code || !isset($rows[$code])) continue;
 
             $val = (float) ($astap->total_realisasi ?: ($astap->jumlah_anggaran ?: 0));
+
+            // Jika aset memiliki transaksi koreksi nilai (KOREKSI_LAIN),
+            // kembalikan nilai belanja modal kasda ke nilai semula sebelum koreksi
+            // agar pengurangan/penambahan di kolom koreksi (5, 6, 7 / 15, 16, 17) mencerminkan mutasi neto yang tepat
+            if (isset($reklasByAstap[$astap->id])) {
+                foreach ($reklasByAstap[$astap->id] as $rkAstap) {
+                    if ($rkAstap->jenis_reklas === 'KOREKSI_LAIN') {
+                        $info = $rkAstap->spesifikasi_baru['koreksi_info'] ?? null;
+                        $tipe = $info['tipe_koreksi'] ?? ($rkAstap->asal_kib === 'KOREKSI' || str_contains(strtolower($rkAstap->keterangan ?? ''), 'penambahan nilai') ? 'tambah' : 'kurang');
+                        if (!empty($info['nilai_semula'])) {
+                            $val = (float) $info['nilai_semula'];
+                        } elseif ($tipe === 'kurang') {
+                            $val += (float) $rkAstap->nilai_reklas;
+                        } elseif ($tipe === 'tambah') {
+                            $val = max(0, $val - (float) $rkAstap->nilai_reklas);
+                        }
+                    }
+                }
+            }
+
             $sumber = $astap->sumber_dana;
 
             // Klasifikasikan Penambahan
@@ -289,15 +309,31 @@ class RmbController extends Controller
                     break;
 
                 case 'KOREKSI_LAIN':
-                    // Temuan Audit BPK / Koreksi Nilai
-                    $tipe = $rk->tipe_koreksi ?? 'kurang';
-                    if ($tipe === 'tambah') {
-                        if ($tujuanCode && isset($rows[$tujuanCode])) {
-                            $rows[$tujuanCode]['c6_koreksi_lkd_tambah'] += $val;
-                        }
-                    } else {
-                        if ($asalCode && isset($rows[$asalCode])) {
-                            $rows[$asalCode]['c16_koreksi_lkd_kurang'] += $val;
+                    // Koreksi Nilai dibagi menjadi 3: Koreksi Biasa, Koreksi LKD, Koreksi Manset
+                    $info = $rk->spesifikasi_baru['koreksi_info'] ?? null;
+                    $tipe = $info['tipe_koreksi'] ?? ($rk->asal_kib === 'KOREKSI' || str_contains(strtolower($rk->keterangan ?? ''), 'penambahan nilai') ? 'tambah' : 'kurang');
+                    $subKoreksi = $rk->sub_koreksi ?? ($info['sub_koreksi'] ?? 'biasa');
+                    $targetRowCode = ($tipe === 'tambah') ? ($tujuanCode ?: ($astap ? $this->resolveRmbCodeForAstap($astap, $defs) : null)) : ($asalCode ?: ($astap ? $this->resolveRmbCodeForAstap($astap, $defs) : null));
+
+                    if ($targetRowCode && isset($rows[$targetRowCode])) {
+                        if ($tipe === 'tambah') {
+                            if ($subKoreksi === 'lkd') {
+                                $rows[$targetRowCode]['c6_koreksi_lkd_tambah'] += $val;
+                            } elseif ($subKoreksi === 'manset') {
+                                $rows[$targetRowCode]['c7_koreksi_manset_tambah'] += $val;
+                            } else {
+                                // Koreksi Biasa (Internal)
+                                $rows[$targetRowCode]['c5_koreksi_rek_tambah'] += $val;
+                            }
+                        } else {
+                            if ($subKoreksi === 'lkd') {
+                                $rows[$targetRowCode]['c16_koreksi_lkd_kurang'] += $val;
+                            } elseif ($subKoreksi === 'manset') {
+                                $rows[$targetRowCode]['c17_koreksi_manset_kurang'] += $val;
+                            } else {
+                                // Koreksi Biasa (Internal)
+                                $rows[$targetRowCode]['c15_koreksi_kurang'] += $val;
+                            }
                         }
                     }
                     break;

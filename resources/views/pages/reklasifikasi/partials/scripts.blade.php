@@ -482,6 +482,7 @@
                     astap_id: '',
                     nama_barang: '',
                     jenis_reklas: 'KOREKSI_REKENING',
+                    sub_koreksi: 'biasa',
                     jenis_reklasifikasi_asal_id: '',
                     jenis_reklasifikasi_tujuan_id: '',
                     tujuan_kib: '',
@@ -944,6 +945,7 @@
                     const payload = {
                         ...this.formData,
                         tipe_koreksi: this.formData.tipe_koreksi || 'kurang',
+                        sub_koreksi: (this.formData.jenis_reklas === 'KOREKSI_LAIN') ? (this.formData.sub_koreksi || 'biasa') : null,
                         nilai_realisasi_baru: parseFloat(this.formData.nilai_realisasi_baru || 0),
                         alasan_reklas: (this.formData.alasan_reklas || '').trim() || (this.formData.keterangan || '').trim() || null,
                         keterangan: (this.formData.keterangan || '').trim() || this.getNarasiPreview(),

@@ -1397,6 +1397,114 @@ class ReklasifikasiTest extends TestCase
         $korLainRow = JenisReklasifikasi::where('kode_prefix', 'KOR_LAIN')->first();
         $this->assertEquals($korLainRow->id, $reklas->jenis_reklasifikasi_tujuan_id);
     }
+
+    public function test_can_reklas_koreksi_nilai_biasa_internal()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Komputer Unit Rekam Medis',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 15000000,
+            'total_realisasi' => 15000000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'sub_koreksi' => 'biasa',
+            'tipe_koreksi' => 'kurang',
+            'nilai_reklas' => 1000000,
+            'tanggal_reklas' => '2026-04-10',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => '000.1.2/BA-REKON/RSUD/2026',
+            'alasan_reklas' => 'Koreksi salah catat administrasi internal kas',
+            'keterangan' => 'Koreksi rekonsiliasi internal bendahara dan aset',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $this->assertEquals('biasa', $reklas->sub_koreksi);
+        $this->assertEquals('Koreksi Biasa (Internal)', $reklas->sub_koreksi_label);
+    }
+
+    public function test_can_reklas_koreksi_nilai_lkd_bpk()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Alat Ultrasonografi USG 4D',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 250000000,
+            'total_realisasi' => 250000000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'sub_koreksi' => 'lkd',
+            'tipe_koreksi' => 'kurang',
+            'nilai_reklas' => 15000000,
+            'tanggal_reklas' => '2026-05-15',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => '15/LHP/XVIII.SBY/05/2026',
+            'alasan_reklas' => 'Temuan pemeriksaan BPK RI atas kelebihan bayar pekerjaan',
+            'keterangan' => 'Tindak lanjut rekomendasi temuan LHP BPK RI',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $this->assertEquals('lkd', $reklas->sub_koreksi);
+        $this->assertEquals('Koreksi LKD (BPK RI)', $reklas->sub_koreksi_label);
+    }
+
+    public function test_can_reklas_koreksi_nilai_manset_bpkad()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Kendaraan Ambulans Jenazah',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 180000000,
+            'total_realisasi' => 180000000,
+            'user_id' => $admin->id,
+        ]);
+
+        $payload = [
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_LAIN',
+            'sub_koreksi' => 'manset',
+            'tipe_koreksi' => 'kurang',
+            'nilai_reklas' => 5000000,
+            'tanggal_reklas' => '2026-06-20',
+            'triwulan' => 2,
+            'tahun' => 2026,
+            'nomor_ba_reklas' => '000.2/BA-MANSET/BPKAD/2026',
+            'alasan_reklas' => 'Penyelarasan register aset dengan aplikasi SIMDA BMD BPKAD',
+            'keterangan' => 'Rekonsiliasi berkala semesteran bidang aset BPKAD',
+        ];
+
+        $response = $this->actingAs($admin)->postJson(route('master.reklasifikasi.store'), $payload);
+        $response->assertStatus(200);
+
+        $reklas = AstapReklas::where('astap_id', $astap->id)->first();
+        $this->assertNotNull($reklas);
+        $this->assertEquals('manset', $reklas->sub_koreksi);
+        $this->assertEquals('Koreksi Manset (BPKAD)', $reklas->sub_koreksi_label);
+    }
 }
 
 
