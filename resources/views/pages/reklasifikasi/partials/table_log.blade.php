@@ -21,9 +21,19 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             </div>
-            <h4 class="text-base font-bold text-white">Belum Ada Transaksi Reklasifikasi</h4>
+            <h4 class="text-base font-bold text-white">
+                @if (($selectedJenis ?? 'all') !== 'all')
+                    Tidak Ditemukan Transaksi
+                @else
+                    Belum Ada Transaksi Reklasifikasi
+                @endif
+            </h4>
             <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">
-                Belum ada aset yang dimutasi antar rekening atau KIB pada periode tahun {{ $selectedTahun }}.
+                @if (($selectedJenis ?? 'all') !== 'all')
+                    Tidak ada transaksi reklasifikasi dengan jenis yang dipilih pada periode ini.
+                @else
+                    Belum ada aset yang dimutasi antar rekening atau KIB pada periode tahun {{ $selectedTahun }}.
+                @endif
             </p>
             <button type="button" @click="openModalTambah()"
                 class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all cursor-pointer">

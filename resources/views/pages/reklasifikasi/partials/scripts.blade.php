@@ -14,7 +14,7 @@
 
     function masterReklasifikasi() {
         return {
-            activeTab: 'matriks',
+            activeTab: (new URLSearchParams(window.location.search).get('tab') === 'log') ? 'log' : 'matriks',
             showModalTambah: false,
             showModalDetail: false,
             showConfirmDelete: false,

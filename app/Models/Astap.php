@@ -172,6 +172,9 @@ class Astap extends Model
      */
     public function isBelanjaModal(): bool
     {
+        if ($this->isKemitraan()) {
+            return false;
+        }
         return empty($this->sumber_dana) || $this->sumber_dana === 'belanja_modal';
     }
 
@@ -207,11 +210,19 @@ class Astap extends Model
 
     public function isKemitraan(): bool
     {
-        return $this->sumber_dana === 'kemitraan';
+        $jenisKode = $this->jenisAstap ? $this->jenisAstap->jenis : '';
+        return $this->sumber_dana === 'kemitraan' 
+            || str_starts_with($jenisKode, '1.5.2')
+            || str_starts_with($this->kode_108 ?? '', '1.5.2')
+            || !empty($this->kemitraan);
     }
 
     public function getSumberDanaLabelAttribute(): string
     {
+        if ($this->isKemitraan()) {
+            return 'Kemitraan Pihak Ketiga (KSO)';
+        }
+
         return match ($this->sumber_dana) {
             'belanja_barang', 'belanja_rekening' => 'Belanja Barang (Perbekalan)',
             'hibah'                             => 'Hibah Masuk',
@@ -457,7 +468,34 @@ class Astap extends Model
         if (str_starts_with($jenisKode, '1.3.3')) return 'KIB C';
         if (str_starts_with($jenisKode, '1.3.4')) return 'KIB D';
         if (str_starts_with($jenisKode, '1.3.6')) return 'KIB F';
-        if (str_starts_with($jenisKode, '1.5.2')) return 'KEMITRAAN';
+        
+        // Akun 1.5.2 (Kemitraan Dengan Pihak Ketiga) -> Petakan ke wujud fisik KIB-nya
+        if (str_starts_with($jenisKode, '1.5.2')) {
+            $subSubKode = $this->jenisAstap ? ($this->jenisAstap->sub_sub_rincian_objek ?? '') : '';
+            $fullKode = $this->kode_108 ?: $subSubKode;
+            
+            // Cek akhiran kode sub-sub rincian:
+            // 001 = Tanah, 002 = Peralatan & Mesin, 003 = Gedung & Bangunan, 004 = Jalan/Irigasi/Jaringan, 005 = Aset Tetap Lainnya
+            if (str_ends_with($fullKode, '.001') || str_contains($fullKode, '.01.001') || stripos($this->nama_barang, 'tanah') !== false) {
+                return 'KIB A';
+            }
+            if (str_ends_with($fullKode, '.002') || str_contains($fullKode, '.01.002') || stripos($this->nama_barang, 'mesin') !== false || stripos($this->nama_barang, 'peralatan') !== false) {
+                return 'KIB B';
+            }
+            if (str_ends_with($fullKode, '.003') || str_contains($fullKode, '.01.003') || stripos($this->nama_barang, 'gedung') !== false || stripos($this->nama_barang, 'bangunan') !== false) {
+                return 'KIB C';
+            }
+            if (str_ends_with($fullKode, '.004') || str_contains($fullKode, '.01.004') || stripos($this->nama_barang, 'jaringan') !== false || stripos($this->nama_barang, 'irigasi') !== false || stripos($this->nama_barang, 'jalan') !== false) {
+                return 'KIB D';
+            }
+            if (str_ends_with($fullKode, '.005') || str_contains($fullKode, '.01.005')) {
+                return 'KIB E';
+            }
+            
+            // Default jika tidak spesifik: KIB B (Peralatan & Mesin)
+            return 'KIB B';
+        }
+
         if (str_starts_with($jenisKode, '1.5.3')) return 'ATB';
         if (str_starts_with($jenisKode, '1.5.4')) return 'ASET LAIN';
 

@@ -2557,8 +2557,15 @@
                     if (this.formData.is_extracomtable) {
                         const items = this.formData.mesin_items || [];
                         for (let i = 0; i < items.length; i++) {
+                            const qty = Number(items[i].mesin_jumlah_barang !== undefined && items[i].mesin_jumlah_barang !== null && items[i].mesin_jumlah_barang !== '' ? items[i].mesin_jumlah_barang : 1);
                             const val = Number(items[i].mesin_nilai_satuan || 0);
                             const nama = items[i].mesin_nama_barang || this.activeNamaBarang || 'Barang Ekstrakomtabel';
+                            if (qty < 1) {
+                                return {
+                                    valid: false,
+                                    message: `⚠️ Volume / Jumlah unit barang Ekstrakomtabel item #${i + 1} (${nama}) minimal bernilai 1!`
+                                };
+                            }
                             if (val <= 0) {
                                 return {
                                     valid: false,
@@ -2579,8 +2586,15 @@
                         if (this.isMesin) {
                             const items = this.formData.mesin_items || [];
                             for (let i = 0; i < items.length; i++) {
+                                const qty = Number(items[i].mesin_jumlah_barang !== undefined && items[i].mesin_jumlah_barang !== null && items[i].mesin_jumlah_barang !== '' ? items[i].mesin_jumlah_barang : 1);
                                 const val = Number(items[i].mesin_nilai_satuan || 0);
                                 const nama = items[i].mesin_nama_barang || this.activeNamaBarang || 'Peralatan & Mesin';
+                                if (qty < 1) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Volume / Jumlah unit Peralatan & Mesin item #${i + 1} (${nama}) minimal bernilai 1!`
+                                    };
+                                }
                                 if (val <= 0) {
                                     return {
                                         valid: false,
@@ -2599,8 +2613,15 @@
                         if (this.isAsetLainnya) {
                             const items = this.formData.lainnya_items || [];
                             for (let i = 0; i < items.length; i++) {
+                                const qty = Number(items[i].lainnya_jumlah_barang !== undefined && items[i].lainnya_jumlah_barang !== null && items[i].lainnya_jumlah_barang !== '' ? items[i].lainnya_jumlah_barang : 1);
                                 const val = Number(items[i].lainnya_nilai_satuan || 0);
                                 const nama = items[i].lainnya_nama_barang || this.activeNamaBarang || 'Aset Tetap Lainnya';
+                                if (qty < 1) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Volume / Jumlah unit Aset Tetap Lainnya item #${i + 1} (${nama}) minimal bernilai 1!`
+                                    };
+                                }
                                 if (val <= 0) {
                                     return {
                                         valid: false,
@@ -2619,8 +2640,15 @@
                         if (this.isAtb) {
                             const items = this.formData.atb_items || [];
                             for (let i = 0; i < items.length; i++) {
+                                const qty = Number(items[i].atb_jumlah !== undefined && items[i].atb_jumlah !== null && items[i].atb_jumlah !== '' ? items[i].atb_jumlah : 1);
                                 const val = Number(items[i].atb_nilai_satuan || 0);
                                 const nama = items[i].atb_nama_barang || this.activeNamaBarang || 'Aset Tidak Berwujud';
+                                if (qty < 1) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Volume / Jumlah unit Aset Tidak Berwujud (ATB) item #${i + 1} (${nama}) minimal bernilai 1!`
+                                    };
+                                }
                                 if (val <= 0) {
                                     return {
                                         valid: false,
@@ -2634,8 +2662,15 @@
                         if (this.isTanah) {
                             const items = this.formData.tanah_items || [];
                             for (let i = 0; i < items.length; i++) {
+                                const qty = Number(items[i].tanah_jumlah_bidang !== undefined && items[i].tanah_jumlah_bidang !== null && items[i].tanah_jumlah_bidang !== '' ? items[i].tanah_jumlah_bidang : 1);
                                 const subtotal = this.getTanahSubtotal(items[i]);
                                 const nama = items[i].tanah_nama_barang || this.activeNamaBarang || 'Tanah';
+                                if (qty < 1) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Jumlah bidang tanah #${i + 1} (${nama}) minimal bernilai 1!`
+                                    };
+                                }
                                 if (subtotal <= 0) {
                                     return {
                                         valid: false,
@@ -2648,8 +2683,15 @@
                         if (this.isGedung) {
                             const items = this.formData.gedung_items || [];
                             for (let i = 0; i < items.length; i++) {
+                                const qty = Number(items[i].gedung_jumlah_bangunan !== undefined && items[i].gedung_jumlah_bangunan !== null && items[i].gedung_jumlah_bangunan !== '' ? items[i].gedung_jumlah_bangunan : 1);
                                 const subtotal = this.getGedungSubtotal(items[i]);
                                 const nama = items[i].gedung_nama_barang || this.activeNamaBarang || 'Gedung & Bangunan';
+                                if (qty < 1) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Jumlah bangunan gedung #${i + 1} (${nama}) minimal bernilai 1!`
+                                    };
+                                }
                                 if (subtotal <= 0) {
                                     return {
                                         valid: false,
@@ -2662,8 +2704,15 @@
                         if (this.isJaringan) {
                             const items = this.formData.jaringan_items || [];
                             for (let i = 0; i < items.length; i++) {
+                                const qty = Number(items[i].jaringan_jumlah !== undefined && items[i].jaringan_jumlah !== null && items[i].jaringan_jumlah !== '' ? items[i].jaringan_jumlah : 1);
                                 const subtotal = this.getJaringanSubtotal(items[i]);
                                 const nama = items[i].jaringan_nama_barang || this.activeNamaBarang || 'Jalan, Irigasi & Jaringan';
+                                if (qty < 1) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Jumlah jaringan/ruas #${i + 1} (${nama}) minimal bernilai 1!`
+                                    };
+                                }
                                 if (subtotal <= 0) {
                                     return {
                                         valid: false,
@@ -2676,8 +2725,15 @@
                         if (this.isKdp) {
                             const items = this.formData.kdp_items || [];
                             for (let i = 0; i < items.length; i++) {
+                                const qty = Number(items[i].kdp_jumlah_bangunan !== undefined && items[i].kdp_jumlah_bangunan !== null && items[i].kdp_jumlah_bangunan !== '' ? items[i].kdp_jumlah_bangunan : 1);
                                 const subtotal = this.getKdpSubtotal(items[i]);
                                 const nama = items[i].kdp_nama_barang || this.activeNamaBarang || 'Konstruksi Dalam Pengerjaan';
+                                if (qty < 1) {
+                                    return {
+                                        valid: false,
+                                        message: `⚠️ Jumlah bangunan KDP #${i + 1} (${nama}) minimal bernilai 1!`
+                                    };
+                                }
                                 if (subtotal <= 0) {
                                     return {
                                         valid: false,

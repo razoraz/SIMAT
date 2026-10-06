@@ -204,7 +204,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[340px] w-[340px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -219,6 +219,7 @@
                             $namaObjekBmd = $objekAsetBmd?->nama_barang ?: ($astap?->nama_barang ?: 'Objek Aset BMD RSUD');
                             $luasObjek = $spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($spec['gedung_luas_lantai'] ?? null));
                             $sertifikatObjek = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($spec['gedung_dokumen_no'] ?? null));
+                            $targetPrintId = $row->id ?: ($row->astap_id ?: ($astap?->id ?: null));
                         @endphp
                         <tr class="hover:bg-cyan-950/20 transition-colors group">
                             <!-- 1. Nomor -->
@@ -348,6 +349,19 @@
                                             <span>Buat PKS</span>
                                         </a>
 
+                                        @if($targetPrintId)
+                                        <!-- Tombol Cetak BAST -->
+                                        <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $targetPrintId]) }}"
+                                            target="_blank"
+                                            title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                            </svg>
+                                            <span>Cetak BAST</span>
+                                        </a>
+                                        @endif
+
                                         <!-- Tombol Detail Aset BMD RSUD -->
                                         <button type="button" @click="openDetail(null, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
                                             title="Lihat Detail Data Aset BMD RSUD"
@@ -362,13 +376,26 @@
                                         <!-- 1. Tombol Detail -->
                                         <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
                                             title="Lihat Detail Lengkap PKS & Objek Aset"
-                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                            <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                             </svg>
                                             <span>Detail</span>
                                         </button>
+
+                                        @if($targetPrintId)
+                                        <!-- Tombol Cetak BAST -->
+                                        <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $targetPrintId]) }}"
+                                            target="_blank"
+                                            title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
+                                            class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                            <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                            </svg>
+                                            <span>Cetak BAST</span>
+                                        </a>
+                                        @endif
 
                                         @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                         <!-- 2. Tombol Reklas -->
@@ -464,7 +491,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi Operasional</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[280px] w-[280px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[340px] w-[340px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -476,6 +503,7 @@
                             $sisaHari = $row->sisa_hari_konsesi;
                             $merk = $spec['merk'] ?? ($spec['mesin_merk'] ?? null);
                             $type = $spec['type'] ?? ($spec['mesin_type'] ?? null);
+                            $targetPrintId = $row->id ?: ($row->astap_id ?: ($astap?->id ?: null));
                         @endphp
                         <tr class="hover:bg-emerald-950/20 transition-colors group">
                             <!-- 1. Nomor -->
@@ -560,13 +588,26 @@
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
                                         title="Lihat Detail Lengkap PKS & Aset Kemitraan"
-                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
-                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 hover:border-cyan-400 font-bold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-cyan-400 group-hover/btn:text-white group-hover/btn:scale-110 transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                         </svg>
                                         <span>Detail</span>
                                     </button>
+
+                                    @if($targetPrintId)
+                                    <!-- Tombol Cetak BAST -->
+                                    <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $targetPrintId]) }}"
+                                        target="_blank"
+                                        title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
+                                        class="group/btn inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95 cursor-pointer leading-none">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400 group-hover/btn:text-white transition-all duration-200 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                        </svg>
+                                        <span>Cetak BAST</span>
+                                    </a>
+                                    @endif
 
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     <!-- 2. Tombol Reklas -->
@@ -654,7 +695,7 @@
                         <th class="py-3.5 px-4 min-w-[125px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[130px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Masa Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[260px] w-[260px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[340px] w-[340px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -758,9 +799,21 @@
                             <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }})"
-                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 font-bold text-xs transition-all">
+                                        class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all">
                                         Detail
                                     </button>
+                                    @php
+                                        $t3PrintId = $row->id ?: ($row->astap_id ?: ($astap?->id ?: null));
+                                    @endphp
+                                    @if($t3PrintId)
+                                    <a href="{{ route('astap.kemitraan.cetak_bast', ['id' => $t3PrintId]) }}"
+                                        target="_blank"
+                                        title="Cetak Berita Acara Serah Terima (BAST) Kemitraan"
+                                        class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 hover:border-emerald-400 font-extrabold text-xs transition-all inline-flex items-center gap-1 shadow-sm">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                        <span>Cetak BAST</span>
+                                    </a>
+                                    @endif
                                     @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
                                     <button type="button" @click="openReklas({{ json_encode($astap) }}, {{ json_encode($row) }})"
                                         class="px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 font-bold text-xs transition-all">

@@ -1089,6 +1089,51 @@ class ReklasifikasiTest extends TestCase
             'tujuan_kode' => 'KOR_LAIN',
         ]);
     }
+
+    public function test_filter_jenis_reklas_in_master_reklasifikasi()
+    {
+        $admin = User::first() ?? User::factory()->create(['role' => 'master_admin']);
+
+        $astap = Astap::create([
+            'nama_barang' => 'Barang Filter Test',
+            'tahun_perolehan' => 2026,
+            'jumlah_volume' => 1,
+            'harga_satuan' => 250000,
+            'total_realisasi' => 250000,
+            'user_id' => $admin->id,
+        ]);
+
+        AstapReklas::create([
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'nilai_reklas' => 250000,
+            'tanggal_reklas' => '2026-03-10',
+            'triwulan' => 1,
+            'tahun' => 2026,
+        ]);
+
+        AstapReklas::create([
+            'astap_id' => $astap->id,
+            'jenis_reklas' => 'KOREKSI_REKENING',
+            'nilai_reklas' => 500000,
+            'tanggal_reklas' => '2026-03-11',
+            'triwulan' => 1,
+            'tahun' => 2026,
+        ]);
+
+        // Filter EKSTRAKOMPTABEL
+        $res = $this->actingAs($admin)->get(route('master.reklasifikasi', [
+            'tahun' => 2026,
+            'triwulan' => 1,
+            'jenis_reklas' => 'EKSTRAKOMPTABEL',
+            'tab' => 'log',
+        ]));
+        $res->assertStatus(200);
+        $res->assertViewHas('selectedJenis', 'EKSTRAKOMPTABEL');
+        $logReklas = $res->viewData('logReklas');
+        $this->assertTrue($logReklas->contains('jenis_reklas', 'EKSTRAKOMPTABEL'));
+        $this->assertFalse($logReklas->contains('jenis_reklas', 'KOREKSI_REKENING'));
+    }
 }
 
 

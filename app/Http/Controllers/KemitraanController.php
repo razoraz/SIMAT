@@ -282,13 +282,29 @@ class KemitraanController extends Controller
     {
         Carbon::setLocale('id');
 
-        // Cari berdasarkan ASTAP ID atau Kemitraan ID
-        $astap = Astap::with(['jenisAstap', 'registers.unit', 'kemitraan', 'unit'])->find($id);
-        if (!$astap) {
-            $kemitraan = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit'])->findOrFail($id);
-            $astap = $kemitraan->astap;
+        // 1. Cek apakah ID merujuk ke record tabel astap_kemitraans
+        $kemitraan = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'objekRegister.astap', 'objekAstap'])->find($id);
+        $astap = null;
+
+        if ($kemitraan) {
+            $astap = $kemitraan->astap ?: ($kemitraan->objekRegister?->astap ?: $kemitraan->objekAstap);
         } else {
-            $kemitraan = $astap->kemitraan;
+            // 2. Jika bukan ID kemitraan, cari dari tabel astaps (misal: aset hasil reklasifikasi yang belum ada PKS)
+            $astap = Astap::with(['jenisAstap', 'registers.unit', 'kemitraan', 'unit'])->find($id);
+            if ($astap) {
+                $kemitraan = $astap->kemitraan;
+            }
+        }
+
+        // 3. Fallback pencarian kemitraan berdasarkan relasi astap_id / objek_astap_id
+        if (!$kemitraan && $astap) {
+            $kemitraan = AstapKemitraan::where('astap_id', $astap->id)
+                ->orWhere('objek_astap_id', $astap->id)
+                ->first();
+        }
+
+        if (!$astap) {
+            abort(404, 'Data aset kemitraan atau objek BAST tidak ditemukan.');
         }
 
         $spec = is_array($astap->spesifikasi_json) ? $astap->spesifikasi_json : (json_decode($astap->spesifikasi_json, true) ?? []);
@@ -298,6 +314,18 @@ class KemitraanController extends Controller
         if (!empty($spec['objek_astap_id'])) {
             $objekAset = Astap::with(['jenisAstap', 'registers'])->find($spec['objek_astap_id']);
         }
+        if (!$objekAset && !empty($kemitraan?->objek_astap_id)) {
+            $objekAset = Astap::with(['jenisAstap', 'registers'])->find($kemitraan->objek_astap_id);
+        }
+        if (!$objekAset && !empty($kemitraan?->objek_register_id)) {
+            $regObj = AstapRegister::with('astap.jenisAstap')->find($kemitraan->objek_register_id);
+            $objekAset = $regObj?->astap;
+        }
+        if (!$objekAset) {
+            $objekAset = $astap;
+        }
+
+        $objekSpec = is_array($objekAset?->spesifikasi_json) ? $objekAset->spesifikasi_json : (json_decode($objekAset?->spesifikasi_json, true) ?? []);
 
         // Tanggal BAST & Hari
         $tglPks = $kemitraan?->tanggal_pks ?: ($spec['tanggal_pks'] ?? ($astap->bast_dokumen_tanggal ?? now()));
@@ -319,8 +347,8 @@ class KemitraanController extends Controller
         // Pejabat Pihak Kedua (Mitra)
         $pihakDua = [
             'perusahaan'  => $kemitraan?->mitra_nama ?: ($spec['mitra_nama'] ?? 'Mitra Kerja Sama'),
-            'pimpinan'    => $kemitraan?->pimpinan_mitra ?: ($spec['mitra_pimpinan'] ?? 'Pimpinan / Direktur Rekanan'),
-            'alamat'      => $kemitraan?->alamat_mitra ?: ($spec['mitra_alamat'] ?? 'Alamat Domisili Mitra'),
+            'pimpinan'    => $kemitraan?->mitra_pimpinan ?: ($kemitraan?->pimpinan_mitra ?: ($spec['mitra_pimpinan'] ?? 'Pimpinan / Direktur Rekanan')),
+            'alamat'      => $kemitraan?->mitra_alamat ?: ($kemitraan?->alamat_mitra ?: ($spec['mitra_alamat'] ?? 'Alamat Domisili Mitra')),
             'jabatan'     => 'Pimpinan / Kuasa Direksi',
         ];
 
@@ -332,10 +360,10 @@ class KemitraanController extends Controller
         ];
 
         // Rincian Objek Fisik (Spesifikasi Tanah KIB A atau Gedung Bangunan)
-        $tanahItems = $spec['tanah_items'] ?? [];
-        $luasTotal = (float) ($spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($objekAset?->spesifikasi_json['luas_m2'] ?? 0)));
-        $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($objekAset?->spesifikasi_json['sertifikat_no'] ?? '-'));
-        $hakTanah = $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? ($objekAset?->spesifikasi_json['hak_tanah'] ?? 'Hak Pakai'));
+        $tanahItems = $spec['tanah_items'] ?? ($objekSpec['tanah_items'] ?? []);
+        $luasTotal = (float) ($spec['luas_m2'] ?? ($spec['tanah_luas_m2'] ?? ($objekSpec['luas_m2'] ?? ($objekSpec['tanah_luas_m2'] ?? 0))));
+        $sertifikatNo = $spec['sertifikat_no'] ?? ($spec['tanah_sertifikat_no'] ?? ($objekSpec['sertifikat_no'] ?? ($objekSpec['tanah_sertifikat_no'] ?? '-')));
+        $hakTanah = $spec['hak_tanah'] ?? ($spec['tanah_hak'] ?? ($objekSpec['hak_tanah'] ?? ($objekSpec['tanah_hak'] ?? 'Hak Pakai')));
 
         // Nomor Surat BAST
         $nomorPks = $kemitraan?->nomor_pks ?: ($spec['nomor_pks'] ?? ($spec['perjanjian_nomor'] ?? ($astap->bast_dokumen_nomor ?: '000.2.3.2/BAST-KSO/430.10.7/' . $tahun)));

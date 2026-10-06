@@ -10807,8 +10807,13 @@
 
                         for (let i = 0; i < this.reklasExtracomItems.length; i++) {
                             const rItem = this.reklasExtracomItems[i];
+                            const vol = parseInt(rItem.jumlah_volume !== undefined && rItem.jumlah_volume !== null && rItem.jumlah_volume !== '' ? rItem.jumlah_volume : 1) || 0;
                             const hrg = parseFloat(rItem.harga_satuan) || 0;
                             const nm = (rItem.nama_barang || '').trim() || ('Barang #' + (i + 1));
+                            if (vol < 1) {
+                                this.showToast(`Volume / Jumlah unit untuk "${nm}" minimal bernilai 1!`, 'error');
+                                return;
+                            }
                             if (hrg <= 0) {
                                 this.showToast(`Harga satuan untuk "${nm}" harus lebih dari Rp 0!`, 'error');
                                 return;
@@ -10826,8 +10831,13 @@
 
                         for (let i = 0; i < this.reklasExtracomItems.length; i++) {
                             const rItem = this.reklasExtracomItems[i];
+                            const vol = parseInt(rItem.jumlah_volume !== undefined && rItem.jumlah_volume !== null && rItem.jumlah_volume !== '' ? rItem.jumlah_volume : 1) || 0;
                             const hrg = parseFloat(rItem.harga_satuan) || 0;
                             const nm = (rItem.nama_barang || '').trim() || ('Barang #' + (i + 1));
+                            if (vol < 1) {
+                                this.showToast(`Volume / Jumlah unit untuk "${nm}" minimal bernilai 1!`, 'error');
+                                return;
+                            }
                             if (hrg <= 300000) {
                                 this.showToast(`Harga satuan untuk "${nm}" (Rp ${Number(hrg).toLocaleString('id-ID')}) belum memenuhi syarat nilai Intrakomtable (Wajib > Rp 300.000)!`, 'error');
                                 return;
@@ -12572,20 +12582,21 @@
 
                         let matchSumber = true;
                         if (this.sumberDanaFilter && this.sumberDanaFilter !== 'all') {
+                            const isKemitraan = item.category === 'KEMITRAAN' || item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan;
+                            const isHibah = item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK' || String(item.asal_usul || '').toUpperCase().includes('HIBAH');
+                            const isBelanjaBarang = item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'));
+                            const isPelimpahan = item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
+
                             if (this.sumberDanaFilter === 'kemitraan') {
-                                matchSumber = item.sumber_dana === 'kemitraan' || item.sumber_dana_raw === 'kemitraan' || !!item.kemitraan;
+                                matchSumber = isKemitraan;
                             } else if (this.sumberDanaFilter === 'hibah') {
-                                matchSumber = item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK' || String(item.asal_usul || '').toUpperCase().includes('HIBAH');
+                                matchSumber = isHibah;
                             } else if (this.sumberDanaFilter === 'belanja_barang') {
-                                matchSumber = item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'));
+                                matchSumber = isBelanjaBarang;
                             } else if (this.sumberDanaFilter === 'pelimpahan') {
-                                matchSumber = item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk';
+                                matchSumber = isPelimpahan;
                             } else if (this.sumberDanaFilter === 'belanja_modal') {
-                                const isOther = (item.sumber_dana === 'kemitraan' || !!item.kemitraan) ||
-                                                (item.sumber_dana === 'hibah' || item.sumber_dana_raw === 'hibah' || item.jenis_reklas === 'HIBAH_MASUK' || String(item.asal_usul || '').toUpperCase().includes('HIBAH')) ||
-                                                (item.sumber_dana === 'belanja_barang' || item.sumber_dana_raw === 'belanja_barang' || item.sumber_dana === 'belanja_rekening' || (item.jenis_pengadaan && item.jenis_pengadaan.includes('barang'))) ||
-                                                (item.sumber_dana === 'pelimpahan' || item.sumber_dana === 'pelimpahan_skpd' || item.sumber_dana === 'mutasi_masuk' || item.sumber_dana === 'mutasi' || item.sumber_dana_raw === 'pelimpahan_skpd' || item.sumber_dana_raw === 'mutasi_masuk');
-                                matchSumber = !isOther || item.sumber_dana === 'belanja_modal';
+                                matchSumber = !isKemitraan && !isHibah && !isBelanjaBarang && !isPelimpahan;
                             }
                         }
 

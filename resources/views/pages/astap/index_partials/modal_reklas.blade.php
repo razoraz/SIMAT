@@ -389,8 +389,43 @@
                                 </div>
                             </div>
 
+                            <!-- Placeholder Petunjuk: Tampil jika langkah 1, 2, atau 3 belum lengkap -->
+                            <div x-show="!reklasTujuanKib || !reklasSubRincianKode || !reklasSubSubRincianKode" 
+                                 x-transition.duration.250ms
+                                 class="p-4 rounded-2xl bg-slate-950/70 border border-dashed border-slate-800 space-y-3 shadow-inner">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 text-slate-300 text-xs font-bold">
+                                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                        <span>Lengkapi Rekening Akun 108 Terlebih Dahulu</span>
+                                    </div>
+                                    <span class="text-[10px] text-amber-300/80 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 font-mono">
+                                        Langkah 1, 2 &amp; 3 Wajib
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 leading-relaxed">
+                                    Formulir spesifikasi fisik baru akan otomatis terbuka setelah Anda menyelesaikan 3 tahapan rekening kodefikasi di atas:
+                                </p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10.5px]">
+                                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all"
+                                         :class="reklasTujuanKib ? 'bg-blue-500/15 border-blue-500/40 text-blue-300' : 'bg-slate-900 border-slate-800 text-slate-500'">
+                                        <span class="font-bold text-xs" x-text="reklasTujuanKib ? '✓' : '1.'"></span>
+                                        <span class="font-bold truncate" x-text="reklasTujuanKib ? ('1. ' + reklasTujuanKib) : '1. Pilih KIB Tujuan'"></span>
+                                    </div>
+                                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all"
+                                         :class="reklasSubRincianKode ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'">
+                                        <span class="font-bold text-xs" x-text="reklasSubRincianKode ? '✓' : '2.'"></span>
+                                        <span class="font-bold truncate" x-text="reklasSubRincianKode ? ('2. ' + reklasSubRincianKode) : '2. Sub-Rincian 108'"></span>
+                                    </div>
+                                    <div class="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all"
+                                         :class="reklasSubSubRincianKode ? 'bg-purple-500/15 border-purple-500/40 text-purple-300' : 'bg-slate-900 border-slate-800 text-slate-500'">
+                                        <span class="font-bold text-xs" x-text="reklasSubSubRincianKode ? '✓' : '3.'"></span>
+                                        <span class="font-bold truncate" x-text="reklasSubSubRincianKode ? ('3. ' + (reklasSubSubRincianNama || reklasSubSubRincianKode)) : '3. Identitas 108'"></span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Bagian Kemitraan: Dokumen Kerja Sama & Rekanan Mitra (Akun 1.5.2) - Non Multi-Choice -->
-                            <div x-show="reklasTujuanKib === 'KEMITRAAN'" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
+                            <div x-show="reklasTujuanKib === 'KEMITRAAN' && reklasSubRincianKode && reklasSubSubRincianKode" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                                     <div class="flex items-center space-x-2">
                                         <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center shrink-0">4</span>
@@ -576,7 +611,7 @@
                             </div>
 
                             <!-- Tingkat 4 (atau 5 jika Kemitraan): Penyesuaian Spesifikasi Fisik Baru Sesuai KIB Tujuan -->
-                            <div x-show="reklasTujuanKib" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
+                            <div x-show="reklasTujuanKib && reklasSubRincianKode && reklasSubSubRincianKode" x-transition.duration.300ms class="p-4 rounded-2xl bg-slate-900 border border-cyan-500/30 space-y-3.5 shadow-lg">
                                 <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                                     <div class="flex items-center space-x-2">
                                         <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-black flex items-center justify-center shrink-0"
@@ -1125,6 +1160,7 @@
                                                 <label class="block text-slate-400 font-bold text-[10px] uppercase tracking-wider mb-1">Volume &amp; Satuan:</label>
                                                 <div class="flex items-center space-x-1.5">
                                                     <input type="number" min="1" x-model.number="item.jumlah_volume" placeholder="1"
+                                                           @input="if (item.jumlah_volume !== undefined && item.jumlah_volume !== null && item.jumlah_volume < 1 && item.jumlah_volume !== '') item.jumlah_volume = 1;"
                                                            title="Jumlah Volume"
                                                            class="w-12 shrink-0 bg-slate-950 border border-slate-700 rounded-lg px-1.5 py-1.5 text-xs text-white text-center focus:outline-none font-bold no-spinner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                            :class="reklasJenis === 'intracom' ? 'focus:border-emerald-500' : 'focus:border-amber-500'">

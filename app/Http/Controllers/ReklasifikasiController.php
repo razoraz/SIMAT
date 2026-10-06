@@ -19,6 +19,7 @@ class ReklasifikasiController extends Controller
     {
         $selectedTahun = (int) $request->get('tahun', date('Y'));
         $selectedTw = $request->get('triwulan', 'all');
+        $selectedJenis = $request->get('jenis_reklas', 'all');
 
         // Daftar tahun perolehan yang ada di sistem
         $tahunList = Astap::select('tahun_perolehan')
@@ -225,6 +226,7 @@ class ReklasifikasiController extends Controller
         // 4. Ambil Log Transaksi Reklasifikasi
         $logReklas = AstapReklas::where('tahun', $selectedTahun)
             ->when($selectedTw !== 'all', fn($q) => $q->where('triwulan', (int) $selectedTw))
+            ->when($selectedJenis !== 'all', fn($q) => $q->where('jenis_reklas', $selectedJenis))
             ->with(['astap.jenisAstap', 'jenisReklasAsal', 'jenisReklasTujuan', 'user'])
             ->orderBy('tanggal_reklas', 'desc')
             ->orderBy('id', 'desc')
@@ -248,6 +250,7 @@ class ReklasifikasiController extends Controller
             'tahunList'         => $tahunList,
             'selectedTahun'     => $selectedTahun,
             'selectedTw'        => $selectedTw,
+            'selectedJenis'     => $selectedJenis,
             'templateRows'      => $templateRows,
             'kandidatAstaps'    => $kandidatAstaps,
             'dbMaster108'       => JenisAstap::getNested108(),
@@ -288,10 +291,18 @@ class ReklasifikasiController extends Controller
         $isIntracom = ($validated['jenis_reklas'] === 'KAPITALISASI_INTRAKOM');
 
         if (($isExtracom || $isIntracom) && !empty($request->reklas_items) && is_array($request->reklas_items)) {
-            // Validasi tiap rincian barang: batas Rp 300.000 dan > Rp 0 sebelum transaksi DB
+            // Validasi tiap rincian barang: volume minimal 1, batas Rp 300.000 dan > Rp 0 sebelum transaksi DB
             foreach ($request->reklas_items as $itemIdx => $rItem) {
+                $qty = (int) ($rItem['jumlah_volume'] ?? 1);
                 $harga = (float) ($rItem['harga_satuan'] ?? 0);
                 $nama = trim((string) ($rItem['nama_barang'] ?? 'Barang #' . ($itemIdx + 1)));
+
+                if ($qty < 1) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Volume / Jumlah unit untuk {$nama} minimal bernilai 1.",
+                    ], 422);
+                }
 
                 if ($harga <= 0) {
                     return response()->json([
@@ -1216,6 +1227,9 @@ class ReklasifikasiController extends Controller
 
             // Sinkronisasi status dan data Kemitraan (Akun 1.5.2)
             if ($targetKib === 'KEMITRAAN') {
+                $astap->sumber_dana = 'kemitraan';
+                $astap->save();
+
                 $spec = $astap->spesifikasi_json ?? [];
                 $kemitraanData = [
                     'astap_id'         => $astap->id,
@@ -1364,7 +1378,13 @@ class ReklasifikasiController extends Controller
                 }
 
                 // Pulihkan status kemitraan jika aset terkait dengan Akun 1.5.2 Kemitraan
-                if ($astap->kemitraan) {
+                if ($reklas->tujuan_kib === 'KEMITRAAN') {
+                    $astap->sumber_dana = 'belanja_modal';
+                    $astap->save();
+                    if ($astap->kemitraan) {
+                        $astap->kemitraan->delete();
+                    }
+                } elseif ($astap->kemitraan) {
                     $statusPulih = 'Aktif';
                     if ($astap->kemitraan->tanggal_selesai && \Carbon\Carbon::parse($astap->kemitraan->tanggal_selesai)->isPast()) {
                         $statusPulih = 'Konsesi Berakhir';

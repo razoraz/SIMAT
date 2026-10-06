@@ -48,8 +48,10 @@
 
     <!-- BARIS 2: FILTER PERIODE (KIRI) & RINGKASAN DATA AKTIF (KANAN) -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <!-- Form Filter Tahun & Periode -->
+        <!-- Form Filter Tahun, Periode & Jenis Reklas -->
         <form method="GET" action="{{ route('master.reklasifikasi') }}" class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <input type="hidden" name="tab" :value="activeTab">
+
             <!-- Filter Tahun -->
             <div class="flex items-center gap-2 bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500/30 transition-all shadow-sm">
                 <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,14 +81,49 @@
                     <option value="4" {{ $selectedTw == '4' ? 'selected' : '' }} class="bg-slate-900 text-white">Triwulan IV (Okt - Des)</option>
                 </select>
             </div>
+
+            <!-- Filter Jenis Reklasifikasi -->
+            <div class="flex items-center gap-2 bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500/30 transition-all shadow-sm">
+                <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span class="text-xs font-semibold text-slate-400">Jenis Reklas:</span>
+                <select name="jenis_reklas" onchange="this.form.submit()" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-1 max-w-[190px] sm:max-w-none truncate">
+                    <option value="all" {{ ($selectedJenis ?? 'all') == 'all' ? 'selected' : '' }} class="bg-slate-900 text-white">Semua Jenis</option>
+                    <option value="KOREKSI_REKENING" {{ ($selectedJenis ?? '') == 'KOREKSI_REKENING' ? 'selected' : '' }} class="bg-slate-900 text-white">Koreksi Rekening / Pindah KIB</option>
+                    <option value="KDP_TO_DEFINITIF" {{ ($selectedJenis ?? '') == 'KDP_TO_DEFINITIF' ? 'selected' : '' }} class="bg-slate-900 text-white">KDP Selesai ➔ Definitif</option>
+                    <option value="EKSTRAKOMPTABEL" {{ ($selectedJenis ?? '') == 'EKSTRAKOMPTABEL' ? 'selected' : '' }} class="bg-slate-900 text-white">Ekstrakomptabel (≤ Rp 300rb)</option>
+                    <option value="KAPITALISASI_INTRAKOM" {{ ($selectedJenis ?? '') == 'KAPITALISASI_INTRAKOM' ? 'selected' : '' }} class="bg-slate-900 text-white">Kapitalisasi Intrakomptabel</option>
+                    <option value="HIBAH_MASUK" {{ ($selectedJenis ?? '') == 'HIBAH_MASUK' ? 'selected' : '' }} class="bg-slate-900 text-white">Hibah Masuk</option>
+                    <option value="KOREKSI_LAIN" {{ ($selectedJenis ?? '') == 'KOREKSI_LAIN' ? 'selected' : '' }} class="bg-slate-900 text-white">Koreksi Nilai / Audit BPK</option>
+                </select>
+            </div>
         </form>
 
         <!-- Status / Active Filter Badge (Kanan) -->
-        <div class="flex items-center gap-2 text-xs text-slate-400">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-semibold text-slate-300">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-semibold text-slate-300 shadow-sm">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Periode Aktif: <strong class="text-white">{{ $selectedTahun }}</strong> ({{ $selectedTw == 'all' ? 'Seluruh Tahun' : 'Triwulan ' . $selectedTw }})</span>
+                <span>Periode: <strong class="text-white">{{ $selectedTahun }}</strong> ({{ $selectedTw == 'all' ? 'Seluruh Tahun' : 'Triwulan ' . $selectedTw }})</span>
             </span>
+
+            @if (($selectedJenis ?? 'all') !== 'all')
+                @php
+                    $jenisLabels = [
+                        'KOREKSI_REKENING'    => 'Koreksi Rekening',
+                        'KDP_TO_DEFINITIF'    => 'KDP ➔ Definitif',
+                        'EKSTRAKOMPTABEL'     => 'Ekstrakomptabel',
+                        'KAPITALISASI_INTRAKOM'=> 'Kapitalisasi Intrakom',
+                        'HIBAH_MASUK'         => 'Hibah Masuk',
+                        'KOREKSI_LAIN'        => 'Koreksi Nilai / BPK',
+                    ];
+                @endphp
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-violet-500/15 border border-violet-500/30 text-[11px] font-semibold text-violet-300 shadow-sm">
+                    <span>🏷️ {{ $jenisLabels[$selectedJenis] ?? $selectedJenis }}</span>
+                    <a href="{{ route('master.reklasifikasi', ['tahun' => $selectedTahun, 'triwulan' => $selectedTw, 'tab' => 'log']) }}"
+                       class="text-violet-400 hover:text-white ml-0.5 font-bold transition-colors" title="Hapus filter jenis">&times;</a>
+                </span>
+            @endif
         </div>
     </div>
 </div>
