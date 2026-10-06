@@ -536,8 +536,8 @@ class ReklasifikasiController extends Controller
                 $subKoreksi = in_array($request->input('sub_koreksi'), ['biasa', 'lkd', 'manset']) ? $request->input('sub_koreksi') : 'biasa';
                 $validated['sub_koreksi'] = $subKoreksi;
 
-                // Jika ada penyesuaian nilai anggaran (bisa diubah)
-                if ($request->filled('jumlah_anggaran')) {
+                // Nilai anggaran hanya berlaku untuk Belanja Modal APBD/BLUD (bukan Hibah/Kemitraan)
+                if ($astap->isBelanjaModal() && $request->filled('jumlah_anggaran')) {
                     $astap->jumlah_anggaran = (float) $request->input('jumlah_anggaran');
                 }
 

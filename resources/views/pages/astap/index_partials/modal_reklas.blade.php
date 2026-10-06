@@ -1227,91 +1227,46 @@
                                                class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 focus:border-cyan-400 rounded-xl text-xs font-mono text-white focus:outline-none">
                                     </div>
                                 </div>
-
-                                <!-- Preset Cepat Alasan Koreksi Nilai -->
-                                <div class="pt-1 space-y-1.5">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Pilih Preset Alasan Cepat:</span>
-                                        <span class="text-[9px] text-slate-500">Klik untuk isi otomatis ke alasan</span>
-                                    </div>
-                                    <div class="flex flex-wrap gap-1.5">
-                                        <template x-if="reklasSubKoreksi === 'biasa'">
-                                            <div class="contents">
-                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai buku karena salah hitung nilai administrasi/ongkir pada SP2D.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-indigo-950/60 text-slate-300 hover:text-indigo-200 border border-slate-700 hover:border-indigo-500/40 transition-all cursor-pointer">
-                                                    + Salah Hitung SP2D
-                                                </button>
-                                                <button type="button" @click="reklasAlasan = 'Koreksi selisih pembulatan nilai kuitansi faktur belanja modal.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-indigo-950/60 text-slate-300 hover:text-indigo-200 border border-slate-700 hover:border-indigo-500/40 transition-all cursor-pointer">
-                                                    + Selisih Pembulatan
-                                                </button>
-                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai realisasi hasil rekonsiliasi internal bendahara pengeluaran dan pengurus barang.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-indigo-950/60 text-slate-300 hover:text-indigo-200 border border-slate-700 hover:border-indigo-500/40 transition-all cursor-pointer">
-                                                    + Rekon Internal Kas
-                                                </button>
-                                            </div>
-                                        </template>
-
-                                        <template x-if="reklasSubKoreksi === 'lkd'">
-                                            <div class="contents">
-                                                <button type="button" @click="reklasAlasan = 'Tindak lanjut temuan LHP BPK RI atas kelebihan bayar pekerjaan belanja modal yang telah disetor ke Kasda.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer">
-                                                    + Kelebihan Bayar / TGR
-                                                </button>
-                                                <button type="button" @click="reklasAlasan = 'Rekomendasi BPK RI atas penyesuaian nilai batas kapitalisasi aset tetap belanja modal.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer">
-                                                    + Rekomendasi LHP BPK
-                                                </button>
-                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai buku hasil uji petik fisik tim auditor eksternal BPK RI.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-200 border border-slate-700 hover:border-cyan-500/40 transition-all cursor-pointer">
-                                                    + Uji Petik Auditor BPK
-                                                </button>
-                                            </div>
-                                        </template>
-
-                                        <template x-if="reklasSubKoreksi === 'manset'">
-                                            <div class="contents">
-                                                <button type="button" @click="reklasAlasan = 'Penyelarasan nilai saldo buku register SIMDA BMD bidang aset BPKAD dengan SIMAT RSUD.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-200 border border-slate-700 hover:border-emerald-500/40 transition-all cursor-pointer">
-                                                    + Penyelarasan SIMDA BMD
-                                                </button>
-                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nilai kapitalisasi hasil rekonsiliasi berkala semesteran e-Manset BPKAD Bondowoso.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-200 border border-slate-700 hover:border-emerald-500/40 transition-all cursor-pointer">
-                                                    + Rekon Semesteran Manset
-                                                </button>
-                                                <button type="button" @click="reklasAlasan = 'Penyesuaian nominal buku aset berdasarkan Berita Acara Rekonsiliasi Aset Pemkab Bondowoso.'"
-                                                        class="px-2.5 py-1 rounded-lg text-[10px] bg-slate-900 hover:bg-emerald-950/60 text-slate-300 hover:text-emerald-200 border border-slate-700 hover:border-emerald-500/40 transition-all cursor-pointer">
-                                                    + BA Rekonsiliasi Pemkab
-                                                </button>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
                             </div>
 
-                            <!-- 1. Grid Anggaran & Realisasi -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <!-- Nilai Anggaran (DPA/RBA) -->
-                                <div class="p-3.5 rounded-xl bg-blue-950/30 border border-blue-500/40 space-y-2">
-                                    <div>
-                                        <label class="block text-blue-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                            💰 Nilai Anggaran (DPA/RBA):
-                                        </label>
+                            <!-- 1. Grid Anggaran & Realisasi (Kondisional: Anggaran hanya di Belanja Modal & Di-Lock) -->
+                            <div class="grid gap-3"
+                                 :class="isReklasBelanjaModal() ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'">
+                                <!-- Nilai Anggaran (DPA/RBA) - HANYA TAMPIL DI BELANJA MODAL & TERKUNCI (READ-ONLY) -->
+                                <template x-if="isReklasBelanjaModal()">
+                                    <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <label class="block text-slate-300 font-bold text-[10.5px] uppercase tracking-wider flex items-center gap-1.5">
+                                                <span>🔒</span>
+                                                <span>Nilai Anggaran (DPA/RBA):</span>
+                                            </label>
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-900 border border-slate-700 text-slate-400">
+                                                Terkunci (Pagu Awal)
+                                            </span>
+                                        </div>
+                                        <div class="relative">
+                                            <span class="absolute left-3 top-2 text-slate-500 text-xs font-mono font-bold">Rp</span>
+                                            <input type="text" readonly
+                                                   :value="Number(reklasNilaiAnggaran || 0).toLocaleString('id-ID')"
+                                                   class="w-full pl-9 pr-3.5 py-1.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-xs font-mono font-bold text-slate-300 cursor-not-allowed text-right select-none focus:outline-none">
+                                        </div>
+                                        <p class="text-[9.5px] text-slate-500 leading-tight">Pagu awal DPA APBD/BLUD bersifat permanen sebagai dokumen otorisasi awal.</p>
                                     </div>
-                                    <div class="relative">
-                                        <span class="absolute left-3 top-2 text-slate-400 text-xs font-mono font-bold">Rp</span>
-                                        <input type="number" step="1000" min="0" x-model.number="reklasNilaiAnggaran" placeholder="0"
-                                               class="w-full pl-9 pr-3.5 py-1.5 bg-slate-900 border border-blue-500/50 rounded-xl text-xs font-mono font-bold text-blue-200 focus:outline-none focus:border-blue-400 text-right no-spinner [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
-                                    </div>
-                                    <p class="text-[9.5px] text-slate-400 leading-tight">Pagu anggaran belanja modal dapat disesuaikan jika ada perubahan pagu DPA.</p>
-                                </div>
+                                </template>
 
                                 <!-- Nilai Realisasi Aset -->
-                                <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-2">
-                                    <div>
-                                        <label class="block text-emerald-300 font-bold text-[10.5px] uppercase tracking-wider">
-                                            🔒 Total Nilai Realisasi Aset:
+                                <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-2"
+                                     :class="!isReklasBelanjaModal() ? 'w-full' : ''">
+                                    <div class="flex items-center justify-between">
+                                        <label class="block text-emerald-300 font-bold text-[10.5px] uppercase tracking-wider flex items-center gap-1.5">
+                                            <span>📦</span>
+                                            <span>Total Nilai Realisasi Aset:</span>
                                         </label>
+                                        <template x-if="!isReklasBelanjaModal()">
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-950/80 border border-cyan-800/80 text-cyan-300"
+                                                  x-text="selectedAstapReklas?.sumber_dana === 'hibah' ? 'Perolehan Hibah (Non-DPA)' : (selectedAstapReklas?.sumber_dana === 'kemitraan' ? 'Perolehan Kemitraan (Non-DPA)' : 'Perolehan Non-DPA')">
+                                            </span>
+                                        </template>
                                     </div>
                                     <div class="relative">
                                         <span class="absolute left-3 top-2 text-slate-400 text-xs font-mono font-bold">Rp</span>

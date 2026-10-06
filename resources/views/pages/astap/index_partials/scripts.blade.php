@@ -9578,6 +9578,19 @@
                 reklasKdpProgresAwal: 0,
                 reklasKemitraanTipeFisik: 'mesin', // 'tanah' | 'mesin' | 'gedung' | 'jaringan' | 'lainnya'
 
+                isReklasBelanjaModal() {
+                    const it = this.selectedAstapReklas;
+                    if (!it) return true;
+                    const sd = String(it.sumber_dana || it.sumber_dana_raw || '').toLowerCase();
+                    if (sd === 'hibah' || sd === 'kemitraan' || sd === 'belanja_barang' || sd === 'belanja_rekening' || sd === 'pelimpahan_skpd' || sd === 'mutasi_masuk' || sd === 'pelimpahan' || sd === 'mutasi') {
+                        return false;
+                    }
+                    if (it.kemitraan || it.category === 'KEMITRAAN' || it.jenis_reklas === 'HIBAH_MASUK') {
+                        return false;
+                    }
+                    return true;
+                },
+
                 getReklasKemitraanPhysicalType() {
                     return this.detectKemitraanPhysicalType();
                 },
@@ -9917,7 +9930,7 @@
                     this.reklasTipeKoreksiNilai = 'kurang';
                     this.reklasNominalKoreksi = 0;
                     this.reklasNilaiRealisasiBaru = parseFloat(item.total_realisasi_num || item.harga_satuan || 0);
-                    this.reklasNilaiAnggaran = parseFloat(item.jumlah_anggaran || item.total_realisasi_num || item.harga_satuan || 0);
+                    this.reklasNilaiAnggaran = this.isReklasBelanjaModal() ? parseFloat(item.jumlah_anggaran || 0) : 0;
                     this.reklasNoDokumenKoreksi = '';
 
                     // Inisialisasi rincian barang untuk Ekstrakomptabel / Intrakomptabel / Koreksi Nilai
@@ -11058,7 +11071,7 @@
                             tanggal_dokumen_koreksi: (this.reklasJenis === 'koreksi_nilai') ? this.reklasDokumenTglKoreksi : null,
                             keterangan: this.getReklasNarasiPreview(),
                             progres_persen: (this.reklasJenis === 'kdp') ? 100 : undefined,
-                            jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? this.reklasNilaiAnggaran : (parseFloat(it.jumlah_anggaran) || null),
+                            jumlah_anggaran: (this.reklasJenis === 'koreksi_nilai') ? (this.isReklasBelanjaModal() ? this.reklasNilaiAnggaran : null) : (parseFloat(it.jumlah_anggaran) || null),
                             reklas_items: (this.reklasJenis === 'extracom' || this.reklasJenis === 'intracom' || this.reklasJenis === 'koreksi_nilai') ? this.reklasExtracomItems : null,
                             spesifikasi_baru: (this.reklasJenis === 'pindah_kib' || this.reklasJenis === 'kdp') 
                                 ? Object.assign({}, this.reklasSpekBaru, {

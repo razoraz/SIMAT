@@ -43,6 +43,10 @@ class AuditKoreksiTest extends TestCase
         $jenis = JenisAstap::first() ?? JenisAstap::create([
             'nama_jenis' => 'Peralatan Medis',
             'jenis' => '1.3.2.07',
+            'sub_rincian_objek' => '1.3.2.07',
+            'uraian_sub_rincian' => 'Alat Kedokteran dan Kesehatan',
+            'sub_sub_rincian_objek' => '1.3.2.07.01.01',
+            'uraian_sub_sub_rincian' => 'EKG Monitor',
             'kelompok_kib' => 'KIB B',
         ]);
 
