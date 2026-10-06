@@ -809,6 +809,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/recycle-bin/{module}/bulk-force-delete',         [RecycleBinController::class, 'bulkForceDelete'])->name('recycle_bin.bulk_force_delete');
     Route::delete('/recycle-bin/{module}/{id}/force-delete',       [RecycleBinController::class, 'forceDelete'])->name('recycle_bin.force_delete');
 
+    // 4c. Rekonsiliasi Belanja Modal (RMB) - Format Resmi BPKAD
+    Route::get('/audit-pemulihan/rmb', [\App\Http\Controllers\RmbController::class, 'index'])->name('rmb.index');
+
     // 5. Unit & Paviliun Index
     Route::get('/unit-paviliun', [UnitController::class, 'index'])->name('unit.index')->middleware('module:unit');
 
