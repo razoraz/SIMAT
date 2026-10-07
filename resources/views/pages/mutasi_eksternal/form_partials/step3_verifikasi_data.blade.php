@@ -311,9 +311,13 @@
             <div class="lg:col-span-2 p-4 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-1.5">
                 <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kode Rekening 108:</span>
-                    <span class="font-extrabold inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px]"
-                        :class="formData.kondisi === 'Baik' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : (formData.kondisi === 'Kurang Baik' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30')"
-                        x-text="'Kondisi: ' + (formData.kondisi || 'Baik')"></span>
+                    <span class="font-extrabold inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] border transition-all"
+                        :class="{
+                            'bg-emerald-500/15 text-emerald-400 border-emerald-500/30': !kondisiSummary.includes('KB') && !kondisiSummary.includes('RB') && !kondisiSummary.includes('Kurang') && !kondisiSummary.includes('Rusak'),
+                            'bg-amber-500/15 text-amber-400 border-amber-500/30': (kondisiSummary.includes('KB') || kondisiSummary.includes('Kurang')) && !kondisiSummary.includes('RB') && !kondisiSummary.includes('Rusak'),
+                            'bg-rose-500/15 text-rose-400 border-rose-500/30': kondisiSummary.includes('RB') || kondisiSummary.includes('Rusak')
+                        }"
+                        x-text="'Kondisi: ' + kondisiSummary"></span>
                 </div>
                 <div class="font-mono font-black text-indigo-300 text-xs sm:text-sm truncate" x-text="selected108Item ? (selected108Item.kode + ' • ' + selected108Item.nama) : 'Kode 108 belum dipilih'"></div>
                 <div class="text-sm font-black text-white truncate pt-0.5" x-text="formData.nama_barang || 'Nama barang belum diisi'"></div>
@@ -544,36 +548,49 @@
             </span>
         </div>
 
-        <!-- Tabel Ringkas Preview NIBAR -->
-        <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 max-h-52 overflow-y-auto custom-scrollbar">
-            <table class="w-full text-left text-xs">
+        <!-- Tabel Ringkas Preview NIBAR (Membaca Rincian Tiap Barang, Bukan Duplikat) -->
+        <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 max-h-56 overflow-y-auto custom-scrollbar">
+            <table class="w-full text-left text-xs min-w-[600px]">
                 <thead class="bg-slate-950 text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-slate-800 sticky top-0 z-10 backdrop-blur-md">
                     <tr>
                         <th class="px-4 py-2.5">Unit Ke</th>
+                        <th class="px-4 py-2.5">Nama / Rincian Barang</th>
                         <th class="px-4 py-2.5">Simulasi NIBAR 45-Digit</th>
                         <th class="px-4 py-2.5">Ruangan Pemegang</th>
-                        <th class="px-4 py-2.5">Kondisi</th>
+                        <th class="px-4 py-2.5 text-center">Kondisi Fisik</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/80 font-mono text-[11px]">
-                    <template x-for="n in Math.min(Number(formData.jumlah_volume || 1), 10)" :key="n">
+                    <template x-for="(u, uIdx) in simulatedUnits.slice(0, 15)" :key="uIdx">
                         <tr class="hover:bg-indigo-500/5 transition-colors">
-                            <td class="px-4 py-2 text-slate-400 font-semibold" x-text="'Unit #' + n"></td>
-                            <td class="px-4 py-2 text-indigo-300 font-bold tracking-wider" x-text="generateSimulatedNibar(n)"></td>
-                            <td class="px-4 py-2 text-slate-300 font-sans" x-text="selectedUnitName || 'RSUD Dr. H. Koesnandi'"></td>
-                            <td class="px-4 py-2">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold"
-                                    :class="formData.kondisi === 'Baik' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
-                                    x-text="formData.kondisi || 'Baik'"></span>
+                            <td class="px-4 py-2 text-slate-400 font-semibold" x-text="'Unit #' + u.unitNumber"></td>
+                            <td class="px-4 py-2 text-white font-sans font-bold text-xs">
+                                <span class="truncate block max-w-[220px]" :title="u.nama" x-text="u.nama"></span>
+                            </td>
+                            <td class="px-4 py-2 text-indigo-300 font-bold tracking-wider" x-text="generateSimulatedNibar(u.unitNumber)"></td>
+                            <td class="px-4 py-2 text-slate-300 font-sans">
+                                <span class="inline-flex items-center gap-1 truncate max-w-[180px]" :title="u.ruang">
+                                    <span class="text-cyan-400 text-xs">📍</span>
+                                    <span x-text="u.ruang"></span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-2 text-center">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold border inline-block"
+                                    :class="{
+                                        'bg-emerald-500/15 text-emerald-400 border-emerald-500/30': u.kondisi === 'Baik' || u.kondisi === 'B',
+                                        'bg-amber-500/15 text-amber-400 border-amber-500/30': u.kondisi === 'Kurang Baik' || u.kondisi === 'KB' || u.kondisi === 'Rusak Ringan' || u.kondisi === 'RR',
+                                        'bg-rose-500/15 text-rose-400 border-rose-500/30': u.kondisi === 'Rusak Berat' || u.kondisi === 'RB' || u.kondisi === 'Rusak'
+                                    }"
+                                    x-text="u.kondisi || 'Baik'"></span>
                             </td>
                         </tr>
                     </template>
                 </tbody>
             </table>
         </div>
-        <template x-if="Number(formData.jumlah_volume || 1) > 10">
+        <template x-if="simulatedUnits.length > 15">
             <p class="text-[10px] text-slate-500 italic">
-                * Menampilkan preview 10 unit pertama dari total <span x-text="formData.jumlah_volume"></span> unit yang akan dicatat ke database.
+                * Menampilkan preview 15 unit pertama dari total <span x-text="simulatedUnits.length"></span> unit yang akan dicatat ke database.
             </p>
         </template>
     </div>

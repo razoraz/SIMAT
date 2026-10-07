@@ -55,6 +55,14 @@
                                 }"
                                 x-text="item.kib_e_type === 'kesenian' ? '🎨 Kesenian' : (item.kib_e_type === 'hewan_tumbuhan' ? '🌿 Hewan/Tanaman' : '📚 Buku Pustaka')">
                             </span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all"
+                                  :class="{
+                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': item.lainnya_kondisi === 'Baik' || !item.lainnya_kondisi,
+                                      'bg-amber-500/20 text-amber-300 border-amber-500/40': item.lainnya_kondisi === 'Kurang Baik',
+                                      'bg-rose-500/20 text-rose-300 border-rose-500/40': item.lainnya_kondisi === 'Rusak Berat'
+                                  }"
+                                  x-text="'• Kondisi: ' + (item.lainnya_kondisi || 'Baik')">
+                            </span>
                             <span class="text-xs text-white font-bold" x-show="item.lainnya_nama_barang || item.lainnya_judul" x-text="item.lainnya_nama_barang || item.lainnya_judul"></span>
                             <span class="text-[10.5px] text-slate-400 font-mono">
                                 • Subtotal: <strong class="text-emerald-400" x-text="'Rp ' + formatRupiah(getLainnyaSubtotal(item))"></strong>

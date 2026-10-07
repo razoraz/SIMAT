@@ -38,6 +38,131 @@ class MutasiEksternalController extends Controller
     }
 
     /**
+     * Ekstrak unit individual dari repeater item pada spesifikasi_json.
+     * Mengembalikan array unit dengan field: ['nama', 'kondisi', 'ruang', 'unit_id', 'nilai_satuan']
+     */
+    public static function extractUnitsFromSpec(
+        array $specJson,
+        string $fallbackNama = 'Barang Pelimpahan',
+        string $fallbackKondisi = 'Baik',
+        ?string $fallbackRuang = null,
+        ?int $fallbackUnitId = null
+    ): array {
+        $units = [];
+
+        if (!empty($specJson['mesin_items']) && is_array($specJson['mesin_items'])) {
+            foreach ($specJson['mesin_items'] as $item) {
+                $qty = max(1, (int)($item['mesin_jumlah'] ?? ($item['mesin_jumlah_barang'] ?? 1)));
+                $nama = !empty($item['mesin_nama_barang']) ? trim($item['mesin_nama_barang']) : $fallbackNama;
+                $kondisi = !empty($item['mesin_kondisi']) ? trim($item['mesin_kondisi']) : $fallbackKondisi;
+                $ruang = !empty($item['ruang_pemegang']) ? trim($item['ruang_pemegang']) : $fallbackRuang;
+                $unitId = !empty($item['unit_id']) ? (int)$item['unit_id'] : $fallbackUnitId;
+                $nilai = (float)($item['mesin_nilai_satuan'] ?? 0);
+                for ($k = 0; $k < $qty; $k++) {
+                    $units[] = [
+                        'nama'         => $nama,
+                        'kondisi'      => $kondisi,
+                        'ruang'        => $ruang,
+                        'unit_id'      => $unitId,
+                        'nilai_satuan' => $nilai,
+                    ];
+                }
+            }
+        } elseif (!empty($specJson['tanah_items']) && is_array($specJson['tanah_items'])) {
+            foreach ($specJson['tanah_items'] as $item) {
+                $qty = max(1, (int)($item['tanah_jumlah_bidang'] ?? ($item['tanah_jumlah_barang'] ?? 1)));
+                $nama = !empty($item['tanah_nama_barang']) ? trim($item['tanah_nama_barang']) : $fallbackNama;
+                $kondisi = !empty($item['tanah_kondisi']) ? trim($item['tanah_kondisi']) : $fallbackKondisi;
+                $ruang = !empty($item['ruang_pemegang']) ? trim($item['ruang_pemegang']) : $fallbackRuang;
+                $unitId = !empty($item['unit_id']) ? (int)$item['unit_id'] : $fallbackUnitId;
+                $nilai = (float)($item['tanah_nilai_satuan'] ?? 0);
+                for ($k = 0; $k < $qty; $k++) {
+                    $units[] = [
+                        'nama'         => $nama,
+                        'kondisi'      => $kondisi,
+                        'ruang'        => $ruang,
+                        'unit_id'      => $unitId,
+                        'nilai_satuan' => $nilai,
+                    ];
+                }
+            }
+        } elseif (!empty($specJson['gedung_items']) && is_array($specJson['gedung_items'])) {
+            foreach ($specJson['gedung_items'] as $item) {
+                $qty = max(1, (int)($item['gedung_jumlah_bangunan'] ?? 1));
+                $nama = !empty($item['gedung_nama_barang']) ? trim($item['gedung_nama_barang']) : $fallbackNama;
+                $kondisi = !empty($item['gedung_kondisi']) ? trim($item['gedung_kondisi']) : $fallbackKondisi;
+                $ruang = !empty($item['ruang_pemegang']) ? trim($item['ruang_pemegang']) : $fallbackRuang;
+                $unitId = !empty($item['unit_id']) ? (int)$item['unit_id'] : $fallbackUnitId;
+                $nilai = (float)($item['gedung_nilai_satuan'] ?? 0);
+                for ($k = 0; $k < $qty; $k++) {
+                    $units[] = [
+                        'nama'         => $nama,
+                        'kondisi'      => $kondisi,
+                        'ruang'        => $ruang,
+                        'unit_id'      => $unitId,
+                        'nilai_satuan' => $nilai,
+                    ];
+                }
+            }
+        } elseif (!empty($specJson['jaringan_items']) && is_array($specJson['jaringan_items'])) {
+            foreach ($specJson['jaringan_items'] as $item) {
+                $qty = max(1, (int)($item['jaringan_jumlah'] ?? 1));
+                $nama = !empty($item['jaringan_nama_barang']) ? trim($item['jaringan_nama_barang']) : $fallbackNama;
+                $kondisi = !empty($item['jaringan_kondisi']) ? trim($item['jaringan_kondisi']) : $fallbackKondisi;
+                $ruang = !empty($item['ruang_pemegang']) ? trim($item['ruang_pemegang']) : $fallbackRuang;
+                $unitId = !empty($item['unit_id']) ? (int)$item['unit_id'] : $fallbackUnitId;
+                $nilai = (float)($item['jaringan_nilai_satuan'] ?? 0);
+                for ($k = 0; $k < $qty; $k++) {
+                    $units[] = [
+                        'nama'         => $nama,
+                        'kondisi'      => $kondisi,
+                        'ruang'        => $ruang,
+                        'unit_id'      => $unitId,
+                        'nilai_satuan' => $nilai,
+                    ];
+                }
+            }
+        } elseif (!empty($specJson['lainnya_items']) && is_array($specJson['lainnya_items'])) {
+            foreach ($specJson['lainnya_items'] as $item) {
+                $qty = max(1, (int)($item['lainnya_jumlah'] ?? 1));
+                $nama = !empty($item['lainnya_nama_barang']) ? trim($item['lainnya_nama_barang']) : (!empty($item['lainnya_judul']) ? trim($item['lainnya_judul']) : $fallbackNama);
+                $kondisi = !empty($item['lainnya_kondisi']) ? trim($item['lainnya_kondisi']) : $fallbackKondisi;
+                $ruang = !empty($item['ruang_pemegang']) ? trim($item['ruang_pemegang']) : $fallbackRuang;
+                $unitId = !empty($item['unit_id']) ? (int)$item['unit_id'] : $fallbackUnitId;
+                $nilai = (float)($item['lainnya_nilai_satuan'] ?? 0);
+                for ($k = 0; $k < $qty; $k++) {
+                    $units[] = [
+                        'nama'         => $nama,
+                        'kondisi'      => $kondisi,
+                        'ruang'        => $ruang,
+                        'unit_id'      => $unitId,
+                        'nilai_satuan' => $nilai,
+                    ];
+                }
+            }
+        }
+
+        return $units;
+    }
+
+    /**
+     * Hitung kondisi dominan dari daftar unit untuk penentuan ringkasan kondisi.
+     */
+    public static function determineDominantCondition(array $units, string $fallback = 'Baik'): string
+    {
+        if (empty($units)) {
+            return $fallback;
+        }
+        $counts = [];
+        foreach ($units as $u) {
+            $k = !empty($u['kondisi']) ? $u['kondisi'] : 'Baik';
+            $counts[$k] = ($counts[$k] ?? 0) + 1;
+        }
+        arsort($counts);
+        return array_key_first($counts) ?: $fallback;
+    }
+
+    /**
      * Dapatkan direktori instansi/SKPD pengirim beserta riwayat data pejabat penyerahnya (Pihak Pertama).
      * Satu instansi dapat memiliki lebih dari 1 pejabat (Kepala Dinas, Pengurus Barang, PPK, atau pejabat baru pengganti).
      */
@@ -340,14 +465,25 @@ class MutasiEksternalController extends Controller
             // Daftar registers / satuan barang
             $items = [];
             $registers = $astap?->registers ?? collect();
+            $specJson = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (is_string($astap?->spesifikasi_json) ? json_decode($astap->spesifikasi_json, true) : []);
+            $extractedUnits = self::extractUnitsFromSpec(
+                $specJson ?: [],
+                $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
+                $m->kondisi ?: 'Baik',
+                $ruangRSUD,
+                $m->unit_id
+            );
+
             if ($registers->isNotEmpty()) {
                 foreach ($registers as $idx => $reg) {
+                    $unitNama = $extractedUnits[$idx]['nama'] ?? ($astap->nama_barang ?: 'Barang Mutasi');
+                    $unitKondisi = $reg->kondisi ?: ($extractedUnits[$idx]['kondisi'] ?? ($m->kondisi ?: 'Baik'));
                     $items[] = [
                         'no'          => $idx + 1,
-                        'nama_barang' => $astap->nama_barang,
+                        'nama_barang' => $unitNama,
                         'nibar'       => $reg->nibar ?: '-',
                         'kode_108'    => $kode108,
-                        'kondisi'     => $reg->kondisi ?: ($m->kondisi ?: 'Baik'),
+                        'kondisi'     => $unitKondisi,
                         'satuan'      => $astap->satuan ?: ($m->satuan ?: 'Unit'),
                         'volume'      => 1,
                     ];
@@ -702,14 +838,21 @@ class MutasiEksternalController extends Controller
         }
         $astapPayload['is_extracomtable'] = $isExtracom;
 
-        $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $request) {
+        $unitModel = !empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
+        $ruangNama = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnadi');
+
+        // Ekstrak rincian spesifik unit individual dan kondisi dominan
+        $units = self::extractUnitsFromSpec($specJson, $data['nama_barang'], $kondisiItem, $ruangNama, $data['unit_id'] ?? null);
+        $dominantKondisi = self::determineDominantCondition($units, $kondisiItem);
+        $kondisiItem = $dominantKondisi;
+        $specJson['kondisi'] = $dominantKondisi;
+        $astapPayload['spesifikasi_json'] = $specJson;
+
+        $item = DB::transaction(function () use ($astapPayload, $data, $totalVolume, $totalRealisasi, $tahun, $kondisiItem, $dominantKondisi, $units, $jenisMutasi, $ruangNama, $ppkNama, $ppkNip, $dokumenPath, $request) {
             // 1. Simpan ke tabel master astaps
             $item = Astap::create($astapPayload);
 
             // 2. Simpan ke tabel mutasi_eksternals (Database Mutasi Eksternal Utama)
-            $unitModel = !empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
-            $ruangNama = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnadi');
-
             MutasiEksternal::create([
                 'astap_id'            => $item->id,
                 'nomor_bamb'          => $data['mutasi_nomor_bamb'],
@@ -734,7 +877,7 @@ class MutasiEksternalController extends Controller
                 'jumlah_volume'       => $totalVolume,
                 'satuan'              => $data['satuan'],
                 'nilai_perolehan'     => $totalRealisasi,
-                'kondisi'             => $kondisiItem,
+                'kondisi'             => $dominantKondisi,
                 'alasan_mutasi'       => $data['mutasi_keterangan'] ?? null,
                 'user_id'             => Auth::id(),
                 'is_deleted'          => 0,
@@ -751,7 +894,7 @@ class MutasiEksternalController extends Controller
                 'keterangan'      => $data['mutasi_keterangan'] ?? null,
             ]);
 
-            // 4. Generate nomor register unik NIBAR 45 digit untuk setiap unit aset
+            // 4. Generate nomor register unik NIBAR 45 digit untuk setiap unit aset dengan kondisi dan ruang masing-masing
             $ja = JenisAstap::find($data['jenis_astap_id']);
             $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
             $kode108Clean = str_pad(substr(str_replace('.', '', $kode108Raw), 0, 12), 12, '0', STR_PAD_RIGHT);
@@ -772,17 +915,21 @@ class MutasiEksternalController extends Controller
                     $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
                 }
 
+                $uKondisi = $units[$i]['kondisi'] ?? $dominantKondisi;
+                $uRuang   = $units[$i]['ruang'] ?? $ruangNama;
+                $uUnitId  = $units[$i]['unit_id'] ?? ($data['unit_id'] ?? null);
+
                 $qrPath = "/scan/{$nibar}";
                 AstapRegister::create([
                     'astap_id'        => $item->id,
-                    'unit_id'         => $data['unit_id'] ?? null,
+                    'unit_id'         => $uUnitId,
                     'tahun_perolehan' => $tahun,
                     'no_register_int' => $runningRegNum,
                     'no_register'     => $nibar,
                     'nibar'           => $nibar,
                     'qr_code_path'    => $qrPath,
-                    'ruang_pemegang'  => $ruangNama,
-                    'kondisi'         => $kondisiItem,
+                    'ruang_pemegang'  => $uRuang,
+                    'kondisi'         => $uKondisi,
                     'status'          => 'Aktif',
                     'is_deleted'      => 0,
                 ]);
@@ -1082,14 +1229,21 @@ class MutasiEksternalController extends Controller
         }
         $astapPayload['is_extracomtable'] = $isExtracom;
 
-        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $jenisMutasi, $ppkNama, $ppkNip, $dokumenPath, $existingDoc, $request) {
+        $unitModel = !empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
+        $ruangNama = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnadi');
+
+        // Ekstrak rincian spesifik unit individual dan kondisi dominan
+        $units = self::extractUnitsFromSpec($specJson, $data['nama_barang'], $kondisiItem, $ruangNama, $data['unit_id'] ?? null);
+        $dominantKondisi = self::determineDominantCondition($units, $kondisiItem);
+        $kondisiItem = $dominantKondisi;
+        $specJson['kondisi'] = $dominantKondisi;
+        $astapPayload['spesifikasi_json'] = $specJson;
+
+        DB::transaction(function () use ($item, $astapPayload, $data, $totalRealisasi, $totalVolume, $tahun, $kondisiItem, $dominantKondisi, $units, $jenisMutasi, $ruangNama, $ppkNama, $ppkNip, $dokumenPath, $existingDoc, $request) {
             // 1. Update master Astap
             $item->update($astapPayload);
 
             // 2. Update / Create MutasiEksternal
-            $unitModel = !empty($data['unit_id']) ? Unit::find($data['unit_id']) : null;
-            $ruangNama = $unitModel ? $unitModel->nama : ($data['alamat_barang'] ?: 'RSUD Dr. H. Koesnadi');
-
             MutasiEksternal::updateOrCreate(
                 ['astap_id' => $item->id],
                 [
@@ -1115,7 +1269,7 @@ class MutasiEksternalController extends Controller
                     'jumlah_volume'       => $totalVolume,
                     'satuan'              => $data['satuan'],
                     'nilai_perolehan'     => $totalRealisasi,
-                    'kondisi'             => $kondisiItem,
+                    'kondisi'             => $dominantKondisi,
                     'alasan_mutasi'       => $data['mutasi_keterangan'] ?? null,
                 ]
             );
@@ -1142,15 +1296,22 @@ class MutasiEksternalController extends Controller
                 ]);
             }
 
-            // 4. Update seluruh register aset yang ada
-            AstapRegister::where('astap_id', $item->id)->update([
-                'unit_id'        => $data['unit_id'] ?? null,
-                'ruang_pemegang' => $ruangNama,
-                'kondisi'        => $kondisiItem,
-            ]);
+            // 4. Update seluruh register aset yang ada secara presisi per unit
+            $existingRegs = AstapRegister::where('astap_id', $item->id)->orderBy('id')->get();
+            foreach ($existingRegs as $idx => $reg) {
+                $uKondisi = $units[$idx]['kondisi'] ?? $dominantKondisi;
+                $uRuang   = $units[$idx]['ruang'] ?? $ruangNama;
+                $uUnitId  = $units[$idx]['unit_id'] ?? ($data['unit_id'] ?? null);
+
+                $reg->update([
+                    'unit_id'        => $uUnitId,
+                    'ruang_pemegang' => $uRuang,
+                    'kondisi'        => $uKondisi,
+                ]);
+            }
 
             // 5. Jika jumlah_volume bertambah melebihi jumlah register saat ini, buat register baru
-            $currentRegsCount = AstapRegister::where('astap_id', $item->id)->count();
+            $currentRegsCount = $existingRegs->count();
             if ($totalVolume > $currentRegsCount) {
                 $ja = JenisAstap::find($data['jenis_astap_id']);
                 $kode108Raw = $ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '1.3.2.00.00.00';
@@ -1161,8 +1322,7 @@ class MutasiEksternalController extends Controller
                     ->max('no_register_int') ?? 0;
 
                 $runningRegNum = (int) $maxRegInt;
-                $needed = $totalVolume - $currentRegsCount;
-                for ($i = 0; $i < $needed; $i++) {
+                for ($i = $currentRegsCount; $i < $totalVolume; $i++) {
                     $runningRegNum++;
                     $noRegStr = str_pad($runningRegNum, 7, '0', STR_PAD_LEFT);
                     $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
@@ -1173,17 +1333,21 @@ class MutasiEksternalController extends Controller
                         $nibar = "1201351102000000280000{$tahun}{$kode108Clean}{$noRegStr}";
                     }
 
+                    $uKondisi = $units[$i]['kondisi'] ?? $dominantKondisi;
+                    $uRuang   = $units[$i]['ruang'] ?? $ruangNama;
+                    $uUnitId  = $units[$i]['unit_id'] ?? ($data['unit_id'] ?? null);
+
                     $qrPath = "/scan/{$nibar}";
                     AstapRegister::create([
                         'astap_id'        => $item->id,
-                        'unit_id'         => $data['unit_id'] ?? null,
+                        'unit_id'         => $uUnitId,
                         'tahun_perolehan' => $tahun,
                         'no_register_int' => $runningRegNum,
                         'no_register'     => $nibar,
                         'nibar'           => $nibar,
                         'qr_code_path'    => $qrPath,
-                        'ruang_pemegang'  => $ruangNama,
-                        'kondisi'         => $kondisiItem,
+                        'ruang_pemegang'  => $uRuang,
+                        'kondisi'         => $uKondisi,
                         'status'          => 'Aktif',
                         'is_deleted'      => 0,
                     ]);

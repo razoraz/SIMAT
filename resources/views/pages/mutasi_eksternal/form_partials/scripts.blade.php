@@ -463,7 +463,7 @@
                 }
                 this.formData.tanah_items.push({
                     tanah_kode_barang: '',
-                    tanah_nama_barang: this.formData.nama_barang || '',
+                    tanah_nama_barang: '',
                     isFilterOpen: false,
                     searchFilter: '',
                     tanah_hak: 'Hak Pakai',
@@ -509,7 +509,7 @@
                 this.formData.mesin_items.push({
                     is_extracom: false,
                     mesin_kode_barang: '',
-                    mesin_nama_barang: this.formData.nama_barang || '',
+                    mesin_nama_barang: '',
                     isFilterOpen: false,
                     searchFilter: '',
                     mesin_merk: '',
@@ -561,7 +561,7 @@
                 }
                 this.formData.gedung_items.push({
                     gedung_kode_barang: '',
-                    gedung_nama_barang: this.formData.nama_barang || '',
+                    gedung_nama_barang: '',
                     isFilterOpen: false,
                     searchFilter: '',
                     gedung_luas_m2: '',
@@ -607,7 +607,7 @@
                 }
                 this.formData.jaringan_items.push({
                     jaringan_kode_barang: '',
-                    jaringan_nama_barang: this.formData.nama_barang || '',
+                    jaringan_nama_barang: '',
                     isFilterOpen: false,
                     searchFilter: '',
                     jaringan_luas_m2: '',
@@ -661,7 +661,7 @@
                     lainnya_nama_barang: '',
                     isFilterOpen: false,
                     searchFilter: '',
-                    lainnya_judul: this.formData.nama_barang || '',
+                    lainnya_judul: '',
                     lainnya_pencipta: '',
                     lainnya_spesifikasi: '',
                     lainnya_tahun: null,
@@ -721,18 +721,26 @@
                 if (this.isTanah && this.formData.tanah_items && this.formData.tanah_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
+                    const kCounts = {};
                     this.formData.tanah_items.forEach(it => {
                         const q = parseInt(it.tanah_jumlah_barang) || parseInt(it.tanah_jumlah_bidang) || 1;
                         const v = parseFloat(it.tanah_nilai_satuan) || parseFloat(it.tanah_nilai_fisik) || 0;
                         totalQty += q;
                         totalVal += (q * v);
+                        const k = it.tanah_kondisi || 'Baik';
+                        kCounts[k] = (kCounts[k] || 0) + q;
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.tanah_items[0].tanah_satuan || 'Bidang';
                     this.formData.total_realisasi = totalVal;
-                    if (this.formData.tanah_items[0].tanah_kondisi) {
-                        this.formData.kondisi = this.formData.tanah_items[0].tanah_kondisi;
+                    
+                    // Hitung kondisi dominan
+                    let dominantK = 'Baik', maxC = -1;
+                    for (const [k, c] of Object.entries(kCounts)) {
+                        if (c > maxC) { maxC = c; dominantK = k; }
                     }
+                    this.formData.kondisi = dominantK;
+
                     if (this.formData.tanah_items[0].tanah_alamat) {
                         this.formData.alamat_barang = this.formData.tanah_items[0].tanah_alamat;
                     }
@@ -749,18 +757,26 @@
                 } else if (this.isMesin && this.formData.mesin_items && this.formData.mesin_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
+                    const kCounts = {};
                     this.formData.mesin_items.forEach(it => {
                         const q = parseInt(it.mesin_jumlah_barang) || 1;
                         const v = parseFloat(it.mesin_nilai_satuan) || 0;
                         totalQty += q;
                         totalVal += (q * v);
+                        const k = it.mesin_kondisi || 'Baik';
+                        kCounts[k] = (kCounts[k] || 0) + q;
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.mesin_items[0].mesin_satuan || 'Unit';
                     this.formData.total_realisasi = totalVal;
-                    if (this.formData.mesin_items[0].mesin_kondisi) {
-                        this.formData.kondisi = this.formData.mesin_items[0].mesin_kondisi;
+                    
+                    // Hitung kondisi dominan
+                    let dominantK = 'Baik', maxC = -1;
+                    for (const [k, c] of Object.entries(kCounts)) {
+                        if (c > maxC) { maxC = c; dominantK = k; }
                     }
+                    this.formData.kondisi = dominantK;
+
                     if (this.formData.mesin_items[0].ruang_pemegang) {
                         const matchedUnit = (this.unitsList || []).find(u => u.nama === this.formData.mesin_items[0].ruang_pemegang);
                         if (matchedUnit) {
@@ -781,18 +797,26 @@
                 } else if (this.isGedung && this.formData.gedung_items && this.formData.gedung_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
+                    const kCounts = {};
                     this.formData.gedung_items.forEach(it => {
                         const q = parseInt(it.gedung_jumlah_bangunan) || 1;
                         const v = parseFloat(it.gedung_nilai_satuan) || 0;
                         totalQty += q;
                         totalVal += (q * v);
+                        const k = it.gedung_kondisi || 'Baik';
+                        kCounts[k] = (kCounts[k] || 0) + q;
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.gedung_items[0].gedung_satuan || 'Gedung';
                     this.formData.total_realisasi = totalVal;
-                    if (this.formData.gedung_items[0].gedung_kondisi) {
-                        this.formData.kondisi = this.formData.gedung_items[0].gedung_kondisi;
+                    
+                    // Hitung kondisi dominan
+                    let dominantK = 'Baik', maxC = -1;
+                    for (const [k, c] of Object.entries(kCounts)) {
+                        if (c > maxC) { maxC = c; dominantK = k; }
                     }
+                    this.formData.kondisi = dominantK;
+
                     if (this.formData.gedung_items[0].gedung_alamat) {
                         this.formData.alamat_barang = this.formData.gedung_items[0].gedung_alamat;
                     }
@@ -809,18 +833,26 @@
                 } else if (this.isJaringan && this.formData.jaringan_items && this.formData.jaringan_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
+                    const kCounts = {};
                     this.formData.jaringan_items.forEach(it => {
                         const q = parseInt(it.jaringan_jumlah) || 1;
                         const v = parseFloat(it.jaringan_nilai_satuan) || 0;
                         totalQty += q;
                         totalVal += (q * v);
+                        const k = it.jaringan_kondisi || 'Baik';
+                        kCounts[k] = (kCounts[k] || 0) + q;
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.jaringan_items[0].jaringan_satuan || 'Ruas';
                     this.formData.total_realisasi = totalVal;
-                    if (this.formData.jaringan_items[0].jaringan_kondisi) {
-                        this.formData.kondisi = this.formData.jaringan_items[0].jaringan_kondisi;
+                    
+                    // Hitung kondisi dominan
+                    let dominantK = 'Baik', maxC = -1;
+                    for (const [k, c] of Object.entries(kCounts)) {
+                        if (c > maxC) { maxC = c; dominantK = k; }
                     }
+                    this.formData.kondisi = dominantK;
+
                     if (this.formData.jaringan_items[0].jaringan_alamat) {
                         this.formData.alamat_barang = this.formData.jaringan_items[0].jaringan_alamat;
                     }
@@ -837,18 +869,26 @@
                 } else if (this.isLainnya && this.formData.lainnya_items && this.formData.lainnya_items.length > 0) {
                     let totalQty = 0;
                     let totalVal = 0;
+                    const kCounts = {};
                     this.formData.lainnya_items.forEach(it => {
                         const q = parseInt(it.lainnya_jumlah) || 1;
                         const v = parseFloat(it.lainnya_nilai_satuan) || 0;
                         totalQty += q;
                         totalVal += (q * v);
+                        const k = it.lainnya_kondisi || 'Baik';
+                        kCounts[k] = (kCounts[k] || 0) + q;
                     });
                     this.formData.jumlah_volume = totalQty > 0 ? totalQty : 1;
                     this.formData.satuan = this.formData.lainnya_items[0].lainnya_satuan || 'Buah';
                     this.formData.total_realisasi = totalVal;
-                    if (this.formData.lainnya_items[0].lainnya_kondisi) {
-                        this.formData.kondisi = this.formData.lainnya_items[0].lainnya_kondisi;
+                    
+                    // Hitung kondisi dominan
+                    let dominantK = 'Baik', maxC = -1;
+                    for (const [k, c] of Object.entries(kCounts)) {
+                        if (c > maxC) { maxC = c; dominantK = k; }
                     }
+                    this.formData.kondisi = dominantK;
+
                     if (this.formData.lainnya_items[0].ruang_pemegang) {
                         const matchedUnit = (this.unitsList || []).find(u => u.nama === this.formData.lainnya_items[0].ruang_pemegang);
                         if (matchedUnit) {
@@ -988,6 +1028,128 @@
 
             get firstLainnyaItem() {
                 return (this.formData.lainnya_items && this.formData.lainnya_items[0]) ? this.formData.lainnya_items[0] : null;
+            },
+
+            // Rincian unit individual hasil flattening dari repeater KIB aktif
+            get simulatedUnits() {
+                const list = [];
+                if (this.isTanah && this.formData.tanah_items) {
+                    this.formData.tanah_items.forEach((it, itIdx) => {
+                        const qty = parseInt(it.tanah_jumlah_barang) || parseInt(it.tanah_jumlah_bidang) || 1;
+                        const kondisi = it.tanah_kondisi || 'Baik';
+                        const ruang = it.tanah_alamat || this.formData.alamat_barang || this.selectedUnitName || 'RSUD Dr. H. Koesnandi';
+                        const nama = it.tanah_nama_barang || this.formData.nama_barang || `Bidang Tanah #${itIdx + 1}`;
+                        for (let q = 0; q < qty; q++) {
+                            list.push({
+                                unitNumber: list.length + 1,
+                                nama: nama,
+                                kondisi: kondisi,
+                                ruang: ruang,
+                                itemIdx: itIdx + 1
+                            });
+                        }
+                    });
+                } else if (this.isMesin && this.formData.mesin_items) {
+                    this.formData.mesin_items.forEach((it, itIdx) => {
+                        const qty = parseInt(it.mesin_jumlah_barang) || 1;
+                        const kondisi = it.mesin_kondisi || 'Baik';
+                        const ruang = it.ruang_pemegang || this.selectedUnitName || 'RSUD Dr. H. Koesnandi';
+                        const nama = it.mesin_nama_barang || (it.mesin_merk ? `${it.mesin_merk} ${it.mesin_type || ''}`.trim() : '') || this.formData.nama_barang || `Barang Mesin #${itIdx + 1}`;
+                        for (let q = 0; q < qty; q++) {
+                            list.push({
+                                unitNumber: list.length + 1,
+                                nama: nama,
+                                kondisi: kondisi,
+                                ruang: ruang,
+                                itemIdx: itIdx + 1
+                            });
+                        }
+                    });
+                } else if (this.isGedung && this.formData.gedung_items) {
+                    this.formData.gedung_items.forEach((it, itIdx) => {
+                        const qty = parseInt(it.gedung_jumlah_bangunan) || 1;
+                        const kondisi = it.gedung_kondisi || 'Baik';
+                        const ruang = it.gedung_alamat || this.formData.alamat_barang || this.selectedUnitName || 'RSUD Dr. H. Koesnandi';
+                        const nama = it.gedung_nama_barang || this.formData.nama_barang || `Bangunan Gedung #${itIdx + 1}`;
+                        for (let q = 0; q < qty; q++) {
+                            list.push({
+                                unitNumber: list.length + 1,
+                                nama: nama,
+                                kondisi: kondisi,
+                                ruang: ruang,
+                                itemIdx: itIdx + 1
+                            });
+                        }
+                    });
+                } else if (this.isJaringan && this.formData.jaringan_items) {
+                    this.formData.jaringan_items.forEach((it, itIdx) => {
+                        const qty = parseInt(it.jaringan_jumlah) || 1;
+                        const kondisi = it.jaringan_kondisi || 'Baik';
+                        const ruang = it.jaringan_alamat || this.formData.alamat_barang || this.selectedUnitName || 'RSUD Dr. H. Koesnandi';
+                        const nama = it.jaringan_nama_barang || this.formData.nama_barang || `Ruas Jaringan #${itIdx + 1}`;
+                        for (let q = 0; q < qty; q++) {
+                            list.push({
+                                unitNumber: list.length + 1,
+                                nama: nama,
+                                kondisi: kondisi,
+                                ruang: ruang,
+                                itemIdx: itIdx + 1
+                            });
+                        }
+                    });
+                } else if (this.isLainnya && this.formData.lainnya_items) {
+                    this.formData.lainnya_items.forEach((it, itIdx) => {
+                        const qty = parseInt(it.lainnya_jumlah) || parseInt(it.lainnya_jumlah_barang) || 1;
+                        const kondisi = it.lainnya_kondisi || 'Baik';
+                        const ruang = it.ruang_pemegang || this.selectedUnitName || 'RSUD Dr. H. Koesnandi';
+                        const nama = it.lainnya_nama_barang || it.lainnya_judul || this.formData.nama_barang || `Item Lainnya #${itIdx + 1}`;
+                        for (let q = 0; q < qty; q++) {
+                            list.push({
+                                unitNumber: list.length + 1,
+                                nama: nama,
+                                kondisi: kondisi,
+                                ruang: ruang,
+                                itemIdx: itIdx + 1
+                            });
+                        }
+                    });
+                }
+
+                if (list.length === 0) {
+                    const total = Math.max(1, parseInt(this.formData.jumlah_volume) || 1);
+                    for (let i = 0; i < total; i++) {
+                        list.push({
+                            unitNumber: i + 1,
+                            nama: this.formData.nama_barang || `Aset BMD #${i + 1}`,
+                            kondisi: this.formData.kondisi || 'Baik',
+                            ruang: this.selectedUnitName || 'RSUD Dr. H. Koesnandi',
+                            itemIdx: 1
+                        });
+                    }
+                }
+                return list;
+            },
+
+            // Ringkasan kondisi untuk banner
+            get kondisiSummary() {
+                const units = this.simulatedUnits || [];
+                if (units.length === 0) return this.formData.kondisi || 'Baik';
+                const counts = { 'Baik': 0, 'Kurang Baik': 0, 'Rusak Berat': 0 };
+                units.forEach(u => {
+                    const k = u.kondisi || 'Baik';
+                    if (counts[k] !== undefined) counts[k]++;
+                    else counts['Baik']++;
+                });
+                const total = units.length;
+                if (counts['Baik'] === total) return 'Baik (Semua)';
+                if (counts['Kurang Baik'] === total) return 'Kurang Baik (Semua)';
+                if (counts['Rusak Berat'] === total) return 'Rusak Berat (Semua)';
+
+                const parts = [];
+                if (counts['Baik'] > 0) parts.push(`${counts['Baik']} Baik`);
+                if (counts['Kurang Baik'] > 0) parts.push(`${counts['Kurang Baik']} KB`);
+                if (counts['Rusak Berat'] > 0) parts.push(`${counts['Rusak Berat']} RB`);
+                return parts.join(' • ');
             },
 
             // File selection
@@ -1870,6 +2032,9 @@
                 if (this.formData.mutasi_asal && !this.formData.pj_asal_nama) {
                     this.syncPejabatFromSkpd(this.formData.mutasi_asal, false);
                 }
+
+                // Sinkronkan total volume, nilai, dan ringkasan kondisi dominan
+                this.syncTotalsFromItems();
             }
         };
     }

@@ -47,6 +47,14 @@
                                   :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
                                   x-text="item.is_extracom ? '📦 Ekstrakomtabel (≤ 300rb)' : '⚙️ Aset Tetap Reguler'">
                             </span>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all"
+                                  :class="{
+                                      'bg-emerald-500/20 text-emerald-300 border-emerald-500/40': item.mesin_kondisi === 'Baik' || !item.mesin_kondisi,
+                                      'bg-amber-500/20 text-amber-300 border-amber-500/40': item.mesin_kondisi === 'Kurang Baik',
+                                      'bg-rose-500/20 text-rose-300 border-rose-500/40': item.mesin_kondisi === 'Rusak Berat'
+                                  }"
+                                  x-text="'• Kondisi: ' + (item.mesin_kondisi || 'Baik')">
+                            </span>
                             <span class="text-[11px] text-slate-200 font-semibold" x-show="item.mesin_nama_barang || item.mesin_merk || item.mesin_type">
                                 • <span x-text="item.mesin_nama_barang ? (item.mesin_nama_barang + ' • ') : ''"></span><span x-text="(item.mesin_merk || '') + ' ' + (item.mesin_type || '')"></span>
                             </span>

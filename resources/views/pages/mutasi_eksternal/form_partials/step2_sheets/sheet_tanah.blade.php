@@ -188,7 +188,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 <div>
                                     <label class="block text-slate-400 text-[10px] mb-1 font-semibold">Kondisi Lahan <span class="text-rose-400">*</span></label>
-                                    <select x-model="item.tanah_kondisi"
+                                    <select x-model="item.tanah_kondisi" @change="syncTotalsFromItems()"
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none transition-all">
                                         <option value="Baik">🟢 Baik (Siap Digunakan)</option>
                                         <option value="Kurang Baik">🟡 Kurang Baik (Perlu Pematangan)</option>

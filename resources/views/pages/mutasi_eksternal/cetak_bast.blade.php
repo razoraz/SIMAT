@@ -76,6 +76,13 @@
         $nilaiTotal = (float) ($mutasi->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
         $hargaSatuan = $totalVol > 0 ? ($nilaiTotal / $totalVol) : $nilaiTotal;
         $kode108 = $astap?->kode_108 ?: ($astap?->jenisAstap?->sub_sub_rincian_objek ?: ($astap?->jenisAstap?->jenis ?: '1.3.2.00.00.00'));
+        $specJson = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (is_string($astap?->spesifikasi_json) ? (json_decode($astap->spesifikasi_json, true) ?: []) : []);
+        $extractedUnits = \App\Http\Controllers\MutasiEksternalController::extractUnitsFromSpec(
+            $specJson ?: [],
+            $astap?->nama_barang ?: 'Barang Pelimpahan SKPD',
+            $mutasi->kondisi ?: 'Baik',
+            $mutasi->ruangan_tujuan ?: 'RSUD'
+        );
 
         // Data Resmi Pejabat SIMAT RSUD dr. H. Koesnadi Bondowoso
         // Pihak Kedua: Pengurus Barang Pengguna RSUD (BUDI HARTONO, S.Sos)
@@ -232,14 +239,19 @@
                 <tbody>
                     @if($registers->isNotEmpty())
                         @foreach($registers as $idx => $reg)
+                        @php
+                            $uNama = $extractedUnits[$idx]['nama'] ?? ($astap->nama_barang ?: 'Barang Pelimpahan SKPD');
+                            $uKondisi = $reg->kondisi ?: ($extractedUnits[$idx]['kondisi'] ?? ($mutasi->kondisi ?: 'Baik'));
+                            $uHarga = !empty($extractedUnits[$idx]['nilai_satuan']) ? $extractedUnits[$idx]['nilai_satuan'] : $hargaSatuan;
+                        @endphp
                         <tr>
                             <td class="border border-black px-2 py-1 text-center font-bold">{{ $idx + 1 }}</td>
-                            <td class="border border-black px-2 py-1 font-semibold">{{ $astap->nama_barang }}</td>
+                            <td class="border border-black px-2 py-1 font-semibold">{{ $uNama }}</td>
                             <td class="border border-black px-2 py-1 font-mono text-center">{{ $kode108 }}</td>
                             <td class="border border-black px-2 py-1 font-mono text-[8.5pt]">{{ $reg->nibar ?: '-' }}</td>
                             <td class="border border-black px-2 py-1 text-center font-mono">{{ $mutasi->astap?->tahun_perolehan ?: date('Y', strtotime($tglObj)) }}</td>
-                            <td class="border border-black px-2 py-1 text-center">{{ $reg->kondisi ?: ($mutasi->kondisi ?: 'Baik') }}</td>
-                            <td class="border border-black px-2 py-1 text-right font-mono">{{ number_format($hargaSatuan, 0, ',', '.') }}</td>
+                            <td class="border border-black px-2 py-1 text-center font-medium">{{ $uKondisi }}</td>
+                            <td class="border border-black px-2 py-1 text-right font-mono">{{ number_format($uHarga, 0, ',', '.') }}</td>
                         </tr>
                         @endforeach
                     @else
