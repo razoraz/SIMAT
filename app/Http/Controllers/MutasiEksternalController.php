@@ -508,6 +508,7 @@ class MutasiEksternalController extends Controller
 
             return [
                 'id'                        => $astap?->id ?: $m->id,
+                'astap_id'                  => $astap?->id ?: $m->astap_id,
                 'mutasi_id'                 => $m->id,
                 'is_deleted'                => (int) $m->is_deleted,
                 'kode'                      => $nomorBamb,

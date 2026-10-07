@@ -390,8 +390,8 @@
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Status Akuntansi:</span>
                         <span class="font-mono font-bold text-[10.5px] px-2 py-0.5 rounded"
-                            :class="firstMesinItem?.is_extracom ? 'text-cyan-300 bg-cyan-950/60 border border-cyan-500/30' : 'text-purple-300 bg-purple-950/60 border border-purple-500/30'"
-                            x-text="firstMesinItem?.is_extracom ? 'Ekstrakomtabel (≤ 300rb)' : 'Aset Tetap Reguler'"></span>
+                            :class="formData.is_extracomtable ? 'text-cyan-300 bg-cyan-950/60 border border-cyan-500/30' : 'text-purple-300 bg-purple-950/60 border border-purple-500/30'"
+                            x-text="formData.is_extracomtable ? 'Ekstrakomtabel (≤ 300rb)' : 'Aset Tetap Reguler'"></span>
                     </div>
                     <div>
                         <span class="text-[10px] font-semibold text-slate-400 block mb-0.5">Bahan / Material:</span>

@@ -20,6 +20,12 @@
 
         <!-- MODAL KONFIRMASI HAPUS (SOFT-DELETE) -->
         @include('pages.mutasi_eksternal.index_partials.modal_delete')
+
+        <!-- MODAL KONFIRMASI TINDAKAN (CUSTOM BESPOKE MODAL) -->
+        @include('pages.mutasi_eksternal.index_partials.modal_confirm')
+
+        <!-- MODAL AKSI REGISTER: UBAH KONDISI & RIWAYAT MUTASI -->
+        @include('pages.mutasi_eksternal.index_partials.modal_register_actions')
     </div>
 
     <!-- Print Media Query Styling untuk Cetak BAST Kertas Putih Sempurna -->

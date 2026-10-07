@@ -32,6 +32,56 @@
             </div>
         </div>
 
+        <!-- STATUS AKUNTANSI: EKSTRAKOMTABEL (EXTRACOM) - TINGKAT FORM GLOBAL -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-3 shadow-inner">
+            <div class="flex items-center justify-between">
+                <label class="text-xs font-bold uppercase tracking-wider flex items-center space-x-2"
+                       :class="formData.is_extracomtable ? 'text-cyan-300' : 'text-purple-300'">
+                    <span x-text="formData.is_extracomtable ? '📦 STATUS AKUNTANSI: EKSTRAKOMTABEL (EXTRACOM)' : '⚙️ STATUS AKUNTANSI: ASET TETAP REGULER (INTRAKOMPTABEL)'"></span>
+                </label>
+                <span class="text-[9.5px] px-2.5 py-0.5 rounded-lg font-bold font-mono border"
+                      :class="formData.is_extracomtable ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                      x-text="formData.is_extracomtable ? '≤ Rp 300.000' : '> Rp 300.000'">
+                </span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- 1. Aset Tetap Reguler -->
+                <button type="button" 
+                        @click="setGlobalExtracom(false)"
+                        :class="!formData.is_extracomtable ? 'border-purple-500 bg-purple-950/40 ring-2 ring-purple-500 text-white font-extrabold shadow-md shadow-purple-500/20' : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="p-3 sm:p-3.5 rounded-2xl border transition-all flex items-center justify-between text-xs cursor-pointer">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="text-lg">⚙️</span>
+                        <div class="text-left">
+                            <div class="text-xs font-bold text-white">Aset Tetap Reguler</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Nilai perolehan satuan &gt; Rp 300.000</div>
+                        </div>
+                    </div>
+                    <span x-show="!formData.is_extracomtable" class="text-purple-400 font-bold text-xs flex items-center gap-1">
+                        <span>✓</span><span>Terpilih</span>
+                    </span>
+                </button>
+
+                <!-- 2. Ekstrakomtabel -->
+                <button type="button" 
+                        @click="setGlobalExtracom(true)"
+                        :class="formData.is_extracomtable ? 'border-cyan-500 bg-cyan-950/40 ring-2 ring-cyan-500 text-white font-extrabold shadow-md shadow-cyan-500/20' : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
+                        class="p-3 sm:p-3.5 rounded-2xl border transition-all flex items-center justify-between text-xs cursor-pointer">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="text-lg">📦</span>
+                        <div class="text-left">
+                            <div class="text-xs font-bold text-white">Ekstrakomtabel (Extracom)</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">Nilai perolehan satuan ≤ Rp 300.000 (Non-Kendaraan)</div>
+                        </div>
+                    </div>
+                    <span x-show="formData.is_extracomtable" class="text-cyan-400 font-bold text-xs flex items-center gap-1">
+                        <span>✓</span><span>Terpilih</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
         <!-- REPEATER DAFTAR ASET TETAP LAINNYA -->
         <div class="space-y-5">
             <template x-for="(item, idx) in formData.lainnya_items" :key="idx">
@@ -44,8 +94,8 @@
                                 <span>📦 Item #<span x-text="idx + 1"></span></span>
                             </span>
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all"
-                                  :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                  x-text="item.is_extracom ? '📦 Extracom (≤ 300rb)' : '⚙️ Reguler'">
+                                  :class="formData.is_extracomtable ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
+                                  x-text="formData.is_extracomtable ? '📦 Extracom (≤ 300rb)' : '⚙️ Reguler'">
                             </span>
                             <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border"
                                 :class="{
@@ -193,58 +243,12 @@
                         </div>
                     </div>
 
-                    <!-- 2. Pilihan Status Akuntansi: Aset Tetap Reguler vs Ekstrakomtabel (Extracom) -->
-                    <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <label class="text-xs font-bold uppercase tracking-wider flex items-center space-x-2"
-                                   :class="item.is_extracom ? 'text-cyan-300' : 'text-purple-300'">
-                                <span x-text="item.is_extracom ? '📦 Status Akuntansi: Ekstrakomtabel (Extracom)' : '⚙️ Status Akuntansi: Aset Tetap Reguler (Intrakomptabel)'"></span>
-                            </label>
-                            <span class="text-[9.5px] px-2 py-0.5 rounded-md font-bold font-mono border"
-                                  :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                  x-text="item.is_extracom ? '≤ Rp 300.000' : '> Rp 300.000'">
-                            </span>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <!-- Aset Tetap Reguler -->
-                            <button type="button" 
-                                    @click="item.is_extracom = false; syncTotalsFromItems();"
-                                    :class="!item.is_extracom ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500 text-white font-extrabold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                                    class="p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-base">⚙️</span>
-                                    <div class="text-left">
-                                        <div class="text-[11px] font-bold">Aset Tetap Reguler</div>
-                                        <div class="text-[9px] text-slate-400">Nilai perolehan satuan &gt; Rp 300.000</div>
-                                    </div>
-                                </div>
-                                <span x-show="!item.is_extracom" class="text-purple-400 font-bold text-xs">✓ Terpilih</span>
-                            </button>
-
-                            <!-- Ekstrakomtabel -->
-                            <button type="button" 
-                                    @click="item.is_extracom = true; syncTotalsFromItems();"
-                                    :class="item.is_extracom ? 'border-cyan-500 bg-cyan-950/40 ring-1 ring-cyan-500 text-white font-extrabold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                                    class="p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-base">📦</span>
-                                    <div class="text-left">
-                                        <div class="text-[11px] font-bold">Ekstrakomtabel (Extracom)</div>
-                                        <div class="text-[9px] text-slate-400">Nilai perolehan satuan ≤ Rp 300.000</div>
-                                    </div>
-                                </div>
-                                <span x-show="item.is_extracom" class="text-cyan-400 font-bold text-xs">✓ Terpilih</span>
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- ========================================================================= -->
                     <!-- AREA FORM ISIAN SPESIFIKASI                                               -->
                     <!-- ========================================================================= -->
 
                     <!-- 1. Form Spesifik: Buku Perpustakaan (Hanya Tampil Saat Non-Extracom) -->
-                    <div x-show="!item.is_extracom && (item.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <div x-show="!formData.is_extracomtable && (item.kib_e_type || 'buku') === 'buku'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
                             <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>📚 Atribut Buku Perpustakaan &amp; Pustaka Medis:</span>
@@ -292,7 +296,7 @@
                     </div>
 
                     <!-- 2. Form Spesifik: Kesenian & Budaya (Hanya Tampil Saat Non-Extracom) -->
-                    <div x-show="!item.is_extracom && item.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <div x-show="!formData.is_extracomtable && item.kib_e_type === 'kesenian'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
                             <span class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>🎨 Atribut Fisik Benda Seni / Budaya:</span>
@@ -334,7 +338,7 @@
                     </div>
 
                     <!-- 3. Form Spesifik: Hewan & Tumbuhan (Hanya Tampil Saat Non-Extracom) -->
-                    <div x-show="!item.is_extracom && item.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
+                    <div x-show="!formData.is_extracomtable && item.kib_e_type === 'hewan_tumbuhan'" class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-inner">
                         <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
                             <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
                                 <span>🌿 Atribut Fisik Hewan &amp; Tumbuhan:</span>
@@ -366,7 +370,7 @@
                     </div>
 
                     <!-- 4. Form Spesifikasi Ekstrakomtabel Baku (Universal untuk Semua Kategori KIB E saat Extracom) -->
-                    <div x-show="item.is_extracom" class="space-y-4">
+                    <div x-show="formData.is_extracomtable" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             <!-- Spesifikasi Fisik (Merk, Type, Ukuran & Nama) -->
@@ -551,10 +555,10 @@
                             </div>
                             <div>
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold flex items-center justify-between">
-                                    <span x-text="item.is_extracom ? 'Nilai Satuan (Rp) *' : 'Nilai Perolehan Satuan (Rp) *'"></span>
+                                    <span x-text="formData.is_extracomtable ? 'Nilai Satuan (Rp) *' : 'Nilai Perolehan Satuan (Rp) *'"></span>
                                     <span class="text-[9px] font-bold"
-                                          :class="item.is_extracom ? 'text-amber-400 font-mono' : 'text-emerald-400'"
-                                          x-text="item.is_extracom ? 'Maks. Rp 300.000' : 'Sesuai BAMB'">
+                                          :class="formData.is_extracomtable ? 'text-amber-400 font-mono' : 'text-emerald-400'"
+                                          x-text="formData.is_extracomtable ? 'Maks. Rp 300.000' : 'Sesuai BAMB'">
                                     </span>
                                 </label>
                                 <input type="text"
@@ -565,10 +569,10 @@
                                         $event.target.value = raw ? Number(raw).toLocaleString('id-ID') : '';
                                         syncTotalsFromItems();
                                     "
-                                    :placeholder="item.is_extracom ? 'Maks. 300.000' : 'Contoh: 1.500.000'"
-                                    :class="item.is_extracom && item.lainnya_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-purple-500'"
+                                    :placeholder="formData.is_extracomtable ? 'Maks. 300.000' : 'Contoh: 1.500.000'"
+                                    :class="formData.is_extracomtable && item.lainnya_nilai_satuan > 300000 ? 'border-rose-500 ring-1 ring-rose-500 text-rose-300' : 'border-slate-700 text-emerald-400 focus:border-purple-500'"
                                     class="w-full bg-slate-950 border rounded-xl px-3 py-2 text-xs font-mono font-bold focus:outline-none transition-colors">
-                                <span x-show="item.is_extracom && item.lainnya_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
+                                <span x-show="formData.is_extracomtable && item.lainnya_nilai_satuan > 300000" class="text-[9px] font-bold text-rose-400 block mt-1">
                                     ⚠️ Nilai satuan Extracom tidak boleh > Rp 300.000!
                                 </span>
                             </div>

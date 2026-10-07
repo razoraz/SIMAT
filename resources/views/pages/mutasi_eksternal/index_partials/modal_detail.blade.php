@@ -566,6 +566,14 @@
                             <p class="text-[10px] text-slate-400 mt-0.5">Daftar unik kode NIBAR per-aset hasil pelimpahan beserta ruangan penempatannya di RSUD Koesnandi.</p>
                         </div>
                         <div class="flex items-center space-x-2 shrink-0">
+                            @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                            <button type="button" @click="resequenceSingleAstap(selectedAstapDetail || selectedMutasi)"
+                                class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[10.5px] font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm active:scale-95"
+                                title="Urutkan ulang register NIBAR barang ini agar berurutan tanpa celah">
+                                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Rapikan NIBAR Barang Ini</span>
+                            </button>
+                            @endif
                             <span class="text-[10px] font-extrabold px-3 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono shadow-sm"
                                   x-text="filteredRegisters.length + ' / ' + ((selectedAstapDetail || selectedMutasi).registers ? (selectedAstapDetail || selectedMutasi).registers.length : 0) + ' Aset'"></span>
                         </div>
@@ -608,6 +616,7 @@
                                     <th class="px-3.5 py-2.5 text-center">Penempatan Ruangan</th>
                                     <th class="px-3.5 py-2.5 text-center">Kondisi</th>
                                     <th class="px-3.5 py-2.5 text-center whitespace-nowrap">QR Code</th>
+                                    <th class="px-3.5 py-2.5 text-center whitespace-nowrap">AKSI</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-800/80 bg-slate-900/50">
@@ -646,11 +655,34 @@
                                                 <span class="leading-none pt-0.5">Download QR</span>
                                             </button>
                                         </td>
+                                        <td class="px-3.5 py-2.5 text-center whitespace-nowrap">
+                                            <div class="flex items-center justify-center space-x-1.5">
+                                                <!-- 1. Tombol Cek Riwayat Aset (Mutasi) -->
+                                                <button type="button" @click.stop="openRiwayatModal(reg)" title="Cek Riwayat Mutasi Aset Ini"
+                                                        class="p-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:text-purple-300 transition-all cursor-pointer shadow-sm active:scale-95">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                </button>
+
+                                                @if(in_array(Auth::user()->role ?? '', ['master_admin', 'admin']))
+                                                <!-- 2. Tombol Ubah Kondisi Barang (Modal Khusus) -->
+                                                <button type="button" @click.stop="openEditKondisiModal(reg)" title="Ubah Kondisi Aset Ini"
+                                                        class="p-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:text-amber-300 transition-all cursor-pointer shadow-sm active:scale-95">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 0L20.586 7a2 2 0 010 2.828l-8.586 8.586z"/></svg>
+                                                </button>
+
+                                                <!-- 3. Tombol Hapus Register -->
+                                                <button type="button" @click.stop="deleteRegister(reg)" title="Hapus Aset Register Ini"
+                                                        class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 transition-all cursor-pointer shadow-sm active:scale-95">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                                @endif
+                                            </div>
+                                        </td>
                                     </tr>
                                 </template>
                                 <template x-if="filteredRegisters.length === 0">
                                     <tr>
-                                        <td colspan="4" class="px-3 py-6 text-center text-slate-500 italic text-xs">
+                                        <td colspan="5" class="px-3 py-6 text-center text-slate-500 italic text-xs">
                                             Tidak ditemukan rincian register NIBAR yang sesuai dengan filter pencarian.
                                         </td>
                                     </tr>

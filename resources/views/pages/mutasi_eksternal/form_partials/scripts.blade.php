@@ -34,6 +34,7 @@
             formData: {
                 from: {{ Js::from(request('from', 'eksternal')) }},
                 sumber_dana: 'pelimpahan_skpd',
+                is_extracomtable: false,
                 tahun_perolehan: new Date().getFullYear(),
                 triwulan: (function() {
                     const m = new Date().getMonth() + 1;
@@ -501,13 +502,30 @@
                 return Number(this.formData.total_realisasi || 0);
             },
 
+            // Setter Global Status Akuntansi (Aset Tetap Reguler vs Ekstrakomtabel)
+            setGlobalExtracom(val) {
+                const isExtra = Boolean(val);
+                this.formData.is_extracomtable = isExtra;
+                if (this.formData.mesin_items && Array.isArray(this.formData.mesin_items)) {
+                    this.formData.mesin_items.forEach(m => {
+                        m.is_extracom = isExtra;
+                    });
+                }
+                if (this.formData.lainnya_items && Array.isArray(this.formData.lainnya_items)) {
+                    this.formData.lainnya_items.forEach(l => {
+                        l.is_extracom = isExtra;
+                    });
+                }
+                this.syncTotalsFromItems();
+            },
+
             // Repeater Actions: Mesin
             addMesinItem() {
                 if (!this.formData.mesin_items) {
                     this.formData.mesin_items = [];
                 }
                 this.formData.mesin_items.push({
-                    is_extracom: false,
+                    is_extracom: Boolean(this.formData.is_extracomtable),
                     mesin_kode_barang: '',
                     mesin_nama_barang: '',
                     isFilterOpen: false,
@@ -655,7 +673,7 @@
                     this.formData.lainnya_items = [];
                 }
                 this.formData.lainnya_items.push({
-                    is_extracom: false,
+                    is_extracom: Boolean(this.formData.is_extracomtable),
                     kib_e_type: 'buku',
                     lainnya_kode_barang: '',
                     lainnya_nama_barang: '',
@@ -1218,10 +1236,12 @@
             // Helper validasi batasan Ekstrakomtabel (Extracom <= Rp 300.000)
             getExtracomViolations() {
                 const violations = [];
+                if (!this.formData.is_extracomtable) return violations;
+
                 if (this.isMesin && Array.isArray(this.formData.mesin_items)) {
                     this.formData.mesin_items.forEach((item, idx) => {
                         const val = parseFloat(item.mesin_nilai_satuan) || 0;
-                        if (item.is_extracom && val > 300000) {
+                        if (val > 300000) {
                             violations.push({
                                 index: idx,
                                 type: 'mesin',
@@ -1235,7 +1255,7 @@
                 } else if (this.isLainnya && Array.isArray(this.formData.lainnya_items)) {
                     this.formData.lainnya_items.forEach((item, idx) => {
                         const val = parseFloat(item.lainnya_nilai_satuan) || 0;
-                        if (item.is_extracom && val > 300000) {
+                        if (val > 300000) {
                             violations.push({
                                 index: idx,
                                 type: 'lainnya',
@@ -1769,6 +1789,7 @@
                 postData.append('ppk_nama', this.formData.ppk_nama || '');
                 postData.append('ppk_nip', this.formData.ppk_nip || '');
                 postData.append('from', this.formData.from || 'eksternal');
+                postData.append('is_extracomtable', this.formData.is_extracomtable ? 1 : 0);
 
                 // Append specs (hanya kirim items sesuai kategori KIB aktif agar tidak mengotori data)
                 postData.append('tanah_items', JSON.stringify(this.isTanah ? (this.formData.tanah_items || []) : []));
@@ -1776,6 +1797,8 @@
                 postData.append('gedung_items', JSON.stringify(this.isGedung ? (this.formData.gedung_items || []) : []));
                 postData.append('jaringan_items', JSON.stringify(this.isJaringan ? (this.formData.jaringan_items || []) : []));
                 postData.append('lainnya_items', JSON.stringify(this.isLainnya ? (this.formData.lainnya_items || []) : []));
+                specJson.is_extracomtable = this.formData.is_extracomtable;
+                specJson.is_extracom = this.formData.is_extracomtable;
                 postData.append('spesifikasi_json', JSON.stringify(specJson));
 
                 if (this.selectedFile) {
@@ -1828,6 +1851,14 @@
                             this.formData[k] = init[k];
                         }
                     });
+
+                    this.formData.is_extracomtable = Boolean(
+                        init.is_extracomtable || 
+                        (init.spesifikasi_json && (init.spesifikasi_json.is_extracomtable || init.spesifikasi_json.is_extracom)) || 
+                        init.is_extracom || 
+                        (init.mesin_items && init.mesin_items[0] && init.mesin_items[0].is_extracom) ||
+                        (init.lainnya_items && init.lainnya_items[0] && init.lainnya_items[0].is_extracom)
+                    );
 
                     // Determine active KIB from selected 108 item code, or items array, or default
                     if (this.selected108Item && this.selected108Item.kode) {
