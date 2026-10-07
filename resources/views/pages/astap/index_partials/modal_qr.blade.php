@@ -3,8 +3,8 @@
         <!-- ========================================================================= -->
         <template x-teleport="body">
             <div x-show="showQrModal" x-cloak @click.self="showQrModal = false"
-                 class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-                 style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+                 class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto modal-backdrop-full"
+                 style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); z-index: 99999;"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
@@ -106,8 +106,8 @@
         <!-- ========================================================================= -->
         <template x-teleport="body">
             <div x-show="showEditKondisiModal" x-cloak @click.self="showEditKondisiModal = false"
-                 class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-                 style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+                 class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto modal-backdrop-full"
+                 style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); z-index: 99999;"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
@@ -186,8 +186,8 @@
         <!-- ========================================================================= -->
         <template x-teleport="body">
             <div x-show="showRiwayatModal" x-cloak @click.self="showRiwayatModal = false"
-                 class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-                 style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+                 class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto modal-backdrop-full"
+                 style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); z-index: 99999;"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"

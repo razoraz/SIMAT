@@ -1,5 +1,5 @@
         <!-- MODAL INPUT ALASAN PENOLAKAN -->
-        <div x-show="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 10000;" @click.self="showRejectModal = false" x-cloak>
+        <div x-show="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-full" style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); z-index: 10000;" @click.self="showRejectModal = false" x-cloak>
             <div class="border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4" style="background-color: #0f172a;">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center space-x-2.5">

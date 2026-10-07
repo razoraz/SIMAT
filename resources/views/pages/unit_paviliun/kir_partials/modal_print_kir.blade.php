@@ -1,7 +1,7 @@
         <!-- 5. MODAL PRATINJAU & CETAK DOKUMEN KIR RESMI (KERTAS PUTIH STANDAR PEMERINTAH) -->
         <div x-show="showPrintModal" x-cloak
-            class="flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
-            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;"
+            class="flex items-center justify-center p-3 sm:p-6 overflow-y-auto modal-backdrop-full"
+            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(32px) !important; -webkit-backdrop-filter: blur(32px) !important;"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">

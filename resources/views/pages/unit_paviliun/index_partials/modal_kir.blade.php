@@ -1,6 +1,6 @@
         <!-- MODAL CETAK LEMBAR KARTU INVENTARIS RUANGAN (KIR) RESMI KEDINASAN BMD     -->
         <!-- ========================================================================= -->
-        <div x-show="showPrintKIRModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak>
+        <div x-show="showPrintKIRModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full p-2 sm:p-4 overflow-y-auto" x-cloak>
             <div @click.away="showPrintKIRModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
                 
                 <!-- Action Bar Modal -->

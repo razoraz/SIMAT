@@ -1,7 +1,7 @@
         <!-- ========================================================================= -->
         <!-- MODAL RINCIAN: DETAIL POPUP BAST MUTASI EKSTERNAL (TRANSFER ANTAR-OPD)     -->
         <!-- ========================================================================= -->
-        <div x-show="showDetailMutasiEksternalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 overflow-y-auto" x-cloak>
+        <div x-show="showDetailMutasiEksternalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full p-4 overflow-y-auto" x-cloak>
             <div @click.away="showDetailMutasiEksternalModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 shadow-2xl space-y-5 my-auto relative">
                 
                 <div class="flex items-center justify-between border-b border-slate-800 pb-4">

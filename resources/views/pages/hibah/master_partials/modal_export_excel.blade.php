@@ -3,7 +3,7 @@
 <!-- ========================================================================= -->
 <template x-teleport="body">
     <div x-show="showModalExport" x-cloak
-         class="fixed inset-0 z-[99999] w-screen h-screen flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-hidden"
+         class="fixed inset-0 z-[99999] w-screen h-screen flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full overflow-hidden"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"

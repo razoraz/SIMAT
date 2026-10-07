@@ -1,7 +1,7 @@
         <!-- 6. FRONTEND MODAL: DETAIL ASET RUANGAN (SESUAI KATALOG DATA ASTAP) -->
         <div x-show="showDetailModal" x-cloak @click.self="showDetailModal = false" 
-            class="flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto" 
-            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;">
+            class="flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto modal-backdrop-full" 
+            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(32px) !important; -webkit-backdrop-filter: blur(32px) !important;">
             <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto" style="background-color: #0f172a;">
                 
                 <template x-if="selectedAsset">

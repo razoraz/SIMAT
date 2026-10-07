@@ -1,5 +1,5 @@
         <!-- GLOBAL CUSTOM CONFIRMATION DIALOG MODAL (Sleek Dark Theme) -->
-        <div x-show="showConfirmModal" x-cloak class="no-print fixed inset-0 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" style="z-index: 99999 !important;">
+        <div x-show="showConfirmModal" x-cloak class="no-print fixed inset-0 flex items-center justify-center bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full p-4" style="z-index: 99999 !important;">
             <div @click.away="showConfirmModal = false"
                  x-show="showConfirmModal"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
