@@ -560,7 +560,7 @@
          @show-toast.window="openToast($event.detail)">
          
         <!-- GLOBAL CONFIRMATION MODAL -->
-        <div x-show="showConfirm" x-cloak class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full p-4">
+        <div x-show="showConfirm" x-cloak class="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
             <div @click.away="showConfirm = false"
                  x-show="showConfirm"
                  x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"

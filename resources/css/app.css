@@ -100,10 +100,3 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     filter: brightness(1.5);
     transform: scale(1.08);
 }
-
-/* Full Frosted Glass Modal Backdrop Overlay */
-.modal-backdrop-full {
-    background-color: rgba(2, 6, 23, 0.85) !important;
-    backdrop-filter: blur(32px) !important;
-    -webkit-backdrop-filter: blur(32px) !important;
-}

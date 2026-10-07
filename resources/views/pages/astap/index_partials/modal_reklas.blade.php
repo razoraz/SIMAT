@@ -3,8 +3,8 @@
         <!-- ========================================================================= -->
         <template x-teleport="body">
             <div x-show="showReklasModal" x-cloak id="modalReklasDialog"
-                 class="fixed inset-0 overflow-y-auto flex items-center justify-center p-3 sm:p-4 modal-backdrop-full"
-                 style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); z-index: 99999;"
+                 class="fixed inset-0 overflow-y-auto flex items-center justify-center p-3 sm:p-4"
+                 style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 99999;"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"

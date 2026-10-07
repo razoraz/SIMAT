@@ -2,7 +2,7 @@
         <!-- MODAL DIALOG: RAPIKAN & URUTKAN ULANG NIBAR (AUTO-RESEQUENCE)             -->
         <!-- ========================================================================= -->
         <div x-show="showResequenceModal" x-cloak
-             class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full flex items-center justify-center p-4"
+             class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"

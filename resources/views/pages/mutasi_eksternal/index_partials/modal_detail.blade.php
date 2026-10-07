@@ -2,8 +2,8 @@
 <!-- Dibuat seragam dan komprehensif mengikuti standar Data ASTAP -->
 <template x-teleport="body">
     <div x-show="showDetailModal" x-cloak @click.self="showDetailModal = false"
-         class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto modal-backdrop-full"
-         style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); z-index: 9000;"
+         class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto"
+         style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 9000;"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -653,38 +653,6 @@
                                         <td colspan="4" class="px-3 py-6 text-center text-slate-500 italic text-xs">
                                             Tidak ditemukan rincian register NIBAR yang sesuai dengan filter pencarian.
                                         </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- 8. CATATAN / MAKSUD & ALASAN MUTASI -->
-                <div class="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1">
-                    <span class="text-slate-400 text-[10px] block font-bold uppercase tracking-wider">💡 Maksud &amp; Alasan Pelimpahan Antar-OPD:</span>
-                    <p class="text-slate-200 text-xs leading-relaxed" x-text="(selectedAstapDetail || selectedMutasi).alasan_mutasi || (selectedAstapDetail || selectedMutasi).mutasi_keterangan || '-'"></p>
-                </div>
-            </div>
-        </template>
-
-        <!-- 9. FOOTER MODAL ACTIONS -->
-        <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
-            <button type="button" @click="showDetailModal = false"
-                class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs transition-all shadow-md active:scale-95 cursor-pointer">
-                Tutup Detail
-            </button>
-            <div class="flex items-center space-x-2">
-                <button type="button" @click="openPrintModal(selectedAstapDetail || selectedMutasi)"
-                    class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg shadow-purple-500/25 transition-all flex items-center space-x-2 active:scale-95 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    <span>🖨️ Cetak / Preview BAST</span>
-                </button>
-            </div>
-        </div>
-
-    </div>
-</template>
                                     </tr>
                                 </template>
                             </tbody>

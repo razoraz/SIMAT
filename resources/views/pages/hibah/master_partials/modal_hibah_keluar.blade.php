@@ -1,7 +1,7 @@
 <!-- MODAL: HIBAH KELUAR (PENGURANGAN BARANG RSUD DIHIBAHKAN KE LUAR) -->
 <div x-show="showModalHibahKeluar" x-cloak @click.self="showModalHibahKeluar = false"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto modal-backdrop-full"
-    style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);">
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+    style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px);">
     
     <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-auto">
         <!-- Header -->

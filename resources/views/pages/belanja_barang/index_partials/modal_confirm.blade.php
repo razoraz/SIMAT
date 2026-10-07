@@ -13,7 +13,7 @@
         x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-        class="fixed inset-0 bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full transition-opacity"></div>
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"></div>
 
     <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
         <div x-show="confirmDeleteModalOpen"

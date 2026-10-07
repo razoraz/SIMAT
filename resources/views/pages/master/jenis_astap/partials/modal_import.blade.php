@@ -1,5 +1,5 @@
 <!-- MODAL IMPORT CSV -->
-<div x-show="showImportModal" x-transition.opacity class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full flex items-center justify-center p-4" x-cloak>
+<div x-show="showImportModal" x-transition.opacity class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4" x-cloak>
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative" @click.away="showImportModal = false">
         <div class="flex items-center justify-between pb-4 border-b border-slate-800">
             <div class="flex items-center space-x-3">

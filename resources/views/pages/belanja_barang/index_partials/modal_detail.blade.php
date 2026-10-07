@@ -15,8 +15,8 @@
             x-transition:leave="ease-in duration-200"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="fixed inset-0 transition-opacity modal-backdrop-full"
-            style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);"></div>
+            class="fixed inset-0 transition-opacity"
+            style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);"></div>
 
     <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
         <div x-show="detailModalOpen"

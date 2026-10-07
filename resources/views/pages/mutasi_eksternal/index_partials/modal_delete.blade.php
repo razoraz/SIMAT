@@ -2,8 +2,8 @@
 <!-- MODAL KONFIRMASI HAPUS / SOFT-DELETE MUTASI EKSTERNAL (PELIMPAHAN SKPD)   -->
 <!-- ========================================================================= -->
 <div x-show="showDeleteModal" x-cloak
-     class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 modal-backdrop-full"
-     style="background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); z-index: 60;"
+     class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4"
+     style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 60;"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"

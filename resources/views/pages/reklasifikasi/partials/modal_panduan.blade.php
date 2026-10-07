@@ -4,7 +4,7 @@
     x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-cloak>
     
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full" @click="showPanduanModal = false"></div>
+    <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm" @click="showPanduanModal = false"></div>
 
     <!-- Modal Dialog -->
     <div class="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden z-10">

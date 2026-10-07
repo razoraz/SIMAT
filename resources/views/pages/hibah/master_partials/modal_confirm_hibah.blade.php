@@ -4,8 +4,8 @@
 
 <!-- 1. MODAL KONFIRMASI PROSES HIBAH KELUAR -->
 <div x-show="showConfirmKeluarModal" x-cloak
-    class="fixed inset-0 flex items-center justify-center p-4 modal-backdrop-full"
-    style="z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);">
+    class="fixed inset-0 flex items-center justify-center p-4"
+    style="z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.92); backdrop-filter: blur(16px);">
     
     <div @click.away="if (!isSubmittingKeluar) { showConfirmKeluarModal = false; showModalHibahKeluar = true; }"
          x-show="showConfirmKeluarModal"
@@ -96,8 +96,8 @@
 
 <!-- 2. MODAL KONFIRMASI HAPUS / BATALKAN TRANSAKSI HIBAH -->
 <div x-show="showConfirmDeleteModal" x-cloak
-    class="fixed inset-0 flex items-center justify-center p-4 modal-backdrop-full"
-    style="z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);">
+    class="fixed inset-0 flex items-center justify-center p-4"
+    style="z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.92); backdrop-filter: blur(16px);">
     
     <div @click.away="if (!isDeleting) showConfirmDeleteModal = false"
          x-show="showConfirmDeleteModal"

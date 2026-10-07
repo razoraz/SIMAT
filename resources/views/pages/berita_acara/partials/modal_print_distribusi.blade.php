@@ -1,7 +1,7 @@
         <!-- ========================================================================= -->
         <!-- MODAL CETAK 2: LEMBAR DOKUMEN BAST DISTRIBUSI BARANG ASET                 -->
         <!-- ========================================================================= -->
-        <div x-show="showPrintDistribusiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-2xl modal-backdrop-full p-2 sm:p-4 overflow-y-auto" x-cloak @click.self="closeDistribusiModal()">
+        <div x-show="showPrintDistribusiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-2 sm:p-4 overflow-y-auto" x-cloak @click.self="closeDistribusiModal()">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-auto relative">
                 
                 <div class="no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
