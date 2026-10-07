@@ -280,10 +280,53 @@
 
                             <!-- 4. Kondisi Aset -->
                             <td class="py-4 px-4 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                                    100% Baik
-                                </span>
+                                @php
+                                    $regCol = ($row->objekRegister ? collect([$row->objekRegister]) : ($astap?->registers ?? collect()))->where('is_deleted', 0);
+                                    $totR = $regCol->count();
+                                    if ($totR > 0) {
+                                        $cB = $regCol->filter(fn($r) => in_array($r->kondisi, ['Baik', 'B']))->count();
+                                        $cK = $regCol->filter(fn($r) => in_array($r->kondisi, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']))->count();
+                                        $cR = $regCol->filter(fn($r) => in_array($r->kondisi, ['Rusak Berat', 'RB', 'Rusak']))->count();
+                                    } else {
+                                        $kRaw = $spec['kondisi'] ?? ($astap?->kondisi_barang ?? 'Baik');
+                                        $cB = in_array($kRaw, ['Baik', 'B']) ? 1 : 0;
+                                        $cK = in_array($kRaw, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']) ? 1 : 0;
+                                        $cR = in_array($kRaw, ['Rusak Berat', 'RB', 'Rusak']) ? 1 : 0;
+                                        $totR = 1;
+                                    }
+                                    $pB = round(($cB / $totR) * 100);
+                                    $pK = round(($cK / $totR) * 100);
+                                    $pR = round(($cR / $totR) * 100);
+                                @endphp
+                                @if($pB === 100)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                                        100% Baik
+                                    </span>
+                                @elseif($pK === 100)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span>
+                                        100% Kurang Baik
+                                    </span>
+                                @elseif($pR === 100)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5 animate-pulse"></span>
+                                        100% Rusak Berat
+                                    </span>
+                                @else
+                                    <div class="inline-flex flex-col items-center">
+                                        <div class="flex h-1.5 w-24 rounded-full overflow-hidden bg-slate-800 mb-1">
+                                            @if($pB > 0)<div class="bg-emerald-400" style="width: {{ $pB }}%"></div>@endif
+                                            @if($pK > 0)<div class="bg-amber-400" style="width: {{ $pK }}%"></div>@endif
+                                            @if($pR > 0)<div class="bg-rose-400" style="width: {{ $pR }}%"></div>@endif
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-[9.5px] font-bold">
+                                            @if($pB > 0)<span class="text-emerald-400">{{ $pB }}% Baik</span>@endif
+                                            @if($pK > 0)<span class="text-amber-400">{{ $pK }}% KB</span>@endif
+                                            @if($pR > 0)<span class="text-rose-400">{{ $pR }}% RB</span>@endif
+                                        </div>
+                                    </div>
+                                @endif
                             </td>
 
                             <!-- 5. Total Nilai Konsesi / Taksiran -->
@@ -487,10 +530,53 @@
 
                             <!-- 4. Kondisi Aset -->
                             <td class="py-4 px-4 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                                    100% Baik
-                                </span>
+                                @php
+                                    $regCol = ($astap?->registers ?? collect())->where('is_deleted', 0);
+                                    $totR = $regCol->count();
+                                    if ($totR > 0) {
+                                        $cB = $regCol->filter(fn($r) => in_array($r->kondisi, ['Baik', 'B']))->count();
+                                        $cK = $regCol->filter(fn($r) => in_array($r->kondisi, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']))->count();
+                                        $cR = $regCol->filter(fn($r) => in_array($r->kondisi, ['Rusak Berat', 'RB', 'Rusak']))->count();
+                                    } else {
+                                        $kRaw = $spec['kondisi'] ?? ($astap?->kondisi_barang ?? 'Baik');
+                                        $cB = in_array($kRaw, ['Baik', 'B']) ? 1 : 0;
+                                        $cK = in_array($kRaw, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']) ? 1 : 0;
+                                        $cR = in_array($kRaw, ['Rusak Berat', 'RB', 'Rusak']) ? 1 : 0;
+                                        $totR = 1;
+                                    }
+                                    $pB = round(($cB / $totR) * 100);
+                                    $pK = round(($cK / $totR) * 100);
+                                    $pR = round(($cR / $totR) * 100);
+                                @endphp
+                                @if($pB === 100)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                                        100% Baik
+                                    </span>
+                                @elseif($pK === 100)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span>
+                                        100% Kurang Baik
+                                    </span>
+                                @elseif($pR === 100)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5 animate-pulse"></span>
+                                        100% Rusak Berat
+                                    </span>
+                                @else
+                                    <div class="inline-flex flex-col items-center">
+                                        <div class="flex h-1.5 w-24 rounded-full overflow-hidden bg-slate-800 mb-1">
+                                            @if($pB > 0)<div class="bg-emerald-400" style="width: {{ $pB }}%"></div>@endif
+                                            @if($pK > 0)<div class="bg-amber-400" style="width: {{ $pK }}%"></div>@endif
+                                            @if($pR > 0)<div class="bg-rose-400" style="width: {{ $pR }}%"></div>@endif
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-[9.5px] font-bold">
+                                            @if($pB > 0)<span class="text-emerald-400">{{ $pB }}% Baik</span>@endif
+                                            @if($pK > 0)<span class="text-amber-400">{{ $pK }}% KB</span>@endif
+                                            @if($pR > 0)<span class="text-rose-400">{{ $pR }}% RB</span>@endif
+                                        </div>
+                                    </div>
+                                @endif
                             </td>
 
                             <!-- 5. Taksiran Nilai Aset -->
@@ -692,10 +778,53 @@
 
                             <!-- 5. Kondisi -->
                             <td class="py-4 px-4 text-center whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
-                                    100% Baik
-                                </span>
+                                @php
+                                    $regCol = ($row->objekRegister ? collect([$row->objekRegister]) : ($astap?->registers ?? collect()))->where('is_deleted', 0);
+                                    $totR = $regCol->count();
+                                    if ($totR > 0) {
+                                        $cB = $regCol->filter(fn($r) => in_array($r->kondisi, ['Baik', 'B']))->count();
+                                        $cK = $regCol->filter(fn($r) => in_array($r->kondisi, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']))->count();
+                                        $cR = $regCol->filter(fn($r) => in_array($r->kondisi, ['Rusak Berat', 'RB', 'Rusak']))->count();
+                                    } else {
+                                        $kRaw = $spec['kondisi'] ?? ($astap?->kondisi_barang ?? 'Baik');
+                                        $cB = in_array($kRaw, ['Baik', 'B']) ? 1 : 0;
+                                        $cK = in_array($kRaw, ['Kurang Baik', 'KB', 'Rusak Ringan', 'RR']) ? 1 : 0;
+                                        $cR = in_array($kRaw, ['Rusak Berat', 'RB', 'Rusak']) ? 1 : 0;
+                                        $totR = 1;
+                                    }
+                                    $pB = round(($cB / $totR) * 100);
+                                    $pK = round(($cK / $totR) * 100);
+                                    $pR = round(($cR / $totR) * 100);
+                                @endphp
+                                @if($pB === 100)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse"></span>
+                                        100% Baik
+                                    </span>
+                                @elseif($pK === 100)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1 animate-pulse"></span>
+                                        100% Kurang Baik
+                                    </span>
+                                @elseif($pR === 100)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1 animate-pulse"></span>
+                                        100% Rusak Berat
+                                    </span>
+                                @else
+                                    <div class="inline-flex flex-col items-center">
+                                        <div class="flex h-1.5 w-20 rounded-full overflow-hidden bg-slate-800 mb-1">
+                                            @if($pB > 0)<div class="bg-emerald-400" style="width: {{ $pB }}%"></div>@endif
+                                            @if($pK > 0)<div class="bg-amber-400" style="width: {{ $pK }}%"></div>@endif
+                                            @if($pR > 0)<div class="bg-rose-400" style="width: {{ $pR }}%"></div>@endif
+                                        </div>
+                                        <div class="flex items-center gap-1.5 text-[9px] font-bold">
+                                            @if($pB > 0)<span class="text-emerald-400">{{ $pB }}% Baik</span>@endif
+                                            @if($pK > 0)<span class="text-amber-400">{{ $pK }}% KB</span>@endif
+                                            @if($pR > 0)<span class="text-rose-400">{{ $pR }}% RB</span>@endif
+                                        </div>
+                                    </div>
+                                @endif
                             </td>
 
                             <!-- 6. Total Nilai -->

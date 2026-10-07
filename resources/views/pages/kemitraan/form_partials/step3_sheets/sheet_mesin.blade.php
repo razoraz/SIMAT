@@ -132,52 +132,6 @@
                         </div>
                     </div>
 
-                    <!-- 2. Pilihan Status Akuntansi: Aset Tetap Reguler vs Ekstrakomtabel (Extracom) -->
-                    <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <label class="text-xs font-bold uppercase tracking-wider flex items-center space-x-2"
-                                   :class="item.is_extracom ? 'text-cyan-300' : 'text-purple-300'">
-                                <span x-text="item.is_extracom ? '📦 Status Akuntansi: Ekstrakomtabel (Extracom)' : '⚙️ Status Akuntansi: Aset Tetap Reguler (Intrakomptabel)'"></span>
-                            </label>
-                            <span class="text-[9.5px] px-2 py-0.5 rounded-md font-bold font-mono border"
-                                  :class="item.is_extracom ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-purple-500/20 text-purple-300 border-purple-500/40'"
-                                  x-text="item.is_extracom ? '≤ Rp 300.000' : '> Rp 300.000'">
-                            </span>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <!-- Aset Tetap Reguler -->
-                            <button type="button" 
-                                    @click="item.is_extracom = false; syncTotalsFromItems();"
-                                    :class="!item.is_extracom ? 'border-purple-500 bg-purple-950/40 ring-1 ring-purple-500 text-white font-extrabold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                                    class="p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-base">⚙️</span>
-                                    <div class="text-left">
-                                        <div class="text-[11px] font-bold">Aset Tetap Reguler</div>
-                                        <div class="text-[9px] text-slate-400">Nilai wajar satuan &gt; Rp 300.000</div>
-                                    </div>
-                                </div>
-                                <span x-show="!item.is_extracom" class="text-purple-400 font-bold text-xs">✓ Terpilih</span>
-                            </button>
-
-                            <!-- Ekstrakomtabel -->
-                            <button type="button" 
-                                    @click="item.is_extracom = true; syncTotalsFromItems();"
-                                    :class="item.is_extracom ? 'border-cyan-500 bg-cyan-950/40 ring-1 ring-cyan-500 text-white font-extrabold' : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700'"
-                                    class="p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-base">📦</span>
-                                    <div class="text-left">
-                                        <div class="text-[11px] font-bold">Ekstrakomtabel (Extracom)</div>
-                                        <div class="text-[9px] text-slate-400">Nilai wajar satuan ≤ Rp 300.000 (Non-Kendaraan)</div>
-                                    </div>
-                                </div>
-                                <span x-show="item.is_extracom" class="text-cyan-400 font-bold text-xs">✓ Terpilih</span>
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- Grid Form Pengisian Spesifikasi Peralatan dan Mesin -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -273,7 +227,7 @@
                                 <label class="block text-slate-400 text-[10px] mb-1 font-semibold">
                                     <span x-text="item.is_extracom ? 'Kondisi Barang' : 'Kondisi Fisik Barang'"></span> <span class="text-rose-400" x-show="!item.is_extracom">*</span>
                                 </label>
-                                <select x-model="item.mesin_kondisi"
+                                <select x-model="item.mesin_kondisi" @change="syncTotalsFromItems()"
                                         class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-cyan-500 focus:outline-none transition-all">
                                     <option value="Baik" x-text="item.is_extracom ? 'Baik (B)' : '🟢 Baik (B) — Siap Operasional'"></option>
                                     <option value="Kurang Baik" x-text="item.is_extracom ? 'Kurang Baik (KB)' : '🟡 Kurang Baik (KB) — Perlu Kalibrasi / Setting'"></option>
