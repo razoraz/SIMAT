@@ -148,7 +148,8 @@
 
                     <!-- JUDUL SURAT RESMI -->
                     <div class="text-center text-black mb-3">
-                        <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0">BERITA ACARA SERAH TERIMA BARANG MILIK DAERAH (BMD)</h3>
+                        <h3 class="font-bold text-[11pt] sm:text-[11.5pt] uppercase underline tracking-normal text-black m-0"
+                            x-text="printDoc.tipe === 'keluar' ? 'BERITA ACARA SERAH TERIMA PEMINDAHTANGANAN BMD' : 'BERITA ACARA SERAH TERIMA BARANG MILIK DAERAH (BMD)'"></h3>
                         <p class="text-[9.5pt] sm:text-[10pt] font-semibold text-black mt-1 m-0">
                             Nomor : <span x-text="printDoc.nomor_bast || printDoc.kode"></span>
                         </p>
@@ -225,7 +226,7 @@
                                 <td style="border: none !important;"></td>
                                 <td style="border: none !important; vertical-align: top; padding: 1px 0;">Instansi / Unit</td>
                                 <td style="border: none !important; vertical-align: top; padding: 1px 0;">:</td>
-                                <td style="border: none !important; vertical-align: top; padding: 1px 0;" class="font-bold">RSUD dr. H. Koesnandi Kabupaten Bondowoso</td>
+                                <td style="border: none !important; vertical-align: top; padding: 1px 0;" class="font-bold uppercase" x-text="printDoc.opd_tujuan || 'RSUD dr. H. Koesnandi Kabupaten Bondowoso'"></td>
                             </tr>
                             <tr style="border: none !important;">
                                 <td style="border: none !important;"></td>

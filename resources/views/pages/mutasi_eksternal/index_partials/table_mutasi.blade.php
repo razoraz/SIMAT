@@ -169,7 +169,7 @@
                 </template>
 
                 <!-- 1. Empty State jika BELUM ADA DATA di database sama sekali -->
-                <template x-if="mutasiEksternals.length === 0">
+                <template x-if="countMasuk === 0">
                     <tr>
                         <td colspan="7" class="text-center py-16 text-slate-400">
                             <div class="flex flex-col items-center justify-center space-y-4 max-w-md mx-auto">
@@ -188,7 +188,7 @@
                 </template>
 
                 <!-- 2. Empty State jika ada data tetapi tidak cocok dengan filter / kata kunci pencarian -->
-                <template x-if="mutasiEksternals.length > 0 && filteredMutasis.length === 0">
+                <template x-if="countMasuk > 0 && filteredMutasis.length === 0">
                     <tr>
                         <td colspan="7" class="text-center align-middle py-28 text-slate-400">
                             <div class="flex flex-col items-center justify-center space-y-2 py-4">

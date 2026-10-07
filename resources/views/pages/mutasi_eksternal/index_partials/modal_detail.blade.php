@@ -32,9 +32,10 @@
                         }"
                         x-text="(selectedAstapDetail || selectedMutasi)?.category === 'EXTRACOM' ? '📦 EXTRACOM' : getEffectiveKibCategory(selectedAstapDetail || selectedMutasi)"></span>
 
-                    <!-- Source Badge: Pelimpahan SKPD -->
-                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-purple-500/20 text-purple-300 border-purple-500/30">
-                        🔄 PELIMPAHAN SKPD LUAR (MUTASI MASUK)
+                    <!-- Source Badge -->
+                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0"
+                        :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-purple-500/20 text-purple-300 border-purple-500/30'"
+                        x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '📤 TRANSFER KE OPD LUAR (MUTASI KELUAR)' : '🔄 PELIMPAHAN SKPD LUAR (MUTASI MASUK)'">
                     </span>
 
                     <!-- Status BAST Badge -->
@@ -112,79 +113,92 @@
                         <span class="text-emerald-400 font-extrabold font-mono text-xs sm:text-sm block truncate"
                               x-text="(selectedAstapDetail || selectedMutasi).jumlah_realisasi || (selectedAstapDetail || selectedMutasi).nilai_perolehan_formatted || formatRupiah((selectedAstapDetail || selectedMutasi).nilai_perolehan)"></span>
                     </div>
-                </div>
-
-                <!-- 3. DOKUMEN BAMB PELIMPAHAN SKPD (KHUSUS DINAS / INSTANSI PENGIRIM) -->
-                <div class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2.5 shadow-sm">
-                    <div class="flex items-center justify-between text-purple-300 font-extrabold text-xs uppercase tracking-wider border-b border-purple-500/20 pb-2">
+                 <!-- 3. DOKUMEN BAMB / BAST -->
+                <div class="p-4 rounded-2xl border space-y-2.5 shadow-sm"
+                    :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-purple-500/10 border-purple-500/30'">
+                    <div class="flex items-center justify-between font-extrabold text-xs uppercase tracking-wider border-b pb-2"
+                        :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'text-cyan-300 border-cyan-500/20' : 'text-purple-300 border-purple-500/20'">
                         <span class="flex items-center space-x-1.5">
-                            <span>📜 Dokumen Berita Acara Mutasi Barang (BAMB) / SKPD Luar</span>
+                            <span x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? '📜 Dokumen Berita Acara Serah Terima (BAST) / Transfer Keluar' : '📜 Dokumen Berita Acara Mutasi Barang (BAMB) / SKPD Luar'"></span>
                         </span>
-                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-purple-300"
-                              x-text="'Nomor BAST: ' + ((selectedAstapDetail || selectedMutasi).kode || (selectedAstapDetail || selectedMutasi).mutasi_nomor_bamb || '-')"></span>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded border"
+                            :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'bg-cyan-950/80 border-cyan-500/40 text-cyan-300' : 'bg-purple-950/80 border-purple-500/40 text-purple-300'"
+                            x-text="'Nomor BAST: ' + ((selectedAstapDetail || selectedMutasi).kode || (selectedAstapDetail || selectedMutasi).mutasi_nomor_bamb || '-')"></span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                         <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">SKPD / Dinas Asal:</span>
-                            <span class="font-bold text-white text-sm" x-text="(selectedAstapDetail || selectedMutasi).opd_asal || (selectedAstapDetail || selectedMutasi).mutasi_asal || '-'"></span>
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold"
+                                x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Instansi / SKPD Penerima:' : 'SKPD / Dinas Asal:'"></span>
+                            <span class="font-bold text-white text-sm"
+                                x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? ((selectedAstapDetail || selectedMutasi).opd_tujuan || '-') : ((selectedAstapDetail || selectedMutasi).opd_asal || (selectedAstapDetail || selectedMutasi).mutasi_asal || '-')"></span>
                             <template x-if="(selectedAstapDetail || selectedMutasi).alamat_instansi">
                                 <p class="text-[10.5px] text-slate-300 mt-0.5" x-text="'📍 ' + (selectedAstapDetail || selectedMutasi).alamat_instansi"></p>
                             </template>
                         </div>
                         <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Nomor BAMB / SK Pelimpahan:</span>
-                            <span class="font-mono text-purple-300 font-bold" x-text="(selectedAstapDetail || selectedMutasi).mutasi_nomor_bamb || (selectedAstapDetail || selectedMutasi).kode || '-'"></span>
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold"
+                                x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Nomor BAST Serah Terima:' : 'Nomor BAMB / SK Pelimpahan:'"></span>
+                            <span class="font-mono font-bold"
+                                :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'text-cyan-300' : 'text-purple-300'"
+                                x-text="(selectedAstapDetail || selectedMutasi).mutasi_nomor_bamb || (selectedAstapDetail || selectedMutasi).kode || '-'"></span>
                             <template x-if="(selectedAstapDetail || selectedMutasi).nomor_sk_dasar">
                                 <p class="text-[10px] text-slate-400 font-mono mt-0.5" x-text="'SK Dasar: ' + (selectedAstapDetail || selectedMutasi).nomor_sk_dasar"></p>
                             </template>
                         </div>
                         <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal BAMB:</span>
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Tanggal Dokumen:</span>
                             <span class="text-slate-200 font-medium font-mono" x-text="formatTanggalIndo((selectedAstapDetail || selectedMutasi).mutasi_tanggal || (selectedAstapDetail || selectedMutasi).tgl_raw)"></span>
                         </div>
                     </div>
                     <template x-if="(selectedAstapDetail || selectedMutasi).alasan_mutasi || (selectedAstapDetail || selectedMutasi).mutasi_keterangan">
-                        <div class="pt-2 border-t border-purple-500/20 text-[11px] text-slate-300">
-                            <span class="text-slate-400 font-semibold">Maksud / Keterangan Pelimpahan: </span>
+                        <div class="pt-2 border-t text-[11px] text-slate-300"
+                            :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'border-cyan-500/20' : 'border-purple-500/20'">
+                            <span class="text-slate-400 font-semibold">Maksud / Keterangan: </span>
                             <span x-text="(selectedAstapDetail || selectedMutasi).alasan_mutasi || (selectedAstapDetail || selectedMutasi).mutasi_keterangan"></span>
                         </div>
                     </template>
                 </div>
 
-                <!-- 4. PIHAK YANG TERLIBAT (PENGIRIM & PENERIMA RSUD) -->
+                <!-- 4. PIHAK YANG TERLIBAT -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <!-- Pihak Pertama: SKPD Pengirim -->
+                    <!-- Pihak Pertama -->
                     <div class="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
                         <div class="flex items-center space-x-1.5 border-b border-slate-800 pb-1.5 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
                             <span>📤</span>
-                            <span>PIHAK PERTAMA (SKPD PENGIRIM)</span>
+                            <span x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'PIHAK PERTAMA (PENYERAH RSUD)' : 'PIHAK PERTAMA (SKPD PENGIRIM)'"></span>
                         </div>
                         <div class="space-y-1">
                             <div>
                                 <span class="text-slate-400 text-[10px] block">Pejabat / Pihak yang Menyerahkan:</span>
-                                <p class="text-emerald-400 font-bold text-xs" x-text="(selectedAstapDetail || selectedMutasi).pj_asal_nama || 'Pejabat Penyerah OPD Asal'"></p>
+                                <p class="text-emerald-400 font-bold text-xs" x-text="(selectedAstapDetail || selectedMutasi).pj_asal_nama || ((selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Pengurus Barang RSUD Dr. H. Koesnadi' : 'Pejabat Penyerah OPD Asal')"></p>
                                 <p class="text-[10px] text-slate-400 font-mono" x-text="'NIP: ' + ((selectedAstapDetail || selectedMutasi).pj_asal_nip || '-')"></p>
-                                <p class="text-[10px] text-slate-400" x-text="(selectedAstapDetail || selectedMutasi).pj_asal_jabatan || 'Pengurus Barang / PPK Asal'"></p>
+                                <p class="text-[10px] text-slate-400" x-text="(selectedAstapDetail || selectedMutasi).pj_asal_jabatan || ((selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Pengurus Barang Pengguna RSUD' : 'Pengurus Barang / PPK Asal')"></p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Pihak Kedua: Penerima RSUD Dr. H. Koesnandi -->
-                    <div class="p-3.5 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 space-y-2">
-                        <div class="flex items-center space-x-1.5 border-b border-indigo-500/30 pb-1.5 text-indigo-300 font-bold uppercase tracking-wider text-[11px]">
+                    <!-- Pihak Kedua -->
+                    <div class="p-3.5 rounded-2xl border space-y-2"
+                        :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'bg-cyan-950/20 border-cyan-500/30' : 'bg-indigo-950/20 border-indigo-500/30'">
+                        <div class="flex items-center space-x-1.5 border-b pb-1.5 font-bold uppercase tracking-wider text-[11px]"
+                            :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'border-cyan-500/30 text-cyan-300' : 'border-indigo-500/30 text-indigo-300'">
                             <span>📥</span>
-                            <span>PIHAK KEDUA (PENERIMA RSUD KOESNANDI)</span>
+                            <span x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'PIHAK KEDUA (PENERIMA OPD LUAR)' : 'PIHAK KEDUA (PENERIMA RSUD KOESNANDI)'"></span>
                         </div>
                         <div class="space-y-1">
                             <div>
-                                <span class="text-slate-400 text-[10px] block">Unit / Ruangan Penempatan Baru:</span>
-                                <p class="font-bold text-indigo-200 text-xs" x-text="(selectedAstapDetail || selectedMutasi).ruangan_tujuan || (selectedAstapDetail || selectedMutasi).opd_tujuan || 'RSUD Dr. H. Koesnandi'"></p>
+                                <span class="text-slate-400 text-[10px] block" x-text="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Instansi / SKPD Penerima:' : 'Unit / Ruangan Penempatan Baru:'"></span>
+                                <p class="font-bold text-xs"
+                                    :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'text-cyan-200' : 'text-indigo-200'"
+                                    x-text="(selectedAstapDetail || selectedMutasi).ruangan_tujuan || (selectedAstapDetail || selectedMutasi).opd_tujuan || 'RSUD Dr. H. Koesnadi'"></p>
                             </div>
                             <div>
-                                <span class="text-slate-400 text-[10px] block">Pejabat Penerima di RSUD:</span>
-                                <p class="text-white font-bold text-xs" x-text="(selectedAstapDetail || selectedMutasi).pejabat_opd_tujuan || (selectedAstapDetail || selectedMutasi).ppk_nama || 'BUDI HARTONO, S.Sos'"></p>
-                                <p class="text-[10px] text-slate-400 font-mono" x-text="'NIP: ' + ((selectedAstapDetail || selectedMutasi).nip_pejabat_opd_tujuan || (selectedAstapDetail || selectedMutasi).ppk_nip || '19760229 200801 1 010')"></p>
-                                <p class="text-[10px] text-indigo-400/90 font-semibold" x-text="(selectedAstapDetail || selectedMutasi).jabatan_opd_tujuan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnandi'"></p>
+                                <span class="text-slate-400 text-[10px] block">Pejabat Penerima:</span>
+                                <p class="text-white font-bold text-xs" x-text="(selectedAstapDetail || selectedMutasi).pejabat_opd_tujuan || (selectedAstapDetail || selectedMutasi).pj_tujuan_nama || (selectedAstapDetail || selectedMutasi).ppk_nama || 'Pejabat Penerima'"></p>
+                                <p class="text-[10px] text-slate-400 font-mono" x-text="'NIP: ' + ((selectedAstapDetail || selectedMutasi).nip_pejabat_opd_tujuan || (selectedAstapDetail || selectedMutasi).pj_tujuan_nip || (selectedAstapDetail || selectedMutasi).ppk_nip || '-')"></p>
+                                <p class="text-[10px] font-semibold"
+                                    :class="(selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'text-cyan-400/90' : 'text-indigo-400/90'"
+                                    x-text="(selectedAstapDetail || selectedMutasi).jabatan_opd_tujuan || ((selectedAstapDetail || selectedMutasi)?.tipe === 'keluar' ? 'Pejabat Penerima Instansi Luar' : 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi')"></p>
                             </div>
                         </div>
                     </div>

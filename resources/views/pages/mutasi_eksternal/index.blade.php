@@ -9,7 +9,16 @@
         <div class="no-print space-y-6">
             @include('pages.mutasi_eksternal.index_partials.header_kpi')
             @include('pages.mutasi_eksternal.index_partials.filter_bar')
-            @include('pages.mutasi_eksternal.index_partials.table_mutasi')
+
+            <!-- 1. TABEL MUTASI MASUK (PELIMPAHAN DARI SKPD LUAR) -->
+            <div x-show="activeDirection === 'masuk'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
+                @include('pages.mutasi_eksternal.index_partials.table_mutasi')
+            </div>
+
+            <!-- 2. TABEL MUTASI KELUAR (TRANSFER ASET RSUD KE OPD LUAR) -->
+            <div x-show="activeDirection === 'keluar'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
+                @include('pages.mutasi_eksternal.index_partials.table_mutasi_keluar')
+            </div>
         </div>
 
         <!-- MODAL DETAIL BAST ANTAR-OPD -->

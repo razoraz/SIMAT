@@ -431,7 +431,14 @@ class MutasiEksternalController extends Controller
         $this->syncLegacyAstapPelimpahan();
 
         // Ambil data aktif dari tabel mutasi_eksternals
-        $records = MutasiEksternal::with(['astap.registers', 'astap.jenisAstap', 'unit', 'user'])
+        $records = MutasiEksternal::with([
+                'astap.registers', 
+                'astap.jenisAstap', 
+                'unit', 
+                'user',
+                'mutasiRegisters.register.astap.jenisAstap',
+                'mutasiRegisters.register.unit'
+            ])
             ->where('is_deleted', 0)
             ->latest('tanggal_mutasi')
             ->latest('id')
@@ -439,7 +446,8 @@ class MutasiEksternalController extends Controller
 
         $mutasiEksternals = $records->map(function ($m) {
             $astap = $m->astap;
-            $nomorBamb = $m->nomor_bamb ?: ($astap?->bast_dokumen_nomor ?: 'BAMB-SKPD-' . str_pad($m->id, 4, '0', STR_PAD_LEFT));
+            $isKeluar = ($m->tipe === 'keluar');
+            $nomorBamb = $m->nomor_bamb ?: ($astap?->bast_dokumen_nomor ?: ($isKeluar ? 'BAST-KELUAR-' . str_pad($m->id, 4, '0', STR_PAD_LEFT) : 'BAMB-SKPD-' . str_pad($m->id, 4, '0', STR_PAD_LEFT)));
 
             // Format tanggal
             $tglRaw = $m->tanggal_mutasi ? $m->tanggal_mutasi->format('Y-m-d') : ($astap?->created_at ? $astap->created_at->format('Y-m-d') : date('Y-m-d'));
@@ -451,9 +459,9 @@ class MutasiEksternalController extends Controller
             }
 
             // Pihak Pengirim & Penerima
-            $opdAsal = $m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar');
             $ruangRSUD = $m->unit?->nama ?: ($m->ruangan_tujuan ?: ($astap?->alamat_barang ?: 'Gudang/Ruangan RSUD'));
-            $opdTujuan = $m->opd_tujuan ?: ('RSUD dr. H. Koesnadi (' . $ruangRSUD . ')');
+            $opdAsal = $isKeluar ? ($m->opd_asal ?: 'RSUD Dr. H. Koesnadi') : ($m->opd_asal ?: ($astap?->mutasi_asal ?: 'SKPD / Instansi Luar'));
+            $opdTujuan = $isKeluar ? ($m->opd_tujuan ?: 'SKPD / Instansi Luar') : ($m->opd_tujuan ?: ('RSUD dr. H. Koesnadi (' . $ruangRSUD . ')'));
 
             // Pejabat
             $pjNama = $m->pj_tujuan_nama ?: ($astap?->ppk_nama ?: 'Pengurus Barang RSUD');
@@ -465,43 +473,63 @@ class MutasiEksternalController extends Controller
             // Daftar registers / satuan barang
             $items = [];
             $registers = $astap?->registers ?? collect();
-            $specJson = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (is_string($astap?->spesifikasi_json) ? json_decode($astap->spesifikasi_json, true) : []);
-            $extractedUnits = self::extractUnitsFromSpec(
-                $specJson ?: [],
-                $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
-                $m->kondisi ?: 'Baik',
-                $ruangRSUD,
-                $m->unit_id
-            );
 
-            if ($registers->isNotEmpty()) {
-                foreach ($registers as $idx => $reg) {
-                    $unitNama = $extractedUnits[$idx]['nama'] ?? ($astap->nama_barang ?: 'Barang Mutasi');
-                    $unitKondisi = $reg->kondisi ?: ($extractedUnits[$idx]['kondisi'] ?? ($m->kondisi ?: 'Baik'));
+            if ($isKeluar && $m->mutasiRegisters && $m->mutasiRegisters->isNotEmpty()) {
+                foreach ($m->mutasiRegisters as $idx => $mr) {
+                    $reg = $mr->register;
+                    $ast = $reg?->astap;
+                    $kd108 = $ast?->kode_108 ?: ($ast?->jenisAstap?->sub_sub_rincian_objek ?: ($ast?->jenisAstap?->jenis ?: '-'));
                     $items[] = [
                         'no'          => $idx + 1,
-                        'nama_barang' => $unitNama,
-                        'nibar'       => $reg->nibar ?: '-',
-                        'kode_108'    => $kode108,
-                        'kondisi'     => $unitKondisi,
-                        'satuan'      => $astap->satuan ?: ($m->satuan ?: 'Unit'),
+                        'nama_barang' => $ast?->nama_barang ?: 'Aset RSUD',
+                        'nibar'       => $reg?->nibar ?: '-',
+                        'kode_108'    => $kd108,
+                        'kondisi'     => $mr->kondisi ?: ($reg?->kondisi ?: ($m->kondisi ?: 'Baik')),
+                        'ruangan_asal'=> $reg?->unit?->nama ?: ($m->ruangan_tujuan ?: 'RSUD Dr. H. Koesnadi'),
+                        'satuan'      => $ast?->satuan ?: ($m->satuan ?: 'Unit'),
                         'volume'      => 1,
+                        'nilai_satuan'=> (float)($reg?->harga_satuan ?: ($ast?->harga_satuan ?: 0)),
                     ];
                 }
             } else {
-                $items[] = [
-                    'no'          => 1,
-                    'nama_barang' => $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
-                    'nibar'       => '-',
-                    'kode_108'    => $kode108,
-                    'kondisi'     => $m->kondisi ?: 'Baik',
-                    'satuan'      => $m->satuan ?: 'Unit',
-                    'volume'      => (int) ($m->jumlah_volume ?: 1),
-                ];
+                $specJson = is_array($astap?->spesifikasi_json) ? $astap->spesifikasi_json : (is_string($astap?->spesifikasi_json) ? json_decode($astap->spesifikasi_json, true) : []);
+                $extractedUnits = self::extractUnitsFromSpec(
+                    $specJson ?: [],
+                    $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
+                    $m->kondisi ?: 'Baik',
+                    $ruangRSUD,
+                    $m->unit_id
+                );
+
+                if ($registers->isNotEmpty()) {
+                    foreach ($registers as $idx => $reg) {
+                        $unitNama = $extractedUnits[$idx]['nama'] ?? ($astap->nama_barang ?: 'Barang Mutasi');
+                        $unitKondisi = $reg->kondisi ?: ($extractedUnits[$idx]['kondisi'] ?? ($m->kondisi ?: 'Baik'));
+                        $items[] = [
+                            'no'          => $idx + 1,
+                            'nama_barang' => $unitNama,
+                            'nibar'       => $reg->nibar ?: '-',
+                            'kode_108'    => $kode108,
+                            'kondisi'     => $unitKondisi,
+                            'satuan'      => $astap->satuan ?: ($m->satuan ?: 'Unit'),
+                            'volume'      => 1,
+                        ];
+                    }
+                } else {
+                    $items[] = [
+                        'no'          => 1,
+                        'nama_barang' => $astap?->nama_barang ?: 'Barang Mutasi Eksternal',
+                        'nibar'       => '-',
+                        'kode_108'    => $kode108,
+                        'kondisi'     => $m->kondisi ?: 'Baik',
+                        'satuan'      => $m->satuan ?: 'Unit',
+                        'volume'      => (int) ($m->jumlah_volume ?: 1),
+                    ];
+                }
             }
 
             $itemCount = count($items);
-            $firstNibar = ($items[0]['nibar'] !== '-') ? $items[0]['nibar'] : ($kode108 ?: '1.3.2.00.00.00');
+            $firstNibar = (!empty($items[0]['nibar']) && $items[0]['nibar'] !== '-') ? $items[0]['nibar'] : ($kode108 ?: '1.3.2.00.00.00');
             $nilaiReal = (float) ($m->nilai_perolehan ?: ($astap?->total_realisasi ?: 0));
             $tahunMasuk = (string) ($astap?->tahun_perolehan ?: date('Y', strtotime($tglRaw)));
             $volAset = (int) ($m->jumlah_volume ?: ($itemCount ?: 1));
@@ -512,19 +540,19 @@ class MutasiEksternalController extends Controller
                 'mutasi_id'                 => $m->id,
                 'is_deleted'                => (int) $m->is_deleted,
                 'kode'                      => $nomorBamb,
-                'jenis'                     => $m->jenis_mutasi ?: 'Transfer Antar-OPD',
+                'jenis'                     => $m->jenis_mutasi ?: ($isKeluar ? 'Transfer Keluar ke OPD' : 'Transfer Antar-OPD'),
                 'tipe'                      => $m->tipe ?: 'masuk',
-                'kategori_label'            => 'Pelimpahan SKPD (Mutasi Masuk)',
-                'nama'                      => ($astap?->nama_barang ?: 'Barang Mutasi') . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
-                'nama_murni'                => $astap?->nama_barang ?: 'Barang Mutasi',
-                'nama_barang'               => $astap?->nama_barang ?: 'Barang Mutasi',
+                'kategori_label'            => $isKeluar ? 'Transfer ke OPD (Mutasi Keluar)' : 'Pelimpahan SKPD (Mutasi Masuk)',
+                'nama'                      => ($isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi')) . ($itemCount > 1 ? " (+{$itemCount} unit)" : ''),
+                'nama_murni'                => $isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi'),
+                'nama_barang'               => $isKeluar && !empty($items[0]['nama_barang']) ? $items[0]['nama_barang'] : ($astap?->nama_barang ?: 'Barang Mutasi'),
                 'category'                  => $astap?->category ?: 'KIB B',
                 'is_extracomtable'          => (bool) ($astap?->is_extracomtable ?? false),
                 'is_reklas'                 => (bool) ($astap?->is_reklas ?? false),
                 'jenis_reklas'              => $astap?->jenis_reklas,
                 'sumber_dana'               => $astap?->sumber_dana ?: 'pelimpahan_skpd',
                 'sumber_dana_raw'           => $astap?->sumber_dana ?: 'pelimpahan_skpd',
-                'jenis_aset_nama'           => $astap?->jenisAstap?->nama_jenis ?: ($astap?->jenisAstap?->jenis ?: 'PELIMPAHAN SKPD'),
+                'jenis_aset_nama'           => $astap?->jenisAstap?->nama_jenis ?: ($astap?->jenisAstap?->jenis ?: ($isKeluar ? 'TRANSFER KE OPD' : 'PELIMPAHAN SKPD')),
                 'tahun_perolehan'           => $tahunMasuk,
                 'volume_satuan'             => $volAset . ' Aset',
                 'jumlah_volume'             => $volAset,
@@ -537,23 +565,23 @@ class MutasiEksternalController extends Controller
                 'registers'                 => $registers->toArray(),
                 'kode_barang'               => $kode108 ?: $firstNibar,
                 'kode_108'                  => $kode108,
-                'kondisi'                   => $items[0]['kondisi'] ?? 'Baik',
+                'kondisi'                   => $items[0]['kondisi'] ?? ($m->kondisi ?: 'Baik'),
                 'opd_asal'                  => $opdAsal,
-                'ruangan_asal'              => $opdAsal,
-                'pj_asal_nama'              => $m->pj_asal_nama ?: 'Pejabat Penyerah SKPD Pengirim',
+                'ruangan_asal'              => $isKeluar ? ($items[0]['ruangan_asal'] ?? ($m->ruangan_tujuan ?: 'RSUD Dr. H. Koesnadi')) : $opdAsal,
+                'pj_asal_nama'              => $m->pj_asal_nama ?: ($isKeluar ? 'Pengurus Barang RSUD Dr. H. Koesnadi' : 'Pejabat Penyerah SKPD Pengirim'),
                 'pj_asal_nip'               => $m->pj_asal_nip ?: '-',
-                'pj_asal_jabatan'           => $m->pj_asal_jabatan ?: 'Pengurus Barang / PPK Asal',
+                'pj_asal_jabatan'           => $m->pj_asal_jabatan ?: ($isKeluar ? 'Pengurus Barang Pengguna' : 'Pengurus Barang / PPK Asal'),
                 'opd_tujuan'                => $opdTujuan,
-                'ruangan_tujuan'            => $ruangRSUD,
-                'pejabat_opd_tujuan'        => $pjNama,
-                'nip_pejabat_opd_tujuan'    => $pjNip,
-                'jabatan_opd_tujuan'        => $m->pj_tujuan_jabatan ?: 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi',
+                'ruangan_tujuan'            => $isKeluar ? $opdTujuan : $ruangRSUD,
+                'pejabat_opd_tujuan'        => $isKeluar ? ($m->pj_tujuan_nama ?: 'Pejabat Penerima OPD') : $pjNama,
+                'nip_pejabat_opd_tujuan'    => $isKeluar ? ($m->pj_tujuan_nip ?: '-') : $pjNip,
+                'jabatan_opd_tujuan'        => $m->pj_tujuan_jabatan ?: ($isKeluar ? 'Pejabat Penerima OPD' : 'Pengurus Barang / PPK RSUD Dr. H. Koesnadi'),
                 'nomor_sk_dasar'            => $m->nomor_sk_dasar ?: $nomorBamb,
                 'alamat_instansi'           => $m->alamat_instansi ?: ($astap?->spesifikasi_json['alamat_instansi'] ?? ''),
                 'tgl'                       => $tglFormatted,
                 'tgl_raw'                   => (string) $tglRaw,
                 'status'                    => $m->status ?: 'Disahkan (Selesai)',
-                'alasan_mutasi'             => $m->alasan_mutasi ?: 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnadi.',
+                'alasan_mutasi'             => $m->alasan_mutasi ?: ($isKeluar ? 'Pemindahtanganan / transfer aset RSUD Dr. H. Koesnadi ke SKPD luar.' : 'Pelimpahan aset barang milik daerah dari SKPD/Dinas luar ke RSUD dr. H. Koesnadi.'),
                 'tgl_estimasi_kembali'      => $m->tgl_estimasi_kembali ? $m->tgl_estimasi_kembali->format('Y-m-d') : null,
                 'dokumen_lampiran'          => $m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null),
                 'dokumen_lampiran_url'      => ($m->dokumen_lampiran ?: ($astap?->spesifikasi_json['dokumen_lampiran'] ?? null)) ? asset('storage/' . ($m->dokumen_lampiran ?: $astap->spesifikasi_json['dokumen_lampiran'])) : null,

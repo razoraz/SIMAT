@@ -1,6 +1,7 @@
 <script>
     function mutasiEksternalCatalog() {
         return {
+            activeDirection: 'masuk',
             searchQuery: '',
             statusFilter: 'all',
             categoryFilter: 'all',
@@ -61,10 +62,27 @@
 
             mutasiEksternals: {{ Js::from($mutasiEksternals) }},
 
+            get countMasuk() {
+                return this.mutasiEksternals.filter(item => item.tipe !== 'keluar').length;
+            },
+
+            get countKeluar() {
+                return this.mutasiEksternals.filter(item => item.tipe === 'keluar').length;
+            },
+
+            get currentDirectionItems() {
+                return this.mutasiEksternals.filter(item => {
+                    if (this.activeDirection === 'keluar') {
+                        return item.tipe === 'keluar';
+                    }
+                    return item.tipe !== 'keluar';
+                });
+            },
+
             get filteredMutasis() {
                 const query = (this.searchQuery || '').toLowerCase().trim();
 
-                return this.mutasiEksternals.filter(item => {
+                return this.currentDirectionItems.filter(item => {
                     // Filter Kategori KIB
                     if (this.categoryFilter !== 'all') {
                         if ((item.category || '').toLowerCase() !== this.categoryFilter.toLowerCase()) return false;
@@ -92,6 +110,8 @@
                             (item.opd_asal || '').toLowerCase().includes(query) ||
                             (item.opd_tujuan || '').toLowerCase().includes(query) ||
                             (item.pejabat_opd_tujuan || '').toLowerCase().includes(query) ||
+                            (item.pj_tujuan_nama || '').toLowerCase().includes(query) ||
+                            (item.pj_asal_nama || '').toLowerCase().includes(query) ||
                             (item.nomor_sk_dasar || '').toLowerCase().includes(query) ||
                             (item.category || '').toLowerCase().includes(query) ||
                             (item.jenis || '').toLowerCase().includes(query) ||
@@ -104,28 +124,28 @@
             },
 
             get countAll() {
-                return this.mutasiEksternals.length;
+                return this.currentDirectionItems.length;
             },
 
             get totalNominal() {
-                return this.mutasiEksternals.reduce((acc, curr) => acc + (parseFloat(curr.nilai_perolehan || curr.total_realisasi_num) || 0), 0);
+                return this.currentDirectionItems.reduce((acc, curr) => acc + (parseFloat(curr.nilai_perolehan || curr.total_realisasi_num) || 0), 0);
             },
 
             get totalUnits() {
-                return this.mutasiEksternals.reduce((acc, curr) => acc + (parseInt(curr.jumlah_volume || curr.item_count || 1) || 1), 0);
+                return this.currentDirectionItems.reduce((acc, curr) => acc + (parseInt(curr.jumlah_volume || curr.item_count || 1) || 1), 0);
             },
 
             get countSkpd() {
-                const opds = this.mutasiEksternals.map(m => (m.opd_asal || '').trim()).filter(Boolean);
+                const opds = this.currentDirectionItems.map(m => (this.activeDirection === 'keluar' ? (m.opd_tujuan || '') : (m.opd_asal || '')).trim()).filter(Boolean);
                 return new Set(opds).size;
             },
 
             get countSelesai() {
-                return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('selesai') || (m.status || '').toLowerCase().includes('disahkan')).length;
+                return this.currentDirectionItems.filter(m => (m.status || '').toLowerCase().includes('selesai') || (m.status || '').toLowerCase().includes('disahkan')).length;
             },
 
             get countMenunggu() {
-                return this.mutasiEksternals.filter(m => (m.status || '').toLowerCase().includes('menunggu')).length;
+                return this.currentDirectionItems.filter(m => (m.status || '').toLowerCase().includes('menunggu')).length;
             },
 
             formatRupiah(val) {
@@ -845,23 +865,29 @@
                     tahun_anggaran: String(item.tahun_perolehan || tahun),
                     tgl_bast: `${tglAngka} ${bulan} ${tahun}`,
 
-                    // Pihak Kesatu (Yang Menyerahkan / SKPD Pengirim)
-                    opd_asal: item.opd_asal || 'Dinas Kesehatan Kabupaten Bondowoso',
-                    alamat_instansi: item.alamat_instansi || (item.astap && item.astap.spesifikasi_json ? item.astap.spesifikasi_json.alamat_instansi : '') || '',
-                    pj_asal_nama: item.pj_asal_nama || 'Pejabat Penyerah SKPD Pengirim',
-                    pj_asal_nip: item.pj_asal_nip || '-',
-                    pj_asal_jabatan: item.pj_asal_jabatan || 'Pengurus Barang / PPK Asal',
+                    // Pihak Kesatu & Pihak Kedua (Disesuaikan dengan Arah Mutasi: Masuk vs Keluar)
+                    opd_asal: (item.tipe === 'keluar') ? 'RSUD dr. H. Koesnandi Kabupaten Bondowoso' : (item.opd_asal || 'Dinas Kesehatan Kabupaten Bondowoso'),
+                    alamat_instansi: (item.tipe === 'keluar') ? 'Jl. Piere Tendean No. 1, Bondowoso' : (item.alamat_instansi || (item.astap && item.astap.spesifikasi_json ? item.astap.spesifikasi_json.alamat_instansi : '') || ''),
+                    pj_asal_nama: (item.tipe === 'keluar') ? (item.pj_asal_nama || 'BUDI HARTONO, S.Sos') : (item.pj_asal_nama || 'Pejabat Penyerah SKPD Pengirim'),
+                    pj_asal_nip: (item.tipe === 'keluar') ? (item.pj_asal_nip || '19760229 200801 1 010') : (item.pj_asal_nip || '-'),
+                    pj_asal_jabatan: (item.tipe === 'keluar') ? (item.pj_asal_jabatan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi') : (item.pj_asal_jabatan || 'Pengurus Barang / PPK Asal'),
                     nomor_sk_dasar: item.nomor_sk_dasar || '',
 
-                    // Pihak Kedua (Yang Menerima / Pengurus Barang RSUD Dr. H. Koesnadi)
-                    opd_tujuan: 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
-                    pj_tujuan_nama: (item.pejabat_opd_tujuan && !item.pejabat_opd_tujuan.toLowerCase().includes('yus')) 
-                        ? item.pejabat_opd_tujuan 
-                        : ((item.pj_tujuan_nama && !item.pj_tujuan_nama.toLowerCase().includes('yus')) ? item.pj_tujuan_nama : 'BUDI HARTONO, S.Sos'),
-                    pj_tujuan_nip: (item.nip_pejabat_opd_tujuan && !item.nip_pejabat_opd_tujuan.includes('19771002') && !item.nip_pejabat_opd_tujuan.includes('19690412'))
-                        ? item.nip_pejabat_opd_tujuan 
-                        : ((item.pj_tujuan_nip && !item.pj_tujuan_nip.includes('19771002') && !item.pj_tujuan_nip.includes('19690412')) ? item.pj_tujuan_nip : '19760229 200801 1 010'),
-                    pj_tujuan_jabatan: item.jabatan_opd_tujuan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi',
+                    // Pihak Kedua
+                    opd_tujuan: (item.tipe === 'keluar') ? (item.opd_tujuan || 'SKPD / Instansi Penerima') : 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
+                    pj_tujuan_nama: (item.tipe === 'keluar') 
+                        ? (item.pejabat_opd_tujuan || item.pj_tujuan_nama || 'Pejabat Penerima OPD')
+                        : ((item.pejabat_opd_tujuan && !item.pejabat_opd_tujuan.toLowerCase().includes('yus')) 
+                            ? item.pejabat_opd_tujuan 
+                            : ((item.pj_tujuan_nama && !item.pj_tujuan_nama.toLowerCase().includes('yus')) ? item.pj_tujuan_nama : 'BUDI HARTONO, S.Sos')),
+                    pj_tujuan_nip: (item.tipe === 'keluar')
+                        ? (item.nip_pejabat_opd_tujuan || item.pj_tujuan_nip || '-')
+                        : ((item.nip_pejabat_opd_tujuan && !item.nip_pejabat_opd_tujuan.includes('19771002') && !item.nip_pejabat_opd_tujuan.includes('19690412'))
+                            ? item.nip_pejabat_opd_tujuan 
+                            : ((item.pj_tujuan_nip && !item.pj_tujuan_nip.includes('19771002') && !item.pj_tujuan_nip.includes('19690412')) ? item.pj_tujuan_nip : '19760229 200801 1 010')),
+                    pj_tujuan_jabatan: (item.tipe === 'keluar')
+                        ? (item.jabatan_opd_tujuan || 'Pengurus Barang / Pejabat Penerima OPD')
+                        : (item.jabatan_opd_tujuan || 'Pengurus Barang Pengguna RSUD Dr. H. Koesnadi'),
 
                     // Pejabat Pengesah (Direktur RSUD Dr. H. Koesnadi)
                     direktur_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',

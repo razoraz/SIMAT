@@ -60,7 +60,20 @@ class MutasiEksternal extends Model
         return $query->where('tipe', 'masuk');
     }
 
+    public function scopeKeluar($query)
+    {
+        return $query->where('tipe', 'keluar');
+    }
+
     // ─── Relations ──────────────────────────────────────────────────────────
+
+    /**
+     * Relasi ke rincian item register yang dimutasi (khususnya mutasi keluar)
+     */
+    public function mutasiRegisters()
+    {
+        return $this->hasMany(MutasiEksternalRegister::class, 'mutasi_eksternal_id');
+    }
 
     /**
      * Relasi ke master aset induk ASTAP
