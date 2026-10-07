@@ -2,7 +2,7 @@
         <template x-teleport="body">
             <div x-show="showConfirmModal" x-cloak
                  class="fixed inset-0 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-                 style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+                 style="background-color: rgba(2, 6, 23, 0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 100005;"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
