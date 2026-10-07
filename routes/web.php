@@ -266,7 +266,11 @@ Route::middleware('auth')->group(function () {
                 'belanjaModal',
                 'belanjaBarang',
                 'pelimpahanSkpd',
-                'hibahDetail'
+                'hibahDetail',
+                'reklas' => function($q) {
+                    $q->orderBy('id', 'desc');
+                },
+                'kemitraan'
             ])
             ->orderBy('id', 'desc')
             ->get()
@@ -333,13 +337,59 @@ Route::middleware('auth')->group(function () {
                 $jp = $a->jenisPengadaan;
                 $rb = $a->rekeningBelanja;
                 $kode108Val = $a->kode_108 ?: ($ja ? ($ja->sub_sub_rincian_objek ?: $ja->jenis) : '');
+                $latestReklas = $a->reklas ? $a->reklas->first() : null;
+                $reklasCount = $a->reklas ? $a->reklas->count() : 0;
+                $hasEverReklas = $reklasCount > 0 || (bool) $a->is_reklas || !empty($a->jenis_reklas);
 
                 return [
                     'id' => $a->id,
                     'created_at' => $a->created_at ? $a->created_at->format('Y-m-d H:i:s') : null,
                     'category' => $a->category,
-                    'sumber_dana' => $a->sumber_dana ?? 'belanja_modal',
+                    'is_reklas' => (bool) ($a->is_reklas || $hasEverReklas),
+                    'has_reklas' => $hasEverReklas,
+                    'reklas_count' => $reklasCount,
+                    'jenis_reklas' => $a->jenis_reklas ?: ($latestReklas?->jenis_reklas),
+                    'tujuan_kib' => $latestReklas?->tujuan_kib,
+                    'tujuan_kode' => $latestReklas?->tujuan_kode,
+                    'tujuan_kode_barang' => $latestReklas?->tujuan_kode,
+                    'tujuan_nama' => $latestReklas?->tujuan_nama,
+                    'asal_kib' => $latestReklas?->asal_kib,
+                    'asal_kode' => $latestReklas?->asal_kode,
+                    'nilai_reklas' => $latestReklas?->nilai_reklas ? (float) $latestReklas->nilai_reklas : null,
+                    'sumber_dana' => ($a->isKemitraan()) ? 'kemitraan' : (in_array($a->sumber_dana, ['pelimpahan_skpd', 'mutasi_masuk', 'mutasi', 'pelimpahan'], true) ? 'pelimpahan' : ($a->sumber_dana === 'hibah' ? 'hibah' : ($a->sumber_dana === 'belanja_barang' ? 'belanja_barang' : ($spec['sumber_dana'] ?? 'belanja_modal')))),
+                    'sumber_dana_raw' => ($a->isKemitraan()) ? 'kemitraan' : $a->sumber_dana,
                     'sumber_dana_label' => $a->sumber_dana_label,
+                    'kemitraan' => $a->kemitraan ? [
+                        'id' => $a->kemitraan->id,
+                        'mitra_nama' => $a->kemitraan->mitra_nama,
+                        'nomor_pks' => $a->kemitraan->nomor_pks,
+                        'tanggal_pks' => $a->kemitraan->tanggal_pks ? $a->kemitraan->tanggal_pks->format('Y-m-d') : ($spec['tanggal_pks'] ?? null),
+                        'skema_kemitraan' => $a->kemitraan->skema_kemitraan ?: ($spec['skema_kemitraan'] ?? 'Sewa'),
+                        'tanggal_mulai' => $a->kemitraan->tanggal_mulai ? $a->kemitraan->tanggal_mulai->format('Y-m-d') : ($spec['tanggal_mulai'] ?? null),
+                        'tanggal_selesai' => $a->kemitraan->tanggal_selesai ? $a->kemitraan->tanggal_selesai->format('Y-m-d') : ($spec['tanggal_selesai'] ?? null),
+                        'status_konsesi' => $a->kemitraan->status_konsesi ?: 'Aktif',
+                        'jumlah_volume' => (int) ($a->kemitraan->jumlah_volume ?: ($a->jumlah_volume ?: 1)),
+                        'satuan' => $a->kemitraan->satuan ?: ($a->satuan ?: 'Unit'),
+                        'nilai_aset' => (float) ($a->kemitraan->nilai_aset ?: $a->total_realisasi),
+                        'sisa_hari' => $a->kemitraan->sisa_hari_konsesi,
+                        'keterangan' => $a->kemitraan->keterangan ?: ($spec['keterangan'] ?? null),
+                    ] : (
+                        ($a->isKemitraan() || $a->sumber_dana === 'kemitraan') ? [
+                            'id' => null,
+                            'mitra_nama' => $spec['mitra_nama'] ?? 'Mitra Pihak Ketiga',
+                            'nomor_pks' => $a->bast_dokumen_nomor ?? ($spec['nomor_pks'] ?? '-'),
+                            'tanggal_pks' => $a->bast_dokumen_tanggal ? (is_string($a->bast_dokumen_tanggal) ? $a->bast_dokumen_tanggal : $a->bast_dokumen_tanggal->format('Y-m-d')) : ($spec['tanggal_pks'] ?? null),
+                            'skema_kemitraan' => $spec['skema_kemitraan'] ?? 'Sewa',
+                            'tanggal_mulai' => $spec['tanggal_mulai'] ?? null,
+                            'tanggal_selesai' => $spec['tanggal_selesai'] ?? null,
+                            'status_konsesi' => 'Aktif',
+                            'jumlah_volume' => (int) ($a->jumlah_volume ?: 1),
+                            'satuan' => $a->satuan ?: 'Unit',
+                            'nilai_aset' => (float) $a->total_realisasi,
+                            'sisa_hari' => null,
+                            'keterangan' => $a->keterangan_tambahan ?? ($spec['keterangan'] ?? null),
+                        ] : null
+                    ),
                     'hibah_pemberi' => $a->hibah_pemberi ?? '',
                     'hibah_nomor_bast' => $a->hibah_nomor_bast ?? '',
                     'hibah_tanggal_bast' => $fmtDate($a->hibah_tanggal_bast, ''),

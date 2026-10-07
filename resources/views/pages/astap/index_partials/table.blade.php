@@ -70,6 +70,17 @@
                                                 <span>🏛️</span><span>BELANJA MODAL</span>
                                             </span>
                                         </template>
+
+                                        {{-- Badge Reklasifikasi -- tampil jika aset pernah melakukan reklas --}}
+                                        <template x-if="item.has_reklas || item.is_reklas || (item.reklas_count && item.reklas_count > 0)">
+                                            <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[9px] font-black whitespace-nowrap leading-none shrink-0 bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20 tracking-wider"
+                                                :title="'Aset ini memiliki riwayat Reklasifikasi' + (item.jenis_reklas ? ' (' + item.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
+                                                <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                                </svg>
+                                                <span>REKLASIFIKASI</span>
+                                            </span>
+                                        </template>
                                         <span class="text-[11px] text-slate-400 truncate font-medium" x-text="item.jenis_aset_nama"></span>
                                     </div>
                                 </td>

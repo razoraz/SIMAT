@@ -232,10 +232,19 @@
                                         Tgl Reklas: {{ $row->tanggal_pks ? \Carbon\Carbon::parse($row->tanggal_pks)->translatedFormat('d F Y') : '-' }}
                                     </div>
                                 @else
-                                    <div class="flex items-center gap-2 mb-1">
+                                    <div class="flex items-center gap-2 mb-1 flex-wrap">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                                             {{ $row->skema_kemitraan ?: 'Sewa' }}
                                         </span>
+                                        @if(($astap?->is_reklas) || ($astap?->reklas && $astap->reklas->isNotEmpty()) || ($objekAsetBmd?->is_reklas) || ($objekAsetBmd?->reklas && $objekAsetBmd->reklas->isNotEmpty()))
+                                            <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20"
+                                                title="Aset ini memiliki riwayat Reklasifikasi">
+                                                <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                                </svg>
+                                                <span>REKLASIFIKASI</span>
+                                            </span>
+                                        @endif
                                         <span class="text-xs font-bold text-white truncate max-w-[180px]" title="{{ $row->mitra_nama }}">
                                             {{ $row->mitra_nama }}
                                         </span>
@@ -438,10 +447,19 @@
 
                             <!-- 2. Dokumen PKS & Rekanan -->
                             <td class="py-4 px-4">
-                                <div class="flex items-center gap-2 mb-1">
+                                <div class="flex items-center gap-2 mb-1 flex-wrap">
                                     <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                                         {{ $row->skema_kemitraan ?: 'KSO' }}
                                     </span>
+                                    @if(($astap?->is_reklas) || ($astap?->reklas && $astap->reklas->isNotEmpty()))
+                                        <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-sm shadow-indigo-500/20"
+                                            title="Aset ini memiliki riwayat Reklasifikasi">
+                                            <svg class="w-2.5 h-2.5 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                            </svg>
+                                            <span>REKLASIFIKASI</span>
+                                        </span>
+                                    @endif
                                     <span class="text-xs font-bold text-white truncate max-w-[180px]" title="{{ $row->mitra_nama }}">
                                         {{ $row->mitra_nama }}
                                     </span>

@@ -59,6 +59,16 @@
                                 </span>
                             </template>
 
+                            <template x-if="selectedAstapDetail?.has_reklas || selectedAstapDetail?.is_reklas || (selectedAstapDetail?.reklas_count && selectedAstapDetail?.reklas_count > 0)">
+                                <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold border uppercase tracking-wider shrink-0 bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-sm"
+                                    :title="'Aset ini memiliki riwayat Reklasifikasi' + (selectedAstapDetail?.jenis_reklas ? ' (' + selectedAstapDetail.jenis_reklas.replace(/_/g, ' ') + ')' : '')">
+                                    <svg class="w-3 h-3 shrink-0 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                    </svg>
+                                    <span>REKLASIFIKASI</span>
+                                </span>
+                            </template>
+
                             <span class="px-2.5 py-0.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 font-mono font-bold text-[11px] truncate max-w-full"
                                 x-text="'Kode: ' + (selectedAstapDetail?.kode_barang || '-')"></span>
 

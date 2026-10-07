@@ -69,7 +69,15 @@ class KemitraanController extends Controller
         $search       = trim($request->query('search', ''));
 
         // Query utama data kemitraan (hanya yang aktif / belum dihapus)
-        $query = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'user', 'objekRegister.astap', 'objekAstap'])
+        $query = AstapKemitraan::with([
+            'astap.jenisAstap', 
+            'astap.registers.unit', 
+            'astap.unit', 
+            'astap.reklas',
+            'user', 
+            'objekRegister.astap.reklas', 
+            'objekAstap.reklas'
+        ])
             ->where('is_deleted', 0)
             ->whereHas('astap', function ($q) {
                 $q->where('is_deleted', 0);
