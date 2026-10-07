@@ -478,7 +478,40 @@
                     </div>
                 </template>
 
-                <!-- 8. DETAIL PENGGUNA -->
+                <!-- 8. DETAIL REKLASIFIKASI ASET -->
+                <template x-if="activeModule === 'reklas'">
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                            <div>
+                                <span class="text-slate-500 text-[10px] uppercase font-bold block">Nomor Berita Acara:</span>
+                                <span class="font-mono font-bold text-cyan-300 text-sm" x-text="selectedItem.nomor_ba"></span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5" x-text="'Tanggal BA: ' + selectedItem.tanggal_reklas"></span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-slate-500 text-[10px] uppercase font-bold block">Nilai Reklasifikasi:</span>
+                                <span class="font-mono font-bold text-emerald-300 text-sm" x-text="selectedItem.nilai_reklas_rp"></span>
+                                <span class="text-[10px] text-slate-400 block" x-text="'T.A. ' + selectedItem.tahun + ' (Triwulan ' + selectedItem.triwulan + ')'"></span>
+                            </div>
+                            <div class="mt-2">
+                                <span class="text-slate-500 text-[10px] block">Aset Terkait:</span>
+                                <span class="font-bold text-white text-xs" x-text="selectedItem.nama_barang"></span>
+                                <span class="text-[10px] font-mono text-cyan-400 block" x-text="'Kode 108: ' + selectedItem.kode_barang"></span>
+                            </div>
+                            <div class="mt-2 text-right">
+                                <span class="text-slate-500 text-[10px] block">Perubahan Rekening / KIB:</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-200 border border-slate-700 inline-block" x-text="selectedItem.asal_kib + ' ➔ ' + selectedItem.tujuan_kib"></span>
+                                <span class="text-[10px] text-emerald-300 block font-semibold mt-1" x-text="selectedItem.jenis_reklas"></span>
+                            </div>
+                        </div>
+                        <div class="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 space-y-1">
+                            <span class="text-[10px] text-slate-500 block uppercase font-bold">Alasan Penghapusan:</span>
+                            <p class="text-xs text-rose-300 font-semibold" x-text="selectedItem.alasan_hapus"></p>
+                            <p class="text-[11px] text-slate-400 mt-1" x-show="selectedItem.keterangan && selectedItem.keterangan !== '-'" x-text="'Catatan Reklas: ' + selectedItem.keterangan"></p>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- 9. DETAIL PENGGUNA -->
                 <template x-if="activeModule === 'users'">
                     <div class="space-y-3">
                         <div class="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl grid grid-cols-2 gap-3 text-xs">

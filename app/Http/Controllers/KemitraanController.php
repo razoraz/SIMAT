@@ -259,7 +259,15 @@ class KemitraanController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $kemitraan = AstapKemitraan::findOrFail($id);
+        $kemitraan = AstapKemitraan::find($id);
+        if (!$kemitraan) {
+            $kemitraan = AstapKemitraan::where('astap_id', $id)->first();
+        }
+
+        if (!$kemitraan) {
+            return response()->json(['success' => false, 'message' => 'Data Kemitraan tidak ditemukan.'], 404);
+        }
+
         $alasanHapus = $request->input('alasan_hapus', 'Dihapus dari Kelola Kemitraan Aset');
 
         DB::transaction(function () use ($kemitraan, $alasanHapus) {

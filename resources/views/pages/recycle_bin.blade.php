@@ -28,7 +28,10 @@
         {{-- 8. TAB CONTENT: BELANJA BARANG (AKUN 5.1.02 / PERBEKALAN RUANGAN) --}}
         @include('pages.recycle_bin_partials.tab_belanja_barang')
 
-        {{-- 9. TAB CONTENT: AKUN PENGGUNA (USERS) --}}
+        {{-- 9. TAB CONTENT: REKLASIFIKASI ASET --}}
+        @include('pages.recycle_bin_partials.tab_reklas')
+
+        {{-- 10. TAB CONTENT: AKUN PENGGUNA (USERS) --}}
         @include('pages.recycle_bin_partials.tab_users')
 
         {{-- 10. DYNAMIC DETAIL MODAL PREVIEW --}}

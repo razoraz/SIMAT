@@ -7,6 +7,7 @@
         ['id' => 'hibah', 'name' => 'Hibah Aset', 'icon' => '🎁', 'desc' => 'Arsip BAST Hibah Masuk & Hibah Keluar'],
         ['id' => 'kemitraan', 'name' => 'Kemitraan Aset', 'icon' => '🤝', 'desc' => 'Kerja Sama Operasi (KSO) & PKS Akun 1.5.2'],
         ['id' => 'belanja_barang', 'name' => 'Belanja Barang', 'icon' => '🛒', 'desc' => 'Faktur Belanja & Perbekalan Akun 5.1.02'],
+        ['id' => 'reklas', 'name' => 'Reklasifikasi Aset', 'icon' => '⚖️', 'desc' => 'Arsip Transaksi Reklasifikasi & Koreksi 108'],
         ['id' => 'users', 'name' => 'Akun Pengguna', 'icon' => '👥', 'desc' => 'Akun Staf, Pegawai, & Otorisasi Sistem'],
     ];
 @endphp
@@ -84,6 +85,7 @@
                         <span x-show="activeModule === 'hibah'">🎁</span>
                         <span x-show="activeModule === 'kemitraan'">🤝</span>
                         <span x-show="activeModule === 'belanja_barang'">🛒</span>
+                        <span x-show="activeModule === 'reklas'">⚖️</span>
                         <span x-show="activeModule === 'users'">👥</span>
                     </div>
                     <div class="min-w-0">
@@ -115,7 +117,7 @@
                 
                 <div class="p-2 pb-2 mb-2 border-b border-slate-800/80 flex items-center justify-between">
                     <span class="text-[10.5px] font-extrabold uppercase tracking-wider text-slate-400">Pilih Kategori Inventaris</span>
-                    <span class="text-[10px] text-slate-500">8 Modul</span>
+                    <span class="text-[10px] text-slate-500">9 Modul</span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[360px] overflow-y-auto">

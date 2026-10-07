@@ -16,6 +16,7 @@
             hibahs: {{ Js::from($deletedHibahs ?? []) }},
             kemitraans: {{ Js::from($deletedKemitraans ?? []) }},
             belanjaBarangs: {{ Js::from($deletedBelanjaBarangs ?? []) }},
+            reklas: {{ Js::from($deletedReklas ?? []) }},
             totalThisMonth: {{ (int) $totalThisMonth }},
             astapSubTab: 'packet',
 
@@ -62,7 +63,7 @@
             },
 
             get totalCount() {
-                return this.mutasis.length + this.mutasiEksternals.length + this.astaps.length + this.nibars.length + this.distribusis.length + this.units.length + this.users.length + this.hibahs.length + this.kemitraans.length + this.belanjaBarangs.length;
+                return this.mutasis.length + this.mutasiEksternals.length + this.astaps.length + this.nibars.length + this.distribusis.length + this.units.length + this.users.length + this.hibahs.length + this.kemitraans.length + this.belanjaBarangs.length + this.reklas.length;
             },
 
             getModuleCount(mod) {
@@ -74,6 +75,7 @@
                 if (mod === 'hibah') return this.hibahs.length;
                 if (mod === 'kemitraan') return this.kemitraans.length;
                 if (mod === 'belanja_barang') return this.belanjaBarangs.length;
+                if (mod === 'reklas') return this.reklas.length;
                 return 0;
             },
 
@@ -90,7 +92,8 @@
                     users: 'Akun Pengguna',
                     hibah: 'Hibah Aset',
                     kemitraan: 'Kemitraan Aset',
-                    belanja_barang: 'Belanja Barang (Akun 5.1.02)'
+                    belanja_barang: 'Belanja Barang (Akun 5.1.02)',
+                    reklas: 'Reklasifikasi Aset'
                 };
                 return map[this.activeModule] || 'Modul';
             },
@@ -113,6 +116,7 @@
                 if (this.activeModule === 'hibah') return 'Cari nomor BAST / nama barang / pihak hibah / tahun / penghapus...';
                 if (this.activeModule === 'kemitraan') return 'Cari nomor PKS / nama mitra / nama barang / skema / ruangan / penghapus...';
                 if (this.activeModule === 'belanja_barang') return 'Cari nomor faktur / toko penyedia / nama barang / ruangan / penghapus...';
+                if (this.activeModule === 'reklas') return 'Cari nomor BA / nama barang / KIB asal / tujuan / kode 108 / penghapus...';
                 return 'Cari data terhapus...';
             },
 
@@ -129,6 +133,7 @@
                 if (this.activeModule === 'hibah') return this.hibahs;
                 if (this.activeModule === 'kemitraan') return this.kemitraans;
                 if (this.activeModule === 'belanja_barang') return this.belanjaBarangs;
+                if (this.activeModule === 'reklas') return this.reklas;
                 return [];
             },
 
@@ -238,6 +243,8 @@
                         this.astaps = this.astaps.filter(a => !astapIdSet.has(Number(a.id)));
                         this.nibars = this.nibars.filter(n => !astapIdSet.has(Number(n.astap_id)));
                     }
+                } else if (targetMod === 'reklas' || targetMod === 'reklasifikasi') {
+                    this.reklas = this.reklas.filter(i => !idSet.has(Number(i.id)));
                 }
 
                 // Kurangi total aktivitas hapus 30 hari terakhir

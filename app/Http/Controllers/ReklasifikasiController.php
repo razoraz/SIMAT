@@ -77,14 +77,14 @@ class ReklasifikasiController extends Controller
         $astaps = $astapQuery->get();
 
         // 2. Ambil seluruh transaksi mutasi reklasifikasi untuk tahun & tw terpilih
-        $reklasQuery = AstapReklas::where('tahun', $selectedTahun);
+        $reklasQuery = AstapReklas::active()->where('tahun', $selectedTahun);
         if ($selectedTw !== 'all') {
             $reklasQuery->where('triwulan', (int) $selectedTw);
         }
         $reklasMutasis = $reklasQuery->with(['astap.jenisAstap', 'jenisReklasAsal', 'jenisReklasTujuan'])->get();
 
         // Kumpulkan riwayat seluruh reklasifikasi per astap pada tahun bersangkutan
-        $allReklasByAstap = AstapReklas::where('tahun', $selectedTahun)
+        $allReklasByAstap = AstapReklas::active()->where('tahun', $selectedTahun)
             ->orderBy('id', 'asc')
             ->get()
             ->groupBy('astap_id');
@@ -224,7 +224,7 @@ class ReklasifikasiController extends Controller
         }
 
         // 4. Ambil Log Transaksi Reklasifikasi
-        $logReklas = AstapReklas::where('tahun', $selectedTahun)
+        $logReklas = AstapReklas::active()->where('tahun', $selectedTahun)
             ->when($selectedTw !== 'all', fn($q) => $q->where('triwulan', (int) $selectedTw))
             ->when($selectedJenis !== 'all', fn($q) => $q->where('jenis_reklas', $selectedJenis))
             ->with(['astap.jenisAstap', 'jenisReklasAsal', 'jenisReklasTujuan', 'user'])
@@ -1466,10 +1466,10 @@ class ReklasifikasiController extends Controller
 
         DB::beginTransaction();
         try {
-            $reklas->delete();
+            $reklas->softDelete($request->input('alasan', 'Dihapus dari modul Reklasifikasi Aset'));
 
-            // Ambil sisa transaksi reklas untuk astap ini (setelah dihapus)
-            $remainingReklas = AstapReklas::where('astap_id', $astapId)
+            // Ambil sisa transaksi reklas untuk astap ini (yang masih aktif setelah dihapus)
+            $remainingReklas = AstapReklas::active()->where('astap_id', $astapId)
                 ->orderBy('created_at', 'asc')
                 ->get();
 
@@ -1547,11 +1547,11 @@ class ReklasifikasiController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Transaksi reklasifikasi berhasil dibatalkan/dihapus.',
+                    'message' => 'Transaksi reklasifikasi berhasil dipindahkan ke Pusat Data Terhapus.',
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Transaksi reklasifikasi berhasil dihapus.');
+            return redirect()->back()->with('success', 'Transaksi reklasifikasi berhasil dipindahkan ke Pusat Data Terhapus.');
         } catch (\Throwable $th) {
             DB::rollBack();
             if ($request->wantsJson()) {

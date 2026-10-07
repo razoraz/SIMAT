@@ -94,82 +94,78 @@
 </div>
 
 
-<!-- 2. MODAL KONFIRMASI HAPUS / BATALKAN TRANSAKSI HIBAH -->
-<div x-show="showConfirmDeleteModal" x-cloak
-    class="fixed inset-0 flex items-center justify-center p-4"
-    style="z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.92); backdrop-filter: blur(16px);">
-    
-    <div @click.away="if (!isDeleting) showConfirmDeleteModal = false"
-         x-show="showConfirmDeleteModal"
-         x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
-         x-transition:enter-start="opacity-0 scale-95"
-         x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
-         x-transition:leave-start="opacity-100 scale-100"
-         x-transition:leave-end="opacity-0 scale-95"
-         class="bg-slate-900 border border-rose-500/50 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 relative overflow-hidden my-auto">
-        
-        <!-- Top Gradient Accent Strip -->
-        <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-red-600 via-rose-500 to-orange-500"></div>
+<!-- 2. MODAL KONFIRMASI HAPUS / PINDAHKAN TRANSAKSI HIBAH KE RECYCLE BIN -->
+<template x-teleport="body">
+    <div x-show="showConfirmDeleteModal" x-cloak
+         class="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+         style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
 
-        <!-- Header Icon & Title -->
-        <div class="flex items-start justify-between gap-3 pt-1">
-            <div class="flex items-start space-x-3.5">
+        <div @click.away="if (!isDeleting) showConfirmDeleteModal = false"
+             x-show="showConfirmDeleteModal"
+             x-transition:enter="transition ease-out duration-200 transform opacity-0 scale-95"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-150 transform opacity-100 scale-100"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="bg-slate-900 border border-rose-500/40 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-4 relative overflow-hidden my-auto">
+            
+            <!-- Subtle Top Accent Strip -->
+            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-500 to-red-600"></div>
+
+            <!-- Header Icon & Title -->
+            <div class="flex items-start space-x-3.5 pt-1">
                 <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border border-rose-500/30 bg-rose-500/20 text-rose-400 shadow-inner">
                     <svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                     </svg>
                 </div>
                 <div class="space-y-1 min-w-0 flex-1">
-                    <h3 class="text-base sm:text-lg font-black text-white leading-snug tracking-tight">
-                        Pindahkan ke Pusat Data Terhapus?
-                    </h3>
-                    <p class="text-slate-300 text-xs leading-relaxed">
-                        Catatan hibah akan dipindahkan ke <strong class="text-amber-300">Pusat Data Terhapus (Recycle Bin)</strong>. Jika ini hibah keluar, unit barang akan otomatis dipulihkan ke inventaris aktif dan data transaksi dapat dipulihkan sewaktu-waktu.
+                    <h3 class="text-base sm:text-lg font-black text-white leading-snug tracking-tight">Konfirmasi Pindahkan ke Tong Sampah</h3>
+                    <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                        Apakah Anda yakin ingin memindahkan data transaksi hibah ini ke Recycle Bin (Tong Sampah)? Catatan hibah akan diarsipkan ke Tong Sampah dan dapat dipulihkan sewaktu-waktu.
                     </p>
                 </div>
             </div>
-            <button type="button" @click="showConfirmDeleteModal = false" :disabled="isDeleting"
-                class="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 flex items-center justify-center transition-all cursor-pointer shrink-0">
-                ✕
-            </button>
-        </div>
 
-        <!-- Item Target Info -->
-        <template x-if="itemToDelete">
-            <div class="p-3.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1 text-xs">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] text-slate-400 uppercase font-bold">Jenis Transaksi:</span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-black"
-                        :class="itemToDelete.tipe_hibah === 'masuk' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'"
-                        x-text="itemToDelete.tipe_hibah === 'masuk' ? '🎁 HIBAH MASUK' : '📤 HIBAH KELUAR'"></span>
+            <!-- Item Target Box -->
+            <template x-if="itemToDelete">
+                <div class="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 text-xs space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">ITEM TARGET:</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/70 border border-rose-800/60 text-rose-300"
+                              x-text="itemToDelete.tipe_hibah === 'masuk' ? 'HIBAH MASUK' : 'HIBAH KELUAR'"></span>
+                    </div>
+                    <p class="text-xs sm:text-sm font-bold text-cyan-300 truncate font-mono"
+                       x-text="(itemToDelete.astap?.nama_barang || itemToDelete.nama_barang || 'Barang Hibah') + (itemToDelete.nomor_bast ? ' (' + itemToDelete.nomor_bast + ')' : '')"></p>
                 </div>
-                <div>
-                    <span class="text-[10px] text-slate-400">Nama Barang:</span>
-                    <p class="font-bold text-white text-xs truncate" x-text="itemToDelete.astap?.nama_barang || itemToDelete.nama_barang || '-'"></p>
-                </div>
-                <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
-                    <span class="text-[10px] text-slate-400">Nomor BAST:</span>
-                    <span class="font-mono text-cyan-300" x-text="itemToDelete.nomor_bast"></span>
-                </div>
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] text-slate-400">Nilai Aset:</span>
-                    <strong class="font-mono text-amber-300" x-text="formatRupiah(itemToDelete.nilai_aset)"></strong>
-                </div>
+            </template>
+
+            <!-- Footer Action Buttons -->
+            <div class="pt-3 border-t border-slate-800/90 flex items-center justify-end space-x-2.5">
+                <button type="button" @click="showConfirmDeleteModal = false" :disabled="isDeleting"
+                    class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-slate-700 transition-all active:scale-95 cursor-pointer disabled:opacity-50">
+                    Batal
+                </button>
+                <button type="button" @click="executeDeleteHibah()" :disabled="isDeleting"
+                    class="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-lg shadow-rose-600/30 transition-all active:scale-95 cursor-pointer flex items-center space-x-2 bg-rose-600 hover:bg-rose-500 text-white border border-rose-500/30 disabled:opacity-50">
+                    <svg x-show="!isDeleting" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    <svg x-show="isDeleting" class="animate-spin -ml-1 mr-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span x-show="!isDeleting">Pindahkan ke Tong Sampah</span>
+                    <span x-show="isDeleting">Memindahkan...</span>
+                </button>
             </div>
-        </template>
-
-        <!-- Footer Action Buttons -->
-        <div class="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2.5">
-            <button type="button" @click="showConfirmDeleteModal = false" :disabled="isDeleting"
-                class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50">
-                Batal
-            </button>
-            <button type="button" @click="executeDeleteHibah()" :disabled="isDeleting"
-                class="px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg transition-all active:scale-95 cursor-pointer flex items-center space-x-2 bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30 border border-rose-500/30 disabled:opacity-50">
-                <span x-show="!isDeleting">Ya, Hapus Data</span>
-                <span x-show="isDeleting">Menghapus...</span>
-            </button>
         </div>
     </div>
-</div>
+</template>

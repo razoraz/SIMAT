@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\TrackableSoftDelete;
 
 class AstapReklas extends Model
 {
-    use HasFactory;
+    use HasFactory, TrackableSoftDelete;
 
     protected $table = 'astap_reklasis';
 
@@ -20,6 +21,8 @@ class AstapReklas extends Model
         'tahun'            => 'integer',
         'spesifikasi_lama' => 'array',
         'spesifikasi_baru' => 'array',
+        'is_deleted'       => 'integer',
+        'deleted_at'       => 'datetime',
     ];
 
 
