@@ -1,6 +1,15 @@
         <!-- MODAL DETAIL RINCIAN DISTRIBUSI BARANG (MENDUKUNG MULTI-BARANG & NIBAR REGISTER) -->
-        <div x-show="showDetailModal" class="no-print fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4" x-cloak>
-            <div @click.away="if (!showConfirmModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <template x-teleport="body">
+            <div x-show="showDetailModal" class="no-print fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+                 style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 x-cloak>
+                <div @click.away="if (!showConfirmModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto my-auto">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800">
                     <div class="flex items-center space-x-3">
                         <span class="p-2.5 rounded-2xl bg-teal-500/20 text-teal-300 text-xl border border-teal-500/30">🚚</span>
@@ -286,3 +295,4 @@
                 </div>
             </div>
         </div>
+    </template>

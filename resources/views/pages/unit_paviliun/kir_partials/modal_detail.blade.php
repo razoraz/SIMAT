@@ -1,8 +1,15 @@
         <!-- 6. FRONTEND MODAL: DETAIL ASET RUANGAN (SESUAI KATALOG DATA ASTAP) -->
-        <div x-show="showDetailModal" x-cloak @click.self="showDetailModal = false" 
-            class="flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto" 
-            style="position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(2, 6, 23, 0.88) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;">
-            <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto" style="background-color: #0f172a;">
+        <template x-teleport="body">
+            <div x-show="showDetailModal" x-cloak @click.self="showDetailModal = false" 
+                 class="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto" 
+                 style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0">
+                <div class="border border-slate-800 rounded-3xl max-w-4xl w-full p-4 sm:p-6 md:p-8 shadow-2xl overflow-y-auto max-h-[90vh] space-y-5 my-auto" style="background-color: #0f172a;">
                 
                 <template x-if="selectedAsset">
                     <div class="space-y-5">
@@ -176,3 +183,4 @@
                 </template>
             </div>
         </div>
+    </template>

@@ -1,7 +1,17 @@
         <!-- MODAL DETAIL UNIT & INVENTARIS ASET RUANGAN (LENGKAP DENGAN DAFTAR ASET)   -->
         <!-- ========================================================================= -->
-        <div x-show="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-3 sm:p-5 overflow-y-auto" x-cloak>
-            <div @click.away="if (!showPrintKIRModal && !showEditModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-6 sm:p-7 shadow-2xl space-y-5 my-auto max-h-[90vh] flex flex-col">
+        <template x-teleport="body">
+            <div x-show="showDetailModal" 
+                 class="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+                 style="background-color: rgba(2, 6, 23, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 99999;"
+                 x-cloak
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0">
+                <div @click.away="if (!showPrintKIRModal && !showEditModal) showDetailModal = false" class="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-6 sm:p-7 shadow-2xl space-y-5 my-auto max-h-[90vh] flex flex-col">
                 
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
@@ -156,3 +166,4 @@
 
             </div>
         </div>
+    </template>
