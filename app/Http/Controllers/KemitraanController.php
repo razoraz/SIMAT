@@ -317,14 +317,21 @@ class KemitraanController extends Controller
         Carbon::setLocale('id');
 
         // 1. Cek apakah ID merujuk ke record tabel astap_kemitraans
-        $kemitraan = AstapKemitraan::with(['astap.jenisAstap', 'astap.registers.unit', 'astap.unit', 'objekRegister.astap', 'objekAstap'])->find($id);
+        $kemitraan = AstapKemitraan::with([
+            'astap.jenisAstap', 
+            'astap.registers.unit', 
+            'astap.unit', 
+            'astap.reklas',
+            'objekRegister.astap.reklas', 
+            'objekAstap.reklas'
+        ])->find($id);
         $astap = null;
 
         if ($kemitraan) {
             $astap = $kemitraan->astap ?: ($kemitraan->objekRegister?->astap ?: $kemitraan->objekAstap);
         } else {
             // 2. Jika bukan ID kemitraan, cari dari tabel astaps (misal: aset hasil reklasifikasi yang belum ada PKS)
-            $astap = Astap::with(['jenisAstap', 'registers.unit', 'kemitraan', 'unit'])->find($id);
+            $astap = Astap::with(['jenisAstap', 'registers.unit', 'kemitraan', 'unit', 'reklas'])->find($id);
             if ($astap) {
                 $kemitraan = $astap->kemitraan;
             }
@@ -403,23 +410,20 @@ class KemitraanController extends Controller
         $nomorPks = $kemitraan?->nomor_pks ?: ($spec['nomor_pks'] ?? ($spec['perjanjian_nomor'] ?? ($astap->bast_dokumen_nomor ?: '000.2.3.2/BAST-KSO/430.10.7/' . $tahun)));
         $nomorBast = '000.2.3.2/BAST-KMT/' . ($kemitraan?->id ?: $astap->id) . '/430.10.7/' . $tahun;
 
-        return view('pages.kemitraan.cetak_bast', [
-            'astap'          => $astap,
-            'kemitraan'      => $kemitraan,
-            'spec'           => $spec,
-            'objekAset'      => $objekAset,
-            'pihakSatu'      => $pihakSatu,
-            'pihakDua'       => $pihakDua,
-            'pengurusBarang' => $pengurusBarang,
-            'hariTgl'        => $hariTgl,
-            'tglFormatted'   => $tglFormatted,
-            'carbonTgl'      => $carbonTgl,
-            'nomorBast'      => $nomorBast,
-            'nomorPks'       => $nomorPks,
-            'luasTotal'      => $luasTotal,
-            'sertifikatNo'   => $sertifikatNo,
-            'hakTanah'       => $hakTanah,
-            'tanahItems'     => $tanahItems,
-        ]);
+        // Resolusi Nama Fisik Asli Barang (jika pernah direklasifikasi dari aset fisik)
+        $reklasHistory = $astap?->reklas?->sortByDesc('id')->first() ?: ($objekAset?->reklas?->sortByDesc('id')->first());
+        $namaFisikAsli = null;
+        if (!empty($astap?->nama_barang) && !str_starts_with(strtolower($astap->nama_barang), 'kerja sama pemanfaatan') && !str_starts_with(strtolower($astap->nama_barang), 'bangun guna serah')) {
+            $namaFisikAsli = $astap->nama_barang;
+        } elseif ($reklasHistory && !empty($reklasHistory->asal_nama)) {
+            $namaFisikAsli = $reklasHistory->asal_nama;
+        } elseif (!empty($objekAset?->nama_barang) && !str_starts_with(strtolower($objekAset->nama_barang), 'kerja sama pemanfaatan')) {
+            $namaFisikAsli = $objekAset->nama_barang;
+        } else {
+            $namaFisikAsli = $spec['mesin_items'][0]['mesin_nama_barang'] ?? ($spec['tanah_items'][0]['tanah_nama_barang'] ?? ($astap?->nama_barang ?: 'Objek Aset BMD RSUD'));
+        }
+
+        return redirect()->route('master.kemitraan')
+            ->with('info', 'Dokumen resmi BAST dapat dicetak langsung melalui tombol Cetak Resmi BAST pada menu Detail Aset.');
     }
 }

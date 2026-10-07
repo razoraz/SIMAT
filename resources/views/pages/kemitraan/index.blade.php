@@ -34,6 +34,9 @@
         <!-- MODAL PILIH TAHUN, TRIWULAN & SKEMA EKSPOR EXCEL KEMITRAAN -->
         @include('pages.kemitraan.master_partials.modal_export_excel')
 
+        <!-- MODAL CETAK RESMI BAST PEMANFAATAN KEMITRAAN -->
+        @include('pages.kemitraan.master_partials.modal_print_bast')
+
         <!-- FLOATING TOAST NOTIFICATION -->
         @include('pages.kemitraan.master_partials.toast')
     </div>

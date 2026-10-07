@@ -195,7 +195,7 @@
 
         <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
-                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
+                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 sticky top-0 z-10 bg-slate-950">
                     <tr>
                         <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
                         <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
@@ -204,7 +204,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Nilai Pemanfaatan (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Pemanfaatan / Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[340px] w-[340px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800/80 shrink-0 min-w-[260px] sticky right-0 z-10">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -425,7 +425,7 @@
                             </td>
 
                             <!-- 7. Aksi (Sticky Right) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 bg-slate-900/95 group-hover:bg-[#072535] transition-colors">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, true)"
@@ -534,7 +534,7 @@
 
         <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
-                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
+                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 sticky top-0 z-10 bg-slate-950">
                     <tr>
                         <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
                         <th class="py-3.5 px-4 min-w-[200px] bg-slate-950">Dokumen PKS &amp; Rekanan</th>
@@ -543,7 +543,7 @@
                         <th class="py-3.5 px-4 min-w-[135px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[140px] text-right bg-slate-950 whitespace-nowrap">Taksiran Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[180px] bg-slate-950">Masa Konsesi Operasional</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[340px] w-[340px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800/80 shrink-0 min-w-[260px] sticky right-0 z-10">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -715,7 +715,7 @@
                             </td>
 
                             <!-- 7. Aksi (Sticky Right) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 bg-slate-900/95 group-hover:bg-[#062922] transition-colors">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <!-- 1. Tombol Detail -->
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
@@ -816,7 +816,7 @@
 
         <div class="border-t border-slate-800/80 bg-slate-950/40 custom-scrollbar" style="max-height: 480px; overflow-y: auto; overflow-x: auto;">
             <table class="w-full text-left text-xs text-slate-300 relative border-collapse">
-                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0" style="position: sticky; top: 0; z-index: 5; background-color: #020617;">
+                <thead class="text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800 shrink-0 sticky top-0 z-10 bg-slate-950">
                     <tr>
                         <th class="py-3.5 px-4 w-12 text-center bg-slate-950 whitespace-nowrap">No</th>
                         <th class="py-3.5 px-4 min-w-[130px] bg-slate-950">Kategori Kemitraan</th>
@@ -826,7 +826,7 @@
                         <th class="py-3.5 px-4 min-w-[125px] text-center bg-slate-950 whitespace-nowrap">Kondisi</th>
                         <th class="py-3.5 px-4 min-w-[130px] text-right bg-slate-950 whitespace-nowrap">Total Nilai (Rp)</th>
                         <th class="py-3.5 px-4 min-w-[170px] bg-slate-950">Masa Konsesi</th>
-                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800 shrink-0 min-w-[340px] w-[340px]" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">Aksi</th>
+                        <th class="py-3.5 px-4 text-center whitespace-nowrap bg-slate-950 border-l border-slate-800/80 shrink-0 min-w-[260px] sticky right-0 z-10">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
@@ -994,7 +994,7 @@
                             </td>
 
                             <!-- 8. Aksi (Sticky Right) -->
-                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800 shrink-0" style="position: sticky; right: 0; z-index: 5; background-color: #020617 !important; box-shadow: -6px 0 12px rgba(0,0,0,0.6);">
+                            <td class="py-4 px-4 text-center whitespace-nowrap border-l border-slate-800/80 shrink-0 sticky right-0 z-10 bg-slate-900/95 group-hover:bg-slate-800 transition-colors">
                                 <div class="flex items-center justify-center space-x-1.5">
                                     <button type="button" @click="openDetail({{ json_encode($row) }}, {{ json_encode($astap) }}, {{ json_encode($firstReg) }}, false)"
                                         class="px-2.5 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 font-bold text-xs transition-all">

@@ -1,6 +1,24 @@
 <!-- ========================================================================= -->
 <!-- SCRIPTS: LOGIKA STATE MANAGEMENT MASTER KEMITRAAN ASET (AKUN 1.5.2)        -->
 <!-- ========================================================================= -->
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #a855f7;
+    }
+</style>
 <script>
     window.dbMasterJenisAstap108 = @json(!empty($dbMaster108) ? $dbMaster108 : []);
 
@@ -8,6 +26,27 @@
         return {
             // Mode Tampilan Pemisah Tabel Kemitraan: 'both' | 'dimanfaatkan' | 'ditambahkan' | 'all'
             kemitraanTableTab: 'both',
+
+            // State Modal Cetak BAST Kemitraan (Modal Standar SIMAT)
+            showModalPrintBast: false,
+            showEditBastForm: false,
+            isBastModified: false,
+            currentBastStorageKey: '',
+            bastDoc: null,
+            toast: {
+                show: false,
+                message: '',
+                type: 'success'
+            },
+
+            showToast(msg, type = 'success') {
+                this.toast = {
+                    show: true,
+                    message: msg,
+                    type: type
+                };
+                setTimeout(() => { this.toast.show = false; }, 3500);
+            },
 
             // State Modal Reklasifikasi Aset Tetap (RSDK) — Sama Seperti di Data ASTAP
             showReklasModal: false,
@@ -370,6 +409,18 @@
                 }
             },
 
+            formatDateIndo(dateString) {
+                if (!dateString || dateString === '-') return '-';
+                try {
+                    const d = new Date(dateString);
+                    if (isNaN(d.getTime())) return String(dateString);
+                    const bList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    return `${d.getDate()} ${bList[d.getMonth()]} ${d.getFullYear()}`;
+                } catch (e) {
+                    return String(dateString);
+                }
+            },
+
             formatTanggalIndo(dateStr) {
                 if (!dateStr || dateStr === '-') return '-';
                 if (String(dateStr).length === 4) return '01 Jan ' + dateStr;
@@ -508,6 +559,218 @@
                 this.detailPenempatanFilter = 'all';
                 this.detailSearchQuery = '';
                 this.showDetailModal = true;
+            },
+
+            // ─── Fitur Modal Cetak BAST Pemanfaatan Kemitraan (Format Modal SIMAT) ───
+            openPrintBast(item) {
+                if (!item) return;
+
+                // Tutup modal detail jika sedang terbuka agar pratinjau BAST tampil bersih & mulus
+                this.showDetailModal = false;
+
+                try {
+                    let astap = item.astap || (item.nama_barang ? item : null);
+                    let kemitraan = item.astap ? item : (item.kemitraan || null);
+                    let spec = astap?.spesifikasi_json || item.spesifikasi_json || {};
+                    if (typeof spec === 'string') {
+                        try { spec = JSON.parse(spec); } catch(e) { spec = {}; }
+                    }
+
+                    let targetId = kemitraan?.id || item.kemitraan_id || astap?.id || item.id || 'draft';
+                    this.currentBastStorageKey = 'bast_kemitraan_modal_' + targetId;
+
+                    // Resolusi Nama Fisik Asli
+                    let namaFisik = astap?.nama_barang || item.nama_barang || 'Objek Aset BMD RSUD';
+                    if (astap?.reklas && Array.isArray(astap.reklas) && astap.reklas.length > 0) {
+                        let lastReklas = astap.reklas[astap.reklas.length - 1];
+                        if (lastReklas?.asal_nama) namaFisik = lastReklas.asal_nama;
+                    } else if (item.objekAstap?.nama_barang) {
+                        namaFisik = item.objekAstap.nama_barang;
+                    } else if (spec?.mesin_items?.[0]?.mesin_nama_barang) {
+                        namaFisik = spec.mesin_items[0].mesin_nama_barang;
+                    } else if (spec?.tanah_items?.[0]?.tanah_nama_barang) {
+                        namaFisik = spec.tanah_items[0].tanah_nama_barang;
+                    }
+
+                    // Tanggal PKS & Tanggal BAST
+                    let rawTglPks = kemitraan?.tanggal_pks || item.tanggal_pks || spec?.tanggal_pks || astap?.bast_dokumen_tanggal || new Date().toISOString().slice(0, 10);
+                    let dPks = new Date(rawTglPks);
+                    if (isNaN(dPks.getTime())) dPks = new Date();
+
+                    const namaHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][dPks.getDay()];
+                    const namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][dPks.getMonth()];
+                    let tglPksStr = `${dPks.getDate()} ${namaBulan} ${dPks.getFullYear()}`;
+                    let hariTglStr = `${namaHari} tanggal ${tglPksStr}`;
+
+                    let thnPks = dPks.getFullYear();
+                    let noBastDefault = `000.2.3.2/BAST-KMT/${targetId}/430.10.7/${thnPks}`;
+                    let noPksDefault = kemitraan?.nomor_pks || item.nomor_pks || spec?.nomor_pks || astap?.bast_dokumen_nomor || `000.2.3.2/PKS-KMT/${targetId}/${thnPks}`;
+
+                    // Masa Konsesi
+                    let masaKonsesi = '';
+                    let tglMulai = kemitraan?.tanggal_mulai || item.tanggal_mulai || spec?.tanggal_mulai;
+                    let tglSelesai = kemitraan?.tanggal_selesai || item.tanggal_selesai || spec?.tanggal_selesai;
+                    if (tglMulai && tglSelesai) {
+                        masaKonsesi = `${this.formatDateIndo(tglMulai)} s.d. ${this.formatDateIndo(tglSelesai)}`;
+                    } else {
+                        masaKonsesi = kemitraan?.jangka_waktu || item.jangka_waktu || spec?.jangka_waktu || '5 (Lima) Tahun';
+                    }
+
+                    // Nilai Aset
+                    let nilaiNum = parseFloat(kemitraan?.nilai_aset || item.nilai_aset || astap?.total_realisasi || item.total_realisasi || 0);
+                    let nilaiFormatted = (nilaiNum || 0).toLocaleString('id-ID');
+
+                    // NIBAR & Volume
+                    let nibar = item.objek_nibar || item.nibar || astap?.registers?.[0]?.nibar || spec?.objek_nibar || spec?.nibar || '-';
+                    let volStr = `${kemitraan?.jumlah_volume || item.jumlah_volume || astap?.jumlah_volume || 1} ${kemitraan?.satuan || item.satuan || astap?.satuan || 'Unit'}`;
+                    if (spec?.luas_m2 || spec?.tanah_luas_m2) {
+                        volStr = `${spec.luas_m2 || spec.tanah_luas_m2} m²`;
+                    }
+
+                    let defaultDoc = {
+                        nomor_bast: noBastDefault,
+                        hari_tanggal: hariTglStr,
+                        lokasi: 'RSUD Dr. H. Koesnandi Kabupaten Bondowoso',
+                        nomor_pks: noPksDefault,
+                        tanggal_pks: tglPksStr,
+                        skema_kemitraan: kemitraan?.skema_kemitraan || item.skema_kemitraan || spec?.skema_kemitraan || 'Kerja Sama Operasional (KSO)',
+                        
+                        // Pihak Kesatu (RSUD)
+                        p1_nama: 'dr. YUS PRIYATNA ADRYANTO, Sp.P, FISR',
+                        p1_nip: '19771002 200604 1 006',
+                        p1_pangkat: 'Pembina Tingkat I (IV/b)',
+                        p1_jabatan: 'Direktur RSUD dr. H. Koesnandi Bondowoso',
+                        p1_instansi: 'RSUD dr. H. Koesnandi Kabupaten Bondowoso',
+                        
+                        // Pihak Kedua (Mitra)
+                        p2_perusahaan: kemitraan?.mitra_nama || item.mitra_nama || item.penyedia_nama || spec?.mitra_nama || 'Mitra Kerja Sama',
+                        p2_pimpinan: kemitraan?.mitra_pimpinan || item.mitra_pimpinan || item.penyedia_pemilik || spec?.mitra_pimpinan || 'Pimpinan / Direktur Rekanan',
+                        p2_jabatan: 'Pimpinan / Kuasa Direksi',
+                        p2_alamat: kemitraan?.mitra_alamat || item.mitra_alamat || item.penyedia_alamat || spec?.mitra_alamat || 'Jl. Kapten Piere Tendean, Bondowoso',
+                        
+                        // Objek Barang
+                        aset_nama: namaFisik,
+                        aset_lokasi: astap?.alamat_barang || item.alamat_barang || 'Kompleks RSUD Dr. H. Koesnandi Bondowoso',
+                        aset_kode108: astap?.kode_108 || item.kode_108 || '1.5.2.01.01.02.001',
+                        aset_nibar: nibar,
+                        aset_volume: volStr,
+                        aset_kondisi: item.kondisi || astap?.kondisi_barang || 'Baik',
+                        aset_keterangan: masaKonsesi,
+                        aset_nilai: nilaiFormatted,
+                        
+                        // Pengurus Barang
+                        pb_nama: 'BUDI HARTONO, S.Sos',
+                        pb_nip: '19760229 200801 1 010'
+                    };
+
+                    // Muat data dari localStorage jika pernah diedit
+                    this.isBastModified = false;
+                    try {
+                        let saved = localStorage.getItem(this.currentBastStorageKey);
+                        if (saved) {
+                            this.bastDoc = Object.assign({}, defaultDoc, JSON.parse(saved));
+                            this.isBastModified = true;
+                        } else {
+                            this.bastDoc = Object.assign({}, defaultDoc);
+                        }
+                    } catch(e) {
+                        this.bastDoc = Object.assign({}, defaultDoc);
+                    }
+                } catch(e) {
+                    console.error('Error generating BAST document:', e);
+                }
+
+                this.showEditBastForm = false;
+                this.showModalPrintBast = true;
+            },
+
+            // Cetak Dokumen BAST Langsung via iFrame Tanpa Ganti Halaman
+            printCurrentBast() {
+                const el = document.getElementById('print-area-bast-kemitraan');
+                if (!el) {
+                    window.print();
+                    return;
+                }
+
+                let iframe = document.getElementById('simat-kemitraan-print-frame');
+                if (iframe) iframe.remove();
+
+                iframe = document.createElement('iframe');
+                iframe.id = 'simat-kemitraan-print-frame';
+                iframe.style.position = 'fixed';
+                iframe.style.right = '0';
+                iframe.style.bottom = '0';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = '0';
+                document.body.appendChild(iframe);
+
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>BAST Kemitraan - ${this.bastDoc?.nomor_bast || 'RSUD Dr. H. Koesnandi'}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 15mm 15mm 15mm 15mm;
+        }
+        body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.5;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .no-print { display: none !important; }
+    </style>
+</head>
+<body style="background:#ffffff; color:#000000;">
+    ${el.innerHTML}
+</body>
+</html>`);
+                doc.close();
+
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    } catch(e) {
+                        window.print();
+                    }
+                }, 400);
+            },
+
+            // Simpan Perubahan Data BAST ke localStorage
+            saveBastData() {
+                if (!this.bastDoc || !this.currentBastStorageKey) return;
+                try {
+                    localStorage.setItem(this.currentBastStorageKey, JSON.stringify(this.bastDoc));
+                    this.isBastModified = true;
+                    this.showToast('Data BAST berhasil disimpan!');
+                } catch(e) {
+                    console.error('Error saving BAST data:', e);
+                }
+            },
+
+            // Reset Data BAST ke Standar Awal
+            resetBastData() {
+                if (confirm('Apakah Anda yakin ingin membatalkan semua perubahan dan mengembalikan BAST ke data asli sistem?')) {
+                    try {
+                        localStorage.removeItem(this.currentBastStorageKey);
+                    } catch(e) {}
+                    this.isBastModified = false;
+                    this.showModalPrintBast = false;
+                    this.showToast('Data BAST berhasil dikembalikan ke standar awal.');
+                }
             },
 
             // ─── Fitur Dokumen BAST & Berkas Kerjasama (Modal Detail) ───────────
